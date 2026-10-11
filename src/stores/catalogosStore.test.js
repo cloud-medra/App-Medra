@@ -20,6 +20,7 @@ vi.mock('firebase/firestore', () => {
     deleteField: () => new FieldValue('delete'),
     increment: () => new FieldValue('increment'),
     collection: (_db, ruta) => ({ path: ruta }),
+    query: (q, ...restricciones) => ({ q, restricciones }),
     getDocs: (...a) => mockGetDocs(...a),
     onSnapshot: (...a) => mockOnSnapshot(...a),
   };
@@ -146,5 +147,35 @@ describe('ordenarPor', () => {
     const ts = (ms) => ({ toMillis: () => ms });
     const datos = [{ f: ts(2) }, { f: new Date(3) }, { f: ts(1) }];
     expect([...datos].sort(store.ordenarPor('f', 'desc')).map(d => (d.f.toMillis ? d.f.toMillis() : d.f.getTime()))).toEqual([3, 2, 1]);
+  });
+});
+
+describe('catalogosStore — consulta filtrada (notas por rol)', () => {
+  it('lee con la consulta y vuelve a leer solo si cambia la clave', async () => {
+    const consulta = (rol) => ({ clave: `rol:${rol}`, restricciones: [{ rol }] });
+    await store.cargarCatalogo('notas', consulta('operador'));
+    expect(mockGetDocs).toHaveBeenCalledTimes(1);
+    expect(mockGetDocs.mock.calls[0][0]).toEqual({ q: { path: 'administracion_notas' }, restricciones: [{ rol: 'operador' }] });
+
+    await store.cargarCatalogo('notas', consulta('operador'));
+    expect(mockGetDocs).toHaveBeenCalledTimes(1);
+
+    await store.refrescarCatalogo('notas');
+    expect(mockGetDocs.mock.calls[1][0].restricciones).toEqual([{ rol: 'operador' }]);
+
+    await store.cargarCatalogo('notas', consulta('admin'));
+    expect(mockGetDocs).toHaveBeenCalledTimes(3);
+    expect(mockGetDocs.mock.calls[2][0].restricciones).toEqual([{ rol: 'admin' }]);
+  });
+
+  it('una respuesta de la consulta anterior no pisa los datos de la nueva', async () => {
+    let resolverVieja;
+    mockGetDocs.mockReturnValueOnce(new Promise((r) => { resolverVieja = r; }));
+    store.cargarCatalogo('notas', { clave: 'rol:operador', restricciones: [] }).catch(() => {});
+    mockGetDocs.mockResolvedValueOnce(snap([{ id: 'nueva' }]));
+    await store.cargarCatalogo('notas', { clave: 'todas', restricciones: [] });
+    resolverVieja(snap([{ id: 'vieja' }]));
+    await Promise.resolve();
+    expect(store.leerCatalogo('notas').map((d) => d.id)).toEqual(['nueva']);
   });
 });

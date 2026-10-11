@@ -44,9 +44,9 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
 
             <BrandingCard />
 
-            {/* Este contenedor ahora aprovecha el espacio restante sin forzar el scroll global */}
+            {/* Accesos rápidos a la izquierda (y primero al apilar en móvil); aprovecha el espacio restante sin forzar el scroll global */}
             <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden">
-              <NuevoModuloCard />
+              <AtajosCard permisos={userData?.permisos} onAbrir={onAbrirAtajo} />
             </div>
           </div>
 
@@ -71,7 +71,10 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
           />
 
           {/* <AvanceInventario /> */}
-          <AtajosCard permisos={userData?.permisos} onAbrir={onAbrirAtajo} />
+          {/* Notas a la derecha; ocupa el alto que deja la agenda */}
+          <div className="flex-1 min-h-[240px] flex flex-col overflow-hidden">
+            <NuevoModuloCard />
+          </div>
         </div>
 
       </div>

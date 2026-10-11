@@ -3,6 +3,7 @@ import { db } from '../../../../firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import { upsertLocal } from '../../../../stores/catalogosStore';
 import { useNotasPanel } from '../../administracion/notasAdmin/useNotasPanel';
+import { estiloVisualNota } from '../../administracion/notasAdmin/notasConfig';
 import { StickyNote, CheckSquare, AlignLeft, Check } from 'lucide-react';
 
 const NuevoModuloCard = () => {
@@ -43,10 +44,18 @@ const NuevoModuloCard = () => {
             No hay notas ingresadas aún.
           </p>
         ) : (
-          notas.map((nota) => (
+          notas.map((nota) => {
+            const visual = estiloVisualNota(nota);
+            const claseTexto = visual.textoPropio ? '' : 'text-gray-600 dark:text-gray-300';
+            return (
             <div
               key={nota.id}
-              className="p-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded flex flex-col gap-1.5 hover:border-gray-200 dark:hover:border-gray-600 transition-colors flex-shrink-0"
+              style={visual.contenedor}
+              className={`p-2.5 border rounded flex flex-col gap-1.5 transition-colors flex-shrink-0 ${
+                visual.fondoPropio
+                  ? ''
+                  : 'bg-gray-50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600'
+              }`}
             >
               <div className="flex items-center gap-1.5">
                 {nota.tipo === 'checklist' ? (
@@ -55,7 +64,10 @@ const NuevoModuloCard = () => {
                   <AlignLeft size={13} className="text-[#2383C2] shrink-0" />
                 )}
                 {nota.titulo && (
-                  <h4 className="text-[11px] font-bold text-gray-800 dark:text-gray-200 truncate">
+                  <h4
+                    style={visual.textoPropio ? { color: visual.texto.color } : undefined}
+                    className={`text-[11px] font-bold truncate ${visual.textoPropio ? '' : 'text-gray-800 dark:text-gray-200'}`}
+                  >
                     {nota.titulo}
                   </h4>
                 )}
@@ -80,10 +92,11 @@ const NuevoModuloCard = () => {
                         )}
                       </span>
                       <span
+                        style={visual.texto}
                         className={`text-[10.5px] leading-tight ${
                           item.completado
-                            ? 'line-through text-gray-400 dark:text-gray-500'
-                            : 'text-gray-600 dark:text-gray-300'
+                            ? `line-through ${visual.textoPropio ? 'opacity-60' : 'text-gray-400 dark:text-gray-500'}`
+                            : claseTexto
                         }`}
                       >
                         {item.texto}
@@ -92,12 +105,19 @@ const NuevoModuloCard = () => {
                   ))}
                 </div>
               ) : (
-                <p className="text-[10.5px] text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                <p style={visual.texto} className={`text-[10.5px] leading-relaxed whitespace-pre-wrap ${claseTexto}`}>
                   {nota.contenido}
                 </p>
               )}
 
-              <div className="flex items-center justify-between border-t border-gray-200/40 dark:border-gray-700/40 pt-1 mt-0.5 text-[8.5px] text-gray-400 dark:text-gray-500 font-num">
+              <div
+                style={visual.textoPropio ? { color: visual.texto.color } : undefined}
+                className={`flex items-center justify-between border-t pt-1 mt-0.5 text-[8.5px] font-num ${
+                  visual.fondoPropio
+                    ? 'border-current/20 opacity-75'
+                    : 'border-gray-200/40 dark:border-gray-700/40 text-gray-400 dark:text-gray-500'
+                }`}
+              >
                 {nota.fecha?.seconds && (
                   <span>
                     {new Date(nota.fecha.seconds * 1000).toLocaleDateString('es-ES', {
@@ -111,7 +131,8 @@ const NuevoModuloCard = () => {
                 {nota.autor && <span className="ml-auto">Por: {nota.autor}</span>}
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

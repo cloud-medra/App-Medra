@@ -1,4 +1,4 @@
-import { collection, getDocs, onSnapshot, FieldValue, serverTimestamp, deleteField } from 'firebase/firestore';
+import { collection, query, getDocs, onSnapshot, FieldValue, serverTimestamp, deleteField } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
 // =====================================================================
@@ -19,6 +19,10 @@ import { db } from '../firebaseConfig';
 //     sesión. Las escrituras de la propia app se reflejan con
 //     upsertLocal/removeLocal; los cambios de otros usuarios, con
 //     refrescarCatalogo (botón "Actualizar") o al recargar la página.
+//   - `notas`: igual que los de lectura única, pero con consulta filtrada
+//     (por rol): las reglas no dejan leer la colección entera. La pantalla
+//     pasa `consulta: { clave, restricciones }`; si la clave cambia (otro
+//     rol), se descarta la copia y se vuelve a leer.
 //
 // Los datos se guardan SIN ordenar ni filtrar (las consultas originales
 // usaban orderBy, que además excluye los docs sin ese campo): cada pantalla
@@ -44,7 +48,7 @@ const obtenerEntrada = (nombre) => {
   if (!CATALOGOS[nombre]) throw new Error(`Catálogo desconocido: "${nombre}"`);
   let e = entradas.get(nombre);
   if (!e) {
-    e = { estado: ESTADO_INICIAL, promesa: null, unsubscribe: null, suscriptores: new Set() };
+    e = { estado: ESTADO_INICIAL, promesa: null, unsubscribe: null, suscriptores: new Set(), consulta: null };
     entradas.set(nombre, e);
   }
   return e;
@@ -59,11 +63,16 @@ const actualizar = (e, cambios) => {
 
 const mapearDocs = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
+const referencia = (nombre, e) => {
+  const ref = collection(db, CATALOGOS[nombre].coleccion);
+  return e.consulta?.restricciones?.length ? query(ref, ...e.consulta.restricciones) : ref;
+};
+
 const abrirListener = (nombre, e) => {
   e.promesa = new Promise((resolve, reject) => {
     let primero = true;
     e.unsubscribe = onSnapshot(
-      collection(db, CATALOGOS[nombre].coleccion),
+      referencia(nombre, e),
       (snap) => {
         const datos = mapearDocs(snap);
         actualizar(e, { datos, cargando: false, error: null });
@@ -83,27 +92,41 @@ const abrirListener = (nombre, e) => {
 };
 
 const leerUnaVez = (nombre, e) => {
-  e.promesa = getDocs(collection(db, CATALOGOS[nombre].coleccion))
+  const promesa = getDocs(referencia(nombre, e))
     .then((snap) => {
+      // Si mientras tanto cambió la consulta, esta respuesta ya no vale.
+      if (e.promesa !== promesa) return e.promesa;
       const datos = mapearDocs(snap);
       actualizar(e, { datos, cargando: false, error: null });
       return datos;
     })
     .catch((error) => {
+      if (e.promesa !== promesa) return e.promesa;
       console.error(`Error al cargar ${CATALOGOS[nombre].coleccion}:`, error);
       e.promesa = null;
       actualizar(e, { cargando: false, error });
       throw error;
     });
-  return e.promesa;
+  e.promesa = promesa;
+  return promesa;
 };
 
 /**
  * Devuelve (y carga si hace falta) los documentos del catálogo. Varias
  * llamadas simultáneas comparten la misma lectura.
+ *
+ * @param {{ clave: string, restricciones: import('firebase/firestore').QueryConstraint[] }} [consulta]
+ *   Solo catálogos de lectura única: filtra la lectura. Otra clave descarta
+ *   la copia anterior y vuelve a leer.
  */
-export const cargarCatalogo = (nombre) => {
+export const cargarCatalogo = (nombre, consulta) => {
   const e = obtenerEntrada(nombre);
+  if (consulta && consulta.clave !== e.consulta?.clave) {
+    e.consulta = consulta;
+    if (e.unsubscribe) { e.unsubscribe(); e.unsubscribe = null; }
+    e.promesa = null;
+    actualizar(e, { datos: null });
+  }
   if (e.promesa) return e.promesa;
   actualizar(e, { cargando: e.estado.datos === null, error: null });
   return CATALOGOS[nombre].enVivo ? abrirListener(nombre, e) : leerUnaVez(nombre, e);
@@ -186,6 +209,7 @@ export const reiniciarCatalogos = () => {
     if (e.unsubscribe) e.unsubscribe();
     e.unsubscribe = null;
     e.promesa = null;
+    e.consulta = null;
     actualizar(e, ESTADO_INICIAL);
   });
 };

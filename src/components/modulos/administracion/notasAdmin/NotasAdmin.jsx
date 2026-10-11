@@ -6,17 +6,26 @@ import {
 } from 'firebase/firestore';
 import { removeLocal } from '../../../../stores/catalogosStore';
 import { useNotasPanel } from './useNotasPanel';
+import {
+  ROLES_NOTA, VALORES_ROLES_NOTA, labelRolNota, rolesDeNota, veTodasLasNotas,
+  normalizarEstilo, estiloVisualNota,
+} from './notasConfig';
+import SelectorEstiloNota from './SelectorEstiloNota';
 import { 
   Send, PlusCircle, CheckSquare, AlignLeft, 
-  Trash2, Edit2, Plus, X, ArrowUp, ArrowDown 
+  Trash2, Edit2, Plus, X, ArrowUp, ArrowDown, Users 
 } from 'lucide-react';
 
 import { useToast } from '../../../../context/ToastContext';
+import { useUser } from '../../../../context/UserContext';
 import ModalConfirm from '../../../../components/ui/ModalConfirm';
 import Spinner from '../../../../components/ui/Spinner';
 
-const NotasAdmin = ({ userData }) => {
+const ESTILO_VACIO = normalizarEstilo(null);
+
+const NotasAdmin = () => {
   const { showToast } = useToast();
+  const { userData } = useUser();
 
   const [tipo, setTipo] = useState('texto');
   const [titulo, setTitulo] = useState('');
@@ -24,6 +33,9 @@ const NotasAdmin = ({ userData }) => {
   const [items, setItems] = useState(['']);
   const [cargando, setCargando] = useState(false);
   const [editandoId, setEditandoId] = useState(null);
+  const [roles, setRoles] = useState([]);
+  const [errorRoles, setErrorRoles] = useState(false);
+  const [estilo, setEstilo] = useState(ESTILO_VACIO);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [idParaEliminar, setIdParaEliminar] = useState(null);
@@ -35,6 +47,15 @@ const NotasAdmin = ({ userData }) => {
     setItems(nuevosItems);
   };
 
+  const toggleRol = (rol) => {
+    setErrorRoles(false);
+    setRoles((prev) => (prev.includes(rol) ? prev.filter((r) => r !== rol) : [...prev, rol]));
+  };
+  const toggleTodos = () => {
+    setErrorRoles(false);
+    setRoles((prev) => (prev.length === VALORES_ROLES_NOTA.length ? [] : [...VALORES_ROLES_NOTA]));
+  };
+
   const agregarItem = () => setItems([...items, '']);
   const eliminarItem = (index) => setItems(items.filter((_, i) => i !== index));
 
@@ -44,6 +65,9 @@ const NotasAdmin = ({ userData }) => {
     setItems(['']);
     setTipo('texto');
     setEditandoId(null);
+    setRoles([]);
+    setErrorRoles(false);
+    setEstilo(ESTILO_VACIO);
   };
 
   const moverNota = async (index, direccion) => {
@@ -81,6 +105,18 @@ const NotasAdmin = ({ userData }) => {
 
     if (tipo === 'texto' && !contenido.trim()) return;
     if (tipo === 'checklist' && items.filter((i) => i.trim()).length === 0) return;
+    if (roles.length === 0) {
+      setErrorRoles(true);
+      showToast('Elige al menos un rol que verá la nota', 'error');
+      return;
+    }
+
+    // Mismo orden que ROLES_NOTA, sin duplicados.
+    const rolesVisibles = VALORES_ROLES_NOTA.filter((r) => roles.includes(r));
+    const estiloGuardar = normalizarEstilo(estilo);
+    // Quien no está entre los destinatarios deja de ver la nota al guardarla
+    // (salvo el Desarrollador, que ve todas).
+    const dejaDeVerla = !veTodasLasNotas(userData) && !rolesVisibles.includes(userData?.rol || 'operador');
 
     setCargando(true);
 
@@ -89,6 +125,8 @@ const NotasAdmin = ({ userData }) => {
         const payloadActualizacion = {
           titulo: titulo.trim(),
           tipo,
+          rolesVisibles,
+          estilo: estiloGuardar,
           ...(tipo === 'texto'
             ? { contenido: contenido.trim(), items: [] }
             : {
@@ -99,8 +137,11 @@ const NotasAdmin = ({ userData }) => {
               }),
         };
         await updateDoc(doc(db, 'administracion_notas', editandoId), payloadActualizacion);
-        await refrescarNotas();
-        showToast('Nota actualizada con éxito', 'success');
+        if (dejaDeVerla) removeLocal('notas', editandoId);
+        else await refrescarNotas();
+        showToast(dejaDeVerla
+          ? 'Nota actualizada. No está dirigida a tu rol, así que ya no la verás.'
+          : 'Nota actualizada con éxito', 'success');
       } else {
         const batch = writeBatch(db);
         
@@ -113,6 +154,8 @@ const NotasAdmin = ({ userData }) => {
         batch.set(nuevaNotaRef, {
           titulo: titulo.trim(),
           tipo,
+          rolesVisibles,
+          estilo: estiloGuardar,
           autor: autorNombre,
           fecha: serverTimestamp(),
           orden: 0,
@@ -127,7 +170,9 @@ const NotasAdmin = ({ userData }) => {
 
         await batch.commit();
         await refrescarNotas();
-        showToast('Nota publicada correctamente', 'success');
+        showToast(dejaDeVerla
+          ? 'Nota publicada. No está dirigida a tu rol, así que no la verás en el listado.'
+          : 'Nota publicada correctamente', 'success');
       }
       resetFormulario();
     } catch (error) {
@@ -142,6 +187,9 @@ const NotasAdmin = ({ userData }) => {
     setEditandoId(nota.id);
     setTipo(nota.tipo || 'texto');
     setTitulo(nota.titulo || '');
+    setRoles(rolesDeNota(nota));
+    setErrorRoles(false);
+    setEstilo(normalizarEstilo(nota.estilo));
     if (nota.tipo === 'checklist') {
       setItems(nota.items?.map((i) => i.texto) || ['']);
       setContenido('');
@@ -287,6 +335,60 @@ const NotasAdmin = ({ userData }) => {
             </div>
           )}
 
+          <fieldset aria-describedby={errorRoles ? 'error-roles-nota' : undefined}>
+            <div className="flex items-center justify-between mb-1">
+              <legend className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                <Users size={12} /> Visible para <span className="text-rose-500">*</span>
+              </legend>
+              <button
+                type="button"
+                onClick={toggleTodos}
+                className="text-[10px] text-[#2383C2] hover:underline font-semibold"
+              >
+                {roles.length === VALORES_ROLES_NOTA.length ? 'Quitar todos' : 'Todos'}
+              </button>
+            </div>
+            <div
+              className={`flex flex-wrap gap-2 p-2 rounded border ${
+                errorRoles
+                  ? 'border-rose-400 bg-rose-50/60 dark:bg-rose-950/20'
+                  : 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900'
+              }`}
+            >
+              {ROLES_NOTA.map((r) => (
+                <label key={r.value} className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-200 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={roles.includes(r.value)}
+                    onChange={() => toggleRol(r.value)}
+                    className="accent-[#2383C2]"
+                  />
+                  {r.label}
+                </label>
+              ))}
+            </div>
+            {errorRoles ? (
+              <p id="error-roles-nota" role="alert" className="text-[10.5px] text-rose-600 dark:text-rose-400 mt-1">
+                Debes elegir al menos un rol.
+              </p>
+            ) : (
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                El rol Desarrollador siempre ve todas las notas.
+              </p>
+            )}
+          </fieldset>
+
+          <SelectorEstiloNota
+            estilo={estilo}
+            onChange={setEstilo}
+            vistaPrevia={{
+              tipo,
+              titulo: titulo.trim(),
+              contenido: contenido.trim(),
+              items: items.filter((i) => i.trim()),
+            }}
+          />
+
           <div className="flex items-center justify-end gap-2 mt-2">
             {editandoId && (
               <button
@@ -337,13 +439,16 @@ const NotasAdmin = ({ userData }) => {
               No hay notas publicadas en el sistema.
             </p>
           ) : (
-            notas.map((nota, idx) => (
+            notas.map((nota, idx) => {
+              const visual = estiloVisualNota(nota);
+              return (
               <div
                 key={nota.id}
+                style={visual.contenedor}
                 className={`p-3 border rounded-lg flex flex-col gap-1.5 transition-all ${
                   editandoId === nota.id
-                    ? 'border-[#2383C2] bg-sky-50/30 dark:bg-sky-950/20'
-                    : 'border-gray-100 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-900/40 hover:border-gray-300 dark:hover:border-gray-600'
+                    ? `border-[#2383C2] ring-1 ring-[#2383C2] ${visual.fondoPropio ? '' : 'bg-sky-50/30 dark:bg-sky-950/20'}`
+                    : `border-gray-100 dark:border-gray-700/60 hover:border-gray-300 dark:hover:border-gray-600 ${visual.fondoPropio ? '' : 'bg-gray-50 dark:bg-gray-900/40'}`
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -354,7 +459,10 @@ const NotasAdmin = ({ userData }) => {
                       <AlignLeft size={14} className="text-[#2383C2] shrink-0" />
                     )}
                     {nota.titulo && (
-                      <h4 className="text-xs font-bold text-gray-800 dark:text-gray-100">
+                      <h4
+                        style={visual.textoPropio ? { color: visual.texto.color } : undefined}
+                        className={`text-xs font-bold ${visual.textoPropio ? '' : 'text-gray-800 dark:text-gray-100'}`}
+                      >
                         {nota.titulo}
                       </h4>
                     )}
@@ -400,26 +508,52 @@ const NotasAdmin = ({ userData }) => {
                 {nota.tipo === 'checklist' ? (
                   <ul className="flex flex-col gap-1 pl-1">
                     {nota.items?.map((item, i) => (
-                      <li key={i} className="text-[11px] text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                      <li
+                        key={i}
+                        style={visual.texto}
+                        className={`text-[11px] flex items-center gap-2 ${visual.textoPropio ? '' : 'text-gray-600 dark:text-gray-300'}`}
+                      >
                         <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
                         <span>{item.texto}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-[11.5px] text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  <p
+                    style={visual.texto}
+                    className={`text-[11.5px] leading-relaxed whitespace-pre-wrap ${visual.textoPropio ? '' : 'text-gray-600 dark:text-gray-300'}`}
+                  >
                     {nota.contenido}
                   </p>
                 )}
 
-                <div className="flex items-center justify-between border-t border-gray-200/50 dark:border-gray-700/50 pt-1.5 mt-1 text-[9px] text-gray-400 dark:text-gray-500">
+                <div className="flex flex-wrap items-center gap-1" aria-label="Roles que ven la nota">
+                  {rolesDeNota(nota).map((rol) => (
+                    <span
+                      key={rol}
+                      className="text-[9px] font-semibold px-1.5 py-0.5 rounded border bg-white/80 dark:bg-gray-800/80 border-sky-200 dark:border-sky-800 text-[#2383C2] dark:text-sky-300"
+                    >
+                      {labelRolNota(rol)}
+                    </span>
+                  ))}
+                </div>
+
+                <div
+                  className={`flex items-center justify-between border-t pt-1.5 mt-1 text-[9px] ${
+                    visual.fondoPropio
+                      ? 'border-current/20 opacity-75'
+                      : 'border-gray-200/50 dark:border-gray-700/50 text-gray-400 dark:text-gray-500'
+                  }`}
+                  style={visual.textoPropio ? { color: visual.texto.color } : undefined}
+                >
                   <span>Por: {nota.autor}</span>
                   {nota.fecha?.seconds && (
                     <span>{new Date(nota.fecha.seconds * 1000).toLocaleDateString()}</span>
                   )}
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>

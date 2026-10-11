@@ -30,7 +30,7 @@ const AtajosCard = ({ permisos, onAbrir }) => {
           No tienes accesos rápidos disponibles con tus permisos actuales.
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2 overflow-y-auto min-h-0 pr-0.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto min-h-0 pr-0.5">
           {atajos.map((a) => (
             <button
               key={`${a.modulo}:${a.path}`}

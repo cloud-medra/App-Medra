@@ -249,9 +249,28 @@ service cloud.firestore {
         (esAdminODev() || tienePermiso(modulo));
     }
 
-    match /administracion_notas/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('administracion'));
+    // Notas del panel: cada una dice qué roles la ven (rolesVisibles, al
+    // menos uno de admin/operador/encargado). El Desarrollador ve todas. Las
+    // consultas del resto tienen que filtrar por su rol
+    // (where('rolesVisibles', 'array-contains', rol)) o se rechazan.
+    function puedeVerNota(nota) {
+      let rol = getUsuario().get('rol', 'operador');
+      return rol == 'dev' || rol in nota.get('rolesVisibles', []);
+    }
+    function notaValida(nota) {
+      return nota.rolesVisibles is list
+        && nota.rolesVisibles.size() > 0
+        && nota.rolesVisibles.toSet().hasOnly(['admin', 'operador', 'encargado'])
+        && (!('estilo' in nota) || nota.estilo is map);
+    }
+    match /administracion_notas/{notaId} {
+      allow read: if request.auth != null && puedeVerNota(resource.data);
+      allow create: if request.auth != null && (esAdminODev() || tienePermiso('administracion'))
+        && notaValida(request.resource.data);
+      allow update: if request.auth != null && (esAdminODev() || tienePermiso('administracion'))
+        && puedeVerNota(resource.data) && notaValida(request.resource.data);
+      allow delete: if request.auth != null && (esAdminODev() || tienePermiso('administracion'))
+        && puedeVerNota(resource.data);
     }
 
     // =================================================================
