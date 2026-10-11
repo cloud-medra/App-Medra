@@ -2,31 +2,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Perfil del usuario; {} si no existe (sin perfil se niega todo lo que
+    // dependa de rol o permisos, sin error de evaluación). Los campos se leen
+    // con get(campo, defecto) porque pueden faltar.
     function getUsuario() {
-      return get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data;
+      let ruta = /databases/$(database)/documents/usuarios/$(request.auth.uid);
+      return exists(ruta) ? get(ruta).data : {};
     }
     function esAdminODev() {
-      let u = getUsuario();
-      return u.rol == 'admin' || u.rol == 'dev';
+      let rol = getUsuario().get('rol', '');
+      return rol == 'admin' || rol == 'dev';
     }
     // Un ítem de menú puntual (ruta) dentro de permisos[modulo]; sin el
     // módulo, lista vacía en vez de error.
     function tieneItem(modulo, ruta) {
-      return ruta in getUsuario().permisos.get(modulo, []);
+      return ruta in getUsuario().get('permisos', {}).get(modulo, []);
     }
     function tienePermiso(modulo) {
-      let u = getUsuario();
-      return u.permisos[modulo] != null;
+      return getUsuario().get('permisos', {}).get(modulo, null) != null;
     }
     // Acción granular (mismo criterio que useGranularPermission): la vista
     // tiene que existir en permisosGranulares; una sección o acción sin
     // configurar se permite; visible:false o la acción en false se niega.
     function accionPermitida(ruta, seccion, accion) {
+      // Sección sin configurar = {} (permitida). Sin `null` en el ternario: el
+      // verificador de tipos del deploy no puede asegurar que sea un map.
       let vista = getUsuario().get('permisosGranulares', {}).get(ruta, null);
-      let sec = vista == null ? null : vista.get(seccion, null);
+      let sec = vista == null ? {} : vista.get(seccion, {});
       return vista != null
-        && (sec == null || (sec.get('visible', true) != false
-          && sec.get('elements', {}).get(accion, true) != false));
+        && sec.get('visible', true) != false
+        && sec.get('elements', {}).get(accion, true) != false;
     }
     // Colecciones con UNA sola pantalla que escribe: además del módulo se
     // exige el ítem de menú (vista) y, en accionEnVista, además la acción
@@ -255,8 +260,10 @@ service cloud.firestore {
     // tienen que filtrar por su rol (where('rolesVisibles', 'array-contains',
     // rol)) o se rechazan; un usuario sin rol cuenta como operador.
     function puedeVerNota(nota) {
-      let rol = getUsuario().get('rol', 'operador');
-      return rol == 'dev' || rol in nota.get('rolesVisibles', []);
+      let u = getUsuario();
+      let rol = u.get('rol', 'operador');
+      // Sin perfil (usuarios/{uid} no existe) no se ve ninguna.
+      return u.size() > 0 && (rol == 'dev' || rol in nota.get('rolesVisibles', []));
     }
     function notaValida(nota) {
       return nota.rolesVisibles is list
@@ -264,12 +271,19 @@ service cloud.firestore {
         && nota.rolesVisibles.toSet().hasOnly(['admin', 'operador', 'encargado', 'dev'])
         && (!('estilo' in nota) || nota.estilo is map);
     }
+    // Al editar, roles y estilo se validan solo si cambian: mover una nota
+    // (orden) o marcar su checklist no exige que ya tenga rolesVisibles (las
+    // notas anteriores a la migración siguen funcionando).
+    function edicionDeNotaValida() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['rolesVisibles', 'estilo'])
+        || notaValida(request.resource.data);
+    }
     match /administracion_notas/{notaId} {
       allow read: if request.auth != null && puedeVerNota(resource.data);
       allow create: if request.auth != null && (esAdminODev() || tienePermiso('administracion'))
         && notaValida(request.resource.data);
       allow update: if request.auth != null && (esAdminODev() || tienePermiso('administracion'))
-        && puedeVerNota(resource.data) && notaValida(request.resource.data);
+        && puedeVerNota(resource.data) && edicionDeNotaValida();
       allow delete: if request.auth != null && (esAdminODev() || tienePermiso('administracion'))
         && puedeVerNota(resource.data);
     }

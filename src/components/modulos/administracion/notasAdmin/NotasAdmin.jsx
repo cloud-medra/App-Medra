@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { db, auth } from '../../../../firebaseConfig';
-import { 
-  collection, addDoc, updateDoc, deleteDoc, doc, 
-  serverTimestamp, writeBatch 
-} from 'firebase/firestore';
+import { deleteDoc, doc } from 'firebase/firestore';
 import { removeLocal } from '../../../../stores/catalogosStore';
 import { useNotasPanel } from './useNotasPanel';
+import { crearNota, actualizarNota, intercambiarOrden } from './notasServicio';
 import {
   ROLES_NOTA, VALORES_ROLES_NOTA, SOLO_DEV, labelRolNota, rolesDeNota, esSoloDev, veTodasLasNotas,
   normalizarEstilo, estiloVisualNota,
@@ -91,10 +89,7 @@ const NotasAdmin = () => {
     const ordenDestino = typeof notaDestino.orden === 'number' ? notaDestino.orden : nuevoIndex;
 
     try {
-      const batch = writeBatch(db);
-      batch.update(doc(db, 'administracion_notas', notaActual.id), { orden: ordenDestino });
-      batch.update(doc(db, 'administracion_notas', notaDestino.id), { orden: ordenActual });
-      await batch.commit();
+      await intercambiarOrden(db, notaActual, ordenActual, notaDestino, ordenDestino);
       await refrescarNotas();
     } catch (error) {
       console.error('Error al reordenar:', error);
@@ -131,54 +126,16 @@ const NotasAdmin = () => {
     setCargando(true);
 
     try {
+      const datos = { titulo, tipo, contenido, items, rolesVisibles, estilo: estiloGuardar };
       if (editandoId) {
-        const payloadActualizacion = {
-          titulo: titulo.trim(),
-          tipo,
-          rolesVisibles,
-          estilo: estiloGuardar,
-          ...(tipo === 'texto'
-            ? { contenido: contenido.trim(), items: [] }
-            : {
-                contenido: '',
-                items: items
-                  .filter((i) => i.trim())
-                  .map((texto) => ({ texto: texto.trim(), completado: false })),
-              }),
-        };
-        await updateDoc(doc(db, 'administracion_notas', editandoId), payloadActualizacion);
+        await actualizarNota(db, editandoId, datos);
         if (dejaDeVerla) removeLocal('notas', editandoId);
         else await refrescarNotas();
         showToast(dejaDeVerla
           ? 'Nota actualizada. No está dirigida a tu rol, así que ya no la verás.'
           : 'Nota actualizada con éxito', 'success');
       } else {
-        const batch = writeBatch(db);
-        
-        notas.forEach((n, idx) => {
-          const ordenValido = typeof n.orden === 'number' ? n.orden : idx;
-          batch.update(doc(db, 'administracion_notas', n.id), { orden: ordenValido + 1 });
-        });
-
-        const nuevaNotaRef = doc(collection(db, 'administracion_notas'));
-        batch.set(nuevaNotaRef, {
-          titulo: titulo.trim(),
-          tipo,
-          rolesVisibles,
-          estilo: estiloGuardar,
-          autor: autorNombre,
-          fecha: serverTimestamp(),
-          orden: 0,
-          ...(tipo === 'texto'
-            ? { contenido: contenido.trim() }
-            : {
-                items: items
-                  .filter((i) => i.trim())
-                  .map((texto) => ({ texto: texto.trim(), completado: false })),
-              }),
-        });
-
-        await batch.commit();
+        await crearNota(db, notas, { ...datos, autor: autorNombre });
         await refrescarNotas();
         showToast(dejaDeVerla
           ? 'Nota publicada. No está dirigida a tu rol, así que no la verás en el listado.'

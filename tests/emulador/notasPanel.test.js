@@ -11,7 +11,8 @@ import {
   getFirestore, connectFirestoreEmulator, collection, query, where, getDocs,
   doc, getDoc, setDoc, updateDoc, deleteDoc,
 } from 'firebase/firestore';
-import { consultaNotas } from '../../src/components/modulos/administracion/notasAdmin/notasConfig.js';
+import { consultaNotas, normalizarEstilo } from '../../src/components/modulos/administracion/notasAdmin/notasConfig.js';
+import { crearNota, actualizarNota, intercambiarOrden } from '../../src/components/modulos/administracion/notasAdmin/notasServicio.js';
 
 const require = createRequire(new URL('../../functions/package.json', import.meta.url));
 const adminApp = require('firebase-admin/app');
@@ -201,5 +202,98 @@ describe('migración (scripts/migrarRolesNotas.js)', () => {
 
     // Idempotente.
     expect((await migrarRolesNotas(adminDb, { aplicar: true })).migradas).toBe(0);
+  });
+});
+
+// Guardado con el mismo código que Notas Admin (notasServicio), sobre datos
+// como los de producción al desplegar: notas viejas aún sin rolesVisibles
+// (migración pendiente) mezcladas con notas nuevas.
+describe('guardado tal como lo hace la app', () => {
+  // Lo que useNotasPanel entrega al formulario: las visibles, por orden.
+  const listado = async ({ db, perfil }) => {
+    const snap = await getDocs(query(collection(db, COL), ...consultaNotas(perfil).restricciones));
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => a.orden - b.orden);
+  };
+  const formulario = (extra = {}) => ({
+    titulo: ' Aviso ', tipo: 'texto', contenido: ' Hola ', items: [''],
+    rolesVisibles: ['admin', 'operador', 'encargado'], estilo: normalizarEstilo({ fondo: '#FEF3C7', negrita: true }),
+    ...extra,
+  });
+
+  beforeAll(async () => {
+    const snap = await adminDb.collection(COL).get();
+    await Promise.all(snap.docs.map((d) => d.ref.delete()));
+    await adminDb.doc(`${COL}/antigua`).set({ titulo: 'antigua', tipo: 'texto', contenido: 'a', orden: 0, autor: 'X' });
+    await adminDb.doc(`${COL}/antiguaChecklist`).set({ tipo: 'checklist', items: [{ texto: 't', completado: false }], orden: 1 });
+    await adminDb.doc(`${COL}/nueva`).set({ titulo: 'nueva', tipo: 'texto', contenido: 'b', orden: 2, rolesVisibles: ['admin'] });
+  });
+
+  it('Desarrollador publica una nota aunque haya notas sin migrar (las corre un lugar)', async () => {
+    const id = await crearNota(s.dev.db, await listado(s.dev), { ...formulario(), autor: 'Dev' });
+    const creada = (await adminDb.doc(`${COL}/${id}`).get()).data();
+    expect(creada).toMatchObject({
+      titulo: 'Aviso', contenido: 'Hola', orden: 0, autor: 'Dev',
+      rolesVisibles: ['admin', 'operador', 'encargado'], estilo: { fondo: '#FEF3C7', texto: null, negrita: true },
+    });
+    expect((await adminDb.doc(`${COL}/antigua`).get()).data()).toEqual({ titulo: 'antigua', tipo: 'texto', contenido: 'a', orden: 1, autor: 'X' });
+  });
+
+  it('Desarrollador publica una nota solo para desarrolladores, y reordena notas sin migrar', async () => {
+    const id = await crearNota(s.dev.db, await listado(s.dev), { ...formulario({ rolesVisibles: ['dev'] }), autor: 'Dev' });
+    expect((await adminDb.doc(`${COL}/${id}`).get()).data().rolesVisibles).toEqual(['dev']);
+    const [a, b] = (await listado(s.dev)).filter((n) => n.id.startsWith('antigua'));
+    await intercambiarOrden(s.dev.db, a, a.orden, b, b.orden);
+  });
+
+  it('Administrador publica (solo corre las que ve) y edita una nota vieja agregándole roles', async () => {
+    const visibles = await listado(s.admin);
+    expect(visibles.map((n) => n.id)).not.toContain('antigua');
+    await crearNota(s.admin.db, visibles, { ...formulario({ rolesVisibles: ['operador'] }), autor: 'Admin' });
+    await actualizarNota(s.dev.db, 'antigua', formulario({ tipo: 'checklist', items: ['x', ' '] }));
+    expect((await adminDb.doc(`${COL}/antigua`).get()).data()).toMatchObject({
+      contenido: '', items: [{ texto: 'x', completado: false }], rolesVisibles: ['admin', 'operador', 'encargado'],
+    });
+  });
+
+  it('el checklist de una nota sin migrar se puede marcar en el Dashboard (Desarrollador)', async () => {
+    await updateDoc(doc(s.dev.db, COL, 'antiguaChecklist'), { items: [{ texto: 't', completado: true }] });
+  });
+
+  it('con muchas notas el batch no supera el límite de accesos de las reglas', async () => {
+    await Promise.all(Array.from({ length: 30 }, (_, i) => adminDb.doc(`${COL}/muchas${i}`).set({
+      titulo: `m${i}`, tipo: 'texto', contenido: 'm', orden: 100 + i, rolesVisibles: ['admin', 'encargado'],
+    })));
+    await crearNota(s.encargado.db, await listado(s.encargado), { ...formulario(), autor: 'Enc' });
+    await crearNota(s.admin.db, await listado(s.admin), { ...formulario(), autor: 'Admin' });
+  });
+
+  it('pero no se cambian los roles de una nota a una lista inválida ni se le quita el campo', async () => {
+    await expect(updateDoc(doc(s.dev.db, COL, 'antiguaChecklist'), { rolesVisibles: [] })).rejects.toMatchObject(DENEGADO);
+    await expect(updateDoc(doc(s.dev.db, COL, 'nueva'), { rolesVisibles: ['jefe'] })).rejects.toMatchObject(DENEGADO);
+    await expect(updateDoc(doc(s.dev.db, COL, 'nueva'), { estilo: 'rojo' })).rejects.toMatchObject(DENEGADO);
+    const { deleteField } = await import('firebase/firestore');
+    await expect(updateDoc(doc(s.dev.db, COL, 'nueva'), { rolesVisibles: deleteField() })).rejects.toMatchObject(DENEGADO);
+  });
+});
+
+// Perfiles incompletos: las reglas niegan sin error de evaluación.
+describe('perfil de usuario incompleto', () => {
+  it('sin documento de usuario no se leen ni escriben notas', async () => {
+    const app = initializeApp({ apiKey: 'demo', projectId: PROYECTO }, `sinperfil-${Date.now()}`);
+    apps.push(app);
+    const auth = getAuth(app);
+    connectAuthEmulator(auth, `http://${AUTH}`, { disableWarnings: true });
+    const db = getFirestore(app);
+    const [host, puerto] = FIRESTORE.split(':');
+    connectFirestoreEmulator(db, host, Number(puerto));
+    await createUserWithEmailAndPassword(auth, `sinperfil-${Date.now()}@prueba.cl`, 'secreto123');
+    await expect(getDocs(query(collection(db, COL), where('rolesVisibles', 'array-contains', 'operador')))).rejects.toMatchObject(DENEGADO);
+    await expect(setDoc(doc(db, COL, 'x'), { orden: 0, rolesVisibles: ['operador'] })).rejects.toMatchObject(DENEGADO);
+  });
+
+  it('sin permisos ni permisosGranulares: lee lo de su rol y no escribe', async () => {
+    const pelado = await sesion('pelado', { rol: 'encargado' });
+    expect(await leerNotas(pelado)).not.toHaveLength(0);
+    await expect(setDoc(doc(pelado.db, COL, 'y'), { orden: 0, rolesVisibles: ['encargado'] })).rejects.toMatchObject(DENEGADO);
   });
 });
