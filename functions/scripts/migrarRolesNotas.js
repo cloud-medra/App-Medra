@@ -3,8 +3,9 @@
 // Migración única: las notas del panel (administracion_notas) pasan a decir
 // qué roles las ven (campo rolesVisibles). A cada nota sin el campo (o con
 // él vacío) se le pone ['admin', 'operador', 'encargado'] para que nadie deje
-// de verla. El Desarrollador ve todas igual. No toca ningún otro campo
-// (las notas sin `estilo` se ven con el aspecto de siempre).
+// de verla. Las que ya tienen roles (incluidas las solo para desarrolladores,
+// ['dev']) no se tocan. El Desarrollador ve todas igual. No toca ningún otro
+// campo (las notas sin `estilo` se ven con el aspecto de siempre).
 //
 // Orden del despliegue: correrla ANTES (o junto) de desplegar las reglas y el
 // hosting nuevos: las reglas nuevas solo dejan leer una nota a los roles de

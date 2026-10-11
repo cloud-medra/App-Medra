@@ -94,6 +94,49 @@ describe('Notas Admin — roles', () => {
   });
 });
 
+describe('Notas Admin — solo desarrolladores', () => {
+  it('"Solo desarrolladores" desmarca los demás roles y guarda ["dev"]', async () => {
+    usuario = { rol: 'dev', nombreCompleto: 'Dev' };
+    render(<NotasAdmin />);
+    escribir('Privada');
+    fireEvent.click(screen.getByLabelText('Operador'));
+    fireEvent.click(screen.getByLabelText('Administrador'));
+    fireEvent.click(screen.getByLabelText(/Solo desarrolladores/));
+    ['Administrador', 'Operador', 'Encargado Centro'].forEach((r) => expect(screen.getByLabelText(r)).not.toBeChecked());
+    expect(screen.getByText('Nota privada: ningún otro rol la verá.')).toBeInTheDocument();
+    publicar();
+    await waitFor(() => expect(mockCommit).toHaveBeenCalled());
+    expect(mockSet.mock.calls[0][1].rolesVisibles).toEqual(['dev']);
+    expect(mockShowToast).toHaveBeenCalledWith('Nota publicada correctamente', 'success');
+  });
+
+  it('marcar un rol quita "Solo desarrolladores"; desmarcarlo deja sin roles (no se guarda)', () => {
+    render(<NotasAdmin />);
+    escribir('x');
+    fireEvent.click(screen.getByLabelText(/Solo desarrolladores/));
+    fireEvent.click(screen.getByLabelText('Encargado Centro'));
+    expect(screen.getByLabelText(/Solo desarrolladores/)).not.toBeChecked();
+    expect(screen.getByLabelText('Encargado Centro')).toBeChecked();
+    fireEvent.click(screen.getByLabelText('Encargado Centro'));
+    fireEvent.click(screen.getByLabelText(/Solo desarrolladores/));
+    fireEvent.click(screen.getByLabelText(/Solo desarrolladores/));
+    publicar();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(mockCommit).not.toHaveBeenCalled();
+  });
+
+  it('en el listado se distingue con la etiqueta "Solo desarrolladores" y al editar queda marcada', () => {
+    usuario = { rol: 'dev' };
+    notas = [{ id: 'd', titulo: 'Privada', tipo: 'texto', contenido: 'Solo devs', orden: 0, rolesVisibles: ['dev'] }];
+    render(<NotasAdmin />);
+    const etiquetas = screen.getByLabelText('Roles que ven la nota');
+    expect(etiquetas).toHaveTextContent(/^Solo desarrolladores$/);
+    fireEvent.click(screen.getByTitle('Editar'));
+    expect(screen.getByLabelText(/Solo desarrolladores/)).toBeChecked();
+    expect(screen.getByLabelText('Operador')).not.toBeChecked();
+  });
+});
+
 describe('Notas Admin — listado y edición', () => {
   it('muestra los roles destinatarios y aplica el estilo; nota vieja sin roles = todos', () => {
     notas = [

@@ -1,10 +1,11 @@
 // Roles destinatarios y estilo de las notas del panel (administracion_notas).
 // Lo usan Notas Admin (formulario y listado) y el Dashboard (NuevoModuloCard).
 //
-// Visibilidad: cada nota guarda `rolesVisibles` (al menos uno de
-// ROLES_NOTA). El Desarrollador no se elige: siempre ve todas. El filtro lo
-// imponen las reglas de Firestore; la consulta del cliente (restriccionesNotas)
-// pide solo lo que las reglas dejan leer.
+// Visibilidad: cada nota guarda `rolesVisibles`, nunca vacío: uno o más de
+// ROLES_NOTA, o solo ['dev'] (nota privada de desarrolladores; mismo valor
+// que usuarios.rol). El Desarrollador ve todas igual, por eso 'dev' no se
+// combina con los demás. El filtro lo imponen las reglas de Firestore; la
+// consulta del cliente (consultaNotas) pide solo lo que las reglas dejan leer.
 //
 // Estilo: `estilo: { fondo, texto, negrita }` (colores '#rrggbb' o null).
 // Sin estilo (o con colores null) se usa el aspecto de siempre (clases Tailwind,
@@ -17,7 +18,9 @@ export const ROLES_NOTA = Object.freeze([
   { value: 'encargado', label: 'Encargado Centro' },
 ]);
 export const VALORES_ROLES_NOTA = ROLES_NOTA.map((r) => r.value);
-export const labelRolNota = (rol) => ROLES_NOTA.find((r) => r.value === rol)?.label || rol;
+export const ROL_DEV = 'dev';
+export const SOLO_DEV = Object.freeze([ROL_DEV]);
+export const labelRolNota = (rol) => (rol === ROL_DEV ? 'Desarrollador' : ROLES_NOTA.find((r) => r.value === rol)?.label || rol);
 
 // Mismo valor por defecto que las reglas (getUsuario().get('rol', 'operador')).
 const rolDe = (userData) => userData?.rol || 'operador';
@@ -29,10 +32,16 @@ export const consultaNotas = (userData) => (veTodasLasNotas(userData)
   ? { clave: 'todas', restricciones: [] }
   : { clave: `rol:${rolDe(userData)}`, restricciones: [where('rolesVisibles', 'array-contains', rolDe(userData))] });
 
-// Notas sin el campo (antes de la migración) se consideran para todos.
-export const rolesDeNota = (nota) => (Array.isArray(nota?.rolesVisibles) && nota.rolesVisibles.length
-  ? VALORES_ROLES_NOTA.filter((r) => nota.rolesVisibles.includes(r))
-  : VALORES_ROLES_NOTA);
+// Destinatarios de una nota, en orden fijo: ['dev'] si es solo para
+// desarrolladores; 'dev' junto con otros roles se ignora (no cambia nada).
+// Notas sin el campo o con la lista vacía (antes de la migración) = todos.
+export const rolesDeNota = (nota) => {
+  const lista = Array.isArray(nota?.rolesVisibles) ? nota.rolesVisibles : [];
+  if (lista.length === 0) return VALORES_ROLES_NOTA;
+  const roles = VALORES_ROLES_NOTA.filter((r) => lista.includes(r));
+  return roles.length ? roles : (lista.includes(ROL_DEV) ? SOLO_DEV : VALORES_ROLES_NOTA);
+};
+export const esSoloDev = (roles) => roles.length === 1 && roles[0] === ROL_DEV;
 
 // ---------- Estilo ----------
 

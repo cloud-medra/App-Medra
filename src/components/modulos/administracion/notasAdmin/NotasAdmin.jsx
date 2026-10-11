@@ -7,13 +7,13 @@ import {
 import { removeLocal } from '../../../../stores/catalogosStore';
 import { useNotasPanel } from './useNotasPanel';
 import {
-  ROLES_NOTA, VALORES_ROLES_NOTA, labelRolNota, rolesDeNota, veTodasLasNotas,
+  ROLES_NOTA, VALORES_ROLES_NOTA, SOLO_DEV, labelRolNota, rolesDeNota, esSoloDev, veTodasLasNotas,
   normalizarEstilo, estiloVisualNota,
 } from './notasConfig';
 import SelectorEstiloNota from './SelectorEstiloNota';
 import { 
   Send, PlusCircle, CheckSquare, AlignLeft, 
-  Trash2, Edit2, Plus, X, ArrowUp, ArrowDown, Users 
+  Trash2, Edit2, Plus, X, ArrowUp, ArrowDown, Users, Code2 
 } from 'lucide-react';
 
 import { useToast } from '../../../../context/ToastContext';
@@ -47,13 +47,23 @@ const NotasAdmin = () => {
     setItems(nuevosItems);
   };
 
+  // Marcar un rol quita "Solo desarrolladores" y viceversa (el Desarrollador
+  // ve todas: combinarlo con otros roles no cambiaría nada).
+  const soloDev = esSoloDev(roles);
   const toggleRol = (rol) => {
     setErrorRoles(false);
-    setRoles((prev) => (prev.includes(rol) ? prev.filter((r) => r !== rol) : [...prev, rol]));
+    setRoles((prev) => {
+      const base = esSoloDev(prev) ? [] : prev;
+      return base.includes(rol) ? base.filter((r) => r !== rol) : [...base, rol];
+    });
   };
   const toggleTodos = () => {
     setErrorRoles(false);
     setRoles((prev) => (prev.length === VALORES_ROLES_NOTA.length ? [] : [...VALORES_ROLES_NOTA]));
+  };
+  const toggleSoloDev = () => {
+    setErrorRoles(false);
+    setRoles((prev) => (esSoloDev(prev) ? [] : [...SOLO_DEV]));
   };
 
   const agregarItem = () => setItems([...items, '']);
@@ -111,8 +121,8 @@ const NotasAdmin = () => {
       return;
     }
 
-    // Mismo orden que ROLES_NOTA, sin duplicados.
-    const rolesVisibles = VALORES_ROLES_NOTA.filter((r) => roles.includes(r));
+    // Mismo orden que ROLES_NOTA, sin duplicados; solo desarrolladores = ['dev'].
+    const rolesVisibles = soloDev ? [...SOLO_DEV] : VALORES_ROLES_NOTA.filter((r) => roles.includes(r));
     const estiloGuardar = normalizarEstilo(estilo);
     // Quien no está entre los destinatarios deja de ver la nota al guardarla
     // (salvo el Desarrollador, que ve todas).
@@ -366,6 +376,16 @@ const NotasAdmin = () => {
                   {r.label}
                 </label>
               ))}
+              <span className="basis-full border-t border-gray-200 dark:border-gray-700" aria-hidden="true" />
+              <label className="flex items-center gap-1.5 text-xs text-violet-700 dark:text-violet-300 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={soloDev}
+                  onChange={toggleSoloDev}
+                  className="accent-violet-600"
+                />
+                <Code2 size={12} /> Solo desarrolladores
+              </label>
             </div>
             {errorRoles ? (
               <p id="error-roles-nota" role="alert" className="text-[10.5px] text-rose-600 dark:text-rose-400 mt-1">
@@ -373,7 +393,9 @@ const NotasAdmin = () => {
               </p>
             ) : (
               <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
-                El rol Desarrollador siempre ve todas las notas.
+                {soloDev
+                  ? 'Nota privada: ningún otro rol la verá.'
+                  : 'El rol Desarrollador siempre ve todas las notas.'}
               </p>
             )}
           </fieldset>
@@ -528,7 +550,11 @@ const NotasAdmin = () => {
                 )}
 
                 <div className="flex flex-wrap items-center gap-1" aria-label="Roles que ven la nota">
-                  {rolesDeNota(nota).map((rol) => (
+                  {esSoloDev(rolesDeNota(nota)) ? (
+                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border flex items-center gap-1 bg-violet-50 dark:bg-violet-950/60 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300">
+                      <Code2 size={10} /> Solo desarrolladores
+                    </span>
+                  ) : rolesDeNota(nota).map((rol) => (
                     <span
                       key={rol}
                       className="text-[9px] font-semibold px-1.5 py-0.5 rounded border bg-white/80 dark:bg-gray-800/80 border-sky-200 dark:border-sky-800 text-[#2383C2] dark:text-sky-300"

@@ -9,7 +9,7 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import {
   getFirestore, connectFirestoreEmulator, collection, query, where, getDocs,
-  doc, getDoc, setDoc, updateDoc,
+  doc, getDoc, setDoc, updateDoc, deleteDoc,
 } from 'firebase/firestore';
 import { consultaNotas } from '../../src/components/modulos/administracion/notasAdmin/notasConfig.js';
 
@@ -52,6 +52,7 @@ const NOTAS = {
   soloOperador: ['operador'],
   soloEncargado: ['encargado'],
   adminYEncargado: ['admin', 'encargado'],
+  soloDev: ['dev'],
 };
 const s = {};
 
@@ -97,12 +98,53 @@ describe('visibilidad por rol', () => {
   });
 });
 
+describe('notas solo para desarrolladores (["dev"])', () => {
+  const noDevs = () => [['Administrador', s.admin], ['Operador', s.operador], ['Encargado Centro', s.encargado], ['sin rol', s.sinRol]];
+
+  it('el Desarrollador la ve; nadie más, con la consulta de la app', async () => {
+    expect(await leerNotas(s.dev)).toContain('soloDev');
+    for (const [, sesionRol] of noDevs()) expect(await leerNotas(sesionRol)).not.toContain('soloDev');
+  });
+
+  it('consultando directo a Firestore tampoco: ni por id, ni con array-contains "dev", ni sin filtro', async () => {
+    for (const [, { db }] of noDevs()) {
+      await expect(getDoc(doc(db, COL, 'soloDev'))).rejects.toMatchObject(DENEGADO);
+      await expect(getDocs(query(collection(db, COL), where('rolesVisibles', 'array-contains', 'dev')))).rejects.toMatchObject(DENEGADO);
+      await expect(getDocs(query(collection(db, COL), where('rolesVisibles', '==', ['dev'])))).rejects.toMatchObject(DENEGADO);
+      await expect(getDocs(collection(db, COL))).rejects.toMatchObject(DENEGADO);
+    }
+    expect((await getDoc(doc(s.dev.db, COL, 'soloDev'))).data().rolesVisibles).toEqual(['dev']);
+  });
+
+  it('ni el Administrador ni quien tiene permiso de Administración la editan o borran', async () => {
+    for (const { db } of [s.admin, s.encargado]) {
+      await expect(updateDoc(doc(db, COL, 'soloDev'), { titulo: 'y' })).rejects.toMatchObject(DENEGADO);
+      await expect(updateDoc(doc(db, COL, 'soloDev'), { rolesVisibles: ['admin'] })).rejects.toMatchObject(DENEGADO);
+      await expect(deleteDoc(doc(db, COL, 'soloDev'))).rejects.toMatchObject(DENEGADO);
+    }
+    expect((await adminDb.doc(`${COL}/soloDev`).get()).data()).toMatchObject({ titulo: 'soloDev', rolesVisibles: ['dev'] });
+  });
+
+  it('"dev" es un valor válido: se crea, edita y borra una nota solo para desarrolladores', async () => {
+    const ref = doc(s.dev.db, COL, 'devNueva');
+    await setDoc(ref, { titulo: 'x', tipo: 'texto', contenido: 'x', orden: 30, rolesVisibles: ['dev'] });
+    await updateDoc(ref, { titulo: 'editada' });
+    expect((await adminDb.doc(`${COL}/devNueva`).get()).data()).toMatchObject({ titulo: 'editada', rolesVisibles: ['dev'] });
+    await expect(setDoc(doc(s.dev.db, COL, 'devVacia'), { titulo: 'x', tipo: 'texto', orden: 31, rolesVisibles: [] }))
+      .rejects.toMatchObject(DENEGADO);
+    await expect(setDoc(doc(s.dev.db, COL, 'devTexto'), { titulo: 'x', tipo: 'texto', orden: 32, rolesVisibles: ['desarrollador'] }))
+      .rejects.toMatchObject(DENEGADO);
+    await deleteDoc(ref);
+    expect((await adminDb.doc(`${COL}/devNueva`).get()).exists).toBe(false);
+  });
+});
+
 describe('escrituras', () => {
   const nota = (rolesVisibles, extra = {}) => ({ titulo: 'x', tipo: 'texto', contenido: 'x', orden: 9, rolesVisibles, ...extra });
 
   it('crear exige al menos un rol válido', async () => {
     await expect(setDoc(doc(s.admin.db, COL, 'n1'), nota([]))).rejects.toMatchObject(DENEGADO);
-    await expect(setDoc(doc(s.admin.db, COL, 'n2'), nota(['dev']))).rejects.toMatchObject(DENEGADO);
+    await expect(setDoc(doc(s.admin.db, COL, 'n2'), nota(['admin', 'supervisor']))).rejects.toMatchObject(DENEGADO);
     const sinCampo = nota(['admin']);
     delete sinCampo.rolesVisibles;
     await expect(setDoc(doc(s.admin.db, COL, 'n3'), sinCampo)).rejects.toMatchObject(DENEGADO);
@@ -148,6 +190,13 @@ describe('migración (scripts/migrarRolesNotas.js)', () => {
       expect(await leerNotas(sesionRol)).toEqual(expect.arrayContaining(['vieja1', 'vieja2']));
     }
     expect((await adminDb.doc(`${COL}/soloAdmin`).get()).data().rolesVisibles).toEqual(['admin']);
+    // Las solo para desarrolladores quedan intactas: siguen privadas.
+    expect((await adminDb.doc(`${COL}/soloDev`).get()).data()).toEqual({
+      titulo: 'soloDev', tipo: 'texto', contenido: 'soloDev', orden: Object.keys(NOTAS).indexOf('soloDev'), rolesVisibles: ['dev'],
+    });
+    for (const sesionRol of [s.admin, s.operador, s.encargado, s.sinRol]) {
+      expect(await leerNotas(sesionRol)).not.toContain('soloDev');
+    }
     expect((await adminDb.doc(`${COL}/vieja1`).get()).data()).toMatchObject({ titulo: 'vieja', contenido: 'a', orden: 20 });
 
     // Idempotente.

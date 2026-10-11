@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('firebase/firestore', () => ({ where: (...a) => ({ where: a }) }));
 const {
-  consultaNotas, rolesDeNota, veTodasLasNotas, normalizarEstilo, estiloVisualNota,
+  consultaNotas, rolesDeNota, esSoloDev, veTodasLasNotas, normalizarEstilo, estiloVisualNota,
   contraste, contrasteEstilo, CONTRASTE_MINIMO,
 } = await import('./notasConfig');
 
@@ -19,6 +19,14 @@ describe('consulta por rol', () => {
   it('rolesDeNota: en orden fijo; sin campo (nota vieja) = todos', () => {
     expect(rolesDeNota({ rolesVisibles: ['encargado', 'admin'] })).toEqual(['admin', 'encargado']);
     expect(rolesDeNota({})).toEqual(['admin', 'operador', 'encargado']);
+    expect(rolesDeNota({ rolesVisibles: [] })).toEqual(['admin', 'operador', 'encargado']);
+  });
+
+  it('solo desarrolladores: ["dev"]; "dev" junto con otros roles se ignora', () => {
+    expect(rolesDeNota({ rolesVisibles: ['dev'] })).toEqual(['dev']);
+    expect(esSoloDev(rolesDeNota({ rolesVisibles: ['dev'] }))).toBe(true);
+    expect(rolesDeNota({ rolesVisibles: ['dev', 'operador'] })).toEqual(['operador']);
+    expect(esSoloDev(['admin'])).toBe(false);
   });
 });
 
