@@ -48,8 +48,11 @@ service firebase.storage {
     // cuando cambió ocImport/meta. Contiene nombres de pacientes: mismo nivel
     // que snapshots/documentos_sistema, más el permiso implantes (lo lee el
     // botón "Sincronizar OC").
+    // Consignación también lo lee (su "Sincronizar OC" llena el N° de orden de
+    // consignacion_registros), pero no lo escribe.
     match /snapshots/indiceOC/{archivo} {
-      allow read, write: if request.auth != null && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow read: if request.auth != null && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
+      allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
     }
 
     // PDFs de cada admisión de Implantes (pestaña Documentos de Gestión
@@ -72,8 +75,9 @@ service firebase.storage {
     // permite "update" para reemplazarlo (la app pregunta antes); nunca se
     // borra. Contienen datos de pacientes: lectura solo con permiso, vía
     // getBlob (sin URLs públicas). Tope: 15 MB.
+    // Consignación solo puede verlos/descargarlos (pestaña Orden de Cargas).
     match /ordenes_oc/{archivo} {
-      allow read: if request.auth != null && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow read: if request.auth != null && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
       allow create, update: if request.auth != null
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('OC_[^/]+\\.pdf')

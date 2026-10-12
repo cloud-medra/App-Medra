@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Hash, X, CheckCircle2, SearchX, Building2, Scale, GitFork, UserCheck, AlertTriangle, ChevronDown, ChevronUp, ArrowRightLeft } from 'lucide-react';
-import { formatearFechaTabla } from './Cargastab/cargasHelpers';
+import { formatearFechaTabla } from '../../implantes/gestionImplantes/components/Cargastab/cargasHelpers';
 
 const TIPOS = {
   SIN_COINCIDENCIA: { label: 'Sin coincidencia', clase: 'text-slate-600 dark:text-gray-300' },
@@ -10,9 +10,9 @@ const TIPOS = {
   REVISAR_NOMBRE: { label: 'Revisar nombre (OC asignada)', clase: 'text-sky-700 dark:text-sky-400' }
 };
 
-const observacion = (fila) => {
-  if (fila.tipo === 'EMPRESA_NO_RECONOCIDA') return `Implantes: ${fila.empresa} · Excel: ${fila.empresasExcel.join(', ')}`;
-  if (fila.tipo === 'CANTIDAD_DISTINTA') return `Mismo código y empresa, pero cantidad Excel ${fila.cantidadExcel} vs Implantes ${fila.cantidadImplantes} (suma por código)`;
+const observacion = (fila, modulo) => {
+  if (fila.tipo === 'EMPRESA_NO_RECONOCIDA') return `${modulo}: ${fila.empresa} · Excel: ${fila.empresasExcel.join(', ')}`;
+  if (fila.tipo === 'CANTIDAD_DISTINTA') return `Mismo código y empresa, pero cantidad Excel ${fila.cantidadExcel} vs ${modulo} ${fila.cantidadImplantes} (suma por código)`;
   if (fila.tipo === 'AMBIGUA') return `OC posibles: ${fila.ocs.join(', ')}`;
   if (fila.tipo === 'REVISAR_NOMBRE') return `OC ${fila.oc} · Excel: ${fila.pacienteExcel || '—'}`;
   return 'No está en el índice (admisión + fecha + código)';
@@ -26,7 +26,9 @@ const Contador = ({ Icon, valor, label, clase }) => (
   </div>
 );
 
-export const SincronizarOCResumenModal = ({ resumen, onClose }) => {
+// `modulo` y `unidad` adaptan los textos: Implantes revisa gestiones;
+// Consignación, registros (un ítem cada uno).
+export const SincronizarOCResumenModal = ({ resumen, onClose, modulo = 'Implantes', unidad = 'gestión(es)' }) => {
   const [verDetalle, setVerDetalle] = useState(false);
   if (!resumen) return null;
   const { contadores, detalle, erroresEscritura, invalidacion } = resumen;
@@ -44,7 +46,7 @@ export const SincronizarOCResumenModal = ({ resumen, onClose }) => {
 
         <div className="px-4 py-3 flex flex-col gap-3 overflow-auto text-[11px]">
           <p className="text-gray-600 dark:text-gray-300">
-            Se revisaron <strong>{resumen.gestionesRevisadas}</strong> gestión(es) con OC pendiente;
+            Se revisaron <strong>{resumen.gestionesRevisadas}</strong> {unidad} con OC pendiente;
             se guardaron OC en <strong>{resumen.gestionesActualizadas}</strong>.
           </p>
 
@@ -80,7 +82,7 @@ export const SincronizarOCResumenModal = ({ resumen, onClose }) => {
             <div className="flex items-start gap-1.5 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 rounded px-2.5 py-1.5">
               <AlertTriangle size={13} className="shrink-0 mt-0.5" />
               <span>
-                {erroresEscritura.length} gestión(es) no se pudieron guardar ({erroresEscritura[0].error}). Quedan pendientes: vuelve a sincronizar.
+                {erroresEscritura.length} {unidad} no se pudieron guardar ({erroresEscritura[0].error}). Quedan pendientes: vuelve a sincronizar.
               </span>
             </div>
           )}
@@ -124,7 +126,7 @@ export const SincronizarOCResumenModal = ({ resumen, onClose }) => {
                           <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 font-num">{fila.codigo}</td>
                           <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 text-center">{fila.cantidad}</td>
                           <td className={`px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 font-semibold ${TIPOS[fila.tipo]?.clase || ''}`}>{TIPOS[fila.tipo]?.label || fila.tipo}</td>
-                          <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 text-slate-500 dark:text-gray-400">{observacion(fila)}</td>
+                          <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 text-slate-500 dark:text-gray-400">{observacion(fila, modulo)}</td>
                         </tr>
                       ))}
                     </tbody>

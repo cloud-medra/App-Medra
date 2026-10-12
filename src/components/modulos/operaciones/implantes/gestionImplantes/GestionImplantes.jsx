@@ -13,8 +13,8 @@ import { GestionesImplantesTable } from './components/GestionesImplantesTable';
 import GestionesImplantesDetalleView from './components/GestionesImplantesDetalleView';
 import { EstadoFilterDropdown } from './components/EstadoFilterDropdown';
 import { DiaFilterDropdown } from './components/DiaFilterDropdown';
-import { SincronizarOCResumenModal } from './components/SincronizarOCResumenModal';
-import { useSincronizarOC } from './hooks/useSincronizarOC';
+import { SincronizarOCResumenModal } from '../../shared/ocIndex/SincronizarOCResumenModal';
+import { useSincronizarOC } from '../../shared/ocIndex/useSincronizarOC';
 import { useMarcarOcPendiente } from './hooks/useMarcarOcPendiente';
 import { useUser } from '../../../../../context/UserContext';
 import DetalleGestionConHeader from '../../shared/DetalleGestionConHeader';
@@ -328,7 +328,7 @@ const GestionesImplantes = ({ onAbrirZonasDiagnostico, apertura } = {}) => {
           {hasPermission(PATH_VISTA, "barra_busqueda") && (
             <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-700">
 
-              <BuscadorConLimpiar value={busqueda} onChange={setBusqueda} placeholder="Buscar por ID, nombre o empresa..." />
+              <BuscadorConLimpiar value={busqueda} onChange={setBusqueda} placeholder="Buscar por ID, nombre, empresa u orden..." />
 
               {admisionFiltrada && (
                 <span className="h-6 inline-flex items-center gap-1 pl-2 pr-1 rounded border border-[#2383C2] bg-blue-50 dark:bg-blue-950/30 text-[#2383C2] text-[11px] font-semibold">

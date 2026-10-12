@@ -19,7 +19,7 @@ import { validarNuevaEmpresaFecha, extraerDatosBase } from '../../../shared/empr
 import { HistorialLogsContenido } from '../GestionesImplanteDrawers';
 import { nombreParaGuardar } from '../utils/camposPaciente';
 import { ocsDeGestion } from '../../../shared/ocIndex/indiceOC';
-import { OrdenTab } from './Ordentab/OrdenTab';
+import { OrdenTab } from '../../../shared/ordenesOC/OrdenTab';
 import { BodymapTab } from './Bodymaptab/BodymapTab';
 import { leerRegistroPdfOC } from '../../../shared/ordenesOC/registroPdfOC';
 

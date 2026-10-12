@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { obtenerFechaHoyISO } from '../utils/gestionesImportExport';
 import { ordenarMeses } from '../../../../../../utils/ordenarMeses';
+import { ocsDeGestion } from '../../../shared/ocIndex/indiceOC';
 
 export const TAMANO_PAGINA_TABLA = 50;
 
@@ -65,7 +66,8 @@ export const useGestionesImplantesFiltros = (implantes, { sinPeriodo = false } =
         !busqueda ||
         idParaBuscar.toLowerCase().includes(busqueda.toLowerCase()) ||
         (i.nombre && i.nombre.toLowerCase().includes(busqueda.toLowerCase())) ||
-        (i.empresa && i.empresa.toLowerCase().includes(busqueda.toLowerCase()));
+        (i.empresa && i.empresa.toLowerCase().includes(busqueda.toLowerCase())) ||
+        ocsDeGestion(i).some(oc => String(oc).toLowerCase().includes(busqueda.toLowerCase()));
 
       let coincideAnio = true;
       let coincideMes = true;

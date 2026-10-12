@@ -235,3 +235,57 @@ export const cruzarGestionesOC = (gestiones, mapa) => {
 
   return { actualizaciones, detalle, contadores };
 };
+
+// Texto de la columna ORDEN: OC distintas separadas por coma ('' si no hay).
+export const textoOCs = (ocs) => [...new Set((ocs || []).filter(Boolean))].join(', ');
+
+// ---------------------------------------------------------------------------
+// Consignación: cada documento de consignacion_registros es UN ítem y la OC
+// va en su campo `orden`. Para cruzar con la MISMA lógica que Implantes, los
+// registros se agrupan por admisión + fecha + empresa (lo que en Implantes es
+// una gestión) en "gestiones virtuales" cuyo id de ítem es la ruta del
+// registro; cruzarGestionesOC hace el resto.
+// ---------------------------------------------------------------------------
+const claveGrupoConsignacion = (r) =>
+  `${normalizarAdmision(r.gestionId)}|${normalizarFecha(r.fecha)}|${String(r.empresa ?? '').trim().toUpperCase()}`;
+
+export const gestionesDesdeRegistrosConsignacion = (registros) => {
+  const grupos = new Map();
+  (registros || []).forEach((r) => {
+    const clave = claveGrupoConsignacion(r);
+    if (!grupos.has(clave)) {
+      grupos.set(clave, {
+        refPath: r.refPath, gestionId: r.gestionId, fecha: r.fecha, empresa: r.empresa, nombre: r.nombre,
+        cotizaciones: [{ items: [] }], ocPorItem: {}
+      });
+    }
+    const g = grupos.get(clave);
+    g.cotizaciones[0].items.push({ id: r.refPath, codigo: r.codigo, cantidad: r.cantidad });
+    const orden = String(r.orden ?? '').trim();
+    if (orden) g.ocPorItem[r.refPath] = orden;
+  });
+  return [...grupos.values()];
+};
+
+// Cruza registros de Consignación (los que aún no tienen `orden`) contra el
+// índice agrupado. No escribe nada.
+//   asignaciones: [{ refPath, oc }] (una por registro que obtuvo OC)
+export const cruzarRegistrosConsignacionOC = (registros, mapa) => {
+  const { actualizaciones, detalle, contadores } = cruzarGestionesOC(gestionesDesdeRegistrosConsignacion(registros), mapa);
+  const asignaciones = actualizaciones.flatMap(a => Object.entries(a.asignaciones).map(([refPath, oc]) => ({ refPath, oc })));
+  return { asignaciones, detalle, contadores };
+};
+
+// OC distintas por empresa + fecha de una admisión de Consignación (pestaña
+// Orden). Devuelve { bloques: [{ uniqueKey, empresa, fecha }], ocsPorBloque }.
+export const bloquesOCConsignacion = (registros) => {
+  const grupos = new Map();
+  (registros || []).forEach((r) => {
+    const clave = claveGrupoConsignacion(r);
+    if (!grupos.has(clave)) grupos.set(clave, { bloque: { uniqueKey: clave, empresa: r.empresa, fecha: r.fecha }, ocs: [] });
+    const orden = String(r.orden ?? '').trim();
+    if (orden) grupos.get(clave).ocs.push(orden);
+  });
+  const lista = [...grupos.values()].sort((a, b) => String(a.bloque.fecha).localeCompare(String(b.bloque.fecha)));
+  return { bloques: lista.map(g => g.bloque), ocsPorBloque: lista.map(g => [...new Set(g.ocs)]) };
+};

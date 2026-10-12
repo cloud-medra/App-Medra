@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   claveCruceOC, mezclarIndiceOC, periodosIndiceOC, agruparIndiceOC, cruzarCodigoOC, cruzarGestionesOC,
-  calcularOcPendiente, ocsDeGestion, rangoFechasIndiceOC
+  calcularOcPendiente, ocsDeGestion, rangoFechasIndiceOC, textoOCs,
+  gestionesDesdeRegistrosConsignacion, cruzarRegistrosConsignacionOC, bloquesOCConsignacion
 } from './indiceOC';
 import {
   normalizarFecha, normalizarCodigo, normalizarAdmision, empresasCoinciden, palabrasEnComun
@@ -182,5 +183,100 @@ describe('helpers de gestión', () => {
     expect(calcularOcPendiente(items, { a: 'X', b: 'Y' })).toBe(false);
     expect(calcularOcPendiente([], {})).toBe(false);
     expect(ocsDeGestion({ cotizaciones: [{ items }], ocPorItem: { a: 'X', b: 'X', zz: 'Z' } })).toEqual(['X']);
+  });
+});
+
+// Columna ORDEN: el cruce de punta a punta (índice -> asignación -> texto de
+// la celda), para una fila de Gestiones (admisión + empresa + día) y para la
+// misma admisión en Consignación (un registro por ítem).
+describe('columna ORDEN después del cruce', () => {
+  const OC1 = '4500001';
+  const OC2 = '4500002';
+  const filasExcel = (...ocs) => ocs.map(([codigo, oc], i) => fila({ id: `F${i}`, codigo, oc }));
+  const mapaDe = (...ocs) => agruparIndiceOC(mezclarIndiceOC({}, filasExcel(...ocs)).indice);
+
+  describe('Gestiones', () => {
+    const gestion = (...codigos) => ({
+      refPath: 'implantes_gestiones/2026/mes/09/dia/15/admision/102345/empresa/MEDTRONIC/detalles/g1',
+      gestionId: '102345', nombre: 'JUAN PEREZ', fecha: '2026-09-15', empresa: 'MEDTRONIC',
+      cotizaciones: [{ items: codigos.map((codigo, i) => ({ id: `i${i}`, codigo, cantidad: 1 })) }]
+    });
+    // Lo que queda guardado tras sincronizar (ocPorItem) -> texto de la celda.
+    const ordenTrasSincronizar = (g, mapa) => {
+      const { actualizaciones } = cruzarGestionesOC([g], mapa);
+      const ocPorItem = Object.assign({}, ...actualizaciones.map(a => a.asignaciones));
+      return textoOCs(ocsDeGestion({ ...g, ocPorItem }));
+    };
+
+    it('una orden', () => {
+      expect(ordenTrasSincronizar(gestion('00123'), mapaDe(['00123', OC1]))).toBe(OC1);
+    });
+
+    it('dos órdenes en la misma fila, separadas por coma', () => {
+      expect(ordenTrasSincronizar(gestion('00123', '00456'), mapaDe(['00123', OC1], ['00456', OC2]))).toBe(`${OC1}, ${OC2}`);
+    });
+
+    it('orden repetida en varios ítems aparece una sola vez', () => {
+      expect(ordenTrasSincronizar(gestion('00123', '00456', '00789'), mapaDe(['00123', OC1], ['00456', OC1], ['00789', OC1]))).toBe(OC1);
+    });
+
+    it('fila sin orden queda vacía', () => {
+      expect(ordenTrasSincronizar(gestion('00999'), mapaDe(['00123', OC1]))).toBe('');
+      expect(textoOCs(ocsDeGestion(gestion('00123')))).toBe('');
+    });
+  });
+
+  describe('Consignación', () => {
+    const registro = (id, codigo, extra = {}) => ({
+      refPath: `consignacion_registros/2026/mes/septiembre/dia/15/detalles/${id}`,
+      gestionId: '102345', nombre: 'JUAN PEREZ', fecha: '2026-09-15', empresa: 'MEDTRONIC',
+      codigo, cantidad: 1, orden: '', ...extra
+    });
+    // `orden` escrito tras sincronizar -> texto por empresa + fecha.
+    const ordenTrasSincronizar = (registros, mapa) => {
+      const { asignaciones } = cruzarRegistrosConsignacionOC(registros, mapa);
+      const porRuta = Object.fromEntries(asignaciones.map(a => [a.refPath, a.oc]));
+      const actualizados = registros.map(r => ({ ...r, orden: porRuta[r.refPath] ?? r.orden }));
+      return { asignaciones, actualizados, textos: bloquesOCConsignacion(actualizados).ocsPorBloque.map(textoOCs) };
+    };
+
+    it('una orden: se escribe en el campo orden del registro', () => {
+      const r = ordenTrasSincronizar([registro('a', '00123')], mapaDe(['00123', OC1]));
+      expect(r.asignaciones).toEqual([{ refPath: registro('a').refPath, oc: OC1 }]);
+      expect(r.textos).toEqual([OC1]);
+    });
+
+    it('dos órdenes en la misma admisión + empresa + día', () => {
+      const r = ordenTrasSincronizar([registro('a', '00123'), registro('b', '00456')], mapaDe(['00123', OC1], ['00456', OC2]));
+      expect(r.actualizados.map(x => x.orden)).toEqual([OC1, OC2]);
+      expect(r.textos).toEqual([`${OC1}, ${OC2}`]);
+    });
+
+    it('orden repetida aparece una sola vez; registros del mismo código suman cantidad', () => {
+      const excel = [fila({ id: 'A', codigo: '00123', oc: OC1, cantidad: 2 }), fila({ id: 'B', codigo: '00456', oc: OC1 })];
+      const mapa = agruparIndiceOC(mezclarIndiceOC({}, excel).indice);
+      const r = ordenTrasSincronizar([registro('a', '00123'), registro('b', '00123'), registro('c', '00456')], mapa);
+      expect(r.actualizados.map(x => x.orden)).toEqual([OC1, OC1, OC1]);
+      expect(r.textos).toEqual([OC1]);
+    });
+
+    it('registro sin orden queda vacío y se informa en el detalle', () => {
+      const r = ordenTrasSincronizar([registro('a', '00999')], mapaDe(['00123', OC1]));
+      expect(r.asignaciones).toEqual([]);
+      expect(r.textos).toEqual(['']);
+      expect(cruzarRegistrosConsignacionOC([registro('a', '00999')], mapaDe(['00123', OC1])).detalle[0])
+        .toMatchObject({ admision: '102345', codigo: '00999', tipo: 'SIN_COINCIDENCIA' });
+    });
+
+    it('no reescribe un orden ya puesto (a mano) y separa por empresa y día', () => {
+      const registros = [
+        registro('a', '00123', { orden: 'MANUAL-1' }),
+        registro('b', '00123', { empresa: 'STRYKER' }),
+        registro('c', '00123', { fecha: '2026-09-16' })
+      ];
+      expect(gestionesDesdeRegistrosConsignacion(registros)).toHaveLength(3);
+      const { asignaciones } = cruzarRegistrosConsignacionOC(registros, mapaDe(['00123', OC1]));
+      expect(asignaciones).toEqual([]);
+    });
   });
 });

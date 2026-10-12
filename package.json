@@ -10,7 +10,7 @@
     "test": "vitest run",
     "preview": "vite preview",
     "deploy": "vite build && npx firebase-tools deploy",
-    "test:emulador": "npx firebase-tools emulators:exec --only firestore,auth --project demo-workcraft \"npx vitest run -c vitest.emulador.config.js\""
+    "test:emulador": "npx firebase-tools emulators:exec --only firestore,auth,storage --project demo-workcraft \"npx vitest run -c vitest.emulador.config.js\""
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

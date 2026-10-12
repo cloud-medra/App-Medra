@@ -55,7 +55,7 @@ export const implantesComponentMaps = {
       barra_busqueda: {
         label: 'Sección: Filtros y Búsqueda',
         elements: {
-          input_buscar: { label: 'Campo: Búsqueda por ID/nombre/empresa' },
+          input_buscar: { label: 'Campo: Búsqueda por ID/nombre/empresa/orden' },
           select_anio: { label: 'Campo: Filtro por Año' },
           select_mes: { label: 'Campo: Filtro por Mes' },
           select_dia: { label: 'Campo: Filtro por Día' },
@@ -70,6 +70,7 @@ export const implantesComponentMaps = {
           col_nombre: { label: 'Columna: Nombre' },
           col_fecha: { label: 'Columna: Fecha' },
           col_empresa: { label: 'Columna: Empresa' },
+          col_orden: { label: 'Columna: Orden (OC de la fila, separadas por coma)' },
           col_admision_nombre: { label: 'Columna: Admisión - Nombre' },
           col_centro: { label: 'Columna: Centro' },
           col_atributo: { label: 'Columna: Atributo' },

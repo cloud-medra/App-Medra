@@ -1,16 +1,20 @@
 import { ClipboardList, Building2, Calendar as CalendarIcon, Copy, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
-import { formatearFechaTabla } from '../Cargastab/cargasHelpers';
-import { ControlPdfOC } from '../../../../shared/ordenesOC/ControlPdfOC';
-import { useSubirPdfOC } from '../../../../shared/ordenesOC/useSubirPdfOC';
-import { claveOC } from '../../../../shared/ordenesOC/ordenesOCHelpers';
+import { formatearFechaTabla } from '../../implantes/gestionImplantes/components/Cargastab/cargasHelpers';
+import { ControlPdfOC } from './ControlPdfOC';
+import { useSubirPdfOC } from './useSubirPdfOC';
+import { claveOC } from './ordenesOCHelpers';
 
 // OC de la admisión (sin duplicados) y su detalle por empresa/fecha. Sale de
 // los datos ya en memoria del detalle (ocsPorBloque). El estado del PDF de
 // cada OC sale de `registroPdf` (ordenesOC/registroPdf, leído por el padre
 // una vez por detalle); el PDF es uno por OC, compartido entre admisiones.
+// La usan Gestión de Implantes y Cargas de Consignación: `puedeSubirPdf`
+// (false en Consignación, que solo tiene permiso de lectura de los PDF)
+// oculta subir/reemplazar; `textoPendiente` dice dónde se sincroniza.
 export const OrdenTab = ({
   bloques = [], ocsPorBloque = [], bloqueActivoIndex, handleCopiarTexto,
-  registroPdf = null, onRecargarRegistroPdf, onPdfRegistrado
+  registroPdf = null, onRecargarRegistroPdf, onPdfRegistrado, puedeSubirPdf = true,
+  textoPendiente = 'Pendiente — aún no hay OC asignadas a esta admisión (usa "Sincronizar OC" en la barra de Gestión de Implantes).'
 }) => {
   const ocsAdmision = [...new Set(ocsPorBloque.flat())];
   const pdfs = registroPdf?.pdfs || {};
@@ -27,6 +31,7 @@ export const OrdenTab = ({
         subiendo={subiendo?.oc === clave ? subiendo : null}
         abriendo={abriendo === clave}
         deshabilitado={Boolean(subiendo) || Boolean(registroPdf?.error)}
+        soloLectura={!puedeSubirPdf}
         onVer={() => verPdfOC(clave)}
         onArchivos={(archivos) => subirParaOC(clave, archivos)}
       />
@@ -45,7 +50,7 @@ export const OrdenTab = ({
         <div className="p-3 flex flex-wrap gap-1.5">
           {ocsAdmision.length === 0 ? (
             <span className="text-[10px] text-slate-400 dark:text-gray-500">
-              Pendiente — aún no hay OC asignadas a esta admisión (usa "Sincronizar OC" en la barra de Gestión de Implantes).
+              {textoPendiente}
             </span>
           ) : ocsAdmision.map(oc => (
             <span key={oc} className="flex items-center gap-1 pr-1 rounded border border-[#2383C2]/30 bg-[#2383C2]/5">
@@ -73,7 +78,7 @@ export const OrdenTab = ({
             </button>
           </div>
         )}
-        {ocsAdmision.length > 0 && !registroPdf?.error && (
+        {puedeSubirPdf && ocsAdmision.length > 0 && !registroPdf?.error && (
           <p className="px-3 pb-2 text-[9.5px] text-slate-400 dark:text-gray-500">
             Un PDF por OC, nombrado OC_número.pdf. Arrástralo sobre la OC o usa el botón de subir.
           </p>

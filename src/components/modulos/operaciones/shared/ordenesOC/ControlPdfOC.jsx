@@ -4,8 +4,9 @@ import { FileText, Eye, Upload, Loader2, CheckCircle2 } from 'lucide-react';
 // Estado + Ver + Subir/Reemplazar del PDF de una OC. Se puede soltar el PDF
 // encima del control o elegirlo con el botón. Lo rechazado por tipo se
 // entrega igual a onArchivos para que lo valide useSubirPdfOC.
-export const ControlPdfOC = ({ oc, tienePdf, subiendo = null, abriendo = false, deshabilitado = false, onVer, onArchivos }) => {
-  const ocupado = deshabilitado || Boolean(subiendo);
+// soloLectura: solo estado + Ver (sin soltar ni subir/reemplazar).
+export const ControlPdfOC = ({ oc, tienePdf, subiendo = null, abriendo = false, deshabilitado = false, soloLectura = false, onVer, onArchivos }) => {
+  const ocupado = deshabilitado || soloLectura || Boolean(subiendo);
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop: (aceptados, rechazados) => onArchivos([...aceptados, ...rechazados.map(r => r.file)]),
     accept: { 'application/pdf': ['.pdf'] },
@@ -20,7 +21,7 @@ export const ControlPdfOC = ({ oc, tienePdf, subiendo = null, abriendo = false, 
   return (
     <span
       {...getRootProps()}
-      title={`Suelta aquí el PDF de la OC ${oc}`}
+      title={soloLectura ? undefined : `Suelta aquí el PDF de la OC ${oc}`}
       className={`relative inline-flex items-center gap-1 px-1 py-0.5 rounded border transition ${
         isDragActive ? 'border-[#2383C2] bg-[#2383C2]/10' : 'border-transparent'
       }`}
@@ -50,6 +51,7 @@ export const ControlPdfOC = ({ oc, tienePdf, subiendo = null, abriendo = false, 
           {abriendo ? <Loader2 size={11} className="animate-spin" /> : <Eye size={11} />}
         </button>
       )}
+      {!soloLectura && (
       <button
         type="button"
         onClick={open}
@@ -59,6 +61,7 @@ export const ControlPdfOC = ({ oc, tienePdf, subiendo = null, abriendo = false, 
       >
         <Upload size={11} />
       </button>
+      )}
     </span>
   );
 };

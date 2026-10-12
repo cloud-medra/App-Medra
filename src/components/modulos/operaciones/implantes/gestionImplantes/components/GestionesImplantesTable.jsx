@@ -3,6 +3,7 @@ import { Copy, History, Pencil, Trash2, Eye, RotateCcw } from 'lucide-react';
 import { construirTextoAdmisionNombre } from '../utils/gestionesImportExport';
 import EstadoBadge from '../../shared/estadoGestion/EstadoBadge';
 import { coloresEstadoGestion, normalizarEstadoGestion } from '../../shared/estadoGestion/estadosGestion';
+import { ocsDeGestion, textoOCs } from '../../../shared/ocIndex/indiceOC';
 
 const COLUMNAS = [
   { key: 'estado', label: '•', ancho: 32, min: 24, align: 'center' },
@@ -11,6 +12,7 @@ const COLUMNAS = [
   { key: 'nombre', label: 'Nombre', ancho: 190, min: 80 },
   { key: 'fecha', label: 'Fecha', ancho: 95, min: 70 },
   { key: 'empresa', label: 'Empresa', ancho: 170, min: 80 },
+  { key: 'orden', label: 'Orden', ancho: 110, min: 60 },
   { key: 'admisionNombre', label: 'Admisión - Nombre', ancho: 230, min: 140 },
   { key: 'centro', label: 'Centro', ancho: 95, min: 60 },
   { key: 'atributo', label: 'Atributo', ancho: 95, min: 60 },
@@ -233,6 +235,7 @@ export const GestionesImplantesTable = ({
             const solicitudInfo = getSolicitudEstilo(i.solicitud);
             const informeInfo = getInformeEstilo(i.informe);
             const textoAdmisionNombre = construirTextoAdmisionNombre(idMostrado, i.nombre);
+            const ordenTexto = textoOCs(ocsDeGestion(i));
 
             return (
               <tr
@@ -263,6 +266,7 @@ export const GestionesImplantesTable = ({
                 <td style={getStickyStyle('nombre')} className={`${celdaBase} text-gray-700 dark:text-gray-200 font-medium ${getStickyClass('nombre')}`} title={i.nombre}>{i.nombre}</td>
                 <td style={getStickyStyle('fecha')} className={`${celdaBase} text-gray-600 dark:text-gray-300 ${getStickyClass('fecha')}`}>{formatearFechaTabla(i.fecha)}</td>
                 <td style={getStickyStyle('empresa')} className={`${celdaBase} text-gray-600 dark:text-gray-300 ${getStickyClass('empresa')}`} title={i.empresa}>{i.empresa || '-'}</td>
+                <td className={`${celdaBase} text-gray-700 dark:text-gray-200 font-num`} title={ordenTexto}>{ordenTexto || '—'}</td>
                 <td className={`${celdaBase} text-gray-600 dark:text-gray-300`} title={textoAdmisionNombre}>
                   <div className="flex items-center gap-1">
                     <span className="truncate">{textoAdmisionNombre}</span>

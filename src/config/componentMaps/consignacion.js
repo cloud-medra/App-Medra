@@ -111,7 +111,7 @@ export const consignacionComponentMaps = {
       filtros: {
         label: 'Sección: Filtros',
         elements: {
-          input_buscar: { label: 'Campo: Búsqueda por ID/nombre/médico/referencia' },
+          input_buscar: { label: 'Campo: Búsqueda por ID/nombre/médico/referencia/orden' },
           select_anio: { label: 'Campo: Filtro por Año' },
           select_mes: { label: 'Campo: Filtro por Mes' },
           select_dia: { label: 'Campo: Filtro por Día' },
@@ -206,6 +206,7 @@ export const consignacionComponentMaps = {
         label: 'Sección: Encabezado del Listado',
         elements: {
           btn_actualizar_lista: { label: 'Acción: Actualizar Lista' },
+          btn_sincronizar_oc: { label: 'Acción: Sincronizar OC (llena N° Orden desde Importar Detalles OC)' },
         },
       },
       filtros_listado: {
@@ -351,6 +352,15 @@ export const consignacionComponentMaps = {
               // (Cargastab.jsx / componentMaps/implantes.js).
               accion_desbloquear_candado: { label: 'Operación: Desbloquear edición de un ítem ya solicitado/imputado (candado)' },
             },
+          },
+        },
+      },
+      '/consignacion/cargasConsignacion/orden': {
+        label: 'Pestaña: Orden — OC por empresa/fecha de la admisión y su PDF (solo ver/descargar)',
+        sections: {
+          empresas_fechas: {
+            label: 'Sección: Empresas / Fechas',
+            elements: {},
           },
         },
       },

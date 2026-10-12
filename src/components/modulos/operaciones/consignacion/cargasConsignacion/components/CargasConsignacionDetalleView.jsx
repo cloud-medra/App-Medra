@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { collectionGroup, query, where, onSnapshot, updateDoc } from 'firebase/firestore';
 import { db } from '../../../../../../firebaseConfig';
-import { ArrowLeft, ListFilter, Info, Truck, UploadCloud, Save, AlertTriangle, X, Loader2, ShieldAlert, History } from 'lucide-react';
+import { ArrowLeft, ListFilter, Info, Truck, UploadCloud, Save, AlertTriangle, X, Loader2, ShieldAlert, History, ClipboardList } from 'lucide-react';
 import { useToast } from '../../../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../../../hooks/useGranularPermission';
 import { useUser } from '../../../../../../context/UserContext';
@@ -13,6 +13,9 @@ import InformacionTab from './InformacionTab';
 import DeliveryTab from './DeliveryTab';
 import CargasTab from './CargasTab';
 import HistorialTab from './HistorialTab';
+import { OrdenTab } from '../../../shared/ordenesOC/OrdenTab';
+import { leerRegistroPdfOC } from '../../../shared/ordenesOC/registroPdfOC';
+import { bloquesOCConsignacion } from '../../../shared/ocIndex/indiceOC';
 
 const COL_BASE = 'consignacion_registros';
 const NOMBRE_SUBCOL_DETALLES = 'detalles';
@@ -27,6 +30,7 @@ const ALL_TABS = [
   { id: 'informacion', label: 'Información', Icon: Info, path: '/consignacion/cargasConsignacion/informacion' },
   { id: 'delivery', label: 'Delivery', Icon: Truck, path: '/consignacion/cargasConsignacion/delivery' },
   { id: 'cargas', label: 'Cargas', Icon: UploadCloud, path: '/consignacion/cargasConsignacion/cargas' },
+  { id: 'orden', label: 'Orden', Icon: ClipboardList, path: '/consignacion/cargasConsignacion/orden' },
   { id: 'logs', label: 'Logs', Icon: History, path: '/consignacion/cargasConsignacion/logs' },
 ];
 
@@ -131,6 +135,33 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
     if (!conDelivery) return registro;
     return { ...registro, delivery: conDelivery.delivery };
   }, [registro, itemsDeEstaAdmision]);
+
+  // Pestaña Orden: OC (campo `orden`, ver Sincronizar OC) por empresa + fecha
+  // de la admisión, desde los ítems ya escuchados (sin lecturas propias).
+  const ordenAdmision = useMemo(() => bloquesOCConsignacion(itemsDeEstaAdmision), [itemsDeEstaAdmision]);
+
+  // Registro de PDF de OC: 1 lectura, la primera vez que se abre Orden.
+  const [registroPdfOC, setRegistroPdfOC] = useState(null); // { pdfs, error }
+  const registroPdfSolicitadoRef = useRef(false);
+  const cargarRegistroPdfOC = useCallback(() => {
+    registroPdfSolicitadoRef.current = true;
+    leerRegistroPdfOC()
+      .then(pdfs => setRegistroPdfOC({ pdfs, error: null }))
+      .catch(err => {
+        console.error('Error al leer el registro de PDF de OC:', err);
+        setRegistroPdfOC({ pdfs: {}, error: 'No se pudo cargar qué OC tienen PDF.' });
+      });
+  }, []);
+  useEffect(() => {
+    if (tabActual?.id !== 'orden' || registroPdfSolicitadoRef.current) return;
+    cargarRegistroPdfOC();
+  }, [tabActual?.id, cargarRegistroPdfOC]);
+
+  const handleCopiarTexto = (texto) => {
+    navigator.clipboard?.writeText(texto)
+      .then(() => showToast(`Copiado: ${texto}`, 'success'))
+      .catch(() => showToast('No se pudo copiar', 'error'));
+  };
 
   const deliveryEsHeredado = Boolean(
     registro && !(registro.delivery || '').trim() && (registroParaDelivery?.delivery || '').trim()
@@ -359,6 +390,20 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
               formData={formData}
               onChange={handleFieldChange}
               setCargando={setCargando}
+            />
+          )}
+
+          {/* Solo ver/descargar el PDF: subirlo es de Documentos/Implantes
+              (storage.rules), así que aquí no se ofrece. */}
+          {tabActual?.id === 'orden' && (
+            <OrdenTab
+              bloques={ordenAdmision.bloques}
+              ocsPorBloque={ordenAdmision.ocsPorBloque}
+              handleCopiarTexto={handleCopiarTexto}
+              registroPdf={registroPdfOC}
+              onRecargarRegistroPdf={() => { setRegistroPdfOC(null); cargarRegistroPdfOC(); }}
+              puedeSubirPdf={false}
+              textoPendiente='Pendiente — aún no hay OC asignadas a esta admisión (usa "Sincronizar OC" en la barra de Cargas de Consignación).'
             />
           )}
 

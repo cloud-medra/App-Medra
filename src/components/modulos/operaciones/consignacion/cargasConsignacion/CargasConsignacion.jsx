@@ -12,7 +12,7 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 import { db } from '../../../../../firebaseConfig';
-import { PackageSearch, RefreshCw, ChevronDown, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { PackageSearch, RefreshCw, ChevronDown, ChevronLeft, ChevronRight, Loader2, Hash } from 'lucide-react';
 import { useToast } from '../../../../../context/ToastContext';
 import { useModal } from '../../../../../context/ModalContext';
 import Spinner from '../../../../ui/Spinner';
@@ -22,6 +22,8 @@ import CargasConsignacionFiltros from './components/CargasConsignacionFiltros';
 import CargasConsignacionTable from './components/CargasConsignacionTable';
 import CargasConsignacionDetalleView from './components/CargasConsignacionDetalleView';
 import { ordenarMeses } from '../../../../../utils/ordenarMeses';
+import { useSincronizarOC } from '../../shared/ocIndex/useSincronizarOC';
+import { SincronizarOCResumenModal } from '../../shared/ocIndex/SincronizarOCResumenModal';
 
 const obtenerFechaHoyISO = () => {
   const hoy = new Date();
@@ -132,6 +134,13 @@ const CargasConsignacion = () => {
   useEffect(() => {
     cargarPrimeraPagina();
   }, [cargarPrimeraPagina]);
+
+  // "Sincronizar OC": llena `orden` (columna ORDEN de Registro) desde
+  // Importar Detalles OC, con el mismo cruce que Gestión de Implantes.
+  const { sincronizandoOC, handleSincronizarOC, resumenOC, cerrarResumenOC } = useSincronizarOC({
+    modulo: 'consignacion',
+    onSincronizado: cargarPrimeraPagina
+  });
 
   const handleActualizarVinculados = async (registro) => {
     if (!registro.gestionId) {
@@ -319,15 +328,27 @@ const CargasConsignacion = () => {
           CARGAS DE CONSIGNACIÓN
         </h2>
         {!registroSeleccionado && (
-          <button
-            type="button"
-            onClick={cargarPrimeraPagina}
-            disabled={cargandoLista}
-            title="Actualizar lista"
-            className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40"
-          >
-            <RefreshCw size={14} className={cargandoLista ? 'animate-spin' : ''} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleSincronizarOC}
+              disabled={sincronizandoOC}
+              title={sincronizandoOC ? 'Sincronizando OC...' : 'Sincronizar OC desde Importar Detalles OC'}
+              aria-label="Sincronizar OC"
+              className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-wait"
+            >
+              {sincronizandoOC ? <Loader2 size={14} className="animate-spin" /> : <Hash size={14} />}
+            </button>
+            <button
+              type="button"
+              onClick={cargarPrimeraPagina}
+              disabled={cargandoLista}
+              title="Actualizar lista"
+              className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40"
+            >
+              <RefreshCw size={14} className={cargandoLista ? 'animate-spin' : ''} />
+            </button>
+          </div>
         )}
       </div>
 
@@ -416,6 +437,8 @@ const CargasConsignacion = () => {
           )}
         </>
       )}
+
+      <SincronizarOCResumenModal resumen={resumenOC} onClose={cerrarResumenOC} modulo="Consignación" unidad="registro(s)" />
     </div>
   );
 };

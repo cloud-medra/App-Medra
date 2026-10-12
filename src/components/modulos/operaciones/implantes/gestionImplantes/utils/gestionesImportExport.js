@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import { ocsDeGestion, textoOCs } from '../../../shared/ocIndex/indiceOC';
 
 // Mismo formato usado por la columna "Admisión - Nombre" de la tabla
 // principal de gestión y por los botones de copiado de CargasTab y
@@ -30,6 +31,7 @@ export const exportarGestionesAExcel = (implantes, showToast) => {
     "NOMBRE": i.nombre || '',
     "FECHA": i.fecha || '',
     "EMPRESA": i.empresa || '',
+    "ORDEN": textoOCs(ocsDeGestion(i)),
     "INFORME": i.informe || 'PENDIENTE',
     "CONVENIO": i.convenio || '',
     "PREVISIÓN": i.prevision || '',
