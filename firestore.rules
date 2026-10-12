@@ -383,9 +383,36 @@ service cloud.firestore {
       allow write: if request.auth != null && (esAdminODev() || tienePermiso('consignacion'));
     }
 
+    // N° de orden de un registro (columna ORDEN de Registro). `ordenOrigen`
+    // dice de dónde vino: 'oc' = Sincronizar OC (Importar Detalles OC),
+    // 'manual' = escrito en la celda, '' o sin el campo = vacío/anterior.
+    // Una orden sincronizada queda bloqueada: ni orden ni ordenOrigen
+    // cambian más (nadie, tampoco admin/dev). Mientras no esté bloqueada:
+    // la sincronización escribe orden + ordenOrigen 'oc'; a mano, solo
+    // números separados por ", " (mismo formato que normalizarOrdenManual).
+    // Solo se valida si el update toca esos campos: editar estado, guía,
+    // etc. de registros antiguos con texto libre en orden sigue funcionando.
+    // Aplica a cualquier documento bajo consignacion_registros (carpetas y
+    // logs no tienen esos campos).
+    function ordenConsignacionBloqueada(datos) {
+      return datos.get('ordenOrigen', '') == 'oc';
+    }
+    function ordenConsignacionNuevaValida(datos) {
+      let orden = datos.get('orden', '');
+      let origen = datos.get('ordenOrigen', '');
+      return orden is string
+        && (origen == 'oc' ? orden.size() > 0
+          : (origen in ['manual', ''] && (orden == '' || orden.matches('^[0-9]+(, [0-9]+)*$'))));
+    }
+    function edicionOrdenConsignacionValida() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['orden', 'ordenOrigen'])
+        || (!ordenConsignacionBloqueada(resource.data) && ordenConsignacionNuevaValida(request.resource.data));
+    }
     match /consignacion_registros/{document=**} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('consignacion'));
+      allow create, delete: if request.auth != null && (esAdminODev() || tienePermiso('consignacion'));
+      allow update: if request.auth != null && (esAdminODev() || tienePermiso('consignacion'))
+        && edicionOrdenConsignacionValida();
     }
 
     match /consignacion_imputadas/{document=**} {

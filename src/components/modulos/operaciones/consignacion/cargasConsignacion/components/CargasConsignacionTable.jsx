@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
-import { Trash2, RefreshCw, RotateCcw, Eye } from 'lucide-react';
+import { Trash2, RefreshCw, RotateCcw, Eye, Lock } from 'lucide-react';
+import { textoOCs } from '../../../shared/ocIndex/indiceOC';
+import { ordenesDeRegistro, esOrdenSincronizada } from '../../utils/registroConsignacionService';
 
 const COLUMNAS = [
   { key: 'colorEstado', label: '', ancho: 28, min: 28, align: 'center', sinResize: true },
@@ -8,6 +10,7 @@ const COLUMNAS = [
   { key: 'nombre', label: 'Nombre', ancho: 160, min: 80 },
   { key: 'fecha', label: 'Fecha', ancho: 90, min: 70 },
   { key: 'empresa', label: 'Empresa', ancho: 140, min: 80 },
+  { key: 'orden', label: 'Orden', ancho: 110, min: 60 },
   { key: 'centro', label: 'Centro', ancho: 100, min: 60 },
   { key: 'atributo', label: 'Atributo', ancho: 110, min: 60 },
   { key: 'estado', label: 'Estado', ancho: 100, min: 60 },
@@ -187,6 +190,7 @@ export const CargasConsignacionTable = ({
           ) : (
             registros.map((r, index) => {
               const estadoKey = (r.estado || 'INGRESADO').toUpperCase();
+              const ordenTexto = textoOCs(ordenesDeRegistro(r));
               return (
                 <tr
                   key={r.id}
@@ -205,6 +209,11 @@ export const CargasConsignacionTable = ({
                   <td className={`${celdaBase} text-gray-700 dark:text-gray-200 font-medium`} title={r.nombre}>{r.nombre || '-'}</td>
                   <td className={`${celdaBase} text-gray-600 dark:text-gray-300`}>{formatearFechaTabla(r.fecha)}</td>
                   <td className={`${celdaBase} text-gray-600 dark:text-gray-300`} title={r.empresa}>{renderP(r.empresa)}</td>
+                  <td className={`${celdaBase} text-gray-700 dark:text-gray-200 font-num`} title={esOrdenSincronizada(r) ? `${ordenTexto} · Sincronizada desde OC` : ordenTexto}>
+                    {ordenTexto
+                      ? <span className="flex items-center gap-1">{esOrdenSincronizada(r) && <Lock size={10} className="shrink-0 text-slate-400" />}<span className="truncate">{ordenTexto}</span></span>
+                      : '—'}
+                  </td>
                   <td className={`${celdaBase} text-gray-600 dark:text-gray-300 font-medium`}>{r.centro || 'PABELLON'}</td>
                   <td className={`${celdaBase} text-gray-600 dark:text-gray-300 font-medium`}>{r.atributo || '-'}</td>
                   <td className={celdaBase}>

@@ -32,7 +32,8 @@ import {
   esRegistroEditable,
   mensajeRegistroNoEditable,
   guardarEdicionRegistroConsignacion,
-  RegistroNoEditableError
+  RegistroNoEditableError,
+  camposOrdenManual
 } from '../utils/registroConsignacionService';
 
 import RegistroConsignacionForm from './components/RegistroConsignacionForm';
@@ -207,15 +208,26 @@ const RegistroConsignacion = () => {
     setRegistroEditando(null);
   };
 
-  const handleActualizarCampo = async (registro, campo, valor) => {
+  // Orden escrita a mano (ya validada y normalizada por la celda). Una orden
+  // sincronizada desde OC no llega aquí (la celda es de solo lectura) y
+  // firestore.rules rechaza cambiarla si la pantalla estaba desactualizada.
+  const handleActualizarOrden = async (registro, valor) => {
+    const campos = camposOrdenManual(valor);
     try {
-      await updateDoc(registro.ref, { [campo]: valor });
+      await updateDoc(registro.ref, campos);
       setRegistros((prev) =>
-        prev.map((r) => (r.id === registro.id ? { ...r, [campo]: valor } : r))
+        prev.map((r) => (r.id === registro.id ? { ...r, ...campos } : r))
       );
+      return true;
     } catch (error) {
-      console.error('Error al actualizar campo:', error);
-      showToast('Error al actualizar', 'error');
+      console.error('Error al actualizar la orden:', error);
+      showToast(
+        error?.code === 'permission-denied'
+          ? 'No se guardó: la orden de este registro ya fue sincronizada desde OC. Actualiza la lista.'
+          : 'Error al actualizar',
+        'error'
+      );
+      return false; // la celda vuelve al valor guardado
     }
   };
 
@@ -429,7 +441,8 @@ const RegistroConsignacion = () => {
             numeroInicial={(paginaSegura - 1) * TAMANO_PAGINA_TABLA}
             onEliminar={handleEliminar}
             onEditar={handleIniciarEdicion}
-            onActualizarCampo={handleActualizarCampo}
+            onActualizarOrden={handleActualizarOrden}
+            onOrdenInvalida={(mensaje) => showToast(mensaje, 'error')}
             onActualizarGuia={handleActualizarGuia}
             onActualizarVinculados={handleActualizarVinculados}
           />

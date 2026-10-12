@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Trash2, RefreshCw, RotateCcw, Pencil, Lock } from 'lucide-react';
 import { esRegistroEditable, mensajeRegistroNoEditable } from '../../utils/registroConsignacionService';
+import { CeldaOrdenConsignacion } from './CeldaOrdenConsignacion';
 
 const COLUMNAS = [
   { key: 'numero', label: '#', ancho: 40, min: 28, align: 'center' },
@@ -122,7 +123,7 @@ const CeldaTextoEditable = ({ valorInicial, onGuardar, placeholder, soloNumeros 
   );
 };
 
-export const ConsignacionTable = ({ registros, numeroInicial = 0, onEliminar, onEditar, onActualizarCampo, onActualizarGuia, onActualizarVinculados }) => {
+export const ConsignacionTable = ({ registros, numeroInicial = 0, onEliminar, onEditar, onActualizarOrden, onOrdenInvalida, onActualizarGuia, onActualizarVinculados }) => {
   const [anchos, setAnchos] = useState(anchosPorDefecto);
   const [actualizandoId, setActualizandoId] = useState(null);
 
@@ -228,10 +229,11 @@ export const ConsignacionTable = ({ registros, numeroInicial = 0, onEliminar, on
                     </span>
                   </td>
                   <td className="py-0.5 px-1 border-b border-r border-gray-200 dark:border-gray-700/70 overflow-hidden">
-                    <CeldaTextoEditable
-                      valorInicial={r.orden}
-                      placeholder="N° Orden"
-                      onGuardar={(valor) => onActualizarCampo(r, 'orden', valor)}
+                    <CeldaOrdenConsignacion
+                      key={`${r.id}_${r.orden || ''}_${r.ordenOrigen || ''}`}
+                      registro={r}
+                      onGuardar={(valor) => onActualizarOrden(r, valor)}
+                      onInvalido={onOrdenInvalida}
                     />
                   </td>
                   <td className="py-0.5 px-1 border-b border-r border-gray-200 dark:border-gray-700/70 overflow-hidden">

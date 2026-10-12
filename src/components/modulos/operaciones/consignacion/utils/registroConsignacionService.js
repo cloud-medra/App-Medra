@@ -30,6 +30,34 @@ export class RegistroNoEditableError extends Error {
   }
 }
 
+// N° de orden (columna ORDEN de Registro). `ordenOrigen`: 'oc' si lo
+// escribió Sincronizar OC (queda bloqueado, también en firestore.rules),
+// 'manual' si se escribió en la celda; '' o sin el campo = vacío o anterior
+// a este campo (ver functions/scripts/marcarOrdenOrigenConsignacion.js).
+export const ORDEN_ORIGEN_OC = 'oc';
+export const ORDEN_ORIGEN_MANUAL = 'manual';
+export const esOrdenSincronizada = (registro) => registro?.ordenOrigen === ORDEN_ORIGEN_OC;
+
+// Orden escrita a mano: solo números; varias, separadas por coma. Se guarda
+// normalizada como "123, 456" (el formato que exige firestore.rules).
+// Devuelve { ok: true, valor } o { ok: false, error }.
+export const normalizarOrdenManual = (texto) => {
+  const limpio = String(texto ?? '').trim();
+  if (!limpio) return { ok: true, valor: '' };
+  const partes = limpio.split(',').map(p => p.trim());
+  if (partes.some(p => !/^\d+$/.test(p))) {
+    return { ok: false, error: 'La orden solo admite números; si son varias, sepáralas con coma (ej: 12345, 12356).' };
+  }
+  return { ok: true, valor: [...new Set(partes)].join(', ') };
+};
+
+// Campos a escribir al guardar una orden a mano (ya normalizada).
+export const camposOrdenManual = (valor) => ({ orden: valor, ordenOrigen: valor ? ORDEN_ORIGEN_MANUAL : '' });
+
+// Órdenes de un registro como lista (una orden manual puede traer varias).
+export const ordenesDeRegistro = (registro) =>
+  [...new Set(String(registro?.orden ?? '').split(',').map(p => p.trim()).filter(Boolean))];
+
 export const TIPOS_CONSIGNACION = ['CONSIGNACION', 'COTIZACION'];
 export const MAX_ESCRITURAS_BATCH = 500;
 
@@ -270,6 +298,9 @@ export const guardarEdicionRegistroConsignacion = (db, registro, datosDoc, clave
       ...datosDoc,
       guias: actual.guias || '',
       orden: actual.orden || '',
+      // La orden sincronizada sigue bloqueada en la carpeta nueva.
+      ...(actual.ordenOrigen ? { ordenOrigen: actual.ordenOrigen } : {}),
+      ...(actual.ocActualizadoEn ? { ocActualizadoEn: actual.ocActualizadoEn } : {}),
       despachado: actual.despachado || 'PENDIENTE',
       fechaRegistro: actual.fechaRegistro || new Date(),
       registradoPor: actual.registradoPor || userData?.nombreCompleto || 'Usuario'

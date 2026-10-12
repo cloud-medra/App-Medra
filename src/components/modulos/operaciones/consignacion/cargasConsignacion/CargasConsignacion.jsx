@@ -275,7 +275,8 @@ const CargasConsignacion = () => {
           (r.nombre || '').toLowerCase().includes(termino) ||
           (r.medico || '').toLowerCase().includes(termino) ||
           (r.empresa || '').toLowerCase().includes(termino) ||
-          (r.descripcion || '').toLowerCase().includes(termino);
+          (r.descripcion || '').toLowerCase().includes(termino) ||
+          String(r.orden || '').toLowerCase().includes(termino);
         if (!coincideTexto) return false;
       }
 

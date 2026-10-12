@@ -7,6 +7,11 @@
 //     registros sin orden.
 //   - scripts/agregarOrdenConsignacion.js: agrega orden '' a los registros
 //     antiguos sin el campo, sin tocar los que ya tienen orden.
+//   - Orden sincronizada (ordenOrigen 'oc') bloqueada en firestore.rules: nadie
+//     la cambia ni la borra; la sincronización sigue escribiendo las vacías;
+//     a mano solo números separados por ", ".
+//   - scripts/marcarOrdenOrigenConsignacion.js: marca 'oc'/'manual' en las
+//     órdenes anteriores al campo ordenOrigen.
 import process from 'node:process';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createRequire } from 'node:module';
@@ -14,7 +19,7 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import {
   getFirestore, connectFirestoreEmulator, collection, collectionGroup, query, where, getDocs,
-  doc, updateDoc, addDoc,
+  doc, updateDoc, addDoc, setDoc, deleteField, serverTimestamp,
 } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator, ref, uploadBytes, getBytes, deleteObject } from 'firebase/storage';
 
@@ -22,6 +27,7 @@ const require = createRequire(new URL('../../functions/package.json', import.met
 const adminApp = require('firebase-admin/app');
 const { getFirestore: getFirestoreAdmin } = require('firebase-admin/firestore');
 const { agregarOrdenConsignacion } = require('./scripts/agregarOrdenConsignacion.js');
+const { marcarOrdenOrigenConsignacion } = require('./scripts/marcarOrdenOrigenConsignacion.js');
 
 const PROYECTO = 'demo-workcraft';
 const BUCKET = `${PROYECTO}.appspot.com`;
@@ -62,6 +68,7 @@ beforeAll(async () => {
   s.documentos = await sesion('documentos', { rol: 'operador', permisos: { documentos: ['/documentos/importarDetallesOC'] } });
   s.consignacion = await sesion('consignacion', { rol: 'operador', permisos: { consignacion: ['/consignacion/cargasConsignacion'] } });
   s.otro = await sesion('otro', { rol: 'operador', permisos: { maestros: ['/maestros/codigosMaestros'] } });
+  s.dev = await sesion('dev', { rol: 'dev', permisos: {} });
 
   // El PDF y el índice los sube quien tiene Documentos (como en la app).
   await uploadBytes(ref(s.documentos.storage, PDF_OC), pdf(), META_PDF);
@@ -139,11 +146,97 @@ describe('Firestore: sincronización de Consignación', () => {
     expect(await agregarOrdenConsignacion(adminDb)).toMatchObject({ sinCampo: 0 });
   });
 
-  it('Consignación puede guardar la OC en orden y su log; otro módulo no', async () => {
+  it('Consignación puede guardar la OC en orden y su log (como la sincronización); otro módulo no', async () => {
     const refPendiente = doc(s.consignacion.db, `${BASE}/pendiente`);
-    await updateDoc(refPendiente, { orden: '4500001' });
+    await updateDoc(refPendiente, { orden: '4500001', ordenOrigen: 'oc', ocActualizadoEn: serverTimestamp() });
     await addDoc(collection(refPendiente, 'logs'), { accion: 'OC_ASIGNADA', detalles: { orden: '4500001' } });
     expect((await adminDb.doc(`${BASE}/pendiente`).get()).data().orden).toBe('4500001');
     await expect(updateDoc(doc(s.otro.db, `${BASE}/antiguo`), { orden: 'X' })).rejects.toMatchObject(DENEGADO);
+  });
+});
+
+describe('firestore.rules: orden sincronizada bloqueada', () => {
+  const R = 'consignacion_registros/2026/mes/octubre/dia/01/detalles';
+  const base = { gestionId: '200001', nombre: 'ANA', empresa: 'MEDTRONIC', codigo: '00123', cantidad: 1, fecha: '2026-10-01', estado: 'INGRESADO' };
+  const ref = (sesionUsuario, id) => doc(sesionUsuario.db, `${R}/${id}`);
+  const leer = async (id) => (await adminDb.doc(`${R}/${id}`).get()).data();
+
+  beforeAll(async () => {
+    await adminDb.doc(`${R}/sincronizada`).set({ ...base, orden: '4500001', ordenOrigen: 'oc' });
+    await adminDb.doc(`${R}/vacia`).set({ ...base, orden: '' });
+    await adminDb.doc(`${R}/manual`).set({ ...base, orden: '12345', ordenOrigen: 'manual' });
+    await adminDb.doc(`${R}/libre`).set({ ...base, orden: 'texto viejo' }); // anterior a la validación
+  });
+
+  it('nadie puede editar ni borrar la orden sincronizada (tampoco dev)', async () => {
+    for (const u of [s.consignacion, s.dev]) {
+      await expect(updateDoc(ref(u, 'sincronizada'), { orden: '999' })).rejects.toMatchObject(DENEGADO);
+      await expect(updateDoc(ref(u, 'sincronizada'), { orden: '' })).rejects.toMatchObject(DENEGADO);
+      await expect(updateDoc(ref(u, 'sincronizada'), { orden: deleteField() })).rejects.toMatchObject(DENEGADO);
+      await expect(updateDoc(ref(u, 'sincronizada'), { ordenOrigen: 'manual' })).rejects.toMatchObject(DENEGADO);
+      await expect(updateDoc(ref(u, 'sincronizada'), { ordenOrigen: deleteField(), orden: '999' })).rejects.toMatchObject(DENEGADO);
+      await expect(setDoc(ref(u, 'sincronizada'), { ...base, orden: '999' })).rejects.toMatchObject(DENEGADO);
+    }
+    expect(await leer('sincronizada')).toMatchObject({ orden: '4500001', ordenOrigen: 'oc' });
+  });
+
+  it('los demás campos de un registro con orden sincronizada se siguen editando', async () => {
+    await updateDoc(ref(s.consignacion, 'sincronizada'), { estado: 'CARGADO', guias: '777' });
+    expect(await leer('sincronizada')).toMatchObject({ estado: 'CARGADO', orden: '4500001' });
+  });
+
+  it('la sincronización sigue escribiendo una orden vacía', async () => {
+    await updateDoc(ref(s.consignacion, 'vacia'), { orden: '4500002', ordenOrigen: 'oc', ocActualizadoEn: serverTimestamp() });
+    expect(await leer('vacia')).toMatchObject({ orden: '4500002', ordenOrigen: 'oc' });
+    // y desde ahí queda bloqueada
+    await expect(updateDoc(ref(s.consignacion, 'vacia'), { orden: '1' })).rejects.toMatchObject(DENEGADO);
+  });
+
+  it('a mano: solo números separados por ", "; se puede corregir o borrar', async () => {
+    await updateDoc(ref(s.consignacion, 'manual'), { orden: '12345, 12356', ordenOrigen: 'manual' });
+    await updateDoc(ref(s.consignacion, 'manual'), { orden: '', ordenOrigen: '' });
+    for (const orden of ['OC 12345', '12345,12356', '12345;12356', 'abc', '12345, ']) {
+      await expect(updateDoc(ref(s.consignacion, 'manual'), { orden, ordenOrigen: 'manual' })).rejects.toMatchObject(DENEGADO);
+    }
+    await expect(updateDoc(ref(s.consignacion, 'manual'), { orden: '1', ordenOrigen: 'otro' })).rejects.toMatchObject(DENEGADO);
+    await expect(updateDoc(ref(s.consignacion, 'manual'), { orden: '', ordenOrigen: 'oc' })).rejects.toMatchObject(DENEGADO);
+  });
+
+  it('un registro antiguo con texto libre en orden se puede editar en otros campos', async () => {
+    await updateDoc(ref(s.consignacion, 'libre'), { estado: 'PENDIENTE' });
+    expect(await leer('libre')).toMatchObject({ estado: 'PENDIENTE', orden: 'texto viejo' });
+  });
+});
+
+describe('scripts/marcarOrdenOrigenConsignacion.js', () => {
+  const R = 'consignacion_registros/2026/mes/noviembre/dia/02/detalles';
+  const base = { gestionId: '300001', fecha: '2026-11-02', codigo: '00123', cantidad: 1 };
+  const log = (ref, orden, ms) => ref.collection('logs').add({ accion: 'OC_ASIGNADA', detalles: { orden }, timestamp: new Date(ms) });
+
+  it('marca oc solo si la orden actual es la que escribió la sincronización', async () => {
+    const { Timestamp } = require('firebase-admin/firestore');
+    const ts = Timestamp.now();
+    const sinc = adminDb.doc(`${R}/sinc`);
+    await sinc.set({ ...base, orden: '4500010', ocActualizadoEn: ts });
+    await log(sinc, '4500010', 1000);
+    const cambiada = adminDb.doc(`${R}/cambiada`);
+    await cambiada.set({ ...base, orden: '999', ocActualizadoEn: ts });
+    await log(cambiada, '4500011', 1000);
+    await adminDb.doc(`${R}/mano`).set({ ...base, orden: '555' });
+    await adminDb.doc(`${R}/vacia`).set({ ...base, orden: '' });
+
+    const antes = await marcarOrdenOrigenConsignacion(adminDb);
+    expect(antes).toMatchObject({ cambiadasAMano: 1 });
+    expect((await sinc.get()).data().ordenOrigen).toBeUndefined();
+
+    await marcarOrdenOrigenConsignacion(adminDb, { aplicar: true });
+    expect((await sinc.get()).data().ordenOrigen).toBe('oc');
+    expect((await cambiada.get()).data().ordenOrigen).toBe('manual');
+    expect((await adminDb.doc(`${R}/mano`).get()).data().ordenOrigen).toBe('manual');
+    expect((await adminDb.doc(`${R}/vacia`).get()).data().ordenOrigen).toBeUndefined();
+    expect(await marcarOrdenOrigenConsignacion(adminDb)).toMatchObject({ oc: 0, manual: 0 });
+
+    // y la recién marcada queda bloqueada
+    await expect(updateDoc(doc(s.consignacion.db, `${R}/sinc`), { orden: '1' })).rejects.toMatchObject(DENEGADO);
   });
 });

@@ -132,7 +132,7 @@ export const consignacionComponentMaps = {
           col_cantidad: { label: 'Columna: Cantidad' },
           col_costo: { label: 'Columna: Costo' },
           col_estado: { label: 'Columna: Estado' },
-          col_orden: { label: 'Columna: N° Orden (editable en línea)' },
+          col_orden: { label: 'Columna: N° Orden (editable en línea si está vacía o es manual: solo números separados por coma; bloqueada si se sincronizó desde OC)' },
           col_guia: { label: 'Columna: N° Guía (editable en línea)' },
           col_despachado: { label: 'Columna: Despachado (Pendiente/Recibido — automático según N° de Guía)' },
           col_delivery: { label: 'Columna: Delivery' },
@@ -212,7 +212,7 @@ export const consignacionComponentMaps = {
       filtros_listado: {
         label: 'Sección: Filtros del Listado',
         elements: {
-          input_buscar: { label: 'Campo: Búsqueda por ID/nombre/médico/empresa/descripción' },
+          input_buscar: { label: 'Campo: Búsqueda por ID/nombre/médico/empresa/descripción/orden' },
           select_anio: { label: 'Campo: Filtro por Año' },
           select_mes: { label: 'Campo: Filtro por Mes' },
           select_dia: { label: 'Campo: Filtro por Día' },
@@ -228,6 +228,7 @@ export const consignacionComponentMaps = {
           col_nombre: { label: 'Columna: Nombre' },
           col_fecha: { label: 'Columna: Fecha' },
           col_empresa: { label: 'Columna: Empresa' },
+          col_orden: { label: 'Columna: Orden (candado si fue sincronizada desde OC)' },
           col_centro: { label: 'Columna: Centro' },
           col_atributo: { label: 'Columna: Atributo' },
           col_estado: { label: 'Columna: Estado (con indicador de color)' },

@@ -154,7 +154,8 @@ export const ejecutarSincronizacionOCConsignacion = async ({ meta, indice }, { u
 
   const { escritas, erroresEscritura, escrituras } = await escribirPorLotes(asignaciones, (batch, { refPath, oc }) => {
     const ref = doc(db, refPath);
-    batch.update(ref, { orden: oc, ocActualizadoEn: serverTimestamp() });
+    // ordenOrigen 'oc' bloquea la orden (Registro y firestore.rules).
+    batch.update(ref, { orden: oc, ordenOrigen: 'oc', ocActualizadoEn: serverTimestamp() });
     batch.set(doc(collection(ref, 'logs')), logOCAsignada({ orden: oc, origen: 'SINCRONIZAR_OC' }, userData));
     return 2;
   });
