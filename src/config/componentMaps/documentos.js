@@ -62,11 +62,11 @@ export const documentosComponentMaps = {
         elements: {},
       },
       barra_filtros: {
-        label: 'Sección: Filtros (Año obligatorio + Mes/Empresa opcionales en cascada, sin preselección)',
+        label: 'Sección: Filtros (Año obligatorio + Mes/Empresa opcionales en cascada, sin preselección) + búsqueda y Exportar Excel',
         elements: {},
       },
       tabla_registros: {
-        label: 'Sección: Tabla — ESTADO="Pendiente factura" (Facturas) o NUMERO_GUIA vacío/"0" (Guías), paginada de 50 en 50',
+        label: 'Sección: Tabla — ESTADO="Pendiente factura" (Facturas) o NUMERO_GUIA vacío/"0" (Guías), paginada de 50 en 50, con TOTAL de Monto OC y registros filtrados',
         elements: {},
       },
     },

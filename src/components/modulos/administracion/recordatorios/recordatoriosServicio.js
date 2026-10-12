@@ -18,10 +18,11 @@ export const consultaTareasDe = (db, uid) => query(refTareas(db), where('asignad
 export const consultaRealizadosDe = (db, uid, fechaMinima) =>
   query(refRealizadosDe(db, uid), where('fecha', '>=', fechaMinima));
 
-const datosTarea = ({ titulo, descripcion = '', dias, asignados, activa = true }) => ({
+const datosTarea = ({ titulo, descripcion = '', dias, hora = '', asignados, activa = true }) => ({
   titulo: String(titulo).trim(),
   descripcion: String(descripcion || '').trim(),
   dias: [...new Set(dias)].sort((a, b) => a - b),
+  hora: String(hora || '').trim(),
   asignados: [...new Set(asignados)],
   activa: Boolean(activa),
 });

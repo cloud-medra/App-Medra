@@ -1,16 +1,27 @@
 // Filtro de empresa (opcional, cascada sobre `filas` ya acotadas por
 // año/mes + el criterio de servidor elegido -estado "Pendiente factura" o
-// numero_guia vacío/"0"-) y paginación de 50 — ambos client-side, mismo
-// criterio que useDetallesOCFiltros.js. Compartido por Facturas y Guías: el
-// criterio de servidor ya viene resuelto en `filas`, acá solo queda filtrar
-// por empresa y paginar, sin importar cuál de los dos tipos de seguimiento
-// se esté viendo.
+// numero_guia vacío/"0"-), búsqueda de texto y paginación de 50 — todo
+// client-side, mismo criterio que useDetallesOCFiltros.js. Compartido por
+// Facturas y Guías: el criterio de servidor ya viene resuelto en `filas`,
+// acá solo queda filtrar por empresa/búsqueda, totalizar y paginar.
 import { useEffect, useMemo, useState } from 'react';
+import { normalizarTexto } from '../../../../../../utils/normalizarTexto';
+import { COLUMNAS, montoNumerico } from '../utils/columnasSeguimiento';
+import { calcularResumenMontoOC } from '../utils/resumenMontoOC';
 
 export const TAMANO_PAGINA_SEGUIMIENTO = 50;
 
+// Texto en que busca la caja de búsqueda: lo que muestra cada columna
+// ("$ 1.234.567", "15-09-2026") más los montos sin formato ("1234567").
+export const textoBusquedaFila = (fila) => normalizarTexto([
+  ...COLUMNAS.map((c) => c.valor(fila)),
+  montoNumerico(fila.oc_monto),
+  montoNumerico(fila.precio_u)
+].filter((v) => v !== null && v !== undefined && v !== '-').join(' | '));
+
 export const useSeguimientoFiltros = (filas) => {
   const [empresa, setEmpresa] = useState('');
+  const [busqueda, setBusqueda] = useState('');
   const [pagina, setPagina] = useState(1);
 
   const opcionesEmpresas = useMemo(() => {
@@ -29,14 +40,22 @@ export const useSeguimientoFiltros = (filas) => {
     if (empresa && !opcionesEmpresas.includes(empresa)) setEmpresa('');
   }, [opcionesEmpresas, empresa]);
 
+  // Índice de búsqueda: se arma una vez por carga, no en cada tecla.
+  const textosBusqueda = useMemo(() => new Map(filas.map((fila) => [fila, textoBusquedaFila(fila)])), [filas]);
+
   const filasFiltradas = useMemo(() => {
-    if (!empresa) return filas;
-    return filas.filter((fila) => (fila.proveedor || '').trim() === empresa);
-  }, [filas, empresa]);
+    const texto = normalizarTexto(busqueda);
+    if (!empresa && !texto) return filas;
+    return filas.filter((fila) => (!empresa || (fila.proveedor || '').trim() === empresa)
+      && (!texto || textosBusqueda.get(fila).includes(texto)));
+  }, [filas, empresa, busqueda, textosBusqueda]);
+
+  // Total de TODAS las filas filtradas (no solo la página visible).
+  const resumen = useMemo(() => calcularResumenMontoOC(filasFiltradas), [filasFiltradas]);
 
   useEffect(() => {
     setPagina(1);
-  }, [filas, empresa]);
+  }, [filas, empresa, busqueda]);
 
   const totalPaginas = Math.max(1, Math.ceil(filasFiltradas.length / TAMANO_PAGINA_SEGUIMIENTO));
   const paginaSegura = Math.min(pagina, totalPaginas);
@@ -48,7 +67,8 @@ export const useSeguimientoFiltros = (filas) => {
 
   return {
     empresa, setEmpresa, opcionesEmpresas,
-    filasFiltradas, filasPagina,
+    busqueda, setBusqueda,
+    filasFiltradas, filasPagina, resumen,
     totalFilas: filasFiltradas.length,
     pagina: paginaSegura, setPagina, totalPaginas
   };

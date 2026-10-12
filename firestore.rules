@@ -305,10 +305,12 @@ service cloud.firestore {
       return esAdminODev() || tienePestanaRecordatorios('administrar');
     }
     function tareaRecordatorioValida(t) {
-      return t.keys().hasOnly(['titulo', 'descripcion', 'dias', 'asignados', 'activa', 'desde', 'creadoPor', 'creadoEn', 'actualizadoEn'])
+      return t.keys().hasOnly(['titulo', 'descripcion', 'dias', 'hora', 'asignados', 'activa', 'desde', 'creadoPor', 'creadoEn', 'actualizadoEn'])
         && t.titulo is string && t.titulo.size() > 0 && t.titulo.size() <= 120
         && t.get('descripcion', '') is string && t.get('descripcion', '').size() <= 1000
         && t.dias is list && t.dias.size() > 0 && t.dias.toSet().hasOnly([1, 2, 3, 4, 5, 6, 7])
+        && t.get('hora', '') is string
+        && (t.get('hora', '') == '' || t.get('hora', '').matches('^([01][0-9]|2[0-3]):[0-5][0-9]$'))
         && t.asignados is list && t.asignados.size() > 0 && t.asignados.size() <= 200
         && t.activa is bool
         && t.desde is string && t.desde.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');

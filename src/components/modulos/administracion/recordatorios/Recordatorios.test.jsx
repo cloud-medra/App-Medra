@@ -66,8 +66,23 @@ describe('Recordatorios', () => {
     fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
     await waitFor(() => expect(servicio.crearTarea).toHaveBeenCalledWith(
       expect.anything(),
-      { titulo: 'Ver órdenes', descripcion: '', dias: [3], asignados: ['u1'] },
+      { titulo: 'Ver órdenes', descripcion: '', dias: [3], hora: '', asignados: ['u1'] },
       expect.objectContaining({ desde: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) })
+    ));
+  });
+
+  it('crear con hora opcional: varias tareas pueden tocar el mismo día, cada una con su hora', async () => {
+    render(<Recordatorios />);
+    fireEvent.click(screen.getByRole('button', { name: /Nuevo recordatorio/ }));
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Cuadrar caja' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Lunes' }));
+    fireEvent.change(screen.getByLabelText(/^Hora/), { target: { value: '09:00' } });
+    fireEvent.click(within((await screen.findByText('ANA PEREZ')).closest('label')).getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+    await waitFor(() => expect(servicio.crearTarea).toHaveBeenCalledWith(
+      expect.anything(),
+      { titulo: 'Cuadrar caja', descripcion: '', dias: [1], hora: '09:00', asignados: ['u1'] },
+      expect.anything()
     ));
   });
 

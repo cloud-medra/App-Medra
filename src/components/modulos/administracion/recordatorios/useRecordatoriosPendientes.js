@@ -3,29 +3,41 @@ import { onSnapshot } from 'firebase/firestore';
 import { db } from '../../../../firebaseConfig';
 import { useUser } from '../../../../context/UserContext';
 import {
-  puedeRecibirRecordatorios, fechaEnSantiago, fechaMinimaRealizados, tareasPendientes, idRealizado,
+  puedeRecibirRecordatorios, fechaEnSantiago, horaEnSantiago, fechaMinimaRealizados, tareasPendientes, idRealizado,
 } from './recordatoriosConfig';
 import { consultaTareasDe, consultaRealizadosDe } from './recordatoriosServicio';
 
-// "Hoy" en Santiago, revisado cada minuto (cambio de día con la app abierta).
-const useHoySantiago = () => {
+// Cada cuánto se revisa la hora: una tarea con hora aparece (y abre el
+// recuadro) a lo más estos ms después de su hora.
+export const INTERVALO_RELOJ_MS = 15000;
+
+// Fecha y hora ('HH:MM') en Santiago, revisadas cada INTERVALO_RELOJ_MS
+// (cambio de día y de minuto con la app abierta). Solo re-renderiza cuando
+// cambia el minuto.
+const useAhoraSantiago = () => {
   const [hoy, setHoy] = useState(() => fechaEnSantiago());
+  const [hora, setHora] = useState(() => horaEnSantiago());
   useEffect(() => {
-    const id = setInterval(() => setHoy(fechaEnSantiago()), 60000);
+    const id = setInterval(() => {
+      const ahora = new Date();
+      setHoy(fechaEnSantiago(ahora));
+      setHora(horaEnSantiago(ahora));
+    }, INTERVALO_RELOJ_MS);
     return () => clearInterval(id);
   }, []);
-  return hoy;
+  return { hoy, hora };
 };
 
-// Tareas del usuario conectado que tocan hoy o quedaron atrasadas.
-// Dos listeners (sus tareas + sus Realizados de la última semana), solo si
-// tiene permiso de recibir recordatorios; sin permiso no lee nada (y lo ya
-// leído se ignora: pendientes depende de habilitado y del uid).
+// Tareas del usuario conectado que tocan hoy (ya llegada su hora) o
+// quedaron atrasadas. Dos listeners (sus tareas + sus Realizados de los
+// últimos DIAS_MAX_ATRASO días), solo si tiene permiso de recibir
+// recordatorios; sin permiso no lee nada (y lo ya leído se ignora:
+// pendientes depende de habilitado y del uid).
 export const useRecordatoriosPendientes = () => {
   const { userData } = useUser();
   const uid = userData?.uid;
   const habilitado = puedeRecibirRecordatorios(userData);
-  const hoy = useHoySantiago();
+  const { hoy, hora } = useAhoraSantiago();
   const fechaMinima = fechaMinimaRealizados(hoy);
 
   const [tareas, setTareas] = useState([]);
@@ -50,8 +62,8 @@ export const useRecordatoriosPendientes = () => {
   }, [habilitado, uid, fechaMinima]);
 
   const pendientes = useMemo(
-    () => (habilitado ? tareasPendientes(tareas, realizados, { uid, hoy }) : []),
-    [habilitado, tareas, realizados, uid, hoy]
+    () => (habilitado ? tareasPendientes(tareas, realizados, { uid, hoy, hora }) : []),
+    [habilitado, tareas, realizados, uid, hoy, hora]
   );
 
   return { pendientes, hoy, habilitado };

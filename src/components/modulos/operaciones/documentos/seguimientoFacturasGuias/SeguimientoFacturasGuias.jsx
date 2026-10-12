@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Receipt, Truck, Loader2, AlertTriangle, CalendarSearch, ArrowLeft } from 'lucide-react';
+import { Receipt, Truck, Loader2, AlertTriangle, CalendarSearch, ArrowLeft, Search, FileSpreadsheet, Sigma } from 'lucide-react';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
 import PaginacionSimple from '../../../../ui/PaginacionSimple';
 import { useDocumentosSistemaPeriodo } from '../hooks/useDocumentosSistemaPeriodo';
@@ -9,6 +9,9 @@ import { useColumnResize } from '../../../../../hooks/useColumnResize';
 import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../ui/ThRedimensionable';
 import { BotonRestablecerAnchos } from '../../../../ui/BotonRestablecerAnchos';
 import { nombreDeMes } from '../../../../../utils/ordenarMeses';
+import { useToast } from '../../../../../context/ToastContext';
+import { COLUMNAS, formatearMonedaCLP } from './utils/columnasSeguimiento';
+import { exportarSeguimientoExcel } from './utils/exportarSeguimientoExcel';
 
 const PATH_VISTA = '/documentos/seguimientoFacturasGuias';
 
@@ -34,34 +37,42 @@ const CRITERIOS = {
   }
 };
 
-const formatearFechaCelda = (valor) => {
-  if (!valor) return '-';
-  const fecha = valor.toDate ? valor.toDate() : new Date(valor);
-  if (isNaN(fecha.getTime())) return '-';
-  const dd = String(fecha.getDate()).padStart(2, '0');
-  const mm = String(fecha.getMonth() + 1).padStart(2, '0');
-  return `${dd}-${mm}-${fecha.getFullYear()}`;
-};
-
 const TH = 'px-2 py-1.5 border-b border-r border-slate-200 dark:border-gray-700';
 const TD = 'px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 truncate';
 
-// Columnas de la tabla (anchos en px, redimensionables; useColumnResize los
-// recuerda por usuario en este navegador). Facturas y Guías comparten tabla.
-const COLUMNAS = [
-  { key: 'id', label: 'ID', ancho: 90, min: 60, td: 'font-num text-slate-600 dark:text-gray-400', valor: (i) => i.id },
-  { key: 'admision', label: 'Admisión', ancho: 80, min: 60, td: 'font-semibold text-[#2383C2]', valor: (i) => i.admision },
-  { key: 'paciente', label: 'Paciente', ancho: 160, min: 60, valor: (i) => i.paciente || '-' },
-  { key: 'medico', label: 'Médico', ancho: 140, min: 60, valor: (i) => i.medico || '-' },
-  { key: 'fecha_cx', label: 'Fecha Cx', ancho: 85, min: 60, valor: (i) => formatearFechaCelda(i.fecha_cx) },
-  { key: 'proveedor', label: 'Empresa', ancho: 160, min: 60, valor: (i) => i.proveedor || '-' },
-  { key: 'codigo', label: 'Código', ancho: 85, min: 60, td: 'font-num text-emerald-600 dark:text-emerald-400', valor: (i) => i.codigo || '-' },
-  { key: 'descripcion', label: 'Descripción', ancho: 200, min: 60, valor: (i) => i.descripcion || '-' },
-  { key: 'cantidad', label: 'Cant.', ancho: 60, min: 60, th: 'text-center', td: 'text-center', valor: (i) => i.cantidad ?? '-' },
-  { key: 'oc', label: 'OC', ancho: 95, min: 60, valor: (i) => i.oc || '-' },
-  { key: 'numero_guia', label: 'N° Guía', ancho: 90, min: 60, valor: (i) => i.numero_guia || '-' },
-  { key: 'numero_factura', label: 'N° Factura', ancho: 90, min: 60, valor: (i) => i.numero_factura || '-' }
-];
+const plural = (n, uno, varios) => `${n.toLocaleString('es-CL')} ${n === 1 ? uno : varios}`;
+
+// Total de Monto OC de TODAS las filas filtradas (año + mes + empresa +
+// búsqueda), no solo la página. Si una OC se repite con el mismo monto en
+// varias filas, avisa que la suma puede estar inflada.
+const ResumenTotal = ({ resumen }) => {
+  const { total, registros, ocsRepetidas, totalSinRepetir } = resumen;
+  return (
+    <div className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+      <div role="status" aria-label="Total Monto OC" className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#2383C2]/40 bg-[#2383C2]/5">
+        <Sigma size={16} className="text-[#2383C2]" />
+        <div className="leading-tight">
+          <div className="text-[9.5px] uppercase tracking-wider text-slate-500 dark:text-gray-400">Total Monto OC</div>
+          <div data-testid="total-monto-oc" className="text-[15px] font-bold font-num text-slate-800 dark:text-gray-100">{formatearMonedaCLP(total)}</div>
+        </div>
+        <div className="pl-3 ml-1 border-l border-slate-200 dark:border-gray-700 leading-tight">
+          <div className="text-[9.5px] uppercase tracking-wider text-slate-500 dark:text-gray-400">Registros</div>
+          <div data-testid="total-registros" className="text-[15px] font-bold font-num text-slate-800 dark:text-gray-100">{registros.toLocaleString('es-CL')}</div>
+        </div>
+      </div>
+      {ocsRepetidas.length > 0 && (
+        <div role="alert" className="flex items-start gap-1.5 text-[10.5px] text-amber-700 dark:text-amber-400 max-w-xl">
+          <AlertTriangle size={12} className="shrink-0 mt-0.5" />
+          <span>
+            {plural(ocsRepetidas.length, 'OC se repite', 'OC se repiten')} en varias filas con el mismo monto
+            {' '}(ej. OC {ocsRepetidas[0].oc}: {ocsRepetidas[0].filas} filas de {formatearMonedaCLP(ocsRepetidas[0].monto)}).
+            {' '}Si Monto OC es el total de la orden, la suma está inflada: contando cada OC una vez sería <b className="font-num">{formatearMonedaCLP(totalSinRepetir)}</b>.
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const SelectorTipoSeguimiento = ({ onElegir }) => (
   <div className="flex-grow flex flex-col items-center justify-center gap-4 p-6">
@@ -86,6 +97,8 @@ const SelectorTipoSeguimiento = ({ onElegir }) => (
 
 const SeguimientoFacturasGuias = () => {
   const { hasPermission } = useGranularPermission();
+  const { showToast } = useToast();
+  const [exportando, setExportando] = useState(false);
   const [tipoId, setTipoId] = useState(null);
   const criterio = tipoId ? CRITERIOS[tipoId] : null;
 
@@ -97,12 +110,30 @@ const SeguimientoFacturasGuias = () => {
 
   const {
     empresa, setEmpresa, opcionesEmpresas,
-    filasPagina, totalFilas,
+    busqueda, setBusqueda,
+    filasFiltradas, filasPagina, totalFilas, resumen,
     pagina, setPagina, totalPaginas
   } = useSeguimientoFiltros(filas);
   const usuario = useUser()?.userData?.uid;
   const { anchos, handleResize, restablecerAnchos, anchoTotalTabla, personalizados } =
     useColumnResize(COLUMNAS, { clave: 'seguimientoFacturasGuias', usuario });
+
+  const exportar = async () => {
+    if (filasFiltradas.length === 0) return;
+    setExportando(true);
+    try {
+      const periodo = [anio, mes, empresa].filter(Boolean).join('_').replace(/[^\w-]+/g, '-');
+      await exportarSeguimientoExcel(filasFiltradas, {
+        total: resumen.total,
+        nombreArchivo: `seguimiento_${tipoId}_${periodo}.xlsx`
+      });
+    } catch (err) {
+      console.error('Error al exportar a Excel:', err);
+      showToast('No se pudo exportar a Excel', 'error');
+    } finally {
+      setExportando(false);
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden font-sans text-[11px]">
@@ -164,6 +195,29 @@ const SeguimientoFacturasGuias = () => {
                 ))}
               </select>
 
+              <div className="relative">
+                <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
+                <input
+                  type="search"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  disabled={!anio}
+                  placeholder="Buscar (admisión, OC, lote, atributo, monto…)"
+                  aria-label="Buscar"
+                  className="h-7 w-64 pl-6 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] disabled:opacity-50"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={exportar}
+                disabled={!anio || cargandoFilas || exportando || filasFiltradas.length === 0}
+                title="Exporta todos los registros filtrados (no solo esta página)"
+                className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-gray-900 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-[11px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {exportando ? <Loader2 size={12} className="animate-spin" /> : <FileSpreadsheet size={12} />} Exportar Excel
+              </button>
+
               <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} className="ml-auto" />
             </div>
           )}
@@ -179,6 +233,7 @@ const SeguimientoFacturasGuias = () => {
             </div>
           ) : (
             <>
+              <ResumenTotal resumen={resumen} />
               {huboTope && (
                 <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-3 py-1 text-[10.5px] text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
                   <AlertTriangle size={11} /> Este período tiene muchos registros — puede que no se estén mostrando todos.

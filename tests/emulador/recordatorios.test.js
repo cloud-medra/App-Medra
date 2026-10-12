@@ -19,7 +19,7 @@ import {
 
 const require = createRequire(new URL('../../functions/package.json', import.meta.url));
 const adminApp = require('firebase-admin/app');
-const { getFirestore: getFirestoreAdmin } = require('firebase-admin/firestore');
+const { getFirestore: getFirestoreAdmin, FieldValue: adminFieldValue } = require('firebase-admin/firestore');
 
 const PROYECTO = 'demo-workcraft';
 const FIRESTORE = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080';
@@ -153,6 +153,23 @@ describe('administrar tareas', () => {
     expect((await adminDb.doc(`recordatorios_tareas/${id}`).get()).data()).toMatchObject({ titulo: 'Temporal 2', activa: false, dias: [5] });
     await borrarTarea(s.gestor.db, id);
     expect((await adminDb.doc(`recordatorios_tareas/${id}`).get()).exists).toBe(false);
+  });
+
+  it('acepta hora opcional (HH:MM o vacía) y la guarda', async () => {
+    const conHora = await crearTarea(s.gestor.db, { ...tarea('A las 9', [s.ana.uid]), hora: '09:00' }, { desde: '2026-10-12' });
+    expect((await adminDb.doc(`recordatorios_tareas/${conHora}`).get()).data()).toMatchObject({ hora: '09:00' });
+    await actualizarTarea(s.gestor.db, conHora, { ...tarea('A las 9', [s.ana.uid]), hora: '' });
+    expect((await adminDb.doc(`recordatorios_tareas/${conHora}`).get()).data()).toMatchObject({ hora: '' });
+    // Una tarea antigua sin el campo hora sigue siendo válida al editar otra cosa.
+    await adminDb.doc(`recordatorios_tareas/${conHora}`).update({ hora: adminFieldValue.delete() });
+    await cambiarActivaTarea(s.gestor.db, conHora, false);
+    await borrarTarea(s.gestor.db, conHora);
+  });
+
+  it('rechaza una hora mal escrita', async () => {
+    for (const hora of ['9:00', '24:00', '12:60', 'mañana', 900]) {
+      await expect(crearTarea(s.admin.db, { ...tarea('X', [s.ana.uid]), hora }, { desde: '2026-10-12' })).rejects.toMatchObject(DENEGADO);
+    }
   });
 
   it('rechaza tareas inválidas (sin días, sin usuarios, día fuera de rango, campos extra)', async () => {

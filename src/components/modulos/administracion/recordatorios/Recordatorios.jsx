@@ -17,9 +17,11 @@ import {
 } from './recordatoriosServicio';
 import { useRecordatoriosPendientes } from './useRecordatoriosPendientes';
 
-const FORM_VACIO = { titulo: '', descripcion: '', dias: [], asignados: [] };
+const FORM_VACIO = { titulo: '', descripcion: '', dias: [], hora: '', asignados: [] };
 const nombreUsuario = (u) => u?.nombreCompleto || u?.email || u?.id || 'Usuario';
 const formatoFecha = (f) => String(f || '').split('-').reverse().join('-');
+// "Lunes a viernes · 09:00"
+const textoDiasHora = (t) => `${textoDias(t.dias)}${t.hora ? ` · ${t.hora}` : ''}`;
 const formatoHora = (ts) => (ts?.toDate ? ts.toDate().toLocaleString('es-CL', { timeZone: 'America/Santiago' }) : '—');
 
 const Pestana = ({ activa, onClick, children }) => (
@@ -38,7 +40,16 @@ const Pestana = ({ activa, onClick, children }) => (
 const MisRecordatorios = ({ uid }) => {
   const [tareas, setTareas] = useState(null);
   const { pendientes } = useRecordatoriosPendientes();
-  const pendientesPorTarea = useMemo(() => new Map(pendientes.map((p) => [p.tarea.id, p])), [pendientes]);
+  // Por tarea: cuántas repeticiones atrasadas tiene y si la de hoy está pendiente.
+  const pendientesPorTarea = useMemo(() => {
+    const mapa = new Map();
+    pendientes.forEach((p) => {
+      const actual = mapa.get(p.tarea.id) || { atrasadas: 0, hoy: false };
+      if (p.atrasada) actual.atrasadas += 1; else actual.hoy = true;
+      mapa.set(p.tarea.id, actual);
+    });
+    return mapa;
+  }, [pendientes]);
 
   useEffect(() => onSnapshot(
     consultaTareasDe(db, uid),
@@ -58,11 +69,11 @@ const MisRecordatorios = ({ uid }) => {
             <div className="min-w-0 flex-grow">
               <p className="font-semibold">{t.titulo}</p>
               {t.descripcion && <p className="text-[10.5px] text-slate-500 dark:text-gray-400 whitespace-pre-wrap">{t.descripcion}</p>}
-              <p className="text-[10px] text-slate-400 mt-0.5">{textoDias(t.dias)}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{textoDiasHora(t)}</p>
             </div>
             {p ? (
-              <span className={`shrink-0 text-[10px] font-bold uppercase ${p.atrasada ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                {p.atrasada ? 'Atrasada' : 'Pendiente hoy'}
+              <span className={`shrink-0 text-[10px] font-bold uppercase ${p.atrasadas ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                {p.atrasadas ? `Atrasada (${p.atrasadas})` : 'Pendiente hoy'}
               </span>
             ) : (
               <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
@@ -155,6 +166,19 @@ const FormularioTarea = ({ inicial, usuarios, guardando, onGuardar, onCancelar }
         </div>
         {error('dias')}
       </fieldset>
+      <div>
+        <label htmlFor="rec-hora" className="block font-semibold mb-0.5">Hora <span className="font-normal text-slate-400">(opcional: aparece desde esa hora; sin hora, desde el inicio del día)</span></label>
+        <div className="flex items-center gap-1.5">
+          <input id="rec-hora" type="time" value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })}
+            className="h-7 px-2 rounded border border-slate-300 dark:border-gray-600 bg-transparent outline-none focus:border-[#2383C2]" />
+          {form.hora && (
+            <button type="button" onClick={() => setForm({ ...form, hora: '' })} className="text-[10px] text-slate-500 hover:text-red-600 underline">
+              Quitar hora
+            </button>
+          )}
+        </div>
+        {error('hora')}
+      </div>
       <fieldset>
         <legend className="font-semibold mb-1">Usuarios asignados ({form.asignados.length})</legend>
         <div className="relative mb-1 max-w-xs">
@@ -267,7 +291,7 @@ const AdministrarRecordatorios = ({ userData }) => {
         <FormularioTarea
           key={editando === 'nueva' ? 'nueva' : editando.id}
           inicial={editando === 'nueva' ? FORM_VACIO : {
-            titulo: editando.titulo, descripcion: editando.descripcion || '', dias: editando.dias || [], asignados: editando.asignados || [],
+            titulo: editando.titulo, descripcion: editando.descripcion || '', dias: editando.dias || [], hora: editando.hora || '', asignados: editando.asignados || [],
           }}
           usuarios={usuarios}
           guardando={guardando}
@@ -297,7 +321,7 @@ const AdministrarRecordatorios = ({ userData }) => {
                   </p>
                   {t.descripcion && <p className="text-[10.5px] text-slate-500 dark:text-gray-400 whitespace-pre-wrap">{t.descripcion}</p>}
                   <p className="text-[10px] text-slate-400 mt-0.5">
-                    {textoDias(t.dias)} · {(t.asignados || []).map((uid) => nombreUsuario(usuariosPorId.get(uid) || { id: uid })).join(', ')}
+                    {textoDiasHora(t)} · {(t.asignados || []).map((uid) => nombreUsuario(usuariosPorId.get(uid) || { id: uid })).join(', ')}
                   </p>
                 </div>
                 <div className="flex gap-1 shrink-0">
