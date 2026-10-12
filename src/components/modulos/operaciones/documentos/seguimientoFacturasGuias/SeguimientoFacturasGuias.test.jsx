@@ -146,14 +146,29 @@ describe('SeguimientoFacturasGuias', () => {
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     });
 
-    it('avisa cuando una OC se repite con el mismo monto en varias filas', async () => {
-      FILAS.push({ admision: '100', proveedor: 'Empresa A', oc: '4501', oc_monto: 1200000, lote: 'LT-10' });
+    it('misma OC con dos códigos del mismo monto: suma completa y sin aviso', async () => {
+      FILAS.push(
+        { admision: '115569', proveedor: 'Empresa C', oc: '61740', codigo: '254139', oc_monto: 98000, fecha_cx: new Date(2026, 9, 5) },
+        { admision: '115569', proveedor: 'Empresa C', oc: '61740', codigo: '254138', oc_monto: 98000, fecha_cx: new Date(2026, 9, 5) }
+      );
+      try {
+        await abrirFacturas2026();
+        fireEvent.change(screen.getByDisplayValue('Empresa'), { target: { value: 'Empresa C' } });
+        expect(screen.getByTestId('total-monto-oc').textContent).toBe('$ 196.000');
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      } finally {
+        FILAS.splice(-2);
+      }
+    });
+
+    it('avisa cuando una fila está exactamente duplicada', async () => {
+      FILAS.push({ ...FILAS[0] });
       try {
         await abrirFacturas2026();
         expect(screen.getByTestId('total-monto-oc').textContent).toBe('$ 2.700.000');
         const aviso = screen.getByRole('alert');
-        expect(aviso).toHaveTextContent('1 OC se repite en varias filas con el mismo monto');
-        expect(aviso).toHaveTextContent('OC 4501: 2 filas de $ 1.200.000');
+        expect(aviso).toHaveTextContent('1 fila parece importada dos veces');
+        expect(aviso).toHaveTextContent('OC 4501, código -, lote LT-9, admisión 100');
         expect(within(aviso).getByText('$ 1.500.000')).toBeInTheDocument();
       } finally {
         FILAS.pop();

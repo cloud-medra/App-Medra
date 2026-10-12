@@ -53,27 +53,52 @@ describe('calcularResumenMontoOC', () => {
     expect(r.total).toBe(3500);
     expect(Number.isNaN(r.total)).toBe(false);
     expect(r.registros).toBe(7);
-    expect(r.ocsRepetidas).toEqual([]);
-    expect(r.totalSinRepetir).toBe(3500);
+    expect(r.duplicados).toEqual([]);
+    expect(r.totalSinDuplicados).toBe(3500);
   });
 
   it('sin filas: total 0 y 0 registros', () => {
-    expect(calcularResumenMontoOC([])).toEqual({ total: 0, registros: 0, ocsRepetidas: [], totalSinRepetir: 0 });
+    expect(calcularResumenMontoOC([])).toEqual({ total: 0, registros: 0, duplicados: [], filasDuplicadas: 0, totalSinDuplicados: 0 });
   });
 
-  it('avisa si una OC se repite en varias filas con el mismo monto (suma inflada)', () => {
+  // Caso real: OC 61740, admisión 115569, mismo día, dos códigos de $ 98.000.
+  const DIA = new Date(2026, 9, 5);
+  const linea = (extra) => ({ oc: '61740', admision: '115569', fecha_cx: DIA, codigo: '254139', lote: 'L1', oc_monto: 98000, ...extra });
+
+  it('misma OC con códigos distintos y el mismo monto: suma completa y sin aviso', () => {
+    const r = calcularResumenMontoOC([linea(), linea({ codigo: '254138' })]);
+    expect(r.total).toBe(196000);
+    expect(r.registros).toBe(2);
+    expect(r.duplicados).toEqual([]);
+    expect(r.totalSinDuplicados).toBe(196000);
+  });
+
+  it('basta con que cambie un campo (código, lote, admisión, fecha o monto) para que no sea duplicado', () => {
+    [
+      { codigo: '254138' },
+      { lote: 'L2' },
+      { admision: '115570' },
+      { fecha_cx: new Date(2026, 9, 6) },
+      { oc_monto: 98001 },
+      { oc: '61741' }
+    ].forEach((cambio) => {
+      expect(calcularResumenMontoOC([linea(), linea(cambio)]).duplicados).toEqual([]);
+    });
+  });
+
+  it('una fila exactamente duplicada (misma OC, código, lote, admisión, fecha y monto) sí avisa', () => {
     const r = calcularResumenMontoOC([
-      { oc: '4500', oc_monto: 900, lote: 'A' },
-      { oc: '4500', oc_monto: '900', lote: 'B' },
-      { oc: '4500', oc_monto: 900, lote: 'C' },
-      { oc: '4600', oc_monto: 100 },
-      { oc: '4600', oc_monto: 200 }, // misma OC, distinto monto: no es repetición
-      { oc: '', oc_monto: 50 },
-      { oc: '', oc_monto: 50 } // sin OC: no se puede saber
+      linea(),
+      // Misma fila importada dos veces (fecha como Timestamp y monto como texto).
+      linea({ fecha_cx: { toDate: () => new Date(2026, 9, 5) }, oc_monto: '$ 98.000' }),
+      linea({ codigo: '254138' })
     ]);
-    expect(r.total).toBe(3100);
-    expect(r.ocsRepetidas).toEqual([{ oc: '4500', monto: 900, filas: 3 }]);
-    expect(r.totalSinRepetir).toBe(1300);
+    expect(r.total).toBe(294000);
+    expect(r.duplicados).toEqual([
+      { oc: '61740', codigo: '254139', lote: 'L1', admision: '115569', fecha: '05-10-2026', monto: 98000, filas: 2 }
+    ]);
+    expect(r.filasDuplicadas).toBe(1);
+    expect(r.totalSinDuplicados).toBe(196000);
   });
 });
 

@@ -43,10 +43,11 @@ const TD = 'px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700
 const plural = (n, uno, varios) => `${n.toLocaleString('es-CL')} ${n === 1 ? uno : varios}`;
 
 // Total de Monto OC de TODAS las filas filtradas (año + mes + empresa +
-// búsqueda), no solo la página. Si una OC se repite con el mismo monto en
-// varias filas, avisa que la suma puede estar inflada.
+// búsqueda), no solo la página. Avisa solo si hay filas duplicadas de
+// verdad (misma OC, código, lote, admisión, fecha y monto).
 const ResumenTotal = ({ resumen }) => {
-  const { total, registros, ocsRepetidas, totalSinRepetir } = resumen;
+  const { total, registros, duplicados, filasDuplicadas, totalSinDuplicados } = resumen;
+  const ej = duplicados[0];
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
       <div role="status" aria-label="Total Monto OC" className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#2383C2]/40 bg-[#2383C2]/5">
@@ -60,13 +61,13 @@ const ResumenTotal = ({ resumen }) => {
           <div data-testid="total-registros" className="text-[15px] font-bold font-num text-slate-800 dark:text-gray-100">{registros.toLocaleString('es-CL')}</div>
         </div>
       </div>
-      {ocsRepetidas.length > 0 && (
+      {duplicados.length > 0 && (
         <div role="alert" className="flex items-start gap-1.5 text-[10.5px] text-amber-700 dark:text-amber-400 max-w-xl">
           <AlertTriangle size={12} className="shrink-0 mt-0.5" />
           <span>
-            {plural(ocsRepetidas.length, 'OC se repite', 'OC se repiten')} en varias filas con el mismo monto
-            {' '}(ej. OC {ocsRepetidas[0].oc}: {ocsRepetidas[0].filas} filas de {formatearMonedaCLP(ocsRepetidas[0].monto)}).
-            {' '}Si Monto OC es el total de la orden, la suma está inflada: contando cada OC una vez sería <b className="font-num">{formatearMonedaCLP(totalSinRepetir)}</b>.
+            {plural(filasDuplicadas, 'fila parece importada dos veces', 'filas parecen importadas dos veces')}: misma OC, código, lote, admisión, fecha y monto
+            {' '}(ej. OC {ej.oc || '-'}, código {ej.codigo || '-'}, lote {ej.lote || '-'}, admisión {ej.admision || '-'}, {ej.fecha}: {ej.filas} filas de {formatearMonedaCLP(ej.monto)}).
+            {' '}Sin esas copias el total sería <b className="font-num">{formatearMonedaCLP(totalSinDuplicados)}</b>.
           </span>
         </div>
       )}
