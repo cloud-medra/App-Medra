@@ -58,7 +58,7 @@ export const completarPermisosGranulares = (guardados, componentMaps) => {
     procesos.forEach(([procesoPath, procesoConfig]) => {
       if (resultado[procesoPath]) {
         resultado[procesoPath] = completarVista(resultado[procesoPath], procesoConfig);
-      } else if (!tieneAlguna) {
+      } else if (!tieneAlguna && procesoConfig.porDefecto !== false) {
         resultado[procesoPath] = generarAccesoTotalDesdeConfig(procesoConfig) || {};
       }
     });
@@ -93,13 +93,19 @@ export const estadoMarcadoVista = (vistaPermisos, config) => {
 
 const rutasProceso = (config) => Object.keys(config?.procesos || {});
 
-// Incluye una vista del menú con acceso total (y todas sus pestañas), sin
-// pisar lo que ya tenga configurado.
+// Pestañas que se incluyen solas al marcar la vista: todas, salvo las
+// declaradas con `porDefecto: false` en el mapa (ej. "Administrar tareas" de
+// Recordatorios), que se marcan a mano.
+const procesosPorDefecto = (config) =>
+  Object.entries(config?.procesos || {}).filter(([, pc]) => pc.porDefecto !== false);
+
+// Incluye una vista del menú con acceso total (y sus pestañas por defecto),
+// sin pisar lo que ya tenga configurado.
 const incluirVista = (granulares, path, config) => {
   if (!config) return;
   if (!granulares[path]) granulares[path] = generarAccesoTotalDesdeConfig(config);
-  rutasProceso(config).forEach((p) => {
-    if (!granulares[p]) granulares[p] = generarAccesoTotalDesdeConfig(config.procesos[p]);
+  procesosPorDefecto(config).forEach(([p, pc]) => {
+    if (!granulares[p]) granulares[p] = generarAccesoTotalDesdeConfig(pc);
   });
 };
 const quitarVista = (granulares, path, config) => {
@@ -139,8 +145,9 @@ export const alternarModuloCompleto = (estado, moduloKey, subItems, componentMap
     const propias = config ? [s.path, ...rutasProceso(config)] : [s.path];
     rutas.push(...propias);
     if (quitado) { quitarVista(permisosGranulares, s.path, config); return; }
-    if (config && !permisosGranulares[s.path]) rutasAgregadas.push(...propias);
+    const nuevas = config && !permisosGranulares[s.path];
     incluirVista(permisosGranulares, s.path, config);
+    if (nuevas) rutasAgregadas.push(...propias.filter((p) => permisosGranulares[p]));
   });
   return {
     estado: {
@@ -200,7 +207,7 @@ export const completarVistasDelMenu = (permisos, granulares, componentMaps) => {
     const config = componentMaps[path];
     if (!config || resultado[path]) return;
     incluirVista(resultado, path, config);
-    agregadas.push(path, ...rutasProceso(config));
+    agregadas.push(path, ...rutasProceso(config).filter((p) => resultado[p]));
   });
   return { permisosGranulares: resultado, agregadas };
 };

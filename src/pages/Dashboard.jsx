@@ -20,6 +20,8 @@ import ResumenGeneral from '../components/modulos/dashboard/ResumenGeneral';
 import ControlMensual from '../components/modulos/administracion/controlMensual/ControlMensual';
 import ResumenPeriodoAbierto from '../components/modulos/administracion/resumenPeriodoAbierto/ResumenPeriodoAbierto.jsx';
 import NotasAdmin from '../components/modulos/administracion/notasAdmin/NotasAdmin';
+import Recordatorios from '../components/modulos/administracion/recordatorios/Recordatorios';
+import RecordatoriosFlotante from '../components/modulos/administracion/recordatorios/RecordatoriosFlotante';
 import CrearUsuario from '../components/modulos/administracion/usuarios/CrearUsuario';
 import ListadoUsuario from '../components/modulos/administracion/usuarios/ListadoUsuario';
 import CargasConsolidado from '../components/modulos/administracion/cargasConsolidado/CargasConsolidado';
@@ -227,6 +229,7 @@ const Dashboard = () => {
     '/administracion/controlMensual': <ControlMensual />,
     '/administracion/ResumenPeriodoAbierto': <ResumenPeriodoAbierto />,
     '/administracion/notasAdmin': <NotasAdmin />,
+    '/administracion/recordatorios': <Recordatorios />,
     '/administracion/crearUsuario': (
       <CrearUsuario
         resumeUsuarioId={resumeUsuarioId}
@@ -721,6 +724,10 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
+
+      {/* Recordatorios del usuario: en todas las vistas (se oculta solo si
+          no tiene pendientes o no tiene permiso). */}
+      <RecordatoriosFlotante />
     </div>
   );
 };

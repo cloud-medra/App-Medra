@@ -289,6 +289,59 @@ service cloud.firestore {
     }
 
     // =================================================================
+    // RECORDATORIOS (Administración → Recordatorios + recuadro flotante)
+    // =================================================================
+    // Pestañas de la vista /administracion/recordatorios (mismo criterio que
+    // recordatoriosConfig.js): "mis" = recibe recordatorios; "administrar" =
+    // crea, edita, desactiva y borra tareas y ve el historial de todos.
+    function tienePestanaRecordatorios(pestana) {
+      return tieneItem('administracion', '/administracion/recordatorios')
+        && ('/administracion/recordatorios/' + pestana) in getUsuario().get('permisosGranulares', {});
+    }
+    function recibeRecordatorios() {
+      return esAdminODev() || tienePestanaRecordatorios('mis');
+    }
+    function administraRecordatorios() {
+      return esAdminODev() || tienePestanaRecordatorios('administrar');
+    }
+    function tareaRecordatorioValida(t) {
+      return t.keys().hasOnly(['titulo', 'descripcion', 'dias', 'asignados', 'activa', 'desde', 'creadoPor', 'creadoEn', 'actualizadoEn'])
+        && t.titulo is string && t.titulo.size() > 0 && t.titulo.size() <= 120
+        && t.get('descripcion', '') is string && t.get('descripcion', '').size() <= 1000
+        && t.dias is list && t.dias.size() > 0 && t.dias.toSet().hasOnly([1, 2, 3, 4, 5, 6, 7])
+        && t.asignados is list && t.asignados.size() > 0 && t.asignados.size() <= 200
+        && t.activa is bool
+        && t.desde is string && t.desde.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+    // Cada usuario lee solo las tareas donde está asignado (consulta
+    // array-contains con su uid); quien administra, todas.
+    match /recordatorios_tareas/{tareaId} {
+      allow read: if request.auth != null
+        && (administraRecordatorios() || (recibeRecordatorios() && request.auth.uid in resource.data.asignados));
+      allow create: if request.auth != null && administraRecordatorios()
+        && tareaRecordatorioValida(request.resource.data);
+      allow update: if request.auth != null && administraRecordatorios()
+        && tareaRecordatorioValida(request.resource.data)
+        && request.resource.data.desde == resource.data.desde;
+      allow delete: if request.auth != null && administraRecordatorios();
+    }
+    // "Realizado" de una repetición = historial (quién y cuándo). Solo el
+    // propio usuario lo crea, sobre una tarea que le está asignada, con la
+    // hora del servidor; nadie lo edita ni lo borra.
+    match /recordatorios_realizados/{uid}/realizados/{realizadoId} {
+      allow read: if request.auth != null && (request.auth.uid == uid || administraRecordatorios());
+      allow create: if request.auth != null && request.auth.uid == uid && recibeRecordatorios()
+        && request.resource.data.keys().hasOnly(['tareaId', 'titulo', 'fecha', 'uid', 'usuarioNombre', 'realizadoEn'])
+        && request.resource.data.uid == uid
+        && request.resource.data.fecha is string && request.resource.data.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && realizadoId == request.resource.data.tareaId + '_' + request.resource.data.fecha
+        && request.resource.data.realizadoEn == request.time
+        && request.resource.data.titulo is string && request.resource.data.usuarioNombre is string
+        && uid in get(/databases/$(database)/documents/recordatorios_tareas/$(request.resource.data.tareaId)).data.asignados;
+      allow update, delete: if false;
+    }
+
+    // =================================================================
     // MAESTRO
     // =================================================================
 

@@ -29,6 +29,7 @@ import {
   GitCompareArrows,
   GitMerge,
   BarChart3,
+  BellRing,
   Microscope,
   Handshake,
   Receipt,
@@ -84,6 +85,7 @@ export const MODULES = {
       { label: 'Control Mensual', path: '/administracion/controlMensual', icon: <CalendarCheck size={14} /> },
       { label: 'Periodo Actual', path: '/administracion/ResumenPeriodoAbierto', icon: <CalendarDays size={14} /> },
       { label: 'Notas Admin', path: '/administracion/notasAdmin', icon: <StickyNote size={14} /> },
+      { label: 'Recordatorios', path: '/administracion/recordatorios', icon: <BellRing size={14} /> },
       { label: 'Crear Usuario', path: '/administracion/crearUsuario', icon: <UserPlus size={14} /> },
       { label: 'Lista Usuario', path: '/administracion/listadoUsuario', icon: <Users size={14} /> },
       // Solo admin/dev (no se asigna por permisos): ver src/config/accesoMenu.js.

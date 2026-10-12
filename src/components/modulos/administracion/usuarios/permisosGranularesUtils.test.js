@@ -124,3 +124,32 @@ describe('operaciones del árbol (compartidas por Crear Usuario y Listado Usuari
     expect(r).toEqual({ pestanas: 1, secciones: 1, acciones: 1, columnas: 1, total: 4 });
   });
 });
+
+describe('pestañas con porDefecto: false (ej. Recordatorios → Administrar tareas)', () => {
+  const MAPA = {
+    '/administracion/recordatorios': {
+      sections: {},
+      procesos: {
+        '/administracion/recordatorios/mis': { sections: {} },
+        '/administracion/recordatorios/administrar': { porDefecto: false, sections: {} },
+      },
+    },
+  };
+  const VACIO = { permisos: {}, permisosGranulares: {} };
+
+  it('al marcar la vista se incluye "Mis recordatorios" pero no "Administrar tareas"', () => {
+    const { estado } = alternarVistaDelMenu(VACIO, 'administracion', '/administracion/recordatorios', MAPA);
+    expect(Object.keys(estado.permisosGranulares).sort()).toEqual(['/administracion/recordatorios', '/administracion/recordatorios/mis']);
+    const { estado: modulo, rutasAgregadas } = alternarModuloCompleto(VACIO, 'administracion', [{ path: '/administracion/recordatorios' }], MAPA);
+    expect(modulo.permisosGranulares['/administracion/recordatorios/administrar']).toBeUndefined();
+    expect(rutasAgregadas).not.toContain('/administracion/recordatorios/administrar');
+  });
+
+  it('se puede marcar a mano, y la migración perezosa no la agrega sola', () => {
+    const conAdministrar = alternarPestana({}, '/administracion/recordatorios/administrar', MAPA['/administracion/recordatorios'].procesos['/administracion/recordatorios/administrar']);
+    expect(conAdministrar['/administracion/recordatorios/administrar']).toEqual({});
+    const completado = completarPermisosGranulares({ '/administracion/recordatorios': {} }, MAPA);
+    expect(completado['/administracion/recordatorios/mis']).toEqual({});
+    expect(completado['/administracion/recordatorios/administrar']).toBeUndefined();
+  });
+});
