@@ -34,10 +34,13 @@ describe('useColumnasPermitidas', () => {
     expect(keys(result.current.columnasVisibles)).toEqual(['sel']);
   });
 
-  it('admin ve todas', () => {
-    usuario = { rol: 'admin' };
+  it('Desarrollador ve todas; el Administrador, según sus permisos', () => {
+    usuario = { rol: 'dev' };
     const { result } = renderHook(() => useColumnasPermitidas(RUTA, 'tabla', COLUMNAS));
     expect(keys(result.current.columnasVisibles)).toEqual(['sel', 'codigo', 'precio', 'nueva']);
+    usuario = { rol: 'admin' };
+    const { result: admin } = renderHook(() => useColumnasPermitidas(RUTA, 'tabla', COLUMNAS));
+    expect(keys(admin.current.columnasVisibles)).toEqual(['sel']);
   });
 
   it('mantiene la misma referencia mientras no cambian los permisos', () => {

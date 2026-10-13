@@ -17,6 +17,7 @@ import { useModal } from '../../../../../context/ModalContext';
 import { useDetallesOCData } from './hooks/useDetallesOCData';
 import { useDetallesOCFiltros, CAMPOS_BUSQUEDA_OC } from './hooks/useDetallesOCFiltros';
 import { useUser } from '../../../../../context/UserContext';
+import { esRolAdministrador } from '../../../../../../functions/permisos/nucleo.mjs';
 import { useColumnResize } from '../../../../../hooks/useColumnResize';
 import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../ui/ThRedimensionable';
 import { BotonRestablecerAnchos } from '../../../../ui/BotonRestablecerAnchos';
@@ -69,7 +70,9 @@ const ImportarDetallesOC = () => {
   const [ultimoArchivo, setUltimoArchivo] = useState(null);
   const { confirmAction } = useModal();
   const userData = useUser()?.userData;
-  const esAdminODev = userData?.rol === 'admin' || userData?.rol === 'dev';
+  // Seleccionar/eliminar filas: rol Administrador/Desarrollador y la acción
+  // (denegada por defecto).
+  const esAdminODev = esRolAdministrador(userData?.rol) && hasPermission(PATH_VISTA, 'tabla_registros', 'btn_eliminar_filas');
 
   const {
     anio, setAnio, anios, cargandoAnios,

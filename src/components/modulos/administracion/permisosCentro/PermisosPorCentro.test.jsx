@@ -33,7 +33,8 @@ const llamadas = [];
 vi.mock('firebase/functions', () => ({ httpsCallable: (_f, nombre) => async (datos) => { llamadas.push({ nombre, datos }); return { data: { usuarios: 2 } }; } }));
 vi.mock('../../../../firebaseConfig', () => ({ db: {}, functions: {} }));
 let rol = 'admin';
-vi.mock('../../../../context/UserContext', () => ({ useUser: () => ({ userData: { rol } }) }));
+let permisos = { administracion: ['/administracion/permisosCentro'] };
+vi.mock('../../../../context/UserContext', () => ({ useUser: () => ({ userData: { rol, permisos } }) }));
 vi.mock('../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 const confirmAction = vi.fn();
 vi.mock('../../../../context/ModalContext', () => ({ useModal: () => ({ confirmAction }) }));
@@ -48,7 +49,7 @@ vi.mock('../../../../hooks/useCatalogo', () => ({
 
 const { default: PermisosPorCentro } = await import('./PermisosPorCentro');
 
-beforeEach(() => { rol = 'admin'; llamadas.length = 0; lecturas.length = 0; confirmAction.mockClear(); });
+beforeEach(() => { rol = 'admin'; permisos = { administracion: ['/administracion/permisosCentro'] }; llamadas.length = 0; lecturas.length = 0; confirmAction.mockClear(); });
 afterEach(cleanup);
 const fila = (nombre) => screen.getByRole('button', { name: nombre }).closest('tr');
 const confirmar = async () => { await act(async () => { await confirmAction.mock.calls.at(-1)[2](); }); };
@@ -90,9 +91,10 @@ describe('Permisos por centro: configurar un centro por rol', () => {
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Operador (2)', 'Encargado de centro (1)Sin configurar', 'Ver usuarios (3)']);
     expect(screen.getByRole('button', { name: /^Guardar$/ })).toBeDisabled();
     fireEvent.click(screen.getByRole('tab', { name: /Encargado de centro/ }));
-    // El ítem de solo administradores no se ofrece en el editor.
+    // Permisos por centro se ofrece como cualquier ítem (solo sirve con rol
+    // Administrador, que no usa plantilla).
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Módulos' })).getByText('Administración'));
-    expect(screen.queryByLabelText('Habilitar Permisos por centro')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Habilitar Permisos por centro')).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Habilitar Lista Usuario'));
     fireEvent.click(screen.getByRole('button', { name: /^Guardar$/ }));
     expect(confirmAction).toHaveBeenCalledWith('Guardar permisos del centro',
@@ -180,16 +182,25 @@ describe('Permisos por centro: configurar un centro por rol', () => {
 });
 
 describe('Permisos por centro: acceso', () => {
-  it.each(['operador', 'encargado'])('un %s no ve la vista ni lee datos', (r) => {
+  it.each(['operador', 'encargado'])('un %s no ve la vista ni lee datos, aunque tenga el ítem', (r) => {
     rol = r;
     render(<PermisosPorCentro />);
-    expect(screen.getByText('Solo un administrador puede configurar los permisos por centro.')).toBeInTheDocument();
+    expect(screen.getByText('Solo un administrador con acceso a Permisos por centro puede configurarlos.')).toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(lecturas).toEqual([]);
   });
 
-  it('un dev sí', () => {
+  it('un Administrador sin el ítem tampoco', () => {
+    permisos = { administracion: ['/administracion/listadoUsuario'] };
+    render(<PermisosPorCentro />);
+    expect(screen.getByText('Solo un administrador con acceso a Permisos por centro puede configurarlos.')).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(lecturas).toEqual([]);
+  });
+
+  it('un dev sí, sin el ítem', () => {
     rol = 'dev';
+    permisos = {};
     render(<PermisosPorCentro />);
     expect(screen.getByRole('button', { name: 'LABORATORIO' })).toBeInTheDocument();
   });

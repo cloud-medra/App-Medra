@@ -76,8 +76,9 @@ describe('alternarAtajo / moverAtajo', () => {
 });
 
 describe('puedeConfigurarAtajos', () => {
-  it('solo admin y dev', () => {
-    expect(puedeConfigurarAtajos({ rol: 'admin' })).toBe(true);
+  it('solo el Desarrollador (activo)', () => {
+    expect(puedeConfigurarAtajos({ rol: 'admin' })).toBe(false);
+    expect(puedeConfigurarAtajos({ rol: 'dev', activo: false })).toBe(false);
     expect(puedeConfigurarAtajos({ rol: 'dev' })).toBe(true);
     expect(puedeConfigurarAtajos({ rol: 'encargado' })).toBe(false);
     expect(puedeConfigurarAtajos(null)).toBe(false);

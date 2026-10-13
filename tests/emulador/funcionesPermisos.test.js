@@ -2,7 +2,8 @@
 // (functions/permisos/servicio.js) contra el emulador de Firestore, con el
 // Admin SDK de functions/: plantilla → usuarios, excepciones, cambio de
 // plantilla, restablecer, usuario sin centro, usuario anterior a las
-// plantillas y protección contra quedarse sin administrador.
+// plantillas, protección contra quedarse sin desarrollador y anti-escalada
+// (un Administrador no se modifica a sí mismo ni a un Desarrollador).
 import process from 'node:process';
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { createRequire } from 'node:module';
@@ -24,7 +25,8 @@ const PLANTILLA_LAB = {
   permisos: { laboratorio: [LAB] },
   permisosGranulares: { [LAB]: { tabla: { visible: true, elements: { btn_editar: true, btn_eliminar: false } } } },
 };
-const YO = { uid: 'yo', nombre: 'Admin' };
+const YO = { uid: 'yo', nombre: 'Admin', rol: 'admin' };
+const DEV = { uid: 'dev1', nombre: 'Dev', rol: 'dev' };
 
 const usuario = async (uid) => (await db.collection('usuarios').doc(uid).get()).data();
 const logs = async (ruta) => (await db.collection(`${ruta}/logs`).get()).docs.map((d) => d.data());
@@ -84,8 +86,9 @@ describe('plantilla por centro de costo', () => {
   });
 
   it('cambiar de centro conserva las excepciones sobre la nueva plantilla; sin centro quedan solo los propios', async () => {
-    await crear('ana');
-    await servicio.guardarPlantillaCentroCosto(db, YO, { centroId: 'lab', rol: 'operador', plantilla: PLANTILLA_LAB });
+    // Encargado: para un Operador el centro es obligatorio (ver más abajo).
+    await crear('ana', { rol: 'encargado' });
+    await servicio.guardarPlantillaCentroCosto(db, YO, { centroId: 'lab', rol: 'encargado', plantilla: PLANTILLA_LAB });
     const propio = { agregados: [claveMenu('maestros', COD), claveVista(COD)], quitados: [] };
     await servicio.guardarPermisosUsuario(db, YO, { uid: 'ana', centroCostoId: 'lab', excepciones: propio });
     expect(Object.keys((await usuario('ana')).permisos).sort()).toEqual(['laboratorio', 'maestros']);
@@ -119,32 +122,86 @@ describe('usuarios anteriores a las plantillas (mi usuario)', () => {
   });
 });
 
-describe('protección contra quedarse sin administrador', () => {
-  it('el último admin no puede quitarse el rol ni inactivarse; con otro admin sí', async () => {
-    await expect(servicio.guardarPermisosUsuario(db, YO, { uid: 'yo', rol: 'operador' })).rejects.toMatchObject({ code: 'failed-precondition' });
-    await expect(servicio.guardarPermisosUsuario(db, YO, { uid: 'yo', datos: { activo: false } })).rejects.toMatchObject({ code: 'failed-precondition' });
-    expect((await usuario('yo')).rol).toBe('admin');
+describe('protección contra quedarse sin desarrollador', () => {
+  beforeEach(() => crear('dev1', { rol: 'dev' }));
 
-    await crear('otro', { rol: 'dev' });
-    await servicio.guardarPermisosUsuario(db, YO, { uid: 'yo', rol: 'encargado' });
-    expect((await usuario('yo')).rol).toBe('encargado');
-    // Ahora "otro" es el último.
-    await expect(servicio.guardarPermisosUsuario(db, YO, { uid: 'otro', datos: { activo: false } })).rejects.toMatchObject({ code: 'failed-precondition' });
+  it('el último desarrollador no puede quitarse el rol ni inactivarse; con otro sí', async () => {
+    await expect(servicio.guardarPermisosUsuario(db, DEV, { uid: 'dev1', rol: 'admin' })).rejects.toMatchObject({ code: 'failed-precondition' });
+    await expect(servicio.guardarPermisosUsuario(db, DEV, { uid: 'dev1', datos: { activo: false } })).rejects.toMatchObject({ code: 'failed-precondition' });
+    expect((await usuario('dev1')).rol).toBe('dev');
+
+    await crear('dev2', { rol: 'dev' });
+    await servicio.guardarPermisosUsuario(db, DEV, { uid: 'dev1', rol: 'encargado' });
+    expect((await usuario('dev1')).rol).toBe('encargado');
+    // Ahora "dev2" es el último (un Administrador no cuenta).
+    await expect(servicio.guardarPermisosUsuario(db, { ...DEV, uid: 'dev2' }, { uid: 'dev2', datos: { activo: false } })).rejects.toMatchObject({ code: 'failed-precondition' });
   });
 
-  it('una plantilla o un centro de costo no pueden quitar la administración (va por el rol)', async () => {
-    await servicio.guardarPlantillaCentroCosto(db, YO, { centroId: 'prev', rol: 'operador', plantilla: { permisos: {}, permisosGranulares: {} } });
-    await servicio.guardarPermisosUsuario(db, YO, { uid: 'yo', centroCostoId: 'prev', excepciones: { agregados: [], quitados: [] } });
+  it('el centro de costo no cambia los permisos de un Administrador (no usa plantilla)', async () => {
+    await servicio.guardarPlantillaCentroCosto(db, DEV, { centroId: 'lab', rol: 'operador', plantilla: PLANTILLA_LAB });
+    const antes = await usuario('yo');
+    await servicio.asignarCentroCostoMasivo(db, DEV, { uids: ['yo'], centroCostoId: 'lab' });
     const yo = await usuario('yo');
-    expect(yo.rol).toBe('admin');
-    expect(yo.activo).not.toBe(false);
-    await expect(servicio.exigirAdministrador(db, 'yo')).resolves.toMatchObject({ uid: 'yo' });
+    expect(yo.centroCostoId).toBe('lab');
+    expect(yo.permisos).toEqual(antes.permisos);
+    expect(yo.permisosGranulares).toEqual(antes.permisosGranulares);
+  });
+});
+
+describe('quién puede usar las funciones (rol + ítem de Administración)', () => {
+  const LISTADO = '/administracion/listadoUsuario';
+  const CENTRO = '/administracion/permisosCentro';
+
+  it('Administrador con el ítem sí; sin el ítem, no; Desarrollador siempre', async () => {
+    await expect(servicio.exigirAdministrador(db, 'yo', [LISTADO])).resolves.toMatchObject({ uid: 'yo', rol: 'admin' });
+    await expect(servicio.exigirAdministrador(db, 'yo', [CENTRO])).rejects.toMatchObject({ code: 'permission-denied' });
+    await crear('dev1', { rol: 'dev' });
+    await expect(servicio.exigirAdministrador(db, 'dev1', [CENTRO])).resolves.toMatchObject({ uid: 'dev1', rol: 'dev' });
   });
 
-  it('solo un admin/dev activo puede usar las funciones', async () => {
+  it('un operador con el ítem, un inactivo o sin sesión, no', async () => {
+    await crear('op', { permisos: { administracion: [LISTADO] } });
+    await crear('inactivo', { rol: 'admin', activo: false, permisos: { administracion: [LISTADO] } });
+    await expect(servicio.exigirAdministrador(db, 'op', [LISTADO])).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(servicio.exigirAdministrador(db, 'inactivo', [LISTADO])).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(servicio.exigirAdministrador(db, undefined, [LISTADO])).rejects.toMatchObject({ code: 'unauthenticated' });
+  });
+});
+
+describe('anti-escalada', () => {
+  beforeEach(async () => {
+    await crear('dev1', { rol: 'dev' });
     await crear('op');
-    await expect(servicio.exigirAdministrador(db, 'op')).rejects.toMatchObject({ code: 'permission-denied' });
-    await expect(servicio.exigirAdministrador(db, undefined)).rejects.toMatchObject({ code: 'unauthenticated' });
+  });
+  const DENEGADO = { code: 'permission-denied' };
+
+  it('un Administrador no cambia su propio rol, estado, centro ni permisos', async () => {
+    await expect(servicio.guardarPermisosUsuario(db, YO, { uid: 'yo', rol: 'operador' })).rejects.toMatchObject(DENEGADO);
+    await expect(servicio.guardarPermisosUsuario(db, YO, { uid: 'yo', datos: { activo: false } })).rejects.toMatchObject(DENEGADO);
+    await expect(servicio.guardarPermisosUsuario(db, YO, { uid: 'yo', centroCostoId: 'lab' })).rejects.toMatchObject(DENEGADO);
+    await expect(servicio.guardarPermisosUsuario(db, YO, { uid: 'yo', excepciones: { agregados: [claveMenu('laboratorio', LAB)], quitados: [] } })).rejects.toMatchObject(DENEGADO);
+    await expect(servicio.asignarCentroCostoMasivo(db, YO, { uids: ['yo'], centroCostoId: 'lab' })).rejects.toMatchObject(DENEGADO);
+    expect((await usuario('yo')).rol).toBe('admin');
+  });
+
+  it('un Administrador no modifica a un Desarrollador ni asigna ese rol', async () => {
+    await expect(servicio.guardarPermisosUsuario(db, YO, { uid: 'dev1', datos: { nombreCompleto: 'Otro' } })).rejects.toMatchObject(DENEGADO);
+    await expect(servicio.guardarPermisosUsuario(db, YO, { uid: 'op', rol: 'dev' })).rejects.toMatchObject(DENEGADO);
+    await expect(servicio.asignarCentroCostoMasivo(db, YO, { uids: ['op', 'dev1'], centroCostoId: 'lab' })).rejects.toMatchObject(DENEGADO);
+    expect((await usuario('op')).rol).toBe('operador');
+    expect((await usuario('dev1')).nombreCompleto).toBe('dev1');
+  });
+
+  it('un Administrador sí edita a un operador (incluido hacerlo Administrador)', async () => {
+    await servicio.guardarPermisosUsuario(db, YO, { uid: 'op', rol: 'admin', datos: { nombreCompleto: 'Op Nuevo' } });
+    expect(await usuario('op')).toMatchObject({ rol: 'admin', nombreCompleto: 'Op Nuevo' });
+  });
+
+  it('el Desarrollador puede todo eso', async () => {
+    await servicio.guardarPermisosUsuario(db, DEV, { uid: 'op', rol: 'dev' });
+    await servicio.guardarPermisosUsuario(db, DEV, { uid: 'yo', rol: 'encargado' });
+    expect((await usuario('op')).rol).toBe('dev');
+    expect((await usuario('yo')).rol).toBe('encargado');
   });
 });
 
@@ -204,7 +261,7 @@ describe('plantillas por centro + rol', () => {
     expect((await usuario('enc')).permisos).toEqual({});
   });
 
-  it('las plantillas son solo para roles sin acceso total', async () => {
+  it('las plantillas son solo para Operador y Encargado (Administrador y Desarrollador no usan)', async () => {
     await expect(servicio.guardarPlantillaCentroCosto(db, YO, { centroId: 'lab', rol: 'admin', plantilla: PLANTILLA_LAB })).rejects.toMatchObject({ code: 'invalid-argument' });
     await expect(servicio.guardarPlantillaCentroCosto(db, YO, { centroId: 'lab', plantilla: PLANTILLA_LAB })).rejects.toMatchObject({ code: 'invalid-argument' });
   });

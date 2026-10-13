@@ -58,7 +58,9 @@ const t = {};
 beforeAll(async () => {
   adminDb = getFirestoreAdmin(adminApp.initializeApp({ projectId: PROYECTO }, 'pruebas-recordatorios'));
   await fetch(`http://${FIRESTORE}/emulator/v1/projects/${PROYECTO}/databases/(default)/documents`, { method: 'DELETE' });
-  s.admin = await sesion('admin', { rol: 'admin', permisos: {} });
+  // Desarrollador: administra sin la vista. El Administrador necesita la pestaña.
+  s.admin = await sesion('admin', { rol: 'dev', permisos: {} });
+  s.adminSinPestana = await sesion('adminsinpestana', { rol: 'admin', permisos: {} });
   s.ana = await sesion('ana', perfil(MIS));
   s.beto = await sesion('beto', perfil(MIS));
   s.sinPestana = await sesion('sinpestana', perfil()); // tiene la vista, pero no "Mis recordatorios"
@@ -144,6 +146,11 @@ describe('administrar tareas', () => {
     await expect(actualizarTarea(s.ana.db, t.ana, tarea('Cambiada', [s.ana.uid]))).rejects.toMatchObject(DENEGADO);
     await expect(cambiarActivaTarea(s.ana.db, t.ana, false)).rejects.toMatchObject(DENEGADO);
     await expect(borrarTarea(s.ana.db, t.ana)).rejects.toMatchObject(DENEGADO);
+  });
+
+  it('un Administrador sin la pestaña tampoco (ya no tiene acceso total)', async () => {
+    await expect(crearTarea(s.adminSinPestana.db, tarea('X', [s.ana.uid]), { desde: '2026-10-12' })).rejects.toMatchObject(DENEGADO);
+    await expect(getDoc(doc(s.adminSinPestana.db, 'recordatorios_tareas', t.ana))).rejects.toMatchObject(DENEGADO);
   });
 
   it('con la pestaña "Administrar tareas" crea, edita, desactiva y borra', async () => {

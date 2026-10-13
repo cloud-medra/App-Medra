@@ -40,12 +40,14 @@ describe('ACCIONES_DENEGADAS_POR_DEFECTO', () => {
     expect(accionDeVista({ tabla_usuarios: { visible: false, elements: { btn_desbloquear: true } } }, LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false);
   });
 
-  it('puedeAccion (Cloud Functions): igual; admin/dev siempre', () => {
+  it('puedeAccion (Cloud Functions): igual (también el Administrador); Desarrollador siempre', () => {
     const operador = (vista) => ({ rol: 'operador', permisos: { administracion: [LISTADO] }, permisosGranulares: { [LISTADO]: vista } });
     expect(puedeAccion(operador({}), 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false);
     expect(puedeAccion(operador({ tabla_usuarios: { visible: true, elements: { btn_desbloquear: true } } }), 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(true);
-    expect(puedeAccion({ rol: 'admin' }, 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(true);
-    expect(puedeAccion({ rol: 'admin', activo: false }, 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false);
+    expect(puedeAccion({ rol: 'admin' }, 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false);
+    expect(puedeAccion({ ...operador({}), rol: 'admin' }, 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false);
+    expect(puedeAccion({ rol: 'dev' }, 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(true);
+    expect(puedeAccion({ rol: 'dev', activo: false }, 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false);
   });
 
   it('plantillas y excepciones (valorDe): sin configurar vale false', () => {

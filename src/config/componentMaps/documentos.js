@@ -49,7 +49,9 @@ export const documentosComponentMaps = {
       },
       tabla_registros: {
         label: 'Sección: Tabla de Registros Importados (documentos_sistema, filtrada por período, paginada de 50 en 50)',
-        elements: {},
+        elements: {
+          btn_eliminar_filas: { label: 'Acción: Seleccionar y eliminar filas (además exige rol Administrador)' },
+        },
       },
     },
   },

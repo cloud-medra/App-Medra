@@ -58,3 +58,7 @@ Object.assign(exports, require("./descripcionesReporte"));
 // usuario con nombre de usuario único (crearUsuario). Ver
 // functions/usuarios/index.js.
 Object.assign(exports, require("./usuarios"));
+
+// Solicitudes de cambio de datos del usuario (Ajustes → Datos) y su
+// aprobación desde Administración → Alertas. Ver functions/solicitudes.
+Object.assign(exports, require("./solicitudes"));

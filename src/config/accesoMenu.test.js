@@ -1,28 +1,46 @@
 import { describe, it, expect } from 'vitest';
-import { subItemsVisibles, puedeAbrirVista, subItemsAsignables, esAdministrador } from './accesoMenu';
+import { subItemsVisibles, puedeAbrirVista, subItemsAsignables, esAdministrador, esDesarrollador } from './accesoMenu';
 import { MODULES } from './modulesConfig.jsx';
 
 const RUTA = '/administracion/permisosCentro';
+const LISTADO = '/administracion/listadoUsuario';
+const ALERTAS = '/administracion/alertas';
 const rutas = (u) => subItemsVisibles(u, 'administracion').map((s) => s.path);
 
-describe('Administración → Permisos por centro: solo admin/dev', () => {
-  it('admin y dev lo ven en el menú aunque no esté en sus permisos', () => {
-    expect(rutas({ rol: 'admin', permisos: {} })).toContain(RUTA);
-    expect(rutas({ rol: 'dev', permisos: { administracion: ['/administracion/listadoUsuario'] } })).toEqual(['/administracion/listadoUsuario', RUTA]);
+describe('Menú: el Administrador ve solo lo asignado; el Desarrollador, todo', () => {
+  it('Administrador sin Administración asignada: solo ve Alertas (automático), no Permisos por centro', () => {
+    expect(rutas({ rol: 'admin', permisos: {} })).toEqual([ALERTAS]);
+    expect(subItemsVisibles({ rol: 'admin', permisos: { laboratorio: ['/laboratorio/ordenLaboratorio'] } }, 'laboratorio').map((s) => s.path))
+      .toEqual(['/laboratorio/ordenLaboratorio']);
   });
 
-  it('encargado y operador no lo ven ni pueden abrirlo, aunque figure en sus permisos', () => {
-    const op = { rol: 'operador', permisos: { administracion: ['/administracion/listadoUsuario', RUTA] } };
-    expect(rutas(op)).toEqual(['/administracion/listadoUsuario']);
-    expect(puedeAbrirVista(op, RUTA)).toBe(false);
-    expect(puedeAbrirVista({ rol: 'encargado', permisos: {} }, RUTA)).toBe(false);
-    expect(puedeAbrirVista({ rol: 'admin' }, RUTA)).toBe(true);
-    expect(puedeAbrirVista(op, '/administracion/listadoUsuario')).toBe(true);
+  it('Permisos por centro se asigna como cualquier ítem', () => {
+    expect(rutas({ rol: 'admin', permisos: { administracion: [RUTA] } })).toEqual([ALERTAS, RUTA]);
+    expect(subItemsAsignables(MODULES.administracion).map((s) => s.path)).toContain(RUTA);
+  });
+
+  it('Desarrollador: todos los ítems, aunque no estén en sus permisos', () => {
+    expect(rutas({ rol: 'dev', permisos: {} })).toEqual(MODULES.administracion.subItems.map((s) => s.path));
+    expect(rutas({ rol: 'dev', permisos: {}, activo: false })).toEqual([]);
+  });
+
+  it('operador y encargado: lo asignado; nunca Alertas, aunque figure en sus permisos', () => {
+    expect(rutas({ rol: 'operador', permisos: { administracion: [LISTADO, RUTA, ALERTAS] } })).toEqual([LISTADO, RUTA]);
+    expect(puedeAbrirVista({ rol: 'operador', permisos: {} }, LISTADO)).toBe(true);
+    expect(puedeAbrirVista({ rol: 'encargado', permisos: {} }, ALERTAS)).toBe(false);
+    expect(puedeAbrirVista({ rol: 'admin', permisos: {} }, ALERTAS)).toBe(true);
+  });
+
+  it('Alertas no se asigna desde el editor de permisos', () => {
+    expect(subItemsAsignables(MODULES.administracion).map((s) => s.path)).not.toContain(ALERTAS);
+  });
+
+  it('roles', () => {
+    expect(esAdministrador({ rol: 'admin' })).toBe(true);
+    expect(esAdministrador({ rol: 'dev' })).toBe(true);
+    expect(esAdministrador({ rol: 'admin', activo: false })).toBe(false);
     expect(esAdministrador(undefined)).toBe(false);
-  });
-
-  it('no se puede asignar desde el editor de permisos (usuarios ni centros)', () => {
-    expect(subItemsAsignables(MODULES.administracion).map((s) => s.path)).not.toContain(RUTA);
-    expect(subItemsAsignables(MODULES.administracion).map((s) => s.path)).toContain('/administracion/listadoUsuario');
+    expect(esDesarrollador({ rol: 'admin' })).toBe(false);
+    expect(esDesarrollador({ rol: 'dev' })).toBe(true);
   });
 });

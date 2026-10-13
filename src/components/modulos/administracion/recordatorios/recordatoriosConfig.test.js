@@ -137,18 +137,21 @@ describe('permisos', () => {
     permisosGranulares: Object.fromEntries([RUTA_RECORDATORIOS, ...pestanas].map((r) => [r, {}])),
   });
 
-  it('recibe solo con la pestaña "Mis recordatorios" (admin y dev siempre)', () => {
+  it('recibe solo con la pestaña "Mis recordatorios" (Desarrollador siempre; Administrador, con la pestaña)', () => {
     expect(puedeRecibirRecordatorios(conPestanas(RUTA_MIS_RECORDATORIOS))).toBe(true);
     expect(puedeRecibirRecordatorios(conPestanas())).toBe(false);
     expect(puedeRecibirRecordatorios({ uid: UID, rol: 'operador', permisos: {}, permisosGranulares: { [RUTA_MIS_RECORDATORIOS]: {} } })).toBe(false);
     expect(puedeRecibirRecordatorios({ uid: UID, rol: 'operador' })).toBe(false);
-    expect(puedeRecibirRecordatorios({ uid: UID, rol: 'admin' })).toBe(true);
+    expect(puedeRecibirRecordatorios({ uid: UID, rol: 'admin' })).toBe(false);
+    expect(puedeRecibirRecordatorios({ ...conPestanas(RUTA_MIS_RECORDATORIOS), rol: 'admin' })).toBe(true);
+    expect(puedeRecibirRecordatorios({ uid: UID, rol: 'dev' })).toBe(true);
   });
 
-  it('administra solo con la pestaña "Administrar tareas" (admin y dev siempre)', () => {
+  it('administra solo con la pestaña "Administrar tareas" (Desarrollador siempre)', () => {
     expect(puedeAdministrarRecordatorios(conPestanas(RUTA_MIS_RECORDATORIOS))).toBe(false);
     expect(puedeAdministrarRecordatorios(conPestanas(RUTA_ADMINISTRAR_RECORDATORIOS))).toBe(true);
     expect(puedeAdministrarRecordatorios({ rol: 'dev' })).toBe(true);
+    expect(puedeAdministrarRecordatorios({ rol: 'admin' })).toBe(false);
   });
 });
 

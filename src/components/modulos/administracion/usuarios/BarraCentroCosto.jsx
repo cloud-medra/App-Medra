@@ -4,13 +4,14 @@ import MarcaOrigen from './MarcaOrigen';
 // Encima del editor de permisos de un usuario: su centro de costo, cuántos
 // permisos tiene personalizados (excepciones) y "Restablecer a la plantilla".
 // `centro`: "Centro – Rol" (la plantilla es por combinación).
-const BarraCentroCosto = ({ centro, conPlantilla, excepciones, onRestablecer, onConfigurarCentro, accesoTotal = false }) => {
+// `sinPlantilla`: rol Administrador/Desarrollador (solo permisos propios).
+const BarraCentroCosto = ({ centro, conPlantilla, excepciones, onRestablecer, onConfigurarCentro, sinPlantilla = false, rol = '' }) => {
   const total = excepciones.agregados + excepciones.quitados;
-  if (centro && accesoTotal) {
+  if (sinPlantilla) {
     return (
       <div className="shrink-0 flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-[11.5px] text-gray-600 dark:text-gray-300">
         <Building2 size={14} className="text-gray-400 shrink-0" />
-        {centro}: su rol tiene acceso total, no usa la plantilla del centro.
+        {rol ? `Rol ${rol}` : 'Su rol'}: no usa plantillas de centro; ve y usa solo lo que se marque aquí.
       </div>
     );
   }

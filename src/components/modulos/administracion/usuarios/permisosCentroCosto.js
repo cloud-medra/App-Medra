@@ -78,13 +78,14 @@ export const usePlantillasPermisos = () => {
 const llamar = (nombre) => async (datos) => (await httpsCallable(functions, nombre)(datos)).data;
 export const guardarPermisosUsuario = llamar('guardarPermisosUsuario');
 export const asignarCentroCostoMasivo = llamar('asignarCentroCostoMasivo');
+export const asignarAdministradoresMasivo = llamar('asignarAdministradoresMasivo');
 export const guardarPlantillaCentroCosto = llamar('guardarPlantillaCentroCosto');
 export const crearUsuario = llamar('crearUsuario');
 export const desbloquearUsuario = llamar('desbloquearUsuario');
 
 // Mensaje legible de un error de las funciones.
 export const mensajeError = (error, porDefecto) => {
-  if (['functions/failed-precondition', 'functions/invalid-argument', 'functions/permission-denied', 'functions/already-exists'].includes(error?.code)) {
+  if (['functions/failed-precondition', 'functions/invalid-argument', 'functions/permission-denied', 'functions/already-exists', 'functions/not-found'].includes(error?.code)) {
     return error.message;
   }
   return porDefecto;

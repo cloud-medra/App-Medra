@@ -7,7 +7,7 @@ import process from 'node:process';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 const PROYECTO = 'demo-workcraft';
 const FIRESTORE = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080';
@@ -48,10 +48,15 @@ const sesion = async (nombre, perfil) => {
 
 const PERMISOS = { laboratorio: ['/laboratorio/codigoLaboratorio'] };
 let admin;
+let adminSinItem;
+let dev;
 let operador;
 
 beforeAll(async () => {
-  admin = await sesion('admin', { rol: 'admin', nombreCompleto: 'Admin', permisos: {}, permisosGranulares: {} });
+  // Administrador con Lista de usuarios; otro sin ningún ítem de Administración.
+  admin = await sesion('admin', { rol: 'admin', nombreCompleto: 'Admin', permisos: { administracion: ['/administracion/listadoUsuario'] }, permisosGranulares: {} });
+  adminSinItem = await sesion('adminsinitem', { rol: 'admin', nombreCompleto: 'Admin Sin Item', permisos: PERMISOS, permisosGranulares: {} });
+  dev = await sesion('dev', { rol: 'dev', nombreCompleto: 'Dev', permisos: {}, permisosGranulares: {} });
   operador = await sesion('operador', { rol: 'operador', nombreCompleto: 'Operador', permisos: PERMISOS, permisosGranulares: {} });
   await sembrar('plantillas_permisos/lab', { permisos: PERMISOS, permisosGranulares: {} });
 });
@@ -62,7 +67,7 @@ const usuario = (s, uid = s.uid) => doc(s.db, 'usuarios', uid);
 describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
   it('tema, cambio de contraseña, datos de perfil, privacidad y orden del menú siguen funcionando', async () => {
     await expect(updateDoc(usuario(operador), { modoPantalla: 'oscuro' })).resolves.toBeUndefined();
-    await expect(updateDoc(usuario(operador), { nombreCompleto: 'Operador Uno', passwordChanged: true })).resolves.toBeUndefined();
+    await expect(updateDoc(usuario(operador), { passwordChanged: true })).resolves.toBeUndefined();
     await expect(updateDoc(usuario(operador), { nombreMostrar: 'nombre', ordenModulos: ['laboratorio'] })).resolves.toBeUndefined();
     await expect(updateDoc(usuario(admin), { modoPantalla: 'oscuro', passwordChanged: true })).resolves.toBeUndefined();
   });
@@ -78,6 +83,13 @@ describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
       { bloqueoLoginHasta: null },
       // El correo lo copia iniciarSesion desde Auth tras confirmar el cambio.
       { email: 'otro@prueba.cl' },
+      // Activo/inactivo va por guardarPermisosUsuario (sincroniza Auth).
+      { activo: false },
+      // Nombre completo y lo de administradores: por solicitud o Editar usuario.
+      { nombreCompleto: 'Otro Nombre' },
+      { centrosAdministrados: ['lab'] },
+      { administradoresAsignados: ['x'] },
+      { todosLosAdministradoresDelCentro: true },
     ];
     for (const cambio of intentos) {
       await expect(updateDoc(usuario(operador), cambio), JSON.stringify(cambio)).rejects.toMatchObject({ code: 'permission-denied' });
@@ -89,9 +101,16 @@ describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
     await expect(updateDoc(usuario(admin, operador.uid), { nombreUsuario: 'otro' })).rejects.toMatchObject({ code: 'permission-denied' });
   });
 
-  it('un admin edita los datos de otro; un operador no', async () => {
-    await expect(updateDoc(usuario(admin, operador.uid), { nombreCompleto: 'Renombrado' })).resolves.toBeUndefined();
-    await expect(updateDoc(usuario(operador, admin.uid), { nombreCompleto: 'X' })).rejects.toMatchObject({ code: 'permission-denied' });
+  it('un Administrador con Lista/Crear usuario edita los datos no protegidos de otro; sin el ítem o un operador, no', async () => {
+    await expect(updateDoc(usuario(admin, operador.uid), { estadoCreacion: { paso1: true } })).resolves.toBeUndefined();
+    await expect(updateDoc(usuario(adminSinItem, operador.uid), { estadoCreacion: { paso1: true } })).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(updateDoc(usuario(operador, admin.uid), { estadoCreacion: { paso1: true } })).rejects.toMatchObject({ code: 'permission-denied' });
+  });
+
+  it('un Administrador no toca el perfil de un Desarrollador; el Desarrollador, el de cualquiera', async () => {
+    await expect(updateDoc(usuario(admin, dev.uid), { estadoCreacion: { paso1: true } })).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(deleteDoc(usuario(admin, dev.uid))).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(updateDoc(usuario(dev, admin.uid), { estadoCreacion: { paso1: true } })).resolves.toBeUndefined();
   });
 });
 
@@ -129,8 +148,10 @@ describe('nombres_usuario e intentos_login: solo las funciones', () => {
 });
 
 describe('plantillas y auditoría', () => {
-  it('las plantillas las lee solo un admin y nadie las escribe desde el navegador', async () => {
+  it('las plantillas las lee un Administrador con el ítem (o un Desarrollador) y nadie las escribe desde el navegador', async () => {
     expect((await getDoc(doc(admin.db, 'plantillas_permisos', 'lab'))).exists()).toBe(true);
+    expect((await getDoc(doc(dev.db, 'plantillas_permisos', 'lab'))).exists()).toBe(true);
+    await expect(getDoc(doc(adminSinItem.db, 'plantillas_permisos', 'lab'))).rejects.toMatchObject({ code: 'permission-denied' });
     await expect(getDoc(doc(operador.db, 'plantillas_permisos', 'lab'))).rejects.toMatchObject({ code: 'permission-denied' });
     await expect(setDoc(doc(admin.db, 'plantillas_permisos', 'lab'), { permisos: {} })).rejects.toMatchObject({ code: 'permission-denied' });
   });

@@ -100,6 +100,7 @@ export const implantesComponentMaps = {
           btn_descargar_plantilla: { label: 'Acción: Descargar Plantilla CSV' },
           input_archivo: { label: 'Campo: Selector de Archivo a Importar' },
           btn_importar: { label: 'Acción: Botón Cargar Registro (ejecutar importación)' },
+          btn_marcar_oc_pendiente: { label: 'Acción: Marcar OC pendiente en un rango (además exige rol Administrador)' },
         },
       },
       detalle_header: {

@@ -17,6 +17,7 @@ import { SincronizarOCResumenModal } from '../../shared/ocIndex/SincronizarOCRes
 import { useSincronizarOC } from '../../shared/ocIndex/useSincronizarOC';
 import { useMarcarOcPendiente } from './hooks/useMarcarOcPendiente';
 import { useUser } from '../../../../../context/UserContext';
+import { esRolAdministrador } from '../../../../../../functions/permisos/nucleo.mjs';
 import DetalleGestionConHeader from '../../shared/DetalleGestionConHeader';
 
 const PATH_VISTA = "/implantes/gestionImplantes";
@@ -100,7 +101,8 @@ const GestionesImplantes = ({ onAbrirZonasDiagnostico, apertura } = {}) => {
   } = useGestionesImplantes(admisionFiltrada ? { admision: admisionFiltrada } : undefined);
   const { sincronizandoOC, handleSincronizarOC, resumenOC, cerrarResumenOC } = useSincronizarOC();
   const { userData } = useUser();
-  const esAdminODev = userData?.rol === 'admin' || userData?.rol === 'dev';
+  // Rol Administrador/Desarrollador y la acción (denegada por defecto).
+  const esAdminODev = esRolAdministrador(userData?.rol) && hasPermission(PATH_VISTA, 'drawer_configuracion', 'btn_marcar_oc_pendiente');
   const marcarOcPendiente = useMarcarOcPendiente({ habilitado: esAdminODev && showConfigDrawer });
 
   const [registroSeleccionado, setRegistroSeleccionado] = useState(null);

@@ -17,13 +17,12 @@ service firebase.storage {
         && (!firestore.exists(/databases/(default)/documents/usuarios/$(request.auth.uid))
           || getUsuario().get('activo', true) != false);
     }
-    function esAdminODev() {
-      let u = getUsuario();
-      return u.rol == 'admin' || u.rol == 'dev';
+    // Desarrollador: único rol con acceso total (igual que firestore.rules).
+    function esDev() {
+      return getUsuario().get('rol', '') == 'dev';
     }
     function tienePermiso(modulo) {
-      let u = getUsuario();
-      return u.permisos[modulo] != null;
+      return getUsuario().get('permisos', {}).get(modulo, null) != null;
     }
     // Mismo criterio que firestore.rules (tieneItem / accionPermitida /
     // accionEnVista): ítem de menú + acción granular de la vista. Las
@@ -32,14 +31,17 @@ service firebase.storage {
       return ruta in getUsuario().permisos.get(modulo, []);
     }
     function accionPermitida(ruta, seccion, accion) {
+      // Sección sin configurar = {} (permitida). Sin `null` en el ternario: el
+      // verificador de tipos del deploy no puede asegurar que sea un map
+      // (aviso "Invalid type. Received one of [null]. Expected one of [map]").
       let vista = getUsuario().get('permisosGranulares', {}).get(ruta, null);
-      let sec = vista == null ? null : vista.get(seccion, null);
+      let sec = vista == null ? {} : vista.get(seccion, {});
       return vista != null
-        && (sec == null || (sec.get('visible', true) != false
-          && sec.get('elements', {}).get(accion, true) != false));
+        && sec.get('visible', true) != false
+        && sec.get('elements', {}).get(accion, true) != false;
     }
     function accionEnVista(modulo, ruta, seccion, accion) {
-      return esAdminODev()
+      return esDev()
         || (tienePermiso(modulo) && tieneItem(modulo, ruta) && accionPermitida(ruta, seccion, accion));
     }
 
@@ -49,7 +51,7 @@ service firebase.storage {
     // así que a diferencia del patrón de lectura abierta de firestore.rules
     // se restringe también la lectura al mismo permiso que la escritura.
     match /snapshots/documentos_sistema/{archivo} {
-      allow read, write: if estaActivo() && (esAdminODev() || tienePermiso('documentos'));
+      allow read, write: if estaActivo() && (esDev() || tienePermiso('documentos'));
     }
 
     // Índice de OC (Importar Detalles OC -> "Sincronizar OC" de Gestión de
@@ -60,8 +62,8 @@ service firebase.storage {
     // Consignación también lo lee (su "Sincronizar OC" llena el N° de orden de
     // consignacion_registros), pero no lo escribe.
     match /snapshots/indiceOC/{archivo} {
-      allow read: if estaActivo() && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
-      allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow read: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
+      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes'));
     }
 
     // PDFs de cada admisión de Implantes (pestaña Documentos de Gestión
@@ -71,12 +73,12 @@ service firebase.storage {
     // operación (listar, subir cada PDF, abrir uno). Se mantiene a propósito
     // también en "create": son documentos con datos de pacientes.
     match /implantes/{admision}/documentos/{archivo} {
-      allow read: if estaActivo() && (esAdminODev() || tienePermiso('implantes'));
+      allow read: if estaActivo() && (esDev() || tienePermiso('implantes'));
       allow create: if estaActivo()
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('.*\\.pdf$')
         && request.resource.size < 20 * 1024 * 1024
-        && (esAdminODev() || tienePermiso('implantes'));
+        && (esDev() || tienePermiso('implantes'));
     }
 
     // PDF de órdenes de compra: UNO por OC (ordenes_oc/OC_{oc}.pdf),
@@ -86,12 +88,12 @@ service firebase.storage {
     // getBlob (sin URLs públicas). Tope: 15 MB.
     // Consignación solo puede verlos/descargarlos (pestaña Orden de Cargas).
     match /ordenes_oc/{archivo} {
-      allow read: if estaActivo() && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
+      allow read: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
       allow create, update: if estaActivo()
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('OC_[^/]+\\.pdf')
         && request.resource.size < 15 * 1024 * 1024
-        && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
+        && (esDev() || tienePermiso('documentos') || tienePermiso('implantes'));
     }
 
     // Implantes → Respaldo de documentos (PDF hasta 20 MB). Leer exige ver o

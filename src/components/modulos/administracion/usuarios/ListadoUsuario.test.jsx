@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 // Listado Usuario con centro de costo: columna, filtro, indicador de permisos
 // personalizados, asignación masiva y activar/inactivar por la Cloud
-// Function (que protege al último administrador).
+// Function (que protege al último desarrollador). Anti-escalada: un
+// Administrador no modifica a un Desarrollador ni a sí mismo.
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
@@ -11,6 +12,7 @@ let respuesta = async () => ({ data: { actualizados: 2, ok: true } });
 vi.mock('firebase/functions', () => ({ httpsCallable: (_f, nombre) => async (datos) => { llamadas.push({ nombre, datos }); return respuesta(nombre, datos); } }));
 const USUARIOS = [
   { id: 'yo', nombreCompleto: 'Admin', nombreUsuario: 'admin', email: 'a@x.cl', rol: 'admin' },
+  { id: 'dev1', nombreCompleto: 'Dora Dev', nombreUsuario: 'dora', email: 'dora@x.cl', rol: 'dev' },
   { id: 'ana', nombreCompleto: 'Ana Lab', nombreUsuario: 'ana', email: 'ana@x.cl', rol: 'operador', centroCostoId: 'lab', excepciones: { agregados: ['v|/x'], quitados: [] } },
   { id: 'luis', nombreCompleto: 'Luis Lab', nombreUsuario: 'luis', email: 'luis@x.cl', rol: 'operador', centroCostoId: 'lab', excepciones: { agregados: [], quitados: [] } },
   // Bloqueado por intentos fallidos (vigente) y uno con el bloqueo ya vencido.
@@ -30,7 +32,8 @@ vi.mock('../../../../hooks/useCatalogo', () => ({
   useCatalogo: () => ({ datos: [{ id: 'lab', nombre: 'UNIDAD DE LABORATORIO', estado: 'ACTIVO' }, { id: 'prev', nombre: 'UNIDAD DE PREVENCIÓN', estado: 'ACTIVO', usarEnGestiones: false }] }),
 }));
 
-let usuarioSesion = { rol: 'admin' };
+const SESION_DEV = { uid: 'dev1', rol: 'dev' };
+let usuarioSesion = SESION_DEV;
 vi.mock('../../../../context/UserContext', () => ({ useUser: () => ({ userData: usuarioSesion }) }));
 
 const { default: ListadoUsuario } = await import('./ListadoUsuario');
@@ -71,12 +74,33 @@ describe('Listado Usuario: centro de costo', () => {
     expect(screen.queryByRole('region', { name: 'Asignación masiva' })).not.toBeInTheDocument();
   });
 
-  it('activar/inactivar pasa por la función y muestra su error (último administrador)', async () => {
-    respuesta = async () => { const e = new Error('No se puede: es el último administrador activo del sistema.'); e.code = 'functions/failed-precondition'; throw e; };
+  it('activar/inactivar pasa por la función y muestra su error (último desarrollador)', async () => {
+    respuesta = async () => { const e = new Error('No se puede: es el último desarrollador activo del sistema.'); e.code = 'functions/failed-precondition'; throw e; };
     render(<ListadoUsuario />);
-    await act(async () => { fireEvent.click(within(fila('Admin')).getByTitle('Inactivar usuario')); });
-    expect(llamadas[0]).toEqual({ nombre: 'guardarPermisosUsuario', datos: { uid: 'yo', datos: { activo: false } } });
-    expect(showToast).toHaveBeenCalledWith('No se puede: es el último administrador activo del sistema.', 'error');
+    await act(async () => { fireEvent.click(within(fila('Dora Dev')).getByTitle('Inactivar usuario')); });
+    expect(llamadas[0]).toEqual({ nombre: 'guardarPermisosUsuario', datos: { uid: 'dev1', datos: { activo: false } } });
+    expect(showToast).toHaveBeenCalledWith('No se puede: es el último desarrollador activo del sistema.', 'error');
+  });
+});
+
+describe('Listado Usuario: anti-escalada', () => {
+  afterEach(() => { usuarioSesion = SESION_DEV; });
+
+  it('un Administrador no edita ni inactiva a un Desarrollador ni a sí mismo', () => {
+    usuarioSesion = { uid: 'yo', rol: 'admin', permisos: { administracion: ['/administracion/listadoUsuario'] } };
+    render(<ListadoUsuario />);
+    ['Dora Dev', 'Admin'].forEach((nombre) => {
+      expect(within(fila(nombre)).queryByTitle('Inactivar usuario')).not.toBeInTheDocument();
+      expect(within(fila(nombre)).queryByTitle('Editar acceso')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(`Seleccionar ${nombre}`)).not.toBeInTheDocument();
+    });
+    expect(within(fila('Ana Lab')).getByTitle('Editar acceso')).toBeInTheDocument();
+  });
+
+  it('un Desarrollador sí', () => {
+    render(<ListadoUsuario />);
+    expect(within(fila('Admin')).getByTitle('Editar acceso')).toBeInTheDocument();
+    expect(within(fila('Dora Dev')).getByTitle('Inactivar usuario')).toBeInTheDocument();
   });
 });
 
@@ -88,7 +112,7 @@ describe('Listado Usuario: bloqueo por intentos fallidos', () => {
     permisosGranulares: { [LISTADO]: { tabla_usuarios: { visible: true, elements } } },
   });
   beforeEach(() => { respuesta = async () => ({ data: { ok: true } }); });
-  afterEach(() => { usuarioSesion = { rol: 'admin' }; });
+  afterEach(() => { usuarioSesion = SESION_DEV; });
 
   it('muestra quién está bloqueado y hasta cuándo; un bloqueo vencido no se muestra', () => {
     render(<ListadoUsuario />);
@@ -117,5 +141,29 @@ describe('Listado Usuario: bloqueo por intentos fallidos', () => {
     usuarioSesion = operadorCon({ btn_desbloquear: true });
     render(<ListadoUsuario />);
     expect(within(fila('Eva Bloq')).getByTitle('Desbloquear usuario')).toBeInTheDocument();
+  });
+});
+
+describe('Listado Usuario: administradores asignados', () => {
+  it('marca "Por reasignar" al operador sin centro o con un administrador que ya no es de su centro', () => {
+    render(<ListadoUsuario />);
+    // eva y max: operadores sin centro de costo.
+    expect(within(fila('Eva Bloq')).getByText('Por reasignar')).toHaveAttribute('title', expect.stringMatching(/Sin centro de costo/));
+    // ana y luis (centro lab, sin administradores activos del centro).
+    expect(within(fila('Ana Lab')).getByText('Por reasignar')).toHaveAttribute('title', expect.stringMatching(/no tiene administradores activos/));
+    expect(within(fila('Admin')).queryByText('Por reasignar')).not.toBeInTheDocument();
+  });
+
+  it('asigna administradores solo a usuarios de un mismo centro', async () => {
+    render(<ListadoUsuario />);
+    fireEvent.click(screen.getByLabelText('Seleccionar Ana Lab'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Eva Bloq'));
+    expect(screen.getByRole('button', { name: 'Asignar administradores…' })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('Seleccionar Eva Bloq'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Luis Lab'));
+    fireEvent.click(screen.getByRole('button', { name: 'Asignar administradores…' }));
+    const panel = screen.getByRole('region', { name: 'Asignar administradores' });
+    await act(async () => { fireEvent.click(within(panel).getByRole('button', { name: 'Guardar' })); });
+    expect(llamadas.at(-1)).toEqual({ nombre: 'asignarAdministradoresMasivo', datos: { uids: ['ana', 'luis'], administradoresAsignados: [], todosLosAdministradoresDelCentro: true } });
   });
 });

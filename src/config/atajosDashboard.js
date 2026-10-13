@@ -35,9 +35,9 @@ export const resolverAtajos = (atajos, modulos, permisos) =>
     }];
   });
 
-// Quién puede editar la configuración global (Ajustes → Atajos). Mismo
-// criterio que esAdminODev() de firestore.rules.
-export const puedeConfigurarAtajos = (userData) => userData?.rol === 'admin' || userData?.rol === 'dev';
+// Quién puede editar la configuración global (Ajustes → Atajos): solo el
+// Desarrollador. Mismo criterio que esDev() de firestore.rules.
+export const puedeConfigurarAtajos = (userData) => userData?.rol === 'dev' && userData?.activo !== false;
 
 const mismoAtajo = (a, b) => a.modulo === b.modulo && a.path === b.path;
 

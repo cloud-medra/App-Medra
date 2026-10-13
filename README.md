@@ -35,11 +35,28 @@ gcloud storage buckets describe gs://workcraft-491b7.firebasestorage.app --forma
 
 Requiere `gcloud` autenticado con una cuenta con permisos sobre el bucket (por ejemplo, desde Cloud Shell). No se aplica con `firebase deploy`.
 
+## Permisos: roles
+
+- **Desarrollador** (`dev`): el único rol con acceso total (ve todos los módulos e ítems y puede todas las acciones). Así siempre hay alguien con acceso a Administración; las funciones no permiten inactivar ni quitarle el rol al último desarrollador activo.
+- **Administrador del sistema** (`admin`): ve y hace **solo lo que se le asigna** (módulos, ítems y permisos granulares), igual que cualquier usuario; no usa plantillas de centro. Además puede administrar usuarios (Crear usuario, Lista de usuarios, Permisos por centro) si tiene ese ítem. No puede cambiarse a sí mismo rol, estado, centro ni permisos, ni modificar a un Desarrollador ni asignar ese rol. Ajustes → Atajos es solo para Desarrollador.
+- **Operador** y **Encargado de centro**: plantilla de su centro + rol, más sus excepciones.
+
+Esto se aplica en el menú (`src/config/accesoMenu.js`), en `useGranularPermission`, en las reglas de Firestore/Storage (`esDev()`, `administraUsuarios()`) y en las Cloud Functions (`exigirAdministrador`, `puedeAccion`). Antes de publicar un cambio de roles, revisar con `functions/scripts/revisarAccesoAdministradores.js` (solo lectura) que exista al menos un Desarrollador activo.
+
 ## Permisos: acciones sensibles
 
 Los permisos granulares (`permisosGranulares`, ver `src/config/componentMaps/`) siguen la regla "sección o acción sin configurar = permitida": así una vista que suma un botón nuevo no se lo quita a quien ya la tenía.
 
-Las **acciones sensibles** (desbloquear, aprobar, rechazar…) son la excepción: **toda acción sensible nueva debe agregarse a `ACCIONES_DENEGADAS_POR_DEFECTO` en [`functions/permisos/nucleo.mjs`](functions/permisos/nucleo.mjs)**. Para no-admin, sin configurar quedan denegadas en `useGranularPermission`, en las Cloud Functions (`puedeAccion`), en plantillas y excepciones (`valorDe`) y en el editor de permisos (las completa desmarcadas; habilitar la vista o "marcar toda la vista" sí las marcan). Admin/dev las tienen siempre. Se validan en Cloud Functions, no en las reglas de Firestore/Storage (lo verifica `src/config/componentMaps/accionesDenegadas.test.js`).
+Las **acciones sensibles** (desbloquear, aprobar, rechazar…) son la excepción: **toda acción sensible nueva debe agregarse a `ACCIONES_DENEGADAS_POR_DEFECTO` en [`functions/permisos/nucleo.mjs`](functions/permisos/nucleo.mjs)**. Para todos salvo el Desarrollador (también el Administrador), sin configurar quedan denegadas en `useGranularPermission`, en las Cloud Functions (`puedeAccion`), en plantillas y excepciones (`valorDe`) y en el editor de permisos (las completa desmarcadas; habilitar la vista o "marcar toda la vista" sí las marcan). El Desarrollador las tiene siempre. Se validan en Cloud Functions, no en las reglas de Firestore/Storage (lo verifica `src/config/componentMaps/accionesDenegadas.test.js`).
+
+## Solicitudes de cambio de datos y Alertas
+
+- **Ajustes → Datos personales**: el usuario no edita su nombre completo, nombre de usuario ni correo; envía una **solicitud** (valor nuevo + motivo) y ve su estado en "Mis solicitudes". Las solicitudes son genéricas (`tipo`, `valorActual`, `valorSolicitado`, `motivo`): para sumar un tipo (por ejemplo, teléfono) se agrega a `TIPOS_SOLICITUD` en [`functions/solicitudes/tipos.mjs`](functions/solicitudes/tipos.mjs) y a `APLICAR` en `functions/solicitudes/servicio.js`.
+- **Quién la recibe y aprueba** ([`destinatarios.mjs`](functions/solicitudes/destinatarios.mjs)): los administradores asignados al usuario (Editar usuario → *Administradores asignados*) o, si no tiene o marcó "Todos", todos los administradores activos de su centro (*Centros que administra* de cada Administrador); siempre, además, los Desarrolladores. Un operador sin centro (anterior) llega a todos los administradores y aparece "Por reasignar" en Lista de usuarios. Las solicitudes de un Administrador van a los Desarrolladores. Un administrador que no es destinatario no puede aprobarla.
+- **Administración → Alertas**: buzón genérico (`alertas/{id}`), automático para Administrador y Desarrollador, con contador de no leídas en el menú; desde ahí se aprueba o se rechaza (con motivo). Cada paso queda en `solicitudes/{id}/historial` y, al aplicarse, en `usuarios/{uid}/logs`.
+- **Correo**: aprobado no cambia de inmediato; el usuario pulsa "Enviar correo de confirmación" (solo a la dirección aprobada) y abre el enlace. Se aplica al entrar o al volver a Ajustes → Datos. Un cambio de correo en Auth sin solicitud aprobada se revierte al entrar y queda en la auditoría.
+- **Editar usuario**: el administrador puede cambiar estos datos directamente (queda en la auditoría y cancela la solicitud abierta de ese dato).
+- **Aviso por correo de las alertas** (preparado, desactivado): [`functions/alertas/correo.js`](functions/alertas/correo.js) escribe en la colección `mail` de la extensión *Trigger Email from Firestore*. Para activarlo, cuando exista la cuenta remitente: instalar y configurar la extensión (remitente = *Default FROM*), poner `ALERTAS_CORREO_HABILITADO=true` en `functions/.env.workcraft-491b7` y desplegar las funciones.
 
 ## Probar a mano con emuladores
 
@@ -62,4 +79,4 @@ npm run dev:emuladores        # terminal 3: la app contra los emuladores
 
 ## Mejoras futuras
 
-- **Administración de usuarios por centro** (pendiente, no implementado). Hoy un "Administrador del sistema" puede crear y editar a cualquier usuario, incluido su nombre de usuario, sin importar el centro; cada cambio queda en la auditoría del usuario (`usuarios/{uid}/logs`). Las solicitudes de cambio de nombre y las alertas sí se restringen por centro (solo los administradores asignados al operador, o los de su centro, más los desarrolladores). Posible mejora: restringir también Crear/Editar usuario para que un administrador solo gestione usuarios de los centros que administra (`centrosAdministrados`). Implica cambiar el modelo actual de "administrador = acceso total" en las reglas de Firestore y en las Cloud Functions de `functions/permisos`.
+- **Administración de usuarios por centro** (pendiente, no implementado). Hoy un "Administrador del sistema" con Lista de usuarios puede editar a cualquier usuario (salvo a un Desarrollador y a sí mismo), incluido su nombre de usuario, sin importar el centro; cada cambio queda en la auditoría del usuario (`usuarios/{uid}/logs`). Las solicitudes de cambio de datos y las alertas sí se restringen por centro (solo los administradores asignados al operador, o los de su centro, más los desarrolladores). Posible mejora: restringir también Crear/Editar usuario para que un administrador solo gestione usuarios de los centros que administra (`centrosAdministrados`). Implica sumar el centro a `exigirAdministrador` (Cloud Functions de `functions/permisos`) y a `administraUsuarios()` de las reglas de Firestore.

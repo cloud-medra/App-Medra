@@ -40,13 +40,14 @@ const PESTANAS = ['documentosRecibidos', 'iniciarProcesos', 'vinculacionCodigos'
 
 // Usuario guardado con la estructura ANTERIOR: pestañas sin secciones,
 // Con Código sin acciones/columnas, y Laboratorio Códigos en el menú sin
-// entrada granular (estaba fuera del mapa).
+// entrada granular (estaba fuera del mapa). Encargado sin centro de costo
+// (para un Operador el centro es obligatorio).
 const usuarioExistente = () => ({
   id: 'u1',
   nombreCompleto: 'Usuario Prueba',
   nombreUsuario: 'uprueba',
   email: 'u@prueba.cl',
-  rol: 'operador',
+  rol: 'encargado',
   permisos: {
     laboratorio: [CP, '/laboratorio/codigoLaboratorio'],
     maestros: ['/maestros/codigosMaestros'],
@@ -128,7 +129,8 @@ describe('Listado Usuario → Editar usuario (pantalla completa)', () => {
     // 3) Datos generales: cambiar el nombre.
     fireEvent.click(screen.getByRole('tab', { name: /Datos generales/ }));
     fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Usuario Editado' } });
-    expect(screen.getByLabelText('Correo')).toBeDisabled();
+    // El administrador puede cambiar el correo directamente (queda en la auditoría).
+    expect(screen.getByLabelText('Correo')).not.toBeDisabled();
 
     // Salir con cambios pide confirmación.
     fireEvent.click(screen.getByRole('button', { name: 'Volver' }));
@@ -144,7 +146,8 @@ describe('Listado Usuario → Editar usuario (pantalla completa)', () => {
     const g = guardado.permisosGranulares;
 
     expect(guardado.nombreCompleto).toBe('Usuario Editado');
-    expect(guardado.rol).toBe('operador');
+    expect(guardado.rol).toBe('encargado');
+    expect(llamadas[0].datos.datos.email).toBeUndefined(); // sin cambio de correo
     // Lo desmarcado queda guardado como quitado.
     expect(g[`${CP}/vinculacionOrdenes`]).toBeUndefined();
     expect(g['/maestros/codigosMaestros/conCodigo'].tabla_datos.elements.action_eliminar).toBe(false);
@@ -332,7 +335,7 @@ describe('Editar usuario: centro + rol', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('LABORATORIO – Encargado de centro aún no tiene permisos configurados');
     fireEvent.change(screen.getByLabelText('Rol'), { target: { value: 'admin' } });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(screen.getByText('Su rol tiene acceso total: no usa la plantilla del centro.')).toBeInTheDocument();
+    expect(screen.getByText('Su rol (Administrador del sistema) no usa la plantilla del centro: solo sus permisos propios.')).toBeInTheDocument();
   });
 });
 
@@ -362,5 +365,50 @@ describe('Editar usuario: nombre de usuario', () => {
     fallo = null;
     expect(llamadas.at(-1).datos.datos.nombreUsuario).toBe('otro');
     expect(screen.getByText('Ese nombre de usuario ya está en uso.')).toBeInTheDocument();
+  });
+});
+
+describe('Editar usuario: correo, centro y administradores', () => {
+  const guardar = () => act(async () => { fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/ })); });
+  const ADMINS = [
+    { id: 'a1', nombreCompleto: 'Admin Lab', rol: 'admin', centrosAdministrados: ['lab'] },
+    { id: 'a2', nombreCompleto: 'Admin Otro', rol: 'admin', centrosAdministrados: ['otro'] },
+    { id: 'a3', nombreCompleto: 'Admin Inactivo', rol: 'admin', centrosAdministrados: ['lab'], activo: false },
+  ];
+  const operador = (extra = {}) => ({ id: 'op', nombreCompleto: 'Op', nombreUsuario: 'op', email: 'op@x.cl', rol: 'operador', centroCostoId: 'lab', excepciones: { agregados: [], quitados: [] }, permisos: {}, permisosGranulares: {}, ...extra });
+
+  it('un Operador sin centro no se guarda', async () => {
+    render(<EditarUsuario usuario={operador({ centroCostoId: null })} onVolver={() => {}} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Datos generales/ }));
+    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Op 2' } });
+    await guardar();
+    expect(llamadas).toEqual([]);
+    expect(screen.getByText('El centro de costo es obligatorio para un Operador.')).toBeInTheDocument();
+  });
+
+  it('ofrece solo los administradores activos de su centro y guarda los elegidos', async () => {
+    render(<EditarUsuario usuario={operador()} usuarios={ADMINS} onVolver={() => {}} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Datos generales/ }));
+    expect(screen.queryByLabelText('Admin Otro')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Admin Inactivo')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Admin Lab'));
+    await guardar();
+    expect(llamadas[0].datos).toMatchObject({ administradoresAsignados: ['a1'], todosLosAdministradoresDelCentro: false });
+  });
+
+  it('cambiar el correo lo envía (la función lo cambia en Auth)', async () => {
+    render(<EditarUsuario usuario={operador()} onVolver={() => {}} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Datos generales/ }));
+    fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'Nuevo@X.cl' } });
+    await guardar();
+    expect(llamadas[0].datos.datos.email).toBe('Nuevo@X.cl');
+  });
+
+  it('un Administrador elige los centros que administra', async () => {
+    render(<EditarUsuario usuario={{ ...operador(), rol: 'admin', centrosAdministrados: [] }} onVolver={() => {}} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Datos generales/ }));
+    fireEvent.click(screen.getByLabelText('LABORATORIO'));
+    await guardar();
+    expect(llamadas[0].datos.centrosAdministrados).toEqual(['lab']);
   });
 });

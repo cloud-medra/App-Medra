@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  aplanar, combinar, calcularExcepciones, normalizarExcepciones, origenCasilla, valorDe, dejaSinAdministrador,
+  aplanar, combinar, calcularExcepciones, normalizarExcepciones, origenCasilla, valorDe, dejaSinDesarrollador,
   claveMenu, claveVista, claveSeccion, claveElemento, SIN_EXCEPCIONES,
 } from '../../../../../functions/permisos/nucleo.mjs';
 
@@ -135,44 +135,41 @@ describe('permiso efectivo por centro de costo', () => {
   });
 });
 
-describe('protección contra quedarse sin administrador', () => {
-  const yo = { id: 'yo', rol: 'admin' };
+describe('protección contra quedarse sin desarrollador', () => {
+  const yo = { id: 'yo', rol: 'dev' };
 
-  it('el último administrador no puede quitarse el rol ni inactivarse', () => {
-    const usuarios = [yo, { id: 'op', rol: 'operador' }];
-    expect(dejaSinAdministrador(usuarios, 'yo', { rol: 'operador' })).toBe(true);
-    expect(dejaSinAdministrador(usuarios, 'yo', { activo: false })).toBe(true);
+  it('el último desarrollador no puede quitarse el rol ni inactivarse', () => {
+    const usuarios = [yo, { id: 'op', rol: 'operador' }, { id: 'a', rol: 'admin' }];
+    expect(dejaSinDesarrollador(usuarios, 'yo', { rol: 'admin' })).toBe(true);
+    expect(dejaSinDesarrollador(usuarios, 'yo', { activo: false })).toBe(true);
   });
 
-  it('con otro administrador activo (admin o dev) sí puede', () => {
-    expect(dejaSinAdministrador([yo, { id: 'b', rol: 'admin' }], 'yo', { rol: 'operador' })).toBe(false);
-    expect(dejaSinAdministrador([yo, { id: 'd', rol: 'dev' }], 'yo', { activo: false })).toBe(false);
+  it('con otro desarrollador activo sí puede (un administrador no cuenta)', () => {
+    expect(dejaSinDesarrollador([yo, { id: 'd', rol: 'dev' }], 'yo', { activo: false })).toBe(false);
+    expect(dejaSinDesarrollador([yo, { id: 'd', rol: 'dev', activo: false }], 'yo', { rol: 'encargado' })).toBe(true);
   });
 
-  it('un administrador inactivo no cuenta', () => {
-    expect(dejaSinAdministrador([yo, { id: 'b', rol: 'admin', activo: false }], 'yo', { rol: 'encargado' })).toBe(true);
-  });
-
-  it('cambios que no quitan la administración no se bloquean', () => {
-    expect(dejaSinAdministrador([yo], 'yo', { rol: 'dev' })).toBe(false);
-    expect(dejaSinAdministrador([yo], 'yo', {})).toBe(false);
-    expect(dejaSinAdministrador([yo], 'yo', { rol: undefined, activo: undefined })).toBe(false);
-    expect(dejaSinAdministrador([yo, { id: 'op', rol: 'operador' }], 'op', { rol: 'encargado' })).toBe(false);
+  it('cambios que no quitan el rol no se bloquean; quitar el de un administrador, tampoco', () => {
+    expect(dejaSinDesarrollador([yo], 'yo', {})).toBe(false);
+    expect(dejaSinDesarrollador([yo], 'yo', { rol: undefined, activo: undefined })).toBe(false);
+    expect(dejaSinDesarrollador([yo, { id: 'a', rol: 'admin' }], 'a', { rol: 'operador' })).toBe(false);
   });
 });
+
 
 describe('roles y plantilla por centro + rol', async () => {
   const { ROLES, ROLES_CON_PLANTILLA, esRolAccesoTotal, idPlantilla, idPlantillaDeUsuario, labelRol } = await import('../../../../../functions/permisos/nucleo.mjs');
 
-  it('lista final de roles: admin/dev acceso total; Operador y Encargado de centro con plantilla', () => {
-    expect(ROLES.map((r) => [r.value, r.label, r.accesoTotal])).toEqual([
-      ['admin', 'Administrador del sistema', true],
-      ['dev', 'Desarrollador', true],
-      ['encargado', 'Encargado de centro', false],
-      ['operador', 'Operador', false],
+  it('lista final de roles: solo dev acceso total; admin/dev sin plantilla; Operador y Encargado de centro con plantilla', () => {
+    expect(ROLES.map((r) => [r.value, r.label, r.accesoTotal, r.sinPlantilla])).toEqual([
+      ['admin', 'Administrador del sistema', false, true],
+      ['dev', 'Desarrollador', true, true],
+      ['encargado', 'Encargado de centro', false, false],
+      ['operador', 'Operador', false, false],
     ]);
     expect(ROLES_CON_PLANTILLA).toEqual(['operador', 'encargado']);
     expect(esRolAccesoTotal('dev')).toBe(true);
+    expect(esRolAccesoTotal('admin')).toBe(false);
     expect(esRolAccesoTotal('encargado')).toBe(false);
     expect(labelRol('encargado')).toBe('Encargado de centro');
   });

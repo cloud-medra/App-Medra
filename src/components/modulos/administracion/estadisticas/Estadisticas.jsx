@@ -62,7 +62,7 @@ const Estadisticas = () => {
     exportar: hasPermission(PATH_VISTA, 'acciones', 'btn_exportar'),
     // Las reglas de Firestore también lo exigen para leer los montos.
     verMontos: hasPermission(PATH_VISTA, 'acciones', 'ver_montos'),
-    // El servidor vuelve a exigir rol admin/dev.
+    // El servidor vuelve a exigir rol, ítem y acción (denegada por defecto).
     recalcular: ['admin', 'dev'].includes(userData?.rol) && hasPermission(PATH_VISTA, 'acciones', 'btn_recalcular'),
   };
 

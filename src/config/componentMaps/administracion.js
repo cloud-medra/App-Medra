@@ -194,6 +194,14 @@ export const administracionComponentMaps = {
     },
   },
 
+  // Plantillas de permisos por centro + rol. Solo la usan Administrador (con
+  // este ítem) y Desarrollador: lo exigen la función guardarPlantillaCentroCosto
+  // y las reglas de plantillas_permisos.
+  '/administracion/permisosCentro': {
+    label: 'Permisos por centro (PermisosPorCentro.jsx) — solo rol Administrador con este ítem, o Desarrollador',
+    sections: {},
+  },
+
   '/administracion/cargasConsolidado': {
     label: 'Cargas Consolidado (CargasConsolidado.jsx) — vista combinada de Consignación + Implantes',
     sections: {
@@ -268,7 +276,7 @@ export const administracionComponentMaps = {
         elements: {
           btn_exportar: { label: 'Acción: Exportar a Excel' },
           ver_montos: { label: 'Acción: Ver montos (tarjeta, columnas, Top 10, detalle y Excel; también lo exigen las reglas de Firestore)' },
-          btn_recalcular: { label: 'Acción: Recalcular período cerrado (además exige rol admin)' },
+          btn_recalcular: { label: 'Acción: Recalcular período cerrado (además exige rol Administrador)' },
         },
       },
       tabla: {

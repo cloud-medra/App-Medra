@@ -32,7 +32,7 @@ const OPERACIONES = Object.fromEntries(GRUPOS.flatMap((g) => g.operaciones).map(
 const VISTAS = { ingresoDocumento: IngresoPorDocumento, ingresoDirecto: IngresoDirecto, egresoTransito: EgresoPorEscaneo };
 
 const tieneAcceso = (userData, ruta) => !ruta
-  || userData?.rol === 'admin' || userData?.rol === 'dev'
+  || userData?.rol === 'dev'
   || (userData?.permisos?.inventario || []).includes(ruta);
 
 const SelectorOperacion = ({ onElegir, permitido }) => (
