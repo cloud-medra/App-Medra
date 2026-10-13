@@ -1,6 +1,8 @@
-// Firestore + Storage del Respaldo de documentos de Implantes.
+// Firestore + Storage del Respaldo de documentos de cada módulo
+// (`modulo`, ver modulosGestion.js). En Implantes:
 //   Firestore: implantes_respaldo_documentos/{id}  (datos, quién y cuándo)
 //   Storage:   implantes_respaldo/{id}/{ID - Nombre - TIPO.pdf}
+// Hemodinamia: hemodinamia_respaldo_documentos y hemodinamia_respaldo.
 // Cada documento tiene su propia carpeta en Storage (por id), así que dos
 // archivos con el mismo nombre nunca chocan. Eliminar lo envía a la
 // papelera (eliminado: true); solo "eliminar definitivamente" borra el PDF.
@@ -8,11 +10,14 @@ import { collection, doc, setDoc, updateDoc, deleteDoc, serverTimestamp } from '
 import { ref, uploadBytesResumable, deleteObject } from 'firebase/storage';
 import { db, storage, auth } from '../../../../../firebaseConfig';
 import { onSnapshotVisible } from '../../../../../hooks/useVisibleSnapshot';
-import { COLECCION_RESPALDO, CARPETA_STORAGE_RESPALDO, construirNombreRespaldo } from './respaldoHelpers';
+import { construirNombreRespaldo } from './respaldoHelpers';
+import { moduloGestion } from '../modulosGestion';
 
-export const escucharRespaldos = (onDatos, onError) =>
+const coleccion = (modulo) => moduloGestion(modulo).coleccionRespaldo;
+
+export const escucharRespaldos = (modulo, onDatos, onError) =>
   onSnapshotVisible(
-    collection(db, COLECCION_RESPALDO),
+    collection(db, coleccion(modulo)),
     (snap) => onDatos(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
     onError
   );
@@ -30,10 +35,10 @@ const subirArchivo = (ruta, file, onProgreso) => new Promise((resolve, reject) =
 
 // Sube el PDF y luego registra sus datos. Si el registro falla, intenta
 // quitar el PDF recién subido para no dejarlo huérfano.
-export const subirRespaldo = async ({ file, idAdmision, fecha, nombre, tipo, usuarioNombre, onProgreso }) => {
-  const docRef = doc(collection(db, COLECCION_RESPALDO));
+export const subirRespaldo = async ({ modulo, file, idAdmision, fecha, nombre, tipo, usuarioNombre, onProgreso }) => {
+  const docRef = doc(collection(db, coleccion(modulo)));
   const nombreArchivo = construirNombreRespaldo({ idAdmision, nombre, tipo });
-  const ruta = `${CARPETA_STORAGE_RESPALDO}/${docRef.id}/${nombreArchivo}`;
+  const ruta = `${moduloGestion(modulo).carpetaRespaldo}/${docRef.id}/${nombreArchivo}`;
   await subirArchivo(ruta, file, onProgreso);
   try {
     await setDoc(docRef, {
@@ -59,19 +64,19 @@ export const subirRespaldo = async ({ file, idAdmision, fecha, nombre, tipo, usu
   return { id: docRef.id, nombreArchivo, ruta };
 };
 
-export const enviarRespaldoAPapelera = (id, usuarioNombre) =>
-  updateDoc(doc(db, COLECCION_RESPALDO, id), { eliminado: true, eliminadoPor: usuarioNombre || 'Usuario', eliminadoEl: serverTimestamp() });
+export const enviarRespaldoAPapelera = (modulo, id, usuarioNombre) =>
+  updateDoc(doc(db, coleccion(modulo), id), { eliminado: true, eliminadoPor: usuarioNombre || 'Usuario', eliminadoEl: serverTimestamp() });
 
-export const restaurarRespaldo = (id) =>
-  updateDoc(doc(db, COLECCION_RESPALDO, id), { eliminado: false, eliminadoPor: null, eliminadoEl: null });
+export const restaurarRespaldo = (modulo, id) =>
+  updateDoc(doc(db, coleccion(modulo), id), { eliminado: false, eliminadoPor: null, eliminadoEl: null });
 
 // Borra el PDF y su registro (solo desde la papelera). Si el PDF ya no existe
 // en Storage, igual se quita el registro.
-export const eliminarRespaldoDefinitivo = async ({ id, ruta }) => {
+export const eliminarRespaldoDefinitivo = async (modulo, { id, ruta }) => {
   try {
     await deleteObject(ref(storage, ruta));
   } catch (err) {
     if (err?.code !== 'storage/object-not-found') throw err;
   }
-  await deleteDoc(doc(db, COLECCION_RESPALDO, id));
+  await deleteDoc(doc(db, coleccion(modulo), id));
 };

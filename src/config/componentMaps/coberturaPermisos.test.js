@@ -38,6 +38,8 @@ const RUTAS_DINAMICAS = {
   'modulos/gestiones/laboratorio/vizualizador/XmlDetallesDoc.jsx': ['/laboratorio/xmlDocLaboratorio', '/laboratorio/archivosControlLaboratorio/documentosRecibidos'],
   'modulos/gestiones/vacunatorio/vizualizador/XmlDetallesDoc.jsx': ['/vacunatorio/xmlDocVacunatorio', '/vacunatorio/archivosControlVacunatorio/documentosRecibidos'],
   'modulos/operaciones/documentos/reportesInfo/ReportesInfo.jsx': ['/documentos/reportesInfo', '/implantes/reportesInfo'],
+  // Pantallas compartidas por Implantes y Hemodinamia (shared/modulosGestion.js).
+  'modulos/operaciones/shared/respaldoDocumentos/RespaldoDocumentos.jsx': ['/implantes/respaldoDocumentos', '/hemodinamia/respaldoDocumentos'],
 };
 
 const usos = [];

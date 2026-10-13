@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Upload, FileText, Trash2, CheckCircle2, AlertCircle, Loader2, CalendarDays } from 'lucide-react';
 import { useToast } from '../../../../../context/ToastContext';
 import { useUser } from '../../../../../context/UserContext';
-import { mensajeErrorStorage } from '../../shared/documentosAdmision/documentosHelpers';
+import { mensajeErrorStorage } from '../documentosAdmision/documentosHelpers';
 import { TIPOS_DOCUMENTO, TAMANO_MAXIMO_MB, validarFilaRespaldo, construirNombreRespaldo, datosDesdeNombreArchivo } from './respaldoHelpers';
 import { subirRespaldo } from './respaldoService';
 
@@ -35,7 +35,8 @@ const nuevaFila = ({ file, idAdmision, nombre, tipo, fecha }) => {
 const INPUT = 'w-full h-8 px-2 rounded-md border bg-white dark:bg-gray-900 text-[12px] text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#2383C2] focus:ring-2 focus:ring-[#2383C2]/15 disabled:opacity-60';
 const borde = (error) => (error ? 'border-red-400' : 'border-gray-300 dark:border-gray-600');
 
-const FormularioRespaldo = ({ iniciales = [], onCerrar, onSubidos }) => {
+// `modulo`: Respaldo del módulo (ver modulosGestion.js).
+const FormularioRespaldo = ({ modulo = 'implantes', iniciales = [], onCerrar, onSubidos }) => {
   const { showToast } = useToast();
   const { userData } = useUser();
   const inputRef = useRef(null);
@@ -75,6 +76,7 @@ const FormularioRespaldo = ({ iniciales = [], onCerrar, onSubidos }) => {
       setFilas((prev) => prev.map((f) => (f.clave === fila.clave ? { ...f, estado: 'subiendo', progreso: 0, error: null } : f)));
       try {
         await subirRespaldo({
+          modulo,
           ...fila,
           usuarioNombre: userData?.nombreCompleto,
           onProgreso: (p) => setFilas((prev) => prev.map((f) => (f.clave === fila.clave ? { ...f, progreso: p } : f))),

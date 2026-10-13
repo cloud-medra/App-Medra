@@ -1,5 +1,6 @@
-// Respaldo de documentos de Implantes: PDF cuyo ID / N° de Admisión no
-// coincide con ninguna gestión. Reutiliza las reglas de los documentos de
+// Respaldo de documentos (Implantes y Hemodinamia, cada uno con su colección
+// y carpeta, ver modulosGestion.js): PDF cuyo ID / N° de Admisión no
+// coincide con ninguna gestión del módulo. Reutiliza las reglas de los documentos de
 // admisión (documentosHelpers.js): misma lista de tipos, mismo tope de tamaño
 // y la misma limpieza de nombres para Storage.
 import {
@@ -12,11 +13,7 @@ import {
   pacienteDesdeNombre,
   tipoDesdeNombre,
   normalizarNombrePersona,
-} from '../../shared/documentosAdmision/documentosHelpers';
-
-export const RUTA_VISTA_RESPALDO = '/implantes/respaldoDocumentos';
-export const COLECCION_RESPALDO = 'implantes_respaldo_documentos';
-export const CARPETA_STORAGE_RESPALDO = 'implantes_respaldo';
+} from '../documentosAdmision/documentosHelpers';
 export { TIPOS_DOCUMENTO, TAMANO_MAXIMO_MB };
 
 const IDS_TIPO = new Set(TIPOS_DOCUMENTO.map((t) => t.id));

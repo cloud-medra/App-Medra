@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { FolderUp, UploadCloud, Loader2, X, AlertTriangle, CheckCircle2, XCircle, HelpCircle, RefreshCw, Trash2, Archive } from 'lucide-react';
 import { useToast } from '../../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
-import FormularioRespaldo from '../../implantes/respaldoDocumentos/FormularioRespaldo';
+import FormularioRespaldo from '../respaldoDocumentos/FormularioRespaldo';
 import { TIPOS_DOCUMENTO, ordenarDocumentos } from '../documentosAdmision/documentosHelpers';
 import { listarDocumentosAdmision, subirTandaAdmision } from '../documentosAdmision/documentosStorage';
 import { ZonaSubidaPdf } from '../documentosAdmision/ZonaSubidaPdf';
@@ -409,6 +409,7 @@ const CargaMasivaDocumentos = ({ modulo }) => {
       </div>
       {respaldoAbierto && (
         <FormularioRespaldo
+          modulo={modulo}
           iniciales={respaldables.map((r) => ({ file: r.file }))}
           onCerrar={() => setRespaldoAbierto(false)}
           onSubidos={alEnviarARespaldo}

@@ -1,4 +1,5 @@
 import { columnas } from './columnas.js';
+import { mapaRespaldoDocumentos } from './operacionesCompartidas.js';
 import { mapaReportesInfo } from './documentos.js';
 import { maestrosComponentMaps } from './maestros.js';
 
@@ -348,41 +349,6 @@ export const implantesComponentMaps = {
   // Respaldo de documentos: PDF cuyo ID / N° de Admisión no coincide con
   // ninguna gestión (RespaldoDocumentos.jsx). Las acciones también se validan
   // en firestore.rules y storage.rules.
-  '/implantes/respaldoDocumentos': {
-    label: 'Respaldo de documentos (RespaldoDocumentos.jsx)',
-    sections: {
-      acciones: {
-        label: 'Sección: Acciones',
-        elements: {
-          btn_subir: { label: 'Acción: Subir documentos al respaldo (también "Enviar a respaldo" desde Gestión y Carga masiva)' },
-        },
-      },
-      filtros: {
-        label: 'Sección: Búsqueda y filtros',
-        elements: {
-          input_busqueda: { label: 'Campo: Buscar por ID o nombre' },
-          select_tipo: { label: 'Campo: Filtro por tipo de documento' },
-        },
-      },
-      tabla_documentos: {
-        label: 'Sección: Tabla de documentos',
-        elements: {
-          btn_ver: { label: 'Operación: Ver documento' },
-          btn_descargar: { label: 'Operación: Descargar' },
-          btn_eliminar: { label: 'Operación: Eliminar (envía a la papelera)' },
-          ...columnas([
-            ['idAdmision', 'ID / N° Admisión'], ['nombre', 'Nombre'], ['tipo', 'Tipo'], ['fecha', 'Fecha'],
-            ['subidoPor', 'Subido por'], ['subidoEl', 'Fecha de subida'], ['acciones', 'Acciones'],
-          ]),
-        },
-      },
-      papelera: {
-        label: 'Sección: Papelera',
-        elements: {
-          btn_restaurar: { label: 'Operación: Restaurar' },
-          btn_eliminar_definitivo: { label: 'Operación: Eliminar definitivamente (borra el PDF)' },
-        },
-      },
-    },
-  },
+  '/implantes/respaldoDocumentos': mapaRespaldoDocumentos('Implantes'),
+
 };

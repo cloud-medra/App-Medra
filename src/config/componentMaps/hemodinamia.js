@@ -1,3 +1,5 @@
+import { mapaRespaldoDocumentos } from './operacionesCompartidas.js';
+
 export const hemodinamiaComponentMaps = {
   // Mismo criterio que componentMaps/implantes.js: las 4 pestañas de la
   // vista de detalle (Detalles, Información, Cargas, Logs) son `procesos`
@@ -196,6 +198,8 @@ export const hemodinamiaComponentMaps = {
       },
     },
   },
+
+  '/hemodinamia/respaldoDocumentos': mapaRespaldoDocumentos('Hemodinamia'),
 
   '/hemodinamia/solicitudHemodinamia': {
     label: 'Solicitud de Hemodinamia (SolicitudHemodinamia.jsx) — sin granularidad cableada aún',

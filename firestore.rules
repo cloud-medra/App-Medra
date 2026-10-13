@@ -762,6 +762,29 @@ service cloud.firestore {
       allow delete: if estaActivo() && enRespaldo('papelera', 'btn_eliminar_definitivo');
     }
 
+    // Hemodinamia → Respaldo de documentos: mismas reglas que Implantes.
+    match /hemodinamia_respaldo_documentos/{docId} {
+      function vistaRespaldo() {
+        return esDev() || (tienePermiso('hemodinamia') && tieneItem('hemodinamia', '/hemodinamia/respaldoDocumentos'));
+      }
+      function enRespaldo(seccion, accion) {
+        return accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', seccion, accion);
+      }
+      allow read: if estaActivo() && vistaRespaldo();
+      allow create: if estaActivo()
+        && enRespaldo('acciones', 'btn_subir')
+        && request.resource.data.eliminado == false
+        && request.resource.data.ruta is string
+        && request.resource.data.ruta.matches('hemodinamia_respaldo/' + docId + '/.+');
+      // Solo enviar a la papelera / restaurar (no se editan los datos).
+      allow update: if estaActivo()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['eliminado', 'eliminadoPor', 'eliminadoEl'])
+        && (request.resource.data.eliminado == true
+          ? enRespaldo('tabla_documentos', 'btn_eliminar')
+          : enRespaldo('papelera', 'btn_restaurar'));
+      allow delete: if estaActivo() && enRespaldo('papelera', 'btn_eliminar_definitivo');
+    }
+
     // Documentos → Archivo digital: carpetas y archivos (padreId) en una sola
     // colección. Cada cambio se valida contra la acción granular que lo
     // permite: crear carpeta / subir, renombrar, mover, eliminar (lógico,

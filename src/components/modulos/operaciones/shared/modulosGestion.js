@@ -20,6 +20,9 @@ export const MODULOS_GESTION = Object.freeze({
     archivoSolicitud: 'solicitud_implantes',
     // Storage: PDF de cada admisión (pestaña Documentos y Carga masiva).
     carpetaDocumentos: 'implantes',
+    // Respaldo de documentos (PDF cuya admisión no está en el módulo).
+    coleccionRespaldo: 'implantes_respaldo_documentos',
+    carpetaRespaldo: 'implantes_respaldo',
     // Rutas (menú y permisos granulares)
     rutas: {
       gestion: '/implantes/gestionImplantes',
@@ -39,10 +42,13 @@ export const MODULOS_GESTION = Object.freeze({
     hojaSolicitud: 'Solicitud Hemodinamia',
     archivoSolicitud: 'solicitud_hemodinamia',
     carpetaDocumentos: 'hemodinamia',
+    coleccionRespaldo: 'hemodinamia_respaldo_documentos',
+    carpetaRespaldo: 'hemodinamia_respaldo',
     rutas: {
       gestion: '/hemodinamia/gestionHemodinamia',
       solicitud: '/hemodinamia/solicitudHemodinamia',
       cargaMasivaDocumentos: '/hemodinamia/cargaMasivaDocumentos',
+      respaldo: '/hemodinamia/respaldoDocumentos',
     },
   },
 });

@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/vitest';
 
 vi.mock('../../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 vi.mock('../../../../../context/UserContext', () => ({ useUser: () => ({ userData: { rol: 'dev' } }) }));
-vi.mock('../../implantes/respaldoDocumentos/respaldoService', () => ({ subirRespaldo: vi.fn() }));
+vi.mock('../respaldoDocumentos/respaldoService', () => ({ subirRespaldo: vi.fn() }));
 vi.mock('./documentosStorage', () => ({
   subirTandaAdmision: vi.fn(),
   obtenerBlobDocumento: vi.fn(async (ruta) => new Blob([ruta], { type: 'application/pdf' }))

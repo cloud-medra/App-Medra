@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   construirNombreRespaldo, validarFilaRespaldo, datosDesdeNombreArchivo, filtrarRespaldos, ordenarRespaldos, fechaValida,
 } from './respaldoHelpers';
-import { idDesdeNombre, pacienteDesdeNombre, tipoDesdeNombre } from '../../shared/documentosAdmision/documentosHelpers';
+import { idDesdeNombre, pacienteDesdeNombre, tipoDesdeNombre } from '../documentosAdmision/documentosHelpers';
 
 const pdf = (name = 'a.pdf', size = 1000) => ({ name, size, type: 'application/pdf' });
 

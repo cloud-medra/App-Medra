@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { FileText, UploadCloud, Eye, Download, Loader2, AlertCircle, RefreshCw, FolderOpen, CheckCircle2, XCircle, HelpCircle, Copy, ChevronUp, Archive } from 'lucide-react';
 import { useToast } from '../../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
-import FormularioRespaldo from '../../implantes/respaldoDocumentos/FormularioRespaldo';
+import FormularioRespaldo from '../respaldoDocumentos/FormularioRespaldo';
 import {
   TIPOS_DOCUMENTO,
   TAMANO_MAXIMO_MB,
@@ -354,6 +354,7 @@ export const DocumentosTab = ({
 
       {respaldoAbierto && (
         <FormularioRespaldo
+          modulo={modulo}
           iniciales={respaldables.map((r) => ({ file: r.file }))}
           onCerrar={() => setRespaldoAbierto(false)}
           onSubidos={alEnviarARespaldo}

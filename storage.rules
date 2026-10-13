@@ -125,6 +125,22 @@ service firebase.storage {
             && !firestore.exists(/databases/(default)/documents/implantes_respaldo_documentos/$(docId))));
     }
 
+    // Hemodinamia → Respaldo de documentos: mismas reglas que Implantes.
+    match /hemodinamia_respaldo/{docId}/{archivo} {
+      allow read: if estaActivo()
+        && (accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'tabla_documentos', 'btn_ver')
+          || accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'tabla_documentos', 'btn_descargar'));
+      allow create: if estaActivo()
+        && request.resource.contentType == 'application/pdf'
+        && archivo.matches('.*\\.pdf$')
+        && request.resource.size <= 20 * 1024 * 1024
+        && accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'acciones', 'btn_subir');
+      allow delete: if estaActivo()
+        && (accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'papelera', 'btn_eliminar_definitivo')
+          || (accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'acciones', 'btn_subir')
+            && !firestore.exists(/databases/(default)/documents/hemodinamia_respaldo_documentos/$(docId))));
+    }
+
     // Documentos → Archivo digital (PDF, JPG, PNG, WEBP hasta 25 MB). Mismo
     // criterio que el respaldo; renombrar y mover no tocan Storage.
     match /documentos_archivo/{nodoId}/{archivo} {
