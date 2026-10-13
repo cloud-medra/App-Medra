@@ -10,50 +10,38 @@ import {
   documentId,
   writeBatch
 } from 'firebase/firestore';
-import { db } from '../../../../../../firebaseConfig';
-import { useToast } from '../../../../../../context/ToastContext';
-import { useUser } from '../../../../../../context/UserContext';
-import { periodoEstaAbierto } from '../../gestionImplantes/components/Cargastab/verificacionPeriodoBloque';
-import { refImputada, construirPayloadImputada } from '../../gestionImplantes/utils/imputadaSync';
-import { registrarLogImplantes } from '../../gestionImplantes/utils/registrarLogImplantes';
-import { diffBloque } from '../utils/diffAdmision';
+import { db } from '../../../../../firebaseConfig';
+import { useToast } from '../../../../../context/ToastContext';
+import { useUser } from '../../../../../context/UserContext';
+import { construirPayloadImputada } from '../../implantes/gestionImplantes/utils/imputadaSync';
+import { registrarLogImplantes as registrarLogGestion } from '../../implantes/gestionImplantes/utils/registrarLogImplantes';
+import { diffBloque } from './utils/diffAdmision';
+import { moduloGestion, rangoGestiones } from '../modulosGestion';
+import { periodoEstaAbierto, obtenerPeriodoAbiertoModulo } from '../periodosModulo';
 
-const MODULO_ACTUAL = 'implantes';
-
-// Mismo rango acotado sobre documentId() que usa el listener principal de
-// Gestión Implantes (useGestionesImplantesData) — evita depender de un
-// índice de collectionGroup sobre "gestionId" que puede no existir todavía
-// en el proyecto (los índices de este repo no se gestionan por código, ver
-// firestore.indexes.json vacío). Es una consulta puntual (getDocs, no
+// Sincronización de imputadas de un módulo de Gestión (Implantes,
+// Hemodinamia): compara {módulo}_gestiones (fuente correcta) con
+// {módulo}_imputadas y corrige un bloque puntual. `construirPayloadImputada`
+// y el log son los mismos en ambos módulos (solo cambia la colección).
+//
+// Consultas acotadas con el mismo rango sobre documentId() que el listener
+// principal de Gestión (rangoGestiones) — evita depender de un índice de
+// collectionGroup sobre "gestionId". Es una consulta puntual (getDocs, no
 // onSnapshot), disparada solo al buscar, no en cada render.
-const RANGO_MIN_GESTIONES = 'implantes_gestiones/0000';
-const RANGO_MAX_GESTIONES = 'implantes_gestiones/9999';
 
 const normalizarAdmision = (valor) => (valor ?? '').toString().trim();
-
-const obtenerPeriodoAbiertoModulo = async () => {
-  const q = query(
-    collection(db, 'cierres_periodos'),
-    where('modulo', '==', MODULO_ACTUAL),
-    where('estado', 'in', ['ABIERTO', 'REABIERTO'])
-  );
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
-  const d = snap.docs[0].data();
-  return { anio: d.anio, mes: d.mes };
-};
 
 /**
  * Agrupa los ítems de un bloque por período resuelto (propio, o el período
  * abierto actual como fallback para ítems legacy sin periodoAnio/periodoMes
  * — mismo criterio que usa guardarDesdeDetalle al re-sincronizar).
  */
-const agruparItemsPorPeriodo = async (itemsGestion) => {
+const agruparItemsPorPeriodo = async (modulo, itemsGestion) => {
   let fallback;
   let fallbackCargado = false;
   const obtenerFallback = async () => {
     if (!fallbackCargado) {
-      fallback = await obtenerPeriodoAbiertoModulo();
+      fallback = await obtenerPeriodoAbiertoModulo(modulo);
       fallbackCargado = true;
     }
     return fallback;
@@ -86,7 +74,7 @@ const agruparItemsPorPeriodo = async (itemsGestion) => {
   return [...grupos.values()];
 };
 
-const compararBloque = async (bloque, admisionStr) => {
+const compararBloque = async (config, bloque, admisionStr) => {
   const itemsGestion = bloque.cotizaciones?.[0]?.items || [];
   const dataGestion = {
     gestionId: bloque.gestionId || bloque.agendaId || admisionStr,
@@ -100,8 +88,8 @@ const compararBloque = async (bloque, admisionStr) => {
     prevision: bloque.prevision || 'P',
     medico: bloque.medico || 'P',
     descripcion: bloque.descripcion || 'P',
-    centro: bloque.centro || 'PABELLON',
-    atributo: bloque.atributo || 'IMPLANTES',
+    centro: config.centroDe(bloque),
+    atributo: bloque.atributo || config.atributoPorDefecto,
     estado: bloque.estado || 'AGENDADO',
     costo: bloque.costo || 0
   };
@@ -118,7 +106,7 @@ const compararBloque = async (bloque, admisionStr) => {
     return { ...base, gruposPeriodo: [], sinItems: true, sinDiferencias: true };
   }
 
-  const gruposItems = await agruparItemsPorPeriodo(itemsGestion);
+  const gruposItems = await agruparItemsPorPeriodo(config.clave, itemsGestion);
 
   const gruposPeriodo = await Promise.all(gruposItems.map(async (grupo) => {
     if (grupo.sinPeriodoResoluble) {
@@ -127,9 +115,9 @@ const compararBloque = async (bloque, admisionStr) => {
     }
 
     const [periodoAbierto, snapImp] = await Promise.all([
-      periodoEstaAbierto(grupo.anio, grupo.mes),
+      periodoEstaAbierto(config.clave, grupo.anio, grupo.mes),
       getDocs(query(
-        collection(db, 'implantes_imputadas', String(grupo.anio), 'meses', grupo.mes, 'documentos'),
+        collection(db, config.coleccionImputadas, String(grupo.anio), 'meses', grupo.mes, 'documentos'),
         where('gestionId', '==', admisionStr),
         where('empresa', '==', dataGestion.empresa)
       ))
@@ -148,7 +136,10 @@ const compararBloque = async (bloque, admisionStr) => {
   return { ...base, gruposPeriodo, sinItems: false, sinDiferencias };
 };
 
-export const useSincronizacionImputadasData = () => {
+export const useSincronizacionImputadasData = (modulo) => {
+  const config = moduloGestion(modulo);
+  const { min: RANGO_MIN_GESTIONES, max: RANGO_MAX_GESTIONES } = rangoGestiones(config);
+  const refImputada = (anio, mes, itemId) => doc(db, config.coleccionImputadas, String(anio), 'meses', mes, 'documentos', itemId);
   const [resultados, setResultados] = useState([]);
   const [buscando, setBuscando] = useState(false);
   const [aplicando, setAplicando] = useState({});
@@ -177,10 +168,10 @@ export const useSincronizacionImputadasData = () => {
         const bloquesAdmision = todosLosBloques.filter(b => normalizarAdmision(b.gestionId || b.agendaId) === admisionStr);
 
         if (bloquesAdmision.length === 0) {
-          return { admision: admisionStr, error: 'No se encontró esta admisión en implantes_gestiones.', bloques: [] };
+          return { admision: admisionStr, error: `No se encontró esta admisión en ${config.coleccionGestiones}.`, bloques: [] };
         }
 
-        const bloques = await Promise.all(bloquesAdmision.map(b => compararBloque(b, admisionStr)));
+        const bloques = await Promise.all(bloquesAdmision.map(b => compararBloque(config, b, admisionStr)));
         return { admision: admisionStr, error: null, bloques };
       }));
 
@@ -207,9 +198,9 @@ export const useSincronizacionImputadasData = () => {
         .filter(b => normalizarAdmision(b.gestionId || b.agendaId) === admisionStr);
 
       if (bloquesAdmision.length === 0) {
-        return { admision: admisionStr, error: 'No se encontró esta admisión en implantes_gestiones.', bloques: [] };
+        return { admision: admisionStr, error: `No se encontró esta admisión en ${config.coleccionGestiones}.`, bloques: [] };
       }
-      const bloques = await Promise.all(bloquesAdmision.map(b => compararBloque(b, admisionStr)));
+      const bloques = await Promise.all(bloquesAdmision.map(b => compararBloque(config, b, admisionStr)));
       return { admision: admisionStr, error: null, bloques };
     })();
 
@@ -232,7 +223,7 @@ export const useSincronizacionImputadasData = () => {
     // Re-verificar período abierto justo antes de escribir — pudo cerrarse
     // entre el momento del diff y el click en "Aplicar corrección".
     for (const grupo of bloqueResultado.gruposPeriodo) {
-      const abiertoAhora = await periodoEstaAbierto(grupo.anio, grupo.mes);
+      const abiertoAhora = await periodoEstaAbierto(config.clave, grupo.anio, grupo.mes);
       if (!abiertoAhora) {
         showToast(`No se puede corregir: el período ${grupo.mes} ${grupo.anio} de este bloque ya está cerrado.`, 'error');
         return;
@@ -277,7 +268,7 @@ export const useSincronizacionImputadasData = () => {
 
       await batch.commit();
 
-      await registrarLogImplantes(
+      await registrarLogGestion(
         doc(db, bloqueResultado.refPath),
         'IMPUTACION_RESINCRONIZADA',
         {

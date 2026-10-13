@@ -202,6 +202,7 @@ export const MODULES = {
       { label: 'Carga masiva de documentos', path: '/hemodinamia/cargaMasivaDocumentos', icon: <FolderUp size={14} /> },
       { label: 'Solicitud', path: '/hemodinamia/solicitudHemodinamia', icon: <FilePlus size={14} /> },
       { label: 'Resumen', path: '/hemodinamia/resumenHemodinamia', icon: <BarChart2 size={14} /> },
+      { label: 'Sincronizar', path: '/hemodinamia/sincronizacionImputadas', icon: <GitCompareArrows size={14} /> },
       { label: 'Respaldo de documentos', path: '/hemodinamia/respaldoDocumentos', icon: <Archive size={14} /> },
     ]
   }

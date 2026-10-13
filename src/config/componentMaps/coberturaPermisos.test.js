@@ -40,6 +40,7 @@ const RUTAS_DINAMICAS = {
   'modulos/operaciones/documentos/reportesInfo/ReportesInfo.jsx': ['/documentos/reportesInfo', '/implantes/reportesInfo'],
   // Pantallas compartidas por Implantes y Hemodinamia (shared/modulosGestion.js).
   'modulos/operaciones/shared/respaldoDocumentos/RespaldoDocumentos.jsx': ['/implantes/respaldoDocumentos', '/hemodinamia/respaldoDocumentos'],
+  'modulos/operaciones/shared/sincronizacionImputadas/SincronizacionImputadas.jsx': ['/implantes/sincronizacionImputadas', '/hemodinamia/sincronizacionImputadas'],
 };
 
 const usos = [];
@@ -114,7 +115,7 @@ const TABLAS_PENDIENTES = new Set([
   'modulos/operaciones/shared/ordenesOC/OrdenTab.jsx',
   'modulos/operaciones/shared/ocIndex/SincronizarOCResumenModal.jsx',
   'modulos/operaciones/implantes/resumenImplantes/ResumenImplantes.jsx',
-  'modulos/operaciones/implantes/sincronizacionImputadas/SincronizacionImputadas.jsx',
+  'modulos/operaciones/shared/sincronizacionImputadas/SincronizacionImputadas.jsx',
   // Solicitud de Implantes y Hemodinamia (pantalla compartida).
   'modulos/operaciones/shared/solicitud/SolicitudGestiones.jsx',
   'ui/TablaRedimensionable.jsx',

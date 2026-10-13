@@ -29,6 +29,7 @@ export const MODULOS_GESTION = Object.freeze({
       solicitud: '/implantes/solicitudImplantes',
       cargaMasivaDocumentos: '/implantes/cargaMasivaDocumentos',
       respaldo: '/implantes/respaldoDocumentos',
+      sincronizacion: '/implantes/sincronizacionImputadas',
     },
   },
   hemodinamia: {
@@ -49,6 +50,7 @@ export const MODULOS_GESTION = Object.freeze({
       solicitud: '/hemodinamia/solicitudHemodinamia',
       cargaMasivaDocumentos: '/hemodinamia/cargaMasivaDocumentos',
       respaldo: '/hemodinamia/respaldoDocumentos',
+      sincronizacion: '/hemodinamia/sincronizacionImputadas',
     },
   },
 });

@@ -93,6 +93,7 @@ import GestionHemodinamia from '../components/modulos/operaciones/hemodinamia/ge
 import SolicitudHemodinamia from '../components/modulos/operaciones/hemodinamia/solicitudHemodinamia/SolicitudHemodinamia';
 import ResumenHemodinamia from '../components/modulos/operaciones/hemodinamia/resumenHemodinamia/ResumenHemodinamia';
 import RespaldoDocumentosHemodinamia from '../components/modulos/operaciones/hemodinamia/respaldoDocumentos/RespaldoDocumentos.jsx';
+import SincronizacionImputadasHemodinamia from '../components/modulos/operaciones/hemodinamia/sincronizacionImputadas/SincronizacionImputadas.jsx';
 import CargaMasivaDocumentosHemodinamia from '../components/modulos/operaciones/hemodinamia/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx';
 
 // --- CONSIGNACION ---
@@ -342,6 +343,7 @@ const Dashboard = () => {
     '/hemodinamia/gestionHemodinamia': <GestionHemodinamia />,
     '/hemodinamia/cargaMasivaDocumentos': <CargaMasivaDocumentosHemodinamia />,
     '/hemodinamia/respaldoDocumentos': <RespaldoDocumentosHemodinamia />,
+    '/hemodinamia/sincronizacionImputadas': <SincronizacionImputadasHemodinamia />,
     '/hemodinamia/solicitudHemodinamia': <SolicitudHemodinamia />,
     '/hemodinamia/resumenHemodinamia': <ResumenHemodinamia />,
 

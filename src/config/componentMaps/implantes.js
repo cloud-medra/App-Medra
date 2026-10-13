@@ -1,5 +1,5 @@
 import { columnas } from './columnas.js';
-import { mapaRespaldoDocumentos } from './operacionesCompartidas.js';
+import { mapaRespaldoDocumentos, mapaSincronizacionImputadas } from './operacionesCompartidas.js';
 import { mapaReportesInfo } from './documentos.js';
 import { maestrosComponentMaps } from './maestros.js';
 
@@ -321,28 +321,8 @@ export const implantesComponentMaps = {
     },
   },
 
-  '/implantes/sincronizacionImputadas': {
-    label: 'Sincronización de Imputadas (SincronizacionImputadas.jsx) — compara y corrige implantes_gestiones vs. implantes_imputadas',
-    sections: {
-      busqueda: {
-        label: 'Sección: Búsqueda por Admisión',
-        elements: {
-          input_admisiones: { label: 'Campo: N° de Admisión(es) a comparar' },
-          btn_buscar: { label: 'Acción: Buscar y Comparar' },
-        },
-      },
-      acciones: {
-        label: 'Sección: Acciones sobre el Diff',
-        elements: {
-          // Corrige un bloque ya imputado, saltándose el flujo normal de
-          // edición + candado de Cargas — por eso va con permiso propio,
-          // pensado para quedar restringido a los mismos usuarios que ya
-          // pueden desbloquear el candado en Cargas (accion_desbloquear_candado).
-          btn_aplicar_correccion: { label: 'Acción: Aplicar Corrección (re-sincroniza un bloque puntual)' },
-        },
-      },
-    },
-  },
+  '/implantes/sincronizacionImputadas': mapaSincronizacionImputadas('Implantes'),
+
 
   '/implantes/reportesInfo': mapaReportesInfo,
 

@@ -1,4 +1,4 @@
-import { mapaRespaldoDocumentos } from './operacionesCompartidas.js';
+import { mapaRespaldoDocumentos, mapaSincronizacionImputadas } from './operacionesCompartidas.js';
 
 export const hemodinamiaComponentMaps = {
   // Mismo criterio que componentMaps/implantes.js: las 4 pestañas de la
@@ -198,6 +198,8 @@ export const hemodinamiaComponentMaps = {
       },
     },
   },
+
+  '/hemodinamia/sincronizacionImputadas': mapaSincronizacionImputadas('Hemodinamia'),
 
   '/hemodinamia/respaldoDocumentos': mapaRespaldoDocumentos('Hemodinamia'),
 
