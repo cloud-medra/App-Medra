@@ -62,7 +62,7 @@ const usuario = (s, uid = s.uid) => doc(s.db, 'usuarios', uid);
 describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
   it('tema, cambio de contraseña, datos de perfil, privacidad y orden del menú siguen funcionando', async () => {
     await expect(updateDoc(usuario(operador), { modoPantalla: 'oscuro' })).resolves.toBeUndefined();
-    await expect(updateDoc(usuario(operador), { nombreCompleto: 'Operador Uno', email: 'op1@prueba.cl', passwordChanged: true })).resolves.toBeUndefined();
+    await expect(updateDoc(usuario(operador), { nombreCompleto: 'Operador Uno', passwordChanged: true })).resolves.toBeUndefined();
     await expect(updateDoc(usuario(operador), { nombreMostrar: 'nombre', ordenModulos: ['laboratorio'] })).resolves.toBeUndefined();
     await expect(updateDoc(usuario(admin), { modoPantalla: 'oscuro', passwordChanged: true })).resolves.toBeUndefined();
   });
@@ -76,6 +76,8 @@ describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
       { excepciones: { agregados: ['v|/x'], quitados: [] } },
       { nombreUsuario: 'otro' },
       { bloqueoLoginHasta: null },
+      // El correo lo copia iniciarSesion desde Auth tras confirmar el cambio.
+      { email: 'otro@prueba.cl' },
     ];
     for (const cambio of intentos) {
       await expect(updateDoc(usuario(operador), cambio), JSON.stringify(cambio)).rejects.toMatchObject({ code: 'permission-denied' });

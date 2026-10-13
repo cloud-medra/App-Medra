@@ -1,16 +1,20 @@
 // Lógica compartida por CrearUsuario y EditarUsuario (EditorPermisos) para
 // armar y completar `permisosGranulares` a partir de COMPONENT_MAPS.
 // Forma: { '/ruta': { seccionKey: { visible, elements: { elementoKey: bool } } } }
+import { deniegaSinConfigurar } from '../../../../../functions/permisos/nucleo.mjs';
 
 // Acceso total (o ninguno, con valor=false) a todas las secciones y
-// elementos de una config de COMPONENT_MAPS (vista o `proceso`).
-export const generarAccesoDesdeConfig = (config, valor = true) => {
+// elementos de una config de COMPONENT_MAPS (vista o `proceso`). Con `ruta`
+// (lo que se genera solo, sin que el admin lo pida), las acciones de
+// ACCIONES_DENEGADAS_POR_DEFECTO quedan desmarcadas; sin ella (habilitar la
+// vista, "marcar toda la vista"), también se marcan.
+export const generarAccesoDesdeConfig = (config, valor = true, ruta = null) => {
   if (!config) return null;
   const secciones = {};
   Object.entries(config.sections || {}).forEach(([sectionKey, section]) => {
     const elementos = {};
     Object.keys(section.elements || {}).forEach((elKey) => {
-      elementos[elKey] = valor;
+      elementos[elKey] = valor && !(ruta && deniegaSinConfigurar(ruta, sectionKey, elKey));
     });
     secciones[sectionKey] = { visible: valor, elements: elementos };
   });
@@ -20,17 +24,17 @@ export const generarAccesoDesdeConfig = (config, valor = true) => {
 export const generarAccesoTotalDesdeConfig = (config) => generarAccesoDesdeConfig(config, true);
 
 // Completa las secciones y elementos que existen en el mapa pero no en lo
-// guardado del usuario, con `true`: es lo mismo que hace useGranularPermission
-// en tiempo real (sección o elemento sin configurar = permitido), así el
-// editor muestra marcado lo que el usuario efectivamente puede hacer. No
-// toca lo que ya tiene valor.
-const completarVista = (guardado, config) => {
+// guardado del usuario, con `true` (salvo ACCIONES_DENEGADAS_POR_DEFECTO,
+// con `false`): es lo mismo que hace useGranularPermission en tiempo real,
+// así el editor muestra marcado lo que el usuario efectivamente puede hacer.
+// No toca lo que ya tiene valor.
+const completarVista = (guardado, config, ruta) => {
   const resultado = { ...guardado };
   Object.entries(config.sections || {}).forEach(([sectionKey, section]) => {
     const actual = resultado[sectionKey];
     const elementos = { ...(actual?.elements || {}) };
     Object.keys(section.elements || {}).forEach((elKey) => {
-      if (typeof elementos[elKey] !== 'boolean') elementos[elKey] = true;
+      if (typeof elementos[elKey] !== 'boolean') elementos[elKey] = !deniegaSinConfigurar(ruta, sectionKey, elKey);
     });
     resultado[sectionKey] = { visible: actual ? actual.visible !== false : true, elements: elementos };
   });
@@ -50,16 +54,16 @@ export const completarPermisosGranulares = (guardados, componentMaps) => {
   const resultado = { ...(guardados || {}) };
   Object.entries(componentMaps).forEach(([path, config]) => {
     if (!resultado[path]) return;
-    resultado[path] = completarVista(resultado[path], config);
+    resultado[path] = completarVista(resultado[path], config, path);
 
     const procesos = Object.entries(config.procesos || {});
     if (procesos.length === 0) return;
     const tieneAlguna = procesos.some(([procesoPath]) => resultado[procesoPath]);
     procesos.forEach(([procesoPath, procesoConfig]) => {
       if (resultado[procesoPath]) {
-        resultado[procesoPath] = completarVista(resultado[procesoPath], procesoConfig);
+        resultado[procesoPath] = completarVista(resultado[procesoPath], procesoConfig, procesoPath);
       } else if (!tieneAlguna && procesoConfig.porDefecto !== false) {
-        resultado[procesoPath] = generarAccesoTotalDesdeConfig(procesoConfig) || {};
+        resultado[procesoPath] = generarAccesoDesdeConfig(procesoConfig, true, procesoPath) || {};
       }
     });
   });

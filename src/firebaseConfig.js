@@ -1,28 +1,51 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, setPersistence, browserSessionPersistence } from "firebase/auth";
+import { getAuth, setPersistence, browserSessionPersistence, connectAuthEmulator } from "firebase/auth";
 import {
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
   memoryLocalCache,
   terminate,
-  clearIndexedDbPersistence
+  clearIndexedDbPersistence,
+  connectFirestoreEmulator
 } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-import { getFunctions } from "firebase/functions";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 
-export const firebaseConfig = {
-  apiKey: import.meta.env.VITE_API_KEY,
-  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_APP_ID,
-  measurementId: import.meta.env.VITE_MEASUREMENT_ID
-};
+// Emuladores locales (Auth, Firestore, Storage y Functions) para probar a
+// mano: solo con `npm run dev:emuladores` (VITE_USAR_EMULADORES=true en
+// desarrollo). En `vite build` import.meta.env.DEV es false, así que el
+// build de producción nunca se conecta a emuladores (el bloque ni siquiera
+// queda en el bundle). Proyecto "demo-": el emulador no toca nada real.
+// Puertos: firebase.json → emulators. Datos de prueba: npm run emuladores:sembrar.
+const USAR_EMULADORES = import.meta.env.DEV && import.meta.env.VITE_USAR_EMULADORES === 'true';
+const HOST_EMULADORES = import.meta.env.VITE_EMULADOR_HOST || '127.0.0.1';
+const PROYECTO_EMULADORES = 'demo-workcraft';
+
+export const firebaseConfig = USAR_EMULADORES
+  ? {
+    apiKey: 'demo',
+    authDomain: `${PROYECTO_EMULADORES}.firebaseapp.com`,
+    projectId: PROYECTO_EMULADORES,
+    storageBucket: `${PROYECTO_EMULADORES}.appspot.com`,
+    appId: 'demo',
+  }
+  : {
+    apiKey: import.meta.env.VITE_API_KEY,
+    authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_APP_ID,
+    measurementId: import.meta.env.VITE_MEASUREMENT_ID
+  };
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+if (USAR_EMULADORES) {
+  connectAuthEmulator(auth, `http://${HOST_EMULADORES}:9099`, { disableWarnings: true });
+  console.warn(`[firebase] Usando EMULADORES locales (${HOST_EMULADORES}, proyecto ${PROYECTO_EMULADORES}).`);
+}
 
 setPersistence(auth, browserSessionPersistence);
 
@@ -60,6 +83,13 @@ const indexedDbDisponible = () => {
 
 let usandoPersistencia = false;
 
+// Cada instancia nueva (también las que se recrean al limpiar la caché) se
+// conecta al emulador si corresponde.
+const conEmulador = (instancia) => {
+  if (USAR_EMULADORES) connectFirestoreEmulator(instancia, HOST_EMULADORES, 8080);
+  return instancia;
+};
+
 const crearFirestore = (persistente = true) => {
   if (persistente && indexedDbDisponible()) {
     try {
@@ -67,13 +97,13 @@ const crearFirestore = (persistente = true) => {
         localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
       });
       usandoPersistencia = true;
-      return instancia;
+      return conEmulador(instancia);
     } catch (error) {
       console.warn('Caché persistente de Firestore no disponible; se usa caché en memoria.', error);
     }
   }
   usandoPersistencia = false;
-  return initializeFirestore(app, { localCache: memoryLocalCache() });
+  return conEmulador(initializeFirestore(app, { localCache: memoryLocalCache() }));
 };
 
 export let db = crearFirestore();
@@ -146,3 +176,7 @@ export const limpiarCacheAlCerrarSesion = async () => {
 
 export const storage = getStorage(app);
 export const functions = getFunctions(app, "us-central1");
+if (USAR_EMULADORES) {
+  connectStorageEmulator(storage, HOST_EMULADORES, 9199);
+  connectFunctionsEmulator(functions, HOST_EMULADORES, 5001);
+}

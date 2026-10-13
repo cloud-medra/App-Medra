@@ -115,6 +115,20 @@ describe('iniciarSesion: correo o nombre de usuario', () => {
   });
 });
 
+describe('iniciarSesion: cambio de correo confirmado', () => {
+  it('el perfil toma el correo de Auth al entrar (no antes); con el anterior ya no entra', async () => {
+    const uid = await crearCuenta({ email: 'ana@medra.cl', nombreUsuario: 'aperez' });
+    // Lo que hace Firebase cuando el usuario confirma verifyBeforeUpdateEmail.
+    await auth.updateUser(uid, { email: 'ana.perez@medra.cl' });
+    expect((await db.collection('usuarios').doc(uid).get()).data().email).toBe('ana@medra.cl');
+    await expect(login({ identificador: 'ana@medra.cl', password: 'secreto123' })).rejects.toEqual(rechazo('unauthenticated'));
+    const { token } = await login({ identificador: 'aperez', password: 'secreto123' });
+    expect((await entrarYLeerPerfil(token)).uid).toBe(uid);
+    expect((await db.collection('usuarios').doc(uid).get()).data().email).toBe('ana.perez@medra.cl');
+    expect((await login({ identificador: 'Ana.Perez@medra.cl', password: 'secreto123' })).token).toBeTruthy();
+  });
+});
+
 describe('iniciarSesion: usuario inactivo', () => {
   it('con la contraseña correcta informa que está deshabilitado (por correo o por nombre), sin contar como fallo', async () => {
     await crearCuenta({ email: 'luis@medra.cl', nombreUsuario: 'lsoto', activo: false });

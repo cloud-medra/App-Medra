@@ -1,3 +1,4 @@
+import { accionDeVista } from '../../functions/permisos/nucleo.mjs';
 import { useUser } from '../context/UserContext';
 
 export const useGranularPermission = () => {
@@ -15,23 +16,13 @@ export const useGranularPermission = () => {
       return false;
     }
 
-    const seccionConfig = viewConfig[sectionKey];
-    if (!seccionConfig) {
-      return true;
+    if (!elementKey) {
+      const seccionConfig = viewConfig[sectionKey];
+      return !seccionConfig || seccionConfig.visible !== false;
     }
-
-    if (seccionConfig.visible === false) {
-      return false;
-    }
-
-    if (elementKey) {
-      const elementoActivo = seccionConfig.elements?.[elementKey];
-      if (elementoActivo === false) {
-        return false;
-      }
-    }
-
-    return true;
+    // Sección o acción sin configurar = permitida, salvo las acciones de
+    // ACCIONES_DENEGADAS_POR_DEFECTO (functions/permisos/nucleo.mjs).
+    return accionDeVista(viewConfig, viewPath, sectionKey, elementKey);
   };
 
   const hasAccesoProceso = (procesoPath) => {

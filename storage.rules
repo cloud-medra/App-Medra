@@ -26,7 +26,8 @@ service firebase.storage {
       return u.permisos[modulo] != null;
     }
     // Mismo criterio que firestore.rules (tieneItem / accionPermitida /
-    // accionEnVista): ítem de menú + acción granular de la vista.
+    // accionEnVista): ítem de menú + acción granular de la vista. Las
+    // acciones de ACCIONES_DENEGADAS_POR_DEFECTO no se validan aquí.
     function tieneItem(modulo, ruta) {
       return ruta in getUsuario().permisos.get(modulo, []);
     }
