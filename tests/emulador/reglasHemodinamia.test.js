@@ -1,6 +1,6 @@
 // Reglas de Hemodinamia (igual que Implantes) contra los emuladores:
 //   - storage.rules: PDF por admisión (hemodinamia/{admisión}/documentos:
-//     solo crear, PDF, permiso hemodinamia); Respaldo de documentos
+//     solo crear y nunca sobrescribir, PDF, permiso hemodinamia); Respaldo de documentos
 //     (hemodinamia_respaldo/); PDF de OC (ordenes_oc) e índice de OC.
 //   - firestore.rules: hemodinamia_respaldo_documentos (vista y acciones de
 //     /hemodinamia/respaldoDocumentos), ocImport y ordenesOC con permiso
@@ -67,7 +67,7 @@ describe('Storage: documentos de admisión de Hemodinamia', () => {
     const r = ref(s.hemo.storage, 'hemodinamia/555/documentos/555 - ANA - DP.pdf');
     await expect(uploadBytes(r, pdf(), META_PDF)).resolves.toBeTruthy();
     await expect(getBytes(r)).resolves.toBeTruthy();
-    // (Sobrescribir: ver el caso "igual que Implantes" más abajo.)
+    // (Sobrescribir: ver "nunca se sobrescribe" más abajo.)
     await expect(uploadBytes(ref(s.hemo.storage, 'hemodinamia/555/documentos/x.txt'), pdf(), { contentType: 'text/plain' })).rejects.toMatchObject(NO_AUTORIZADO);
   });
 
@@ -78,16 +78,32 @@ describe('Storage: documentos de admisión de Hemodinamia', () => {
   });
 });
 
-describe('Storage: sobrescribir un PDF existente', () => {
-  it('Hemodinamia se comporta igual que Implantes', async () => {
+describe('Storage: nunca se sobrescribe un PDF existente (resource == null)', () => {
+  it('documentos de admisión: Implantes y Hemodinamia rechazan sobrescribir', async () => {
     const implantes = await sesion('impl2', { rol: 'operador', permisos: { implantes: ['/implantes/gestionImplantes'] } });
     const rImpl = ref(implantes.storage, 'implantes/777/documentos/a.pdf');
     const rHemo = ref(s.hemo.storage, 'hemodinamia/777/documentos/a.pdf');
-    await uploadBytes(rImpl, pdf(), META_PDF);
-    await uploadBytes(rHemo, pdf(), META_PDF);
-    const resultado = async (r) => uploadBytes(r, pdf(), META_PDF).then(() => 'permitido', () => 'rechazado');
-    const enImplantes = await resultado(rImpl);
-    expect(await resultado(rHemo)).toBe(enImplantes);
+    await expect(uploadBytes(rImpl, pdf(), META_PDF)).resolves.toBeTruthy();
+    await expect(uploadBytes(rHemo, pdf(), META_PDF)).resolves.toBeTruthy();
+    await expect(uploadBytes(rImpl, pdf(), META_PDF)).rejects.toMatchObject(NO_AUTORIZADO);
+    await expect(uploadBytes(rHemo, pdf(), META_PDF)).rejects.toMatchObject(NO_AUTORIZADO);
+  });
+
+  it('Archivo digital (Documentos): tampoco se sobrescribe', async () => {
+    const RUTA = '/documentos/archivoDigital';
+    const archivo = await sesion('archivo', {
+      rol: 'operador', permisos: { documentos: [RUTA] },
+      permisosGranulares: { [RUTA]: { archivos: { visible: true, elements: { btn_subir: true } } } },
+    });
+    const r = ref(archivo.storage, 'documentos_archivo/n1/informe.pdf');
+    await expect(uploadBytes(r, pdf(), META_PDF)).resolves.toBeTruthy();
+    await expect(uploadBytes(r, pdf(), META_PDF)).rejects.toMatchObject(NO_AUTORIZADO);
+  });
+
+  it('respaldo de documentos: tampoco se sobrescribe', async () => {
+    const r = ref(s.hemo.storage, 'hemodinamia_respaldo/r9/555 - ANA - DP.pdf');
+    await expect(uploadBytes(r, pdf(), META_PDF)).resolves.toBeTruthy();
+    await expect(uploadBytes(r, pdf(), META_PDF)).rejects.toMatchObject(NO_AUTORIZADO);
   });
 });
 

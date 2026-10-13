@@ -69,12 +69,18 @@ service firebase.storage {
     // PDFs de cada admisión de Implantes (pestaña Documentos de Gestión
     // Implantes). Solo "create": nunca se sobrescribe ni se borra desde la
     // app; ante un nombre repetido el cliente usa "(2)", "(3)"...
+    // `resource == null` (el archivo no existe aún) hace explícito el "no
+    // sobrescribir": en producción sobrescribir se evalúa como "update" (no
+    // permitido aquí), pero el emulador de Storage lo evalúa como "create" y
+    // sin esta condición dejaba pisar el PDF. Igual en Hemodinamia, en los
+    // respaldos y en Archivo digital (tests/emulador/reglasHemodinamia.test.js).
     // El chequeo de permiso (getUsuario) cuesta 1 lectura de Firestore por
     // operación (listar, subir cada PDF, abrir uno). Se mantiene a propósito
     // también en "create": son documentos con datos de pacientes.
     match /implantes/{admision}/documentos/{archivo} {
       allow read: if estaActivo() && (esDev() || tienePermiso('implantes'));
       allow create: if estaActivo()
+        && resource == null
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('.*\\.pdf$')
         && request.resource.size < 20 * 1024 * 1024
@@ -86,6 +92,7 @@ service firebase.storage {
     match /hemodinamia/{admision}/documentos/{archivo} {
       allow read: if estaActivo() && (esDev() || tienePermiso('hemodinamia'));
       allow create: if estaActivo()
+        && resource == null
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('.*\\.pdf$')
         && request.resource.size < 20 * 1024 * 1024
@@ -116,6 +123,7 @@ service firebase.storage {
         && (accionEnVista('implantes', '/implantes/respaldoDocumentos', 'tabla_documentos', 'btn_ver')
           || accionEnVista('implantes', '/implantes/respaldoDocumentos', 'tabla_documentos', 'btn_descargar'));
       allow create: if estaActivo()
+        && resource == null
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('.*\\.pdf$')
         && request.resource.size <= 20 * 1024 * 1024
@@ -132,6 +140,7 @@ service firebase.storage {
         && (accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'tabla_documentos', 'btn_ver')
           || accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'tabla_documentos', 'btn_descargar'));
       allow create: if estaActivo()
+        && resource == null
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('.*\\.pdf$')
         && request.resource.size <= 20 * 1024 * 1024
@@ -149,6 +158,7 @@ service firebase.storage {
         && (accionEnVista('documentos', '/documentos/archivoDigital', 'archivos', 'btn_ver')
           || accionEnVista('documentos', '/documentos/archivoDigital', 'archivos', 'btn_descargar'));
       allow create: if estaActivo()
+        && resource == null
         && request.resource.contentType in ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
         && request.resource.size <= 25 * 1024 * 1024
         && accionEnVista('documentos', '/documentos/archivoDigital', 'archivos', 'btn_subir');
