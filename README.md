@@ -59,3 +59,7 @@ npm run dev:emuladores        # terminal 3: la app contra los emuladores
   ```
 
   Mientras sean públicos, cualquiera con la URL llega a los emuladores (datos de prueba): al terminar, volver a `private` o detener los emuladores.
+
+## Mejoras futuras
+
+- **Administración de usuarios por centro** (pendiente, no implementado). Hoy un "Administrador del sistema" puede crear y editar a cualquier usuario, incluido su nombre de usuario, sin importar el centro; cada cambio queda en la auditoría del usuario (`usuarios/{uid}/logs`). Las solicitudes de cambio de nombre y las alertas sí se restringen por centro (solo los administradores asignados al operador, o los de su centro, más los desarrolladores). Posible mejora: restringir también Crear/Editar usuario para que un administrador solo gestione usuarios de los centros que administra (`centrosAdministrados`). Implica cambiar el modelo actual de "administrador = acceso total" en las reglas de Firestore y en las Cloud Functions de `functions/permisos`.
