@@ -21,6 +21,12 @@ import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 const USAR_EMULADORES = import.meta.env.DEV && import.meta.env.VITE_USAR_EMULADORES === 'true';
 const HOST_EMULADORES = import.meta.env.VITE_EMULADOR_HOST || '127.0.0.1';
 const PROYECTO_EMULADORES = 'demo-workcraft';
+// Codespace abierto en el navegador: cada puerto reenviado es
+// https://<codespace>-<puerto>.app.github.dev (los puertos de los emuladores
+// tienen que ser públicos, ver README). Se detecta por la URL de la app.
+const CODESPACE = USAR_EMULADORES ? window.location.hostname.match(/^(.+)-\d+\.(app\.github\.dev)$/) : null;
+const hostCodespace = (puerto) => `${CODESPACE[1]}-${puerto}.${CODESPACE[2]}`;
+const urlEmulador = (puerto) => (CODESPACE ? `https://${hostCodespace(puerto)}` : `http://${HOST_EMULADORES}:${puerto}`);
 
 export const firebaseConfig = USAR_EMULADORES
   ? {
@@ -43,8 +49,8 @@ export const firebaseConfig = USAR_EMULADORES
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 if (USAR_EMULADORES) {
-  connectAuthEmulator(auth, `http://${HOST_EMULADORES}:9099`, { disableWarnings: true });
-  console.warn(`[firebase] Usando EMULADORES locales (${HOST_EMULADORES}, proyecto ${PROYECTO_EMULADORES}).`);
+  connectAuthEmulator(auth, urlEmulador(9099), { disableWarnings: true });
+  console.warn(`[firebase] Usando EMULADORES (${CODESPACE ? 'Codespace' : HOST_EMULADORES}, proyecto ${PROYECTO_EMULADORES}).`);
 }
 
 setPersistence(auth, browserSessionPersistence);
@@ -84,9 +90,14 @@ const indexedDbDisponible = () => {
 let usandoPersistencia = false;
 
 // Cada instancia nueva (también las que se recrean al limpiar la caché) se
-// conecta al emulador si corresponde.
+// conecta al emulador si corresponde. En el Codespace, connectFirestoreEmulator
+// solo habla http: se apunta al puerto reenviado como host https, con long
+// polling (el proxy de Codespaces no deja pasar el streaming).
+const AJUSTES_FIRESTORE_CODESPACE = CODESPACE
+  ? { host: hostCodespace(8080), ssl: true, experimentalForceLongPolling: true }
+  : {};
 const conEmulador = (instancia) => {
-  if (USAR_EMULADORES) connectFirestoreEmulator(instancia, HOST_EMULADORES, 8080);
+  if (USAR_EMULADORES && !CODESPACE) connectFirestoreEmulator(instancia, HOST_EMULADORES, 8080);
   return instancia;
 };
 
@@ -94,6 +105,7 @@ const crearFirestore = (persistente = true) => {
   if (persistente && indexedDbDisponible()) {
     try {
       const instancia = initializeFirestore(app, {
+        ...AJUSTES_FIRESTORE_CODESPACE,
         localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
       });
       usandoPersistencia = true;
@@ -103,7 +115,7 @@ const crearFirestore = (persistente = true) => {
     }
   }
   usandoPersistencia = false;
-  return conEmulador(initializeFirestore(app, { localCache: memoryLocalCache() }));
+  return conEmulador(initializeFirestore(app, { ...AJUSTES_FIRESTORE_CODESPACE, localCache: memoryLocalCache() }));
 };
 
 export let db = crearFirestore();
@@ -175,8 +187,18 @@ export const limpiarCacheAlCerrarSesion = async () => {
 };
 
 export const storage = getStorage(app);
-export const functions = getFunctions(app, "us-central1");
+// En el Codespace, las funciones del emulador se llaman como dominio propio
+// (https://<codespace>-5001…/<proyecto>/<región>/<función>).
+export const functions = CODESPACE
+  ? getFunctions(app, `${urlEmulador(5001)}/${PROYECTO_EMULADORES}/us-central1`)
+  : getFunctions(app, "us-central1");
 if (USAR_EMULADORES) {
-  connectStorageEmulator(storage, HOST_EMULADORES, 9199);
-  connectFunctionsEmulator(functions, HOST_EMULADORES, 5001);
+  if (CODESPACE) {
+    connectStorageEmulator(storage, hostCodespace(9199), 443);
+    // connectStorageEmulator solo habla http; el puerto reenviado es https.
+    storage._protocol = 'https';
+  } else {
+    connectStorageEmulator(storage, HOST_EMULADORES, 9199);
+    connectFunctionsEmulator(functions, HOST_EMULADORES, 5001);
+  }
 }
