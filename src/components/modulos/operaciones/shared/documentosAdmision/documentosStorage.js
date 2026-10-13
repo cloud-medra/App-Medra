@@ -1,13 +1,16 @@
-// Acceso a Storage de los PDF de admisiones de Implantes (pestaña Documentos
-// y Carga masiva de documentos). Sin Firestore: el listado sale
+// Acceso a Storage de los PDF de admisiones de Implantes y Hemodinamia
+// (pestaña Documentos y Carga masiva de documentos), cada módulo en su
+// carpeta ({carpetaDocumentos}/{admisión}/documentos, ver modulosGestion.js). Sin Firestore: el listado sale
 // de un listAll de la carpeta de la admisión (ver documentosHelpers.js).
 // storage.rules solo permite "create" en esta ruta, así que el servidor
 // rechaza cualquier intento de sobrescribir un PDF existente.
 import { ref, listAll, uploadBytesResumable, getBlob } from 'firebase/storage';
-import { storage, auth } from '../../../../../../firebaseConfig';
+import { storage, auth } from '../../../../../firebaseConfig';
 import { nombreDisponible, nombreParaStorage, tipoDesdeNombre, mensajeErrorStorage } from './documentosHelpers';
+import { moduloGestion } from '../modulosGestion';
 
-const carpetaAdmision = (idAdmision) => `implantes/${String(idAdmision).trim().replace(/\//g, '_')}/documentos`;
+export const carpetaAdmision = (modulo, idAdmision) =>
+  `${moduloGestion(modulo).carpetaDocumentos}/${String(idAdmision).trim().replace(/\//g, '_')}/documentos`;
 
 const aDocumento = (itemRef) => ({
   nombre: itemRef.name,
@@ -15,8 +18,8 @@ const aDocumento = (itemRef) => ({
   tipo: tipoDesdeNombre(itemRef.name)
 });
 
-export const listarDocumentosAdmision = async (idAdmision) => {
-  const res = await listAll(ref(storage, carpetaAdmision(idAdmision)));
+export const listarDocumentosAdmision = async (modulo, idAdmision) => {
+  const res = await listAll(ref(storage, carpetaAdmision(modulo, idAdmision)));
   return res.items.map(aDocumento);
 };
 
@@ -35,8 +38,8 @@ const subirArchivo = (ruta, file, customMetadata, onProgreso) => new Promise((re
 // mismo nombre después de cargar el listado (la regla prohíbe sobrescribir)
 // o por falta de permiso: se relista UNA vez para distinguirlo; si el
 // nombre apareció, se reintenta con el siguiente sufijo.
-export const subirDocumentoAdmision = async ({ idAdmision, nombre: nombreArchivo, file, nombresConocidos, onProgreso }) => {
-  const carpeta = carpetaAdmision(idAdmision);
+export const subirDocumentoAdmision = async ({ modulo, idAdmision, nombre: nombreArchivo, file, nombresConocidos, onProgreso }) => {
+  const carpeta = carpetaAdmision(modulo, idAdmision);
   const customMetadata = { nombreOriginal: file.name, subidoPor: auth.currentUser?.email || '' };
   let nombres = nombresConocidos;
   let nombre = nombreDisponible(nombreArchivo, nombres);
@@ -46,7 +49,7 @@ export const subirDocumentoAdmision = async ({ idAdmision, nombre: nombreArchivo
     return { documento: aDocumento(itemRef), listaActualizada: null };
   } catch (err) {
     if (err?.code !== 'storage/unauthorized') throw err;
-    const actual = await listarDocumentosAdmision(idAdmision);
+    const actual = await listarDocumentosAdmision(modulo, idAdmision);
     nombres = actual.map(d => d.nombre);
     if (!nombres.some(n => n.toLowerCase() === nombre.toLowerCase())) throw err;
     nombre = nombreDisponible(nombreArchivo, nombres);
@@ -62,7 +65,7 @@ export const subirDocumentoAdmision = async ({ idAdmision, nombre: nombreArchivo
 // permiso (ya descartado el choque de nombre en subirDocumentoAdmision), el
 // resto fallaría igual: se corta ahí y se marca `sinPermiso`.
 // onProgreso(indiceArchivo, porcentajeDelArchivo)
-export const subirTandaAdmision = async ({ idAdmision, archivos, listaInicial = [], onProgreso }) => {
+export const subirTandaAdmision = async ({ modulo, idAdmision, archivos, listaInicial = [], onProgreso }) => {
   let lista = listaInicial;
   const subidos = [];
   const fallidos = [];
@@ -73,6 +76,7 @@ export const subirTandaAdmision = async ({ idAdmision, archivos, listaInicial = 
     onProgreso?.(i, 0);
     try {
       const { documento, listaActualizada } = await subirDocumentoAdmision({
+        modulo,
         idAdmision,
         nombre: nombreParaStorage(file.name),
         file,
@@ -82,7 +86,7 @@ export const subirTandaAdmision = async ({ idAdmision, archivos, listaInicial = 
       lista = [...(listaActualizada || lista).filter(d => d.ruta !== documento.ruta), documento];
       subidos.push({ nombreOriginal: file.name, ...documento });
     } catch (err) {
-      console.error('Error al subir documento de implantes:', err);
+      console.error(`Error al subir documento de ${modulo}:`, err);
       const motivo = `${mensajeErrorStorage(err)} No se subió.`;
       fallidos.push({ nombre: file.name, motivo });
       if (err?.code === 'storage/unauthorized') {

@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react';
 import { FileText, UploadCloud, Eye, Download, Loader2, AlertCircle, RefreshCw, FolderOpen, CheckCircle2, XCircle, HelpCircle, Copy, ChevronUp, Archive } from 'lucide-react';
-import { useToast } from '../../../../../../../context/ToastContext';
-import { useGranularPermission } from '../../../../../../../hooks/useGranularPermission';
-import FormularioRespaldo from '../../../respaldoDocumentos/FormularioRespaldo';
-import { RUTA_VISTA_RESPALDO } from '../../../respaldoDocumentos/respaldoHelpers';
+import { useToast } from '../../../../../context/ToastContext';
+import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
+import FormularioRespaldo from '../../implantes/respaldoDocumentos/FormularioRespaldo';
 import {
   TIPOS_DOCUMENTO,
   TAMANO_MAXIMO_MB,
@@ -11,12 +10,13 @@ import {
   superaTamanoMaximo,
   mensajeErrorStorage,
   ordenarDocumentos
-} from '../../../shared/documentosAdmision/documentosHelpers';
-import { subirTandaAdmision, obtenerBlobDocumento } from '../../../shared/documentosAdmision/documentosStorage';
-import { ZonaSubidaPdf } from '../../../shared/documentosAdmision/ZonaSubidaPdf';
-import { construirTextoAdmisionNombre } from '../../utils/gestionesImportExport';
+} from './documentosHelpers';
+import { subirTandaAdmision, obtenerBlobDocumento } from './documentosStorage';
+import { ZonaSubidaPdf } from './ZonaSubidaPdf';
+import { construirTextoAdmisionNombre } from '../../implantes/gestionImplantes/utils/gestionesImportExport';
 import { VisorDocumentoModal } from './VisorDocumentoModal';
 import { IconoArchivo } from './IconoArchivo';
+import { moduloGestion } from '../modulosGestion';
 
 const SIN_TIPO = 'SIN_TIPO';
 
@@ -24,10 +24,14 @@ const SIN_TIPO = 'SIN_TIPO';
 // Pestaña Documentos: PDF de la admisión en Storage. Los archivos se suben
 // con su nombre original; id y tipo se leen del nombre, con las mismas reglas
 // que Carga masiva de documentos (shared/documentosAdmision).
-// El listado vive en el padre (GestionesImplantesDetalleView) para que
+// Pestaña compartida por Implantes y Hemodinamia (`modulo`, ver
+// modulosGestion.js): cada uno en su carpeta de Storage.
+// El listado vive en el padre (el detalle de la gestión, ver
+// useDocumentosAdmision) para que
 // cambiar de pestaña no lo vuelva a pedir; acá solo se muestra y, al terminar
 // una tanda de subida, se le entrega el listado actualizado en memoria.
 export const DocumentosTab = ({
+  modulo = 'implantes',
   idAdmision,
   gestionId,
   nombre,
@@ -46,7 +50,9 @@ export const DocumentosTab = ({
   // PDF rechazados por id distinto o ilegible: se pueden enviar al Respaldo
   // de documentos (con ID, nombre y tipo leídos del nombre del archivo).
   const { hasPermission } = useGranularPermission();
-  const puedeRespaldar = hasPermission(RUTA_VISTA_RESPALDO, 'acciones', 'btn_subir');
+  const config = moduloGestion(modulo);
+  // Solo si el módulo tiene Respaldo de documentos.
+  const puedeRespaldar = Boolean(config.rutas.respaldo) && hasPermission(config.rutas.respaldo, 'acciones', 'btn_subir');
   const [respaldoAbierto, setRespaldoAbierto] = useState(false);
   const respaldables = (resumen?.rechazados || []).filter((r) => r.respaldable && r.file);
   const alEnviarARespaldo = (files) => setResumen((prev) => prev && ({
@@ -91,6 +97,7 @@ export const DocumentosTab = ({
     // 2) Subida de a uno (sufijos "(2)" considerando también esta tanda); el
     // listado se arma en memoria.
     const { lista: listaTrabajo, subidos, fallidos } = await subirTandaAdmision({
+      modulo,
       idAdmision,
       archivos: aSubir,
       listaInicial: lista,
@@ -122,7 +129,7 @@ export const DocumentosTab = ({
       accion(url);
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (err) {
-      console.error('Error al abrir documento de implantes:', err);
+      console.error(`Error al abrir documento de ${modulo}:`, err);
       showToast(mensajeErrorStorage(err), 'error');
     } finally {
       setAbriendoRuta(null);

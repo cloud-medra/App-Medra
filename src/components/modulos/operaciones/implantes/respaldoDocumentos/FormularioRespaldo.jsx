@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, Upload, FileText, Trash2, CheckCircle2, AlertCircle, Loader2, CalendarDays } from 'lucide-react';
 import { useToast } from '../../../../../context/ToastContext';
 import { useUser } from '../../../../../context/UserContext';
-import { mensajeErrorStorage } from '../shared/documentosAdmision/documentosHelpers';
+import { mensajeErrorStorage } from '../../shared/documentosAdmision/documentosHelpers';
 import { TIPOS_DOCUMENTO, TAMANO_MAXIMO_MB, validarFilaRespaldo, construirNombreRespaldo, datosDesdeNombreArchivo } from './respaldoHelpers';
 import { subirRespaldo } from './respaldoService';
 

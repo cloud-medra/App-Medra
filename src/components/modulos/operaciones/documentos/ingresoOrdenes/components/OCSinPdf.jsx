@@ -1,7 +1,7 @@
 import { useDropzone } from 'react-dropzone';
 import { Loader2, AlertCircle, RefreshCw, Search, Upload, CheckCircle2, XCircle, X, FileWarning, CalendarSearch, Database } from 'lucide-react';
 import PaginacionSimple from '../../../../../ui/PaginacionSimple';
-import { ZonaSubidaPdf } from '../../../implantes/shared/documentosAdmision/ZonaSubidaPdf';
+import { ZonaSubidaPdf } from '../../../shared/documentosAdmision/ZonaSubidaPdf';
 import { useSubirPdfOC } from '../../../shared/ordenesOC/useSubirPdfOC';
 import { TAMANO_MAXIMO_PDF_OC_MB } from '../../../shared/ordenesOC/ordenesOCHelpers';
 import { useOCSinPdf } from '../hooks/useOCSinPdf';

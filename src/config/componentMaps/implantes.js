@@ -202,7 +202,7 @@ export const implantesComponentMaps = {
         },
       },
       '/implantes/gestionImplantes/documentos': {
-        label: 'Pestaña: Documentos — PDF de la admisión en Storage (Documentostab.jsx)',
+        label: 'Pestaña: Documentos — PDF de la admisión en Storage (shared/documentosAdmision/DocumentosTab.jsx)',
         sections: {
           contenido: {
             label: 'Sección: Subida múltiple y listado de PDF (DP, RP, INF, COT)',

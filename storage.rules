@@ -81,6 +81,17 @@ service firebase.storage {
         && (esDev() || tienePermiso('implantes'));
     }
 
+    // PDFs de cada admisión de Hemodinamia: mismas reglas que Implantes
+    // (pestaña Documentos y Carga masiva de documentos de Hemodinamia).
+    match /hemodinamia/{admision}/documentos/{archivo} {
+      allow read: if estaActivo() && (esDev() || tienePermiso('hemodinamia'));
+      allow create: if estaActivo()
+        && request.resource.contentType == 'application/pdf'
+        && archivo.matches('.*\\.pdf$')
+        && request.resource.size < 20 * 1024 * 1024
+        && (esDev() || tienePermiso('hemodinamia'));
+    }
+
     // PDF de órdenes de compra: UNO por OC (ordenes_oc/OC_{oc}.pdf),
     // compartido por todas las admisiones/empresas que usan esa OC. Se
     // permite "update" para reemplazarlo (la app pregunta antes); nunca se

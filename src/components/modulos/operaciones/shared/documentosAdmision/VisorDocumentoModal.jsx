@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Download, ExternalLink, X, Loader2, AlertCircle, FileText } from 'lucide-react';
-import { obtenerBlobDocumento } from '../../../shared/documentosAdmision/documentosStorage';
-import { mensajeErrorStorage, TIPOS_DOCUMENTO } from '../../../shared/documentosAdmision/documentosHelpers';
+import { obtenerBlobDocumento } from './documentosStorage';
+import { mensajeErrorStorage, TIPOS_DOCUMENTO } from './documentosHelpers';
 
 const BOTON = 'h-7 px-2 inline-flex items-center gap-1.5 rounded border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-[10.5px] font-medium text-slate-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:text-slate-600 transition';
 

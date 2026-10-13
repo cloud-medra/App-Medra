@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { Info, ListFilter, UploadCloud, Unlock, Lock, History, ShieldAlert } from 'lucide-react';
+import { Info, ListFilter, UploadCloud, Unlock, Lock, History, ShieldAlert, Folder } from 'lucide-react';
 
 import { usePeriodoAbiertoStore } from '../../../../../../hooks/usePeriodoAbiertoStore';
 import { useGranularPermission } from '../../../../../../hooks/useGranularPermission';
@@ -16,6 +16,8 @@ import { EmpresasFechasPanel } from './EmpresasFechasPanel';
 import { validarNuevaEmpresaFecha, extraerDatosBase } from '../../../shared/empresaFechaDesdeDetalle';
 import { HistorialLogsContenido } from '../GestionesHemodinamiaDrawers';
 import { CENTRO_HEMODINAMIA } from '../utils/constantesHemodinamia';
+import { DocumentosTab } from '../../../shared/documentosAdmision/DocumentosTab';
+import { useDocumentosAdmision } from '../../../shared/documentosAdmision/useDocumentosAdmision';
 
 const MODULO_ACTUAL = 'hemodinamia';
 
@@ -23,6 +25,7 @@ const ALL_TABS = [
   { id: 'detalles', label: 'Detalles', Icon: ListFilter, path: '/hemodinamia/gestionHemodinamia/detalles' },
   { id: 'informacion', label: 'Información', Icon: Info, path: '/hemodinamia/gestionHemodinamia/informacion' },
   { id: 'cargas', label: 'Cargas', Icon: UploadCloud, path: '/hemodinamia/gestionHemodinamia/cargas' },
+  { id: 'documentos', label: 'Documentos', Icon: Folder, path: '/hemodinamia/gestionHemodinamia/documentos' },
   { id: 'logs', label: 'Logs', Icon: History, path: '/hemodinamia/gestionHemodinamia/logs' },
 ];
 
@@ -571,6 +574,13 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
     });
   }, [tabActual?.id, refPathBloqueActivo]);
 
+  // Documentos: ID YA guardado (la foto inicial), no el que se esté editando
+  // sin guardar — el PDF no debe quedar en la carpeta de un ID que todavía no
+  // existe en Firestore. También es contra el que se validan los nombres.
+  const gestionIdGuardado = JSON.parse(snapshotInicialRef.current).gestionId;
+  const idAdmisionDocs = esCodigoPendiente(gestionIdGuardado) ? '' : String(gestionIdGuardado).trim();
+  const docsAdmision = useDocumentosAdmision(MODULO_ACTUAL, idAdmisionDocs, tabActual?.id === 'documentos');
+
   return (
     <div className="flex-grow flex flex-col bg-slate-50/50 dark:bg-gray-900 overflow-hidden text-[10px]">
 
@@ -679,6 +689,17 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
               periodoAbierto={periodoActivo}
               cargandoPeriodo={cargandoPeriodo}
               handleCopiarTexto={handleCopiarTexto}
+            />
+          )}
+
+          {tabActual?.id === 'documentos' && (
+            <DocumentosTab
+              modulo={MODULO_ACTUAL}
+              idAdmision={idAdmisionDocs}
+              gestionId={formData.gestionId}
+              nombre={formData.nombre}
+              handleCopiarTexto={handleCopiarTexto}
+              {...docsAdmision}
             />
           )}
 

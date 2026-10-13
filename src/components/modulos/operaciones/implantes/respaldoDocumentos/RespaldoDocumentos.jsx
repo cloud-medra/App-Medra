@@ -5,9 +5,9 @@ import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitida
 import { useToast } from '../../../../../context/ToastContext';
 import { useModal } from '../../../../../context/ModalContext';
 import { useUser } from '../../../../../context/UserContext';
-import { obtenerBlobDocumento } from '../shared/documentosAdmision/documentosStorage';
-import { mensajeErrorStorage } from '../shared/documentosAdmision/documentosHelpers';
-import { VisorDocumentoModal } from '../gestionImplantes/components/Documentostab/VisorDocumentoModal';
+import { obtenerBlobDocumento } from '../../shared/documentosAdmision/documentosStorage';
+import { mensajeErrorStorage } from '../../shared/documentosAdmision/documentosHelpers';
+import { VisorDocumentoModal } from '../../shared/documentosAdmision/VisorDocumentoModal';
 import FormularioRespaldo from './FormularioRespaldo';
 import { TIPOS_DOCUMENTO, filtrarRespaldos, ordenarRespaldos } from './respaldoHelpers';
 import { escucharRespaldos, enviarRespaldoAPapelera, restaurarRespaldo, eliminarRespaldoDefinitivo } from './respaldoService';

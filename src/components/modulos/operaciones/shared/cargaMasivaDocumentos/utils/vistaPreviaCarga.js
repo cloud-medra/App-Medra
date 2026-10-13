@@ -12,7 +12,7 @@ import {
   esPdf,
   superaTamanoMaximo,
   TAMANO_MAXIMO_MB
-} from '../../shared/documentosAdmision/documentosHelpers';
+} from '../../documentosAdmision/documentosHelpers';
 
 export const ESTADOS = {
   LISTO: { label: 'Listo para subir', subible: true },
@@ -46,9 +46,9 @@ export const idsPorVerificar = (items, yaSolicitados) => [...new Set(
     .filter(id => id && !yaSolicitados.has(id))
 )];
 
-const motivoRechazo = (fila) => {
+const motivoRechazo = (fila, etiquetaModulo) => {
   switch (fila.estado) {
-    case 'NO_ENCONTRADA': return `La admisión ${fila.idAdmision} no existe en Implantes. No se subió.`;
+    case 'NO_ENCONTRADA': return `La admisión ${fila.idAdmision} no existe en ${etiquetaModulo}. No se subió.`;
     case 'NOMBRE_INVALIDO': return 'El nombre no comienza con un id de admisión legible ("102030 - PACIENTE - TIPO"). No se subió.';
     case 'NO_PDF': return 'No es un archivo PDF. No se subió.';
     case 'MUY_GRANDE': return `Supera el máximo de ${TAMANO_MAXIMO_MB} MB. No se subió.`;
@@ -57,11 +57,11 @@ const motivoRechazo = (fila) => {
   }
 };
 
-// `respaldable`: la admisión no existe en Implantes, así que el archivo se
+// `respaldable`: la admisión no existe en el módulo, así que el archivo se
 // puede enviar al Respaldo de documentos (se conserva `file` para eso).
-export const rechazoDeFila = (fila) => ({
+export const rechazoDeFila = (fila, etiquetaModulo = 'Implantes') => ({
   nombre: fila.nombre,
-  motivo: motivoRechazo(fila),
+  motivo: motivoRechazo(fila, etiquetaModulo),
   file: fila.file,
   respaldable: fila.estado === 'NO_ENCONTRADA',
 });

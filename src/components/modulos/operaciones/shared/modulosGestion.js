@@ -18,10 +18,14 @@ export const MODULOS_GESTION = Object.freeze({
     // Excel de Solicitud
     hojaSolicitud: 'Solicitud Implantes',
     archivoSolicitud: 'solicitud_implantes',
+    // Storage: PDF de cada admisión (pestaña Documentos y Carga masiva).
+    carpetaDocumentos: 'implantes',
     // Rutas (menú y permisos granulares)
     rutas: {
       gestion: '/implantes/gestionImplantes',
       solicitud: '/implantes/solicitudImplantes',
+      cargaMasivaDocumentos: '/implantes/cargaMasivaDocumentos',
+      respaldo: '/implantes/respaldoDocumentos',
     },
   },
   hemodinamia: {
@@ -34,9 +38,11 @@ export const MODULOS_GESTION = Object.freeze({
     atributoPorDefecto: 'HEMODINAMIA',
     hojaSolicitud: 'Solicitud Hemodinamia',
     archivoSolicitud: 'solicitud_hemodinamia',
+    carpetaDocumentos: 'hemodinamia',
     rutas: {
       gestion: '/hemodinamia/gestionHemodinamia',
       solicitud: '/hemodinamia/solicitudHemodinamia',
+      cargaMasivaDocumentos: '/hemodinamia/cargaMasivaDocumentos',
     },
   },
 });

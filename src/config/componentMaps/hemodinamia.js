@@ -162,6 +162,15 @@ export const hemodinamiaComponentMaps = {
           },
         },
       },
+      '/hemodinamia/gestionHemodinamia/documentos': {
+        label: 'Pestaña: Documentos — PDF de la admisión en Storage (shared/documentosAdmision/DocumentosTab.jsx)',
+        sections: {
+          contenido: {
+            label: 'Sección: Subida múltiple y listado de PDF (DP, RP, INF, COT)',
+            elements: {},
+          },
+        },
+      },
       '/hemodinamia/gestionHemodinamia/logs': {
         label: 'Pestaña: Logs — historial del bloque activo, solo lectura',
         sections: {
@@ -170,6 +179,20 @@ export const hemodinamiaComponentMaps = {
             elements: {},
           },
         },
+      },
+    },
+  },
+
+  '/hemodinamia/cargaMasivaDocumentos': {
+    label: 'Carga masiva de documentos (shared/cargaMasivaDocumentos) — PDF de varias admisiones, sin granularidad cableada aún',
+    sections: {
+      zona_carga: {
+        label: 'Sección: Zona de carga (arrastrar/seleccionar PDF)',
+        elements: {},
+      },
+      vista_previa: {
+        label: 'Sección: Vista previa por admisión y subida',
+        elements: {},
       },
     },
   },

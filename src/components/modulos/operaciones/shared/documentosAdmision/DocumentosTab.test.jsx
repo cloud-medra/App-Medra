@@ -3,15 +3,15 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
-vi.mock('../../../../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
-vi.mock('../../../../../../../context/UserContext', () => ({ useUser: () => ({ userData: { rol: 'dev' } }) }));
-vi.mock('../../../respaldoDocumentos/respaldoService', () => ({ subirRespaldo: vi.fn() }));
-vi.mock('../../../shared/documentosAdmision/documentosStorage', () => ({
+vi.mock('../../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
+vi.mock('../../../../../context/UserContext', () => ({ useUser: () => ({ userData: { rol: 'dev' } }) }));
+vi.mock('../../implantes/respaldoDocumentos/respaldoService', () => ({ subirRespaldo: vi.fn() }));
+vi.mock('./documentosStorage', () => ({
   subirTandaAdmision: vi.fn(),
   obtenerBlobDocumento: vi.fn(async (ruta) => new Blob([ruta], { type: 'application/pdf' }))
 }));
 // La zona de subida simulada expone los archivos de prueba en `globalThis.__archivosPrueba`.
-vi.mock('../../../shared/documentosAdmision/ZonaSubidaPdf', () => ({
+vi.mock('./ZonaSubidaPdf', () => ({
   ZonaSubidaPdf: ({ onArchivos }) => (
     <div data-testid="zona-subida">
       <button type="button" onClick={() => onArchivos(globalThis.__archivosPrueba || [])}>simular subida</button>
@@ -19,7 +19,7 @@ vi.mock('../../../shared/documentosAdmision/ZonaSubidaPdf', () => ({
   )
 }));
 
-import { DocumentosTab } from './Documentostab';
+import { DocumentosTab } from './DocumentosTab';
 
 const doc = (nombre, tipo) => ({ nombre, ruta: `implantes/100/documentos/${nombre}`, tipo });
 const LISTA = [
@@ -94,7 +94,7 @@ describe('DocumentosTab', () => {
   });
 
   it('un PDF de otra admisión se puede enviar al respaldo, con sus datos leídos del nombre', async () => {
-    const { subirTandaAdmision } = await import('../../../shared/documentosAdmision/documentosStorage');
+    const { subirTandaAdmision } = await import('./documentosStorage');
     subirTandaAdmision.mockResolvedValue({ lista: [], subidos: [], fallidos: [], sinPermiso: false });
     globalThis.__archivosPrueba = [new File(['x'], '555 - LUIS SOTO - COT 9 - EMP.pdf', { type: 'application/pdf' })];
     renderTab({ lista: [], cargando: false, error: null });
@@ -106,6 +106,19 @@ describe('DocumentosTab', () => {
     expect(within(dialogo).getByDisplayValue('LUIS SOTO')).toBeInTheDocument();
     expect(within(dialogo).getByDisplayValue('COT — Cotización')).toBeInTheDocument();
     expect(within(dialogo).getByText('555 - LUIS SOTO - COT.pdf')).toBeInTheDocument();
+    delete globalThis.__archivosPrueba;
+  });
+});
+
+describe('DocumentosTab en Hemodinamia', () => {
+  it('sube a la carpeta del módulo (modulo = hemodinamia)', async () => {
+    const { subirTandaAdmision } = await import('./documentosStorage');
+    subirTandaAdmision.mockClear();
+    subirTandaAdmision.mockResolvedValue({ lista: [], subidos: [], fallidos: [], sinPermiso: false });
+    globalThis.__archivosPrueba = [new File(['x'], '100 - ANA - DP.pdf', { type: 'application/pdf' })];
+    render(<DocumentosTab modulo="hemodinamia" idAdmision="100" gestionId="100" nombre="ANA" documentos={{ lista: [], cargando: false, error: null }} onRecargar={vi.fn()} onDocumentosSubidos={vi.fn()} />);
+    fireEvent.click(screen.getByText('simular subida'));
+    await waitFor(() => expect(subirTandaAdmision).toHaveBeenCalledWith(expect.objectContaining({ modulo: 'hemodinamia', idAdmision: '100' })));
     delete globalThis.__archivosPrueba;
   });
 });

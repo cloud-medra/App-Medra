@@ -12,7 +12,7 @@ import {
   pacienteDesdeNombre,
   tipoDesdeNombre,
   normalizarNombrePersona,
-} from '../shared/documentosAdmision/documentosHelpers';
+} from '../../shared/documentosAdmision/documentosHelpers';
 
 export const RUTA_VISTA_RESPALDO = '/implantes/respaldoDocumentos';
 export const COLECCION_RESPALDO = 'implantes_respaldo_documentos';

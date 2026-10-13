@@ -8,8 +8,8 @@ import { MESES } from '../../../../administracion/controlMensual/constants';
 import { InformacionTab } from './Informaciontab/Informaciontab';
 import { DetallesTab } from './Detallestab/Detallestab';
 import { CargasTab } from './Cargastab/Cargastab';
-import { DocumentosTab } from './Documentostab/Documentostab';
-import { listarDocumentosAdmision } from '../../shared/documentosAdmision/documentosStorage';
+import { DocumentosTab } from '../../../shared/documentosAdmision/DocumentosTab';
+import { useDocumentosAdmision } from '../../../shared/documentosAdmision/useDocumentosAdmision';
 import { esEstadoCargaCompleto } from './Cargastab/cargasHelpers';
 import { verificarPeriodosBloque } from './Cargastab/verificacionPeriodoBloque';
 import { camposSolicitudDe } from '../../../shared/periodoImputacion';
@@ -636,36 +636,8 @@ const GestionesImplantesDetalleView = forwardRef(({
   const gestionIdGuardado = JSON.parse(snapshotInicialRef.current).gestionId;
   const idAdmisionDocs = esCodigoPendiente(gestionIdGuardado) ? '' : String(gestionIdGuardado).trim();
 
-  // El listado de Storage vive acá (no en DocumentosTab, que se desmonta al
-  // cambiar de pestaña): se pide una sola vez por admisión mientras el panel
-  // esté abierto. `docsSolicitadoRef` evita un segundo listAll si se sale y
-  // se vuelve a la pestaña (antes o después de que termine el primero, y
-  // también si falló: en ese caso solo "Reintentar" vuelve a listar).
-  const [documentosAdmision, setDocumentosAdmision] = useState(null);
-  const docsSolicitadoRef = useRef(null);
-
-  const cargarDocumentos = useCallback((idAdmision) => {
-    docsSolicitadoRef.current = idAdmision;
-    listarDocumentosAdmision(idAdmision)
-      .then(lista => {
-        if (docsSolicitadoRef.current === idAdmision) setDocumentosAdmision({ idAdmision, lista, error: null });
-      })
-      .catch(err => {
-        console.error('Error al listar documentos de implantes:', err);
-        if (docsSolicitadoRef.current !== idAdmision) return;
-        setDocumentosAdmision({ idAdmision, lista: [], error: 'No se pudo cargar el listado de documentos.' });
-      });
-  }, []);
-
-  useEffect(() => {
-    if (tabActual?.id !== 'documentos' || !idAdmisionDocs || docsSolicitadoRef.current === idAdmisionDocs) return;
-    cargarDocumentos(idAdmisionDocs);
-  }, [tabActual?.id, idAdmisionDocs, cargarDocumentos]);
-
-  const handleRecargarDocumentos = () => {
-    setDocumentosAdmision(null);
-    cargarDocumentos(idAdmisionDocs);
-  };
+  // Listado de Storage de la pestaña Documentos (una vez por admisión).
+  const docsAdmision = useDocumentosAdmision('implantes', idAdmisionDocs, tabActual?.id === 'documentos');
 
   // Registro de PDF de OC (ordenesOC/registroPdf): 1 lectura, solo la
   // primera vez que se abre la pestaña Orden en este detalle. Las subidas lo
@@ -690,13 +662,6 @@ const GestionesImplantesDetalleView = forwardRef(({
 
   const handlePdfOCRegistrado = (oc, entrada) => {
     setRegistroPdfOC(prev => ({ error: null, pdfs: { ...(prev?.pdfs || {}), [oc]: entrada } }));
-  };
-
-  // Al terminar una tanda de subida, DocumentosTab entrega el listado ya
-  // armado en memoria (lo previo + lo subido): una sola actualización, sin
-  // volver a listar Storage.
-  const handleDocumentosSubidos = (lista) => {
-    setDocumentosAdmision({ idAdmision: idAdmisionDocs, lista, error: null });
   };
 
   return (
@@ -828,17 +793,12 @@ const GestionesImplantesDetalleView = forwardRef(({
 
           {tabActual?.id === 'documentos' && (
             <DocumentosTab
+              modulo="implantes"
               idAdmision={idAdmisionDocs}
               gestionId={formData.gestionId}
               nombre={formData.nombre}
               handleCopiarTexto={handleCopiarTexto}
-              documentos={{
-                lista: documentosAdmision?.idAdmision === idAdmisionDocs ? documentosAdmision.lista : [],
-                cargando: Boolean(idAdmisionDocs) && documentosAdmision?.idAdmision !== idAdmisionDocs,
-                error: documentosAdmision?.idAdmision === idAdmisionDocs ? documentosAdmision.error : null
-              }}
-              onRecargar={handleRecargarDocumentos}
-              onDocumentosSubidos={handleDocumentosSubidos}
+              {...docsAdmision}
             />
           )}
 

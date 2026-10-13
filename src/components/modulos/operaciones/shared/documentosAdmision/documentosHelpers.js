@@ -1,5 +1,5 @@
-// Reglas de los PDF de admisiones de Implantes, compartidas por la pestaña
-// Documentos de Gestión Implantes y por Carga masiva de documentos (ambas
+// Reglas de los PDF de admisiones (Implantes y Hemodinamia), compartidas por
+// la pestaña Documentos de Gestión y por Carga masiva de documentos (ambas
 // pantallas deben aplicar exactamente las mismas). Los archivos llegan ya
 // nombrados ("102030 - JOSE PEREZ - COT 12345678 - EMPRESA.pdf") y se suben
 // con ese nombre; el id de admisión y el tipo se leen del propio nombre, en
@@ -16,7 +16,7 @@ export const TIPOS_DOCUMENTO = [
 
 const IDS_TIPO = TIPOS_DOCUMENTO.map(t => t.id);
 
-// Mismo tope que storage.rules (match /implantes/{admision}/documentos/...).
+// Mismo tope que storage.rules (match /implantes|hemodinamia/{admision}/documentos/...).
 export const TAMANO_MAXIMO_MB = 20;
 export const superaTamanoMaximo = (file) => (file?.size || 0) > TAMANO_MAXIMO_MB * 1024 * 1024;
 
@@ -140,7 +140,7 @@ export const ordenarDocumentos = (lista) => [...lista].sort((a, b) => {
 export const mensajeErrorStorage = (err) => {
   switch (err?.code) {
     case 'storage/unauthorized':
-      return 'No tienes permiso para esta acción en Documentos de Implantes (o el archivo no es un PDF válido de hasta 20 MB).';
+      return 'No tienes permiso para esta acción en estos documentos (o el archivo no es un PDF válido de hasta 20 MB).';
     case 'storage/retry-limit-exceeded':
     case 'storage/network-request-failed':
       return 'Se perdió la conexión con el servidor. Intenta nuevamente.';
