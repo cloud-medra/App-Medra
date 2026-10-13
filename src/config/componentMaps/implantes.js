@@ -1,4 +1,3 @@
-import { columnas } from './columnas.js';
 import { mapaRespaldoDocumentos, mapaSincronizacionImputadas, reubicarMapa } from './operacionesCompartidas.js';
 import { mapaReportesInfo } from './documentos.js';
 import { maestrosComponentMaps } from './maestros.js';
