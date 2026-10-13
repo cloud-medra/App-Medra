@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Calendar, Settings, FilterX, RefreshCw, ArrowLeft, Save, AlertTriangle, X } from 'lucide-react';
+import { Calendar, Settings, FilterX, RefreshCw, ArrowLeft, Save, AlertTriangle, X, Hash, Loader2 } from 'lucide-react';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
 import { BuscadorConLimpiar } from '../../../../ui/BuscadorConLimpiar';
 import Spinner from '../../../../ui/Spinner';
@@ -10,6 +10,11 @@ import GestionesHemodinamiaForm from './components/GestionesHemodinamiaForm';
 import { GestionesHemodinamiaTable } from './components/GestionesHemodinamiaTable';
 import GestionesHemodinamiaDetalleView from './components/GestionesHemodinamiaDetalleView';
 import { EstadoFilterDropdown } from './components/EstadoFilterDropdown';
+import { SincronizarOCResumenModal } from '../../shared/ocIndex/SincronizarOCResumenModal';
+import { useSincronizarOC } from '../../shared/ocIndex/useSincronizarOC';
+import { useMarcarOcPendiente } from '../../shared/ocIndex/useMarcarOcPendiente';
+import { useUser } from '../../../../../context/UserContext';
+import { esRolAdministrador } from '../../../../../../functions/permisos/nucleo.mjs';
 
 const PATH_VISTA = "/hemodinamia/gestionHemodinamia";
 
@@ -72,6 +77,12 @@ const GestionHemodinamia = () => {
     handleDescargarPlantilla,
     handleEjecutarImportacion
   } = useGestionesHemodinamia();
+  // Igual que Implantes: Sincronizar OC (índice de Importar Detalles OC) y
+  // Marcar OC pendiente (rol Administrador/Desarrollador + acción denegada por defecto).
+  const { sincronizandoOC, handleSincronizarOC, resumenOC, cerrarResumenOC } = useSincronizarOC({ modulo: 'hemodinamia' });
+  const { userData } = useUser();
+  const esAdminODev = esRolAdministrador(userData?.rol) && hasPermission(PATH_VISTA, 'drawer_configuracion', 'btn_marcar_oc_pendiente');
+  const marcarOcPendiente = useMarcarOcPendiente({ habilitado: esAdminODev && showConfigDrawer, modulo: 'hemodinamia' });
 
   const [registroSeleccionado, setRegistroSeleccionado] = useState(null);
   const detalleRef = useRef(null);
@@ -190,6 +201,18 @@ const GestionHemodinamia = () => {
                 title="Sincronizar datos vinculados desde ReportesInfo"
               >
                 {sincronizando ? "Sincronizando..." : <RefreshCw size={15} />}
+              </button>
+            )}
+
+            {hasPermission(PATH_VISTA, "header", "btn_configuracion") && (
+              <button
+                onClick={handleSincronizarOC}
+                disabled={sincronizandoOC}
+                className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-wait"
+                title={sincronizandoOC ? "Sincronizando OC..." : "Sincronizar OC desde Importar Detalles OC"}
+                aria-label="Sincronizar OC"
+              >
+                {sincronizandoOC ? <Loader2 size={15} className="animate-spin" /> : <Hash size={15} />}
               </button>
             )}
 
@@ -344,6 +367,8 @@ const GestionHemodinamia = () => {
         </>
       )}
 
+      <SincronizarOCResumenModal resumen={resumenOC} onClose={cerrarResumenOC} modulo="Hemodinamia" />
+
       <DrawersOverlay
         show={showLogDrawer || showConfigDrawer}
         onClick={() => {
@@ -371,6 +396,7 @@ const GestionHemodinamia = () => {
         onSelectFile={setImportFile}
         importing={importing}
         onEjecutarImportacion={handleEjecutarImportacion}
+        marcarOcPendiente={esAdminODev ? marcarOcPendiente : null}
       />
     </div>
   );

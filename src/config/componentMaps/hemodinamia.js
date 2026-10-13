@@ -75,6 +75,7 @@ export const hemodinamiaComponentMaps = {
           btn_descargar_plantilla: { label: 'Acción: Descargar Plantilla CSV' },
           input_archivo: { label: 'Campo: Selector de Archivo a Importar' },
           btn_importar: { label: 'Acción: Botón Cargar Registro (ejecutar importación)' },
+          btn_marcar_oc_pendiente: { label: 'Acción: Marcar OC pendiente en un rango (además exige rol Administrador)' },
         },
       },
       detalle_header: {
@@ -162,6 +163,15 @@ export const hemodinamiaComponentMaps = {
               formulario_contenido_pad: { label: 'Bloque: Agregar Contenido de PAD (referencia, cantidad, lote, vencimiento)' },
               accion_desbloquear_candado: { label: 'Operación: Desbloquear edición de un bloque ya imputado (candado)' },
             },
+          },
+        },
+      },
+      '/hemodinamia/gestionHemodinamia/orden': {
+        label: 'Pestaña: Orden — Empresas / Fechas de la admisión',
+        sections: {
+          empresas_fechas: {
+            label: 'Sección: Empresas / Fechas',
+            elements: {},
           },
         },
       },

@@ -1,5 +1,6 @@
 // Migración de una sola vez para "Sincronizar OC", desde el navegador (sin
-// cuenta de servicio): agrega `ocPendiente` a las gestiones de Implantes que
+// cuenta de servicio): agrega `ocPendiente` a las gestiones (Implantes o
+// Hemodinamia, `coleccion`) que
 // no lo tienen. Sincronizar OC consulta where('ocPendiente', '==', true) y
 // Firestore no encuentra documentos donde el campo no existe.
 //
@@ -24,17 +25,17 @@ const mesSiguiente = (mes) => {
   return Number(m) === 12 ? `${Number(a) + 1}-01` : `${a}-${String(Number(m) + 1).padStart(2, '0')}`;
 };
 
-const rutaMes = (mes) => {
+const rutaMes = (mes, coleccion) => {
   const [, a, m] = mes.match(MES_VALIDO);
-  return `implantes_gestiones/${a}/mes/${m}`;
+  return `${coleccion}/${a}/mes/${m}`;
 };
 
 // Límites de documentId() para las gestiones entre `desde` y `hasta`
 // (meses 'YYYY-MM', ambos incluidos): [inicio, fin).
-export const rangoRutasGestiones = (desde, hasta) => {
+export const rangoRutasGestiones = (desde, hasta, coleccion = 'implantes_gestiones') => {
   if (!MES_VALIDO.test(desde || '') || !MES_VALIDO.test(hasta || '')) throw new Error('Indica los meses en formato AAAA-MM.');
   if (desde > hasta) throw new Error('El mes "desde" es posterior al mes "hasta".');
-  return { inicio: rutaMes(desde), fin: rutaMes(mesSiguiente(hasta)) };
+  return { inicio: rutaMes(desde, coleccion), fin: rutaMes(mesSiguiente(hasta), coleccion) };
 };
 
 // Gestiones (data cruda) -> qué escribir. Las que ya tienen el campo no se tocan.
@@ -56,8 +57,8 @@ export const mesMasAntiguoIndiceOC = async () => {
   return fechaMin ? String(fechaMin).slice(0, 7) : null;
 };
 
-export const marcarOcPendienteEnRango = async ({ desde, hasta }) => {
-  const { inicio, fin } = rangoRutasGestiones(desde, hasta);
+export const marcarOcPendienteEnRango = async ({ desde, hasta, coleccion = 'implantes_gestiones' }) => {
+  const { inicio, fin } = rangoRutasGestiones(desde, hasta, coleccion);
   const snap = await getDocs(query(
     collectionGroup(db, 'detalles'),
     where(documentId(), '>=', inicio),

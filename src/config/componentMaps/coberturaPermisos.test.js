@@ -103,14 +103,14 @@ const TABLAS_PENDIENTES = new Set([
   'modulos/operaciones/documentos/seguimientoFacturasGuias/SeguimientoFacturasGuias.jsx',
   'modulos/operaciones/hemodinamia/gestionHemodinamia/components/Cargastab/Cargastab.jsx',
   'modulos/operaciones/hemodinamia/gestionHemodinamia/components/Cargastab/CotizacionCard.jsx',
-  'modulos/operaciones/hemodinamia/gestionHemodinamia/components/GestionesHemodinamiaTable.jsx',
   'modulos/operaciones/shared/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx',
   'modulos/operaciones/implantes/gestionImplantes/components/Cargastab/Cargastab.jsx',
   'modulos/operaciones/implantes/gestionImplantes/components/Cargastab/CotizacionCard.jsx',
   // La tabla de contenido del PAD registrado (antes dentro de Cargastab.jsx).
   'modulos/operaciones/implantes/gestionImplantes/components/Cargastab/ContenidoPadRegistrado.jsx',
   'modulos/operaciones/shared/documentosAdmision/DocumentosTab.jsx',
-  'modulos/operaciones/implantes/gestionImplantes/components/GestionesImplantesTable.jsx',
+  // Tabla de Gestión de Implantes y Hemodinamia (compartida).
+  'modulos/operaciones/shared/gestion/GestionesTable.jsx',
   'modulos/operaciones/shared/ordenesOC/OrdenTab.jsx',
   'modulos/operaciones/shared/ocIndex/SincronizarOCResumenModal.jsx',
   // Resumen de Implantes y Hemodinamia (pantalla compartida).

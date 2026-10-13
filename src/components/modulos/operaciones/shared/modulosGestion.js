@@ -17,10 +17,16 @@ export const MODULOS_GESTION = Object.freeze({
     atributoPorDefecto: 'IMPLANTES',
     // Excel de Solicitud
     tituloResumen: 'RESUMEN DE IMPLANTES IMPUTADOS',
+    // Textos del drawer de Configuración (Exportar / Importación masiva).
+    textoRegistros: 'implantes registrados',
+    textoNuevosRegistros: 'nuevos implantes',
     hojaSolicitud: 'Solicitud Implantes',
     archivoSolicitud: 'solicitud_implantes',
     // Storage: PDF de cada admisión (pestaña Documentos y Carga masiva).
     carpetaDocumentos: 'implantes',
+    // OC (Importar Detalles OC → Sincronizar OC): campos de ocImport/meta de
+    // este módulo (versión ya sincronizada y OC cambiadas por aplicar).
+    oc: { campoUltimaSync: 'ultimaSyncVersion', campoInvalidacionesPendientes: 'ocInvalidacionesPendientes' },
     // Respaldo de documentos (PDF cuya admisión no está en el módulo).
     coleccionRespaldo: 'implantes_respaldo_documentos',
     carpetaRespaldo: 'implantes_respaldo',
@@ -42,9 +48,12 @@ export const MODULOS_GESTION = Object.freeze({
     centroDe: () => CENTRO_HEMODINAMIA,
     atributoPorDefecto: 'HEMODINAMIA',
     tituloResumen: 'RESUMEN DE HEMODINAMIA IMPUTADA',
+    textoRegistros: 'registros de Hemodinamia',
+    textoNuevosRegistros: 'nuevos registros',
     hojaSolicitud: 'Solicitud Hemodinamia',
     archivoSolicitud: 'solicitud_hemodinamia',
     carpetaDocumentos: 'hemodinamia',
+    oc: { campoUltimaSync: 'ultimaSyncVersionHemodinamia', campoInvalidacionesPendientes: 'ocInvalidacionesPendientesHemodinamia' },
     coleccionRespaldo: 'hemodinamia_respaldo_documentos',
     carpetaRespaldo: 'hemodinamia_respaldo',
     rutas: {
@@ -56,6 +65,9 @@ export const MODULOS_GESTION = Object.freeze({
     },
   },
 });
+
+// Módulos cuyas gestiones reciben OC del índice de Importar Detalles OC.
+export const MODULOS_CON_OC = Object.freeze(['implantes', 'hemodinamia']);
 
 export const moduloGestion = (clave) => {
   const config = MODULOS_GESTION[clave];

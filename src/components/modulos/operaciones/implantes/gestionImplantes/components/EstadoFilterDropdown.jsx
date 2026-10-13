@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useDropdownFlotante } from '../../../../../../hooks/useDropdownFlotante';
 import { ListFilter, ChevronDown, Check } from 'lucide-react';
-import { coloresEstadoGestion } from '../../shared/estadoGestion/estadosGestion';
+import { coloresEstadoGestion } from '../../../shared/estadoGestion/estadosGestion';
 
 export const EstadoFilterDropdown = ({
   opcionesEstados,

@@ -719,14 +719,14 @@ service cloud.firestore {
 
     match /ocImport/{docId} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia'));
     }
 
     // Registro de qué OC tienen PDF (ordenes_oc/ en Storage): un documento
     // ordenesOC/registroPdf con { pdfs: { [oc]: {subidoEn, subidoPor} } }.
     match /ordenesOC/{docId} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia'));
     }
 
     match /implantes_gestiones/{document=**} {

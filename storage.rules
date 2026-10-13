@@ -55,15 +55,15 @@ service firebase.storage {
     }
 
     // Índice de OC (Importar Detalles OC -> "Sincronizar OC" de Gestión de
-    // Implantes). Lo escribe la importación y lo lee la sincronización solo
-    // cuando cambió ocImport/meta. Contiene nombres de pacientes: mismo nivel
-    // que snapshots/documentos_sistema, más el permiso implantes (lo lee el
-    // botón "Sincronizar OC").
+    // Implantes y de Hemodinamia). Lo escribe la importación y lo lee la
+    // sincronización solo cuando cambió ocImport/meta. Contiene nombres de
+    // pacientes: mismo nivel que snapshots/documentos_sistema, más el permiso
+    // implantes o hemodinamia (lo lee el botón "Sincronizar OC").
     // Consignación también lo lee (su "Sincronizar OC" llena el N° de orden de
     // consignacion_registros), pero no lo escribe.
     match /snapshots/indiceOC/{archivo} {
-      allow read: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
-      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow read: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia') || tienePermiso('consignacion'));
+      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia'));
     }
 
     // PDFs de cada admisión de Implantes (pestaña Documentos de Gestión
@@ -97,14 +97,15 @@ service firebase.storage {
     // permite "update" para reemplazarlo (la app pregunta antes); nunca se
     // borra. Contienen datos de pacientes: lectura solo con permiso, vía
     // getBlob (sin URLs públicas). Tope: 15 MB.
+    // Hemodinamia, igual que Implantes (pestaña Orden de su Gestión).
     // Consignación solo puede verlos/descargarlos (pestaña Orden de Cargas).
     match /ordenes_oc/{archivo} {
-      allow read: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
+      allow read: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia') || tienePermiso('consignacion'));
       allow create, update: if estaActivo()
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('OC_[^/]+\\.pdf')
         && request.resource.size < 15 * 1024 * 1024
-        && (esDev() || tienePermiso('documentos') || tienePermiso('implantes'));
+        && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia'));
     }
 
     // Implantes → Respaldo de documentos (PDF hasta 20 MB). Leer exige ver o

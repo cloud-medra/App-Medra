@@ -15,7 +15,7 @@ import { EstadoFilterDropdown } from './components/EstadoFilterDropdown';
 import { DiaFilterDropdown } from './components/DiaFilterDropdown';
 import { SincronizarOCResumenModal } from '../../shared/ocIndex/SincronizarOCResumenModal';
 import { useSincronizarOC } from '../../shared/ocIndex/useSincronizarOC';
-import { useMarcarOcPendiente } from './hooks/useMarcarOcPendiente';
+import { useMarcarOcPendiente } from '../../shared/ocIndex/useMarcarOcPendiente';
 import { useUser } from '../../../../../context/UserContext';
 import { esRolAdministrador } from '../../../../../../functions/permisos/nucleo.mjs';
 import DetalleGestionConHeader from '../../shared/DetalleGestionConHeader';

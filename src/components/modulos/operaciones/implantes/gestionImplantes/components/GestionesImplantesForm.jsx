@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Save, X, Info, Loader2, AlertCircle } from 'lucide-react';
 import EmpresaSelect from './EmpresaSelect';
-import EstadoBadge from '../../shared/estadoGestion/EstadoBadge';
+import EstadoBadge from '../../../shared/estadoGestion/EstadoBadge';
 
 const GestionesImplantesForm = ({
   formData,

@@ -7,29 +7,32 @@ import {
   FileText,
   Tag
 } from 'lucide-react';
-import { formatearFechaTabla, getEstadoCargaStyle } from '../Cargastab/cargasHelpers';
-import { formatearFecha } from '../../utils/gestionesImportExport';
-import { MESES } from '../../../../../administracion/controlMensual/constants';
-import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
-import { useColumnResize } from '../../../../../../../hooks/useColumnResize';
-import { useUser } from '../../../../../../../context/UserContext';
-import { TablaRedimensionable } from '../../../../../../ui/TablaRedimensionable';
-import { BotonRestablecerAnchos } from '../../../../../../ui/BotonRestablecerAnchos';
-import { periodoImputacion } from '../../../../shared/periodoImputacion';
+import { formatearFechaTabla, getEstadoCargaStyle } from '../../implantes/gestionImplantes/components/Cargastab/cargasHelpers';
+import { formatearFecha } from '../../implantes/gestionImplantes/utils/gestionesImportExport';
+import { MESES } from '../../../administracion/controlMensual/constants';
+import { formatearPesos } from '../../../../../utils/formatearMoneda';
+import { itemRequiereOC } from '../ocIndex/indiceOC';
+import EstadoBadge from '../estadoGestion/EstadoBadge';
+import { useColumnResize } from '../../../../../hooks/useColumnResize';
+import { useUser } from '../../../../../context/UserContext';
+import { TablaRedimensionable } from '../../../../ui/TablaRedimensionable';
+import { BotonRestablecerAnchos } from '../../../../ui/BotonRestablecerAnchos';
+import { periodoImputacion } from '../periodoImputacion';
 
 // Columnas de la tabla de ítems (redimensionables, anchos recordados por
-// usuario en localStorage bajo 'hemodinamia.detalle').
+// usuario en localStorage bajo '{modulo}.detalle', ej. 'implantes.detalle'). `contexto.ocPorItem`
+// es el mapa de OC del bloque que se está dibujando.
 const COLUMNAS = [
-  { key: 'referencia', label: 'Referencia', ancho: 160, min: 80,
+  { key: 'referencia', label: 'Referencia', ancho: 100, min: 60,
     clase: 'font-medium text-slate-700 dark:text-gray-200', celda: it => it.referencia },
   { key: 'codigo', label: 'Código', ancho: 90, min: 55,
     clase: it => `font-num ${it.sinCodigo ? 'text-red-600 dark:text-red-400 font-bold' : 'text-emerald-600 dark:text-emerald-400'}`,
     celda: it => it.codigo || 'S/C' },
   { key: 'descriptorAuto', label: 'Desc. Auto', ancho: 180, min: 80,
     clase: 'text-slate-500 dark:text-gray-400', celda: it => it.descriptorAuto || 'P' },
-  { key: 'clase', label: 'Clase', ancho: 90, min: 50,
+  { key: 'clase', label: 'Clase', ancho: 60, min: 40,
     clase: 'text-slate-600 dark:text-gray-300', celda: it => it.clase || 'P' },
-  { key: 'tipo', label: 'Tipo', ancho: 100, min: 50,
+  { key: 'tipo', label: 'Tipo', ancho: 70, min: 40,
     clase: 'text-slate-600 dark:text-gray-300', celda: it => it.tipoVinculado || 'P' },
   { key: 'precio', label: 'Precio', ancho: 85, min: 55,
     clase: 'text-slate-600 dark:text-gray-300', celda: it => `$${formatearPesos(it.precio || 0)}` },
@@ -45,6 +48,11 @@ const COLUMNAS = [
     clase: 'text-slate-600 dark:text-gray-300', celda: it => it.lote },
   { key: 'vencimiento', label: 'Vencimiento', ancho: 90, min: 60,
     clase: 'text-slate-600 dark:text-gray-300', celda: it => formatearFechaTabla(it.vencimiento) },
+  { key: 'oc', label: 'OC', ancho: 60, min: 30, clase: 'font-num',
+    titulo: (it, { ocPorItem }) => ocPorItem[it.id],
+    celda: (it, { ocPorItem }) => (ocPorItem[it.id]
+      ? <span className="text-slate-700 dark:text-gray-200 font-semibold">{ocPorItem[it.id]}</span>
+      : <span className="text-slate-400 dark:text-gray-500 font-sans">{itemRequiereOC(it) ? 'Pendiente' : '—'}</span>) },
   { key: 'estadoCarga', label: 'Estado Carga', ancho: 105, min: 70,
     celda: it => {
       if (it.sinCodigo) return <span className="text-[9px] font-semibold text-red-600 dark:text-red-400">SIN CÓDIGO</span>;
@@ -62,12 +70,18 @@ const claseFilaItem = (it) =>
 
 // ocPorItemBloques: [{ itemId: oc }] alineado con formData.bloques (ver
 // GestionesImplantesDetalleView).
-export const DetallesTab = ({ formData }) => {
+// Pestaña Detalles de Implantes y de Hemodinamia (`modulo`, ver modulosGestion.js).
+export const DetallesTab = ({ formData, ocPorItemBloques = [], modulo = 'implantes' }) => {
   const bloques = formData?.bloques || [];
   const usuario = useUser()?.userData?.uid;
   const { anchos, handleResize, restablecerAnchos, personalizados } =
-    useColumnResize(COLUMNAS, { clave: 'hemodinamia.detalle', usuario });
+    useColumnResize(COLUMNAS, { clave: `${modulo}.detalle`, usuario });
 
+  // Período/fecha de carga son datos de la ADMISIÓN (no de una empresa en
+  // particular), así que se toman del primer ítem que ya tenga periodoAnio/
+  // periodoMes asignado (mismo campo que usa el candado en Cargas) en
+  // cualquiera de los bloques de esta admisión. Si ninguno lo tiene todavía
+  // (nunca pasó por Solicitud/Imputación), no se muestra nada.
   let itemConPeriodo = null;
   let bloqueDelPeriodo = null;
   for (const bloque of bloques) {
@@ -115,7 +129,7 @@ export const DetallesTab = ({ formData }) => {
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Estado Operativo</span>
-            <span className="text-slate-700 dark:text-gray-200 font-semibold">{formData?.estado || 'P'}</span>
+            <span><EstadoBadge estado={formData?.estado} texto={formData?.estado || 'P'} ancho={false} /></span>
           </div>
           <div className="flex flex-col gap-0.5">
             <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Estado Informe</span>
@@ -172,6 +186,7 @@ export const DetallesTab = ({ formData }) => {
         bloques.map((bloque, idx) => {
           const items = bloque.cotizaciones?.[0]?.items || [];
           const cotizacion = bloque.cotizaciones?.[0];
+          const ocPorItem = ocPorItemBloques[idx] || {};
 
           return (
             <div key={bloque.uniqueKey || idx} className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
@@ -211,6 +226,7 @@ export const DetallesTab = ({ formData }) => {
                 filas={items}
                 anchos={anchos}
                 onResize={handleResize}
+                contexto={{ ocPorItem }}
                 claseFila={claseFilaItem}
                 vacio="Sin ítems registrados en este bloque"
                 pie={{

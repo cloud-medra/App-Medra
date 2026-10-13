@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Layers, Building2, AlertCircle, Plus } from 'lucide-react';
-import EmpresaSelect from './EmpresaSelect';
-import AgregarEmpresaFechaForm from '../../../shared/AgregarEmpresaFechaForm';
+import EmpresaSelect from '../../implantes/gestionImplantes/components/EmpresaSelect';
+import AgregarEmpresaFechaForm from '../AgregarEmpresaFechaForm';
 
 const ESTADO_STYLES = {
   AGENDADO:         { dot: 'bg-yellow-400',  text: 'text-yellow-700 dark:text-yellow-400',   bg: 'bg-yellow-50 dark:bg-yellow-950/20',   border: 'border-yellow-300 dark:border-yellow-800' },

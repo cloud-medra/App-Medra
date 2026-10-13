@@ -1,4 +1,5 @@
-// "Sincronizar OC" de Gestión de Implantes y de Cargas de Consignación (ver
+// "Sincronizar OC" de Gestión de Implantes, de Gestión de Hemodinamia y de
+// Cargas de Consignación (ver
 // ejecutarSincronizacionOCConsignacion al final). Implantes, lecturas por corrida:
 //   1 (ocImport/meta) + las gestiones con ocPendiente == true cuya fecha cae
 //   dentro del rango de fechas del índice (las demás no pueden cruzar).
@@ -12,8 +13,8 @@ import { db } from '../../../../../firebaseConfig';
 import { agruparIndiceOC, cruzarGestionesOC, cruzarRegistrosConsignacionOC } from './indiceOC';
 import { obtenerIndiceOC, registrarSincronizacionOC, limpiarInvalidacionesPendientes } from './indiceOCRemoto';
 import { invalidarOCGestiones } from './invalidarOCGestiones';
+import { moduloGestion } from '../modulosGestion';
 
-const PREFIJO_IMPLANTES = 'implantes_gestiones/';
 const PREFIJO_CONSIGNACION = 'consignacion_registros/';
 // 2 operaciones por gestión con OC (update + log): 450 ops = 225 gestiones.
 const MAX_OPS_BATCH = 450;
@@ -65,24 +66,29 @@ const escribirPorLotes = async (items, agregar) => {
 
 // Paso 1 (barato): meta + índice. Permite avisar "no hay importaciones
 // nuevas" antes de consultar las gestiones pendientes.
-export const prepararSincronizacionOC = async () => {
+// `modulo`: Implantes o Hemodinamia (cada uno registra su propia versión
+// sincronizada, ver modulosGestion.js → oc).
+export const prepararSincronizacionOC = async (modulo = 'implantes') => {
   const { meta, indice, desdeCache } = await obtenerIndiceOC();
   if (!meta || Object.keys(indice).length === 0) {
     throw new Error('Aún no hay un índice de OC: importa el Excel en Documentos → Importar Detalles OC.');
   }
-  return { meta, indice, desdeCache, sinNovedades: meta.ultimaSyncVersion === meta.version };
+  return { meta, indice, desdeCache, sinNovedades: meta[moduloGestion(modulo).oc.campoUltimaSync] === meta.version };
 };
 
 // Paso 2: consulta pendientes, cruza y escribe.
-export const ejecutarSincronizacionOC = async ({ meta, indice }, { userData } = {}) => {
+export const ejecutarSincronizacionOC = async ({ meta, indice }, { userData, modulo = 'implantes' } = {}) => {
+  const config = moduloGestion(modulo);
+  const prefijo = `${config.coleccionGestiones}/`;
   // OC cambiadas por una reimportación que no se pudieron aplicar a las
-  // gestiones (quien importó no tenía permiso de Implantes): se aplican antes
-  // de buscar pendientes, para que esas gestiones entren en esta corrida.
+  // gestiones del módulo (quien importó no tenía permiso del módulo): se
+  // aplican antes de buscar pendientes, para que esas gestiones entren en
+  // esta corrida. Cada módulo tiene su propia lista.
   let invalidacion = null;
-  const pendientes = meta.ocInvalidacionesPendientes || [];
+  const pendientes = meta[config.oc.campoInvalidacionesPendientes] || [];
   if (pendientes.length > 0) {
-    invalidacion = { ...(await invalidarOCGestiones(pendientes, { usuario: userData })), correcciones: pendientes.length };
-    if (!invalidacion.error) await limpiarInvalidacionesPendientes();
+    invalidacion = { ...(await invalidarOCGestiones(pendientes, { usuario: userData, modulos: [modulo] })), correcciones: pendientes.length };
+    if (!invalidacion.error) await limpiarInvalidacionesPendientes(modulo);
   }
 
   const q = query(
@@ -93,7 +99,7 @@ export const ejecutarSincronizacionOC = async ({ meta, indice }, { userData } = 
   );
   const snap = await getDocs(q);
   const gestiones = snap.docs
-    .filter(d => d.ref.path.startsWith(PREFIJO_IMPLANTES))
+    .filter(d => d.ref.path.startsWith(prefijo))
     .map(d => ({ id: d.id, refPath: d.ref.path, ...d.data() }));
 
   const { actualizaciones, detalle, contadores } = cruzarGestionesOC(gestiones, agruparIndiceOC(indice));
@@ -111,7 +117,7 @@ export const ejecutarSincronizacionOC = async ({ meta, indice }, { userData } = 
   let escriturasMeta = 0;
 
   try {
-    await registrarSincronizacionOC(meta.version);
+    await registrarSincronizacionOC(meta.version, modulo);
     escriturasMeta = 1;
   } catch (err) {
     console.warn('No se pudo registrar la sincronización en ocImport/meta:', err);

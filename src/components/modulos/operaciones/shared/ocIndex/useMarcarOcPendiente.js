@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useToast } from '../../../../../../context/ToastContext';
-import { useModal } from '../../../../../../context/ModalContext';
-import { marcarOcPendienteEnRango, mesMasAntiguoIndiceOC } from '../../../shared/ocIndex/marcarOcPendiente';
+import { useToast } from '../../../../../context/ToastContext';
+import { useModal } from '../../../../../context/ModalContext';
+import { marcarOcPendienteEnRango, mesMasAntiguoIndiceOC } from './marcarOcPendiente';
+import { moduloGestion } from '../modulosGestion';
 
 const mesActual = () => {
   const d = new Date();
@@ -12,7 +13,8 @@ const mesActual = () => {
 // ocPendiente en las gestiones que no lo tienen. "Desde" se propone con el
 // mes más antiguo del Excel de OC importado (1 lectura, solo al abrir el
 // menú la primera vez).
-export const useMarcarOcPendiente = ({ habilitado }) => {
+// `modulo`: Implantes o Hemodinamia (sus gestiones, ver modulosGestion.js).
+export const useMarcarOcPendiente = ({ habilitado, modulo = 'implantes' }) => {
   const { showToast } = useToast();
   const { confirmAction } = useModal();
   const [desde, setDesde] = useState('');
@@ -35,7 +37,7 @@ export const useMarcarOcPendiente = ({ habilitado }) => {
     setMarcando(true);
     setResultado(null);
     try {
-      const r = await marcarOcPendienteEnRango({ desde, hasta });
+      const r = await marcarOcPendienteEnRango({ desde, hasta, coleccion: moduloGestion(modulo).coleccionGestiones });
       setResultado(r);
       showToast(
         `Marcar OC pendiente: ${r.escriturasFirestore} gestión(es) actualizada(s) · ${r.lecturasFirestore} lectura(s), ${r.escriturasFirestore} escritura(s)${r.errores ? ` · ${r.errores} con error` : ''}`,

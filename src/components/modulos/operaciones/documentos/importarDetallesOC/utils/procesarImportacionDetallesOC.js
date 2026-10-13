@@ -192,7 +192,7 @@ export const procesarImportacionDetallesOC = async (file, { onProgreso, usuario 
     escrituras += gestionesOC.escrituras;
     if (gestionesOC.error) {
       try {
-        await agregarInvalidacionesPendientes(ocCambiadas.map(sanearOcCambiada));
+        await agregarInvalidacionesPendientes(ocCambiadas.map(sanearOcCambiada), gestionesOC.modulosConError?.length ? gestionesOC.modulosConError : undefined);
         escrituras += 1;
         gestionesOC.pendientesEnSincronizar = true;
       } catch (err) {

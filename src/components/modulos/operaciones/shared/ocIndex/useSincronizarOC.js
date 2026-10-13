@@ -6,12 +6,17 @@ import { prepararSincronizacionOC, ejecutarSincronizacionOC, ejecutarSincronizac
 
 const MODULOS = {
   implantes: { ejecutar: ejecutarSincronizacionOC, indice: 'ocPendiente + fecha', unidad: 'gestión(es)', avisarSinNovedades: true },
+  // Hemodinamia: mismo flujo que Implantes sobre hemodinamia_gestiones.
+  hemodinamia: {
+    ejecutar: (preparado, opciones) => ejecutarSincronizacionOC(preparado, { ...opciones, modulo: 'hemodinamia' }),
+    indice: 'ocPendiente + fecha', unidad: 'gestión(es)', avisarSinNovedades: true,
+  },
   // Consignación no registra la versión sincronizada (ver sincronizarOC.js):
   // el aviso "sin importaciones nuevas" no aplica.
   consignacion: { ejecutar: ejecutarSincronizacionOCConsignacion, indice: 'orden + fecha', unidad: 'registro(s)', avisarSinNovedades: false }
 };
 
-// Botón "Sincronizar OC" de Gestión de Implantes (los cambios llegan a la
+// Botón "Sincronizar OC" de Gestión de Implantes y de Hemodinamia (los cambios llegan a la
 // tabla por el listener que ya existe) y de Cargas de Consignación
 // (onSincronizado recarga su lista).
 export const useSincronizarOC = ({ modulo = 'implantes', onSincronizado } = {}) => {
@@ -50,7 +55,7 @@ export const useSincronizarOC = ({ modulo = 'implantes', onSincronizado } = {}) 
     setSincronizandoOC(true);
     let preparado;
     try {
-      preparado = await prepararSincronizacionOC();
+      preparado = await prepararSincronizacionOC(modulo === 'consignacion' ? 'implantes' : modulo);
     } catch (err) {
       console.error('Error al preparar Sincronizar OC:', err);
       showToast(err.message, 'error');
