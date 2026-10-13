@@ -10,6 +10,7 @@ import { ref, uploadString, getBytes } from 'firebase/storage';
 import { db, storage } from '../../../../../firebaseConfig';
 import { rangoFechasIndiceOC, periodosIndiceOC, FORMATO_INDICE_OC } from './indiceOC';
 import { leerCacheIndiceOC, guardarCacheIndiceOC } from './cacheIndiceOC';
+import { moduloGestion, MODULOS_CON_OC } from '../modulosGestion';
 
 const RUTA_INDICE = 'snapshots/indiceOC/indiceOC.json';
 const refMeta = () => doc(db, 'ocImport', 'meta');
@@ -87,13 +88,20 @@ export const obtenerPeriodosOC = async () => {
   return { meta, periodos: periodosIndiceOC(indice), indice };
 };
 
-export const registrarSincronizacionOC = (version) =>
-  updateDoc(refMeta(), { ultimaSyncVersion: version, ultimaSyncEn: serverTimestamp() });
+// Cada módulo registra su propia versión sincronizada (ver modulosGestion.js:
+// oc.campoUltimaSync). Implantes conserva los nombres de campo de siempre.
+export const registrarSincronizacionOC = (version, modulo = 'implantes') => {
+  const campo = moduloGestion(modulo).oc.campoUltimaSync;
+  return updateDoc(refMeta(), { [campo]: version, [`${campo.replace('Version', 'En')}`]: serverTimestamp() });
+};
 
 // OC cambiadas pendientes de aplicar en las gestiones (ver
 // invalidarOCGestiones.js y ejecutarSincronizacionOC).
-export const agregarInvalidacionesPendientes = (ocCambiadas) =>
-  setDoc(refMeta(), { ocInvalidacionesPendientes: arrayUnion(...ocCambiadas) }, { merge: true });
+// Una lista por módulo (oc.campoInvalidacionesPendientes): cada "Sincronizar
+// OC" aplica y limpia solo la suya. `modulos`: los que no se pudieron
+// corregir al importar (por defecto, todos).
+export const agregarInvalidacionesPendientes = (ocCambiadas, modulos = MODULOS_CON_OC) =>
+  setDoc(refMeta(), Object.fromEntries(modulos.map((m) => [moduloGestion(m).oc.campoInvalidacionesPendientes, arrayUnion(...ocCambiadas)])), { merge: true });
 
-export const limpiarInvalidacionesPendientes = () =>
-  updateDoc(refMeta(), { ocInvalidacionesPendientes: deleteField() });
+export const limpiarInvalidacionesPendientes = (modulo = 'implantes') =>
+  updateDoc(refMeta(), { [moduloGestion(modulo).oc.campoInvalidacionesPendientes]: deleteField() });

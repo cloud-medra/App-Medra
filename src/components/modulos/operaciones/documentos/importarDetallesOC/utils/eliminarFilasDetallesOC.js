@@ -154,7 +154,7 @@ export const eliminarFilasDetallesOC = async (filas, { liberarOC = true, usuario
     escrituras += g.escrituras;
     if (g.error) {
       try {
-        await agregarInvalidacionesPendientes(ocALiberar);
+        await agregarInvalidacionesPendientes(ocALiberar, g.modulosConError?.length ? g.modulosConError : undefined);
         escrituras += 1;
         g.pendientesEnSincronizar = true;
       } catch (err) {

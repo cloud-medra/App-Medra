@@ -1,17 +1,9 @@
-import { columnas } from './columnas.js';
+import { mapaRespaldoDocumentos, mapaSincronizacionImputadas, reubicarMapa } from './operacionesCompartidas.js';
 import { mapaReportesInfo } from './documentos.js';
 import { maestrosComponentMaps } from './maestros.js';
 
-// Implantes → Códigos: la misma pantalla que Maestros → Códigos
-// (CodigosMaestros.jsx, colección maestros_codigos) con su propio ítem de
-// menú y sus propios permisos granulares. Se deriva del mapa de Maestros
-// (mismas secciones, acciones, columnas y pestañas) cambiando las rutas,
-// así ambos quedan siempre iguales pero se asignan por separado.
-const reubicarMapa = (config, de, a, label) => ({
-  ...config,
-  label,
-  procesos: Object.fromEntries(Object.entries(config.procesos || {}).map(([ruta, proceso]) => [ruta.replace(de, a), proceso])),
-});
+// Implantes → Códigos: la misma pantalla que Maestros → Códigos con su propio
+// ítem de menú y permisos (ver reubicarMapa en operacionesCompartidas.js).
 
 export const implantesComponentMaps = {
   '/implantes/codigosImplantes': reubicarMapa(
@@ -202,7 +194,7 @@ export const implantesComponentMaps = {
         },
       },
       '/implantes/gestionImplantes/documentos': {
-        label: 'Pestaña: Documentos — PDF de la admisión en Storage (Documentostab.jsx)',
+        label: 'Pestaña: Documentos — PDF de la admisión en Storage (shared/documentosAdmision/DocumentosTab.jsx)',
         sections: {
           contenido: {
             label: 'Sección: Subida múltiple y listado de PDF (DP, RP, INF, COT)',
@@ -282,7 +274,7 @@ export const implantesComponentMaps = {
   },
 
   '/implantes/resumenImplantes': {
-    label: 'Resumen de Implantes Imputados (ResumenImplantes.jsx) — solo lectura, sin granularidad cableada aún',
+    label: 'Resumen de Implantes Imputados (shared/resumen/ResumenGestiones.jsx) — solo lectura, sin granularidad cableada aún',
     sections: {
       header: {
         label: 'Sección: Encabezado',
@@ -320,69 +312,14 @@ export const implantesComponentMaps = {
     },
   },
 
-  '/implantes/sincronizacionImputadas': {
-    label: 'Sincronización de Imputadas (SincronizacionImputadas.jsx) — compara y corrige implantes_gestiones vs. implantes_imputadas',
-    sections: {
-      busqueda: {
-        label: 'Sección: Búsqueda por Admisión',
-        elements: {
-          input_admisiones: { label: 'Campo: N° de Admisión(es) a comparar' },
-          btn_buscar: { label: 'Acción: Buscar y Comparar' },
-        },
-      },
-      acciones: {
-        label: 'Sección: Acciones sobre el Diff',
-        elements: {
-          // Corrige un bloque ya imputado, saltándose el flujo normal de
-          // edición + candado de Cargas — por eso va con permiso propio,
-          // pensado para quedar restringido a los mismos usuarios que ya
-          // pueden desbloquear el candado en Cargas (accion_desbloquear_candado).
-          btn_aplicar_correccion: { label: 'Acción: Aplicar Corrección (re-sincroniza un bloque puntual)' },
-        },
-      },
-    },
-  },
+  '/implantes/sincronizacionImputadas': mapaSincronizacionImputadas('Implantes'),
+
 
   '/implantes/reportesInfo': mapaReportesInfo,
 
   // Respaldo de documentos: PDF cuyo ID / N° de Admisión no coincide con
   // ninguna gestión (RespaldoDocumentos.jsx). Las acciones también se validan
   // en firestore.rules y storage.rules.
-  '/implantes/respaldoDocumentos': {
-    label: 'Respaldo de documentos (RespaldoDocumentos.jsx)',
-    sections: {
-      acciones: {
-        label: 'Sección: Acciones',
-        elements: {
-          btn_subir: { label: 'Acción: Subir documentos al respaldo (también "Enviar a respaldo" desde Gestión y Carga masiva)' },
-        },
-      },
-      filtros: {
-        label: 'Sección: Búsqueda y filtros',
-        elements: {
-          input_busqueda: { label: 'Campo: Buscar por ID o nombre' },
-          select_tipo: { label: 'Campo: Filtro por tipo de documento' },
-        },
-      },
-      tabla_documentos: {
-        label: 'Sección: Tabla de documentos',
-        elements: {
-          btn_ver: { label: 'Operación: Ver documento' },
-          btn_descargar: { label: 'Operación: Descargar' },
-          btn_eliminar: { label: 'Operación: Eliminar (envía a la papelera)' },
-          ...columnas([
-            ['idAdmision', 'ID / N° Admisión'], ['nombre', 'Nombre'], ['tipo', 'Tipo'], ['fecha', 'Fecha'],
-            ['subidoPor', 'Subido por'], ['subidoEl', 'Fecha de subida'], ['acciones', 'Acciones'],
-          ]),
-        },
-      },
-      papelera: {
-        label: 'Sección: Papelera',
-        elements: {
-          btn_restaurar: { label: 'Operación: Restaurar' },
-          btn_eliminar_definitivo: { label: 'Operación: Eliminar definitivamente (borra el PDF)' },
-        },
-      },
-    },
-  },
+  '/implantes/respaldoDocumentos': mapaRespaldoDocumentos('Implantes'),
+
 };

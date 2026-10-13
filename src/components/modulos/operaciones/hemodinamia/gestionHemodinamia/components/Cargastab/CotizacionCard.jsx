@@ -1,4 +1,6 @@
-import React, { useState, useMemo, useLayoutEffect, useCallback } from 'react';
+import React, { useState, useMemo, useLayoutEffect, useCallback, useRef, useEffect } from 'react';
+// Reparto del ancho sobrante entre columnas de texto (igual que Implantes).
+import { anchosConExtra } from '../../../../implantes/gestionImplantes/components/Cargastab/cargasHelpers';
 import { createPortal } from 'react-dom';
 import {
   FileText,
@@ -114,10 +116,29 @@ export const CotizacionCard = ({
 }) => {
   const [abierto, setAbierto] = useState(defaultOpen);
   const [anchos, setAnchos] = useState(anchosItemsPorDefecto);
+  // Ancho disponible del contenedor de la tabla (para repartir el espacio
+  // sobrante; sin ResizeObserver, p. ej. en pruebas, no se reparte).
+  const contenedorTablaRef = useRef(null);
+  const [anchoDisponible, setAnchoDisponible] = useState(0);
+  useEffect(() => {
+    const el = contenedorTablaRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return undefined;
+    const observador = new ResizeObserver(([entrada]) => setAnchoDisponible(Math.floor(entrada.contentRect.width)));
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, [abierto]); // la tabla solo existe con la cotización desplegada
+  const anchoBase = COLUMNAS_ITEMS.reduce((suma, col) => suma + (anchos[col.key] ?? col.ancho), 0);
+  const anchosVisibles = anchosConExtra(anchos, anchoDisponible - anchoBase - 2);
+  const anchoTotalTabla = COLUMNAS_ITEMS.reduce((suma, col) => suma + (anchosVisibles[col.key] ?? col.ancho), 0);
+  // Al redimensionar a mano se parte de lo que se ve (con el reparto
+  // incluido), así la columna sigue al mouse 1:1.
   const handleResize = useCallback((colKey, nuevoAncho) => {
-    setAnchos(prev => (prev[colKey] === nuevoAncho ? prev : { ...prev, [colKey]: nuevoAncho }));
-  }, []);
-  const anchoTotalTabla = COLUMNAS_ITEMS.reduce((suma, col) => suma + (anchos[col.key] ?? col.ancho), 0);
+    setAnchos(prev => {
+      const suma = COLUMNAS_ITEMS.reduce((t, col) => t + (prev[col.key] ?? col.ancho), 0);
+      const base = anchosConExtra(prev, anchoDisponible - suma - 2);
+      return base[colKey] === nuevoAncho ? base : { ...base, [colKey]: nuevoAncho };
+    });
+  }, [anchoDisponible]);
   const [editandoId, setEditandoId] = useState(null);
   const [borrador, setBorrador] = useState(BORRADOR_VACIO);
   const [edicionEsPad, setEdicionEsPad] = useState(false);
@@ -437,7 +458,7 @@ export const CotizacionCard = ({
             </button>
           </div>
 
-          <div className="overflow-auto rounded border border-slate-200 dark:border-gray-700">
+          <div ref={contenedorTablaRef} className="overflow-auto rounded border border-slate-200 dark:border-gray-700">
             <div className="flex justify-end px-1 py-0.5 bg-slate-50 dark:bg-gray-900/60 border-b border-slate-200 dark:border-gray-700">
               <button
                 type="button"
@@ -454,7 +475,7 @@ export const CotizacionCard = ({
             >
               <colgroup>
                 {COLUMNAS_ITEMS.map(col => (
-                  <col key={col.key} style={{ width: anchos[col.key] }} />
+                  <col key={col.key} style={{ width: anchosVisibles[col.key] }} />
                 ))}
               </colgroup>
               <thead className="bg-slate-50 dark:bg-gray-900/60">
@@ -466,7 +487,7 @@ export const CotizacionCard = ({
                       className={`relative ${col.px || 'px-2.5'} py-1.5 border-b border-slate-200 dark:border-gray-700 ${idx < COLUMNAS_ITEMS.length - 1 ? 'border-r' : ''} ${col.align === 'center' ? 'text-center' : ''}`}
                     >
                       <span className="block truncate">{col.label}</span>
-                      <ManijaRedimension colKey={col.key} anchoActual={anchos[col.key]} anchoMin={col.min} onResize={handleResize} />
+                      <ManijaRedimension colKey={col.key} anchoActual={anchosVisibles[col.key]} anchoMin={col.min} onResize={handleResize} />
                     </th>
                   ))}
                 </tr>

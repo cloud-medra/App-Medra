@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import Spinner from '../../../../ui/Spinner';
 import { useSolicitudConsignacionData } from './hooks/useSolicitudConsignacionData';
-import { usePeriodoAbiertoModulo } from '../../implantes/gestionImplantes/components/Cargastab/usePeriodoAbiertoModulo';
+import { usePeriodoAbiertoModulo } from '../../shared/usePeriodoAbiertoModulo';
 import { useColumnResize } from '../../../../../hooks/useColumnResize';
 import { ManijaRedimension } from '../../../../ui/ManijaRedimension';
 

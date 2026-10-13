@@ -489,11 +489,13 @@ service cloud.firestore {
     }
 
     // Códigos: los edita el módulo Maestros (como antes) o quien tenga el
-    // ítem Implantes → Códigos (misma pantalla, permisos propios).
+    // ítem Implantes → Códigos o Hemodinamia → Códigos (misma pantalla,
+    // permisos propios).
     match /maestros_codigos/{document=**} {
       allow read: if estaActivo();
       allow write: if estaActivo() && (esDev() || tienePermiso('maestros')
-        || tieneItem('implantes', '/implantes/codigosImplantes'));
+        || tieneItem('implantes', '/implantes/codigosImplantes')
+        || tieneItem('hemodinamia', '/hemodinamia/codigosHemodinamia'));
     }
 
     // Registro de auditoría de cada importación masiva de precios
@@ -717,14 +719,14 @@ service cloud.firestore {
 
     match /ocImport/{docId} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia'));
     }
 
     // Registro de qué OC tienen PDF (ordenes_oc/ en Storage): un documento
     // ordenesOC/registroPdf con { pdfs: { [oc]: {subidoEn, subidoPor} } }.
     match /ordenesOC/{docId} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia'));
     }
 
     match /implantes_gestiones/{document=**} {
@@ -753,6 +755,29 @@ service cloud.firestore {
         && request.resource.data.eliminado == false
         && request.resource.data.ruta is string
         && request.resource.data.ruta.matches('implantes_respaldo/' + docId + '/.+');
+      // Solo enviar a la papelera / restaurar (no se editan los datos).
+      allow update: if estaActivo()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['eliminado', 'eliminadoPor', 'eliminadoEl'])
+        && (request.resource.data.eliminado == true
+          ? enRespaldo('tabla_documentos', 'btn_eliminar')
+          : enRespaldo('papelera', 'btn_restaurar'));
+      allow delete: if estaActivo() && enRespaldo('papelera', 'btn_eliminar_definitivo');
+    }
+
+    // Hemodinamia → Respaldo de documentos: mismas reglas que Implantes.
+    match /hemodinamia_respaldo_documentos/{docId} {
+      function vistaRespaldo() {
+        return esDev() || (tienePermiso('hemodinamia') && tieneItem('hemodinamia', '/hemodinamia/respaldoDocumentos'));
+      }
+      function enRespaldo(seccion, accion) {
+        return accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', seccion, accion);
+      }
+      allow read: if estaActivo() && vistaRespaldo();
+      allow create: if estaActivo()
+        && enRespaldo('acciones', 'btn_subir')
+        && request.resource.data.eliminado == false
+        && request.resource.data.ruta is string
+        && request.resource.data.ruta.matches('hemodinamia_respaldo/' + docId + '/.+');
       // Solo enviar a la papelera / restaurar (no se editan los datos).
       allow update: if estaActivo()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['eliminado', 'eliminadoPor', 'eliminadoEl'])

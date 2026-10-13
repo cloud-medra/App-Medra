@@ -3,8 +3,9 @@
 // Firestore) para poder testear el contenido de cada hoja.
 //
 // Hojas por origen: mismas columnas y nombres que el Excel nativo de cada
-// módulo (useSolicitudImplantesData / useSolicitudConsignacionData /
-// useSolicitudHemodinamiaData), para que el archivo del Consolidado sea
+// módulo (shared/solicitud/useSolicitudGestionesData para Implantes y
+// Hemodinamia; useSolicitudConsignacionData), para que el archivo del
+// Consolidado sea
 // intercambiable con el de cada pantalla nativa.
 // "Detalle Unificado" y "Resumen": las 3 fuentes juntas en una sola tabla,
 // con una columna Origen y nombres de columna comunes.

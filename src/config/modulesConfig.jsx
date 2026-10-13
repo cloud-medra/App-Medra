@@ -199,8 +199,13 @@ export const MODULES = {
     icon: <HeartPulse size={18} />,
     subItems: [
       { label: 'Gestion', path: '/hemodinamia/gestionHemodinamia', icon: <FolderKanban size={14} /> },
+      { label: 'Carga masiva de documentos', path: '/hemodinamia/cargaMasivaDocumentos', icon: <FolderUp size={14} /> },
       { label: 'Solicitud', path: '/hemodinamia/solicitudHemodinamia', icon: <FilePlus size={14} /> },
       { label: 'Resumen', path: '/hemodinamia/resumenHemodinamia', icon: <BarChart2 size={14} /> },
+      { label: 'Sincronizar', path: '/hemodinamia/sincronizacionImputadas', icon: <GitCompareArrows size={14} /> },
+      { label: 'Respaldo de documentos', path: '/hemodinamia/respaldoDocumentos', icon: <Archive size={14} /> },
+      // Misma pantalla y datos que Maestros → Codigos, con permisos propios.
+      { label: 'Códigos', path: '/hemodinamia/codigosHemodinamia', icon: <ScanBarcode size={14} /> },
     ]
   }
 };

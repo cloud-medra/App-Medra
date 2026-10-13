@@ -55,30 +55,48 @@ service firebase.storage {
     }
 
     // Índice de OC (Importar Detalles OC -> "Sincronizar OC" de Gestión de
-    // Implantes). Lo escribe la importación y lo lee la sincronización solo
-    // cuando cambió ocImport/meta. Contiene nombres de pacientes: mismo nivel
-    // que snapshots/documentos_sistema, más el permiso implantes (lo lee el
-    // botón "Sincronizar OC").
+    // Implantes y de Hemodinamia). Lo escribe la importación y lo lee la
+    // sincronización solo cuando cambió ocImport/meta. Contiene nombres de
+    // pacientes: mismo nivel que snapshots/documentos_sistema, más el permiso
+    // implantes o hemodinamia (lo lee el botón "Sincronizar OC").
     // Consignación también lo lee (su "Sincronizar OC" llena el N° de orden de
     // consignacion_registros), pero no lo escribe.
     match /snapshots/indiceOC/{archivo} {
-      allow read: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
-      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow read: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia') || tienePermiso('consignacion'));
+      allow write: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia'));
     }
 
     // PDFs de cada admisión de Implantes (pestaña Documentos de Gestión
     // Implantes). Solo "create": nunca se sobrescribe ni se borra desde la
     // app; ante un nombre repetido el cliente usa "(2)", "(3)"...
+    // `resource == null` (el archivo no existe aún) hace explícito el "no
+    // sobrescribir": en producción sobrescribir se evalúa como "update" (no
+    // permitido aquí), pero el emulador de Storage lo evalúa como "create" y
+    // sin esta condición dejaba pisar el PDF. Igual en Hemodinamia, en los
+    // respaldos y en Archivo digital (tests/emulador/reglasHemodinamia.test.js).
     // El chequeo de permiso (getUsuario) cuesta 1 lectura de Firestore por
     // operación (listar, subir cada PDF, abrir uno). Se mantiene a propósito
     // también en "create": son documentos con datos de pacientes.
     match /implantes/{admision}/documentos/{archivo} {
       allow read: if estaActivo() && (esDev() || tienePermiso('implantes'));
       allow create: if estaActivo()
+        && resource == null
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('.*\\.pdf$')
         && request.resource.size < 20 * 1024 * 1024
         && (esDev() || tienePermiso('implantes'));
+    }
+
+    // PDFs de cada admisión de Hemodinamia: mismas reglas que Implantes
+    // (pestaña Documentos y Carga masiva de documentos de Hemodinamia).
+    match /hemodinamia/{admision}/documentos/{archivo} {
+      allow read: if estaActivo() && (esDev() || tienePermiso('hemodinamia'));
+      allow create: if estaActivo()
+        && resource == null
+        && request.resource.contentType == 'application/pdf'
+        && archivo.matches('.*\\.pdf$')
+        && request.resource.size < 20 * 1024 * 1024
+        && (esDev() || tienePermiso('hemodinamia'));
     }
 
     // PDF de órdenes de compra: UNO por OC (ordenes_oc/OC_{oc}.pdf),
@@ -86,14 +104,15 @@ service firebase.storage {
     // permite "update" para reemplazarlo (la app pregunta antes); nunca se
     // borra. Contienen datos de pacientes: lectura solo con permiso, vía
     // getBlob (sin URLs públicas). Tope: 15 MB.
+    // Hemodinamia, igual que Implantes (pestaña Orden de su Gestión).
     // Consignación solo puede verlos/descargarlos (pestaña Orden de Cargas).
     match /ordenes_oc/{archivo} {
-      allow read: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
+      allow read: if estaActivo() && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia') || tienePermiso('consignacion'));
       allow create, update: if estaActivo()
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('OC_[^/]+\\.pdf')
         && request.resource.size < 15 * 1024 * 1024
-        && (esDev() || tienePermiso('documentos') || tienePermiso('implantes'));
+        && (esDev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('hemodinamia'));
     }
 
     // Implantes → Respaldo de documentos (PDF hasta 20 MB). Leer exige ver o
@@ -104,6 +123,7 @@ service firebase.storage {
         && (accionEnVista('implantes', '/implantes/respaldoDocumentos', 'tabla_documentos', 'btn_ver')
           || accionEnVista('implantes', '/implantes/respaldoDocumentos', 'tabla_documentos', 'btn_descargar'));
       allow create: if estaActivo()
+        && resource == null
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('.*\\.pdf$')
         && request.resource.size <= 20 * 1024 * 1024
@@ -114,6 +134,23 @@ service firebase.storage {
             && !firestore.exists(/databases/(default)/documents/implantes_respaldo_documentos/$(docId))));
     }
 
+    // Hemodinamia → Respaldo de documentos: mismas reglas que Implantes.
+    match /hemodinamia_respaldo/{docId}/{archivo} {
+      allow read: if estaActivo()
+        && (accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'tabla_documentos', 'btn_ver')
+          || accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'tabla_documentos', 'btn_descargar'));
+      allow create: if estaActivo()
+        && resource == null
+        && request.resource.contentType == 'application/pdf'
+        && archivo.matches('.*\\.pdf$')
+        && request.resource.size <= 20 * 1024 * 1024
+        && accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'acciones', 'btn_subir');
+      allow delete: if estaActivo()
+        && (accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'papelera', 'btn_eliminar_definitivo')
+          || (accionEnVista('hemodinamia', '/hemodinamia/respaldoDocumentos', 'acciones', 'btn_subir')
+            && !firestore.exists(/databases/(default)/documents/hemodinamia_respaldo_documentos/$(docId))));
+    }
+
     // Documentos → Archivo digital (PDF, JPG, PNG, WEBP hasta 25 MB). Mismo
     // criterio que el respaldo; renombrar y mover no tocan Storage.
     match /documentos_archivo/{nodoId}/{archivo} {
@@ -121,6 +158,7 @@ service firebase.storage {
         && (accionEnVista('documentos', '/documentos/archivoDigital', 'archivos', 'btn_ver')
           || accionEnVista('documentos', '/documentos/archivoDigital', 'archivos', 'btn_descargar'));
       allow create: if estaActivo()
+        && resource == null
         && request.resource.contentType in ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
         && request.resource.size <= 25 * 1024 * 1024
         && accionEnVista('documentos', '/documentos/archivoDigital', 'archivos', 'btn_subir');

@@ -314,7 +314,7 @@ export const useSolicitudesUnificadasData = () => {
           const logsAEjecutar = [];
 
           // Implantes: mismo criterio que su Solicitud nativa
-          // (useSolicitudImplantesData.js) — el ítem SIEMPRE se imputa al
+          // (shared/solicitud/useSolicitudGestionesData.js) — el ítem SIEMPRE se imputa al
           // período actualmente abierto (periodoImplantes), nunca al
           // período que tenía guardado de cuando fue cargado. Antes acá se
           // usaba `it.periodoAnio || periodoImplantes.anio` (preferir el
@@ -343,7 +343,7 @@ export const useSolicitudesUnificadasData = () => {
             // `_raw` es el doc CRUDO de implantes_gestiones: no tiene
             // `numCotizacion` en la raíz (vive en cotizaciones[0]) ni los
             // valores por defecto que sí arma la Solicitud nativa
-            // (useSolicitudImplantesData.js). Se reconstruye el bloque con
+            // (shared/solicitud/useSolicitudGestionesData.js). Se reconstruye el bloque con
             // esos mismos defaults, para que lo imputado sea idéntico a lo
             // que imputa la pantalla nativa. Antes `bloque.numCotizacion`
             // era siempre undefined y cualquier ítem sin numCotizacion

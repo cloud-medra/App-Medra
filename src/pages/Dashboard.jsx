@@ -92,6 +92,9 @@ import ArchivoDigital from '../components/modulos/operaciones/documentos/archivo
 import GestionHemodinamia from '../components/modulos/operaciones/hemodinamia/gestionHemodinamia/GestionHemodinamia';
 import SolicitudHemodinamia from '../components/modulos/operaciones/hemodinamia/solicitudHemodinamia/SolicitudHemodinamia';
 import ResumenHemodinamia from '../components/modulos/operaciones/hemodinamia/resumenHemodinamia/ResumenHemodinamia';
+import RespaldoDocumentosHemodinamia from '../components/modulos/operaciones/hemodinamia/respaldoDocumentos/RespaldoDocumentos.jsx';
+import SincronizacionImputadasHemodinamia from '../components/modulos/operaciones/hemodinamia/sincronizacionImputadas/SincronizacionImputadas.jsx';
+import CargaMasivaDocumentosHemodinamia from '../components/modulos/operaciones/hemodinamia/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx';
 
 // --- CONSIGNACION ---
 import IngresarGuiaDespacho from '../components/modulos/operaciones/consignacion/ingresarGuiaDespacho/IngresarGuiaDespacho';
@@ -292,6 +295,7 @@ const Dashboard = () => {
     // Misma pantalla en Maestros y en Implantes; la key separa su estado.
     '/maestros/codigosMaestros': <CodigosMaestros key="maestros" />,
     '/implantes/codigosImplantes': <CodigosMaestros key="implantes" rutaBase="/implantes/codigosImplantes" />,
+    '/hemodinamia/codigosHemodinamia': <CodigosMaestros key="hemodinamia" rutaBase="/hemodinamia/codigosHemodinamia" />,
     '/maestros/padMaestros': <PadMaestros />,
     '/maestros/actualizacionPreciosMaestros': <ActualizacionPreciosMaestros />,
     '/consignacion/ingresarGuiaDespacho': <IngresarGuiaDespacho />,
@@ -338,6 +342,9 @@ const Dashboard = () => {
     '/implantes/sincronizacionImputadas': <SincronizacionImputadas />,
 
     '/hemodinamia/gestionHemodinamia': <GestionHemodinamia />,
+    '/hemodinamia/cargaMasivaDocumentos': <CargaMasivaDocumentosHemodinamia />,
+    '/hemodinamia/respaldoDocumentos': <RespaldoDocumentosHemodinamia />,
+    '/hemodinamia/sincronizacionImputadas': <SincronizacionImputadasHemodinamia />,
     '/hemodinamia/solicitudHemodinamia': <SolicitudHemodinamia />,
     '/hemodinamia/resumenHemodinamia': <ResumenHemodinamia />,
 

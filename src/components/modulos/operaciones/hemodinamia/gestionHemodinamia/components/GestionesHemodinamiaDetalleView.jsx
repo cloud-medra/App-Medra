@@ -1,21 +1,27 @@
 import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { Info, ListFilter, UploadCloud, Unlock, Lock, History, ShieldAlert } from 'lucide-react';
+import { Info, ListFilter, UploadCloud, Unlock, Lock, History, ShieldAlert, Folder, ClipboardList } from 'lucide-react';
 
 import { usePeriodoAbiertoStore } from '../../../../../../hooks/usePeriodoAbiertoStore';
 import { useGranularPermission } from '../../../../../../hooks/useGranularPermission';
 import { useToast } from '../../../../../../context/ToastContext';
 import { MESES } from '../../../../administracion/controlMensual/constants';
 import { InformacionTab } from './Informaciontab/Informaciontab';
-import { DetallesTab } from './Detallestab/Detallestab';
+import { DetallesTab } from '../../../shared/gestion/DetallesTab';
 import { CargasTab } from './Cargastab/Cargastab';
 import { esEstadoCargaCompleto } from './Cargastab/cargasHelpers';
 import { verificarPeriodosBloque } from './Cargastab/verificacionPeriodoBloque';
 import { camposSolicitudDe } from '../../../shared/periodoImputacion';
 import { aplicarNuevoItemABloque } from '../utils/aplicarNuevoItemABloque';
-import { EmpresasFechasPanel } from './EmpresasFechasPanel';
+import { EmpresasFechasPanel } from '../../../shared/gestion/EmpresasFechasPanel';
+import { OrdenTab } from '../../../shared/ordenesOC/OrdenTab';
+import { useRegistroPdfOC } from '../../../shared/ordenesOC/useRegistroPdfOC';
+import { ocsDeGestion } from '../../../shared/ocIndex/indiceOC';
 import { validarNuevaEmpresaFecha, extraerDatosBase } from '../../../shared/empresaFechaDesdeDetalle';
 import { HistorialLogsContenido } from '../GestionesHemodinamiaDrawers';
 import { CENTRO_HEMODINAMIA } from '../utils/constantesHemodinamia';
+import { nombreParaGuardar } from '../../../implantes/gestionImplantes/utils/camposPaciente';
+import { DocumentosTab } from '../../../shared/documentosAdmision/DocumentosTab';
+import { useDocumentosAdmision } from '../../../shared/documentosAdmision/useDocumentosAdmision';
 
 const MODULO_ACTUAL = 'hemodinamia';
 
@@ -23,6 +29,8 @@ const ALL_TABS = [
   { id: 'detalles', label: 'Detalles', Icon: ListFilter, path: '/hemodinamia/gestionHemodinamia/detalles' },
   { id: 'informacion', label: 'Información', Icon: Info, path: '/hemodinamia/gestionHemodinamia/informacion' },
   { id: 'cargas', label: 'Cargas', Icon: UploadCloud, path: '/hemodinamia/gestionHemodinamia/cargas' },
+  { id: 'orden', label: 'Orden', Icon: ClipboardList, path: '/hemodinamia/gestionHemodinamia/orden' },
+  { id: 'documentos', label: 'Documentos', Icon: Folder, path: '/hemodinamia/gestionHemodinamia/documentos' },
   { id: 'logs', label: 'Logs', Icon: History, path: '/hemodinamia/gestionHemodinamia/logs' },
 ];
 
@@ -144,6 +152,22 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
   };
 
   const [formData, setFormData] = useState(construirEstadoInicial);
+
+  // OC por ítem (Sincronizar OC): se leen del registro EN VIVO (listener de la
+  // tabla), no de formData, para que una sincronización hecha con el detalle
+  // abierto se vea sin recargar. Alineado por índice con formData.bloques.
+  const ocPorItemPorRegistro = useMemo(
+    () => new Map(registrosDeEstaAdmision.map(r => [r.id, r.ocPorItem || {}])),
+    [registrosDeEstaAdmision]
+  );
+  const ocPorItemBloques = useMemo(
+    () => formData.bloques.map(b => ocPorItemPorRegistro.get(b.idOriginal) || {}),
+    [formData.bloques, ocPorItemPorRegistro]
+  );
+  const ocsPorBloque = useMemo(
+    () => formData.bloques.map((b, i) => ocsDeGestion({ cotizaciones: b.cotizaciones, ocPorItem: ocPorItemBloques[i] })),
+    [formData.bloques, ocPorItemBloques]
+  );
   const snapshotInicialRef = useRef(JSON.stringify(construirEstadoInicial()));
 
   const idsItemsOriginalesRef = useRef(
@@ -424,6 +448,10 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
       return null;
     }
 
+    // Nombre en MAYÚSCULAS y sin espacios sobrantes (igual que Implantes;
+    // también corrige registros antiguos al guardarlos).
+    formDataParaGuardar = { ...formDataParaGuardar, nombre: nombreParaGuardar(formDataParaGuardar.nombre) };
+
     const payload = {
       admisionId: formDataParaGuardar.gestionId,
       paciente: {
@@ -571,6 +599,15 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
     });
   }, [tabActual?.id, refPathBloqueActivo]);
 
+  // Documentos: ID YA guardado (la foto inicial), no el que se esté editando
+  // sin guardar — el PDF no debe quedar en la carpeta de un ID que todavía no
+  // existe en Firestore. También es contra el que se validan los nombres.
+  const gestionIdGuardado = JSON.parse(snapshotInicialRef.current).gestionId;
+  const idAdmisionDocs = esCodigoPendiente(gestionIdGuardado) ? '' : String(gestionIdGuardado).trim();
+  const docsAdmision = useDocumentosAdmision(MODULO_ACTUAL, idAdmisionDocs, tabActual?.id === 'documentos');
+  // Registro de PDF de OC: 1 lectura al abrir la pestaña Orden.
+  const registroPdfOC = useRegistroPdfOC(tabActual?.id === 'orden');
+
   return (
     <div className="flex-grow flex flex-col bg-slate-50/50 dark:bg-gray-900 overflow-hidden text-[10px]">
 
@@ -626,9 +663,12 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
           )}
         </div>
 
-        {(tabActual?.id === 'informacion' || tabActual?.id === 'cargas' || tabActual?.id === 'logs') && (
+        {/* Orden reutiliza el mismo panel (y el mismo formData.bloques ya en
+            memoria) que Información/Cargas: no hace lecturas propias. */}
+        {(tabActual?.id === 'informacion' || tabActual?.id === 'cargas' || tabActual?.id === 'orden' || tabActual?.id === 'logs') && (
           <EmpresasFechasPanel
             bloques={formData.bloques}
+            ocsPorBloque={ocsPorBloque}
             bloqueActivoIndex={bloqueActivoIndex}
             setBloqueActivoIndex={setBloqueActivoIndex}
             erroresFecha={erroresFecha}
@@ -663,7 +703,7 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
           )}
 
           {tabActual?.id === 'detalles' && (
-            <DetallesTab formData={formData} />
+            <DetallesTab formData={formData} ocPorItemBloques={ocPorItemBloques} modulo={MODULO_ACTUAL} />
           )}
 
           {tabActual?.id === 'cargas' && (
@@ -679,6 +719,29 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
               periodoAbierto={periodoActivo}
               cargandoPeriodo={cargandoPeriodo}
               handleCopiarTexto={handleCopiarTexto}
+              onIrAInformacion={tabsPermitidas.some(t => t.id === 'informacion') ? () => setActiveTab('informacion') : undefined}
+            />
+          )}
+
+          {tabActual?.id === 'orden' && (
+            <OrdenTab
+              bloques={formData.bloques}
+              ocsPorBloque={ocsPorBloque}
+              bloqueActivoIndex={bloqueActivoIndex}
+              handleCopiarTexto={handleCopiarTexto}
+              textoPendiente='Pendiente — aún no hay OC asignadas a esta admisión (usa "Sincronizar OC" en la barra de Gestión de Hemodinamia).'
+              {...registroPdfOC}
+            />
+          )}
+
+          {tabActual?.id === 'documentos' && (
+            <DocumentosTab
+              modulo={MODULO_ACTUAL}
+              idAdmision={idAdmisionDocs}
+              gestionId={formData.gestionId}
+              nombre={formData.nombre}
+              handleCopiarTexto={handleCopiarTexto}
+              {...docsAdmision}
             />
           )}
 

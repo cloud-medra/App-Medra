@@ -207,7 +207,7 @@ export const normalizarImputadaConsignacion = (doc) => ({
 // Campos `*Export` (+ area/prevision): lo que va al EXCEL, que NO es lo
 // mismo que lo que se muestra en pantalla. En Implantes/Hemodinamia la
 // tabla nativa muestra `referencia` bajo el título "Descripción", pero su
-// Excel nativo (useSolicitudImplantesData/useSolicitudHemodinamiaData)
+// Excel nativo (shared/solicitud/useSolicitudGestionesData)
 // exporta `descriptorAuto` como DESCRIPCION y `tipoVinculado` (del ítem)
 // como ATRIBUTO. Antes el export del Consolidado reutilizaba `descripcion`
 // (el valor de pantalla = referencia), por eso salía la Referencia en la

@@ -14,7 +14,7 @@ vi.mock('../../../../../hooks/useColumnasPermitidas', () => ({
 vi.mock('../../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 vi.mock('../../../../../context/ModalContext', () => ({ useModal: () => ({ confirmAction }) }));
 vi.mock('../../../../../context/UserContext', () => ({ useUser: () => ({ userData: { nombreCompleto: 'Ana' } }) }));
-vi.mock('../../implantes/shared/documentosAdmision/documentosStorage', () => ({ obtenerBlobDocumento: vi.fn() }));
+vi.mock('../../shared/documentosAdmision/documentosStorage', () => ({ obtenerBlobDocumento: vi.fn() }));
 
 // Inicio: Contratos/ (Empresa X/ con contrato.pdf, resumen.png), leeme.pdf
 const NODOS = [

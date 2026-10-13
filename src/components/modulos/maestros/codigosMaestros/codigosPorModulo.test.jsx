@@ -16,7 +16,7 @@ vi.mock('./components/tabConCodigo/TabConCodigo', () => tab('conCodigo'));
 vi.mock('./components/tabVistaGeneral/TabVistaGeneral', () => tab('vistaGeneral'));
 
 const { default: CodigosMaestros } = await import('./CodigosMaestros');
-const { RUTA_CODIGOS_IMPLANTES, RUTA_CODIGOS_MAESTROS } = await import('./rutasCodigos');
+const { RUTA_CODIGOS_IMPLANTES, RUTA_CODIGOS_MAESTROS, RUTA_CODIGOS_HEMODINAMIA } = await import('./rutasCodigos');
 const { subItemsVisibles, subItemsAsignables } = await import('../../../../config/accesoMenu');
 const { MODULES } = await import('../../../../config/modulesConfig.jsx');
 const { COMPONENT_MAPS } = await import('../../../../config/componentMaps/index.js');
@@ -92,5 +92,29 @@ describe('Códigos en Maestros y en Implantes', () => {
     const completados = completarPermisosGranulares(u.permisosGranulares, COMPONENT_MAPS);
     expect(Object.keys(completados).some((r) => r.startsWith(RUTA_CODIGOS_IMPLANTES))).toBe(false);
     expect(completarVistasDelMenu(u.permisos, completados, COMPONENT_MAPS).agregadas).toEqual([]);
+  });
+});
+
+describe('Códigos en Hemodinamia (igual que Implantes)', () => {
+  it('ítem propio, mismo ícono y mismo mapa de permisos con rutas de Hemodinamia', () => {
+    const hemo = MODULES.hemodinamia.subItems.find((s) => s.path === RUTA_CODIGOS_HEMODINAMIA);
+    const maestros = MODULES.maestros.subItems.find((s) => s.path === RUTA_CODIGOS_MAESTROS);
+    expect(hemo.label).toBe('Códigos');
+    expect(hemo.icon.type).toBe(maestros.icon.type);
+    expect(subItemsAsignables(MODULES.hemodinamia).map((s) => s.path)).toContain(RUTA_CODIGOS_HEMODINAMIA);
+    const mh = COMPONENT_MAPS[RUTA_CODIGOS_HEMODINAMIA];
+    const mm = COMPONENT_MAPS[RUTA_CODIGOS_MAESTROS];
+    expect(Object.keys(mh.procesos)).toEqual(Object.keys(mm.procesos).map((r) => r.replace(RUTA_CODIGOS_MAESTROS, RUTA_CODIGOS_HEMODINAMIA)));
+    expect(mh.procesos[`${RUTA_CODIGOS_HEMODINAMIA}/conCodigo`]).toEqual(mm.procesos[`${RUTA_CODIGOS_MAESTROS}/conCodigo`]);
+  });
+
+  it('la pantalla en Hemodinamia usa sus propias rutas de pestañas y permisos', () => {
+    usuario = {
+      rol: 'operador',
+      permisos: { hemodinamia: [RUTA_CODIGOS_HEMODINAMIA] },
+      permisosGranulares: { [RUTA_CODIGOS_HEMODINAMIA]: {}, [`${RUTA_CODIGOS_HEMODINAMIA}/conCodigo`]: {} },
+    };
+    render(<CodigosMaestros rutaBase={RUTA_CODIGOS_HEMODINAMIA} />);
+    expect(screen.getByTestId('conCodigo')).toHaveTextContent(`${RUTA_CODIGOS_HEMODINAMIA}/conCodigo`);
   });
 });

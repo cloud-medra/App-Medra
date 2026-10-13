@@ -20,13 +20,18 @@ import { construirTextoAdmisionNombre } from '../../utils/gestionesImportExport'
 import { useAutocompleteReferencia } from './useAutocompleteReferencia';
 import { useGranularPermission } from '../../../../../../../hooks/useGranularPermission';
 import { CotizacionCard } from './CotizacionCard';
-import { construirItemContenidoPadDesdeFila } from './PadContenidoRow';
+import { PadContenidoRow, construirItemContenidoPadDesdeFila } from './PadContenidoRow';
+// Mismos componentes que Cargas de Implantes (notas de la admisión y edición
+// de las líneas ya registradas del contenido del PAD).
+import ContenidoPadRegistrado from '../../../../implantes/gestionImplantes/components/Cargastab/ContenidoPadRegistrado';
+import NotasAdmision from '../../../../implantes/gestionImplantes/components/Cargastab/NotasAdmision';
 import { construirItemLoteDesdeFila } from './loteAdicionalHelpers';
 import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
 // Foco para ingresar ítems seguidos con el teclado (ver src/utils/foco.js).
 import { enfocar, alPresionarEnter } from '../../../../../../../utils/foco';
 
 const PATH_VISTA = '/hemodinamia/gestionHemodinamia/cargas';
+const PATH_INFORMACION = '/hemodinamia/gestionHemodinamia/informacion';
 
 const INITIAL_ITEM = {
   numCotizacion: '',
@@ -59,7 +64,7 @@ const DRAFT_CONTENIDO_VACIO = {
 
 const DRAFT_LOTE_VACIO = { cantidad: '', lote: '', vencimiento: '' };
 
-export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarItem, onEliminarItem, onEliminarCotizacion, onActualizarEstadoItem, onEditarItem, periodoAbierto, cargandoPeriodo, handleCopiarTexto }, ref) => {
+export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarItem, onEliminarItem, onEliminarCotizacion, onActualizarEstadoItem, onEditarItem, periodoAbierto, cargandoPeriodo, handleCopiarTexto, onIrAInformacion }, ref) => {
   const bloqueActivo = formData?.bloques?.[bloqueActivoIndex];
   const cotizaciones = bloqueActivo?.cotizaciones || [];
 
@@ -71,8 +76,17 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
   const [desbloqueadoLocal, setDesbloqueadoLocal] = useState(false);
   const [verificandoCandado, setVerificandoCandado] = useState(false);
   const [errorCandado, setErrorCandado] = useState('');
-  const { hasPermission } = useGranularPermission();
+  const { hasPermission, hasAccesoProceso } = useGranularPermission();
   const puedeAgregarContenidoPad = hasPermission(PATH_VISTA, 'tabla_cotizaciones', 'formulario_contenido_pad');
+  // Notas de la admisión: visibles para quien ve Cargas; si tiene la
+  // pestaña Información, se respetan sus permisos por campo. "Editar en
+  // Información" solo si puede editarlos allí (igual que Implantes).
+  const tieneInformacion = hasAccesoProceso(PATH_INFORMACION);
+  const campoInformacion = (campo) => hasPermission(PATH_INFORMACION, 'formulario_observaciones', campo);
+  const verDescripcion = !tieneInformacion || campoInformacion('input_descripcion');
+  const verObservacion = !tieneInformacion || campoInformacion('input_observacion');
+  const puedeEditarNotas = Boolean(onIrAInformacion) && tieneInformacion
+    && (campoInformacion('input_descripcion') || campoInformacion('input_observacion'));
 
   const bloqueSolicitado = (bloqueActivo?.solicitud || '').toUpperCase() === 'SOLICITADO';
   const bloqueado = bloqueSolicitado && !desbloqueadoLocal;
@@ -271,6 +285,12 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
 
   const handleEliminarContenidoRegistrado = (tempId) => {
     setContenidoPad(prev => prev.filter(f => f.tempId !== tempId));
+  };
+
+  // Edición de una línea ya registrada (ver ContenidoPadRegistrado).
+  const handleActualizarContenidoRegistrado = (tempId, fila) => {
+    if (bloqueado || !puedeAgregarContenidoPad) return;
+    setContenidoPad(prev => prev.map(f => (f.tempId === tempId ? { ...fila, tempId } : f)));
   };
 
   const handleDraftLoteChange = (field, value) => {
@@ -481,7 +501,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
 
   if (!bloqueActivo) {
     return (
-      <div className="p-4 max-w-7xl mx-auto w-full">
+      <div className="px-4 lg:px-6 py-4 w-full max-w-[2200px] mx-auto">
         <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs p-6 text-[10px] text-slate-500 dark:text-gray-400">
           Selecciona una empresa/fecha en el panel lateral para gestionar sus cargas.
         </div>
@@ -492,7 +512,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
   const sinPeriodoAbierto = !cargandoPeriodo && !periodoAbierto;
 
   return (
-    <div className="p-4 max-w-7xl mx-auto w-full space-y-3">
+    <div className="px-4 lg:px-6 py-4 w-full max-w-[2200px] mx-auto space-y-3">
 
       <div className="flex items-center justify-between gap-1.5 px-1">
         <div className="flex items-center gap-1.5">
@@ -558,6 +578,16 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
           )}
         </div>
       </div>
+
+      {/* Fuera del fieldset: se ve (y se copia) también con el bloque imputado. */}
+      <NotasAdmision
+        descripcion={formData?.descripcion}
+        observacion={formData?.observacion}
+        onCopiar={handleCopiarTexto}
+        onEditar={puedeEditarNotas ? onIrAInformacion : undefined}
+        verDescripcion={verDescripcion}
+        verObservacion={verObservacion}
+      />
 
       {sinPeriodoAbierto && (
         <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-[11px] text-red-700 dark:text-red-400">
@@ -864,51 +894,13 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               </div>
 
               {contenidoPad.length > 0 && (
-                <div className="overflow-hidden rounded border border-fuchsia-200 dark:border-fuchsia-900/60">
-                  <table className="w-full text-left text-[10px] border-collapse">
-                    <thead className="bg-fuchsia-100/60 dark:bg-fuchsia-950/30">
-                      <tr className="text-fuchsia-700 dark:text-fuchsia-400 uppercase font-bold text-[9px]">
-                        <th className="px-2 py-1 border-b border-fuchsia-200 dark:border-fuchsia-900/60">Referencia</th>
-                        <th className="px-2 py-1 border-b border-fuchsia-200 dark:border-fuchsia-900/60 text-center">Cant.</th>
-                        <th className="px-2 py-1 border-b border-fuchsia-200 dark:border-fuchsia-900/60">Lote</th>
-                        <th className="px-2 py-1 border-b border-fuchsia-200 dark:border-fuchsia-900/60">Vencimiento</th>
-                        <th className="px-2 py-1 border-b border-fuchsia-200 dark:border-fuchsia-900/60 text-center">Quitar</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {contenidoPad.map(fila => (
-                        <tr key={fila.tempId} className="border-l-2 border-transparent hover:border-[#2383C2] bg-white dark:bg-gray-900/40 hover:bg-fuchsia-50/40 dark:hover:bg-fuchsia-950/10">
-                          <td className="px-2 py-1 border-b border-fuchsia-100 dark:border-fuchsia-900/40 font-semibold text-slate-700 dark:text-gray-200 truncate max-w-[160px]" title={fila.referencia}>
-                            {fila.referencia}
-                          </td>
-                          <td className="px-2 py-1 border-b border-fuchsia-100 dark:border-fuchsia-900/40 text-center text-slate-600 dark:text-gray-300">
-                            {fila.cantidad}
-                          </td>
-                          <td className="px-2 py-1 border-b border-fuchsia-100 dark:border-fuchsia-900/40 text-slate-600 dark:text-gray-300">
-                            {fila.lote === 'Sin lote'
-                              ? <span className="italic text-slate-400 dark:text-gray-500">Sin lote</span>
-                              : fila.lote}
-                          </td>
-                          <td className="px-2 py-1 border-b border-fuchsia-100 dark:border-fuchsia-900/40 text-slate-600 dark:text-gray-300">
-                            {fila.vencimiento === 'Sin fecha'
-                              ? <span className="italic text-slate-400 dark:text-gray-500">Sin fecha</span>
-                              : formatearFechaTabla(fila.vencimiento)}
-                          </td>
-                          <td className="px-2 py-1 border-b border-fuchsia-100 dark:border-fuchsia-900/40 text-center">
-                            <button
-                              type="button"
-                              onClick={() => handleEliminarContenidoRegistrado(fila.tempId)}
-                              className="text-red-500 hover:text-red-700 p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30"
-                              title="Quitar esta línea"
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <ContenidoPadRegistrado
+                  filas={contenidoPad}
+                  onActualizar={handleActualizarContenidoRegistrado}
+                  onEliminar={handleEliminarContenidoRegistrado}
+                  deshabilitado={bloqueado || sinPeriodoAbierto || !puedeAgregarContenidoPad}
+                  FilaEditor={PadContenidoRow}
+                />
               )}
 
               <p className="text-[9px] text-fuchsia-600 dark:text-fuchsia-400 italic">

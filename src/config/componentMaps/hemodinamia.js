@@ -1,3 +1,6 @@
+import { mapaRespaldoDocumentos, mapaSincronizacionImputadas, reubicarMapa } from './operacionesCompartidas.js';
+import { maestrosComponentMaps } from './maestros.js';
+
 export const hemodinamiaComponentMaps = {
   // Mismo criterio que componentMaps/implantes.js: las 4 pestañas de la
   // vista de detalle (Detalles, Información, Cargas, Logs) son `procesos`
@@ -72,6 +75,7 @@ export const hemodinamiaComponentMaps = {
           btn_descargar_plantilla: { label: 'Acción: Descargar Plantilla CSV' },
           input_archivo: { label: 'Campo: Selector de Archivo a Importar' },
           btn_importar: { label: 'Acción: Botón Cargar Registro (ejecutar importación)' },
+          btn_marcar_oc_pendiente: { label: 'Acción: Marcar OC pendiente en un rango (además exige rol Administrador)' },
         },
       },
       detalle_header: {
@@ -162,6 +166,24 @@ export const hemodinamiaComponentMaps = {
           },
         },
       },
+      '/hemodinamia/gestionHemodinamia/orden': {
+        label: 'Pestaña: Orden — Empresas / Fechas de la admisión',
+        sections: {
+          empresas_fechas: {
+            label: 'Sección: Empresas / Fechas',
+            elements: {},
+          },
+        },
+      },
+      '/hemodinamia/gestionHemodinamia/documentos': {
+        label: 'Pestaña: Documentos — PDF de la admisión en Storage (shared/documentosAdmision/DocumentosTab.jsx)',
+        sections: {
+          contenido: {
+            label: 'Sección: Subida múltiple y listado de PDF (DP, RP, INF, COT)',
+            elements: {},
+          },
+        },
+      },
       '/hemodinamia/gestionHemodinamia/logs': {
         label: 'Pestaña: Logs — historial del bloque activo, solo lectura',
         sections: {
@@ -173,6 +195,32 @@ export const hemodinamiaComponentMaps = {
       },
     },
   },
+
+  '/hemodinamia/cargaMasivaDocumentos': {
+    label: 'Carga masiva de documentos (shared/cargaMasivaDocumentos) — PDF de varias admisiones, sin granularidad cableada aún',
+    sections: {
+      zona_carga: {
+        label: 'Sección: Zona de carga (arrastrar/seleccionar PDF)',
+        elements: {},
+      },
+      vista_previa: {
+        label: 'Sección: Vista previa por admisión y subida',
+        elements: {},
+      },
+    },
+  },
+
+  '/hemodinamia/sincronizacionImputadas': mapaSincronizacionImputadas('Hemodinamia'),
+
+  '/hemodinamia/respaldoDocumentos': mapaRespaldoDocumentos('Hemodinamia'),
+
+  // Misma pantalla y datos que Maestros → Códigos, con permisos propios (igual que Implantes).
+  '/hemodinamia/codigosHemodinamia': reubicarMapa(
+    maestrosComponentMaps['/maestros/codigosMaestros'],
+    '/maestros/codigosMaestros',
+    '/hemodinamia/codigosHemodinamia',
+    'Códigos (Hemodinamia) — misma pantalla y datos que Maestros → Códigos, con permisos propios',
+  ),
 
   '/hemodinamia/solicitudHemodinamia': {
     label: 'Solicitud de Hemodinamia (SolicitudHemodinamia.jsx) — sin granularidad cableada aún',
@@ -211,7 +259,7 @@ export const hemodinamiaComponentMaps = {
   },
 
   '/hemodinamia/resumenHemodinamia': {
-    label: 'Resumen de Hemodinamia Imputada (ResumenHemodinamia.jsx) — solo lectura, sin granularidad cableada aún',
+    label: 'Resumen de Hemodinamia Imputada (shared/resumen/ResumenGestiones.jsx) — solo lectura, sin granularidad cableada aún',
     sections: {
       header: {
         label: 'Sección: Encabezado',

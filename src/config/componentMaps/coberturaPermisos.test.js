@@ -29,15 +29,18 @@ const recorrer = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((
 // contra cada vista que los monta.
 const RUTAS_DINAMICAS = {
   // Códigos: misma pantalla en Maestros y en Implantes (prop rutaVista).
-  'modulos/maestros/codigosMaestros/components/tabPendientes/TabPendientes.jsx': ['/maestros/codigosMaestros/pendientes', '/implantes/codigosImplantes/pendientes'],
-  'modulos/maestros/codigosMaestros/components/tabConCodigo/TabConCodigo.jsx': ['/maestros/codigosMaestros/conCodigo', '/implantes/codigosImplantes/conCodigo'],
-  'modulos/maestros/codigosMaestros/components/tabVistaGeneral/TabVistaGeneral.jsx': ['/maestros/codigosMaestros/vistaGeneral', '/implantes/codigosImplantes/vistaGeneral'],
+  'modulos/maestros/codigosMaestros/components/tabPendientes/TabPendientes.jsx': ['/maestros/codigosMaestros/pendientes', '/implantes/codigosImplantes/pendientes', '/hemodinamia/codigosHemodinamia/pendientes'],
+  'modulos/maestros/codigosMaestros/components/tabConCodigo/TabConCodigo.jsx': ['/maestros/codigosMaestros/conCodigo', '/implantes/codigosImplantes/conCodigo', '/hemodinamia/codigosHemodinamia/conCodigo'],
+  'modulos/maestros/codigosMaestros/components/tabVistaGeneral/TabVistaGeneral.jsx': ['/maestros/codigosMaestros/vistaGeneral', '/implantes/codigosImplantes/vistaGeneral', '/hemodinamia/codigosHemodinamia/vistaGeneral'],
   'modulos/gestiones/shared/TablaOrdenes.jsx': ['/laboratorio/ordenLaboratorio', '/vacunatorio/ordenVacunatorio'],
   'modulos/gestiones/shared/DetalleOrdenTabla.jsx': ['/laboratorio/ordenLaboratorio', '/vacunatorio/ordenVacunatorio'],
   'modulos/gestiones/shared/TablaXmlDocumentos.jsx': ['/laboratorio/xmlDocLaboratorio', '/vacunatorio/xmlDocVacunatorio'],
   'modulos/gestiones/laboratorio/vizualizador/XmlDetallesDoc.jsx': ['/laboratorio/xmlDocLaboratorio', '/laboratorio/archivosControlLaboratorio/documentosRecibidos'],
   'modulos/gestiones/vacunatorio/vizualizador/XmlDetallesDoc.jsx': ['/vacunatorio/xmlDocVacunatorio', '/vacunatorio/archivosControlVacunatorio/documentosRecibidos'],
   'modulos/operaciones/documentos/reportesInfo/ReportesInfo.jsx': ['/documentos/reportesInfo', '/implantes/reportesInfo'],
+  // Pantallas compartidas por Implantes y Hemodinamia (shared/modulosGestion.js).
+  'modulos/operaciones/shared/respaldoDocumentos/RespaldoDocumentos.jsx': ['/implantes/respaldoDocumentos', '/hemodinamia/respaldoDocumentos'],
+  'modulos/operaciones/shared/sincronizacionImputadas/SincronizacionImputadas.jsx': ['/implantes/sincronizacionImputadas', '/hemodinamia/sincronizacionImputadas'],
 };
 
 const usos = [];
@@ -100,21 +103,21 @@ const TABLAS_PENDIENTES = new Set([
   'modulos/operaciones/documentos/seguimientoFacturasGuias/SeguimientoFacturasGuias.jsx',
   'modulos/operaciones/hemodinamia/gestionHemodinamia/components/Cargastab/Cargastab.jsx',
   'modulos/operaciones/hemodinamia/gestionHemodinamia/components/Cargastab/CotizacionCard.jsx',
-  'modulos/operaciones/hemodinamia/gestionHemodinamia/components/GestionesHemodinamiaTable.jsx',
-  'modulos/operaciones/hemodinamia/resumenHemodinamia/ResumenHemodinamia.jsx',
-  'modulos/operaciones/hemodinamia/solicitudHemodinamia/SolicitudHemodinamia.jsx',
-  'modulos/operaciones/implantes/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx',
+  'modulos/operaciones/shared/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx',
   'modulos/operaciones/implantes/gestionImplantes/components/Cargastab/Cargastab.jsx',
   'modulos/operaciones/implantes/gestionImplantes/components/Cargastab/CotizacionCard.jsx',
   // La tabla de contenido del PAD registrado (antes dentro de Cargastab.jsx).
   'modulos/operaciones/implantes/gestionImplantes/components/Cargastab/ContenidoPadRegistrado.jsx',
-  'modulos/operaciones/implantes/gestionImplantes/components/Documentostab/Documentostab.jsx',
-  'modulos/operaciones/implantes/gestionImplantes/components/GestionesImplantesTable.jsx',
+  'modulos/operaciones/shared/documentosAdmision/DocumentosTab.jsx',
+  // Tabla de Gestión de Implantes y Hemodinamia (compartida).
+  'modulos/operaciones/shared/gestion/GestionesTable.jsx',
   'modulos/operaciones/shared/ordenesOC/OrdenTab.jsx',
   'modulos/operaciones/shared/ocIndex/SincronizarOCResumenModal.jsx',
-  'modulos/operaciones/implantes/resumenImplantes/ResumenImplantes.jsx',
-  'modulos/operaciones/implantes/sincronizacionImputadas/SincronizacionImputadas.jsx',
-  'modulos/operaciones/implantes/solicitudImplantes/SolicitudImplantes.jsx',
+  // Resumen de Implantes y Hemodinamia (pantalla compartida).
+  'modulos/operaciones/shared/resumen/ResumenGestiones.jsx',
+  'modulos/operaciones/shared/sincronizacionImputadas/SincronizacionImputadas.jsx',
+  // Solicitud de Implantes y Hemodinamia (pantalla compartida).
+  'modulos/operaciones/shared/solicitud/SolicitudGestiones.jsx',
   'ui/TablaRedimensionable.jsx',
 ]);
 

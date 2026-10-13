@@ -126,7 +126,7 @@ export const useSolicitudConsignacionData = () => {
           }));
 
           // Hoja "Resumen", mismo criterio que la de Solicitud Implantes
-          // (useSolicitudImplantesData.js): una fila por ítem, con las
+          // (shared/solicitud/useSolicitudGestionesData.js): una fila por ítem, con las
           // columnas Ingreso/Area/Previsión/Id/Cód/Cant/Venta/Médico/Fecha/
           // Descripción/Estado. A diferencia de Implantes, en Consignación
           // no existe un estado de carga por ítem: como el export solo

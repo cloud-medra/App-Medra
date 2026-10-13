@@ -26,6 +26,8 @@ import { periodoEstaAbierto } from '../components/Cargastab/verificacionPeriodoB
 import { periodoImputacion, bloqueParaImputacion, camposSolicitudDe } from '../../../shared/periodoImputacion';
 import { refImputada, construirPayloadImputada } from '../utils/imputadaSync';
 import { registrarLogHemodinamia } from '../utils/registrarLogHemodinamia';
+import { calcularOcPendiente, itemsDeGestion } from '../../../shared/ocIndex/indiceOC';
+import { ordenarGestiones } from '../../../implantes/gestionImplantes/utils/ordenGestiones';
 import { existeGestionEnColeccion, extraerDatosBase, MENSAJE_DUPLICADO } from '../../../shared/empresaFechaDesdeDetalle';
 import { calcularFechaRegistroAdmision } from '../../../shared/fechaRegistroAdmision';
 
@@ -172,12 +174,9 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
         active: true,
         ...document.data()
       }));
-      mapeados.sort((a, b) => {
-        const millisA = a.fechaRegistro?.toMillis ? a.fechaRegistro.toMillis() : new Date(a.fechaRegistro || 0).getTime();
-        const millisB = b.fechaRegistro?.toMillis ? b.fechaRegistro.toMillis() : new Date(b.fechaRegistro || 0).getTime();
-        return millisB - millisA;
-      });
-      return mapeados;
+      // Orden por defecto (igual que Implantes): fecha de la gestión (la
+      // columna "Fecha"), luego nombre y empresa. Ver ordenGestiones.js.
+      return ordenarGestiones(mapeados);
     };
 
     if (!admision && refPath) {
@@ -416,6 +415,9 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
 
     const dataAEnviar = {
       ...dataNormalizada,
+      // Ver "Sincronizar OC": el flag debe existir en todos los registros
+      // (Firestore no puede consultar "campo inexistente"). Igual que Implantes.
+      ocPendiente: calcularOcPendiente(itemsDeGestion(dataNormalizada), {}),
       fechaRegistro: new Date(),
       fechaRegistroAdmision: calcularFechaRegistroAdmision({ idNuevo: dataNormalizada.gestionId }),
       registradoPor: userData?.nombreCompleto || 'Usuario'
@@ -563,6 +565,11 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
           }),
           registradoPor: implanteExistente?.registradoPor || userData?.nombreCompleto || 'Usuario'
         };
+        // Gestión anterior a "Sincronizar OC" sin el flag: se agrega al
+        // editarla (este formulario no toca los ítems ni ocPorItem).
+        if (implanteExistente && typeof implanteExistente.ocPendiente !== 'boolean') {
+          dataAEnviar.ocPendiente = calcularOcPendiente(itemsDeGestion(implanteExistente), implanteExistente.ocPorItem || {});
+        }
 
         await updateDoc(docRef, dataAEnviar);
         await registrarLog(docRef, 'EDICION', { ...dataNormalizada });
@@ -662,6 +669,13 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
         dataNormalizada.fechaInicioCarga = registro.fechaInicioCarga || original?.fechaInicioCarga || null;
         dataNormalizada.fechaCarga = registro.fechaCarga || original?.fechaCarga || null;
 
+        // OC por ítem (Sincronizar OC): se toma del registro EN VIVO (no de la
+        // foto del detalle) para no pisar una sincronización hecha mientras el
+        // detalle estaba abierto. En un update normal ocPorItem no se escribe
+        // (queda intacto); solo se recalcula ocPendiente con los ítems nuevos.
+        const ocPorItemActual = original?.ocPorItem || {};
+        dataNormalizada.ocPendiente = calcularOcPendiente(itemsDeGestion(dataNormalizada), ocPorItemActual);
+
         const rutaCambio = !original || (
           original.fecha !== dataNormalizada.fecha ||
           (original.empresa || '') !== dataNormalizada.empresa ||
@@ -690,6 +704,11 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
             fechaRegistro: original?.fechaRegistro || new Date(),
             registradoPor: original?.registradoPor || userData?.nombreCompleto || 'Usuario'
           };
+          // El documento se mueve de ruta: las OC ya asignadas viajan con él
+          // (solo las de ítems que siguen existiendo).
+          const idsItems = new Set(itemsDeGestion(dataNormalizada).map(it => it.id));
+          const ocPorItemVigente = Object.fromEntries(Object.entries(ocPorItemActual).filter(([id]) => idsItems.has(id)));
+          if (Object.keys(ocPorItemVigente).length > 0) datosGuardados.ocPorItem = ocPorItemVigente;
           // Si estaba solicitado, conserva la solicitud (período incluido).
           if (original) Object.assign(datosGuardados, camposSolicitudDe(original));
           batch.set(nuevoDocRef, datosGuardados);
@@ -701,7 +720,7 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
           }
         }
 
-        registrosGuardados.push({ id: docRefFinal.id, refPath: docRefFinal.path, ...datosGuardados });
+        registrosGuardados.push({ id: docRefFinal.id, refPath: docRefFinal.path, ocPorItem: ocPorItemActual, ...datosGuardados });
 
         const itemsAntes = original?.cotizaciones?.[0]?.items || [];
         const itemsDespues = registro.cotizaciones?.[0]?.items || [];
@@ -983,6 +1002,7 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
             costo: Number(item.costo) || 0,
             solicitud: 'PENDIENTE',
             active: true,
+            ocPendiente: false, // sin ítems todavía: nada que sincronizar
             registradoPor: userData?.nombreCompleto || 'Importación Masiva',
             fechaRegistro: new Date(),
             fechaRegistroAdmision: calcularFechaRegistroAdmision({ idNuevo: gestionIdLimpio })

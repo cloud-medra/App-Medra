@@ -12,7 +12,9 @@ import { SIN_LOTE, SIN_FECHA, aBorrador, validarContenidoPad, deBorrador } from 
 // registrar: referencia y cantidad > 0 obligatorias; vencimiento vacío o
 // fecha AAAA-MM-DD. Lote / vencimiento vacíos = "Sin lote" / "Sin fecha".
 
-const ContenidoPadRegistrado = ({ filas, onActualizar, onEliminar, deshabilitado = false }) => {
+// `FilaEditor`: fila de edición con su autocompletado (Hemodinamia pasa la
+// suya, que busca solo en el segmento HEMODINAMIA de Códigos).
+const ContenidoPadRegistrado = ({ filas, onActualizar, onEliminar, deshabilitado = false, FilaEditor = PadContenidoRow }) => {
   const [editandoId, setEditandoId] = useState(null);
   const [borrador, setBorrador] = useState(null);
   const [errores, setErrores] = useState({});
@@ -50,7 +52,7 @@ const ContenidoPadRegistrado = ({ filas, onActualizar, onEliminar, deshabilitado
               <td colSpan={5} className="p-2 border-b border-fuchsia-100 dark:border-fuchsia-900/40">
                 {/* Enter guarda, Escape cancela (en cualquier campo de la fila). */}
                 <div onKeyDown={alTeclear} className="flex flex-col gap-1.5" role="group" aria-label={`Editar ${fila.referencia}`}>
-                  <PadContenidoRow fila={borrador} onChange={(nueva) => { setBorrador(nueva); setErrores({}); }} puedeEliminar={false} />
+                  <FilaEditor fila={borrador} onChange={(nueva) => { setBorrador(nueva); setErrores({}); }} puedeEliminar={false} />
                   {Object.keys(errores).length > 0 && (
                     <div role="alert" className="text-[9px] text-red-500 font-medium flex items-center gap-1">
                       <AlertCircle size={10} />

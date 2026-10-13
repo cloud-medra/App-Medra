@@ -11,7 +11,8 @@ import {
   ListChecks
 } from 'lucide-react';
 import Spinner from '../../../../ui/Spinner';
-import EstadoBadge from '../shared/estadoGestion/EstadoBadge';
+import EstadoBadge from '../../shared/estadoGestion/EstadoBadge';
+import { moduloGestion } from '../../shared/modulosGestion';
 
 export const DrawersOverlay = ({ show, onClick }) => {
   if (!show) return null;
@@ -64,7 +65,8 @@ const FilaCambio = ({ etiqueta, anterior, nuevo }) => (
   </li>
 );
 
-const DetalleLog = ({ log }) => {
+// `coleccionImputadas`: la del módulo de la gestión (ver modulosGestion.js).
+const DetalleLog = ({ log, coleccionImputadas = 'implantes_imputadas' }) => {
   const d = log.detalles || {};
 
   switch (log.accion) {
@@ -196,7 +198,7 @@ const DetalleLog = ({ log }) => {
         <div className="space-y-1.5">
           {actualizados.length > 0 && (
             <p className="text-emerald-600 dark:text-emerald-400">
-              {actualizados.length} ítem{actualizados.length === 1 ? '' : 's'} actualizado{actualizados.length === 1 ? '' : 's'} en <strong>implantes_imputadas</strong>.
+              {actualizados.length} ítem{actualizados.length === 1 ? '' : 's'} actualizado{actualizados.length === 1 ? '' : 's'} en <strong>{coleccionImputadas}</strong>.
             </p>
           )}
           {noSincronizados.length > 0 && (
@@ -242,7 +244,9 @@ const DetalleLog = ({ log }) => {
   }
 };
 
-export const HistorialLogsContenido = ({ logsList, loadingLogs, formatearFecha }) => {
+// `modulo` (opcional): Implantes o Hemodinamia, para los textos de imputadas.
+export const HistorialLogsContenido = ({ logsList, loadingLogs, formatearFecha, modulo = 'implantes' }) => {
+  const { coleccionImputadas } = moduloGestion(modulo);
   if (loadingLogs) {
     return (
       <div className="flex flex-col items-center justify-center h-48 gap-2">
@@ -286,7 +290,7 @@ export const HistorialLogsContenido = ({ logsList, loadingLogs, formatearFecha }
           </p>
 
           <div className="text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 p-2 rounded border border-gray-100 dark:border-gray-700/60 text-[10px]">
-            <DetalleLog log={log} />
+            <DetalleLog log={log} coleccionImputadas={coleccionImputadas} />
           </div>
         </div>
       ))}
@@ -300,7 +304,8 @@ export const LogDrawer = ({
   selectedImplante,
   logsList,
   loadingLogs,
-  formatearFecha
+  formatearFecha,
+  modulo = 'implantes'
 }) => {
   const idMostrado = selectedImplante?.gestionId || selectedImplante?.agendaId || 'N/A';
 
@@ -334,7 +339,7 @@ export const LogDrawer = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">
-        <HistorialLogsContenido logsList={logsList} loadingLogs={loadingLogs} formatearFecha={formatearFecha} />
+        <HistorialLogsContenido logsList={logsList} loadingLogs={loadingLogs} formatearFecha={formatearFecha} modulo={modulo} />
       </div>
 
       <div className="px-3 py-2 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900 shrink-0 text-[10px] text-gray-500">
@@ -360,8 +365,10 @@ export const ConfigDrawer = ({
   onSelectFile,
   importing,
   onEjecutarImportacion,
-  marcarOcPendiente // solo admin/dev; null para el resto
+  marcarOcPendiente, // solo admin/dev; null para el resto
+  modulo = 'implantes' // Implantes o Hemodinamia (textos, ver modulosGestion.js)
 }) => {
+  const config = moduloGestion(modulo);
   return (
     <div
       className={`fixed top-0 right-0 z-50 h-full w-full max-w-sm bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 flex flex-col transform transition-transform duration-300 ease-in-out ${
@@ -373,7 +380,7 @@ export const ConfigDrawer = ({
           <Settings size={16} className="text-[#2383C2]" />
           <div>
             <h3 className="text-[12px] font-bold text-gray-800 dark:text-gray-100">
-              Configuración de Implantes
+              Configuración de {config.etiqueta}
             </h3>
             <p className="text-[10px] text-gray-500 dark:text-gray-400">
               Herramientas de importación y exportación
@@ -392,10 +399,10 @@ export const ConfigDrawer = ({
         <div className="p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50/50 dark:bg-gray-900/30 space-y-2">
           <div className="flex items-center gap-2 text-gray-800 dark:text-gray-200 font-bold text-[11px]">
             <Download size={14} className="text-emerald-600 dark:text-emerald-400" />
-            <span>Exportar Implantes</span>
+            <span>Exportar {config.etiqueta}</span>
           </div>
           <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
-            Descarga la lista actual de implantes registrados ({totalImplantes}{' '}
+            Descarga la lista actual de {config.textoRegistros} ({totalImplantes}{' '}
             registros) en un archivo compatible con Excel (CSV/XLSX).
           </p>
           <button
@@ -413,7 +420,7 @@ export const ConfigDrawer = ({
             <span>Importación Masiva</span>
           </div>
           <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">
-            Carga masivamente nuevos implantes seleccionando un archivo
+            Carga masivamente {config.textoNuevosRegistros} seleccionando un archivo
             formateado en Excel o CSV.
           </p>
           <button

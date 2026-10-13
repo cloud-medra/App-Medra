@@ -8,8 +8,8 @@ import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitida
 import { useToast } from '../../../../../context/ToastContext';
 import { useModal } from '../../../../../context/ModalContext';
 import { useUser } from '../../../../../context/UserContext';
-import { obtenerBlobDocumento } from '../../implantes/shared/documentosAdmision/documentosStorage';
-import { VisorDocumentoModal } from '../../implantes/gestionImplantes/components/Documentostab/VisorDocumentoModal';
+import { obtenerBlobDocumento } from '../../shared/documentosAdmision/documentosStorage';
+import { VisorDocumentoModal } from '../../shared/documentosAdmision/VisorDocumentoModal';
 import DialogoNombre from './DialogoNombre';
 import DialogoMover from './DialogoMover';
 import {
