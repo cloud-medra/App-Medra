@@ -15,24 +15,28 @@ import {
 // Importación unificada de configuración de módulos y vistas
 import { MODULES, AJUSTES_ITEMS, SPECIAL_VIEWS } from '../config/modulesConfig.jsx';
 
-// --- VISTAS GENERALES Y ADMINISTRACIÓN ---
+// --- UTILIDADES DEL MENÚ Y DEL PANEL (no son vistas) ---
+import RecordatoriosFlotante from '../components/modulos/administracion/recordatorios/RecordatoriosFlotante';
+import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
+import { subItemsVisibles, puedeAbrirVista, esAdministrador } from '../config/accesoMenu';
+import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
+import { vistaInicialDesdeURL } from '../components/modulos/operaciones/documentos/reportesInfo/urlDetalle';
+import { puedeConfigurarAtajos } from '../config/atajosDashboard';
+
+// --- DASHBOARD ---
 import ResumenGeneral from '../components/modulos/dashboard/ResumenGeneral';
+
+// --- ADMINISTRACIÓN ---
+import Alertas from '../components/modulos/administracion/alertas/Alertas';
 import ControlMensual from '../components/modulos/administracion/controlMensual/ControlMensual';
 import ResumenPeriodoAbierto from '../components/modulos/administracion/resumenPeriodoAbierto/ResumenPeriodoAbierto.jsx';
 import NotasAdmin from '../components/modulos/administracion/notasAdmin/NotasAdmin';
 import Recordatorios from '../components/modulos/administracion/recordatorios/Recordatorios';
-import RecordatoriosFlotante from '../components/modulos/administracion/recordatorios/RecordatoriosFlotante';
 import CrearUsuario from '../components/modulos/administracion/usuarios/CrearUsuario';
 import ListadoUsuario from '../components/modulos/administracion/usuarios/ListadoUsuario';
+import PermisosPorCentro from '../components/modulos/administracion/permisosCentro/PermisosPorCentro';
 import CargasConsolidado from '../components/modulos/administracion/cargasConsolidado/CargasConsolidado';
 import Estadisticas from '../components/modulos/administracion/estadisticas/Estadisticas';
-import PermisosPorCentro from '../components/modulos/administracion/permisosCentro/PermisosPorCentro';
-import Alertas from '../components/modulos/administracion/alertas/Alertas';
-import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
-import ZonasDiagnostico from '../components/modulos/maestros/zonasDiagnostico/ZonasDiagnostico';
-import DescripcionesOcultas from '../components/modulos/maestros/descripcionesOcultas/DescripcionesOcultas';
-import { subItemsVisibles, puedeAbrirVista, esAdministrador } from '../config/accesoMenu';
-import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
 
 // --- LABORATORIO ---
 import EmpresasLaboratorio from '../components/modulos/gestiones/laboratorio/registros/EmpresasLaboratorio';
@@ -52,6 +56,8 @@ import ArchivosControlVacunatorio from '../components/modulos/gestiones/vacunato
 import EmpresasMaestros from '../components/modulos/maestros/empresasMaestros/EmpresasMaestros';
 import PrestadoresMaestros from '../components/modulos/maestros/prestadoresMaestro/PrestadoresMaestros';
 import CentrosMaestros from '../components/modulos/maestros/centrosMaestros/CentrosMaestros';
+import ZonasDiagnostico from '../components/modulos/maestros/zonasDiagnostico/ZonasDiagnostico';
+import DescripcionesOcultas from '../components/modulos/maestros/descripcionesOcultas/DescripcionesOcultas';
 import PrevisionesMaestros from '../components/modulos/maestros/previsionesMaestros/PrevisionesMaestros';
 import ConveniosMaestros from '../components/modulos/maestros/conveniosMaestros/ConveniosMaestros';
 import RecargosMaestros from '../components/modulos/maestros/recargosMaestros/RecargosMaestros';
@@ -60,7 +66,14 @@ import CodigosMaestros from '../components/modulos/maestros/codigosMaestros/Codi
 import PadMaestros from '../components/modulos/maestros/padMaestros/PadMaestros';
 import ActualizacionPreciosMaestros from '../components/modulos/maestros/actualizacionPreciosMaestros/ActualizacionPreciosMaestros';
 
-
+// --- CONSIGNACIÓN ---
+import IngresarGuiaDespacho from '../components/modulos/operaciones/consignacion/ingresarGuiaDespacho/IngresarGuiaDespacho';
+import Listadoguiasconsignacion from '../components/modulos/operaciones/consignacion/listadoguiasconsignacion/Listadoguiasconsignacion';
+import RegistroConsignacion from '../components/modulos/operaciones/consignacion/registroConsignacion/RegistroConsignacion';
+import CargaMasivaConsignacion from '../components/modulos/operaciones/consignacion/cargaMasivaConsignacion/CargaMasivaConsignacion';
+import CargasConsignacion from '../components/modulos/operaciones/consignacion/cargasConsignacion/CargasConsignacion';
+import SolicitudConsignacion from '../components/modulos/operaciones/consignacion/solicitudConsignacion/SolicitudConsignacion';
+import ResumenConsignacion from '../components/modulos/operaciones/consignacion/resumenConsignacion/ResumenConsignacion';
 
 // --- INVENTARIO ---
 import GeneralInventario from '../components/modulos/inventario/generalInventario/GeneralInventario';
@@ -75,43 +88,28 @@ import InventarioPorCajas from '../components/modulos/inventario/inventarioCajas
 
 // --- DOCUMENTOS ---
 import ReportesInfo from '../components/modulos/operaciones/documentos/reportesInfo/ReportesInfo';
-import { vistaInicialDesdeURL } from '../components/modulos/operaciones/documentos/reportesInfo/urlDetalle';
 import ImportarDetallesOC from '../components/modulos/operaciones/documentos/importarDetallesOC/ImportarDetallesOC';
 import SeguimientoFacturasGuias from '../components/modulos/operaciones/documentos/seguimientoFacturasGuias/SeguimientoFacturasGuias';
 import IngresoOrdenes from '../components/modulos/operaciones/documentos/ingresoOrdenes/IngresoOrdenes';
+import ArchivoDigital from '../components/modulos/operaciones/documentos/archivoDigital/ArchivoDigital.jsx';
 
 // --- IMPLANTES ---
 import GestionImplantes from '../components/modulos/operaciones/implantes/gestionImplantes/GestionImplantes';
+import CargaMasivaDocumentos from '../components/modulos/operaciones/implantes/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx';
 import SolicitudImplantes from '../components/modulos/operaciones/implantes/solicitudImplantes/SolicitudImplantes';
 import ResumenImplantes from '../components/modulos/operaciones/implantes/resumenImplantes/ResumenImplantes.jsx';
 import SincronizacionImputadas from '../components/modulos/operaciones/implantes/sincronizacionImputadas/SincronizacionImputadas.jsx';
-import CargaMasivaDocumentos from '../components/modulos/operaciones/implantes/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx';
 import RespaldoDocumentos from '../components/modulos/operaciones/implantes/respaldoDocumentos/RespaldoDocumentos.jsx';
-import ArchivoDigital from '../components/modulos/operaciones/documentos/archivoDigital/ArchivoDigital.jsx';
 
+// --- HEMODINAMIA ---
 import GestionHemodinamia from '../components/modulos/operaciones/hemodinamia/gestionHemodinamia/GestionHemodinamia';
+import CargaMasivaDocumentosHemodinamia from '../components/modulos/operaciones/hemodinamia/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx';
 import SolicitudHemodinamia from '../components/modulos/operaciones/hemodinamia/solicitudHemodinamia/SolicitudHemodinamia';
 import ResumenHemodinamia from '../components/modulos/operaciones/hemodinamia/resumenHemodinamia/ResumenHemodinamia';
-import RespaldoDocumentosHemodinamia from '../components/modulos/operaciones/hemodinamia/respaldoDocumentos/RespaldoDocumentos.jsx';
 import SincronizacionImputadasHemodinamia from '../components/modulos/operaciones/hemodinamia/sincronizacionImputadas/SincronizacionImputadas.jsx';
-import CargaMasivaDocumentosHemodinamia from '../components/modulos/operaciones/hemodinamia/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx';
+import RespaldoDocumentosHemodinamia from '../components/modulos/operaciones/hemodinamia/respaldoDocumentos/RespaldoDocumentos.jsx';
 
-// --- CONSIGNACION ---
-import IngresarGuiaDespacho from '../components/modulos/operaciones/consignacion/ingresarGuiaDespacho/IngresarGuiaDespacho';
-import Listadoguiasconsignacion from '../components/modulos/operaciones/consignacion/listadoguiasconsignacion/Listadoguiasconsignacion';
-import RegistroConsignacion from '../components/modulos/operaciones/consignacion/registroConsignacion/RegistroConsignacion';
-import CargaMasivaConsignacion from '../components/modulos/operaciones/consignacion/cargaMasivaConsignacion/CargaMasivaConsignacion';
-import CargasConsignacion from '../components/modulos/operaciones/consignacion/cargasConsignacion/CargasConsignacion';
-import SolicitudConsignacion from '../components/modulos/operaciones/consignacion/solicitudConsignacion/SolicitudConsignacion';
-import ResumenConsignacion from '../components/modulos/operaciones/consignacion/resumenConsignacion/ResumenConsignacion';
-
-
-
-// --- PERFIL Y LEGALES ---
-import Perfil from '../components/modulos/general/perfil/Perfil';
-import PoliticasPrivacidad from '../components/modulos/general/legales/PoliticasPrivacidad';
-import TerminosServicio from '../components/modulos/general/legales/TerminosServicio';
-
+// --- AJUSTES ---
 import DatosUsuarios from '../components/modulos/general/settings/datosUsuarios/DatosUsuarios';
 import CambiarPasswordAjustes from '../components/modulos/general/settings/cambiarPassword/CambiarPasswordAjustes';
 import AjusteTema from '../components/modulos/general/settings/ajusteTema/AjusteTema';
@@ -119,9 +117,12 @@ import ConfigPrivacidad from '../components/modulos/general/settings/configPriva
 import ModulosVisibles from '../components/modulos/general/settings/modulosVisibles/ModulosVisibles';
 import OrdenModulos from '../components/modulos/general/settings/ordenModulos/OrdenModulos';
 import AtajosDashboard from '../components/modulos/general/settings/atajosDashboard/AtajosDashboard';
-import { puedeConfigurarAtajos } from '../config/atajosDashboard';
-
 // import PreferenciasGenerales from '../components/modulos/ajustes/PreferenciasGenerales';
+
+// --- PERFIL Y LEGALES (sin ítem de menú) ---
+import Perfil from '../components/modulos/general/perfil/Perfil';
+import PoliticasPrivacidad from '../components/modulos/general/legales/PoliticasPrivacidad';
+import TerminosServicio from '../components/modulos/general/legales/TerminosServicio';
 
 // Contador de alertas sin leer (menú lateral).
 const Contador = ({ n }) => (n > 0 ? (
@@ -237,7 +238,11 @@ const Dashboard = () => {
     : undefined;
 
   const VIEW_MAP = {
+    // ── Dashboard ──
     'dashboard': <ResumenGeneral userData={userData} onAbrirAtajo={abrirVistaDeModulo} />,
+
+    // ── Administración ──
+    [RUTA_ALERTAS]: <Alertas />,
     '/administracion/controlMensual': <ControlMensual />,
     '/administracion/ResumenPeriodoAbierto': <ResumenPeriodoAbierto />,
     '/administracion/notasAdmin': <NotasAdmin />,
@@ -269,35 +274,37 @@ const Dashboard = () => {
       />
     ),
     '/administracion/cargasConsolidado': <CargasConsolidado />,
-    [RUTA_ALERTAS]: <Alertas />,
     '/administracion/estadisticas': <Estadisticas />,
 
+    // ── Laboratorio ──
     '/laboratorio/empresasLaboratorio': <EmpresasLaboratorio />,
     '/laboratorio/codigoLaboratorio': <CodigoLaboratorio />,
     '/laboratorio/ordenLaboratorio': <OrdenLaboratorio />,
     '/laboratorio/xmlDocLaboratorio': <XmlDocLaboratorio />,
     '/laboratorio/archivosControlLaboratorio': <ArchivosControlLaboratorio />,
+
+    // ── Vacunatorio ──
     '/vacunatorio/empresasVacunatorio': <EmpresasVacunatorio />,
     '/vacunatorio/codigoVacunatorio': <CodigoVacunatorio />,
     '/vacunatorio/ordenVacunatorio': <OrdenVacunatorio />,
     '/vacunatorio/xmlDocVacunatorio': <XmlDocVacunatorio />,
     '/vacunatorio/archivosControlVacunatorio': <ArchivosControlVacunatorio />,
-    'perfil': <Perfil userData={userData} />,
-    'privacidad': <PoliticasPrivacidad />,
-    'terminos': <TerminosServicio />,
+
+    // ── Maestros ──
     '/maestros/empresasMaestros': <EmpresasMaestros />,
     '/maestros/prestadoresMaestros': <PrestadoresMaestros />,
     '/maestros/centrosMaestros': <CentrosMaestros />,
+    '/maestros/zonasDiagnostico': <ZonasDiagnostico key={busquedaZonas} busquedaInicial={busquedaZonas} />,
+    '/maestros/descripcionesOcultas': <DescripcionesOcultas />,
     '/maestros/previsionesMaestros': <PrevisionesMaestros />,
     '/maestros/conveniosMaestros': <ConveniosMaestros />,
     '/maestros/recargosMaestros': <RecargosMaestros />,
     '/maestros/calculadorMaestros': <CalculadorMaestros />,
-    // Misma pantalla en Maestros y en Implantes; la key separa su estado.
     '/maestros/codigosMaestros': <CodigosMaestros key="maestros" />,
-    '/implantes/codigosImplantes': <CodigosMaestros key="implantes" rutaBase="/implantes/codigosImplantes" />,
-    '/hemodinamia/codigosHemodinamia': <CodigosMaestros key="hemodinamia" rutaBase="/hemodinamia/codigosHemodinamia" />,
     '/maestros/padMaestros': <PadMaestros />,
     '/maestros/actualizacionPreciosMaestros': <ActualizacionPreciosMaestros />,
+
+    // ── Consignación ──
     '/consignacion/ingresarGuiaDespacho': <IngresarGuiaDespacho />,
     '/consignacion/listadoguiasconsignacion': <Listadoguiasconsignacion />,
     '/consignacion/registroConsignacion': <RegistroConsignacion />,
@@ -306,6 +313,7 @@ const Dashboard = () => {
     '/consignacion/solicitudConsignacion': <SolicitudConsignacion />,
     '/consignacion/resumenConsignacion': <ResumenConsignacion />,
 
+    // ── Inventario ──
     '/inventario/generalInventario': <GeneralInventario />,
     '/inventario/existenciasInventario': <ExistenciasInventario />,
     '/inventario/ingresosInventario': <IngresosInventario />,
@@ -316,12 +324,14 @@ const Dashboard = () => {
     '/inventario/escaneoInventario': <EscaneoInventario />,
     '/inventario/inventarioCajas': <InventarioPorCajas />,
 
+    // ── Documentos ──
     '/documentos/reportesInfo': <ReportesInfo pathVista="/documentos/reportesInfo" onAbrirGestionImplante={abrirGestionImplante} />,
     '/documentos/importarDetallesOC': <ImportarDetallesOC />,
     '/documentos/seguimientoFacturasGuias': <SeguimientoFacturasGuias />,
     '/documentos/ingresoOrdenes': <IngresoOrdenes />,
     '/documentos/archivoDigital': <ArchivoDigital />,
 
+    // ── Implantes ──
     '/implantes/gestionImplantes': (
       <GestionImplantes
         key={aperturaGestion?.n || 0}
@@ -332,22 +342,24 @@ const Dashboard = () => {
         }}
       />
     ),
-    '/maestros/zonasDiagnostico': <ZonasDiagnostico key={busquedaZonas} busquedaInicial={busquedaZonas} />,
-    '/maestros/descripcionesOcultas': <DescripcionesOcultas />,
     '/implantes/cargaMasivaDocumentos': <CargaMasivaDocumentos />,
-    '/implantes/respaldoDocumentos': <RespaldoDocumentos />,
-    '/implantes/reportesInfo': <ReportesInfo pathVista="/implantes/reportesInfo" onAbrirGestionImplante={abrirGestionImplante} />,
     '/implantes/solicitudImplantes': <SolicitudImplantes />,
     '/implantes/resumenImplantes': <ResumenImplantes />,
     '/implantes/sincronizacionImputadas': <SincronizacionImputadas />,
+    '/implantes/reportesInfo': <ReportesInfo pathVista="/implantes/reportesInfo" onAbrirGestionImplante={abrirGestionImplante} />,
+    '/implantes/respaldoDocumentos': <RespaldoDocumentos />,
+    '/implantes/codigosImplantes': <CodigosMaestros key="implantes" rutaBase="/implantes/codigosImplantes" />,
 
+    // ── Hemodinamia ──
     '/hemodinamia/gestionHemodinamia': <GestionHemodinamia />,
     '/hemodinamia/cargaMasivaDocumentos': <CargaMasivaDocumentosHemodinamia />,
-    '/hemodinamia/respaldoDocumentos': <RespaldoDocumentosHemodinamia />,
-    '/hemodinamia/sincronizacionImputadas': <SincronizacionImputadasHemodinamia />,
     '/hemodinamia/solicitudHemodinamia': <SolicitudHemodinamia />,
     '/hemodinamia/resumenHemodinamia': <ResumenHemodinamia />,
+    '/hemodinamia/sincronizacionImputadas': <SincronizacionImputadasHemodinamia />,
+    '/hemodinamia/respaldoDocumentos': <RespaldoDocumentosHemodinamia />,
+    '/hemodinamia/codigosHemodinamia': <CodigosMaestros key="hemodinamia" rutaBase="/hemodinamia/codigosHemodinamia" />,
 
+    // ── Ajustes ──
     '/settings/datosUsuarios': <DatosUsuarios userData={userData} />,
     '/settings/cambiarPasswordAjustes': <CambiarPasswordAjustes userData={userData} />,
     '/settings/ajusteTema': <AjusteTema />,
@@ -355,8 +367,12 @@ const Dashboard = () => {
     '/settings/modulosVisibles': <ModulosVisibles userData={userData} />,
     '/settings/ordenModulos': ( <OrdenModulos userData={userData} onOrderSaved={(cambios) => setUserData(prev => ({ ...prev, ...cambios }))} /> ),
     '/settings/atajosDashboard': <AtajosDashboard userData={userData} />,
-    
     // '/ajustes/preferenciasGenerales': <PreferenciasGenerales />,
+
+    // ── Vistas sin ítem de menú (perfil y legales) ──
+    'perfil': <Perfil userData={userData} />,
+    'privacidad': <PoliticasPrivacidad />,
+    'terminos': <TerminosServicio />,
   };
 
   const fechaActual = new Date().toLocaleDateString('es-CL', {
