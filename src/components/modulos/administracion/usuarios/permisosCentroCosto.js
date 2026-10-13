@@ -79,10 +79,11 @@ const llamar = (nombre) => async (datos) => (await httpsCallable(functions, nomb
 export const guardarPermisosUsuario = llamar('guardarPermisosUsuario');
 export const asignarCentroCostoMasivo = llamar('asignarCentroCostoMasivo');
 export const guardarPlantillaCentroCosto = llamar('guardarPlantillaCentroCosto');
+export const crearUsuario = llamar('crearUsuario');
 
 // Mensaje legible de un error de las funciones.
 export const mensajeError = (error, porDefecto) => {
-  if (error?.code === 'functions/failed-precondition' || error?.code === 'functions/invalid-argument' || error?.code === 'functions/permission-denied') {
+  if (['functions/failed-precondition', 'functions/invalid-argument', 'functions/permission-denied', 'functions/already-exists'].includes(error?.code)) {
     return error.message;
   }
   return porDefecto;

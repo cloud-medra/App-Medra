@@ -3,21 +3,27 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
-vi.mock('firebase/app', () => ({ initializeApp: vi.fn(), deleteApp: vi.fn() }));
-vi.mock('firebase/auth', () => ({ getAuth: vi.fn(), createUserWithEmailAndPassword: vi.fn(async () => ({ user: { uid: 'nuevo' } })), signOut: vi.fn() }));
-const setDoc = vi.fn(async () => {});
 const LAB = '/laboratorio/codigoLaboratorio';
 vi.mock('firebase/firestore', () => ({
-  doc: vi.fn((_db, col, id) => `${col}/${id}`), getDoc: vi.fn(), setDoc: (...a) => setDoc(...a), updateDoc: vi.fn(), serverTimestamp: vi.fn(), collection: vi.fn(),
+  doc: vi.fn((_db, col, id) => `${col}/${id}`), getDoc: vi.fn(), updateDoc: vi.fn(), collection: vi.fn(),
   onSnapshot: (_ref, siguiente) => { siguiente({ docs: [{ id: 'lab__operador', data: () => ({ permisos: { laboratorio: [LAB] }, permisosGranulares: { [LAB]: {} } }) }] }); return () => {}; },
 }));
 const llamadas = [];
-vi.mock('firebase/functions', () => ({ httpsCallable: (_f, nombre) => async (datos) => { llamadas.push({ nombre, datos }); return { data: { ok: true } }; } }));
-vi.mock('../../../../firebaseConfig', () => ({ db: {}, auth: {}, firebaseConfig: {}, functions: {} }));
+// crearUsuario responde con el uid; el resto, ok. `fallo` simula un error de la función.
+let fallo = null;
+vi.mock('firebase/functions', () => ({
+  httpsCallable: (_f, nombre) => async (datos) => {
+    llamadas.push({ nombre, datos });
+    if (fallo) throw fallo;
+    return { data: nombre === 'crearUsuario' ? { uid: 'nuevo' } : { ok: true } };
+  },
+}));
+vi.mock('../../../../firebaseConfig', () => ({ db: {}, functions: {} }));
 vi.mock('../../../../hooks/useCatalogo', () => ({
   useCatalogo: () => ({ datos: [{ id: 'lab', nombre: 'LABORATORIO', estado: 'ACTIVO' }, { id: 'vac', nombre: 'VACUNATORIO', estado: 'ACTIVO', usarEnGestiones: false }] }),
 }));
-vi.mock('../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
+const showToast = vi.fn();
+vi.mock('../../../../context/ToastContext', () => ({ useToast: () => ({ showToast }) }));
 const confirmAction = vi.fn();
 vi.mock('../../../../context/ModalContext', () => ({ useModal: () => ({ confirmAction }) }));
 
@@ -67,8 +73,10 @@ describe('Crear Usuario con centro de costo', () => {
     elegirCentro('LABORATORIO');
     expect(screen.getByText(/Heredará los permisos de LABORATORIO – Operador/)).toBeInTheDocument();
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Crear cuenta/ })); });
-    expect(setDoc).toHaveBeenCalledWith('usuarios/nuevo', expect.objectContaining({ permisos: {}, permisosGranulares: {} }));
-    expect(llamadas).toEqual([{ nombre: 'guardarPermisosUsuario', datos: { uid: 'nuevo', centroCostoId: 'lab', excepciones: { agregados: [], quitados: [] } } }]);
+    expect(llamadas).toEqual([
+      { nombre: 'crearUsuario', datos: { nombreCompleto: 'Ana Pérez', nombreUsuario: 'aperez', email: 'ana@x.cl', password: 'secreto1', rol: 'operador' } },
+      { nombre: 'guardarPermisosUsuario', datos: { uid: 'nuevo', centroCostoId: 'lab', excepciones: { agregados: [], quitados: [] } } },
+    ]);
     // Pestaña Permisos: ya tiene los del centro, heredados.
     expect(screen.getByLabelText('Habilitar Maestro Códigos')).toBeChecked();
     expect(screen.getByText('Hereda la plantilla de este centro y rol.')).toBeInTheDocument();
@@ -92,5 +100,40 @@ describe('Crear Usuario con centro de costo', () => {
     // Hay datos sin guardar (el centro elegido): pide confirmar antes de salir.
     expect(onIrAPermisosCentro).not.toHaveBeenCalled();
     expect(confirmAction).toHaveBeenCalledWith('Cambios sin guardar', expect.any(String), onIrAPermisosCentro, expect.any(Object));
+  });
+});
+
+describe('Crear Usuario: nombre de usuario', () => {
+  const llenar = (nombreUsuario) => {
+    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Pérez' } });
+    fireEvent.change(screen.getByLabelText('Nombre de usuario'), { target: { value: nombreUsuario } });
+    fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'ana@x.cl' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'secreto1' } });
+    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: 'secreto1' } });
+  };
+
+  it.each([
+    ['ana@x.cl', 'El nombre de usuario no puede contener "@".'],
+    ['ana perez', 'El nombre de usuario no puede contener espacios.'],
+  ])('"%s" no se envía: %s', async (nombreUsuario, mensaje) => {
+    llamadas.length = 0;
+    showToast.mockClear();
+    render(<CrearUsuario />);
+    llenar(nombreUsuario);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Crear cuenta/ })); });
+    expect(llamadas).toEqual([]);
+    expect(showToast).toHaveBeenCalledWith(mensaje, 'error');
+  });
+
+  it('si ya está en uso, muestra el mensaje de la función y no avanza', async () => {
+    llamadas.length = 0;
+    showToast.mockClear();
+    fallo = Object.assign(new Error('Ese nombre de usuario ya está en uso.'), { code: 'functions/already-exists' });
+    render(<CrearUsuario />);
+    llenar('aperez');
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Crear cuenta/ })); });
+    fallo = null;
+    expect(showToast).toHaveBeenCalledWith('Ese nombre de usuario ya está en uso.', 'error');
+    expect(screen.getByRole('tab', { name: /Permisos/ })).toBeDisabled();
   });
 });

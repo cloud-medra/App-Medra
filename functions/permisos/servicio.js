@@ -11,6 +11,7 @@ const {
   aplanar, desaplanar, combinar, calcularExcepciones, normalizarExcepciones, esAdministrador, dejaSinAdministrador,
   SIN_EXCEPCIONES, ROLES, ROLES_CON_PLANTILLA, ROL_POR_DEFECTO, idPlantilla, idPlantillaDeUsuario, labelRol,
 } = require('./nucleo.mjs');
+const { prepararNombreUsuario } = require('../usuarios/indiceNombres');
 
 const VALORES_ROL = ROLES.map((r) => r.value);
 const ROLES_ACCESO_TOTAL = ROLES.filter((r) => r.accesoTotal).map((r) => r.value);
@@ -98,13 +99,13 @@ const guardarPermisosUsuario = async (db, por, data) => {
   if (typeof uid !== 'string' || !uid) throw new HttpsError('invalid-argument', 'Usuario inválido.');
   if (rol !== undefined && !VALORES_ROL.includes(rol)) throw new HttpsError('invalid-argument', 'Rol inválido.');
   const actualizacion = {};
-  ['nombreCompleto', 'nombreUsuario'].forEach((campo) => {
-    if (datos[campo] !== undefined) {
-      const v = String(datos[campo]).trim();
-      if (!v) throw new HttpsError('invalid-argument', `El campo ${campo} es obligatorio.`);
-      actualizacion[campo] = v;
-    }
-  });
+  if (datos.nombreCompleto !== undefined) {
+    const v = String(datos.nombreCompleto).trim();
+    if (!v) throw new HttpsError('invalid-argument', 'El campo nombreCompleto es obligatorio.');
+    actualizacion.nombreCompleto = v;
+  }
+  // Se valida (formato y unicidad) en la transacción, solo si cambia.
+  if (datos.nombreUsuario !== undefined) actualizacion.nombreUsuario = String(datos.nombreUsuario).trim();
   if (datos.activo !== undefined) actualizacion.activo = datos.activo !== false;
   if (rol !== undefined) actualizacion.rol = rol;
 
@@ -119,6 +120,10 @@ const guardarPermisosUsuario = async (db, por, data) => {
     const snap = await t.get(refUsuario(db, uid));
     if (!snap.exists) throw new HttpsError('not-found', 'El usuario no existe.');
     const antes = snap.data();
+    // Nombre de usuario nuevo: único (índice nombres_usuario, misma transacción).
+    let escribirNombre = null;
+    if (actualizacion.nombreUsuario === antes.nombreUsuario) delete actualizacion.nombreUsuario;
+    else if (actualizacion.nombreUsuario !== undefined) escribirNombre = await prepararNombreUsuario(db, t, uid, actualizacion.nombreUsuario, antes.nombreUsuario);
     if (centroCostoId !== undefined) await validarCentro(db, centroCostoId, t);
     const administradores = await leerAdministradores(db, t);
     if (dejaSinAdministrador(administradores, uid, { rol: actualizacion.rol, activo: actualizacion.activo })) {
@@ -142,6 +147,7 @@ const guardarPermisosUsuario = async (db, por, data) => {
     const cambios = cambiosParaLog(antes, actualizacion);
     if (Object.keys(actualizacion).length === 0) return { cambios };
     t.update(refUsuario(db, uid), { ...actualizacion, permisosActualizadosEl: FieldValue.serverTimestamp() });
+    escribirNombre?.(t);
     if (Object.keys(cambios).length) registrarLog(t, refUsuario(db, uid), 'PERMISOS', por, cambios);
     return { cambios };
   });

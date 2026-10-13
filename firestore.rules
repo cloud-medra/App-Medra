@@ -71,22 +71,20 @@ service cloud.firestore {
 
     // Rol, permisos (el efectivo, calculado), centro de costo y excepciones
     // solo los escriben las Cloud Functions de functions/permisos (que exigen
-    // admin/dev y no dejan el sistema sin administrador). Desde el navegador,
-    // cada usuario actualiza lo suyo (tema, cambio de contraseña…) y un
-    // admin/dev, los datos de los demás.
+    // admin/dev y no dejan el sistema sin administrador). El nombre de
+    // usuario también (es único: índice nombres_usuario, ver
+    // functions/usuarios). Desde el navegador, cada usuario actualiza lo suyo
+    // (tema, cambio de contraseña…) y un admin/dev, los datos de los demás.
     function camposProtegidosUsuario() {
-      return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones'];
+      return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones', 'nombreUsuario'];
     }
     match /usuarios/{userId} {
       allow read: if request.auth != null;
       allow update: if request.auth != null && (request.auth.uid == userId || esAdminODev())
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(camposProtegidosUsuario());
-      // Crear Usuario crea el documento base (con su rol y sin permisos); los
-      // permisos se asignan después con guardarPermisosUsuario.
-      allow create: if request.auth != null && esAdminODev()
-        && !request.resource.data.keys().hasAny(['centroCostoId', 'excepciones'])
-        && request.resource.data.get('permisos', {}) == {}
-        && request.resource.data.get('permisosGranulares', {}) == {};
+      // El documento base lo crea la función crearUsuario (Crear Usuario),
+      // junto con la cuenta y el índice del nombre de usuario.
+      allow create: if false;
       allow delete: if request.auth != null && esAdminODev();
 
       // Auditoría de permisos (la escriben las funciones).
@@ -94,6 +92,16 @@ service cloud.firestore {
         allow read: if request.auth != null && esAdminODev();
         allow write: if false;
       }
+    }
+
+    // Índice de nombres de usuario (únicos) e intentos fallidos de login:
+    // solo las Cloud Functions de functions/usuarios. No se leen desde el
+    // navegador (revelarían qué usuarios existen).
+    match /nombres_usuario/{nombre} {
+      allow read, write: if false;
+    }
+    match /intentos_login/{clave} {
+      allow read, write: if false;
     }
 
     // Plantillas de permisos por centro de costo (id = id de maestros_centros):

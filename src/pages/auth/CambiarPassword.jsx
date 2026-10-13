@@ -93,7 +93,6 @@ const CambiarPassword = () => {
     passwords.new === passwords.confirm &&
     passwords.new !== '' &&
     perfil.nombreCompleto.trim() !== '' &&
-    perfil.nombreUsuario.trim() !== '' &&
     perfil.email.trim() !== '';
 
   const handleUpdate = async () => {
@@ -121,7 +120,6 @@ const CambiarPassword = () => {
 
       await updateDoc(doc(db, 'usuarios', user.uid), {
         nombreCompleto: perfil.nombreCompleto.trim(),
-        nombreUsuario: perfil.nombreUsuario.trim(),
         email: perfil.email.trim(),
         passwordChanged: true,
       });
@@ -133,7 +131,6 @@ const CambiarPassword = () => {
       setUserData((prev) => ({
         ...prev,
         nombreCompleto: perfil.nombreCompleto.trim(),
-        nombreUsuario: perfil.nombreUsuario.trim(),
         email: perfil.email.trim(),
         passwordChanged: true,
       }));
@@ -186,7 +183,7 @@ const CambiarPassword = () => {
   // Campo que por defecto muestra el valor actual como texto fijo, con un
   // lápiz para activar edición. Solo se convierte en <input> si el usuario
   // lo pide — nunca aparece vacío invitando a llenarlo.
-  const CampoPerfil = ({ campo, icon: Icon, label, tipo = 'text', placeholder }) => {
+  const CampoPerfil = ({ campo, icon: Icon, label, tipo = 'text', placeholder, soloLectura = false }) => {
     const estaEditando = editando[campo];
 
     return (
@@ -221,14 +218,16 @@ const CambiarPassword = () => {
               <Icon className="text-gray-400 shrink-0" size={16} />
               <span className="truncate">{perfil[campo] || '—'}</span>
             </span>
-            <button
-              type="button"
-              onClick={() => toggleEditar(campo)}
-              title={`Cambiar ${label.toLowerCase()}`}
-              className="text-gray-400 hover:text-[#2383C2] shrink-0 p-1"
-            >
-              <Pencil size={13} />
-            </button>
+            {!soloLectura && (
+              <button
+                type="button"
+                onClick={() => toggleEditar(campo)}
+                title={`Cambiar ${label.toLowerCase()}`}
+                className="text-gray-400 hover:text-[#2383C2] shrink-0 p-1"
+              >
+                <Pencil size={13} />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -254,7 +253,8 @@ const CambiarPassword = () => {
 
           <div className="space-y-3 mb-5">
             <CampoPerfil campo="nombreCompleto" icon={User} label="Nombre completo" placeholder="Ej: Juana Pérez Soto" />
-            <CampoPerfil campo="nombreUsuario" icon={AtSign} label="Nombre de usuario" placeholder="Ej: jperez" />
+            {/* Solo lectura: es único y lo asigna un administrador (Administración → Usuarios). */}
+            <CampoPerfil campo="nombreUsuario" icon={AtSign} label="Nombre de usuario" soloLectura />
             <CampoPerfil campo="email" icon={Mail} label="Correo" tipo="email" placeholder="ejemplo@medra.cl" />
           </div>
 

@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { initializeApp, deleteApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { User, AtSign, Mail, Lock, Shield, UserPlus, KeyRound, CheckCircle2, CircleDashed, RotateCcw, Building2 } from 'lucide-react';
 
-import { db, auth, firebaseConfig } from '../../../../firebaseConfig';
+import { db } from '../../../../firebaseConfig';
 import { COMPONENT_MAPS } from '../../../../config/componentMaps.jsx';
 import { completarPermisosGranulares, vistasConfigurables } from './permisosGranularesUtils';
 import { useToast } from '../../../../context/ToastContext';
@@ -16,16 +14,18 @@ import CentroSelect from '../../../ui/CentroSelect';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import {
   usePlantillasPermisos, calcularExcepciones, completar, efectivo, crearOrigen, contarExcepciones,
-  guardarPermisosUsuario, mensajeError, plantillaDeUsuario, SIN_PERMISOS as PERMISOS_VACIOS,
+  guardarPermisosUsuario, crearUsuario, mensajeError, plantillaDeUsuario, SIN_PERMISOS as PERMISOS_VACIOS,
 } from './permisosCentroCosto';
 import BarraCentroCosto from './BarraCentroCosto';
 import AvisoCentroSinConfigurar from './AvisoCentroSinConfigurar';
 import { useModal } from '../../../../context/ModalContext';
 import { ROLES, esRolAccesoTotal, labelRol } from './roles';
+import { errorNombreUsuario } from '../../../../../functions/usuarios/nombreUsuario.mjs';
 
 // Crear Usuario, con el mismo marco y el mismo editor de permisos que
 // Editar usuario (Listado Usuario):
-//   Datos generales: crea la cuenta (Auth + documento base) — "paso 1".
+//   Datos generales: crea la cuenta (Auth + documento base, con la Cloud
+//                    Function crearUsuario: el nombre de usuario es único) — "paso 1".
 //   Permisos:        EditorPermisos. "Guardar permisos" guarda la selección
 //                    ("paso 2") y cada vista configurable se marca como
 //                    revisada ("paso 3", itemsFinalizados). Al estar todo
@@ -192,7 +192,8 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
 
   const validarPaso1 = () => {
     if (!formData.nombreCompleto.trim()) return 'El nombre completo es obligatorio.';
-    if (!formData.nombreUsuario.trim()) return 'El nombre de usuario es obligatorio.';
+    const errorNombre = errorNombreUsuario(formData.nombreUsuario);
+    if (errorNombre) return errorNombre;
     if (!formData.email.trim()) return 'El correo es obligatorio.';
     if (formData.password.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
     if (formData.password !== formData.confirmPassword) return 'Las contraseñas no coinciden.';
@@ -217,65 +218,34 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
     }
 
     setCargando(true);
-
-    // Se crea una instancia secundaria de Firebase para poder registrar al
-    // nuevo usuario SIN cerrar la sesión del administrador que está en el panel.
-    const nombreAppSecundaria = `crear-usuario-${Date.now()}`;
-    const appSecundaria = initializeApp(firebaseConfig, nombreAppSecundaria);
-    const authSecundaria = getAuth(appSecundaria);
-
     try {
-      const credenciales = await createUserWithEmailAndPassword(
-        authSecundaria,
-        formData.email.trim(),
-        formData.password
-      );
-      const nuevoUsuario = credenciales.user;
-      const estadoInicial = { ...ESTADO_CREACION_INICIAL, paso1: true };
-
-      await setDoc(doc(db, 'usuarios', nuevoUsuario.uid), {
+      const { uid } = await crearUsuario({
         nombreCompleto: formData.nombreCompleto.trim(),
         nombreUsuario: formData.nombreUsuario.trim(),
         email: formData.email.trim(),
+        password: formData.password,
         rol: formData.rol,
-        permisos: {},
-        permisosGranulares: {},
-        estadoCreacion: estadoInicial,
-        passwordChanged: false,
-        modoPantalla: 'claro',
-        creadoPor: auth.currentUser?.uid || null,
-        creadoEl: serverTimestamp(),
       });
-
-      await signOut(authSecundaria);
+      const estadoInicial = { ...ESTADO_CREACION_INICIAL, paso1: true };
 
       // Con centro de costo: hereda su plantilla (la función calcula y
       // guarda el permiso efectivo).
       if (formData.centroCostoId) {
-        await guardarPermisosUsuario({ uid: nuevoUsuario.uid, centroCostoId: formData.centroCostoId, excepciones: { agregados: [], quitados: [] } });
+        await guardarPermisosUsuario({ uid, centroCostoId: formData.centroCostoId, excepciones: { agregados: [], quitados: [] } });
         const heredados = efectivo(plantillaElegida, null);
         setPermisos(heredados.permisos);
         setPermisosGranulares(heredados.permisosGranulares);
         setGuardado(heredados);
       }
 
-      setUsuarioId(nuevoUsuario.uid);
+      setUsuarioId(uid);
       setEstadoCreacion(estadoInicial);
       showToast(`Usuario "${formData.nombreCompleto}" creado. Continúa con los permisos.`, 'success');
       setTab('permisos');
     } catch (error) {
       console.error('Error al crear usuario:', error);
-      if (error.code === 'auth/email-already-in-use') {
-        showToast('Ese correo ya está registrado', 'error');
-      } else if (error.code === 'auth/invalid-email') {
-        showToast('El correo ingresado no es válido', 'error');
-      } else if (error.code === 'auth/weak-password') {
-        showToast('La contraseña es demasiado débil', 'error');
-      } else {
-        showToast(mensajeError(error, 'Ocurrió un error al crear el usuario'), 'error');
-      }
+      showToast(mensajeError(error, 'Ocurrió un error al crear el usuario'), 'error');
     } finally {
-      await deleteApp(appSecundaria);
       setCargando(false);
     }
   };

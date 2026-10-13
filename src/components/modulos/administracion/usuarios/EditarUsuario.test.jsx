@@ -12,7 +12,8 @@ import '@testing-library/jest-dom/vitest';
 // que recibe (excepciones) y el permiso efectivo se calcula como lo hace la
 // función (combinar, de functions/permisos/nucleo.mjs).
 const llamadas = [];
-vi.mock('firebase/functions', () => ({ httpsCallable: (_f, nombre) => async (datos) => { llamadas.push({ nombre, datos }); return { data: { ok: true } }; } }));
+let fallo = null; // error que devuelve la función (p. ej. nombre en uso)
+vi.mock('firebase/functions', () => ({ httpsCallable: (_f, nombre) => async (datos) => { llamadas.push({ nombre, datos }); if (fallo) throw fallo; return { data: { ok: true } }; } }));
 let plantillasDocs = [];
 let escucharPlantillas = null;
 const snapshotPlantillas = () => ({ docs: plantillasDocs.map(([id, p]) => ({ id, data: () => p })) });
@@ -332,5 +333,34 @@ describe('Editar usuario: centro + rol', () => {
     fireEvent.change(screen.getByLabelText('Rol'), { target: { value: 'admin' } });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByText('Su rol tiene acceso total: no usa la plantilla del centro.')).toBeInTheDocument();
+  });
+});
+
+describe('Editar usuario: nombre de usuario', () => {
+  const editar = (u, nombreUsuario) => {
+    render(<EditarUsuario usuario={u} onVolver={() => {}} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Datos generales/ }));
+    fireEvent.change(screen.getByLabelText('Nombre de usuario'), { target: { value: nombreUsuario } });
+  };
+  const guardar = () => act(async () => { fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/ })); });
+
+  it.each([
+    ['u@prueba.cl', 'El nombre de usuario no puede contener "@".'],
+    ['u prueba', 'El nombre de usuario no puede contener espacios.'],
+    ['  ', 'El nombre de usuario es obligatorio.'],
+  ])('"%s" no se guarda: %s', async (nombreUsuario, mensaje) => {
+    editar(usuarioExistente(), nombreUsuario);
+    await guardar();
+    expect(llamadas).toEqual([]);
+    expect(screen.getByText(mensaje)).toBeInTheDocument();
+  });
+
+  it('si ya está en uso, lo indica en el campo', async () => {
+    fallo = Object.assign(new Error('Ese nombre de usuario ya está en uso.'), { code: 'functions/already-exists' });
+    editar(usuarioExistente(), 'otro');
+    await guardar();
+    fallo = null;
+    expect(llamadas.at(-1).datos.datos.nombreUsuario).toBe('otro');
+    expect(screen.getByText('Ese nombre de usuario ya está en uso.')).toBeInTheDocument();
   });
 });

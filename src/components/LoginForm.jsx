@@ -3,30 +3,34 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, Link } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema } from '../schemas/loginSchema';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { auth } from '../firebaseConfig';
+import { signInWithCustomToken, signOut } from 'firebase/auth';
+import { httpsCallable } from 'firebase/functions';
+import { auth, functions } from '../firebaseConfig';
 import { useUser } from '../context/UserContext';
-import { ShieldCheck, Mail, Lock, Loader2, AlertCircle } from 'lucide-react';
+import { ShieldCheck, User, Lock, Loader2, AlertCircle } from 'lucide-react';
 import loginIllustration from '../assets/login.svg';
 import logoMedra from '../assets/logo/medra-logo-sistema-integral-claro.svg';
 import { motion } from 'framer-motion';
 import PuntosAnimados from './PuntosAnimados';
+import { MENSAJE_LOGIN_INCORRECTO } from '../../functions/usuarios/nombreUsuario.mjs';
 
-// Mensaje según el código de Firebase Auth: solo los errores de credenciales
-// se informan como tales (antes cualquier fallo, incluso uno de Firestore,
-// se mostraba como "Correo o contraseña incorrectos").
+// El login pasa por la Cloud Function iniciarSesion (functions/usuarios):
+// acepta correo o nombre de usuario, verifica la contraseña y que el usuario
+// esté activo, y devuelve un custom token del usuario. Cualquier fallo de
+// credenciales llega con el mismo mensaje (no revela si el usuario existe).
+const iniciarSesion = httpsCallable(functions, 'iniciarSesion');
+
+// Mensaje según el código del error: solo los errores de credenciales se
+// informan como tales (no cualquier fallo, por ejemplo uno de Firestore).
 const mensajeErrorLogin = (error) => {
   switch (error?.code) {
-    case 'auth/invalid-credential':
-    case 'auth/invalid-login-credentials':
-    case 'auth/wrong-password':
-    case 'auth/user-not-found':
-    case 'auth/invalid-email':
-      return "Correo o contraseña incorrectos.";
+    case 'functions/unauthenticated':
     case 'auth/user-disabled':
-      return "Tu usuario está deshabilitado. Contacta al administrador.";
+      return MENSAJE_LOGIN_INCORRECTO;
+    case 'functions/resource-exhausted':
     case 'auth/too-many-requests':
       return "Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo.";
+    case 'functions/unavailable':
     case 'auth/network-request-failed':
       return "Sin conexión con el servidor. Revisa tu conexión a internet.";
     default:
@@ -83,8 +87,8 @@ const LoginForm = () => {
     setLoading(true);
     setLoginError('');
     try {
-      const emailLimpio = data.email.trim();
-      await signInWithEmailAndPassword(auth, emailLimpio, data.password);
+      const { data: { token } } = await iniciarSesion({ identificador: data.identificador, password: data.password });
+      await signInWithCustomToken(auth, token);
       // Éxito: `loading` sigue en true; los efectos de arriba navegan (o
       // informan el error de perfil) cuando UserContext termina de cargar.
     } catch (error) {
@@ -99,7 +103,7 @@ const LoginForm = () => {
   // copian los valores reales de los inputs antes de validar.
   const enviar = (e) => {
     const campos = e.currentTarget.elements;
-    setValue('email', campos.email.value);
+    setValue('identificador', campos.identificador.value);
     setValue('password', campos.password.value);
     return handleSubmit(onSubmit)(e);
   };
@@ -139,26 +143,30 @@ const LoginForm = () => {
 
           <form onSubmit={enviar} className="space-y-4" noValidate>
             <div className="relative">
-              <label className="block text-sm font-medium mb-1">Usuario o Correo</label>
+              <label htmlFor="identificador" className="block text-sm font-medium mb-1">Usuario o correo</label>
               <div className="flex items-center">
-                <Mail className="absolute ml-3 text-gray-400" size={20} />
+                <User className="absolute ml-3 text-gray-400" size={20} />
                 <input
-                  {...register("email")}
-                  type="email"
+                  {...register("identificador")}
+                  id="identificador"
+                  type="text"
                   autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   className="w-full p-3 pl-10 border border-gray-200 rounded-xl focus:ring-1 focus:ring-[#2383C2] focus:border-[#2383C2] outline-none transition-all"
-                  placeholder="ejemplo@medra.cl"
+                  placeholder="Usuario o correo"
                 />
               </div>
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              {errors.identificador && <p className="text-red-500 text-xs mt-1">{errors.identificador.message}</p>}
             </div>
 
             <div className="relative">
-              <label className="block text-sm font-medium mb-1">Contraseña</label>
+              <label htmlFor="password" className="block text-sm font-medium mb-1">Contraseña</label>
               <div className="flex items-center">
                 <Lock className="absolute ml-3 text-gray-400" size={20} />
                 <input
                   {...register("password")}
+                  id="password"
                   type="password"
                   autoComplete="current-password"
                   className="w-full p-3 pl-10 border border-gray-200 rounded-xl focus:ring-1 focus:ring-[#2383C2] focus:border-[#2383C2] outline-none transition-all"

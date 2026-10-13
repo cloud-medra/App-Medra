@@ -11,6 +11,7 @@ import MarcoEdicionUsuario, { Chip, ConfirmarSalida } from './MarcoEdicionUsuari
 import EditorPermisos from './EditorPermisos';
 import { Tarjeta, Campo, CampoTexto, CampoSelect, CampoEstado } from './CamposFormulario';
 import { ROLES, esRolAccesoTotal, labelRol } from './roles';
+import { errorNombreUsuario } from '../../../../../functions/usuarios/nombreUsuario.mjs';
 import { completarPermisosGranulares, completarVistasDelMenu, resumenRestricciones } from './permisosGranularesUtils';
 import {
   usePlantillasPermisos, calcularExcepciones, completar, efectivo, crearOrigen, contarExcepciones, tieneExcepciones, excepcionesDe,
@@ -151,7 +152,11 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
   const validar = () => {
     const e = {};
     if (!datos.nombreCompleto.trim()) e.nombreCompleto = 'El nombre completo es obligatorio.';
-    if (!datos.nombreUsuario.trim()) e.nombreUsuario = 'El nombre de usuario es obligatorio.';
+    // Obligatorio; el formato (sin "@" ni espacios) se exige si cambia, igual
+    // que la función: un nombre antiguo fuera de formato no impide editar lo demás.
+    const nombre = datos.nombreUsuario.trim();
+    const errorNombre = (!nombre || nombre !== inicial.datos.nombreUsuario) && errorNombreUsuario(nombre);
+    if (errorNombre) e.nombreUsuario = errorNombre;
     setErrores(e);
     if (Object.keys(e).length) setTab('datos');
     return Object.keys(e).length === 0;
@@ -180,6 +185,10 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
       return true;
     } catch (error) {
       console.error('Error al guardar cambios del usuario:', error);
+      if (error?.code === 'functions/already-exists') {
+        setErrores({ nombreUsuario: error.message });
+        setTab('datos');
+      }
       showToast(mensajeError(error, 'No se pudieron guardar los cambios'), 'error');
       return false;
     } finally {

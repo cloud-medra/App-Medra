@@ -53,3 +53,8 @@ Object.assign(exports, require("./admisiones"));
 // ocultaImplantes / ocultaDocumentos de cada fila. Ver
 // functions/descripcionesReporte/index.js.
 Object.assign(exports, require("./descripcionesReporte"));
+
+// Usuarios: login con correo o nombre de usuario (iniciarSesion) y Crear
+// usuario con nombre de usuario único (crearUsuario). Ver
+// functions/usuarios/index.js.
+Object.assign(exports, require("./usuarios"));

@@ -35,12 +35,10 @@ const DatosUsuarios = () => {
 
   const hayCambios =
     perfil.nombreCompleto.trim() !== original.nombreCompleto ||
-    perfil.nombreUsuario.trim() !== original.nombreUsuario ||
     perfil.email.trim() !== original.email;
 
   const isFormValid =
     perfil.nombreCompleto.trim() !== '' &&
-    perfil.nombreUsuario.trim() !== '' &&
     perfil.email.trim() !== '';
 
   const handleGuardar = async () => {
@@ -69,7 +67,6 @@ const DatosUsuarios = () => {
 
       const datosActualizados = {
         nombreCompleto: perfil.nombreCompleto.trim(),
-        nombreUsuario: perfil.nombreUsuario.trim(),
         email: perfil.email.trim(),
       };
 
@@ -81,8 +78,8 @@ const DatosUsuarios = () => {
       // login.
       setUserData((prev) => ({ ...prev, ...datosActualizados }));
 
-      setOriginal(datosActualizados);
-      setPerfil(datosActualizados);
+      setOriginal((prev) => ({ ...prev, ...datosActualizados }));
+      setPerfil((prev) => ({ ...prev, ...datosActualizados }));
       setEditando({ nombreCompleto: false, nombreUsuario: false, email: false });
 
       showToast('Tus datos se actualizaron correctamente', 'success');
@@ -102,7 +99,7 @@ const DatosUsuarios = () => {
     }
   };
 
-  const CampoPerfil = ({ campo, icon: Icon, label, tipo = 'text', placeholder }) => {
+  const CampoPerfil = ({ campo, icon: Icon, label, tipo = 'text', placeholder, soloLectura = false }) => {
     const estaEditando = editando[campo];
 
     return (
@@ -141,14 +138,16 @@ const DatosUsuarios = () => {
               <Icon className="text-gray-400 shrink-0" size={14} />
               <span className="truncate">{perfil[campo] || '—'}</span>
             </span>
-            <button
-              type="button"
-              onClick={() => toggleEditar(campo)}
-              title={`Cambiar ${label.toLowerCase()}`}
-              className="text-gray-400 hover:text-[#2383C2] shrink-0 p-1"
-            >
-              <Pencil size={12} />
-            </button>
+            {!soloLectura && (
+              <button
+                type="button"
+                onClick={() => toggleEditar(campo)}
+                title={`Cambiar ${label.toLowerCase()}`}
+                className="text-gray-400 hover:text-[#2383C2] shrink-0 p-1"
+              >
+                <Pencil size={12} />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -170,7 +169,8 @@ const DatosUsuarios = () => {
 
         <div className="flex flex-col gap-3">
           <CampoPerfil campo="nombreCompleto" icon={User} label="Nombre completo" placeholder="Ej: Juana Pérez Soto" />
-          <CampoPerfil campo="nombreUsuario" icon={AtSign} label="Nombre de usuario" placeholder="Ej: jperez" />
+          {/* Solo lectura: es único y lo asigna un administrador (Administración → Usuarios). */}
+          <CampoPerfil campo="nombreUsuario" icon={AtSign} label="Nombre de usuario" soloLectura />
           <CampoPerfil campo="email" icon={Mail} label="Correo" tipo="email" placeholder="ejemplo@medra.cl" />
         </div>
 

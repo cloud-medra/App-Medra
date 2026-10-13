@@ -1,0 +1,214 @@
+// Lógica de las Cloud Functions de usuarios (ver index.js), separada de
+// onCall para probarla contra los emuladores (tests/emulador). Cada función
+// recibe Firestore y Auth del Admin SDK.
+
+const crypto = require('node:crypto');
+const process = require('node:process');
+const { HttpsError } = require('firebase-functions/v2/https');
+const { FieldValue, Timestamp } = require('firebase-admin/firestore');
+const {
+  errorNombreUsuario, normalizarNombreUsuario, normalizarIdentificador, esCorreo,
+  MENSAJE_LOGIN_INCORRECTO, MENSAJE_NOMBRE_EN_USO,
+} = require('./nombreUsuario.mjs');
+const { refNombre, prepararNombreUsuario } = require('./indiceNombres');
+const { ROLES, ROL_POR_DEFECTO } = require('../permisos/nucleo.mjs');
+
+const VALORES_ROL = ROLES.map((r) => r.value);
+const refUsuario = (db, uid) => db.collection('usuarios').doc(uid);
+
+// --- Iniciar sesión -------------------------------------------------------
+
+// Bloqueo por intentos fallidos: MAX_FALLOS seguidos dentro de VENTANA_MS
+// bloquean BLOQUEO_MS. Se cuenta por cuenta (uid) cuando el identificador
+// corresponde a una, así el bloqueo es el mismo entrando con el correo o
+// con el nombre de usuario; si no corresponde a ninguna, por identificador.
+const MAX_FALLOS = 5;
+const VENTANA_MS = 15 * 60 * 1000;
+const BLOQUEO_MS = 15 * 60 * 1000;
+const MENSAJE_BLOQUEO = 'Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo.';
+
+// intentos_login/{hash}: el id es un hash, no guarda correos ni nombres.
+const refIntentos = (db, clave) => db.collection('intentos_login').doc(crypto.createHash('sha256').update(clave).digest('hex'));
+const incorrecto = () => new HttpsError('unauthenticated', MENSAJE_LOGIN_INCORRECTO);
+
+// Cuenta de Auth a la que apunta el identificador (null si ninguna).
+const resolverCuenta = async (db, auth, identificador) => {
+  try {
+    if (esCorreo(identificador)) return await auth.getUserByEmail(identificador);
+    const indice = (await refNombre(db, identificador).get()).data();
+    return indice ? await auth.getUser(indice.uid) : null;
+  } catch (err) {
+    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email') return null;
+    throw err;
+  }
+};
+
+const registrarFallo = (db, ref, ahora) => db.runTransaction(async (t) => {
+  const previo = (await t.get(ref)).data() || {};
+  const vigente = previo.ultimoFallo && ahora - previo.ultimoFallo.toMillis() < VENTANA_MS;
+  const fallos = (vigente ? previo.fallos || 0 : 0) + 1;
+  const bloquear = fallos >= MAX_FALLOS;
+  t.set(ref, {
+    fallos: bloquear ? 0 : fallos,
+    ultimoFallo: Timestamp.fromMillis(ahora),
+    bloqueadoHasta: bloquear ? Timestamp.fromMillis(ahora + BLOQUEO_MS) : null,
+    // Para una política de TTL opcional sobre este campo.
+    expiraEl: Timestamp.fromMillis(ahora + 24 * 60 * 60 * 1000),
+  });
+});
+
+// Verifica correo + contraseña con la API REST de Firebase Auth (el Admin
+// SDK no verifica contraseñas). 'ok' | 'incorrecta' | 'limitada'.
+const verificarPasswordRest = (apiKey) => async (email, password) => {
+  const emulador = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+  const base = emulador ? `http://${emulador}/identitytoolkit.googleapis.com` : 'https://identitytoolkit.googleapis.com';
+  const respuesta = await fetch(`${base}/v1/accounts:signInWithPassword?key=${encodeURIComponent(apiKey)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password, returnSecureToken: false }),
+  });
+  if (respuesta.ok) return 'ok';
+  const mensaje = (await respuesta.json().catch(() => ({})))?.error?.message || '';
+  if (mensaje.startsWith('TOO_MANY_ATTEMPTS_TRY_LATER')) return 'limitada';
+  if (/^(INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS|EMAIL_NOT_FOUND|USER_DISABLED|INVALID_EMAIL|MISSING_PASSWORD)/.test(mensaje)) return 'incorrecta';
+  throw new Error(`signInWithPassword ${respuesta.status}: ${mensaje}`);
+};
+
+// identificador: correo (si tiene "@") o nombre de usuario, sin distinguir
+// mayúsculas ni espacios alrededor. `email` se acepta por compatibilidad.
+// Devuelve un custom token del mismo uid: la sesión, el perfil y los
+// permisos se cargan igual que antes (UserContext → usuarios/{uid}).
+const iniciarSesion = async (db, auth, data, { verificarPassword, ahora = Date.now() }) => {
+  const identificador = normalizarIdentificador(data?.identificador ?? data?.email);
+  const password = typeof data?.password === 'string' ? data.password : '';
+  if (!identificador || !password) throw incorrecto();
+
+  const cuenta = await resolverCuenta(db, auth, identificador);
+  const intentos = refIntentos(db, cuenta ? `uid:${cuenta.uid}` : `id:${identificador}`);
+  const previo = (await intentos.get()).data();
+  if (previo?.bloqueadoHasta && previo.bloqueadoHasta.toMillis() > ahora) {
+    throw new HttpsError('resource-exhausted', MENSAJE_BLOQUEO);
+  }
+
+  let valido = false;
+  if (cuenta && !cuenta.disabled && cuenta.email) {
+    const resultado = await verificarPassword(cuenta.email, password);
+    if (resultado === 'limitada') throw new HttpsError('resource-exhausted', MENSAJE_BLOQUEO);
+    // Usuario inactivo (Administración → Usuarios): mismo mensaje.
+    valido = resultado === 'ok' && (await refUsuario(db, cuenta.uid).get()).data()?.activo !== false;
+  }
+  if (!valido) {
+    await registrarFallo(db, intentos, ahora);
+    throw incorrecto();
+  }
+  if (previo) await intentos.delete();
+  return { token: await auth.createCustomToken(cuenta.uid) };
+};
+
+// --- Crear usuario --------------------------------------------------------
+
+const ERRORES_AUTH = {
+  'auth/email-already-exists': ['already-exists', 'Ese correo ya está registrado.'],
+  'auth/invalid-email': ['invalid-argument', 'El correo ingresado no es válido.'],
+  'auth/invalid-password': ['invalid-argument', 'La contraseña es demasiado débil.'],
+};
+
+// Crea la cuenta de Auth, usuarios/{uid} (el documento base de Crear
+// Usuario: rol y sin permisos) y su entrada en nombres_usuario. Si el
+// nombre se tomó entre medio, se borra la cuenta recién creada.
+const crearUsuario = async (db, auth, por, data) => {
+  const { nombreCompleto, nombreUsuario, email, password, rol = ROL_POR_DEFECTO } = data || {};
+  const nombre = String(nombreCompleto ?? '').trim();
+  if (!nombre) throw new HttpsError('invalid-argument', 'El nombre completo es obligatorio.');
+  const errorNombre = errorNombreUsuario(nombreUsuario);
+  if (errorNombre) throw new HttpsError('invalid-argument', errorNombre);
+  const correo = String(email ?? '').trim();
+  if (!correo) throw new HttpsError('invalid-argument', 'El correo es obligatorio.');
+  if (typeof password !== 'string' || password.length < 6) throw new HttpsError('invalid-argument', 'La contraseña debe tener al menos 6 caracteres.');
+  if (!VALORES_ROL.includes(rol)) throw new HttpsError('invalid-argument', 'Rol inválido.');
+  // Aviso temprano, para no crear la cuenta de Auth en vano.
+  if ((await refNombre(db, normalizarNombreUsuario(nombreUsuario)).get()).exists) {
+    throw new HttpsError('already-exists', MENSAJE_NOMBRE_EN_USO);
+  }
+
+  let cuenta;
+  try {
+    cuenta = await auth.createUser({ email: correo, password });
+  } catch (err) {
+    const conocido = ERRORES_AUTH[err.code];
+    if (conocido) throw new HttpsError(...conocido);
+    throw err;
+  }
+  try {
+    await db.runTransaction(async (t) => {
+      const escribirNombre = await prepararNombreUsuario(db, t, cuenta.uid, nombreUsuario);
+      t.create(refUsuario(db, cuenta.uid), {
+        nombreCompleto: nombre,
+        nombreUsuario: String(nombreUsuario).trim(),
+        email: cuenta.email,
+        rol,
+        permisos: {},
+        permisosGranulares: {},
+        estadoCreacion: { paso1: true, paso2: false, itemsFinalizados: {}, completo: false },
+        passwordChanged: false,
+        modoPantalla: 'claro',
+        creadoPor: por.uid,
+        creadoEl: FieldValue.serverTimestamp(),
+      });
+      escribirNombre(t);
+    });
+  } catch (err) {
+    await auth.deleteUser(cuenta.uid).catch(() => {});
+    throw err;
+  }
+  return { uid: cuenta.uid };
+};
+
+// --- Índice de nombres de los usuarios existentes -------------------------
+
+// Revisa usuarios/*: los nombres vacíos, con "@", espacios u otros
+// caracteres no permitidos, o repetidos (sin distinguir mayúsculas) quedan
+// en `problemas` y no se indexan. No modifica nada.
+const revisarNombresUsuario = async (db) => {
+  const usuarios = (await db.collection('usuarios').get()).docs.map((d) => ({ uid: d.id, ...d.data() }));
+  const problemas = [];
+  const porNombre = new Map();
+  usuarios.forEach((u) => {
+    const motivo = errorNombreUsuario(u.nombreUsuario);
+    if (motivo) {
+      problemas.push({ ...resumen(u), motivo });
+      return;
+    }
+    const n = normalizarNombreUsuario(u.nombreUsuario);
+    porNombre.set(n, [...(porNombre.get(n) || []), u]);
+  });
+  const entradas = [];
+  porNombre.forEach((lista, normalizado) => {
+    if (lista.length === 1) {
+      entradas.push({ normalizado, uid: lista[0].uid, nombreUsuario: String(lista[0].nombreUsuario).trim() });
+      return;
+    }
+    lista.forEach((u) => problemas.push({ ...resumen(u), motivo: `Nombre repetido (sin distinguir mayúsculas): "${normalizado}", ${lista.length} usuarios.` }));
+  });
+  return { total: usuarios.length, entradas, problemas };
+};
+const resumen = (u) => ({ uid: u.uid, nombreUsuario: u.nombreUsuario ?? null, nombreCompleto: u.nombreCompleto || '', email: u.email || '', activo: u.activo !== false });
+
+// Escribe en nombres_usuario las entradas válidas (idempotente). Un nombre
+// ya indexado por otro usuario no se pisa.
+const indexarNombresUsuario = async (db, entradas) => {
+  let escritas = 0;
+  const omitidas = [];
+  for (const e of entradas) {
+    const actual = (await refNombre(db, e.normalizado).get()).data();
+    if (actual && actual.uid !== e.uid) {
+      omitidas.push(e);
+      continue;
+    }
+    await refNombre(db, e.normalizado).set({ uid: e.uid, nombreUsuario: e.nombreUsuario });
+    escritas += 1;
+  }
+  return { escritas, omitidas };
+};
+
+module.exports = { iniciarSesion, verificarPasswordRest, crearUsuario, revisarNombresUsuario, indexarNombresUsuario, MAX_FALLOS };

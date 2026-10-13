@@ -1,8 +1,8 @@
 // Reglas de usuarios/{uid} y plantillas_permisos (permisos por centro de
-// costo). Rol, permisos, permisosGranulares, centroCostoId y excepciones
-// solo los escriben las Cloud Functions; desde el navegador cada usuario
-// sigue pudiendo editar lo suyo (tema, contraseña, datos, orden del menú) y
-// un admin los datos de los demás.
+// costo). Rol, permisos, permisosGranulares, centroCostoId, excepciones y
+// nombreUsuario (único) solo los escriben las Cloud Functions; desde el
+// navegador cada usuario sigue pudiendo editar lo suyo (tema, contraseña,
+// datos, orden del menú) y un admin los datos de los demás.
 import process from 'node:process';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { initializeApp, deleteApp } from 'firebase/app';
@@ -62,7 +62,7 @@ const usuario = (s, uid = s.uid) => doc(s.db, 'usuarios', uid);
 describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
   it('tema, cambio de contraseña, datos de perfil, privacidad y orden del menú siguen funcionando', async () => {
     await expect(updateDoc(usuario(operador), { modoPantalla: 'oscuro' })).resolves.toBeUndefined();
-    await expect(updateDoc(usuario(operador), { nombreCompleto: 'Operador Uno', nombreUsuario: 'op1', email: 'op1@prueba.cl', passwordChanged: true })).resolves.toBeUndefined();
+    await expect(updateDoc(usuario(operador), { nombreCompleto: 'Operador Uno', email: 'op1@prueba.cl', passwordChanged: true })).resolves.toBeUndefined();
     await expect(updateDoc(usuario(operador), { nombreMostrar: 'nombre', ordenModulos: ['laboratorio'] })).resolves.toBeUndefined();
     await expect(updateDoc(usuario(admin), { modoPantalla: 'oscuro', passwordChanged: true })).resolves.toBeUndefined();
   });
@@ -74,6 +74,7 @@ describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
       { permisosGranulares: { '/administracion/listadoUsuario': {} } },
       { centroCostoId: 'lab' },
       { excepciones: { agregados: ['v|/x'], quitados: [] } },
+      { nombreUsuario: 'otro' },
     ];
     for (const cambio of intentos) {
       await expect(updateDoc(usuario(operador), cambio), JSON.stringify(cambio)).rejects.toMatchObject({ code: 'permission-denied' });
@@ -81,6 +82,8 @@ describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
     // Tampoco un admin escribe el permiso efectivo o el rol directamente: va por las funciones.
     await expect(updateDoc(usuario(admin, operador.uid), { permisos: {} })).rejects.toMatchObject({ code: 'permission-denied' });
     await expect(updateDoc(usuario(admin), { rol: 'operador' })).rejects.toMatchObject({ code: 'permission-denied' });
+    // El nombre de usuario es único: solo por las funciones (índice nombres_usuario).
+    await expect(updateDoc(usuario(admin, operador.uid), { nombreUsuario: 'otro' })).rejects.toMatchObject({ code: 'permission-denied' });
   });
 
   it('un admin edita los datos de otro; un operador no', async () => {
@@ -90,11 +93,21 @@ describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
 });
 
 describe('usuarios: crear (Crear Usuario)', () => {
-  it('admin crea el documento base con rol y sin permisos; los permisos van después por la función', async () => {
-    await expect(setDoc(doc(admin.db, 'usuarios', 'nuevo1'), { nombreCompleto: 'Nuevo', rol: 'operador', permisos: {}, permisosGranulares: {} })).resolves.toBeUndefined();
-    await expect(setDoc(doc(admin.db, 'usuarios', 'nuevo2'), { rol: 'operador', permisos: PERMISOS, permisosGranulares: {} })).rejects.toMatchObject({ code: 'permission-denied' });
-    await expect(setDoc(doc(admin.db, 'usuarios', 'nuevo3'), { rol: 'operador', permisos: {}, permisosGranulares: {}, centroCostoId: 'lab' })).rejects.toMatchObject({ code: 'permission-denied' });
+  it('el documento base lo crea la función crearUsuario: nadie lo crea desde el navegador (ni admin)', async () => {
+    await expect(setDoc(doc(admin.db, 'usuarios', 'nuevo1'), { nombreCompleto: 'Nuevo', rol: 'operador', permisos: {}, permisosGranulares: {} })).rejects.toMatchObject({ code: 'permission-denied' });
     await expect(setDoc(doc(operador.db, 'usuarios', 'nuevo4'), { rol: 'operador', permisos: {}, permisosGranulares: {} })).rejects.toMatchObject({ code: 'permission-denied' });
+  });
+});
+
+describe('nombres_usuario e intentos_login: solo las funciones', () => {
+  it('nadie los lee ni los escribe desde el navegador (no se revela qué usuarios existen)', async () => {
+    await sembrar('nombres_usuario/operador', { uid: 'x', nombreUsuario: 'operador' });
+    for (const s of [admin, operador]) {
+      await expect(getDoc(doc(s.db, 'nombres_usuario', 'operador'))).rejects.toMatchObject({ code: 'permission-denied' });
+      await expect(setDoc(doc(s.db, 'nombres_usuario', 'libre'), { uid: s.uid, nombreUsuario: 'libre' })).rejects.toMatchObject({ code: 'permission-denied' });
+      await expect(getDoc(doc(s.db, 'intentos_login', 'x'))).rejects.toMatchObject({ code: 'permission-denied' });
+      await expect(setDoc(doc(s.db, 'intentos_login', 'x'), { fallos: 0 })).rejects.toMatchObject({ code: 'permission-denied' });
+    }
   });
 });
 
