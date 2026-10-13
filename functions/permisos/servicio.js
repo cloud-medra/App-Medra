@@ -3,18 +3,25 @@
 // (tests/emulador). Cada función recibe la instancia de Firestore.
 // Las plantillas son por centro + rol: plantillas_permisos/{centroId}__{rol}.
 // Permiso efectivo = plantilla(centro, rol del usuario) + agregados − quitados;
-// los roles de acceso total (admin/dev) no usan plantilla.
+// Administrador y Desarrollador no usan plantilla (solo sus permisos propios).
 
 const { HttpsError } = require('firebase-functions/v2/https');
 const { FieldValue } = require('firebase-admin/firestore');
 const {
-  aplanar, desaplanar, combinar, calcularExcepciones, normalizarExcepciones, esAdministrador, dejaSinAdministrador,
-  SIN_EXCEPCIONES, ROLES, ROLES_CON_PLANTILLA, ROL_POR_DEFECTO, idPlantilla, idPlantillaDeUsuario, labelRol,
+  aplanar, desaplanar, combinar, calcularExcepciones, normalizarExcepciones, puedeAdministrar, dejaSinDesarrollador,
+  SIN_EXCEPCIONES, ROLES, ROLES_CON_PLANTILLA, esRolSinPlantilla, ROL_POR_DEFECTO, idPlantilla, idPlantillaDeUsuario, labelRol,
 } = require('./nucleo.mjs');
 const { prepararNombreUsuario } = require('../usuarios/indiceNombres');
 
 const VALORES_ROL = ROLES.map((r) => r.value);
 const ROLES_ACCESO_TOTAL = ROLES.filter((r) => r.accesoTotal).map((r) => r.value);
+const ROL_DESARROLLADOR = 'dev';
+// Ítems de Administración que habilitan cada función (además del rol).
+const RUTAS = Object.freeze({
+  crear: '/administracion/crearUsuario',
+  listado: '/administracion/listadoUsuario',
+  permisosCentro: '/administracion/permisosCentro',
+});
 const MAX_CASILLAS_PLANTILLA = 20000;
 const TAMANO_LOTE = 400;
 
@@ -22,14 +29,25 @@ const refUsuario = (db, uid) => db.collection('usuarios').doc(uid);
 const refPlantilla = (db, id) => db.collection('plantillas_permisos').doc(id);
 const refCentro = (db, id) => db.collection('maestros_centros').doc(id);
 
-// Quién llama: { uid, nombre } si es admin/dev activo.
-const exigirAdministrador = async (db, uid) => {
+// Quién llama: { uid, nombre, rol } si es Desarrollador activo, o
+// Administrador activo con alguno de esos ítems de Administración.
+const exigirAdministrador = async (db, uid, rutas) => {
   if (!uid) throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
   const perfil = (await refUsuario(db, uid).get()).data();
-  if (!esAdministrador(perfil)) {
-    throw new HttpsError('permission-denied', 'Solo un administrador puede cambiar permisos de usuarios.');
+  if (!puedeAdministrar(perfil, rutas)) {
+    throw new HttpsError('permission-denied', 'Solo un administrador con acceso a esta vista puede hacerlo.');
   }
-  return { uid, nombre: perfil.nombreCompleto || perfil.email || '' };
+  return { uid, nombre: perfil.nombreCompleto || perfil.email || '', rol: perfil.rol };
+};
+
+// Anti-escalada: un Administrador no se cambia a sí mismo rol, estado,
+// centro ni permisos, no modifica a un Desarrollador ni asigna ese rol.
+// El Desarrollador puede todo (salvo dejar el sistema sin desarrollador).
+const exigirPuedeModificar = (por, uid, antes, { cambiaAcceso = false, rolNuevo } = {}) => {
+  if (por.rol === ROL_DESARROLLADOR) return;
+  if (antes?.rol === ROL_DESARROLLADOR) throw new HttpsError('permission-denied', 'Solo otro Desarrollador puede modificar a un Desarrollador.');
+  if (rolNuevo === ROL_DESARROLLADOR) throw new HttpsError('permission-denied', 'Solo un Desarrollador puede asignar el rol Desarrollador.');
+  if (cambiaAcceso && uid === por.uid) throw new HttpsError('permission-denied', 'No puedes cambiar tu propio rol, estado, centro ni permisos.');
 };
 
 // Plantilla en su forma canónica (sin campos ajenos ni valores raros).
@@ -39,7 +57,7 @@ const limpiarPlantilla = (plantilla) => {
   return desaplanar(plano);
 };
 
-// Plantilla del centro para el rol (null: sin centro, rol de acceso total o
+// Plantilla del centro para el rol (null: sin centro, rol sin plantilla o
 // combinación sin configurar → no otorga permisos).
 const leerPlantilla = async (db, centroId, rol, transaccion) => {
   const id = idPlantillaDeUsuario(centroId, rol);
@@ -59,7 +77,7 @@ const validarCentro = async (db, centroId, transaccion) => {
 
 const rolDe = (u) => u?.rol || ROL_POR_DEFECTO;
 
-const leerAdministradores = async (db, transaccion) => {
+const leerDesarrolladores = async (db, transaccion) => {
   const q = db.collection('usuarios').where('rol', 'in', ROLES_ACCESO_TOTAL);
   const snap = transaccion ? await transaccion.get(q) : await q.get();
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -140,9 +158,13 @@ const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
     if (actualizacion.nombreUsuario === antes.nombreUsuario) delete actualizacion.nombreUsuario;
     else if (actualizacion.nombreUsuario !== undefined) escribirNombre = await prepararNombreUsuario(db, t, uid, actualizacion.nombreUsuario, antes.nombreUsuario);
     if (centroCostoId !== undefined) await validarCentro(db, centroCostoId, t);
-    const administradores = await leerAdministradores(db, t);
-    if (dejaSinAdministrador(administradores, uid, { rol: actualizacion.rol, activo: actualizacion.activo })) {
-      throw new HttpsError('failed-precondition', 'No se puede: es el último administrador activo del sistema.');
+    exigirPuedeModificar(por, uid, antes, {
+      rolNuevo: actualizacion.rol,
+      cambiaAcceso: [rol, datos.activo, centroCostoId, excepciones].some((v) => v !== undefined),
+    });
+    const desarrolladores = await leerDesarrolladores(db, t);
+    if (dejaSinDesarrollador(desarrolladores, uid, { rol: actualizacion.rol, activo: actualizacion.activo })) {
+      throw new HttpsError('failed-precondition', 'No se puede: es el último desarrollador activo del sistema.');
     }
 
     // El permiso efectivo se recalcula si cambia el centro o las
@@ -188,8 +210,13 @@ const asignarCentroCostoMasivo = async (db, por, data) => {
     const snap = await refUsuario(db, uid).get();
     if (!snap.exists) continue;
     const antes = snap.data();
+    exigirPuedeModificar(por, uid, antes, { cambiaAcceso: true });
     const exc = excepcionesDe(antes);
-    const actualizacion = { centroCostoId: centroCostoId ?? null, excepciones: exc, ...combinar(await plantillaPara(rolDe(antes)), exc) };
+    // Administrador/Desarrollador no usan plantilla: el centro no cambia sus
+    // permisos (y uno antiguo sin excepciones no los pierde).
+    const actualizacion = esRolSinPlantilla(rolDe(antes))
+      ? { centroCostoId: centroCostoId ?? null }
+      : { centroCostoId: centroCostoId ?? null, excepciones: exc, ...combinar(await plantillaPara(rolDe(antes)), exc) };
     lote.update(refUsuario(db, uid), { ...actualizacion, permisosActualizadosEl: FieldValue.serverTimestamp() });
     const cambios = cambiosParaLog(antes, { centroCostoId: actualizacion.centroCostoId });
     if (Object.keys(cambios).length) registrarLog(lote, refUsuario(db, uid), 'CENTRO_COSTO_MASIVO', por, cambios);
@@ -233,4 +260,6 @@ const guardarPlantillaCentroCosto = async (db, por, data) => {
   return { usuarios: usuarios.length };
 };
 
-module.exports = { exigirAdministrador, guardarPermisosUsuario, asignarCentroCostoMasivo, guardarPlantillaCentroCosto };
+module.exports = {
+  exigirAdministrador, exigirPuedeModificar, guardarPermisosUsuario, asignarCentroCostoMasivo, guardarPlantillaCentroCosto, RUTAS,
+};

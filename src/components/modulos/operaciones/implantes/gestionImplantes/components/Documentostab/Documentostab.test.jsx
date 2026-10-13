@@ -4,7 +4,7 @@ import { render, screen, fireEvent, cleanup, within, waitFor } from '@testing-li
 import '@testing-library/jest-dom/vitest';
 
 vi.mock('../../../../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
-vi.mock('../../../../../../../context/UserContext', () => ({ useUser: () => ({ userData: { rol: 'admin' } }) }));
+vi.mock('../../../../../../../context/UserContext', () => ({ useUser: () => ({ userData: { rol: 'dev' } }) }));
 vi.mock('../../../respaldoDocumentos/respaldoService', () => ({ subirRespaldo: vi.fn() }));
 vi.mock('../../../shared/documentosAdmision/documentosStorage', () => ({
   subirTandaAdmision: vi.fn(),

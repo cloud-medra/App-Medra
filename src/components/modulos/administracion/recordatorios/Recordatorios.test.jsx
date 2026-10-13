@@ -34,13 +34,13 @@ vi.mock('./recordatoriosServicio', async (importOriginal) => ({ ...(await import
 import Recordatorios from './Recordatorios';
 
 beforeEach(() => {
-  usuario = { uid: 'adm', rol: 'admin', nombreCompleto: 'ADMIN' };
+  usuario = { uid: 'adm', rol: 'dev', nombreCompleto: 'ADMIN' };
   Object.values(servicio).forEach((f) => f.mockClear());
 });
 afterEach(cleanup);
 
 describe('Recordatorios', () => {
-  it('admin ve las dos pestañas y el listado (desactivadas al final)', async () => {
+  it('el Desarrollador ve las dos pestañas y el listado (desactivadas al final)', async () => {
     render(<Recordatorios />);
     expect(screen.getByRole('button', { name: 'Administrar tareas' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Mis recordatorios' })).toBeInTheDocument();

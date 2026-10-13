@@ -21,25 +21,33 @@
 // Del usuario solo se guardan las excepciones { agregados, quitados }.
 
 // Roles (lista única: pantalla de usuarios, Permisos por centro y funciones).
-// Los de acceso total (administradores del sistema) no usan plantillas; los
-// demás reciben la plantilla de su centro de costo PARA SU ROL.
+// - accesoTotal: ve y hace todo sin permisos asignados (solo Desarrollador:
+//   así siempre hay alguien con acceso a Administración).
+// - sinPlantilla: no recibe la plantilla de su centro de costo; sus permisos
+//   son solo los propios (Administrador y Desarrollador).
+// - administra: rol que puede administrar usuarios (Crear usuario, Lista de
+//   usuarios, Permisos por centro), siempre que además tenga el ítem del
+//   menú; ve automáticamente los ítems `automaticoAdministradores` (Alertas).
+// Los demás reciben la plantilla de su centro de costo PARA SU ROL.
 export const ROLES = Object.freeze([
-  { value: 'admin', label: 'Administrador del sistema', accesoTotal: true },
-  { value: 'dev', label: 'Desarrollador', accesoTotal: true },
-  { value: 'encargado', label: 'Encargado de centro', accesoTotal: false },
-  { value: 'operador', label: 'Operador', accesoTotal: false },
+  { value: 'admin', label: 'Administrador del sistema', accesoTotal: false, sinPlantilla: true, administra: true },
+  { value: 'dev', label: 'Desarrollador', accesoTotal: true, sinPlantilla: true, administra: true },
+  { value: 'encargado', label: 'Encargado de centro', accesoTotal: false, sinPlantilla: false, administra: false },
+  { value: 'operador', label: 'Operador', accesoTotal: false, sinPlantilla: false, administra: false },
 ]);
 export const esRolAccesoTotal = (rol) => ROLES.some((r) => r.value === rol && r.accesoTotal);
+export const esRolSinPlantilla = (rol) => ROLES.some((r) => r.value === rol && r.sinPlantilla);
+export const esRolAdministrador = (rol) => ROLES.some((r) => r.value === rol && r.administra);
 // Orden de las pestañas de Permisos por centro: Operador (la base) primero.
 const ORDEN_PLANTILLAS = ['operador', 'encargado'];
-export const ROLES_CON_PLANTILLA = Object.freeze(ROLES.filter((r) => !r.accesoTotal).map((r) => r.value)
+export const ROLES_CON_PLANTILLA = Object.freeze(ROLES.filter((r) => !r.sinPlantilla).map((r) => r.value)
   .sort((a, b) => ORDEN_PLANTILLAS.indexOf(a) - ORDEN_PLANTILLAS.indexOf(b)));
 export const ROL_POR_DEFECTO = 'operador';
 export const labelRol = (rol) => ROLES.find((r) => r.value === rol)?.label || rol || 'Sin rol';
 
 // Plantilla de un centro de costo para un rol: plantillas_permisos/{centroId}__{rol}.
 export const idPlantilla = (centroId, rol) => `${centroId}__${rol}`;
-// Id de la plantilla que corresponde a un usuario (null: sin centro, o rol de acceso total).
+// Id de la plantilla que corresponde a un usuario (null: sin centro, o rol sin plantilla).
 export const idPlantillaDeUsuario = (centroId, rol) => {
   const r = rol || ROL_POR_DEFECTO;
   return centroId && ROLES_CON_PLANTILLA.includes(r) ? idPlantilla(centroId, r) : null;
@@ -50,19 +58,23 @@ export const claveVista = (ruta) => `v|${ruta}`;
 export const claveSeccion = (ruta, seccion) => `s|${ruta}|${seccion}`;
 export const claveElemento = (ruta, seccion, elemento) => `e|${ruta}|${seccion}|${elemento}`;
 
-// Acciones sensibles DENEGADAS POR DEFECTO para no-admin: sin configurar
+// Acciones sensibles DENEGADAS POR DEFECTO (para todos salvo Desarrollador): sin configurar
 // (sección o acción sin valor guardado) se niegan, al revés que el resto
 // ("sin configurar = permitida"). Toda acción sensible nueva (aprobar,
 // rechazar, desbloquear…) debe agregarse aquí; así ningún usuario que ya
 // tenga la vista la recibe sin que un admin la marque. Lo respetan
 // useGranularPermission, puedeAccion (Cloud Functions), valorDe (plantillas
 // y excepciones) y el editor de permisos (que las completa desmarcadas;
-// "marcar toda la vista" y "acceso total" sí las marcan). Admin/dev, siempre.
+// "marcar toda la vista" y "acceso total" sí las marcan). Desarrollador, siempre.
 // Las reglas de Firestore/Storage usan el criterio permisivo: estas acciones
 // se validan en Cloud Functions, no en reglas (lo verifica
 // src/config/componentMaps/accionesDenegadas.test.js).
 export const ACCIONES_DENEGADAS_POR_DEFECTO = Object.freeze([
   claveElemento('/administracion/listadoUsuario', 'tabla_usuarios', 'btn_desbloquear'),
+  // Antes solo por rol (admin/dev); siguen exigiendo además rol Administrador.
+  claveElemento('/administracion/estadisticas', 'acciones', 'btn_recalcular'),
+  claveElemento('/documentos/importarDetallesOC', 'tabla_registros', 'btn_eliminar_filas'),
+  claveElemento('/implantes/gestionImplantes', 'drawer_configuracion', 'btn_marcar_oc_pendiente'),
 ]);
 const DENEGADAS = new Set(ACCIONES_DENEGADAS_POR_DEFECTO);
 export const deniegaSinConfigurar = (ruta, seccion, accion) => DENEGADAS.has(claveElemento(ruta, seccion, accion));
@@ -173,14 +185,28 @@ export const origenCasilla = (clave, planoPlantilla, excepciones) => {
   return valorDe(planoPlantilla, clave) ? 'heredado' : null;
 };
 
-// --- Protección contra quedarse sin administrador -------------------------
-// Administrar usuarios exige rol admin/dev (reglas de Firestore y estas
-// funciones); el rol no viene de plantillas, así que solo lo pueden quitar
-// un cambio de rol o la inactivación.
-export const esAdministrador = (u) => Boolean(u) && esRolAccesoTotal(u.rol) && u.activo !== false;
+// --- Protección contra quedarse sin desarrollador --------------------------
+// El Desarrollador es el único rol con acceso total (el que siempre puede
+// entrar a Administración); el rol no viene de plantillas, así que solo lo
+// pueden quitar un cambio de rol o la inactivación.
+export const esDesarrollador = (u) => Boolean(u) && esRolAccesoTotal(u.rol) && u.activo !== false;
+// Usuario activo con rol que administra (Administrador o Desarrollador).
+export const esAdministrador = (u) => Boolean(u) && esRolAdministrador(u.rol) && u.activo !== false;
+// ¿Puede usar una vista de Administración que administra usuarios? El
+// Desarrollador siempre; el Administrador, solo con alguno de esos ítems.
+export const puedeAdministrar = (u, rutas) => esDesarrollador(u)
+  || (esAdministrador(u) && rutas.some((r) => (u.permisos?.administracion || []).includes(r)));
+// usuarios: [{ id, rol, activo }] (al menos todos los desarrolladores).
+export const dejaSinDesarrollador = (usuarios, uid, cambios = {}) => {
+  const antes = usuarios.find((u) => u.id === uid);
+  if (!esDesarrollador(antes)) return false;
+  const definidos = Object.fromEntries(Object.entries(cambios).filter(([, v]) => v !== undefined));
+  if (esDesarrollador({ ...antes, ...definidos })) return false;
+  return !usuarios.some((u) => u.id !== uid && esDesarrollador(u));
+};
 
 // Acción granular de un usuario activo, con el mismo criterio que las reglas
-// (accionEnVista) y useGranularPermission: admin/dev pueden todo; el resto
+// (accionEnVista) y useGranularPermission: el Desarrollador puede todo; el resto
 // necesita el ítem del menú y la vista en permisosGranulares; una sección o
 // acción sin configurar se permite (salvo ACCIONES_DENEGADAS_POR_DEFECTO);
 // visible:false o la acción en false, no.

@@ -48,9 +48,10 @@ exports.cerrarPeriodoImputacion = onCall(
       throw new HttpsError('permission-denied', 'Tu usuario no tiene un perfil registrado.');
     }
 
-    // Admin o dev cierran siempre; el resto necesita el ítem Control Mensual
-    // de Administración (misma clave que el menú y tieneItem() en las reglas).
-    const esAdminODev = perfil.rol === 'admin' || perfil.rol === 'dev';
+    // El Desarrollador cierra siempre; el resto (también el Administrador)
+    // necesita el ítem Control Mensual de Administración (misma clave que el
+    // menú y tieneItem() en las reglas).
+    const esAdminODev = perfil.rol === 'dev';
     const itemsAdministracion = perfil.permisos?.administracion;
     const tieneItemControlMensual = Array.isArray(itemsAdministracion)
       && itemsAdministracion.includes(ITEM_CONTROL_MENSUAL);

@@ -66,7 +66,8 @@ afterAll(() => deleteApp(cliente.app));
 beforeEach(async () => {
   await fetch(`http://${FIRESTORE}/emulator/v1/projects/${PROYECTO}/databases/(default)/documents`, { method: 'DELETE' });
   await fetch(`http://${AUTH}/emulator/v1/projects/${PROYECTO}/accounts`, { method: 'DELETE' });
-  await db.collection('usuarios').doc('yo').set({ nombreCompleto: 'Admin', rol: 'admin', permisos: {}, permisosGranulares: {} });
+  // Desarrollador: puede todo sin permisos asignados.
+  await db.collection('usuarios').doc('yo').set({ nombreCompleto: 'Admin', rol: 'dev', permisos: {}, permisosGranulares: {} });
 });
 
 describe('iniciarSesion: correo o nombre de usuario', () => {
@@ -234,6 +235,9 @@ describe('desbloquearUsuario (Lista de usuarios, btn_desbloquear)', () => {
     await expect(servicio.exigirAccion(db, 'sin', servicio.ACCION_DESBLOQUEAR)).rejects.toEqual(rechazo('permission-denied'));
     await expect(servicio.exigirAccion(db, 'otro', servicio.ACCION_DESBLOQUEAR)).rejects.toEqual(rechazo('permission-denied'));
     await expect(servicio.exigirAccion(db, undefined, servicio.ACCION_DESBLOQUEAR)).rejects.toEqual(rechazo('unauthenticated'));
+    // El Administrador ya no tiene acceso total: necesita la acción marcada.
+    await db.collection('usuarios').doc('adm').set({ nombreCompleto: 'adm', rol: 'admin', permisos: { administracion: [LISTADO] }, permisosGranulares: { [LISTADO]: {} } });
+    await expect(servicio.exigirAccion(db, 'adm', servicio.ACCION_DESBLOQUEAR)).rejects.toEqual(rechazo('permission-denied'));
   });
 });
 

@@ -10,7 +10,8 @@ import Spinner from '../../../ui/Spinner';
 import MarcoEdicionUsuario, { Chip, ConfirmarSalida } from './MarcoEdicionUsuario';
 import EditorPermisos from './EditorPermisos';
 import { Tarjeta, Campo, CampoTexto, CampoSelect, CampoEstado } from './CamposFormulario';
-import { ROLES, esRolAccesoTotal, labelRol } from './roles';
+import { esRolAccesoTotal, esRolSinPlantilla, labelRol, rolesAsignables } from './roles';
+import { useUser } from '../../../../context/UserContext';
 import { errorNombreUsuario } from '../../../../../functions/usuarios/nombreUsuario.mjs';
 import { completarPermisosGranulares, completarVistasDelMenu, resumenRestricciones } from './permisosGranularesUtils';
 import {
@@ -69,6 +70,9 @@ const estadoInicial = (usuario) => {
 };
 
 const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
+  // Rol Desarrollador: solo lo asigna otro Desarrollador (lo vuelve a exigir
+  // guardarPermisosUsuario, igual que no editarse a sí mismo).
+  const { userData } = useUser();
   const { showToast } = useToast();
   const { confirmAction } = useModal();
   const { datos: centros } = useCatalogo('centros');
@@ -97,14 +101,17 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
   // Plantilla del centro + rol elegidos (completa, como el editor) y
   // excepciones del usuario respecto de ella.
   const nombreCentro = (id) => centros.find((c) => c.id === id)?.nombre || 'centro sin nombre';
+  // Acceso total: solo Desarrollador. Sin plantilla: Administrador y
+  // Desarrollador (sus permisos son solo los propios).
   const accesoTotal = esRolAccesoTotal(datos.rol);
+  const sinPlantilla = esRolSinPlantilla(datos.rol);
   const plantillaElegida = plantillaDeUsuario(plantillas, datos.centroCostoId, datos.rol);
   const combinacion = datos.centroCostoId ? `${nombreCentro(datos.centroCostoId)} – ${labelRol(datos.rol)}` : null;
   const plantilla = useMemo(() => completar(plantillaElegida || SIN_PERMISOS), [plantillaElegida]);
   // Permiso efectivo = plantilla + agregados − quitados (vista previa; el
   // que vale lo calcula la función al guardar).
   const permisos = useMemo(() => efectivo(plantilla, excepciones), [plantilla, excepciones]);
-  const origen = useMemo(() => (datos.centroCostoId && !accesoTotal ? crearOrigen(plantilla, excepciones) : undefined), [datos.centroCostoId, accesoTotal, plantilla, excepciones]);
+  const origen = useMemo(() => (datos.centroCostoId && !sinPlantilla ? crearOrigen(plantilla, excepciones) : undefined), [datos.centroCostoId, sinPlantilla, plantilla, excepciones]);
   const nExcepciones = contarExcepciones(excepciones);
 
   // Al cambiar de centro o de rol, el permiso se recalcula al instante con
@@ -114,8 +121,8 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
     if (!tieneExcepciones(excepciones)) return;
     const destino = !centroId
       ? 'sus permisos propios (sin centro de costo)'
-      : esRolAccesoTotal(rol)
-        ? `el rol ${labelRol(rol)} (acceso total)`
+      : esRolSinPlantilla(rol)
+        ? `el rol ${labelRol(rol)} (sin plantilla de centro)`
         : `la plantilla de ${nombreCentro(centroId)} – ${labelRol(rol)}`;
     confirmAction(
       titulo,
@@ -147,7 +154,7 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
   const configurarCentro = onIrAPermisosCentro && (() => (hayCambios
     ? confirmAction('Cambios sin guardar', 'Se descartarán los cambios de este usuario.', onIrAPermisosCentro, { confirmText: 'Salir sin guardar', type: 'warning' })
     : onIrAPermisosCentro()));
-  const centroSinConfigurar = Boolean(datos.centroCostoId) && !accesoTotal && plantillasCargadas && !plantillaElegida;
+  const centroSinConfigurar = Boolean(datos.centroCostoId) && !sinPlantilla && plantillasCargadas && !plantillaElegida;
 
   const validar = () => {
     const e = {};
@@ -289,7 +296,7 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
                     ayuda="Es el correo de ingreso: no se modifica desde aquí."
                   />
                   <CampoSelect
-                    id="rol" label="Rol" icon={Shield} opciones={ROLES} value={datos.rol}
+                    id="rol" label="Rol" icon={Shield} opciones={rolesAsignables(userData, datos.rol)} value={datos.rol}
                     ayuda={accesoTotal ? 'Acceso total: no se aplican los permisos granulares.' : 'Los permisos se configuran en la pestaña Permisos.'}
                     onChange={(e) => cambiarRol(e.target.value)}
                   />
@@ -297,8 +304,8 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
                   <Campo id="centroCosto" label="Centro de costo"
                     ayuda={!datos.centroCostoId
                       ? 'Sin centro de costo: el usuario tiene solo sus permisos propios.'
-                      : accesoTotal
-                        ? 'Su rol tiene acceso total: no usa la plantilla del centro.'
+                      : sinPlantilla
+                        ? `Su rol (${labelRol(datos.rol)}) no usa la plantilla del centro: solo sus permisos propios.`
                         : plantillaElegida
                           ? `Hereda los permisos de ${combinacion} (ver pestaña Permisos).`
                           : undefined}>
@@ -353,7 +360,8 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
           <BarraCentroCosto
             centro={combinacion}
             conPlantilla={Boolean(plantillaElegida)}
-            accesoTotal={accesoTotal}
+            sinPlantilla={sinPlantilla}
+            rol={labelRol(datos.rol)}
             excepciones={nExcepciones}
             onRestablecer={restablecerPlantilla}
             onConfigurarCentro={configurarCentro}

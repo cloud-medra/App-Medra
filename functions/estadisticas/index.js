@@ -5,7 +5,8 @@
 //     reabrirlo vuelve a quedar en curso.
 //   - estadisticasNocturno: 03:00 (Chile), recalcula los períodos abiertos
 //     para corregir cualquier diferencia de los triggers (B).
-//   - recalcularEstadisticasPeriodo: recálculo manual, solo admin/dev.
+//   - recalcularEstadisticasPeriodo: recálculo manual (Desarrollador, o
+//     Administrador con la acción "Recalcular").
 
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
@@ -15,6 +16,7 @@ const { initializeApp, getApps } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { FUENTES, MESES } = require('./nucleo');
 const { aplicarCambio, aplicarCierre, recalcularAbiertos, recalcularPeriodo } = require('./servicio');
+const { puedeAccion } = require('../permisos/nucleo.mjs');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
@@ -61,8 +63,11 @@ exports.recalcularEstadisticasPeriodo = onCall(
   async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
     const perfil = (await db.collection('usuarios').doc(request.auth.uid).get()).data() || {};
-    if (!['admin', 'dev'].includes(perfil.rol)) {
-      throw new HttpsError('permission-denied', 'Solo un administrador puede recalcular un período.');
+    // Desarrollador, o Administrador con el ítem y la acción "Recalcular"
+    // (denegada por defecto).
+    if (!(perfil.rol === 'dev' || (perfil.rol === 'admin'
+      && puedeAccion(perfil, 'administracion', '/administracion/estadisticas', 'acciones', 'btn_recalcular')))) {
+      throw new HttpsError('permission-denied', 'Solo un administrador con la acción "Recalcular" puede recalcular un período.');
     }
     const { modulo, anio, mes } = request.data || {};
     if (!FUENTES[modulo] || !/^\d{4}$/.test(String(anio)) || !MESES.includes(mes)) {

@@ -5,9 +5,10 @@
 //     el mismo mensaje; con la contraseña correcta, un usuario inactivo
 //     recibe "Tu usuario está deshabilitado". Bloquea tras varios intentos.
 //   - crearUsuario: cuenta de Auth + usuarios/{uid} + nombres_usuario, con
-//     el nombre de usuario único. Solo admin/dev activos.
+//     el nombre de usuario único. Desarrollador, o Administrador con el
+//     ítem Crear usuario (el rol Desarrollador solo lo asigna otro).
 //   - desbloquearUsuario: quita el bloqueo por intentos fallidos (Lista de
-//     usuarios, acción granular btn_desbloquear; admin/dev siempre).
+//     usuarios, acción granular btn_desbloquear; Desarrollador siempre).
 // La lógica está en servicio.js.
 //
 // iniciarSesion necesita:
@@ -23,7 +24,7 @@ const { initializeApp, getApps } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 const servicio = require('./servicio');
-const { exigirAdministrador } = require('../permisos/servicio');
+const { exigirAdministrador, exigirPuedeModificar, RUTAS } = require('../permisos/servicio');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
@@ -36,7 +37,8 @@ exports.iniciarSesion = onCall({ region: REGION, maxInstances: 10 }, (request) =
 ));
 
 exports.crearUsuario = onCall({ region: REGION }, async (request) => {
-  const por = await exigirAdministrador(db, request.auth?.uid);
+  const por = await exigirAdministrador(db, request.auth?.uid, [RUTAS.crear]);
+  exigirPuedeModificar(por, null, null, { rolNuevo: request.data?.rol });
   const resultado = await servicio.crearUsuario(db, getAuth(), por, request.data);
   logger.info('crearUsuario', { por: por.uid, uid: resultado.uid });
   return resultado;

@@ -142,7 +142,7 @@ const desbloquearUsuario = async (db, por, data) => {
   return { ok: true };
 };
 
-// Quién llama: { uid, nombre } si puede esa acción granular (o es admin/dev).
+// Quién llama: { uid, nombre } si puede esa acción granular (o es Desarrollador).
 const exigirAccion = async (db, uid, [modulo, ruta, seccion, accion]) => {
   if (!uid) throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
   const perfil = (await refUsuario(db, uid).get()).data();

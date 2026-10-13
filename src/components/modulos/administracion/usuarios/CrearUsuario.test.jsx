@@ -26,6 +26,8 @@ const showToast = vi.fn();
 vi.mock('../../../../context/ToastContext', () => ({ useToast: () => ({ showToast }) }));
 const confirmAction = vi.fn();
 vi.mock('../../../../context/ModalContext', () => ({ useModal: () => ({ confirmAction }) }));
+let usuarioSesion = { uid: 'yo', rol: 'admin', permisos: { administracion: ['/administracion/crearUsuario'] } };
+vi.mock('../../../../context/UserContext', () => ({ useUser: () => ({ userData: usuarioSesion }) }));
 
 const { default: CrearUsuario } = await import('./CrearUsuario');
 
@@ -135,5 +137,22 @@ describe('Crear Usuario: nombre de usuario', () => {
     fallo = null;
     expect(showToast).toHaveBeenCalledWith('Ese nombre de usuario ya está en uso.', 'error');
     expect(screen.getByRole('tab', { name: /Permisos/ })).toBeDisabled();
+  });
+});
+
+describe('Crear Usuario: rol Desarrollador', () => {
+  afterEach(() => { usuarioSesion = { uid: 'yo', rol: 'admin', permisos: { administracion: ['/administracion/crearUsuario'] } }; });
+  const opciones = () => within(screen.getByLabelText('Rol')).getAllByRole('option').map((o) => o.value);
+
+  it('un Administrador no puede elegirlo', () => {
+    render(<CrearUsuario />);
+    expect(opciones()).not.toContain('dev');
+    expect(opciones()).toContain('admin');
+  });
+
+  it('un Desarrollador sí', () => {
+    usuarioSesion = { uid: 'yo', rol: 'dev' };
+    render(<CrearUsuario />);
+    expect(opciones()).toContain('dev');
   });
 });

@@ -63,7 +63,8 @@ beforeAll(async () => {
   await Promise.all(Object.entries(NOTAS).map(([id, rolesVisibles], orden) => adminDb.doc(`${COL}/${id}`).set({
     titulo: id, tipo: 'texto', contenido: id, orden, rolesVisibles,
   })));
-  s.admin = await sesion('admin', { rol: 'admin', permisos: {} });
+  // El Administrador escribe notas con el módulo, como cualquiera.
+  s.admin = await sesion('admin', { rol: 'admin', permisos: { administracion: ['/administracion/notasAdmin'] } });
   s.operador = await sesion('operador', { rol: 'operador', permisos: {} });
   s.encargado = await sesion('encargado', { rol: 'encargado', permisos: { administracion: ['/administracion/notasAdmin'] } });
   s.dev = await sesion('dev', { rol: 'dev', permisos: {} });

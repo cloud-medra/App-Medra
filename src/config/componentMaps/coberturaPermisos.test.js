@@ -118,9 +118,9 @@ const TABLAS_PENDIENTES = new Set([
   'ui/TablaRedimensionable.jsx',
 ]);
 
-// Vistas de solo administradores (ítems `soloAdministradores` del menú, ver
-// src/config/accesoMenu.js): no se asignan por permisos, así que sus tablas
-// no tienen granularidad por columnas.
+// Permisos por centro: vista de administración de usuarios (solo rol
+// Administrador con el ítem, o Desarrollador); sus tablas no tienen
+// granularidad por columnas.
 const TABLAS_SOLO_ADMINISTRADORES = new Set([
   'modulos/administracion/permisosCentro/PermisosPorCentro.jsx',
   'modulos/administracion/permisosCentro/ConfigurarCentro.jsx',

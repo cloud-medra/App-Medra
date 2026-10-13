@@ -332,7 +332,7 @@ describe('Editar usuario: centro + rol', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('LABORATORIO – Encargado de centro aún no tiene permisos configurados');
     fireEvent.change(screen.getByLabelText('Rol'), { target: { value: 'admin' } });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    expect(screen.getByText('Su rol tiene acceso total: no usa la plantilla del centro.')).toBeInTheDocument();
+    expect(screen.getByText('Su rol (Administrador del sistema) no usa la plantilla del centro: solo sus permisos propios.')).toBeInTheDocument();
   });
 });
 

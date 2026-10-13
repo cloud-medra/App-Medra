@@ -12,7 +12,7 @@
 
 const { FieldValue } = require('firebase-admin/firestore');
 const {
-  combinar, normalizarExcepciones, idPlantilla, idPlantillaDeUsuario, esRolAccesoTotal, ROLES_CON_PLANTILLA, ROL_POR_DEFECTO, SIN_EXCEPCIONES,
+  combinar, normalizarExcepciones, idPlantilla, idPlantillaDeUsuario, esRolSinPlantilla, ROLES_CON_PLANTILLA, ROL_POR_DEFECTO, SIN_EXCEPCIONES,
 } = require('./nucleo.mjs');
 
 const ROL_DESTINO = ROL_POR_DEFECTO; // 'operador'
@@ -44,7 +44,7 @@ const migrarPlantillasPorRol = async (db, { aplicar = false } = {}) => {
     const nuevas = new Map(roles.map((r) => [idPlantilla(centroId, r), conflictos.includes(r)
       ? null // la existente se respeta
       : plantilla]));
-    const cambian = usuarios.filter((u) => !esRolAccesoTotal(u.rol)).filter((u) => {
+    const cambian = usuarios.filter((u) => !esRolSinPlantilla(u.rol)).filter((u) => {
       const exc = normalizarExcepciones(u.excepciones || SIN_EXCEPCIONES);
       const antes = combinar(plantilla, exc);
       const id = idPlantillaDeUsuario(centroId, u.rol || ROL_POR_DEFECTO);

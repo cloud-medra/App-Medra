@@ -20,6 +20,7 @@ import Spinner from '../../../../components/ui/Spinner';
 import EditarUsuario from './EditarUsuario';
 import CentroSelect from '../../../ui/CentroSelect';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
+import { useUser } from '../../../../context/UserContext';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { ROLES } from './roles';
 import {
@@ -53,6 +54,10 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
   const { showToast } = useToast();
   const { confirmAction } = useModal();
   const { hasPermission } = useGranularPermission();
+  const { userData } = useUser();
+  // Un Administrador no edita ni inactiva a un Desarrollador ni a sí mismo
+  // (anti-escalada; lo vuelve a exigir guardarPermisosUsuario).
+  const protegido = (usuario) => userData?.rol !== 'dev' && (usuario.rol === 'dev' || usuario.id === userData?.uid);
   const puedeDesbloquear = hasPermission('/administracion/listadoUsuario', 'tabla_usuarios', 'btn_desbloquear');
 
   const [usuarios, setUsuarios] = useState([]);
@@ -263,7 +268,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
   // sus vistas y vistas del menú sin configuración (bloqueadas hasta
   // configurarlas o correr la migración).
   const resumenGranular = (usuario) => {
-    if (usuario.rol === 'admin' || usuario.rol === 'dev') return null;
+    if (usuario.rol === 'dev') return null;
     const restricciones = resumenRestricciones(usuario.permisos, usuario.permisosGranulares, COMPONENT_MAPS);
     const sinConfigurar = completarVistasDelMenu(usuario.permisos, usuario.permisosGranulares, COMPONENT_MAPS)
       .agregadas.filter((p) => Object.values(usuario.permisos || {}).flat().includes(p));
@@ -409,14 +414,15 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                   const enEdicion = usuarioEditandoId === usuario.id;
                   const rolLabel = ROLES.find((r) => r.value === usuario.rol)?.label || usuario.rol;
                   const incompleta = creacionIncompleta(usuario);
+                  const soloLectura = protegido(usuario);
                   const { cantidad: cantidadModulos, labels: labelsModulos } = modulosAsignados(usuario);
 
                   return (
                     <tr
                       key={usuario.id}
-                      onClick={() => (incompleta ? null : abrirEdicion(usuario))}
+                      onClick={() => (incompleta || soloLectura ? null : abrirEdicion(usuario))}
                       className={`border-l-2 transition-colors ${
-                        incompleta
+                        incompleta || soloLectura
                           ? 'border-transparent bg-amber-50/60 dark:bg-amber-900/10'
                           : `cursor-pointer hover:bg-gray-50/80 dark:hover:bg-gray-700/40 ${
                               enEdicion ? 'border-[#2383C2] bg-[#2383C2]/5' : 'border-transparent'
@@ -424,7 +430,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                       }`}
                     >
                       <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-center" onClick={(e) => e.stopPropagation()}>
-                        {!incompleta && (
+                        {!incompleta && !soloLectura && (
                           <input type="checkbox" checked={seleccionados.has(usuario.id)} onChange={() => alternarSeleccion(usuario.id)}
                             aria-label={`Seleccionar ${usuario.nombreCompleto || usuario.email}`} className="accent-[#2383C2]" />
                         )}
@@ -582,6 +588,10 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                                   {desbloqueandoId === usuario.id ? <Spinner size="sm" /> : <LockOpen size={13} />}
                                 </button>
                               )}
+                              {soloLectura ? (
+                                <span title={usuario.rol === 'dev' ? 'Solo otro Desarrollador puede modificar a un Desarrollador' : 'No puedes modificar tu propio acceso'}
+                                  className="text-gray-400 dark:text-gray-500"><Lock size={13} /></span>
+                              ) : (<>
                               <button
                                 type="button"
                                 title={activo ? 'Inactivar usuario' : 'Activar usuario'}
@@ -614,6 +624,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                               >
                                 <Pencil size={13} />
                               </button>
+                              </>)}
                             </>
                           )}
                         </div>

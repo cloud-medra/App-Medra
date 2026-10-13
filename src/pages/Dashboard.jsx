@@ -29,7 +29,7 @@ import Estadisticas from '../components/modulos/administracion/estadisticas/Esta
 import PermisosPorCentro from '../components/modulos/administracion/permisosCentro/PermisosPorCentro';
 import ZonasDiagnostico from '../components/modulos/maestros/zonasDiagnostico/ZonasDiagnostico';
 import DescripcionesOcultas from '../components/modulos/maestros/descripcionesOcultas/DescripcionesOcultas';
-import { subItemsVisibles, puedeAbrirVista, esAdministrador } from '../config/accesoMenu';
+import { subItemsVisibles, puedeAbrirVista } from '../config/accesoMenu';
 import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
 
 // --- LABORATORIO ---
@@ -219,8 +219,8 @@ const Dashboard = () => {
   };
 
   const irAPermisosCentro = () => abrirVistaDeModulo('administracion', '/administracion/permisosCentro');
-  // Bloque "Período abierto": enlaza a Control Mensual solo para admin/dev.
-  const abrirControlMensual = esAdministrador(userData)
+  // Bloque "Período abierto": enlaza a Control Mensual solo si tiene el ítem.
+  const abrirControlMensual = subItemsVisibles(userData, 'administracion').some((s) => s.path === '/administracion/controlMensual')
     ? () => abrirVistaDeModulo('administracion', '/administracion/controlMensual')
     : undefined;
 
@@ -348,8 +348,9 @@ const Dashboard = () => {
 
   // --- ORDEN DE MÓDULOS APLICADO (usa userData.ordenModulos si existe) ---
   const modulosPermitidos = (() => {
-    // Los ítems "solo administradores" cuentan para admin/dev aunque no
-    // estén en sus permisos (ver src/config/accesoMenu.js).
+    // El Desarrollador ve todos los ítems y Administrador/Desarrollador los
+    // automáticos (Alertas) aunque no estén en sus permisos (ver
+    // src/config/accesoMenu.js).
     const base = Object.keys(MODULES).filter(
       (mKey) => (userData.permisos[mKey] || []).length > 0 || subItemsVisibles(userData, mKey).length > 0
     );
@@ -455,7 +456,7 @@ const Dashboard = () => {
               </div>
 
               <div className="space-y-1">
-                {AJUSTES_ITEMS.filter((item) => !item.soloAdminODev || puedeConfigurarAtajos(userData)).map((item) => (
+                {AJUSTES_ITEMS.filter((item) => !item.soloDesarrollador || puedeConfigurarAtajos(userData)).map((item) => (
                   <button
                     key={item.path}
                     onClick={() => setActiveView(item.path)}

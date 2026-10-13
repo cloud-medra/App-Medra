@@ -43,7 +43,8 @@ export const MAX_DESCRIPCION = 1000;
 export const DIAS_MAX_ATRASO = 90;
 export const HORA_VALIDA = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-const esAdministrador = (userData) => userData?.rol === 'admin' || userData?.rol === 'dev';
+// Solo el Desarrollador sin la vista (acceso total); el Administrador, con sus pestañas.
+const esAdministrador = (userData) => userData?.rol === 'dev';
 const tieneVista = (userData) => (userData?.permisos?.administracion || []).includes(RUTA_RECORDATORIOS);
 const tienePestana = (userData, ruta) => Boolean(userData?.permisosGranulares?.[ruta]);
 

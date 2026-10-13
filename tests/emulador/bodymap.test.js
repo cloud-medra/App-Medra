@@ -106,12 +106,14 @@ describe('reglas de maestros_zonas_diagnostico', () => {
   };
   const ID = idDescripcion('RUPTURA MANGUITO ROTADORES');
   const RUTA = '/maestros/zonasDiagnostico';
-  let admin; let editor; let lector;
+  let admin; let adminSinItem; let editor; let lector;
 
   beforeAll(async () => {
     await vaciar();
     await sembrar(`${COLECCION}/${ID}`, { descripcion: 'RUPTURA MANGUITO ROTADORES', zonas: ['hombro'], lado: 'no_especificado', estado: 'sugerida', gestiones: 33 });
-    admin = await sesion('admin', { rol: 'admin', permisos: {}, permisosGranulares: {} });
+    // `admin` = Desarrollador (acceso total); el Administrador se rige por sus permisos.
+    admin = await sesion('admin', { rol: 'dev', permisos: {}, permisosGranulares: {} });
+    adminSinItem = await sesion('adminsinitem', { rol: 'admin', permisos: {}, permisosGranulares: {} });
     editor = await sesion('editor', { rol: 'operador', permisos: { maestros: [RUTA] }, permisosGranulares: { [RUTA]: { tabla_datos: { visible: true, elements: { action_editar: true } } } } });
     lector = await sesion('lector', { rol: 'operador', permisos: { implantes: ['/implantes/gestionImplantes'] }, permisosGranulares: {} });
   });
@@ -125,6 +127,7 @@ describe('reglas de maestros_zonas_diagnostico', () => {
     await expect(updateDoc(doc(lector, COLECCION, ID), cambio)).rejects.toMatchObject({ code: 'permission-denied' });
     await expect(updateDoc(doc(editor, COLECCION, ID), cambio)).resolves.toBeUndefined();
     await expect(updateDoc(doc(admin, COLECCION, ID), { ...cambio, lado: 'bilateral' })).resolves.toBeUndefined();
+    await expect(updateDoc(doc(adminSinItem, COLECCION, ID), cambio)).rejects.toMatchObject({ code: 'permission-denied' });
     await expect(addDoc(collection(editor, COLECCION, ID, 'logs'), { accion: 'EDICION' })).resolves.toBeDefined();
     await expect(addDoc(collection(lector, COLECCION, ID, 'logs'), { accion: 'EDICION' })).rejects.toMatchObject({ code: 'permission-denied' });
   });

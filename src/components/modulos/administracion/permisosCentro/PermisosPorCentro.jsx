@@ -4,7 +4,7 @@ import { KeyRound, Search, X, AlertTriangle, SlidersHorizontal } from 'lucide-re
 import { db } from '../../../../firebaseConfig';
 import { useUser } from '../../../../context/UserContext';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
-import { esAdministrador } from '../../../../config/accesoMenu';
+import { puedeAdministrar } from '../../../../../functions/permisos/nucleo.mjs';
 import Spinner from '../../../ui/Spinner';
 import { usePlantillasPermisos, ROLES_CON_PLANTILLA, labelRol } from '../usuarios/permisosCentroCosto';
 import { resumenCentros, filtrarCentros } from './resumenCentros';
@@ -136,12 +136,12 @@ const Vista = ({ onEditarUsuario }) => {
   );
 };
 
-// Solo admin/dev (además del menú y del guard del Dashboard; las plantillas
-// solo las leen ellos según las reglas, y solo se escriben por la función).
+// Rol Administrador con este ítem, o Desarrollador (igual que las reglas de
+// plantillas_permisos y la función guardarPlantillaCentroCosto).
 const PermisosPorCentro = ({ onEditarUsuario }) => {
   const { userData } = useUser();
-  if (!esAdministrador(userData)) {
-    return <p className="py-10 text-center text-[12px] text-gray-500">Solo un administrador puede configurar los permisos por centro.</p>;
+  if (!puedeAdministrar(userData, ['/administracion/permisosCentro'])) {
+    return <p className="py-10 text-center text-[12px] text-gray-500">Solo un administrador con acceso a Permisos por centro puede configurarlos.</p>;
   }
   return <Vista onEditarUsuario={onEditarUsuario} />;
 };

@@ -52,7 +52,6 @@ const CargaDatos = () => {
   }
 
   const tieneAccesoAlModulo =
-    userData.rol === 'admin' ||
     userData.rol === 'dev' ||
     !!userData?.permisosGranulares?.[RUTA];
 

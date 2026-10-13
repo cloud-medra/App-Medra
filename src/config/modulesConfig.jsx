@@ -88,8 +88,9 @@ export const MODULES = {
       { label: 'Recordatorios', path: '/administracion/recordatorios', icon: <BellRing size={14} /> },
       { label: 'Crear Usuario', path: '/administracion/crearUsuario', icon: <UserPlus size={14} /> },
       { label: 'Lista Usuario', path: '/administracion/listadoUsuario', icon: <Users size={14} /> },
-      // Solo admin/dev (no se asigna por permisos): ver src/config/accesoMenu.js.
-      { label: 'Permisos por centro', path: '/administracion/permisosCentro', icon: <KeyRound size={14} />, soloAdministradores: true },
+      // Se asigna como cualquier ítem, pero solo sirve con rol Administrador
+      // (o Desarrollador): ver src/config/accesoMenu.js y functions/permisos.
+      { label: 'Permisos por centro', path: '/administracion/permisosCentro', icon: <KeyRound size={14} /> },
       { label: 'Cargas Consolidado', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} /> },
       { label: 'Estadísticas', path: '/administracion/estadisticas', icon: <BarChart3 size={14} /> }
     ]
@@ -208,8 +209,8 @@ export const AJUSTES_ITEMS = [
   { path: '/ajustes/configPrivacidad', label: 'Config. Privacidad', icon: <Lock size={15} /> },
   { path: '/settings/modulosVisibles', label: 'Módulos Visibles', icon: <Eye size={15} /> },
   { path: '/settings/ordenModulos', label: 'Orden de Módulos', icon: <ArrowUpDown size={15} /> },
-  // soloAdminODev: solo se muestra a los roles admin/dev (configuración global).
-  { path: '/settings/atajosDashboard', label: 'Atajos', icon: <Zap size={15} />, soloAdminODev: true },
+  // soloDesarrollador: solo se muestra al rol Desarrollador (configuración global).
+  { path: '/settings/atajosDashboard', label: 'Atajos', icon: <Zap size={15} />, soloDesarrollador: true },
   { path: '/ajustes/preferenciasGenerales', label: 'Preferencias Generales', icon: <Sliders size={15} /> },
   { path: '/ajustes/ayudaSoporte', label: 'Ayuda y Soporte', icon: <HelpCircle size={15} /> },
 ];

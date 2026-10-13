@@ -13,7 +13,9 @@
 //     (conserva las excepciones de cada uno).
 //   - guardarPlantillaCentroCosto: guarda la plantilla y recalcula a todos
 //     los usuarios de ese centro de costo, con sus excepciones.
-// Solo admin/dev activos. Nunca se deja el sistema sin administrador.
+// Solo Desarrollador, o Administrador con el ítem de Administración de cada
+// función (anti-escalada: ver exigirPuedeModificar). Nunca se deja el
+// sistema sin desarrollador.
 // Cada cambio queda en usuarios/{uid}/logs o plantillas_permisos/{id}/logs.
 // La lógica está en servicio.js.
 
@@ -29,13 +31,15 @@ const db = getFirestore();
 
 const REGION = 'us-central1';
 
-const callable = (nombre, opciones = {}) => onCall({ region: REGION, ...opciones }, async (request) => {
-  const por = await servicio.exigirAdministrador(db, request.auth?.uid);
+const callable = (nombre, rutas, opciones = {}) => onCall({ region: REGION, ...opciones }, async (request) => {
+  const por = await servicio.exigirAdministrador(db, request.auth?.uid, rutas);
   const resultado = await servicio[nombre](db, por, request.data, { auth: getAuth() });
   logger.info(nombre, { por: por.uid, resultado });
   return resultado;
 });
 
-exports.guardarPermisosUsuario = callable('guardarPermisosUsuario');
-exports.asignarCentroCostoMasivo = callable('asignarCentroCostoMasivo');
-exports.guardarPlantillaCentroCosto = callable('guardarPlantillaCentroCosto', { timeoutSeconds: 300 });
+const { RUTAS } = servicio;
+// Crear Usuario también guarda los permisos de la cuenta recién creada.
+exports.guardarPermisosUsuario = callable('guardarPermisosUsuario', [RUTAS.listado, RUTAS.crear]);
+exports.asignarCentroCostoMasivo = callable('asignarCentroCostoMasivo', [RUTAS.listado]);
+exports.guardarPlantillaCentroCosto = callable('guardarPlantillaCentroCosto', [RUTAS.permisosCentro], { timeoutSeconds: 300 });

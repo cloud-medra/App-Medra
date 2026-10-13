@@ -19,7 +19,8 @@ import {
 import BarraCentroCosto from './BarraCentroCosto';
 import AvisoCentroSinConfigurar from './AvisoCentroSinConfigurar';
 import { useModal } from '../../../../context/ModalContext';
-import { ROLES, esRolAccesoTotal, labelRol } from './roles';
+import { useUser } from '../../../../context/UserContext';
+import { esRolAccesoTotal, esRolSinPlantilla, labelRol, rolesAsignables } from './roles';
 import { errorNombreUsuario } from '../../../../../functions/usuarios/nombreUsuario.mjs';
 
 // Crear Usuario, con el mismo marco y el mismo editor de permisos que
@@ -57,6 +58,7 @@ const ESTADO_CREACION_INICIAL = {
 const SIN_PERMISOS = { permisos: {}, permisosGranulares: {} };
 
 const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro }) => {
+  const { userData } = useUser();
   const { showToast } = useToast();
   const { confirmAction } = useModal();
   const { datos: centros } = useCatalogo('centros');
@@ -95,11 +97,12 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
   const plantillaElegida = plantillaDeUsuario(plantillas, formData.centroCostoId, formData.rol);
   const plantilla = useMemo(() => completar(plantillaElegida || PERMISOS_VACIOS), [plantillaElegida]);
   const excepciones = useMemo(() => calcularExcepciones(plantilla, { permisos, permisosGranulares }), [plantilla, permisos, permisosGranulares]);
-  const accesoTotalRol = esRolAccesoTotal(formData.rol);
-  const origen = useMemo(() => (formData.centroCostoId && !accesoTotalRol ? crearOrigen(plantilla, excepciones) : undefined), [formData.centroCostoId, accesoTotalRol, plantilla, excepciones]);
+  // Administrador y Desarrollador no usan la plantilla del centro.
+  const sinPlantillaRol = esRolSinPlantilla(formData.rol);
+  const origen = useMemo(() => (formData.centroCostoId && !sinPlantillaRol ? crearOrigen(plantilla, excepciones) : undefined), [formData.centroCostoId, sinPlantillaRol, plantilla, excepciones]);
   const nombreCentro = (id) => centros.find((c) => c.id === id)?.nombre || 'centro sin nombre';
   const combinacion = formData.centroCostoId ? `${nombreCentro(formData.centroCostoId)} – ${labelRol(formData.rol)}` : null;
-  const centroSinConfigurar = Boolean(formData.centroCostoId) && !accesoTotalRol && plantillasCargadas && !plantillaElegida;
+  const centroSinConfigurar = Boolean(formData.centroCostoId) && !sinPlantillaRol && plantillasCargadas && !plantillaElegida;
   // Ir a Permisos por centro (con confirmación si hay cambios sin guardar).
   const configurarCentro = onIrAPermisosCentro && (() => (hayCambios
     ? confirmAction('Cambios sin guardar', 'Se descartará lo que no hayas guardado de este usuario.', onIrAPermisosCentro, { confirmText: 'Salir sin guardar', type: 'warning' })
@@ -355,14 +358,14 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
                   <CampoTexto id="nombreCompleto" name="nombreCompleto" label="Nombre completo" icon={User} value={formData.nombreCompleto} onChange={handleChange} placeholder="Ej: Juana Pérez Soto" />
                   <CampoTexto id="nombreUsuario" name="nombreUsuario" label="Nombre de usuario" icon={AtSign} value={formData.nombreUsuario} onChange={handleChange} placeholder="Ej: jperez" />
                   <CampoTexto id="email" name="email" type="email" label="Correo" icon={Mail} value={formData.email} onChange={handleChange} placeholder="ejemplo@medra.cl" ayuda="Será el correo de ingreso al sistema." />
-                  <CampoSelect id="rol" name="rol" label="Rol" icon={Shield} opciones={ROLES} value={formData.rol} onChange={handleChange}
+                  <CampoSelect id="rol" name="rol" label="Rol" icon={Shield} opciones={rolesAsignables(userData, formData.rol)} value={formData.rol} onChange={handleChange}
                     ayuda={accesoTotal ? 'Acceso total: no se aplican los permisos granulares.' : 'Los permisos se asignan en la pestaña Permisos.'} />
                   <Campo id="centroCosto" label="Centro de costo"
                     ayuda={usuarioId
                       ? 'Para cambiarlo, edita el usuario desde Listado Usuario.'
                       : formData.centroCostoId
-                        ? (accesoTotalRol
-                          ? 'Su rol tiene acceso total: no usa la plantilla del centro.'
+                        ? (sinPlantillaRol
+                          ? `Su rol (${labelRol(formData.rol)}) no usa la plantilla del centro: solo los permisos que le asignes.`
                           : plantillaElegida ? `Heredará los permisos de ${combinacion}: queda configurado al crear la cuenta.` : undefined)
                         : 'Opcional. Sin centro de costo, el usuario tendrá solo los permisos que le asignes.'}>
                     <CentroSelect todos value={formData.centroCostoId} onChange={(c) => setFormData((prev) => ({ ...prev, centroCostoId: c.id }))}
@@ -390,7 +393,8 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
           <BarraCentroCosto
             centro={combinacion}
             conPlantilla={Boolean(plantillaElegida)}
-            accesoTotal={accesoTotalRol}
+            sinPlantilla={sinPlantillaRol}
+            rol={labelRol(formData.rol)}
             excepciones={contarExcepciones(excepciones)}
             onRestablecer={() => { const p = efectivo(plantillaElegida, null); setPermisos(p.permisos); setPermisosGranulares(p.permisosGranulares); }}
             onConfigurarCentro={configurarCentro}
