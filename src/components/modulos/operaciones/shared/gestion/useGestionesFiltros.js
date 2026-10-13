@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
-import { obtenerFechaHoyISO } from '../utils/gestionesImportExport';
-import { ordenarMeses } from '../../../../../../utils/ordenarMeses';
-import { ocsDeGestion } from '../../../shared/ocIndex/indiceOC';
+import { obtenerFechaHoyISO } from '../../implantes/gestionImplantes/utils/gestionesImportExport';
+import { ordenarMeses } from '../../../../../utils/ordenarMeses';
+import { ocsDeGestion } from '../ocIndex/indiceOC';
 
 export const TAMANO_PAGINA_TABLA = 50;
 
@@ -26,7 +26,8 @@ export const opcionesPeriodoGestiones = (implantes, { filtroAnio = '', filtroMes
 };
 
 // `sinPeriodo`: arranca sin año/mes ni "hasta hoy" (solo valor inicial).
-export const useGestionesImplantesFiltros = (implantes, { sinPeriodo = false } = {}) => {
+// Filtros, búsqueda y paginación de Gestión (Implantes y Hemodinamia).
+export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
   const [busqueda, setBusqueda] = useState('');
 
   const fechaHoy = new Date();

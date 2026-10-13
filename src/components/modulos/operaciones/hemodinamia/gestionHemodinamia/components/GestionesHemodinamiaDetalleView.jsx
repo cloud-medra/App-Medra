@@ -19,6 +19,7 @@ import { ocsDeGestion } from '../../../shared/ocIndex/indiceOC';
 import { validarNuevaEmpresaFecha, extraerDatosBase } from '../../../shared/empresaFechaDesdeDetalle';
 import { HistorialLogsContenido } from '../GestionesHemodinamiaDrawers';
 import { CENTRO_HEMODINAMIA } from '../utils/constantesHemodinamia';
+import { nombreParaGuardar } from '../../../implantes/gestionImplantes/utils/camposPaciente';
 import { DocumentosTab } from '../../../shared/documentosAdmision/DocumentosTab';
 import { useDocumentosAdmision } from '../../../shared/documentosAdmision/useDocumentosAdmision';
 
@@ -447,6 +448,10 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
       return null;
     }
 
+    // Nombre en MAYÚSCULAS y sin espacios sobrantes (igual que Implantes;
+    // también corrige registros antiguos al guardarlos).
+    formDataParaGuardar = { ...formDataParaGuardar, nombre: nombreParaGuardar(formDataParaGuardar.nombre) };
+
     const payload = {
       admisionId: formDataParaGuardar.gestionId,
       paciente: {
@@ -714,6 +719,7 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
               periodoAbierto={periodoActivo}
               cargandoPeriodo={cargandoPeriodo}
               handleCopiarTexto={handleCopiarTexto}
+              onIrAInformacion={tabsPermitidas.some(t => t.id === 'informacion') ? () => setActiveTab('informacion') : undefined}
             />
           )}
 

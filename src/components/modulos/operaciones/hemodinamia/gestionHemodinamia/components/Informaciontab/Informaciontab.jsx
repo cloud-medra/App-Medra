@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import EmpresaSelect from '../EmpresaSelect';
 import { CENTRO_HEMODINAMIA } from '../../utils/constantesHemodinamia';
+import { soloDigitos, nombreEnMayusculas, limpiarInputConservandoCursor } from '../../../../implantes/gestionImplantes/utils/camposPaciente';
 import { verificarPeriodosBloque } from '../Cargastab/verificacionPeriodoBloque';
 import { useGranularPermission } from '../../../../../../../hooks/useGranularPermission';
 
@@ -168,9 +169,13 @@ export const InformacionTab = forwardRef(({
               <label className="font-semibold text-slate-600 dark:text-gray-300">ID / Nº Admisión</label>
               <input
                 type="text"
+                inputMode="numeric"
                 name="gestionId"
                 value={formData.gestionId}
-                onChange={handleGeneralChange}
+                // Solo dígitos (también al pegar); se guarda como string. Igual que Implantes.
+                onChange={(e) => handleGeneralChange({
+                  target: { name: 'gestionId', value: limpiarInputConservandoCursor(e.target, soloDigitos) }
+                })}
                 className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
@@ -181,7 +186,11 @@ export const InformacionTab = forwardRef(({
                 type="text"
                 name="nombre"
                 value={formData.nombre}
-                onChange={handleGeneralChange}
+                // MAYÚSCULAS al escribir o pegar, sin mover el cursor. El trim
+                // se hace al guardar (GestionesHemodinamiaDetalleView).
+                onChange={(e) => handleGeneralChange({
+                  target: { name: 'nombre', value: limpiarInputConservandoCursor(e.target, nombreEnMayusculas) }
+                })}
                 placeholder="Nombre del paciente"
                 className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
               />

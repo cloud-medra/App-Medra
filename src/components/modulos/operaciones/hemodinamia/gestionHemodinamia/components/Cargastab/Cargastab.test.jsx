@@ -179,3 +179,34 @@ describe('Cargas: contenido de un PAD', () => {
     expect(screen.queryByLabelText('Referencia contenido')).not.toBeInTheDocument();
   });
 });
+
+describe('Hemodinamia Cargas: igual que Implantes', () => {
+  it('muestra las notas de la admisión', () => {
+    render(
+      <CargasTab
+        formData={{ bloques: [{ cotizaciones: [], solicitud: '' }], descripcion: 'ANGIOPLASTIA', observacion: 'SIN OBS' }}
+        bloqueActivoIndex={0}
+        onAgregarItem={onAgregarItem}
+        periodoAbierto={{ anio: 2026, mes: 'OCTUBRE' }}
+        cargandoPeriodo={false}
+      />
+    );
+    expect(screen.getByText('Notas de la admisión')).toBeInTheDocument();
+  });
+
+  it('las líneas ya registradas del contenido del PAD se pueden editar', async () => {
+    montar();
+    escribir('N° Cotización', 'COT-1');
+    escribir('Referencia', 'PAD');
+    elegirSugerencia('PAD RODILLA');
+    escribir('Cantidad', '1');
+    escribir('Referencia contenido', 'TORNILLO 3.5');
+    escribir('Cantidad contenido', '2');
+    fireEvent.click(screen.getByTitle('Registrar esta línea de contenido'));
+    await esperarFoco();
+    expect(screen.getByRole('table', { name: 'Contenido del PAD registrado' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Editar TORNILLO 3.5' }));
+    expect(screen.getByRole('group', { name: 'Editar TORNILLO 3.5' })).toBeInTheDocument();
+  });
+});
+

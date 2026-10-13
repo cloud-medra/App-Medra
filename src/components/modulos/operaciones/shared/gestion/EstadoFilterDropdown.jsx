@@ -1,17 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useDropdownFlotante } from '../../../../../../hooks/useDropdownFlotante';
+import { useDropdownFlotante } from '../../../../../hooks/useDropdownFlotante';
 import { ListFilter, ChevronDown, Check } from 'lucide-react';
-
-const ESTADO_COLORS = {
-  AGENDADO: 'bg-yellow-400',
-  AGENDANDO: 'bg-yellow-400',
-  PENDIENTE: 'bg-orange-500',
-  CARGADO: 'bg-emerald-500',
-  'S/COTIZACION': 'bg-purple-600',
-  'SIN COTIZACION': 'bg-purple-600',
-  INCOMPLETO: 'bg-sky-400',
-};
+import { coloresEstadoGestion } from '../estadoGestion/estadosGestion';
 
 export const EstadoFilterDropdown = ({
   opcionesEstados,
@@ -67,7 +58,7 @@ export const EstadoFilterDropdown = ({
                 className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <span className="flex items-center gap-1.5">
-                  <span className={`h-2 w-2 rounded-full inline-block ${ESTADO_COLORS[estado] || 'bg-gray-400'}`} />
+                  <span className={`h-2 w-2 rounded-full inline-block ${coloresEstadoGestion(estado).punto}`} />
                   {estado}
                 </span>
                 {seleccionado && <Check size={13} className="text-[#2383C2]" />}

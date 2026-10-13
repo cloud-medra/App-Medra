@@ -27,6 +27,7 @@ import { periodoImputacion, bloqueParaImputacion, camposSolicitudDe } from '../.
 import { refImputada, construirPayloadImputada } from '../utils/imputadaSync';
 import { registrarLogHemodinamia } from '../utils/registrarLogHemodinamia';
 import { calcularOcPendiente, itemsDeGestion } from '../../../shared/ocIndex/indiceOC';
+import { ordenarGestiones } from '../../../implantes/gestionImplantes/utils/ordenGestiones';
 import { existeGestionEnColeccion, extraerDatosBase, MENSAJE_DUPLICADO } from '../../../shared/empresaFechaDesdeDetalle';
 import { calcularFechaRegistroAdmision } from '../../../shared/fechaRegistroAdmision';
 
@@ -173,12 +174,9 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
         active: true,
         ...document.data()
       }));
-      mapeados.sort((a, b) => {
-        const millisA = a.fechaRegistro?.toMillis ? a.fechaRegistro.toMillis() : new Date(a.fechaRegistro || 0).getTime();
-        const millisB = b.fechaRegistro?.toMillis ? b.fechaRegistro.toMillis() : new Date(b.fechaRegistro || 0).getTime();
-        return millisB - millisA;
-      });
-      return mapeados;
+      // Orden por defecto (igual que Implantes): fecha de la gestión (la
+      // columna "Fecha"), luego nombre y empresa. Ver ordenGestiones.js.
+      return ordenarGestiones(mapeados);
     };
 
     if (!admision && refPath) {

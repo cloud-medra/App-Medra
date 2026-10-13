@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Plus, Save, X, Info, Loader2, AlertCircle } from 'lucide-react';
-import EmpresaSelect from './EmpresaSelect';
-import { CENTRO_HEMODINAMIA } from '../utils/constantesHemodinamia';
+import EmpresaSelect from '../../implantes/gestionImplantes/components/EmpresaSelect';
+import EstadoBadge from '../estadoGestion/EstadoBadge';
+import { moduloGestion } from '../modulosGestion';
 
-const GestionesHemodinamiaForm = ({
+// Formulario de registro de Gestión de Implantes y de Hemodinamia (`modulo`,
+// ver modulosGestion.js: centro, atributo y textos).
+const GestionesForm = ({
+  modulo = 'implantes',
   formData,
   setFormData,
   editingId,
@@ -11,6 +15,7 @@ const GestionesHemodinamiaForm = ({
   handleIdChange,
   cancelarEdicion
 }) => {
+  const config = moduloGestion(modulo);
   const [errorFecha, setErrorFecha] = useState(false);
 
   const onSubmitForm = (e) => {
@@ -61,7 +66,7 @@ const GestionesHemodinamiaForm = ({
             value={formData.nombre || ''}
             onChange={e => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
             className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 uppercase"
-            placeholder="Nombre del paciente"
+            placeholder={config.placeholderNombre}
           />
         </div>
 
@@ -122,7 +127,7 @@ const GestionesHemodinamiaForm = ({
             <input
               type="text"
               value={formData.observacion || ''}
-              onChange={e => setFormData({ ...formData, observacion: e.target.value })}
+              onChange={e => setFormData({ ...formData, observacion: e.target.value.toUpperCase() })}
               className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
               placeholder="Observación libre..."
             />
@@ -157,22 +162,20 @@ const GestionesHemodinamiaForm = ({
         <div className="flex items-center gap-1">
           <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Centro:</span>
           <span className="font-semibold text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[10px]">
-            {CENTRO_HEMODINAMIA}
+            {config.centroDe(formData)}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
           <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Atributo:</span>
           <span className="font-semibold text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[10px]">
-            {formData.atributo || 'HEMODINAMIA'}
+            {formData.atributo || config.atributoPorDefecto}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
           <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Estado:</span>
-          <span className="font-semibold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded text-[10px]">
-            {formData.estado || 'AGENDANDO'}
-          </span>
+          <EstadoBadge estado={formData.estado || 'AGENDANDO'} ancho={false} />
         </div>
 
         <div className="flex items-center gap-1">
@@ -214,4 +217,4 @@ const GestionesHemodinamiaForm = ({
   );
 };
 
-export default GestionesHemodinamiaForm;
+export default GestionesForm;
