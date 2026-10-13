@@ -1,4 +1,4 @@
-import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   UploadCloud,
   Building2,
@@ -23,6 +23,8 @@ import { CotizacionCard } from './CotizacionCard';
 import { construirItemContenidoPadDesdeFila } from './PadContenidoRow';
 import { construirItemLoteDesdeFila } from './loteAdicionalHelpers';
 import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
+// Foco para ingresar ítems seguidos con el teclado (ver src/utils/foco.js).
+import { enfocar, alPresionarEnter } from '../../../../../../../utils/foco';
 
 const PATH_VISTA = '/hemodinamia/gestionHemodinamia/cargas';
 
@@ -76,6 +78,11 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
   const bloqueado = bloqueSolicitado && !desbloqueadoLocal;
 
   const [nuevoItem, setNuevoItem] = useState(INITIAL_ITEM);
+  const numCotizacionRef = useRef(null);
+  const referenciaRef = useRef(null);
+  const cantidadRef = useRef(null);
+  const referenciaContenidoRef = useRef(null);
+  const cantidadContenidoRef = useRef(null);
   const [errores, setErrores] = useState({});
   const [esPad, setEsPad] = useState(false);
   const [contenidoPad, setContenidoPad] = useState([]);
@@ -242,6 +249,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
 
     if (Object.keys(err).length > 0) {
       setErrorDraftContenido(err);
+      enfocar(err.referencia ? referenciaContenidoRef : cantidadContenidoRef);
       return;
     }
 
@@ -257,6 +265,8 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
     setContenidoPad(prev => [...prev, filaRegistrada]);
     setDraftContenido(DRAFT_CONTENIDO_VACIO);
     setErrorDraftContenido({});
+    // Siguiente línea del contenido del PAD (no la Referencia principal).
+    enfocar(referenciaContenidoRef);
   };
 
   const handleEliminarContenidoRegistrado = (tempId) => {
@@ -391,11 +401,15 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
 
     if (Object.keys(err).length > 0) {
       setErrores(err);
+      // Primer campo con error; los datos ingresados se conservan.
+      enfocar(err.numCotizacion ? numCotizacionRef : err.referencia ? referenciaRef : cantidadRef);
       return;
     }
 
     construirItemsDesdeFormulario().forEach(item => onAgregarItem(bloqueActivoIndex, item));
     limpiarFormularioNuevoItem();
+    // Lista para la siguiente referencia (el formulario la deja vacía).
+    enfocar(referenciaRef);
   };
 
   const handleAbrirCandado = async () => {
@@ -580,6 +594,8 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 <span className="text-red-500">*</span>
               </label>
               <input
+                ref={numCotizacionRef}
+                aria-label="N° Cotización"
                 type="text"
                 value={nuevoItem.numCotizacion}
                 onChange={e => handleChange('numCotizacion', e.target.value)}
@@ -612,6 +628,8 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 <span className="text-red-500">*</span>
               </label>
               <input
+                ref={referenciaRef}
+                aria-label="Referencia"
                 type="text"
                 value={nuevoItem.referencia}
                 onChange={e => handleChange('referencia', e.target.value)}
@@ -658,6 +676,8 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 <span className="text-red-500">*</span>
               </label>
               <input
+                ref={cantidadRef}
+                aria-label="Cantidad"
                 type="number"
                 value={nuevoItem.cantidad}
                 onChange={e => handleChange('cantidad', e.target.value)}
@@ -695,8 +715,10 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 ) : (
                   <input
                     type="date"
+                    aria-label="Vencimiento"
                     value={nuevoItem.vencimiento}
                     onChange={e => handleChange('vencimiento', e.target.value)}
+                    onKeyDown={alPresionarEnter(() => { if (!sinPeriodoAbierto && !bloqueado) handleAgregar(); })}
                     className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
                   />
                 )}
@@ -745,6 +767,8 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 <div className="flex flex-col gap-1 relative md:col-span-2" ref={containerRefContenido}>
                   <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Referencia contenido</label>
                   <input
+                    ref={referenciaContenidoRef}
+                    aria-label="Referencia contenido"
                     type="text"
                     value={draftContenido.referencia}
                     onChange={e => handleDraftReferenciaChange(e.target.value)}
@@ -785,6 +809,8 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Cant.</label>
                   <input
+                    ref={cantidadContenidoRef}
+                    aria-label="Cantidad contenido"
                     type="number"
                     value={draftContenido.cantidad}
                     onChange={e => handleDraftChange('cantidad', e.target.value)}
@@ -809,8 +835,10 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Vencimiento</label>
                     <input
                       type="date"
+                      aria-label="Vencimiento contenido"
                       value={draftContenido.vencimiento}
                       onChange={e => handleDraftChange('vencimiento', e.target.value)}
+                      onKeyDown={alPresionarEnter(handleRegistrarContenido)}
                       className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                     />
                   </div>

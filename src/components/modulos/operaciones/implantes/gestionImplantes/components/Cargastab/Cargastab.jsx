@@ -26,6 +26,8 @@ import ContenidoPadRegistrado from './ContenidoPadRegistrado';
 import NotasAdmision from './NotasAdmision';
 import { construirItemLoteDesdeFila } from './loteAdicionalHelpers';
 import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
+// Foco para ingresar ítems seguidos con el teclado (ver src/utils/foco.js).
+import { enfocar, alPresionarEnter } from '../../../../../../../utils/foco';
 
 const PATH_VISTA = '/implantes/gestionImplantes/cargas';
 const PATH_INFORMACION = '/implantes/gestionImplantes/informacion';
@@ -60,18 +62,6 @@ const DRAFT_CONTENIDO_VACIO = {
 };
 
 const DRAFT_LOTE_VACIO = { cantidad: '', lote: '', vencimiento: '' };
-
-// Foco del teclado para ingresar muchas referencias seguidas: después del
-// re-render (el campo puede cambiar, ej. al agregar un PAD se oculta su
-// contenido), como en EgresoPorEscaneo.
-const enfocar = (ref) => setTimeout(() => ref.current?.focus(), 0);
-// Enter en el último campo: agrega el ítem / registra la línea (nunca envía
-// ni guarda la carga completa).
-const alPresionarEnter = (accion) => (e) => {
-  if (e.key !== 'Enter' || e.nativeEvent?.isComposing) return;
-  e.preventDefault();
-  accion();
-};
 
 export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarItem, onEliminarItem, onEliminarCotizacion, onActualizarEstadoItem, onEditarItem, periodoAbierto, cargandoPeriodo, handleCopiarTexto, onIrAInformacion }, ref) => {
   const bloqueActivo = formData?.bloques?.[bloqueActivoIndex];
