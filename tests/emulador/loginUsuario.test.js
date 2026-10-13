@@ -124,6 +124,42 @@ describe('iniciarSesion: usuario inactivo', () => {
   });
 });
 
+describe('inactivar / reactivar (guardarPermisosUsuario) también en Auth', () => {
+  it('inactivar deshabilita la cuenta y revoca sus sesiones; reactivar la habilita', async () => {
+    const uid = await crearCuenta({ email: 'ana@medra.cl', nombreUsuario: 'aperez' });
+    const antes = Date.now();
+    await permisos.guardarPermisosUsuario(db, YO, { uid, datos: { activo: false } }, { auth });
+    const cuenta = await auth.getUser(uid);
+    expect(cuenta.disabled).toBe(true);
+    expect(new Date(cuenta.tokensValidAfterTime).getTime()).toBeGreaterThanOrEqual(Math.floor(antes / 1000) * 1000);
+    // Deshabilitada en Auth no se puede verificar la contraseña: mensaje genérico (seguridad primero).
+    await expect(login({ identificador: 'aperez', password: 'secreto123' })).rejects.toEqual(rechazo('unauthenticated', INCORRECTO));
+
+    await permisos.guardarPermisosUsuario(db, YO, { uid, datos: { activo: true } }, { auth });
+    expect((await auth.getUser(uid)).disabled).toBe(false);
+    expect((await entrarYLeerPerfil((await login({ identificador: 'aperez', password: 'secreto123' })).token)).uid).toBe(uid);
+  });
+
+  it('un usuario sin cuenta de Auth se inactiva igual', async () => {
+    await db.collection('usuarios').doc('legado').set({ nombreCompleto: 'Legado', rol: 'operador', permisos: {}, permisosGranulares: {} });
+    await expect(permisos.guardarPermisosUsuario(db, YO, { uid: 'legado', datos: { activo: false } }, { auth })).resolves.toMatchObject({ ok: true });
+  });
+
+  it('script: revisa y deshabilita a los inactivos de antes; informa los activos deshabilitados', async () => {
+    const viejo = await crearCuenta({ email: 'viejo@medra.cl', nombreUsuario: 'viejo', activo: false });
+    const raro = await crearCuenta({ email: 'raro@medra.cl', nombreUsuario: 'raro' });
+    await auth.updateUser(raro, { disabled: true });
+    await crearCuenta({ email: 'ok@medra.cl', nombreUsuario: 'ok' });
+    const r = await servicio.revisarInactivosEnAuth(db, auth);
+    expect(r.pendientes.map((u) => u.uid)).toEqual([viejo]);
+    expect(r.activosDeshabilitados.map((u) => u.uid)).toEqual([raro]);
+    expect((await auth.getUser(viejo)).disabled).toBe(false); // la revisión no escribe
+    expect(await servicio.deshabilitarEnAuth(auth, [viejo])).toEqual({ deshabilitados: 1, errores: [] });
+    expect((await auth.getUser(viejo)).disabled).toBe(true);
+    expect((await servicio.revisarInactivosEnAuth(db, auth)).pendientes).toEqual([]);
+  });
+});
+
 describe('iniciarSesion: bloqueo por intentos fallidos', () => {
   it('5 fallos bloquean la cuenta 15 minutos, entrando con el nombre o con el correo', async () => {
     const uid = await crearCuenta({ email: 'ana@medra.cl', nombreUsuario: 'aperez' });

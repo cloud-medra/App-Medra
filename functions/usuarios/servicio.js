@@ -253,7 +253,49 @@ const indexarNombresUsuario = async (db, entradas) => {
   return { escritas, omitidas };
 };
 
+// --- Usuarios inactivos deshabilitados en Auth -----------------------------
+
+// Compara usuarios/* (activo) con Auth (disabled). No modifica nada.
+//   pendientes: inactivos con la cuenta de Auth aún habilitada.
+//   activosDeshabilitados: activos con la cuenta deshabilitada (solo se
+//   informa; se corrige reactivándolos desde Lista de usuarios).
+const revisarInactivosEnAuth = async (db, auth) => {
+  const usuarios = (await db.collection('usuarios').get()).docs.map((d) => ({ uid: d.id, ...d.data() }));
+  const cuentas = new Map();
+  for (let i = 0; i < usuarios.length; i += 100) {
+    const { users } = await auth.getUsers(usuarios.slice(i, i + 100).map((u) => ({ uid: u.uid })));
+    users.forEach((c) => cuentas.set(c.uid, c));
+  }
+  const resultado = { total: usuarios.length, pendientes: [], yaDeshabilitados: [], activosDeshabilitados: [], sinCuenta: [] };
+  usuarios.forEach((u) => {
+    const cuenta = cuentas.get(u.uid);
+    const fila = resumen(u);
+    if (!cuenta) {
+      if (u.activo === false) resultado.sinCuenta.push(fila);
+    } else if (u.activo === false) {
+      resultado[cuenta.disabled ? 'yaDeshabilitados' : 'pendientes'].push(fila);
+    } else if (cuenta.disabled) {
+      resultado.activosDeshabilitados.push(fila);
+    }
+  });
+  return resultado;
+};
+
+// Deshabilita en Auth y revoca las sesiones de esos usuarios.
+const deshabilitarEnAuth = async (auth, uids) => {
+  const errores = [];
+  for (const uid of uids) {
+    try {
+      await auth.updateUser(uid, { disabled: true });
+      await auth.revokeRefreshTokens(uid);
+    } catch (err) {
+      errores.push({ uid, error: err.message });
+    }
+  }
+  return { deshabilitados: uids.length - errores.length, errores };
+};
+
 module.exports = {
   iniciarSesion, verificarPasswordRest, crearUsuario, desbloquearUsuario, exigirAccion, ACCION_DESBLOQUEAR,
-  revisarNombresUsuario, indexarNombresUsuario, MAX_FALLOS,
+  revisarNombresUsuario, indexarNombresUsuario, revisarInactivosEnAuth, deshabilitarEnAuth, MAX_FALLOS,
 };

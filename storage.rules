@@ -9,6 +9,14 @@ service firebase.storage {
     function getUsuario() {
       return firestore.get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data;
     }
+    // Sesión de un usuario activo (mismo criterio que firestore.rules: un
+    // token emitido antes de inactivarlo sigue valiendo hasta una hora).
+    // Sin perfil o sin el campo `activo`, se considera activo.
+    function estaActivo() {
+      return request.auth != null
+        && (!firestore.exists(/databases/(default)/documents/usuarios/$(request.auth.uid))
+          || getUsuario().get('activo', true) != false);
+    }
     function esAdminODev() {
       let u = getUsuario();
       return u.rol == 'admin' || u.rol == 'dev';
@@ -40,7 +48,7 @@ service firebase.storage {
     // así que a diferencia del patrón de lectura abierta de firestore.rules
     // se restringe también la lectura al mismo permiso que la escritura.
     match /snapshots/documentos_sistema/{archivo} {
-      allow read, write: if request.auth != null && (esAdminODev() || tienePermiso('documentos'));
+      allow read, write: if estaActivo() && (esAdminODev() || tienePermiso('documentos'));
     }
 
     // Índice de OC (Importar Detalles OC -> "Sincronizar OC" de Gestión de
@@ -51,8 +59,8 @@ service firebase.storage {
     // Consignación también lo lee (su "Sincronizar OC" llena el N° de orden de
     // consignacion_registros), pero no lo escribe.
     match /snapshots/indiceOC/{archivo} {
-      allow read: if request.auth != null && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow read: if estaActivo() && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
     }
 
     // PDFs de cada admisión de Implantes (pestaña Documentos de Gestión
@@ -62,8 +70,8 @@ service firebase.storage {
     // operación (listar, subir cada PDF, abrir uno). Se mantiene a propósito
     // también en "create": son documentos con datos de pacientes.
     match /implantes/{admision}/documentos/{archivo} {
-      allow read: if request.auth != null && (esAdminODev() || tienePermiso('implantes'));
-      allow create: if request.auth != null
+      allow read: if estaActivo() && (esAdminODev() || tienePermiso('implantes'));
+      allow create: if estaActivo()
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('.*\\.pdf$')
         && request.resource.size < 20 * 1024 * 1024
@@ -77,8 +85,8 @@ service firebase.storage {
     // getBlob (sin URLs públicas). Tope: 15 MB.
     // Consignación solo puede verlos/descargarlos (pestaña Orden de Cargas).
     match /ordenes_oc/{archivo} {
-      allow read: if request.auth != null && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
-      allow create, update: if request.auth != null
+      allow read: if estaActivo() && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes') || tienePermiso('consignacion'));
+      allow create, update: if estaActivo()
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('OC_[^/]+\\.pdf')
         && request.resource.size < 15 * 1024 * 1024
@@ -89,15 +97,15 @@ service firebase.storage {
     // descargar. Borrar: "eliminar definitivamente" o, para quien sube, el
     // archivo huérfano cuyo registro en Firestore no llegó a crearse.
     match /implantes_respaldo/{docId}/{archivo} {
-      allow read: if request.auth != null
+      allow read: if estaActivo()
         && (accionEnVista('implantes', '/implantes/respaldoDocumentos', 'tabla_documentos', 'btn_ver')
           || accionEnVista('implantes', '/implantes/respaldoDocumentos', 'tabla_documentos', 'btn_descargar'));
-      allow create: if request.auth != null
+      allow create: if estaActivo()
         && request.resource.contentType == 'application/pdf'
         && archivo.matches('.*\\.pdf$')
         && request.resource.size <= 20 * 1024 * 1024
         && accionEnVista('implantes', '/implantes/respaldoDocumentos', 'acciones', 'btn_subir');
-      allow delete: if request.auth != null
+      allow delete: if estaActivo()
         && (accionEnVista('implantes', '/implantes/respaldoDocumentos', 'papelera', 'btn_eliminar_definitivo')
           || (accionEnVista('implantes', '/implantes/respaldoDocumentos', 'acciones', 'btn_subir')
             && !firestore.exists(/databases/(default)/documents/implantes_respaldo_documentos/$(docId))));
@@ -106,14 +114,14 @@ service firebase.storage {
     // Documentos → Archivo digital (PDF, JPG, PNG, WEBP hasta 25 MB). Mismo
     // criterio que el respaldo; renombrar y mover no tocan Storage.
     match /documentos_archivo/{nodoId}/{archivo} {
-      allow read: if request.auth != null
+      allow read: if estaActivo()
         && (accionEnVista('documentos', '/documentos/archivoDigital', 'archivos', 'btn_ver')
           || accionEnVista('documentos', '/documentos/archivoDigital', 'archivos', 'btn_descargar'));
-      allow create: if request.auth != null
+      allow create: if estaActivo()
         && request.resource.contentType in ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
         && request.resource.size <= 25 * 1024 * 1024
         && accionEnVista('documentos', '/documentos/archivoDigital', 'archivos', 'btn_subir');
-      allow delete: if request.auth != null
+      allow delete: if estaActivo()
         && (accionEnVista('documentos', '/documentos/archivoDigital', 'papelera', 'btn_eliminar_definitivo')
           || (accionEnVista('documentos', '/documentos/archivoDigital', 'archivos', 'btn_subir')
             && !firestore.exists(/databases/(default)/documents/documentos_archivo/$(nodoId))));

@@ -9,7 +9,8 @@ export const UserProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true); // Nuevo estado de carga global
   // Por qué no se pudo cargar el perfil del usuario autenticado:
-  // null | 'sin-perfil' (no existe usuarios/{uid}) | 'error-carga'.
+  // null | 'sin-perfil' (no existe usuarios/{uid}) | 'inactivo' (un admin
+  // lo inactivó; LoginForm cierra la sesión con el aviso) | 'error-carga'.
   const [perfilError, setPerfilError] = useState(null);
 
 // El perfil propio se ESCUCHA (no se lee una sola vez): si un administrador
@@ -51,7 +52,12 @@ useEffect(() => {
     dejarDeEscuchar = onSnapshot(
       doc(db, "usuarios", currentUser.uid),
       (userDoc) => {
-        if (userDoc.exists()) {
+        if (userDoc.exists() && userDoc.data().activo === false) {
+          // Inactivado (también con la sesión ya abierta): las reglas ya le
+          // niegan todo; sin userData, ProtectedRoute lo lleva al login.
+          setUserData(null);
+          setPerfilError('inactivo');
+        } else if (userDoc.exists()) {
           setUserData({ ...userDoc.data(), uid: currentUser.uid });
           setPerfilError(null);
         } else {

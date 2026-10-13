@@ -94,7 +94,22 @@ const registrarLog = (escritor, ref, accion, por, detalle) => escritor.set(ref.c
   accion, detalle, usuario: por.nombre, usuarioUid: por.uid, fecha: FieldValue.serverTimestamp(),
 });
 
-const guardarPermisosUsuario = async (db, por, data) => {
+// Activo/inactivo también en Auth: inactivo = cuenta deshabilitada (no puede
+// entrar por ninguna vía, ni refrescar su sesión) y sesiones revocadas. Se
+// aplica cada vez que llega `activo` (idempotente), así un fallo anterior se
+// corrige al volver a guardar. Una cuenta sin usuario de Auth se ignora.
+const sincronizarActivoEnAuth = async (auth, uid, activo) => {
+  try {
+    await auth.updateUser(uid, { disabled: !activo });
+    if (!activo) await auth.revokeRefreshTokens(uid);
+  } catch (err) {
+    if (err.code === 'auth/user-not-found') return;
+    throw new HttpsError('failed-precondition', `Se guardaron los cambios, pero no se pudo ${activo ? 'habilitar' : 'deshabilitar'} la cuenta de acceso. Vuelve a guardar.`);
+  }
+};
+
+// opciones.auth: Admin SDK de Auth (para activar/inactivar la cuenta).
+const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
   const { uid, datos = {}, rol, centroCostoId, excepciones } = data || {};
   if (typeof uid !== 'string' || !uid) throw new HttpsError('invalid-argument', 'Usuario inválido.');
   if (rol !== undefined && !VALORES_ROL.includes(rol)) throw new HttpsError('invalid-argument', 'Rol inválido.');
@@ -151,6 +166,7 @@ const guardarPermisosUsuario = async (db, por, data) => {
     if (Object.keys(cambios).length) registrarLog(t, refUsuario(db, uid), 'PERMISOS', por, cambios);
     return { cambios };
   });
+  if (auth && actualizacion.activo !== undefined) await sincronizarActivoEnAuth(auth, uid, actualizacion.activo);
   return { ok: true, campos: Object.keys(resultado.cambios) };
 };
 

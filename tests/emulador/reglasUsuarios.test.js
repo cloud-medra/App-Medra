@@ -93,6 +93,20 @@ describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
   });
 });
 
+describe('usuarios inactivos: un token ya emitido no sirve', () => {
+  it('con la sesión abierta, un inactivo solo lee su propio perfil; nada más', async () => {
+    const inactivo = await sesion('inactivo', { rol: 'admin', nombreCompleto: 'Inactivo', activo: false, permisos: PERMISOS, permisosGranulares: {} });
+    await expect(getDoc(usuario(inactivo))).resolves.toBeTruthy();
+    await expect(getDoc(usuario(inactivo, operador.uid))).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(getDoc(doc(inactivo.db, 'plantillas_permisos', 'lab'))).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(updateDoc(usuario(inactivo), { modoPantalla: 'oscuro' })).rejects.toMatchObject({ code: 'permission-denied' });
+    // Los activos, igual que antes (con y sin el campo `activo`).
+    await expect(getDoc(usuario(operador, inactivo.uid))).resolves.toBeTruthy();
+    const conCampo = await sesion('activo', { rol: 'operador', nombreCompleto: 'Activo', activo: true, permisos: {}, permisosGranulares: {} });
+    await expect(getDoc(usuario(conCampo, operador.uid))).resolves.toBeTruthy();
+  });
+});
+
 describe('usuarios: crear (Crear Usuario)', () => {
   it('el documento base lo crea la función crearUsuario: nadie lo crea desde el navegador (ni admin)', async () => {
     await expect(setDoc(doc(admin.db, 'usuarios', 'nuevo1'), { nombreCompleto: 'Nuevo', rol: 'operador', permisos: {}, permisosGranulares: {} })).rejects.toMatchObject({ code: 'permission-denied' });

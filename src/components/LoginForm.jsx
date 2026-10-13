@@ -75,9 +75,10 @@ const LoginForm = () => {
   // próximo intento parta limpio.
   useEffect(() => {
     if (!perfilError || !auth.currentUser) return;
-    const mensaje = perfilError === 'sin-perfil'
-      ? "Tu usuario no tiene un perfil configurado en la base de datos."
-      : "No se pudo cargar tu perfil. Inténtalo nuevamente.";
+    const mensaje = {
+      'sin-perfil': "Tu usuario no tiene un perfil configurado en la base de datos.",
+      inactivo: MENSAJE_USUARIO_DESHABILITADO,
+    }[perfilError] || "No se pudo cargar tu perfil. Inténtalo nuevamente.";
     signOut(auth)
       .catch((error) => console.error('Error al cerrar sesión:', error))
       .finally(() => {

@@ -16,9 +16,12 @@ vi.mock('firebase/functions', () => ({
   },
 }));
 const signInWithCustomToken = vi.fn(async () => ({}));
-vi.mock('firebase/auth', () => ({ signInWithCustomToken: (...a) => signInWithCustomToken(...a), signOut: vi.fn() }));
-vi.mock('../firebaseConfig', () => ({ auth: { currentUser: null }, functions: {} }));
-vi.mock('../context/UserContext', () => ({ useUser: () => ({ userData: null, loading: false, perfilError: null }) }));
+const signOut = vi.fn(async () => {});
+vi.mock('firebase/auth', () => ({ signInWithCustomToken: (...a) => signInWithCustomToken(...a), signOut: (...a) => signOut(...a) }));
+const authMock = { currentUser: null };
+vi.mock('../firebaseConfig', () => ({ auth: authMock, functions: {} }));
+let perfilError = null;
+vi.mock('../context/UserContext', () => ({ useUser: () => ({ userData: null, loading: false, perfilError }) }));
 vi.mock('framer-motion', () => ({ motion: { img: (props) => <img alt={props.alt} /> } }));
 
 const { default: LoginForm } = await import('./LoginForm');
@@ -72,5 +75,17 @@ describe('LoginForm: usuario o correo', () => {
     await ingresar('   ', 'secreto123');
     expect(llamadas).toEqual([]);
     expect(screen.getByText('Ingresa tu usuario o correo')).toBeInTheDocument();
+  });
+});
+
+describe('LoginForm: sesión de un usuario inactivado', () => {
+  afterEach(() => { perfilError = null; authMock.currentUser = null; });
+
+  it('cierra la sesión y avisa que está deshabilitado', async () => {
+    perfilError = 'inactivo';
+    authMock.currentUser = { uid: 'u1' };
+    await act(async () => { render(<MemoryRouter><LoginForm /></MemoryRouter>); });
+    expect(signOut).toHaveBeenCalled();
+    expect(screen.getByText('Tu usuario está deshabilitado. Contacta al administrador.')).toBeInTheDocument();
   });
 });

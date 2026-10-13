@@ -9,6 +9,13 @@ service cloud.firestore {
       let ruta = /databases/$(database)/documents/usuarios/$(request.auth.uid);
       return exists(ruta) ? get(ruta).data : {};
     }
+    // Sesión de un usuario activo. Al inactivarlo se deshabilita en Auth y se
+    // revocan sus sesiones, pero un token ya emitido sigue valiendo hasta una
+    // hora: por eso las reglas también lo verifican. Sin perfil o sin el
+    // campo `activo`, se considera activo (como antes).
+    function estaActivo() {
+      return request.auth != null && getUsuario().get('activo', true) != false;
+    }
     function esAdminODev() {
       let rol = getUsuario().get('rol', '');
       return rol == 'admin' || rol == 'dev';
@@ -47,21 +54,21 @@ service cloud.firestore {
     }
 
     match /{path=**}/documentos/{documentId} {
-      allow read: if request.auth != null;
+      allow read: if estaActivo();
     }
 
     // =================================================================
     // REGLA PARA COLLECTION GROUP "detalles" Y SUS SUBCOLECCIONES (logs)
     // =================================================================
     match /{path=**}/detalles/{detalleId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && path.size() > 0 && path[0] != 'documentos_sistema' &&
+      allow read: if estaActivo();
+      allow write: if estaActivo() && path.size() > 0 && path[0] != 'documentos_sistema' &&
         (esAdminODev() || tienePermiso('implantes'));
     }
 
     match /{path=**}/detalles/{detalleId}/logs/{logId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && path.size() > 0 && path[0] != 'documentos_sistema' &&
+      allow read: if estaActivo();
+      allow write: if estaActivo() && path.size() > 0 && path[0] != 'documentos_sistema' &&
         (esAdminODev() || tienePermiso('implantes'));
     }
 
@@ -80,17 +87,19 @@ service cloud.firestore {
       return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones', 'nombreUsuario', 'bloqueoLoginHasta'];
     }
     match /usuarios/{userId} {
-      allow read: if request.auth != null;
-      allow update: if request.auth != null && (request.auth.uid == userId || esAdminODev())
+      // El propio perfil se lee aunque esté inactivo: así la app ve el cambio
+      // y cierra la sesión con el aviso (UserContext).
+      allow read: if request.auth != null && (request.auth.uid == userId || estaActivo());
+      allow update: if estaActivo() && (request.auth.uid == userId || esAdminODev())
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(camposProtegidosUsuario());
       // El documento base lo crea la función crearUsuario (Crear Usuario),
       // junto con la cuenta y el índice del nombre de usuario.
       allow create: if false;
-      allow delete: if request.auth != null && esAdminODev();
+      allow delete: if estaActivo() && esAdminODev();
 
       // Auditoría de permisos (la escriben las funciones).
       match /logs/{logId} {
-        allow read: if request.auth != null && esAdminODev();
+        allow read: if estaActivo() && esAdminODev();
         allow write: if false;
       }
     }
@@ -108,10 +117,10 @@ service cloud.firestore {
     // Plantillas de permisos por centro de costo (id = id de maestros_centros):
     // solo las escribe guardarPlantillaCentroCosto.
     match /plantillas_permisos/{centroId} {
-      allow read: if request.auth != null && esAdminODev();
+      allow read: if estaActivo() && esAdminODev();
       allow write: if false;
       match /logs/{logId} {
-        allow read: if request.auth != null && esAdminODev();
+        allow read: if estaActivo() && esAdminODev();
         allow write: if false;
       }
     }
@@ -121,38 +130,38 @@ service cloud.firestore {
     // =================================================================
 
     match /laboratorio_empresas/{document=**} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth != null && escribeVista('laboratorio', '/laboratorio/empresasLaboratorio');
-      allow delete: if request.auth != null
+      allow read: if estaActivo();
+      allow create, update: if estaActivo() && escribeVista('laboratorio', '/laboratorio/empresasLaboratorio');
+      allow delete: if estaActivo()
         && accionEnVista('laboratorio', '/laboratorio/empresasLaboratorio', 'tabla_datos', 'action_eliminar');
     }
 
     match /laboratorio_codigos/{document=**} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth != null && escribeVista('laboratorio', '/laboratorio/codigoLaboratorio');
-      allow delete: if request.auth != null
+      allow read: if estaActivo();
+      allow create, update: if estaActivo() && escribeVista('laboratorio', '/laboratorio/codigoLaboratorio');
+      allow delete: if estaActivo()
         && accionEnVista('laboratorio', '/laboratorio/codigoLaboratorio', 'tabla', 'btn_eliminar');
     }
 
     match /laboratorio_ordenes/{document=**} {
-      allow read: if request.auth != null;
+      allow read: if estaActivo();
       // Toda escritura de Órdenes es la importación desde Excel.
-      allow write: if request.auth != null
+      allow write: if estaActivo()
         && accionEnVista('laboratorio', '/laboratorio/ordenLaboratorio', 'cabecera_acciones', 'btn_importar');
     }
 
     match /laboratorio_documentos/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('laboratorio'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('laboratorio'));
     }
 
     match /laboratorio_cierres/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('laboratorio'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('laboratorio'));
     }
     match /laboratorio_imputadas/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('laboratorio'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('laboratorio'));
     }
 
     // =================================================================
@@ -160,38 +169,38 @@ service cloud.firestore {
     // =================================================================
 
     match /vacunatorio_empresas/{document=**} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth != null && escribeVista('vacunatorio', '/vacunatorio/empresasVacunatorio');
-      allow delete: if request.auth != null
+      allow read: if estaActivo();
+      allow create, update: if estaActivo() && escribeVista('vacunatorio', '/vacunatorio/empresasVacunatorio');
+      allow delete: if estaActivo()
         && accionEnVista('vacunatorio', '/vacunatorio/empresasVacunatorio', 'tabla_datos', 'action_eliminar');
     }
 
     match /vacunatorio_codigos/{document=**} {
-      allow read: if request.auth != null;
-      allow create, update: if request.auth != null && escribeVista('vacunatorio', '/vacunatorio/codigoVacunatorio');
-      allow delete: if request.auth != null
+      allow read: if estaActivo();
+      allow create, update: if estaActivo() && escribeVista('vacunatorio', '/vacunatorio/codigoVacunatorio');
+      allow delete: if estaActivo()
         && accionEnVista('vacunatorio', '/vacunatorio/codigoVacunatorio', 'tabla', 'btn_eliminar');
     }
 
     match /vacunatorio_ordenes/{document=**} {
-      allow read: if request.auth != null;
+      allow read: if estaActivo();
       // Toda escritura de Órdenes es la importación desde Excel.
-      allow write: if request.auth != null
+      allow write: if estaActivo()
         && accionEnVista('vacunatorio', '/vacunatorio/ordenVacunatorio', 'cabecera_acciones', 'btn_importar');
     }
 
     match /vacunatorio_documentos/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('vacunatorio'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('vacunatorio'));
     }
 
     match /vacunatorio_cierres/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('vacunatorio'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('vacunatorio'));
     }
     match /vacunatorio_imputadas/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('vacunatorio'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('vacunatorio'));
     }
 
     // =================================================================
@@ -221,15 +230,15 @@ service cloud.firestore {
     }
 
     match /cierres_periodos/{cierreId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null &&
+      allow read: if estaActivo();
+      allow create: if estaActivo() &&
         (esAdminODev() || tienePermiso(request.resource.data.modulo)) &&
         request.resource.data.get('estado', '') != 'CERRADO';
-      allow update: if request.auth != null &&
+      allow update: if estaActivo() &&
         (esAdminODev() || tienePermiso(resource.data.modulo)) &&
         request.resource.data.modulo == resource.data.modulo &&
         (request.resource.data.get('estado', '') != 'CERRADO' || esCierreAutomaticoPorApertura(cierreId));
-      allow delete: if request.auth != null &&
+      allow delete: if estaActivo() &&
         (esAdminODev() || tienePermiso(resource.data.modulo));
     }
 
@@ -237,29 +246,29 @@ service cloud.firestore {
     // comparar mes actual vs. mes anterior sin recalcular sumando documentos crudos).
     // Doc ID: {anio}_{mes}_{modulo}, con campo "modulo" siempre presente.
     match /imputaciones_periodos/{snapshotId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null &&
+      allow read: if estaActivo();
+      allow create: if estaActivo() &&
         (esAdminODev() || tienePermiso(request.resource.data.modulo));
-      allow update, delete: if request.auth != null &&
+      allow update, delete: if estaActivo() &&
         (esAdminODev() || tienePermiso(resource.data.modulo));
     }
 
     match /documentos_imputados/{modulo}/{path=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null &&
+      allow read: if estaActivo();
+      allow write: if estaActivo() &&
         (esAdminODev() || tienePermiso(modulo));
     }
 
     // Configuración global del sistema (p. ej. atajosDashboard: atajos del
     // Dashboard). La leen todos; solo admin/dev la modifican.
     match /configuracion_sistema/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && esAdminODev();
+      allow read: if estaActivo();
+      allow write: if estaActivo() && esAdminODev();
     }
 
     match /configuracion_periodos/{modulo} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null &&
+      allow read: if estaActivo();
+      allow write: if estaActivo() &&
         (esAdminODev() || tienePermiso(modulo));
     }
 
@@ -288,12 +297,12 @@ service cloud.firestore {
         || notaValida(request.resource.data);
     }
     match /administracion_notas/{notaId} {
-      allow read: if request.auth != null && puedeVerNota(resource.data);
-      allow create: if request.auth != null && (esAdminODev() || tienePermiso('administracion'))
+      allow read: if estaActivo() && puedeVerNota(resource.data);
+      allow create: if estaActivo() && (esAdminODev() || tienePermiso('administracion'))
         && notaValida(request.resource.data);
-      allow update: if request.auth != null && (esAdminODev() || tienePermiso('administracion'))
+      allow update: if estaActivo() && (esAdminODev() || tienePermiso('administracion'))
         && puedeVerNota(resource.data) && edicionDeNotaValida();
-      allow delete: if request.auth != null && (esAdminODev() || tienePermiso('administracion'))
+      allow delete: if estaActivo() && (esAdminODev() || tienePermiso('administracion'))
         && puedeVerNota(resource.data);
     }
 
@@ -327,21 +336,21 @@ service cloud.firestore {
     // Cada usuario lee solo las tareas donde está asignado (consulta
     // array-contains con su uid); quien administra, todas.
     match /recordatorios_tareas/{tareaId} {
-      allow read: if request.auth != null
+      allow read: if estaActivo()
         && (administraRecordatorios() || (recibeRecordatorios() && request.auth.uid in resource.data.asignados));
-      allow create: if request.auth != null && administraRecordatorios()
+      allow create: if estaActivo() && administraRecordatorios()
         && tareaRecordatorioValida(request.resource.data);
-      allow update: if request.auth != null && administraRecordatorios()
+      allow update: if estaActivo() && administraRecordatorios()
         && tareaRecordatorioValida(request.resource.data)
         && request.resource.data.desde == resource.data.desde;
-      allow delete: if request.auth != null && administraRecordatorios();
+      allow delete: if estaActivo() && administraRecordatorios();
     }
     // "Realizado" de una repetición = historial (quién y cuándo). Solo el
     // propio usuario lo crea, sobre una tarea que le está asignada, con la
     // hora del servidor; nadie lo edita ni lo borra.
     match /recordatorios_realizados/{uid}/realizados/{realizadoId} {
-      allow read: if request.auth != null && (request.auth.uid == uid || administraRecordatorios());
-      allow create: if request.auth != null && request.auth.uid == uid && recibeRecordatorios()
+      allow read: if estaActivo() && (request.auth.uid == uid || administraRecordatorios());
+      allow create: if estaActivo() && request.auth.uid == uid && recibeRecordatorios()
         && request.resource.data.keys().hasOnly(['tareaId', 'titulo', 'fecha', 'uid', 'usuarioNombre', 'realizadoEn'])
         && request.resource.data.uid == uid
         && request.resource.data.fecha is string && request.resource.data.fecha.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
@@ -357,18 +366,18 @@ service cloud.firestore {
     // =================================================================
 
     match /maestros_empresas/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('maestros'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('maestros'));
     }
 
     match /maestros_prestadores/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('maestros'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('maestros'));
     }
 
     match /maestros_centros/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('maestros'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('maestros'));
     }
 
     // Bodymap: Maestro "Zonas por diagnóstico". Lo lee quien ve gestiones;
@@ -379,63 +388,63 @@ service cloud.firestore {
       return accionEnVista('maestros', '/maestros/zonasDiagnostico', 'tabla_datos', 'action_editar');
     }
     match /maestros_zonas_diagnostico/{descripcionId} {
-      allow read: if request.auth != null;
+      allow read: if estaActivo();
       allow create, delete: if false;
-      allow update: if request.auth != null && editaZonasDiagnostico()
+      allow update: if estaActivo() && editaZonasDiagnostico()
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['zonas', 'lado', 'estado', 'actualizadoPor', 'actualizadoPorUid', 'actualizadoEl'])
         && request.resource.data.zonas is list && request.resource.data.zonas.size() <= 20
         && request.resource.data.estado in ['sin_asignar', 'sugerida', 'confirmada']
         && request.resource.data.lado in ['no_especificado', 'derecho', 'izquierdo', 'bilateral'];
       match /logs/{logId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null && editaZonasDiagnostico();
+        allow read: if estaActivo();
+        allow create: if estaActivo() && editaZonasDiagnostico();
         allow update, delete: if false;
       }
     }
 
     match /maestros_previsiones/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('maestros'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('maestros'));
     }
 
     match /maestros_convenios/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('maestros'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('maestros'));
     }
 
     match /maestros_recargos/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('maestros'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('maestros'));
     }
 
     // Códigos: los edita el módulo Maestros (como antes) o quien tenga el
     // ítem Implantes → Códigos (misma pantalla, permisos propios).
     match /maestros_codigos/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('maestros')
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('maestros')
         || tieneItem('implantes', '/implantes/codigosImplantes'));
     }
 
     // Registro de auditoría de cada importación masiva de precios
     // (Maestros → Actualización Precios). Inmutable una vez creado.
     match /maestros_codigos_importaciones_precios/{importacionId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && (esAdminODev() || tienePermiso('maestros'));
+      allow read: if estaActivo();
+      allow create: if estaActivo() && (esAdminODev() || tienePermiso('maestros'));
       allow update, delete: if false;
     }
 
     match /maestros_pad/{document=**} {
-      allow read: if request.auth != null;
+      allow read: if estaActivo();
       // Toda escritura de PAD es "Guardar / Actualizar PAD" (incluye el
       // reemplazo de la receta de ítems).
-      allow write: if request.auth != null
+      allow write: if estaActivo()
         && accionEnVista('maestros', '/maestros/padMaestros', 'acciones_pad', 'btn_guardar');
     }
 
     match /maestros_listados/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('maestros'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('maestros'));
     }
 
     // =================================================================
@@ -443,8 +452,8 @@ service cloud.firestore {
     // =================================================================
 
     match /consignacion_guias/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('consignacion'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('consignacion'));
     }
 
     // N° de orden de un registro (columna ORDEN de Registro). `ordenOrigen`
@@ -473,15 +482,15 @@ service cloud.firestore {
         || (!ordenConsignacionBloqueada(resource.data) && ordenConsignacionNuevaValida(request.resource.data));
     }
     match /consignacion_registros/{document=**} {
-      allow read: if request.auth != null;
-      allow create, delete: if request.auth != null && (esAdminODev() || tienePermiso('consignacion'));
-      allow update: if request.auth != null && (esAdminODev() || tienePermiso('consignacion'))
+      allow read: if estaActivo();
+      allow create, delete: if estaActivo() && (esAdminODev() || tienePermiso('consignacion'));
+      allow update: if estaActivo() && (esAdminODev() || tienePermiso('consignacion'))
         && edicionOrdenConsignacionValida();
     }
 
     match /consignacion_imputadas/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('consignacion'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('consignacion'));
     }
 
     // =================================================================
@@ -489,23 +498,23 @@ service cloud.firestore {
     // =================================================================
 
     match /inventario_general/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('inventario'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('inventario'));
     }
 
     match /inventario_transito/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('inventario'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('inventario'));
     }
 
     match /inventario_historial/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('inventario'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('inventario'));
     }
 
     match /inventario_egresos/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('inventario'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('inventario'));
     }
 
     // Escaneo: vínculos código de barras -> producto del maestro. El id del
@@ -515,23 +524,23 @@ service cloud.firestore {
     // puede reescribir si el ingreso al que apunta ya no existe (se eliminó
     // de Stock General).
     match /inventario_ingresos_documentos/{id} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && (esAdminODev() || tienePermiso('inventario'));
-      allow update: if request.auth != null && (esAdminODev() || tienePermiso('inventario'))
+      allow read: if estaActivo();
+      allow create: if estaActivo() && (esAdminODev() || tienePermiso('inventario'));
+      allow update: if estaActivo() && (esAdminODev() || tienePermiso('inventario'))
         && !exists(/databases/$(database)/documents/inventario_general/$(resource.data.ingresoId));
-      allow delete: if request.auth != null && esAdminODev();
+      allow delete: if estaActivo() && esAdminODev();
     }
 
     match /inventario_codigos_barra/{codigo} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('inventario'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('inventario'));
     }
 
     // Inventario por cajas: inventarios_fisicos/{id} (+ subcolección
     // cajas) y el documento _control con el inventario en curso.
     match /inventarios_fisicos/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('inventario'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('inventario'));
     }
 
     // =================================================================
@@ -540,8 +549,8 @@ service cloud.firestore {
 
 
     match /{path=**}/registros/{registroId} {
-     allow read: if request.auth != null;
-     allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos'));
+     allow read: if estaActivo();
+     allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos'));
     }
 
     // Reportes Info es la misma pantalla en Documentos y en Implantes
@@ -550,7 +559,7 @@ service cloud.firestore {
     // Reporte Info → "Gestión implante": marca por número de admisión. Solo
     // la escriben la Cloud Function y el script (functions/admisiones).
     match /admisiones_gestionadas_implantes/{admision} {
-      allow read: if request.auth != null;
+      allow read: if estaActivo();
       allow write: if false;
     }
 
@@ -570,9 +579,9 @@ service cloud.firestore {
         && accionEnVista(modulo, '/' + modulo + '/reportesInfo', 'filas_ocultas', 'action_ocultarDescripcion');
     }
     match /maestros_descripciones_reporte/{descripcionId} {
-      allow read: if request.auth != null;
+      allow read: if estaActivo();
       allow create, delete: if false;
-      allow update: if request.auth != null
+      allow update: if estaActivo()
         && camposDescripcionCambiados().hasOnly(['ocultaImplantes', 'ocultaDocumentos', 'actualizadoPor', 'actualizadoPorUid', 'actualizadoEl'])
         && request.resource.data.get('ocultaImplantes', false) is bool
         && request.resource.data.get('ocultaDocumentos', false) is bool
@@ -582,8 +591,8 @@ service cloud.firestore {
     }
 
     match /documentos_reportesInfo/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos')
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos')
         || tieneItem('implantes', '/implantes/reportesInfo'));
     }
 
@@ -594,24 +603,24 @@ service cloud.firestore {
     // arriba (esa es solo para implantes/consignación/hemodinamia) para que
     // el permiso 'implantes' no habilite escritura acá.
     match /documentos_sistema/{anio} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos'));
 
       match /meses/{mes} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos'));
+        allow read: if estaActivo();
+        allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos'));
 
         match /admisiones/{admision} {
-          allow read: if request.auth != null;
-          allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos'));
+          allow read: if estaActivo();
+          allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos'));
 
           match /empresas/{proveedor} {
-            allow read: if request.auth != null;
-            allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos'));
+            allow read: if estaActivo();
+            allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos'));
 
             match /detalles/{idFila} {
-              allow read: if request.auth != null;
-              allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos'));
+              allow read: if estaActivo();
+              allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos'));
             }
           }
         }
@@ -630,31 +639,31 @@ service cloud.firestore {
     // en el mismo lote que el borrado; contiene datos de pacientes: solo
     // admin/dev la leen, y nadie la modifica ni la borra.
     match /detallesOCEliminados/{docId} {
-      allow read: if request.auth != null && esAdminODev();
-      allow create: if request.auth != null && (esAdminODev() || tienePermiso('documentos'));
+      allow read: if estaActivo() && esAdminODev();
+      allow create: if estaActivo() && (esAdminODev() || tienePermiso('documentos'));
       allow update, delete: if false;
     }
 
     match /ocImport/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
     }
 
     // Registro de qué OC tienen PDF (ordenes_oc/ en Storage): un documento
     // ordenesOC/registroPdf con { pdfs: { [oc]: {subidoEn, subidoPor} } }.
     match /ordenesOC/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('documentos') || tienePermiso('implantes'));
     }
 
     match /implantes_gestiones/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('implantes'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('implantes'));
     }
 
     match /implantes_imputadas/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('implantes'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('implantes'));
     }
 
     // Implantes → Respaldo de documentos: PDF cuyo ID no coincide con ninguna
@@ -667,19 +676,19 @@ service cloud.firestore {
       function enRespaldo(seccion, accion) {
         return accionEnVista('implantes', '/implantes/respaldoDocumentos', seccion, accion);
       }
-      allow read: if request.auth != null && vistaRespaldo();
-      allow create: if request.auth != null
+      allow read: if estaActivo() && vistaRespaldo();
+      allow create: if estaActivo()
         && enRespaldo('acciones', 'btn_subir')
         && request.resource.data.eliminado == false
         && request.resource.data.ruta is string
         && request.resource.data.ruta.matches('implantes_respaldo/' + docId + '/.+');
       // Solo enviar a la papelera / restaurar (no se editan los datos).
-      allow update: if request.auth != null
+      allow update: if estaActivo()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['eliminado', 'eliminadoPor', 'eliminadoEl'])
         && (request.resource.data.eliminado == true
           ? enRespaldo('tabla_documentos', 'btn_eliminar')
           : enRespaldo('papelera', 'btn_restaurar'));
-      allow delete: if request.auth != null && enRespaldo('papelera', 'btn_eliminar_definitivo');
+      allow delete: if estaActivo() && enRespaldo('papelera', 'btn_eliminar_definitivo');
     }
 
     // Documentos → Archivo digital: carpetas y archivos (padreId) en una sola
@@ -700,15 +709,15 @@ service cloud.firestore {
       function cambios() {
         return request.resource.data.diff(resource.data).affectedKeys();
       }
-      allow read: if request.auth != null && vistaArchivo();
-      allow create: if request.auth != null
+      allow read: if estaActivo() && vistaArchivo();
+      allow create: if estaActivo()
         && request.resource.data.eliminado == false
         && ((request.resource.data.tipo == 'carpeta' && enArchivo('carpetas', 'btn_crear'))
           || (request.resource.data.tipo == 'archivo'
             && request.resource.data.ruta is string
             && request.resource.data.ruta.matches('documentos_archivo/' + nodoId + '/.+')
             && enArchivo('archivos', 'btn_subir')));
-      allow update: if request.auth != null
+      allow update: if estaActivo()
         && request.resource.data.tipo == resource.data.tipo
         && (
           // Renombrar
@@ -731,7 +740,7 @@ service cloud.firestore {
             && cambios().hasOnly(['eliminado', 'eliminadoEl', 'eliminadoPor', 'eliminadoGrupo', 'padreId'])
             && enArchivo('papelera', 'btn_restaurar'))
         );
-      allow delete: if request.auth != null && enArchivo('papelera', 'btn_eliminar_definitivo');
+      allow delete: if estaActivo() && enArchivo('papelera', 'btn_eliminar_definitivo');
     }
 
     // Administración → Estadísticas: documentos precalculados por módulo y
@@ -741,7 +750,7 @@ service cloud.firestore {
     // los de montos exigen además la acción "Ver montos". Solo escriben las
     // Cloud Functions y el script inicial (Admin SDK, no pasan por reglas).
     match /estadisticas/{docId} {
-      allow read: if request.auth != null && (esAdminODev()
+      allow read: if estaActivo() && (esAdminODev()
         || (tienePermiso('administracion')
           && tieneItem('administracion', '/administracion/estadisticas')
           && (docId == '_indice'
@@ -756,13 +765,13 @@ service cloud.firestore {
     // =================================================================
 
     match /hemodinamia_gestiones/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('hemodinamia'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('hemodinamia'));
     }
 
     match /hemodinamia_imputadas/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && (esAdminODev() || tienePermiso('hemodinamia'));
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esAdminODev() || tienePermiso('hemodinamia'));
     }
 
   }
