@@ -55,6 +55,13 @@ describe('LoginForm: usuario o correo', () => {
     expect(signInWithCustomToken).not.toHaveBeenCalled();
   });
 
+  it('usuario inactivo con la contraseña correcta: "deshabilitado"', async () => {
+    respuesta = Object.assign(new Error('x'), { code: 'functions/permission-denied' });
+    await ingresar('jperez', 'secreto123');
+    expect(screen.getByText('Tu usuario está deshabilitado. Contacta al administrador.')).toBeInTheDocument();
+    expect(signInWithCustomToken).not.toHaveBeenCalled();
+  });
+
   it('bloqueo por intentos: lo informa', async () => {
     respuesta = Object.assign(new Error('x'), { code: 'functions/resource-exhausted' });
     await ingresar('jperez', 'malaclave');

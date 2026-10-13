@@ -20,9 +20,10 @@ import Spinner from '../../../../components/ui/Spinner';
 import EditarUsuario from './EditarUsuario';
 import CentroSelect from '../../../ui/CentroSelect';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
+import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { ROLES } from './roles';
 import {
-  excepcionesDe, contarExcepciones, tieneExcepciones, guardarPermisosUsuario, asignarCentroCostoMasivo, mensajeError,
+  excepcionesDe, contarExcepciones, tieneExcepciones, guardarPermisosUsuario, asignarCentroCostoMasivo, desbloquearUsuario, mensajeError,
 } from './permisosCentroCosto';
 import { vistasConfigurables, resumenRestricciones, completarVistasDelMenu } from './permisosGranularesUtils';
 
@@ -40,6 +41,8 @@ import {
   Layers,
   SlidersHorizontal,
   X,
+  Lock,
+  LockOpen,
 } from 'lucide-react';
 
 // TODO: mantener sincronizado con la lista de roles de CrearUsuario.jsx.
@@ -49,6 +52,8 @@ import {
 const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioConsumido, onIrAPermisosCentro }) => {
   const { showToast } = useToast();
   const { confirmAction } = useModal();
+  const { hasPermission } = useGranularPermission();
+  const puedeDesbloquear = hasPermission('/administracion/listadoUsuario', 'tabla_usuarios', 'btn_desbloquear');
 
   const [usuarios, setUsuarios] = useState([]);
   const [cargandoLista, setCargandoLista] = useState(true);
@@ -67,6 +72,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
 
   const [actualizandoEstadoId, setActualizandoEstadoId] = useState(null);
   const [cancelandoId, setCancelandoId] = useState(null);
+  const [desbloqueandoId, setDesbloqueandoId] = useState(null);
 
   // --- Suscripción en tiempo real a la colección de usuarios ---
   useEffect(() => {
@@ -99,6 +105,13 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
   }, [abrirUsuarioId, abrirAplicado, onAbrirUsuarioConsumido]);
 
   const estaActivo = (usuario) => usuario.activo !== false;
+  // Bloqueo por intentos fallidos de login (lo escribe la función
+  // iniciarSesion): fecha de fin si sigue vigente, si no null.
+  const bloqueadoHasta = (usuario) => {
+    const fin = usuario.bloqueoLoginHasta?.toDate?.();
+    return fin && fin.getTime() > Date.now() ? fin : null;
+  };
+  const formatoBloqueo = (fecha) => fecha.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
 
   // La creación de un usuario se hace en 3 pasos (ver CrearUsuario.jsx). Los
   // usuarios creados ANTES de este wizard no tienen "estadoCreacion" y se
@@ -199,6 +212,20 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
       showToast(mensajeError(error, 'No se pudo cambiar el estado del usuario'), 'error');
     } finally {
       setActualizandoEstadoId(null);
+    }
+  };
+
+  // --- Desbloquear (bloqueo por intentos fallidos de login) ---
+  const desbloquear = async (usuario) => {
+    setDesbloqueandoId(usuario.id);
+    try {
+      await desbloquearUsuario({ uid: usuario.id });
+      showToast(`Usuario "${usuario.nombreCompleto}" desbloqueado`, 'success');
+    } catch (error) {
+      console.error('Error al desbloquear usuario:', error);
+      showToast(mensajeError(error, 'No se pudo desbloquear el usuario'), 'error');
+    } finally {
+      setDesbloqueandoId(null);
     }
   };
 
@@ -378,6 +405,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
               <tbody>
                 {usuariosFiltrados.map((usuario, index) => {
                   const activo = estaActivo(usuario);
+                  const bloqueo = bloqueadoHasta(usuario);
                   const enEdicion = usuarioEditandoId === usuario.id;
                   const rolLabel = ROLES.find((r) => r.value === usuario.rol)?.label || usuario.rol;
                   const incompleta = creacionIncompleta(usuario);
@@ -502,6 +530,12 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                             {activo ? 'Activo' : 'Inactivo'}
                           </span>
                         )}
+                        {bloqueo && (
+                          <span className="mt-0.5 flex items-center gap-1 w-fit text-[9.5px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                            <Lock size={10} />
+                            Bloqueado hasta {formatoBloqueo(bloqueo)}
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-1 px-2 border-b border-gray-200 dark:border-gray-700 text-center">
@@ -534,6 +568,20 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                             </>
                           ) : (
                             <>
+                              {bloqueo && puedeDesbloquear && (
+                                <button
+                                  type="button"
+                                  title="Desbloquear usuario"
+                                  disabled={desbloqueandoId === usuario.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    desbloquear(usuario);
+                                  }}
+                                  className="text-red-500 dark:text-red-400 hover:text-green-600 transition disabled:opacity-50"
+                                >
+                                  {desbloqueandoId === usuario.id ? <Spinner size="sm" /> : <LockOpen size={13} />}
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 title={activo ? 'Inactivar usuario' : 'Activar usuario'}

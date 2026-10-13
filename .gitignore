@@ -27,5 +27,7 @@ dist-ssr
 .env
 .env.local
 .env.production
+# Parámetros de las Cloud Functions por proyecto (WEB_API_KEY, ver functions/usuarios/index.js)
+functions/.env.*
 # Caché de despliegue de Firebase Hosting
 .firebase/

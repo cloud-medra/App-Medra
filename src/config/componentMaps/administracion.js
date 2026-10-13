@@ -180,6 +180,7 @@ export const administracionComponentMaps = {
           btn_editar_acceso: { label: 'Acción: Editar Acceso (abre la pantalla de edición)' },
           btn_continuar_creacion: { label: 'Acción: Continuar Creación Incompleta' },
           btn_cancelar_creacion: { label: 'Acción: Cancelar Creación Incompleta' },
+          btn_desbloquear: { label: 'Acción: Desbloquear (bloqueo por intentos fallidos de login)' },
         },
       },
       drawer_edicion_permisos: {

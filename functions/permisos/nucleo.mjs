@@ -162,6 +162,21 @@ export const origenCasilla = (clave, planoPlantilla, excepciones) => {
 // un cambio de rol o la inactivación.
 export const esAdministrador = (u) => Boolean(u) && esRolAccesoTotal(u.rol) && u.activo !== false;
 
+// Acción granular de un usuario activo, con el mismo criterio que las reglas
+// (accionEnVista) y useGranularPermission: admin/dev pueden todo; el resto
+// necesita el ítem del menú y la vista en permisosGranulares; una sección o
+// acción sin configurar se permite; visible:false o la acción en false, no.
+export const puedeAccion = (u, modulo, ruta, seccion, accion) => {
+  if (!u || u.activo === false) return false;
+  if (esRolAccesoTotal(u.rol)) return true;
+  if (!(u.permisos?.[modulo] || []).includes(ruta)) return false;
+  const vista = u.permisosGranulares?.[ruta];
+  if (!vista) return false;
+  const config = vista[seccion];
+  if (!config) return true;
+  return config.visible !== false && config.elements?.[accion] !== false;
+};
+
 // usuarios: [{ id, rol, activo }] (al menos todos los administradores).
 export const dejaSinAdministrador = (usuarios, uid, cambios = {}) => {
   const antes = usuarios.find((u) => u.id === uid);

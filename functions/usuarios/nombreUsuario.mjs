@@ -10,8 +10,10 @@
 export const MAX_NOMBRE_USUARIO = 50;
 
 // Mismo mensaje para cualquier fallo de credenciales: no revela si el
-// usuario existe, si está inactivo o si solo falló la contraseña.
+// usuario existe o si solo falló la contraseña.
 export const MENSAJE_LOGIN_INCORRECTO = 'Usuario/correo o contraseña incorrectos.';
+// Solo cuando la contraseña es correcta y el usuario está inactivo.
+export const MENSAJE_USUARIO_DESHABILITADO = 'Tu usuario está deshabilitado. Contacta al administrador.';
 export const MENSAJE_NOMBRE_EN_USO = 'Ese nombre de usuario ya está en uso.';
 
 export const normalizarNombreUsuario = (valor) => String(valor ?? '').trim().toLowerCase();

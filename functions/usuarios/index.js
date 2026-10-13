@@ -1,10 +1,13 @@
 // Usuarios (login y Administración → Crear usuario).
 //   - iniciarSesion: login con correo o nombre de usuario + contraseña.
 //     Sin sesión previa. Devuelve un custom token del usuario; cualquier
-//     fallo de credenciales (usuario inexistente, contraseña incorrecta,
-//     usuario inactivo) da el mismo mensaje. Bloquea tras varios intentos.
+//     fallo de credenciales (usuario inexistente, contraseña incorrecta) da
+//     el mismo mensaje; con la contraseña correcta, un usuario inactivo
+//     recibe "Tu usuario está deshabilitado". Bloquea tras varios intentos.
 //   - crearUsuario: cuenta de Auth + usuarios/{uid} + nombres_usuario, con
 //     el nombre de usuario único. Solo admin/dev activos.
+//   - desbloquearUsuario: quita el bloqueo por intentos fallidos (Lista de
+//     usuarios, acción granular btn_desbloquear; admin/dev siempre).
 // La lógica está en servicio.js.
 //
 // iniciarSesion necesita:
@@ -36,5 +39,12 @@ exports.crearUsuario = onCall({ region: REGION }, async (request) => {
   const por = await exigirAdministrador(db, request.auth?.uid);
   const resultado = await servicio.crearUsuario(db, getAuth(), por, request.data);
   logger.info('crearUsuario', { por: por.uid, uid: resultado.uid });
+  return resultado;
+});
+
+exports.desbloquearUsuario = onCall({ region: REGION }, async (request) => {
+  const por = await servicio.exigirAccion(db, request.auth?.uid, servicio.ACCION_DESBLOQUEAR);
+  const resultado = await servicio.desbloquearUsuario(db, por, request.data);
+  logger.info('desbloquearUsuario', { por: por.uid, uid: request.data?.uid });
   return resultado;
 });

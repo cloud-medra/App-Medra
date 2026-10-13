@@ -22,6 +22,7 @@ const AUTH = process.env.FIREBASE_AUTH_EMULATOR_HOST || '127.0.0.1:9099';
 process.env.FIREBASE_AUTH_EMULATOR_HOST = AUTH;
 
 const INCORRECTO = 'Usuario/correo o contraseña incorrectos.';
+const DESHABILITADO = 'Tu usuario está deshabilitado. Contacta al administrador.';
 const LAB = '/laboratorio/codigoLaboratorio';
 const PERMISOS = { permisos: { laboratorio: [LAB] }, permisosGranulares: { [LAB]: { tabla: { visible: true, elements: { btn_editar: true, btn_eliminar: false } } } } };
 const YO = { uid: 'yo', nombre: 'Admin' };
@@ -93,7 +94,7 @@ describe('iniciarSesion: correo o nombre de usuario', () => {
     expect((await entrarYLeerPerfil(token)).uid).toBe(uid);
   });
 
-  it('contraseña incorrecta, usuario inexistente, inactivo o deshabilitado: el mismo mensaje', async () => {
+  it('contraseña incorrecta, usuario inexistente o deshabilitado en Auth: el mismo mensaje', async () => {
     await crearCuenta({ email: 'ana@medra.cl', nombreUsuario: 'aperez' });
     await crearCuenta({ email: 'luis@medra.cl', nombreUsuario: 'lsoto', activo: false });
     const deshabilitado = await crearCuenta({ email: 'eva@medra.cl', nombreUsuario: 'eva' });
@@ -103,14 +104,22 @@ describe('iniciarSesion: correo o nombre de usuario', () => {
       { identificador: 'aperez', password: 'otra-clave' },
       { identificador: 'nadie@medra.cl', password: 'secreto123' },
       { identificador: 'nadie', password: 'secreto123' },
-      { identificador: 'luis@medra.cl', password: 'secreto123' },
-      { identificador: 'lsoto', password: 'secreto123' },
+      { identificador: 'luis@medra.cl', password: 'otra-clave' }, // inactivo, contraseña incorrecta
       { identificador: 'eva', password: 'secreto123' },
       { identificador: '', password: 'secreto123' },
       { identificador: 'aperez', password: '' },
     ];
     for (const intento of intentos) {
       await expect(login(intento), JSON.stringify(intento)).rejects.toEqual(rechazo('unauthenticated', INCORRECTO));
+    }
+  });
+});
+
+describe('iniciarSesion: usuario inactivo', () => {
+  it('con la contraseña correcta informa que está deshabilitado (por correo o por nombre), sin contar como fallo', async () => {
+    await crearCuenta({ email: 'luis@medra.cl', nombreUsuario: 'lsoto', activo: false });
+    for (let i = 0; i < servicio.MAX_FALLOS + 1; i += 1) {
+      await expect(login({ identificador: i % 2 ? 'lsoto' : 'LUIS@medra.cl', password: 'secreto123' })).rejects.toEqual(rechazo('permission-denied', DESHABILITADO));
     }
   });
 });
@@ -122,12 +131,15 @@ describe('iniciarSesion: bloqueo por intentos fallidos', () => {
     for (let i = 0; i < servicio.MAX_FALLOS; i += 1) {
       await expect(login({ identificador: i % 2 ? 'aperez' : 'ANA@medra.cl', password: 'mala' }, t0)).rejects.toEqual(rechazo('unauthenticated'));
     }
+    // Se ve en el perfil (Lista de usuarios).
+    expect((await db.collection('usuarios').doc(uid).get()).data().bloqueoLoginHasta.toMillis()).toBe(t0 + 15 * 60 * 1000);
     // Bloqueada: ni con la contraseña correcta, por ninguno de los dos.
     await expect(login({ identificador: 'ana@medra.cl', password: 'secreto123' }, t0 + 1000)).rejects.toEqual(rechazo('resource-exhausted'));
     await expect(login({ identificador: 'aperez', password: 'secreto123' }, t0 + 1000)).rejects.toEqual(rechazo('resource-exhausted'));
     // Pasado el bloqueo entra, y el contador vuelve a cero.
     const { token } = await login({ identificador: 'aperez', password: 'secreto123' }, t0 + 16 * 60 * 1000);
     expect((await entrarYLeerPerfil(token)).uid).toBe(uid);
+    expect((await db.collection('usuarios').doc(uid).get()).data().bloqueoLoginHasta).toBeUndefined();
     await expect(login({ identificador: 'aperez', password: 'mala' }, t0 + 17 * 60 * 1000)).rejects.toEqual(rechazo('unauthenticated'));
   });
 
@@ -137,6 +149,41 @@ describe('iniciarSesion: bloqueo por intentos fallidos', () => {
       await expect(login({ identificador: 'nadie', password: 'mala' }, t0)).rejects.toEqual(rechazo('unauthenticated'));
     }
     await expect(login({ identificador: 'nadie', password: 'mala' }, t0)).rejects.toEqual(rechazo('resource-exhausted'));
+  });
+});
+
+describe('desbloquearUsuario (Lista de usuarios, btn_desbloquear)', () => {
+  const LISTADO = '/administracion/listadoUsuario';
+  const bloquear = async () => {
+    const t0 = Date.now();
+    for (let i = 0; i < servicio.MAX_FALLOS; i += 1) await login({ identificador: 'aperez', password: 'mala' }, t0).catch(() => {});
+    await expect(login({ identificador: 'aperez', password: 'secreto123' })).rejects.toEqual(rechazo('resource-exhausted'));
+  };
+  const operador = (uid, elements) => db.collection('usuarios').doc(uid).set({
+    nombreCompleto: uid, rol: 'operador', permisos: { administracion: [LISTADO] },
+    permisosGranulares: { [LISTADO]: { tabla_usuarios: { visible: true, elements } } },
+  });
+
+  it('quita el bloqueo, deja auditoría y el usuario entra de inmediato', async () => {
+    const uid = await crearCuenta({ email: 'ana@medra.cl', nombreUsuario: 'aperez' });
+    await bloquear();
+    const por = await servicio.exigirAccion(db, 'yo', servicio.ACCION_DESBLOQUEAR);
+    await servicio.desbloquearUsuario(db, por, { uid });
+    expect((await db.collection('usuarios').doc(uid).get()).data().bloqueoLoginHasta).toBeUndefined();
+    const logs = (await db.collection(`usuarios/${uid}/logs`).get()).docs.map((d) => d.data());
+    expect(logs).toEqual([expect.objectContaining({ accion: 'DESBLOQUEO_LOGIN', usuarioUid: 'yo' })]);
+    const { token } = await login({ identificador: 'ana@medra.cl', password: 'secreto123' });
+    expect((await entrarYLeerPerfil(token)).uid).toBe(uid);
+  });
+
+  it('puede quien tiene la acción granular; sin ella, o sin el ítem, no', async () => {
+    await operador('con', { btn_desbloquear: true });
+    await operador('sin', { btn_desbloquear: false });
+    await db.collection('usuarios').doc('otro').set({ nombreCompleto: 'otro', rol: 'operador', permisos: {}, permisosGranulares: {} });
+    await expect(servicio.exigirAccion(db, 'con', servicio.ACCION_DESBLOQUEAR)).resolves.toMatchObject({ uid: 'con' });
+    await expect(servicio.exigirAccion(db, 'sin', servicio.ACCION_DESBLOQUEAR)).rejects.toEqual(rechazo('permission-denied'));
+    await expect(servicio.exigirAccion(db, 'otro', servicio.ACCION_DESBLOQUEAR)).rejects.toEqual(rechazo('permission-denied'));
+    await expect(servicio.exigirAccion(db, undefined, servicio.ACCION_DESBLOQUEAR)).rejects.toEqual(rechazo('unauthenticated'));
   });
 });
 

@@ -12,12 +12,13 @@ import loginIllustration from '../assets/login.svg';
 import logoMedra from '../assets/logo/medra-logo-sistema-integral-claro.svg';
 import { motion } from 'framer-motion';
 import PuntosAnimados from './PuntosAnimados';
-import { MENSAJE_LOGIN_INCORRECTO } from '../../functions/usuarios/nombreUsuario.mjs';
+import { MENSAJE_LOGIN_INCORRECTO, MENSAJE_USUARIO_DESHABILITADO } from '../../functions/usuarios/nombreUsuario.mjs';
 
 // El login pasa por la Cloud Function iniciarSesion (functions/usuarios):
 // acepta correo o nombre de usuario, verifica la contraseña y que el usuario
 // esté activo, y devuelve un custom token del usuario. Cualquier fallo de
-// credenciales llega con el mismo mensaje (no revela si el usuario existe).
+// credenciales llega con el mismo mensaje (no revela si el usuario existe);
+// solo con la contraseña correcta se informa que el usuario está inactivo.
 const iniciarSesion = httpsCallable(functions, 'iniciarSesion');
 
 // Mensaje según el código del error: solo los errores de credenciales se
@@ -27,6 +28,8 @@ const mensajeErrorLogin = (error) => {
     case 'functions/unauthenticated':
     case 'auth/user-disabled':
       return MENSAJE_LOGIN_INCORRECTO;
+    case 'functions/permission-denied':
+      return MENSAJE_USUARIO_DESHABILITADO;
     case 'functions/resource-exhausted':
     case 'auth/too-many-requests':
       return "Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo.";

@@ -8,10 +8,10 @@ const { HttpsError } = require('firebase-functions/v2/https');
 const { FieldValue, Timestamp } = require('firebase-admin/firestore');
 const {
   errorNombreUsuario, normalizarNombreUsuario, normalizarIdentificador, esCorreo,
-  MENSAJE_LOGIN_INCORRECTO, MENSAJE_NOMBRE_EN_USO,
+  MENSAJE_LOGIN_INCORRECTO, MENSAJE_USUARIO_DESHABILITADO, MENSAJE_NOMBRE_EN_USO,
 } = require('./nombreUsuario.mjs');
 const { refNombre, prepararNombreUsuario } = require('./indiceNombres');
-const { ROLES, ROL_POR_DEFECTO } = require('../permisos/nucleo.mjs');
+const { ROLES, ROL_POR_DEFECTO, puedeAccion } = require('../permisos/nucleo.mjs');
 
 const VALORES_ROL = ROLES.map((r) => r.value);
 const refUsuario = (db, uid) => db.collection('usuarios').doc(uid);
@@ -22,12 +22,15 @@ const refUsuario = (db, uid) => db.collection('usuarios').doc(uid);
 // bloquean BLOQUEO_MS. Se cuenta por cuenta (uid) cuando el identificador
 // corresponde a una, así el bloqueo es el mismo entrando con el correo o
 // con el nombre de usuario; si no corresponde a ninguna, por identificador.
+// El bloqueo de una cuenta se refleja en usuarios/{uid}.bloqueoLoginHasta
+// (Lista de usuarios lo muestra y permite desbloquear).
 const MAX_FALLOS = 5;
 const VENTANA_MS = 15 * 60 * 1000;
 const BLOQUEO_MS = 15 * 60 * 1000;
 const MENSAJE_BLOQUEO = 'Demasiados intentos fallidos. Espera unos minutos e inténtalo de nuevo.';
 
 // intentos_login/{hash}: el id es un hash, no guarda correos ni nombres.
+const claveCuenta = (uid) => `uid:${uid}`;
 const refIntentos = (db, clave) => db.collection('intentos_login').doc(crypto.createHash('sha256').update(clave).digest('hex'));
 const incorrecto = () => new HttpsError('unauthenticated', MENSAJE_LOGIN_INCORRECTO);
 
@@ -43,18 +46,21 @@ const resolverCuenta = async (db, auth, identificador) => {
   }
 };
 
-const registrarFallo = (db, ref, ahora) => db.runTransaction(async (t) => {
+// uid: el de la cuenta, si el identificador corresponde a una.
+const registrarFallo = (db, ref, ahora, uid) => db.runTransaction(async (t) => {
   const previo = (await t.get(ref)).data() || {};
+  const perfil = uid ? await t.get(refUsuario(db, uid)) : null;
   const vigente = previo.ultimoFallo && ahora - previo.ultimoFallo.toMillis() < VENTANA_MS;
   const fallos = (vigente ? previo.fallos || 0 : 0) + 1;
-  const bloquear = fallos >= MAX_FALLOS;
+  const hasta = fallos >= MAX_FALLOS ? Timestamp.fromMillis(ahora + BLOQUEO_MS) : null;
   t.set(ref, {
-    fallos: bloquear ? 0 : fallos,
+    fallos: hasta ? 0 : fallos,
     ultimoFallo: Timestamp.fromMillis(ahora),
-    bloqueadoHasta: bloquear ? Timestamp.fromMillis(ahora + BLOQUEO_MS) : null,
+    bloqueadoHasta: hasta,
     // Para una política de TTL opcional sobre este campo.
     expiraEl: Timestamp.fromMillis(ahora + 24 * 60 * 60 * 1000),
   });
+  if (hasta && perfil?.exists) t.update(perfil.ref, { bloqueoLoginHasta: hasta });
 });
 
 // Verifica correo + contraseña con la API REST de Firebase Auth (el Admin
@@ -78,32 +84,68 @@ const verificarPasswordRest = (apiKey) => async (email, password) => {
 // mayúsculas ni espacios alrededor. `email` se acepta por compatibilidad.
 // Devuelve un custom token del mismo uid: la sesión, el perfil y los
 // permisos se cargan igual que antes (UserContext → usuarios/{uid}).
+// Con la contraseña correcta, un usuario inactivo recibe su propio mensaje
+// (permission-denied); cualquier otro fallo, el genérico.
 const iniciarSesion = async (db, auth, data, { verificarPassword, ahora = Date.now() }) => {
   const identificador = normalizarIdentificador(data?.identificador ?? data?.email);
   const password = typeof data?.password === 'string' ? data.password : '';
   if (!identificador || !password) throw incorrecto();
 
   const cuenta = await resolverCuenta(db, auth, identificador);
-  const intentos = refIntentos(db, cuenta ? `uid:${cuenta.uid}` : `id:${identificador}`);
+  const intentos = refIntentos(db, cuenta ? claveCuenta(cuenta.uid) : `id:${identificador}`);
   const previo = (await intentos.get()).data();
   if (previo?.bloqueadoHasta && previo.bloqueadoHasta.toMillis() > ahora) {
     throw new HttpsError('resource-exhausted', MENSAJE_BLOQUEO);
   }
 
-  let valido = false;
-  if (cuenta && !cuenta.disabled && cuenta.email) {
-    const resultado = await verificarPassword(cuenta.email, password);
-    if (resultado === 'limitada') throw new HttpsError('resource-exhausted', MENSAJE_BLOQUEO);
-    // Usuario inactivo (Administración → Usuarios): mismo mensaje.
-    valido = resultado === 'ok' && (await refUsuario(db, cuenta.uid).get()).data()?.activo !== false;
-  }
-  if (!valido) {
-    await registrarFallo(db, intentos, ahora);
+  // Una cuenta deshabilitada en Auth no se puede verificar: genérico.
+  const resultado = cuenta && !cuenta.disabled && cuenta.email ? await verificarPassword(cuenta.email, password) : 'incorrecta';
+  if (resultado === 'limitada') throw new HttpsError('resource-exhausted', MENSAJE_BLOQUEO);
+  if (resultado !== 'ok') {
+    await registrarFallo(db, intentos, ahora, cuenta?.uid);
     throw incorrecto();
   }
+  const perfil = refUsuario(db, cuenta.uid);
+  const datosPerfil = (await perfil.get()).data();
+  // Usuario inactivo (Administración → Usuarios): no es un intento fallido.
+  if (datosPerfil?.activo === false) throw new HttpsError('permission-denied', MENSAJE_USUARIO_DESHABILITADO);
   if (previo) await intentos.delete();
+  if (datosPerfil?.bloqueoLoginHasta) await perfil.update({ bloqueoLoginHasta: FieldValue.delete() });
   return { token: await auth.createCustomToken(cuenta.uid) };
 };
+
+// Lista de usuarios → Desbloquear (acción btn_desbloquear): quita el
+// bloqueo por intentos fallidos de una cuenta y lo deja en su auditoría.
+const desbloquearUsuario = async (db, por, data) => {
+  const uid = data?.uid;
+  if (typeof uid !== 'string' || !uid) throw new HttpsError('invalid-argument', 'Usuario inválido.');
+  const ref = refUsuario(db, uid);
+  await db.runTransaction(async (t) => {
+    const snap = await t.get(ref);
+    if (!snap.exists) throw new HttpsError('not-found', 'El usuario no existe.');
+    t.delete(refIntentos(db, claveCuenta(uid)));
+    t.update(ref, { bloqueoLoginHasta: FieldValue.delete() });
+    t.set(ref.collection('logs').doc(), {
+      accion: 'DESBLOQUEO_LOGIN',
+      detalle: { bloqueadoHasta: snap.data().bloqueoLoginHasta ?? null },
+      usuario: por.nombre,
+      usuarioUid: por.uid,
+      fecha: FieldValue.serverTimestamp(),
+    });
+  });
+  return { ok: true };
+};
+
+// Quién llama: { uid, nombre } si puede esa acción granular (o es admin/dev).
+const exigirAccion = async (db, uid, [modulo, ruta, seccion, accion]) => {
+  if (!uid) throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  const perfil = (await refUsuario(db, uid).get()).data();
+  if (!puedeAccion(perfil, modulo, ruta, seccion, accion)) {
+    throw new HttpsError('permission-denied', 'No tienes permiso para esta acción.');
+  }
+  return { uid, nombre: perfil.nombreCompleto || perfil.email || '' };
+};
+const ACCION_DESBLOQUEAR = ['administracion', '/administracion/listadoUsuario', 'tabla_usuarios', 'btn_desbloquear'];
 
 // --- Crear usuario --------------------------------------------------------
 
@@ -211,4 +253,7 @@ const indexarNombresUsuario = async (db, entradas) => {
   return { escritas, omitidas };
 };
 
-module.exports = { iniciarSesion, verificarPasswordRest, crearUsuario, revisarNombresUsuario, indexarNombresUsuario, MAX_FALLOS };
+module.exports = {
+  iniciarSesion, verificarPasswordRest, crearUsuario, desbloquearUsuario, exigirAccion, ACCION_DESBLOQUEAR,
+  revisarNombresUsuario, indexarNombresUsuario, MAX_FALLOS,
+};

@@ -72,11 +72,12 @@ service cloud.firestore {
     // Rol, permisos (el efectivo, calculado), centro de costo y excepciones
     // solo los escriben las Cloud Functions de functions/permisos (que exigen
     // admin/dev y no dejan el sistema sin administrador). El nombre de
-    // usuario también (es único: índice nombres_usuario, ver
-    // functions/usuarios). Desde el navegador, cada usuario actualiza lo suyo
-    // (tema, cambio de contraseña…) y un admin/dev, los datos de los demás.
+    // usuario (es único: índice nombres_usuario) y el bloqueo por intentos
+    // fallidos también, con las de functions/usuarios. Desde el navegador,
+    // cada usuario actualiza lo suyo (tema, cambio de contraseña…) y un
+    // admin/dev, los datos de los demás.
     function camposProtegidosUsuario() {
-      return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones', 'nombreUsuario'];
+      return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones', 'nombreUsuario', 'bloqueoLoginHasta'];
     }
     match /usuarios/{userId} {
       allow read: if request.auth != null;

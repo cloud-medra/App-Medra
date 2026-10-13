@@ -80,6 +80,7 @@ export const guardarPermisosUsuario = llamar('guardarPermisosUsuario');
 export const asignarCentroCostoMasivo = llamar('asignarCentroCostoMasivo');
 export const guardarPlantillaCentroCosto = llamar('guardarPlantillaCentroCosto');
 export const crearUsuario = llamar('crearUsuario');
+export const desbloquearUsuario = llamar('desbloquearUsuario');
 
 // Mensaje legible de un error de las funciones.
 export const mensajeError = (error, porDefecto) => {

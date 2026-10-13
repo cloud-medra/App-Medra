@@ -13,6 +13,9 @@ const USUARIOS = [
   { id: 'yo', nombreCompleto: 'Admin', nombreUsuario: 'admin', email: 'a@x.cl', rol: 'admin' },
   { id: 'ana', nombreCompleto: 'Ana Lab', nombreUsuario: 'ana', email: 'ana@x.cl', rol: 'operador', centroCostoId: 'lab', excepciones: { agregados: ['v|/x'], quitados: [] } },
   { id: 'luis', nombreCompleto: 'Luis Lab', nombreUsuario: 'luis', email: 'luis@x.cl', rol: 'operador', centroCostoId: 'lab', excepciones: { agregados: [], quitados: [] } },
+  // Bloqueado por intentos fallidos (vigente) y uno con el bloqueo ya vencido.
+  { id: 'eva', nombreCompleto: 'Eva Bloq', nombreUsuario: 'eva', email: 'eva@x.cl', rol: 'operador', bloqueoLoginHasta: { toDate: () => new Date(2099, 0, 2, 14, 30) } },
+  { id: 'max', nombreCompleto: 'Max Venc', nombreUsuario: 'max', email: 'max@x.cl', rol: 'operador', bloqueoLoginHasta: { toDate: () => new Date(2000, 0, 1) } },
 ];
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(), query: vi.fn(), orderBy: vi.fn(), doc: vi.fn(), deleteDoc: vi.fn(),
@@ -26,6 +29,9 @@ vi.mock('../../../../context/ModalContext', () => ({ useModal: () => ({ confirmA
 vi.mock('../../../../hooks/useCatalogo', () => ({
   useCatalogo: () => ({ datos: [{ id: 'lab', nombre: 'UNIDAD DE LABORATORIO', estado: 'ACTIVO' }, { id: 'prev', nombre: 'UNIDAD DE PREVENCIÓN', estado: 'ACTIVO', usarEnGestiones: false }] }),
 }));
+
+let usuarioSesion = { rol: 'admin' };
+vi.mock('../../../../context/UserContext', () => ({ useUser: () => ({ userData: usuarioSesion }) }));
 
 const { default: ListadoUsuario } = await import('./ListadoUsuario');
 
@@ -71,5 +77,41 @@ describe('Listado Usuario: centro de costo', () => {
     await act(async () => { fireEvent.click(within(fila('Admin')).getByTitle('Inactivar usuario')); });
     expect(llamadas[0]).toEqual({ nombre: 'guardarPermisosUsuario', datos: { uid: 'yo', datos: { activo: false } } });
     expect(showToast).toHaveBeenCalledWith('No se puede: es el último administrador activo del sistema.', 'error');
+  });
+});
+
+describe('Listado Usuario: bloqueo por intentos fallidos', () => {
+  const LISTADO = '/administracion/listadoUsuario';
+  const operadorCon = (elements) => ({
+    rol: 'operador',
+    permisos: { administracion: [LISTADO] },
+    permisosGranulares: { [LISTADO]: { tabla_usuarios: { visible: true, elements } } },
+  });
+  beforeEach(() => { respuesta = async () => ({ data: { ok: true } }); });
+  afterEach(() => { usuarioSesion = { rol: 'admin' }; });
+
+  it('muestra quién está bloqueado y hasta cuándo; un bloqueo vencido no se muestra', () => {
+    render(<ListadoUsuario />);
+    expect(within(fila('Eva Bloq')).getByText(/Bloqueado hasta .*14:30/)).toBeInTheDocument();
+    expect(within(fila('Max Venc')).queryByText(/Bloqueado/)).not.toBeInTheDocument();
+    expect(within(fila('Max Venc')).queryByTitle('Desbloquear usuario')).not.toBeInTheDocument();
+  });
+
+  it('desbloquear llama a la función con el uid', async () => {
+    render(<ListadoUsuario />);
+    await act(async () => { fireEvent.click(within(fila('Eva Bloq')).getByTitle('Desbloquear usuario')); });
+    expect(llamadas).toEqual([{ nombre: 'desbloquearUsuario', datos: { uid: 'eva' } }]);
+    expect(showToast).toHaveBeenCalledWith('Usuario "Eva Bloq" desbloqueado', 'success');
+  });
+
+  it('respeta la acción granular btn_desbloquear', () => {
+    usuarioSesion = operadorCon({ btn_desbloquear: false });
+    render(<ListadoUsuario />);
+    expect(within(fila('Eva Bloq')).getByText(/Bloqueado hasta/)).toBeInTheDocument();
+    expect(within(fila('Eva Bloq')).queryByTitle('Desbloquear usuario')).not.toBeInTheDocument();
+    cleanup();
+    usuarioSesion = operadorCon({ btn_desbloquear: true });
+    render(<ListadoUsuario />);
+    expect(within(fila('Eva Bloq')).getByTitle('Desbloquear usuario')).toBeInTheDocument();
   });
 });

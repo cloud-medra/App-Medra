@@ -75,6 +75,7 @@ describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
       { centroCostoId: 'lab' },
       { excepciones: { agregados: ['v|/x'], quitados: [] } },
       { nombreUsuario: 'otro' },
+      { bloqueoLoginHasta: null },
     ];
     for (const cambio of intentos) {
       await expect(updateDoc(usuario(operador), cambio), JSON.stringify(cambio)).rejects.toMatchObject({ code: 'permission-denied' });
