@@ -30,6 +30,7 @@ import {
   GitMerge,
   BarChart3,
   BellRing,
+  Bell,
   Microscope,
   Handshake,
   Receipt,
@@ -82,6 +83,9 @@ export const MODULES = {
     label: 'Administración',
     icon: <Settings2 size={16} />,
     subItems: [
+      // Buzón de alertas (solicitudes de cambio de datos): automático para
+      // Administrador y Desarrollador, no se asigna (src/config/accesoMenu.js).
+      { label: 'Alertas', path: '/administracion/alertas', icon: <Bell size={14} />, automaticoAdministradores: true },
       { label: 'Control Mensual', path: '/administracion/controlMensual', icon: <CalendarCheck size={14} /> },
       { label: 'Periodo Actual', path: '/administracion/ResumenPeriodoAbierto', icon: <CalendarDays size={14} /> },
       { label: 'Notas Admin', path: '/administracion/notasAdmin', icon: <StickyNote size={14} /> },

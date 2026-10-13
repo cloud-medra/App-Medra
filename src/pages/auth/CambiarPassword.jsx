@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updatePassword, verifyBeforeUpdateEmail } from 'firebase/auth';
+import { updatePassword } from 'firebase/auth';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../../firebaseConfig';
 import { useToast } from '../../context/ToastContext';
@@ -19,7 +19,6 @@ import {
   FileText,
   PartyPopper,
   ArrowRight,
-  Pencil,
   X,
 } from 'lucide-react';
 
@@ -34,25 +33,11 @@ const CambiarPassword = () => {
 
   const [cargandoPerfil, setCargandoPerfil] = useState(true);
   const [perfil, setPerfil] = useState({ nombreCompleto: '', nombreUsuario: '', email: '' });
-  const [emailOriginal, setEmailOriginal] = useState('');
   const [passwords, setPasswords] = useState({ new: '', confirm: '' });
   const [aceptaPoliticas, setAceptaPoliticas] = useState(false);
   const [loading, setLoading] = useState(false);
   // null | 'privacidad' | 'terminos' -> controla el modal emergente
   const [modalAbierto, setModalAbierto] = useState(null);
-
-  // Controla, por campo, si se está mostrando como texto fijo o como input
-  // editable. Por defecto todo empieza en "false" (solo lectura) — el
-  // usuario decide si quiere cambiar algo, no se le obliga a re-ingresarlo.
-  const [editando, setEditando] = useState({
-    nombreCompleto: false,
-    nombreUsuario: false,
-    email: false,
-  });
-
-  const toggleEditar = (campo) => {
-    setEditando((prev) => ({ ...prev, [campo]: !prev[campo] }));
-  };
 
   useEffect(() => {
     const cargarPerfil = async () => {
@@ -70,7 +55,6 @@ const CambiarPassword = () => {
             nombreUsuario: data.nombreUsuario || '',
             email: data.email || user.email || '',
           });
-          setEmailOriginal(data.email || user.email || '');
         }
       } catch (error) {
         console.error('Error al cargar perfil:', error);
@@ -91,13 +75,11 @@ const CambiarPassword = () => {
   const isFormValid =
     Object.values(validations).every(Boolean) &&
     passwords.new === passwords.confirm &&
-    passwords.new !== '' &&
-    perfil.nombreCompleto.trim() !== '' &&
-    perfil.email.trim() !== '';
+    passwords.new !== '';
 
   const handleUpdate = async () => {
     if (!isFormValid) {
-      showToast('Por favor, completa tus datos y cumple con todos los requisitos de seguridad.', 'error');
+      showToast('Por favor, cumple con todos los requisitos de seguridad.', 'error');
       return;
     }
 
@@ -110,45 +92,25 @@ const CambiarPassword = () => {
 
     setLoading(true);
     try {
-      const emailCambio = perfil.email.trim() !== emailOriginal;
-
-      // El correo cambia recién cuando el usuario confirma el enlace que le
-      // llega a la dirección nueva; usuarios/{uid}.email se actualiza al
-      // entrar con el correo ya cambiado (función iniciarSesion), no antes.
-      if (emailCambio) {
-        await verifyBeforeUpdateEmail(user, perfil.email.trim());
-      }
-
       await updatePassword(user, passwords.new);
 
-      await updateDoc(doc(db, 'usuarios', user.uid), {
-        nombreCompleto: perfil.nombreCompleto.trim(),
-        passwordChanged: true,
-      });
+      // Nombre, nombre de usuario y correo no se cambian aquí: se piden en
+      // Ajustes → Datos personales (solicitud que aprueba el administrador).
+      await updateDoc(doc(db, 'usuarios', user.uid), { passwordChanged: true });
 
       // Firestore ya quedó actualizado, pero UserContext guarda userData en
       // memoria y solo se refresca en login/logout (onAuthStateChanged). Si
       // no lo actualizamos acá también, ProtectedRoute sigue viendo el
       // passwordChanged viejo y te devuelve a esta misma pantalla.
-      setUserData((prev) => ({
-        ...prev,
-        nombreCompleto: perfil.nombreCompleto.trim(),
-        passwordChanged: true,
-      }));
+      setUserData((prev) => ({ ...prev, passwordChanged: true }));
 
-      showToast(emailCambio
-        ? 'Tu contraseña se actualizó. Te enviamos un correo de confirmación a la nueva dirección.'
-        : 'Tus datos y contraseña se actualizaron correctamente', 'success');
+      showToast('Tu contraseña se actualizó correctamente', 'success');
       setPaso('bienvenida');
     } catch (error) {
       console.error('Error al actualizar acceso:', error);
       if (error.code === 'auth/requires-recent-login') {
         showToast('Tu sesión expiró, vuelve a iniciar sesión para continuar.', 'error');
         setTimeout(() => navigate('/', { replace: true }), 1500);
-      } else if (error.code === 'auth/email-already-in-use') {
-        showToast('Ese correo ya está en uso por otra cuenta.', 'error');
-      } else if (error.code === 'auth/invalid-email') {
-        showToast('El correo ingresado no es válido.', 'error');
       } else if (error.code === 'auth/weak-password') {
         showToast('La contraseña es demasiado débil.', 'error');
       } else {
@@ -183,59 +145,17 @@ const CambiarPassword = () => {
     </div>
   );
 
-  // Campo que por defecto muestra el valor actual como texto fijo, con un
-  // lápiz para activar edición. Solo se convierte en <input> si el usuario
-  // lo pide — nunca aparece vacío invitando a llenarlo.
-  const CampoPerfil = ({ campo, icon: Icon, label, tipo = 'text', placeholder, soloLectura = false }) => {
-    const estaEditando = editando[campo];
-
-    return (
-      <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
-        {estaEditando ? (
-          <div className="relative flex items-center">
-            <Icon className="absolute ml-3 text-gray-400" size={16} />
-            <input
-              type={tipo}
-              autoFocus
-              value={perfil[campo]}
-              onChange={(e) => setPerfil({ ...perfil, [campo]: e.target.value })}
-              onBlur={() => {
-                // Si lo dejó vacío, no lo dejamos guardado en blanco: volvemos a modo lectura sin perder el valor.
-                if (!perfil[campo].trim()) toggleEditar(campo);
-              }}
-              placeholder={placeholder}
-              className="w-full p-2.5 pl-9 pr-14 text-sm border border-[#2383C2] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#2383C2]"
-            />
-            <button
-              type="button"
-              onClick={() => toggleEditar(campo)}
-              className="absolute right-2 text-[10px] font-bold text-[#2383C2] hover:underline"
-            >
-              Listo
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between gap-2 p-2.5 pl-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-            <span className="flex items-center gap-2 truncate">
-              <Icon className="text-gray-400 shrink-0" size={16} />
-              <span className="truncate">{perfil[campo] || '—'}</span>
-            </span>
-            {!soloLectura && (
-              <button
-                type="button"
-                onClick={() => toggleEditar(campo)}
-                title={`Cambiar ${label.toLowerCase()}`}
-                className="text-gray-400 hover:text-[#2383C2] shrink-0 p-1"
-              >
-                <Pencil size={13} />
-              </button>
-            )}
-          </div>
-        )}
+  // Dato del perfil, solo lectura (los cambios se piden en Ajustes →
+  // Datos personales).
+  const CampoPerfil = ({ campo, icon: Icon, label }) => (
+    <div>
+      <span className="block text-xs font-semibold text-gray-600 mb-1">{label}</span>
+      <div className="flex items-center gap-2 p-2.5 pl-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
+        <Icon className="text-gray-400 shrink-0" size={16} />
+        <span className="truncate">{perfil[campo] || '—'}</span>
       </div>
-    );
-  };
+    </div>
+  );
 
   if (cargandoPerfil) {
     return (
@@ -251,14 +171,13 @@ const CambiarPassword = () => {
         <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
           <h2 className="text-xl font-bold mb-2 text-[#2383C2]">Configura tu acceso</h2>
           <p className="text-sm text-gray-600 mb-6">
-            Es tu primer ingreso. Estos son tus datos — cámbialos solo si quieres, y define una nueva contraseña segura.
+            Es tu primer ingreso. Revisa tus datos y define una nueva contraseña segura. Si algún dato está mal, después podrás solicitar el cambio en Ajustes → Datos personales.
           </p>
 
           <div className="space-y-3 mb-5">
-            <CampoPerfil campo="nombreCompleto" icon={User} label="Nombre completo" placeholder="Ej: Juana Pérez Soto" />
-            {/* Solo lectura: es único y lo asigna un administrador (Administración → Usuarios). */}
-            <CampoPerfil campo="nombreUsuario" icon={AtSign} label="Nombre de usuario" soloLectura />
-            <CampoPerfil campo="email" icon={Mail} label="Correo" tipo="email" placeholder="ejemplo@medra.cl" />
+            <CampoPerfil campo="nombreCompleto" icon={User} label="Nombre completo" />
+            <CampoPerfil campo="nombreUsuario" icon={AtSign} label="Nombre de usuario" />
+            <CampoPerfil campo="email" icon={Mail} label="Correo" />
           </div>
 
           <div className="border-t border-gray-100 pt-4">

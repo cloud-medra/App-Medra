@@ -7,10 +7,16 @@
 //   usuario      correo                   situación
 //   dev          dev@prueba.cl            Desarrollador (acceso total: ve todo)
 //   admin        admin@prueba.cl          Administrador con Crear usuario, Lista de
-//                                         usuarios (con "Desbloquear") y Permisos por centro
+//                                         usuarios (con "Desbloquear") y Permisos por
+//                                         centro; administra LABORATORIO
 //   adminlab     adminlab@prueba.cl       Administrador con solo Laboratorio
-//                                         (no ve Administración ni Atajos)
-//   operador     operador@prueba.cl       Lista de usuarios con "Desbloquear" marcado
+//                                         (Administración: solo Alertas; sin Atajos);
+//                                         administra LABORATORIO
+//   adminprev    adminprev@prueba.cl      Administrador de PREVENCIÓN (otro centro:
+//                                         no recibe ni puede aprobar las de LABORATORIO)
+//   operador     operador@prueba.cl       LABORATORIO; Lista de usuarios con
+//                                         "Desbloquear"; tiene una solicitud pendiente
+//                                         (cambio de nombre completo)
 //   sinpermiso   sinpermiso@prueba.cl     Lista de usuarios SIN "Desbloquear"
 //                                         configurado (denegado por defecto)
 //   inactivo     inactivo@prueba.cl       inactivo y deshabilitado en Auth
@@ -20,6 +26,8 @@
 //                                         deshabilitarInactivosAuth)
 //   bloqueado    bloqueado@prueba.cl      bloqueado por 5 intentos fallidos
 //   nuevo        nuevo@prueba.cl          primer ingreso (Cambiar contraseña)
+//   (sinpermiso, inactivo, bloqueado y nuevo no tienen centro: en Lista de
+//   usuarios aparecen "Por reasignar")
 //
 // Contraseña de todos: Prueba123. Nombres de usuario indexados.
 //
@@ -33,6 +41,7 @@ const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 const servicio = require('../usuarios/servicio');
+const solicitudes = require('../solicitudes/servicio');
 
 const PROYECTO = process.env.GCLOUD_PROJECT || '';
 const FIRESTORE = process.env.FIRESTORE_EMULATOR_HOST;
@@ -56,7 +65,7 @@ const listado = (elements) => ({
 const USUARIOS = [
   { nombreUsuario: 'dev', nombreCompleto: 'Dev Prueba', rol: 'dev', permisos: {}, permisosGranulares: {} },
   {
-    nombreUsuario: 'admin', nombreCompleto: 'Admin Prueba', rol: 'admin', centroCostoId: 'lab',
+    nombreUsuario: 'admin', nombreCompleto: 'Admin Prueba', rol: 'admin', centroCostoId: 'lab', centrosAdministrados: ['lab'],
     permisos: { administracion: ADMINISTRACION },
     permisosGranulares: {
       ...Object.fromEntries(ADMINISTRACION.map((r) => [r, {}])),
@@ -64,10 +73,14 @@ const USUARIOS = [
     },
   },
   {
-    nombreUsuario: 'adminlab', nombreCompleto: 'Admin Laboratorio', rol: 'admin', centroCostoId: 'lab',
+    nombreUsuario: 'adminlab', nombreCompleto: 'Admin Laboratorio', rol: 'admin', centroCostoId: 'lab', centrosAdministrados: ['lab'],
     permisos: { laboratorio: LAB }, permisosGranulares: Object.fromEntries(LAB.map((r) => [r, {}])),
   },
-  { nombreUsuario: 'operador', nombreCompleto: 'Operador Con Permisos', rol: 'operador', ...listado({ btn_desbloquear: true }) },
+  {
+    nombreUsuario: 'adminprev', nombreCompleto: 'Admin Prevención', rol: 'admin', centroCostoId: 'prev', centrosAdministrados: ['prev'],
+    permisos: { laboratorio: LAB }, permisosGranulares: Object.fromEntries(LAB.map((r) => [r, {}])),
+  },
+  { nombreUsuario: 'operador', nombreCompleto: 'Operador Con Permisos', rol: 'operador', centroCostoId: 'lab', ...listado({ btn_desbloquear: true }) },
   { nombreUsuario: 'sinpermiso', nombreCompleto: 'Operador Sin Permisos', rol: 'operador', ...listado({}) },
   { nombreUsuario: 'inactivo', nombreCompleto: 'Usuario Inactivo', rol: 'operador', activo: false, deshabilitadoEnAuth: true, ...listado({}) },
   { nombreUsuario: 'inactivoprevio', nombreCompleto: 'Inactivo Previo', rol: 'operador', activo: false, ...listado({}) },
@@ -98,6 +111,9 @@ const USUARIOS = [
     }
     console.log(`  ${u.nombreUsuario.padEnd(15)} ${email.padEnd(26)} ${uid}`);
   }
+  // Una solicitud pendiente para ver en Administración → Alertas.
+  const { uid: uidOperador } = await auth.getUserByEmail('operador@prueba.cl');
+  await solicitudes.crearSolicitud(db, auth, uidOperador, { tipo: 'nombreCompleto', valorSolicitado: 'Operador Renombrado', motivo: 'Prueba del buzón' }, { notificar: async () => ({}) });
   console.log(`\nListo (proyecto ${PROYECTO}). Contraseña de todos: ${PASSWORD}`);
 })().catch((err) => {
   console.error(err);

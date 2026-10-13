@@ -198,6 +198,8 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
     const errorNombre = errorNombreUsuario(formData.nombreUsuario);
     if (errorNombre) return errorNombre;
     if (!formData.email.trim()) return 'El correo es obligatorio.';
+    // Sus solicitudes van a los administradores de su centro.
+    if (formData.rol === 'operador' && !formData.centroCostoId) return 'El centro de costo es obligatorio para un Operador.';
     if (formData.password.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
     if (formData.password !== formData.confirmPassword) return 'Las contraseñas no coinciden.';
     return '';
@@ -367,7 +369,9 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
                         ? (sinPlantillaRol
                           ? `Su rol (${labelRol(formData.rol)}) no usa la plantilla del centro: solo los permisos que le asignes.`
                           : plantillaElegida ? `Heredará los permisos de ${combinacion}: queda configurado al crear la cuenta.` : undefined)
-                        : 'Opcional. Sin centro de costo, el usuario tendrá solo los permisos que le asignes.'}>
+                        : formData.rol === 'operador'
+                          ? 'Obligatorio para un Operador: define su plantilla y a qué administradores llegan sus solicitudes.'
+                          : 'Opcional. Sin centro de costo, el usuario tendrá solo los permisos que le asignes.'}>
                     <CentroSelect todos value={formData.centroCostoId} onChange={(c) => setFormData((prev) => ({ ...prev, centroCostoId: c.id }))}
                       placeholder="Sin centro de costo" disabled={!!usuarioId || !plantillasCargadas} />
                   </Campo>

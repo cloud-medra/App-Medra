@@ -250,6 +250,34 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "alertas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "destinatarios",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "creadoEl",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "solicitudes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "solicitanteUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEl",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

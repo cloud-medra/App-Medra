@@ -37,8 +37,6 @@ export const analizarAccesoAdministradores = (usuarios) => {
         ...resumen(u),
         modulos,
         items: items.length,
-        // Anterior a las plantillas: sin excepciones guardadas.
-        antiguo: u.excepciones === undefined,
         pierde,
         vistasSinConfigurar,
         accionesSinMarcar,

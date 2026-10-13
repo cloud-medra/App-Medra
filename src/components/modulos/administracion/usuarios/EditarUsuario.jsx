@@ -21,6 +21,8 @@ import {
 } from './permisosCentroCosto';
 import BarraCentroCosto from './BarraCentroCosto';
 import AvisoCentroSinConfigurar from './AvisoCentroSinConfigurar';
+import { CentrosAdministrados, AdministradoresAsignados } from './AsignacionAdministradores';
+import { TIPOS_SOLICITUD } from '../../../../../functions/solicitudes/tipos.mjs';
 
 // Edición de un usuario existente desde Listado Usuario, a pantalla completa
 // (reemplaza al listado, igual que las vistas de detalle del sistema).
@@ -58,7 +60,11 @@ const estadoInicial = (usuario) => {
     datos: {
       nombreCompleto: usuario.nombreCompleto || '',
       nombreUsuario: usuario.nombreUsuario || '',
+      email: usuario.email || '',
       rol: usuario.rol || 'operador',
+      centrosAdministrados: usuario.centrosAdministrados || [],
+      administradoresAsignados: usuario.administradoresAsignados || [],
+      todosLosAdministradoresDelCentro: usuario.todosLosAdministradoresDelCentro === true,
       activo: usuario.activo !== false,
       centroCostoId: usuario.centroCostoId ?? null,
     },
@@ -69,7 +75,8 @@ const estadoInicial = (usuario) => {
   };
 };
 
-const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
+// usuarios: todos (para ofrecer los administradores de su centro).
+const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }) => {
   // Rol Desarrollador: solo lo asigna otro Desarrollador (lo vuelve a exigir
   // guardarPermisosUsuario, igual que no editarse a sí mismo).
   const { userData } = useUser();
@@ -134,7 +141,8 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
   };
   const cambiarCentro = (centroId) => {
     if (centroId === datos.centroCostoId) return;
-    setDatos((d) => ({ ...d, centroCostoId: centroId }));
+    // Otro centro: sus administradores asignados ya no corresponden.
+    setDatos((d) => ({ ...d, centroCostoId: centroId, administradoresAsignados: [] }));
     ofrecerLimpiar('Cambiar centro de costo', centroId, datos.rol);
   };
   const cambiarRol = (rol) => {
@@ -164,6 +172,12 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
     const nombre = datos.nombreUsuario.trim();
     const errorNombre = (!nombre || nombre !== inicial.datos.nombreUsuario) && errorNombreUsuario(nombre);
     if (errorNombre) e.nombreUsuario = errorNombre;
+    const email = datos.email.trim();
+    if (email.toLowerCase() !== (inicial.datos.email || '').toLowerCase()) {
+      const errorEmail = TIPOS_SOLICITUD.email.validar(TIPOS_SOLICITUD.email.normalizar(email));
+      if (errorEmail) e.email = errorEmail;
+    }
+    if (datos.rol === 'operador' && !datos.centroCostoId) e.centroCostoId = 'El centro de costo es obligatorio para un Operador.';
     setErrores(e);
     if (Object.keys(e).length) setTab('datos');
     return Object.keys(e).length === 0;
@@ -178,13 +192,23 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
     }
     setGuardando(true);
     try {
-      const datosLimpios = { ...datos, nombreCompleto: datos.nombreCompleto.trim(), nombreUsuario: datos.nombreUsuario.trim() };
+      const datosLimpios = { ...datos, nombreCompleto: datos.nombreCompleto.trim(), nombreUsuario: datos.nombreUsuario.trim(), email: datos.email.trim() };
+      const cambioEmail = datosLimpios.email.toLowerCase() !== (inicial.datos.email || '').toLowerCase();
+      const conAdministradores = ['operador', 'encargado'].includes(datosLimpios.rol);
       await guardarPermisosUsuario({
         uid: usuario.id,
-        datos: { nombreCompleto: datosLimpios.nombreCompleto, nombreUsuario: datosLimpios.nombreUsuario, activo: datosLimpios.activo },
+        datos: {
+          nombreCompleto: datosLimpios.nombreCompleto, nombreUsuario: datosLimpios.nombreUsuario, activo: datosLimpios.activo,
+          ...(cambioEmail ? { email: datosLimpios.email } : {}),
+        },
         rol: datosLimpios.rol,
         centroCostoId: datosLimpios.centroCostoId,
         excepciones,
+        ...(datosLimpios.rol === 'admin' ? { centrosAdministrados: datosLimpios.centrosAdministrados } : {}),
+        ...(conAdministradores ? {
+          administradoresAsignados: datosLimpios.todosLosAdministradoresDelCentro ? [] : datosLimpios.administradoresAsignados,
+          todosLosAdministradoresDelCentro: datosLimpios.todosLosAdministradoresDelCentro,
+        } : {}),
       });
       setInicial({ datos: datosLimpios, excepciones, agregadas: [] });
       setDatos(datosLimpios);
@@ -193,7 +217,7 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
     } catch (error) {
       console.error('Error al guardar cambios del usuario:', error);
       if (error?.code === 'functions/already-exists') {
-        setErrores({ nombreUsuario: error.message });
+        setErrores(/correo/i.test(error.message) ? { email: error.message } : { nombreUsuario: error.message });
         setTab('datos');
       }
       showToast(mensajeError(error, 'No se pudieron guardar los cambios'), 'error');
@@ -292,8 +316,9 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
                     onChange={(e) => setDatos((d) => ({ ...d, nombreUsuario: e.target.value }))}
                   />
                   <CampoTexto
-                    id="email" label="Correo" icon={Mail} value={usuario.email || ''} disabled
-                    ayuda="Es el correo de ingreso: no se modifica desde aquí."
+                    id="email" label="Correo" icon={Mail} type="email" value={datos.email} error={errores.email}
+                    onChange={(e) => setDatos((d) => ({ ...d, email: e.target.value }))}
+                    ayuda="Es el correo de ingreso. Si lo cambias aquí, cambia al guardar y queda en la auditoría."
                   />
                   <CampoSelect
                     id="rol" label="Rol" icon={Shield} opciones={rolesAsignables(userData, datos.rol)} value={datos.rol}
@@ -301,7 +326,7 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
                     onChange={(e) => cambiarRol(e.target.value)}
                   />
                   <CampoEstado activo={datos.activo} onChange={(v) => setDatos((d) => ({ ...d, activo: v }))} />
-                  <Campo id="centroCosto" label="Centro de costo"
+                  <Campo id="centroCosto" label="Centro de costo" error={errores.centroCostoId}
                     ayuda={!datos.centroCostoId
                       ? 'Sin centro de costo: el usuario tiene solo sus permisos propios.'
                       : sinPlantilla
@@ -322,6 +347,19 @@ const EditarUsuario = ({ usuario, onVolver, onIrAPermisosCentro }) => {
                   {centroSinConfigurar && (
                     <div className="md:col-span-2">
                       <AvisoCentroSinConfigurar nombre={combinacion} onConfigurar={configurarCentro} />
+                    </div>
+                  )}
+                  {datos.rol === 'admin' && (
+                    <div className="md:col-span-2">
+                      <CentrosAdministrados centros={centros} seleccionados={datos.centrosAdministrados}
+                        onCambiar={(lista) => setDatos((d) => ({ ...d, centrosAdministrados: lista }))} />
+                    </div>
+                  )}
+                  {['operador', 'encargado'].includes(datos.rol) && (
+                    <div className="md:col-span-2">
+                      <AdministradoresAsignados usuarios={usuarios} centroId={datos.centroCostoId}
+                        asignados={datos.administradoresAsignados} todos={datos.todosLosAdministradoresDelCentro}
+                        onCambiar={(cambio) => setDatos((d) => ({ ...d, ...cambio }))} />
                     </div>
                   )}
                 </div>

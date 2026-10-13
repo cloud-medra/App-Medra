@@ -41,6 +41,8 @@ describe('Crear Usuario (mismo marco que Editar usuario)', () => {
     expect(screen.getByRole('button', { name: /Crear cuenta/ })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Volver' })).not.toBeInTheDocument();
     expect(screen.getByText('Centro de costo')).toBeInTheDocument();
+    expect(screen.getByText(/Obligatorio para un Operador/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Rol'), { target: { value: 'encargado' } });
     expect(screen.getByText(/Sin centro de costo, el usuario tendrá solo los permisos que le asignes/)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Pérez' } });
@@ -107,6 +109,8 @@ describe('Crear Usuario con centro de costo', () => {
 
 describe('Crear Usuario: nombre de usuario', () => {
   const llenar = (nombreUsuario) => {
+    fireEvent.click(screen.getByText('Sin centro de costo'));
+    fireEvent.click(screen.getByText('LABORATORIO'));
     fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Pérez' } });
     fireEvent.change(screen.getByLabelText('Nombre de usuario'), { target: { value: nombreUsuario } });
     fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'ana@x.cl' } });
@@ -154,5 +158,21 @@ describe('Crear Usuario: rol Desarrollador', () => {
     usuarioSesion = { uid: 'yo', rol: 'dev' };
     render(<CrearUsuario />);
     expect(opciones()).toContain('dev');
+  });
+});
+
+describe('Crear Usuario: Operador sin centro', () => {
+  it('no se crea: el centro es obligatorio para un Operador', async () => {
+    llamadas.length = 0;
+    showToast.mockClear();
+    render(<CrearUsuario />);
+    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Ana Pérez' } });
+    fireEvent.change(screen.getByLabelText('Nombre de usuario'), { target: { value: 'aperez' } });
+    fireEvent.change(screen.getByLabelText('Correo'), { target: { value: 'ana@x.cl' } });
+    fireEvent.change(screen.getByLabelText('Contraseña'), { target: { value: 'secreto1' } });
+    fireEvent.change(screen.getByLabelText('Confirmar contraseña'), { target: { value: 'secreto1' } });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Crear cuenta/ })); });
+    expect(llamadas).toEqual([]);
+    expect(showToast).toHaveBeenCalledWith('El centro de costo es obligatorio para un Operador.', 'error');
   });
 });

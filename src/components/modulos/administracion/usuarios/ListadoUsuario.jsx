@@ -21,10 +21,12 @@ import EditarUsuario from './EditarUsuario';
 import CentroSelect from '../../../ui/CentroSelect';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { useUser } from '../../../../context/UserContext';
+import { motivoReasignar } from '../../../../../functions/solicitudes/destinatarios.mjs';
+import { AdministradoresAsignados } from './AsignacionAdministradores';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { ROLES } from './roles';
 import {
-  excepcionesDe, contarExcepciones, tieneExcepciones, guardarPermisosUsuario, asignarCentroCostoMasivo, desbloquearUsuario, mensajeError,
+  excepcionesDe, contarExcepciones, tieneExcepciones, guardarPermisosUsuario, asignarCentroCostoMasivo, asignarAdministradoresMasivo, desbloquearUsuario, mensajeError,
 } from './permisosCentroCosto';
 import { vistasConfigurables, resumenRestricciones, completarVistasDelMenu } from './permisosGranularesUtils';
 
@@ -70,6 +72,8 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
   const [filtroCentro, setFiltroCentro] = useState('todos');
   const [seleccionados, setSeleccionados] = useState(() => new Set());
   const [asignando, setAsignando] = useState(false);
+  // Asignar administradores a varios (mismo centro): { administradoresAsignados, todosLosAdministradoresDelCentro } o null.
+  const [asignacionAdmins, setAsignacionAdmins] = useState(null);
   const { datos: centros } = useCatalogo('centros');
   const nombreCentro = (id) => centros.find((c) => c.id === id)?.nombre || 'Centro eliminado';
 
@@ -202,6 +206,27 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
     );
   };
 
+  // Asignación masiva de administradores: solo Operadores/Encargados de un
+  // mismo centro de costo.
+  const seleccionUsuarios = usuarios.filter((u) => seleccionados.has(u.id));
+  const centrosSeleccion = new Set(seleccionUsuarios.map((u) => u.centroCostoId || null));
+  const centroComun = centrosSeleccion.size === 1 && !centrosSeleccion.has(null) ? [...centrosSeleccion][0] : null;
+  const puedeAsignarAdmins = Boolean(centroComun) && seleccionUsuarios.every((u) => ['operador', 'encargado'].includes(u.rol || 'operador'));
+  const guardarAsignacionAdmins = async () => {
+    setAsignando(true);
+    try {
+      const { actualizados } = await asignarAdministradoresMasivo({ uids: seleccionUsuarios.map((u) => u.id), ...asignacionAdmins });
+      setAsignacionAdmins(null);
+      setSeleccionados(new Set());
+      showToast(`Administradores asignados a ${actualizados} usuario(s).`, 'success');
+    } catch (error) {
+      console.error('Error al asignar administradores:', error);
+      showToast(mensajeError(error, 'No se pudieron asignar los administradores'), 'error');
+    } finally {
+      setAsignando(false);
+    }
+  };
+
   // --- Activar / Inactivar (acción rápida, sin entrar a modo edición) ---
   const toggleActivoUsuario = async (usuario) => {
     setActualizandoEstadoId(usuario.id);
@@ -299,7 +324,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
   // Edición a pantalla completa: reemplaza al listado (mismo patrón que las
   // vistas de detalle del sistema). `key` reinicia el estado al cambiar de usuario.
   if (usuarioEditando) {
-    return <EditarUsuario key={usuarioEditando.id} usuario={usuarioEditando} onVolver={() => setUsuarioEditandoId(null)} onIrAPermisosCentro={onIrAPermisosCentro} />;
+    return <EditarUsuario key={usuarioEditando.id} usuario={usuarioEditando} usuarios={usuarios} onVolver={() => setUsuarioEditandoId(null)} onIrAPermisosCentro={onIrAPermisosCentro} />;
   }
 
   return (
@@ -371,10 +396,30 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
             className="h-7 px-2.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 font-semibold text-gray-600 dark:text-gray-300 hover:text-red-600 disabled:opacity-50">
             Quitar centro
           </button>
+          <button type="button" onClick={() => setAsignacionAdmins({ administradoresAsignados: [], todosLosAdministradoresDelCentro: true })}
+            disabled={asignando || !puedeAsignarAdmins}
+            title={puedeAsignarAdmins ? '' : 'Elige solo Operadores o Encargados de un mismo centro de costo'}
+            className="h-7 px-2.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 font-semibold text-gray-600 dark:text-gray-300 hover:text-[#2383C2] disabled:opacity-50">
+            Asignar administradores…
+          </button>
           {asignando && <Spinner size="sm" />}
           <button type="button" onClick={() => setSeleccionados(new Set())} className="ml-auto inline-flex items-center gap-1 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">
             <X size={13} /> Limpiar selección
           </button>
+        </div>
+      )}
+
+      {asignacionAdmins && puedeAsignarAdmins && (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 max-w-md flex flex-col gap-2" role="region" aria-label="Asignar administradores">
+          <p className="text-[11.5px] text-gray-600 dark:text-gray-300">{seleccionUsuarios.length} usuario(s) de {nombreCentro(centroComun)}:</p>
+          <AdministradoresAsignados usuarios={usuarios} centroId={centroComun}
+            asignados={asignacionAdmins.administradoresAsignados} todos={asignacionAdmins.todosLosAdministradoresDelCentro}
+            onCambiar={(cambio) => setAsignacionAdmins((a) => ({ ...a, ...cambio }))} />
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setAsignacionAdmins(null)} className="text-[11px] px-3 py-1.5 rounded border border-gray-300 dark:border-gray-600">Cancelar</button>
+            <button type="button" onClick={guardarAsignacionAdmins} disabled={asignando}
+              className="text-[11px] font-bold px-3 py-1.5 rounded bg-[#2383C2] text-white disabled:opacity-50">Guardar</button>
+          </div>
         </div>
       )}
 
@@ -461,6 +506,14 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                           <Shield size={10} className="text-[#2383C2]" />
                           {rolLabel}
                         </span>
+                        {(() => {
+                          const motivo = motivoReasignar(usuario, usuarios);
+                          return motivo && (
+                            <span title={motivo} className="mt-0.5 flex items-center gap-1 w-fit text-[9.5px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                              Por reasignar
+                            </span>
+                          );
+                        })()}
                       </td>
 
                       <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70">

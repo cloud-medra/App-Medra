@@ -143,3 +143,27 @@ describe('Listado Usuario: bloqueo por intentos fallidos', () => {
     expect(within(fila('Eva Bloq')).getByTitle('Desbloquear usuario')).toBeInTheDocument();
   });
 });
+
+describe('Listado Usuario: administradores asignados', () => {
+  it('marca "Por reasignar" al operador sin centro o con un administrador que ya no es de su centro', () => {
+    render(<ListadoUsuario />);
+    // eva y max: operadores sin centro de costo.
+    expect(within(fila('Eva Bloq')).getByText('Por reasignar')).toHaveAttribute('title', expect.stringMatching(/Sin centro de costo/));
+    // ana y luis (centro lab, sin administradores activos del centro).
+    expect(within(fila('Ana Lab')).getByText('Por reasignar')).toHaveAttribute('title', expect.stringMatching(/no tiene administradores activos/));
+    expect(within(fila('Admin')).queryByText('Por reasignar')).not.toBeInTheDocument();
+  });
+
+  it('asigna administradores solo a usuarios de un mismo centro', async () => {
+    render(<ListadoUsuario />);
+    fireEvent.click(screen.getByLabelText('Seleccionar Ana Lab'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Eva Bloq'));
+    expect(screen.getByRole('button', { name: 'Asignar administradores…' })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText('Seleccionar Eva Bloq'));
+    fireEvent.click(screen.getByLabelText('Seleccionar Luis Lab'));
+    fireEvent.click(screen.getByRole('button', { name: 'Asignar administradores…' }));
+    const panel = screen.getByRole('region', { name: 'Asignar administradores' });
+    await act(async () => { fireEvent.click(within(panel).getByRole('button', { name: 'Guardar' })); });
+    expect(llamadas.at(-1)).toEqual({ nombre: 'asignarAdministradoresMasivo', datos: { uids: ['ana', 'luis'], administradoresAsignados: [], todosLosAdministradoresDelCentro: true } });
+  });
+});

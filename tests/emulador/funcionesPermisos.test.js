@@ -86,8 +86,9 @@ describe('plantilla por centro de costo', () => {
   });
 
   it('cambiar de centro conserva las excepciones sobre la nueva plantilla; sin centro quedan solo los propios', async () => {
-    await crear('ana');
-    await servicio.guardarPlantillaCentroCosto(db, YO, { centroId: 'lab', rol: 'operador', plantilla: PLANTILLA_LAB });
+    // Encargado: para un Operador el centro es obligatorio (ver más abajo).
+    await crear('ana', { rol: 'encargado' });
+    await servicio.guardarPlantillaCentroCosto(db, YO, { centroId: 'lab', rol: 'encargado', plantilla: PLANTILLA_LAB });
     const propio = { agregados: [claveMenu('maestros', COD), claveVista(COD)], quitados: [] };
     await servicio.guardarPermisosUsuario(db, YO, { uid: 'ana', centroCostoId: 'lab', excepciones: propio });
     expect(Object.keys((await usuario('ana')).permisos).sort()).toEqual(['laboratorio', 'maestros']);
@@ -198,9 +199,9 @@ describe('anti-escalada', () => {
 
   it('el Desarrollador puede todo eso', async () => {
     await servicio.guardarPermisosUsuario(db, DEV, { uid: 'op', rol: 'dev' });
-    await servicio.guardarPermisosUsuario(db, DEV, { uid: 'yo', rol: 'operador' });
+    await servicio.guardarPermisosUsuario(db, DEV, { uid: 'yo', rol: 'encargado' });
     expect((await usuario('op')).rol).toBe('dev');
-    expect((await usuario('yo')).rol).toBe('operador');
+    expect((await usuario('yo')).rol).toBe('encargado');
   });
 });
 

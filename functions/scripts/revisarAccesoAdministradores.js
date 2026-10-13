@@ -43,7 +43,7 @@ const fila = (u) => `${u.uid} | ${u.nombreUsuario} | ${u.nombreCompleto} | ${u.e
   }
 
   r.administradores.forEach((a) => {
-    console.log(`\nAdministrador: ${fila(a)}${a.antiguo ? '  [anterior a las plantillas]' : ''}`);
+    console.log(`\nAdministrador: ${fila(a)}`);
     console.log(`  Módulos asignados (${a.items} ítems): ${a.modulos.join(', ') || '(ninguno: no vería ningún módulo)'}`);
     a.pierde.forEach((p) => console.log(`  - Deja de ver: ${p}`));
     if (a.vistasSinConfigurar.length) console.log(`  - Vistas sin configuración granular (adentro quedarían bloqueadas): ${a.vistasSinConfigurar.join(', ')}`);

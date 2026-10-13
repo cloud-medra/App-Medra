@@ -11,6 +11,8 @@
 //     cuenta de Auth y, al inactivar, revoca sus sesiones).
 //   - asignarCentroCostoMasivo: el mismo centro de costo a varios usuarios
 //     (conserva las excepciones de cada uno).
+//   - asignarAdministradoresMasivo: administradores asignados (o "todos los
+//     del centro") a varios Operadores/Encargados del mismo centro.
 //   - guardarPlantillaCentroCosto: guarda la plantilla y recalcula a todos
 //     los usuarios de ese centro de costo, con sus excepciones.
 // Solo Desarrollador, o Administrador con el ítem de Administración de cada
@@ -42,4 +44,5 @@ const { RUTAS } = servicio;
 // Crear Usuario también guarda los permisos de la cuenta recién creada.
 exports.guardarPermisosUsuario = callable('guardarPermisosUsuario', [RUTAS.listado, RUTAS.crear]);
 exports.asignarCentroCostoMasivo = callable('asignarCentroCostoMasivo', [RUTAS.listado]);
+exports.asignarAdministradoresMasivo = callable('asignarAdministradoresMasivo', [RUTAS.listado]);
 exports.guardarPlantillaCentroCosto = callable('guardarPlantillaCentroCosto', [RUTAS.permisosCentro], { timeoutSeconds: 300 });

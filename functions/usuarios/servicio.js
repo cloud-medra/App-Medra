@@ -12,6 +12,7 @@ const {
 } = require('./nombreUsuario.mjs');
 const { refNombre, prepararNombreUsuario } = require('./indiceNombres');
 const { ROLES, ROL_POR_DEFECTO, puedeAccion } = require('../permisos/nucleo.mjs');
+const { sincronizarCorreo } = require('../solicitudes/servicio');
 
 const VALORES_ROL = ROLES.map((r) => r.value);
 const refUsuario = (db, uid) => db.collection('usuarios').doc(uid);
@@ -110,13 +111,10 @@ const iniciarSesion = async (db, auth, data, { verificarPassword, ahora = Date.n
   // Usuario inactivo (Administración → Usuarios): no es un intento fallido.
   if (datosPerfil?.activo === false) throw new HttpsError('permission-denied', MENSAJE_USUARIO_DESHABILITADO);
   if (previo) await intentos.delete();
+  if (datosPerfil?.bloqueoLoginHasta) await perfil.update({ bloqueoLoginHasta: FieldValue.delete() });
   // Correo cambiado y confirmado por el usuario (verifyBeforeUpdateEmail):
-  // el perfil toma el de Auth recién ahora.
-  const ajustes = {
-    ...(datosPerfil?.bloqueoLoginHasta ? { bloqueoLoginHasta: FieldValue.delete() } : {}),
-    ...(datosPerfil && datosPerfil.email !== cuenta.email ? { email: cuenta.email } : {}),
-  };
-  if (Object.keys(ajustes).length) await perfil.update(ajustes);
+  // se aplica solo si es el de una solicitud aprobada; si no, se revierte.
+  await sincronizarCorreo(db, auth, cuenta, datosPerfil);
   return { token: await auth.createCustomToken(cuenta.uid) };
 };
 

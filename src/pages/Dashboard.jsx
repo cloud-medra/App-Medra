@@ -27,9 +27,11 @@ import ListadoUsuario from '../components/modulos/administracion/usuarios/Listad
 import CargasConsolidado from '../components/modulos/administracion/cargasConsolidado/CargasConsolidado';
 import Estadisticas from '../components/modulos/administracion/estadisticas/Estadisticas';
 import PermisosPorCentro from '../components/modulos/administracion/permisosCentro/PermisosPorCentro';
+import Alertas from '../components/modulos/administracion/alertas/Alertas';
+import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
 import ZonasDiagnostico from '../components/modulos/maestros/zonasDiagnostico/ZonasDiagnostico';
 import DescripcionesOcultas from '../components/modulos/maestros/descripcionesOcultas/DescripcionesOcultas';
-import { subItemsVisibles, puedeAbrirVista } from '../config/accesoMenu';
+import { subItemsVisibles, puedeAbrirVista, esAdministrador } from '../config/accesoMenu';
 import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
 
 // --- LABORATORIO ---
@@ -117,6 +119,13 @@ import AtajosDashboard from '../components/modulos/general/settings/atajosDashbo
 import { puedeConfigurarAtajos } from '../config/atajosDashboard';
 
 // import PreferenciasGenerales from '../components/modulos/ajustes/PreferenciasGenerales';
+
+// Contador de alertas sin leer (menú lateral).
+const Contador = ({ n }) => (n > 0 ? (
+  <span className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold inline-flex items-center justify-center" aria-label={`${n} alertas sin leer`}>
+    {n > 98 ? '99+' : n}
+  </span>
+) : null);
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -257,6 +266,7 @@ const Dashboard = () => {
       />
     ),
     '/administracion/cargasConsolidado': <CargasConsolidado />,
+    [RUTA_ALERTAS]: <Alertas />,
     '/administracion/estadisticas': <Estadisticas />,
 
     '/laboratorio/empresasLaboratorio': <EmpresasLaboratorio />,
@@ -345,6 +355,9 @@ const Dashboard = () => {
   const fechaActual = new Date().toLocaleDateString('es-CL', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
+
+  // Alertas sin leer (Administración → Alertas): contador en el menú.
+  const alertasNoLeidas = useAlertasNoLeidas(userData?.uid, esAdministrador(userData));
 
   // --- ORDEN DE MÓDULOS APLICADO (usa userData.ordenModulos si existe) ---
   const modulosPermitidos = (() => {
@@ -509,6 +522,7 @@ const Dashboard = () => {
                           {MODULES[key].label}
                         </span>
                       </div>
+                      {key === 'administracion' && !isSidebarCollapsed && <Contador n={alertasNoLeidas} />}
                       {!isSidebarCollapsed && <ChevronRight size={14} className="flex-shrink-0 opacity-60 ml-1" />}
                     </button>
                   ))}
@@ -541,6 +555,7 @@ const Dashboard = () => {
                       <span className={`transition-all duration-300 truncate ${isSidebarCollapsed ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                         {sub.label}
                       </span>
+                      {sub.path === RUTA_ALERTAS && !isSidebarCollapsed && <Contador n={alertasNoLeidas} />}
                     </button>
                   ))}
                 </div>

@@ -117,8 +117,14 @@ describe('iniciarSesion: correo o nombre de usuario', () => {
 });
 
 describe('iniciarSesion: cambio de correo confirmado', () => {
-  it('el perfil toma el correo de Auth al entrar (no antes); con el anterior ya no entra', async () => {
+  // Solicitud de correo ya APROBADA (functions/solicitudes), esperando confirmación.
+  const aprobada = (uid, valorSolicitado) => db.collection('solicitudes').add({
+    tipo: 'email', estado: 'aprobada', solicitanteUid: uid, valorActual: 'ana@medra.cl', valorSolicitado, aprobadores: [],
+  });
+
+  it('el correo aprobado y confirmado se aplica al entrar (no antes); con el anterior ya no entra', async () => {
     const uid = await crearCuenta({ email: 'ana@medra.cl', nombreUsuario: 'aperez' });
+    const ref = await aprobada(uid, 'ana.perez@medra.cl');
     // Lo que hace Firebase cuando el usuario confirma verifyBeforeUpdateEmail.
     await auth.updateUser(uid, { email: 'ana.perez@medra.cl' });
     expect((await db.collection('usuarios').doc(uid).get()).data().email).toBe('ana@medra.cl');
@@ -126,7 +132,21 @@ describe('iniciarSesion: cambio de correo confirmado', () => {
     const { token } = await login({ identificador: 'aperez', password: 'secreto123' });
     expect((await entrarYLeerPerfil(token)).uid).toBe(uid);
     expect((await db.collection('usuarios').doc(uid).get()).data().email).toBe('ana.perez@medra.cl');
+    expect((await ref.get()).data().estado).toBe('aplicada');
+    const logs = (await db.collection(`usuarios/${uid}/logs`).get()).docs.map((d) => d.data());
+    expect(logs).toEqual([expect.objectContaining({ accion: 'CAMBIO_CORREO_CONFIRMADO', detalle: expect.objectContaining({ antes: 'ana@medra.cl', despues: 'ana.perez@medra.cl' }) })]);
     expect((await login({ identificador: 'Ana.Perez@medra.cl', password: 'secreto123' })).token).toBeTruthy();
+  });
+
+  it('un cambio de correo sin solicitud aprobada (u otra dirección) se revierte al entrar', async () => {
+    const uid = await crearCuenta({ email: 'ana@medra.cl', nombreUsuario: 'aperez' });
+    await aprobada(uid, 'ana.perez@medra.cl');
+    await auth.updateUser(uid, { email: 'otra@medra.cl' });
+    await login({ identificador: 'aperez', password: 'secreto123' });
+    expect((await auth.getUser(uid)).email).toBe('ana@medra.cl');
+    expect((await db.collection('usuarios').doc(uid).get()).data().email).toBe('ana@medra.cl');
+    const logs = (await db.collection(`usuarios/${uid}/logs`).get()).docs.map((d) => d.data());
+    expect(logs).toEqual([expect.objectContaining({ accion: 'CAMBIO_CORREO_NO_AUTORIZADO', detalle: { intentado: 'otra@medra.cl', restaurado: 'ana@medra.cl' } })]);
   });
 });
 

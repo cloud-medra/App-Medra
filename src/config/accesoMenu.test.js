@@ -4,17 +4,18 @@ import { MODULES } from './modulesConfig.jsx';
 
 const RUTA = '/administracion/permisosCentro';
 const LISTADO = '/administracion/listadoUsuario';
+const ALERTAS = '/administracion/alertas';
 const rutas = (u) => subItemsVisibles(u, 'administracion').map((s) => s.path);
 
 describe('Menú: el Administrador ve solo lo asignado; el Desarrollador, todo', () => {
-  it('Administrador sin Administración asignada: no ve ningún ítem (tampoco Permisos por centro)', () => {
-    expect(rutas({ rol: 'admin', permisos: {} })).toEqual([]);
+  it('Administrador sin Administración asignada: solo ve Alertas (automático), no Permisos por centro', () => {
+    expect(rutas({ rol: 'admin', permisos: {} })).toEqual([ALERTAS]);
     expect(subItemsVisibles({ rol: 'admin', permisos: { laboratorio: ['/laboratorio/ordenLaboratorio'] } }, 'laboratorio').map((s) => s.path))
       .toEqual(['/laboratorio/ordenLaboratorio']);
   });
 
   it('Permisos por centro se asigna como cualquier ítem', () => {
-    expect(rutas({ rol: 'admin', permisos: { administracion: [RUTA] } })).toEqual([RUTA]);
+    expect(rutas({ rol: 'admin', permisos: { administracion: [RUTA] } })).toEqual([ALERTAS, RUTA]);
     expect(subItemsAsignables(MODULES.administracion).map((s) => s.path)).toContain(RUTA);
   });
 
@@ -23,9 +24,15 @@ describe('Menú: el Administrador ve solo lo asignado; el Desarrollador, todo', 
     expect(rutas({ rol: 'dev', permisos: {}, activo: false })).toEqual([]);
   });
 
-  it('operador y encargado: lo asignado', () => {
-    expect(rutas({ rol: 'operador', permisos: { administracion: [LISTADO, RUTA] } })).toEqual([LISTADO, RUTA]);
+  it('operador y encargado: lo asignado; nunca Alertas, aunque figure en sus permisos', () => {
+    expect(rutas({ rol: 'operador', permisos: { administracion: [LISTADO, RUTA, ALERTAS] } })).toEqual([LISTADO, RUTA]);
     expect(puedeAbrirVista({ rol: 'operador', permisos: {} }, LISTADO)).toBe(true);
+    expect(puedeAbrirVista({ rol: 'encargado', permisos: {} }, ALERTAS)).toBe(false);
+    expect(puedeAbrirVista({ rol: 'admin', permisos: {} }, ALERTAS)).toBe(true);
+  });
+
+  it('Alertas no se asigna desde el editor de permisos', () => {
+    expect(subItemsAsignables(MODULES.administracion).map((s) => s.path)).not.toContain(ALERTAS);
   });
 
   it('roles', () => {

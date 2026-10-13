@@ -101,7 +101,10 @@ service cloud.firestore {
     // (tema, cambio de contraseña…) y quien administra usuarios, los datos no
     // protegidos de los demás (salvo de un Desarrollador).
     function camposProtegidosUsuario() {
-      return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones', 'nombreUsuario', 'bloqueoLoginHasta', 'email', 'activo'];
+      // nombreCompleto, nombreUsuario y email: el usuario los cambia por
+      // solicitud (functions/solicitudes); el administrador, en Editar usuario.
+      return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones', 'nombreUsuario', 'bloqueoLoginHasta', 'email', 'activo',
+        'nombreCompleto', 'centrosAdministrados', 'administradoresAsignados', 'todosLosAdministradoresDelCentro'];
     }
     function rutasAdministrarUsuarios() {
       return ['/administracion/crearUsuario', '/administracion/listadoUsuario'];
@@ -141,6 +144,41 @@ service cloud.firestore {
       allow read, write: if false;
     }
     match /intentos_login/{clave} {
+      allow read, write: if false;
+    }
+
+    // =================================================================
+    // SOLICITUDES Y ALERTAS (Ajustes → Datos, Administración → Alertas)
+    // =================================================================
+    // Solo las escriben las Cloud Functions de functions/solicitudes. Una
+    // solicitud la leen quien la pidió, sus aprobadores y los
+    // desarrolladores; su historial, lo mismo.
+    function puedeVerSolicitud(s) {
+      return request.auth.uid == s.solicitanteUid || request.auth.uid in s.aprobadores || esDev();
+    }
+    match /solicitudes/{id} {
+      allow read: if estaActivo() && puedeVerSolicitud(resource.data);
+      allow write: if false;
+      match /historial/{h} {
+        allow read: if estaActivo() && puedeVerSolicitud(get(/databases/$(database)/documents/solicitudes/$(id)).data);
+        allow write: if false;
+      }
+    }
+    // Alertas: las ven sus destinatarios (noLeidas ⊆ destinatarios, así el
+    // contador del menú puede consultar por noLeidas) y los desarrolladores.
+    // Desde el navegador, cada uno solo se quita a sí mismo de noLeidas.
+    match /alertas/{id} {
+      allow read: if estaActivo()
+        && (request.auth.uid in resource.data.destinatarios || request.auth.uid in resource.data.noLeidas || esDev());
+      allow update: if estaActivo()
+        && request.auth.uid in resource.data.destinatarios
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['noLeidas'])
+        && request.resource.data.noLeidas == resource.data.noLeidas.removeAll([request.auth.uid]);
+      allow create, delete: if false;
+    }
+    // Correos de la extensión Trigger Email (functions/alertas/correo.js):
+    // solo los escribe la función; nadie los lee desde el navegador.
+    match /mail/{id} {
       allow read, write: if false;
     }
 
