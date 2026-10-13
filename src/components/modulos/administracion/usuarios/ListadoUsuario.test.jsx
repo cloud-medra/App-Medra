@@ -104,7 +104,11 @@ describe('Listado Usuario: bloqueo por intentos fallidos', () => {
     expect(showToast).toHaveBeenCalledWith('Usuario "Eva Bloq" desbloqueado', 'success');
   });
 
-  it('respeta la acción granular btn_desbloquear', () => {
+  it('respeta la acción granular btn_desbloquear (denegada si no está configurada)', () => {
+    usuarioSesion = operadorCon({ btn_editar_acceso: true });
+    render(<ListadoUsuario />);
+    expect(within(fila('Eva Bloq')).queryByTitle('Desbloquear usuario')).not.toBeInTheDocument();
+    cleanup();
     usuarioSesion = operadorCon({ btn_desbloquear: false });
     render(<ListadoUsuario />);
     expect(within(fila('Eva Bloq')).getByText(/Bloqueado hasta/)).toBeInTheDocument();

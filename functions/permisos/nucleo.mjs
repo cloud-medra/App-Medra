@@ -50,12 +50,29 @@ export const claveVista = (ruta) => `v|${ruta}`;
 export const claveSeccion = (ruta, seccion) => `s|${ruta}|${seccion}`;
 export const claveElemento = (ruta, seccion, elemento) => `e|${ruta}|${seccion}|${elemento}`;
 
+// Acciones sensibles DENEGADAS POR DEFECTO para no-admin: sin configurar
+// (sección o acción sin valor guardado) se niegan, al revés que el resto
+// ("sin configurar = permitida"). Toda acción sensible nueva (aprobar,
+// rechazar, desbloquear…) debe agregarse aquí; así ningún usuario que ya
+// tenga la vista la recibe sin que un admin la marque. Lo respetan
+// useGranularPermission, puedeAccion (Cloud Functions), valorDe (plantillas
+// y excepciones) y el editor de permisos (que las completa desmarcadas;
+// "marcar toda la vista" y "acceso total" sí las marcan). Admin/dev, siempre.
+// Las reglas de Firestore/Storage usan el criterio permisivo: estas acciones
+// se validan en Cloud Functions, no en reglas (lo verifica
+// src/config/componentMaps/accionesDenegadas.test.js).
+export const ACCIONES_DENEGADAS_POR_DEFECTO = Object.freeze([
+  claveElemento('/administracion/listadoUsuario', 'tabla_usuarios', 'btn_desbloquear'),
+]);
+const DENEGADAS = new Set(ACCIONES_DENEGADAS_POR_DEFECTO);
+export const deniegaSinConfigurar = (ruta, seccion, accion) => DENEGADAS.has(claveElemento(ruta, seccion, accion));
+
 export const SIN_EXCEPCIONES = Object.freeze({ agregados: [], quitados: [] });
 const PATRON_CLAVE = /^(m\|[^|]+\|[^|]+|v\|[^|]+|s\|[^|]+\|[^|]+|e\|[^|]+\|[^|]+\|[^|]+)$/;
 const MAX_EXCEPCIONES = 20000;
 
 const tipo = (clave) => clave[0];
-const permitidaSinConfigurar = (clave) => tipo(clave) === 's' || tipo(clave) === 'e';
+const permitidaSinConfigurar = (clave) => tipo(clave) === 's' || (tipo(clave) === 'e' && !DENEGADAS.has(clave));
 
 export const aplanar = (estado) => {
   const plano = {};
@@ -165,16 +182,25 @@ export const esAdministrador = (u) => Boolean(u) && esRolAccesoTotal(u.rol) && u
 // Acción granular de un usuario activo, con el mismo criterio que las reglas
 // (accionEnVista) y useGranularPermission: admin/dev pueden todo; el resto
 // necesita el ítem del menú y la vista en permisosGranulares; una sección o
-// acción sin configurar se permite; visible:false o la acción en false, no.
+// acción sin configurar se permite (salvo ACCIONES_DENEGADAS_POR_DEFECTO);
+// visible:false o la acción en false, no.
 export const puedeAccion = (u, modulo, ruta, seccion, accion) => {
   if (!u || u.activo === false) return false;
   if (esRolAccesoTotal(u.rol)) return true;
   if (!(u.permisos?.[modulo] || []).includes(ruta)) return false;
   const vista = u.permisosGranulares?.[ruta];
   if (!vista) return false;
-  const config = vista[seccion];
-  if (!config) return true;
-  return config.visible !== false && config.elements?.[accion] !== false;
+  return accionDeVista(vista, ruta, seccion, accion);
+};
+
+// Una acción dentro de la vista ya otorgada (permisosGranulares[ruta]).
+export const accionDeVista = (vista, ruta, seccion, accion) => {
+  const config = vista?.[seccion];
+  const porDefecto = !deniegaSinConfigurar(ruta, seccion, accion);
+  if (!config) return porDefecto;
+  if (config.visible === false) return false;
+  const valor = config.elements?.[accion];
+  return valor === undefined ? porDefecto : valor !== false;
 };
 
 // usuarios: [{ id, rol, activo }] (al menos todos los administradores).

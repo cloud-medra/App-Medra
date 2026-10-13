@@ -34,3 +34,32 @@ gcloud storage buckets describe gs://workcraft-491b7.firebasestorage.app --forma
 ```
 
 Requiere `gcloud` autenticado con una cuenta con permisos sobre el bucket (por ejemplo, desde Cloud Shell). No se aplica con `firebase deploy`.
+
+## Permisos: acciones sensibles
+
+Los permisos granulares (`permisosGranulares`, ver `src/config/componentMaps/`) siguen la regla "sección o acción sin configurar = permitida": así una vista que suma un botón nuevo no se lo quita a quien ya la tenía.
+
+Las **acciones sensibles** (desbloquear, aprobar, rechazar…) son la excepción: **toda acción sensible nueva debe agregarse a `ACCIONES_DENEGADAS_POR_DEFECTO` en [`functions/permisos/nucleo.mjs`](functions/permisos/nucleo.mjs)**. Para no-admin, sin configurar quedan denegadas en `useGranularPermission`, en las Cloud Functions (`puedeAccion`), en plantillas y excepciones (`valorDe`) y en el editor de permisos (las completa desmarcadas; habilitar la vista o "marcar toda la vista" sí las marcan). Admin/dev las tienen siempre. Se validan en Cloud Functions, no en las reglas de Firestore/Storage (lo verifica `src/config/componentMaps/accionesDenegadas.test.js`).
+
+## Probar a mano con emuladores
+
+Proyecto `demo-workcraft` (no toca nada real). Solo en desarrollo: el build de producción no incluye la conexión a emuladores.
+
+```bash
+npm run emuladores            # terminal 1: Auth, Firestore, Storage y Functions
+npm run emuladores:sembrar    # terminal 2: borra y crea usuarios de prueba (ver functions/scripts/sembrarEmulador.js)
+npm run dev:emuladores        # terminal 3: la app contra los emuladores
+```
+
+- **VS Code de escritorio** (o local): los puertos se reenvían a `localhost`; abrir `http://localhost:5173`.
+- **Codespace en el navegador**: la app detecta la URL `https://<codespace>-5173.app.github.dev` y usa los puertos reenviados por HTTPS. En la pestaña *Ports*, los puertos 9099, 8080, 9199 y 5001 deben estar reenviados y con visibilidad **Public** (los privados exigen la cookie de GitHub y el navegador los bloquea por CORS):
+
+  ```bash
+  gh codespace ports visibility 9099:public 8080:public 9199:public 5001:public -c "$CODESPACE_NAME"
+  ```
+
+  Mientras sean públicos, cualquiera con la URL llega a los emuladores (datos de prueba): al terminar, volver a `private` o detener los emuladores.
+
+## Mejoras futuras
+
+- **Administración de usuarios por centro** (pendiente, no implementado). Hoy un "Administrador del sistema" puede crear y editar a cualquier usuario, incluido su nombre de usuario, sin importar el centro; cada cambio queda en la auditoría del usuario (`usuarios/{uid}/logs`). Las solicitudes de cambio de nombre y las alertas sí se restringen por centro (solo los administradores asignados al operador, o los de su centro, más los desarrolladores). Posible mejora: restringir también Crear/Editar usuario para que un administrador solo gestione usuarios de los centros que administra (`centrosAdministrados`). Implica cambiar el modelo actual de "administrador = acceso total" en las reglas de Firestore y en las Cloud Functions de `functions/permisos`.

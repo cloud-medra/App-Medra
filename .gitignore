@@ -29,5 +29,7 @@ dist-ssr
 .env.production
 # Parámetros de las Cloud Functions por proyecto (WEB_API_KEY, ver functions/usuarios/index.js)
 functions/.env.*
+# Emulador (proyecto demo-workcraft): valores falsos, se versiona.
+!functions/.env.demo-workcraft
 # Caché de despliegue de Firebase Hosting
 .firebase/

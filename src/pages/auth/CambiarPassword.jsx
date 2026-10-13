@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updatePassword, updateEmail } from 'firebase/auth';
+import { updatePassword, verifyBeforeUpdateEmail } from 'firebase/auth';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../../firebaseConfig';
 import { useToast } from '../../context/ToastContext';
@@ -112,15 +112,17 @@ const CambiarPassword = () => {
     try {
       const emailCambio = perfil.email.trim() !== emailOriginal;
 
+      // El correo cambia recién cuando el usuario confirma el enlace que le
+      // llega a la dirección nueva; usuarios/{uid}.email se actualiza al
+      // entrar con el correo ya cambiado (función iniciarSesion), no antes.
       if (emailCambio) {
-        await updateEmail(user, perfil.email.trim());
+        await verifyBeforeUpdateEmail(user, perfil.email.trim());
       }
 
       await updatePassword(user, passwords.new);
 
       await updateDoc(doc(db, 'usuarios', user.uid), {
         nombreCompleto: perfil.nombreCompleto.trim(),
-        email: perfil.email.trim(),
         passwordChanged: true,
       });
 
@@ -131,11 +133,12 @@ const CambiarPassword = () => {
       setUserData((prev) => ({
         ...prev,
         nombreCompleto: perfil.nombreCompleto.trim(),
-        email: perfil.email.trim(),
         passwordChanged: true,
       }));
 
-      showToast('Tus datos y contraseña se actualizaron correctamente', 'success');
+      showToast(emailCambio
+        ? 'Tu contraseña se actualizó. Te enviamos un correo de confirmación a la nueva dirección.'
+        : 'Tus datos y contraseña se actualizaron correctamente', 'success');
       setPaso('bienvenida');
     } catch (error) {
       console.error('Error al actualizar acceso:', error);

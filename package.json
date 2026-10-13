@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:emuladores": "VITE_USAR_EMULADORES=true vite",
     "build": "vite build",
     "lint": "eslint .",
     "test": "vitest run",
     "preview": "vite preview",
     "deploy": "vite build && npx firebase-tools deploy",
-    "test:emulador": "npx firebase-tools emulators:exec --only firestore,auth,storage --project demo-workcraft \"npx vitest run -c vitest.emulador.config.js\""
+    "test:emulador": "npx firebase-tools emulators:exec --only firestore,auth,storage --project demo-workcraft \"npx vitest run -c vitest.emulador.config.js\"",
+    "emuladores": "npx firebase-tools emulators:start --only auth,firestore,storage,functions --project demo-workcraft",
+    "emuladores:sembrar": "cd functions && FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 GCLOUD_PROJECT=demo-workcraft node scripts/sembrarEmulador.js"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { updateEmail } from 'firebase/auth';
+import { verifyBeforeUpdateEmail } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, auth } from '../../../../../firebaseConfig';
 import { useToast } from '../../../../../context/ToastContext';
@@ -20,6 +20,8 @@ const DatosUsuarios = () => {
   const [perfil, setPerfil] = useState(valoresIniciales);
   const [original, setOriginal] = useState(valoresIniciales);
   const [loading, setLoading] = useState(false);
+  // Correo nuevo a la espera de que el usuario lo confirme desde su bandeja.
+  const [emailPendiente, setEmailPendiente] = useState(null);
 
   // Igual que en CambiarPassword: cada campo empieza en solo lectura, mostrando
   // el dato real. Solo se vuelve input si el usuario hace clic en el lápiz.
@@ -59,30 +61,37 @@ const DatosUsuarios = () => {
 
     setLoading(true);
     try {
-      const emailCambio = perfil.email.trim() !== original.email;
+      const emailNuevo = perfil.email.trim();
+      const emailCambio = emailNuevo !== original.email;
 
+      // El correo cambia recién cuando el usuario confirma el enlace que le
+      // llega a la dirección nueva (requisito con la protección contra
+      // enumeración de correos). usuarios/{uid}.email se actualiza al entrar
+      // con el correo ya cambiado (función iniciarSesion), no antes.
       if (emailCambio) {
-        await updateEmail(user, perfil.email.trim());
+        await verifyBeforeUpdateEmail(user, emailNuevo);
       }
 
-      const datosActualizados = {
-        nombreCompleto: perfil.nombreCompleto.trim(),
-        email: perfil.email.trim(),
-      };
+      const nombreCompleto = perfil.nombreCompleto.trim();
+      if (nombreCompleto !== original.nombreCompleto) {
+        await updateDoc(doc(db, 'usuarios', user.uid), { nombreCompleto });
+        // Mismo detalle que en CambiarPassword: hay que sincronizar el
+        // UserContext en memoria, si no el resto de la app (ej. el saludo del
+        // header, el avatar) sigue mostrando los datos viejos hasta el próximo
+        // login.
+        setUserData((prev) => ({ ...prev, nombreCompleto }));
+      }
 
-      await updateDoc(doc(db, 'usuarios', user.uid), datosActualizados);
-
-      // Mismo detalle que en CambiarPassword: hay que sincronizar el
-      // UserContext en memoria, si no el resto de la app (ej. el saludo del
-      // header, el avatar) sigue mostrando los datos viejos hasta el próximo
-      // login.
-      setUserData((prev) => ({ ...prev, ...datosActualizados }));
-
-      setOriginal((prev) => ({ ...prev, ...datosActualizados }));
-      setPerfil((prev) => ({ ...prev, ...datosActualizados }));
+      setOriginal((prev) => ({ ...prev, nombreCompleto }));
+      setPerfil((prev) => ({ ...prev, nombreCompleto, email: original.email }));
       setEditando({ nombreCompleto: false, nombreUsuario: false, email: false });
 
-      showToast('Tus datos se actualizaron correctamente', 'success');
+      if (emailCambio) {
+        setEmailPendiente(emailNuevo);
+        showToast('Te enviamos un correo de confirmación a la nueva dirección.', 'success');
+      } else {
+        showToast('Tus datos se actualizaron correctamente', 'success');
+      }
     } catch (error) {
       console.error('Error al actualizar datos:', error);
       if (error.code === 'auth/requires-recent-login') {
@@ -172,6 +181,11 @@ const DatosUsuarios = () => {
           {/* Solo lectura: es único y lo asigna un administrador (Administración → Usuarios). */}
           <CampoPerfil campo="nombreUsuario" icon={AtSign} label="Nombre de usuario" soloLectura />
           <CampoPerfil campo="email" icon={Mail} label="Correo" tipo="email" placeholder="ejemplo@medra.cl" />
+          {emailPendiente && (
+            <p role="status" className="text-[11px] text-amber-700 dark:text-amber-400">
+              Te enviamos un correo de confirmación a la nueva dirección. El cambio a <strong>{emailPendiente}</strong> se aplicará cuando lo confirmes.
+            </p>
+          )}
         </div>
 
         <div className="flex justify-end">

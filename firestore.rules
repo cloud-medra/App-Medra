@@ -31,6 +31,8 @@ service cloud.firestore {
     // Acción granular (mismo criterio que useGranularPermission): la vista
     // tiene que existir en permisosGranulares; una sección o acción sin
     // configurar se permite; visible:false o la acción en false se niega.
+    // Las acciones de ACCIONES_DENEGADAS_POR_DEFECTO (functions/permisos/
+    // nucleo.mjs) NO se validan aquí: van por Cloud Functions.
     function accionPermitida(ruta, seccion, accion) {
       // Sección sin configurar = {} (permitida). Sin `null` en el ternario: el
       // verificador de tipos del deploy no puede asegurar que sea un map.
@@ -79,12 +81,14 @@ service cloud.firestore {
     // Rol, permisos (el efectivo, calculado), centro de costo y excepciones
     // solo los escriben las Cloud Functions de functions/permisos (que exigen
     // admin/dev y no dejan el sistema sin administrador). El nombre de
-    // usuario (es único: índice nombres_usuario) y el bloqueo por intentos
-    // fallidos también, con las de functions/usuarios. Desde el navegador,
+    // usuario (es único: índice nombres_usuario), el bloqueo por intentos
+    // fallidos y el correo (se copia del de Auth al entrar, después de que el
+    // usuario confirma el cambio) también, con las de functions/usuarios.
+    // Desde el navegador,
     // cada usuario actualiza lo suyo (tema, cambio de contraseña…) y un
     // admin/dev, los datos de los demás.
     function camposProtegidosUsuario() {
-      return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones', 'nombreUsuario', 'bloqueoLoginHasta'];
+      return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones', 'nombreUsuario', 'bloqueoLoginHasta', 'email'];
     }
     match /usuarios/{userId} {
       // El propio perfil se lee aunque esté inactivo: así la app ve el cambio

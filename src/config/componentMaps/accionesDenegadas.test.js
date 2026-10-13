@@ -1,0 +1,65 @@
+import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import { COMPONENT_MAPS } from './index.js';
+import {
+  ACCIONES_DENEGADAS_POR_DEFECTO, accionDeVista, puedeAccion, valorDe, aplanar, claveElemento,
+} from '../../../functions/permisos/nucleo.mjs';
+import { completarPermisosGranulares, generarAccesoDesdeConfig } from '../../components/modulos/administracion/usuarios/permisosGranularesUtils';
+
+// Acciones sensibles denegadas por defecto (functions/permisos/nucleo.mjs):
+// sin configurar se niegan para no-admin; el resto sigue permitido.
+const separar = (clave) => clave.split('|').slice(1); // [ruta, seccion, accion]
+const LISTADO = '/administracion/listadoUsuario';
+const DESBLOQUEAR = claveElemento(LISTADO, 'tabla_usuarios', 'btn_desbloquear');
+
+describe('ACCIONES_DENEGADAS_POR_DEFECTO', () => {
+  it('cada una existe en COMPONENT_MAPS (vista, sección y acción)', () => {
+    expect(ACCIONES_DENEGADAS_POR_DEFECTO).toContain(DESBLOQUEAR);
+    ACCIONES_DENEGADAS_POR_DEFECTO.forEach((clave) => {
+      const [ruta, seccion, accion] = separar(clave);
+      expect(COMPONENT_MAPS[ruta]?.sections?.[seccion]?.elements?.[accion], clave).toBeTruthy();
+    });
+  });
+
+  it('no se validan en reglas de Firestore/Storage (que usan "sin configurar = permitida")', () => {
+    const reglas = ['firestore.rules', 'storage.rules'].map((f) => fs.readFileSync(new URL(`../../../${f}`, import.meta.url), 'utf8')).join('\n');
+    ACCIONES_DENEGADAS_POR_DEFECTO.forEach((clave) => {
+      const [, , accion] = separar(clave);
+      expect(reglas.includes(`'${accion}'`), `${accion} aparece en las reglas: valídala en una Cloud Function`).toBe(false);
+    });
+  });
+
+  it('sin configurar: denegada; marcada: permitida; las demás acciones, como antes', () => {
+    const vista = { tabla_usuarios: { visible: true, elements: { btn_editar_acceso: true } } };
+    expect(accionDeVista(vista, LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false);
+    expect(accionDeVista({}, LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false); // sección sin configurar
+    expect(accionDeVista(vista, LISTADO, 'tabla_usuarios', 'btn_activar_inactivar')).toBe(true);
+    expect(accionDeVista({}, LISTADO, 'tabla_usuarios', 'btn_activar_inactivar')).toBe(true);
+    const marcada = { tabla_usuarios: { visible: true, elements: { btn_desbloquear: true } } };
+    expect(accionDeVista(marcada, LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(true);
+    expect(accionDeVista({ tabla_usuarios: { visible: false, elements: { btn_desbloquear: true } } }, LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false);
+  });
+
+  it('puedeAccion (Cloud Functions): igual; admin/dev siempre', () => {
+    const operador = (vista) => ({ rol: 'operador', permisos: { administracion: [LISTADO] }, permisosGranulares: { [LISTADO]: vista } });
+    expect(puedeAccion(operador({}), 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false);
+    expect(puedeAccion(operador({ tabla_usuarios: { visible: true, elements: { btn_desbloquear: true } } }), 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(true);
+    expect(puedeAccion({ rol: 'admin' }, 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(true);
+    expect(puedeAccion({ rol: 'admin', activo: false }, 'administracion', LISTADO, 'tabla_usuarios', 'btn_desbloquear')).toBe(false);
+  });
+
+  it('plantillas y excepciones (valorDe): sin configurar vale false', () => {
+    const plano = aplanar({ permisos: {}, permisosGranulares: { [LISTADO]: {} } });
+    expect(valorDe(plano, DESBLOQUEAR)).toBe(false);
+    expect(valorDe(plano, claveElemento(LISTADO, 'tabla_usuarios', 'btn_editar_acceso'))).toBe(true);
+  });
+
+  it('el editor la completa desmarcada; habilitar la vista o "marcar toda la vista" la marcan', () => {
+    const completo = completarPermisosGranulares({ [LISTADO]: { tabla_usuarios: { visible: true, elements: {} } } }, COMPONENT_MAPS);
+    expect(completo[LISTADO].tabla_usuarios.elements.btn_desbloquear).toBe(false);
+    expect(completo[LISTADO].tabla_usuarios.elements.btn_editar_acceso).toBe(true);
+    // Un valor ya guardado no se toca.
+    expect(completarPermisosGranulares({ [LISTADO]: { tabla_usuarios: { visible: true, elements: { btn_desbloquear: true } } } }, COMPONENT_MAPS)[LISTADO].tabla_usuarios.elements.btn_desbloquear).toBe(true);
+    expect(generarAccesoDesdeConfig(COMPONENT_MAPS[LISTADO], true).tabla_usuarios.elements.btn_desbloquear).toBe(true);
+  });
+});

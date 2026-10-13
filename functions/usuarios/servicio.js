@@ -110,7 +110,13 @@ const iniciarSesion = async (db, auth, data, { verificarPassword, ahora = Date.n
   // Usuario inactivo (Administración → Usuarios): no es un intento fallido.
   if (datosPerfil?.activo === false) throw new HttpsError('permission-denied', MENSAJE_USUARIO_DESHABILITADO);
   if (previo) await intentos.delete();
-  if (datosPerfil?.bloqueoLoginHasta) await perfil.update({ bloqueoLoginHasta: FieldValue.delete() });
+  // Correo cambiado y confirmado por el usuario (verifyBeforeUpdateEmail):
+  // el perfil toma el de Auth recién ahora.
+  const ajustes = {
+    ...(datosPerfil?.bloqueoLoginHasta ? { bloqueoLoginHasta: FieldValue.delete() } : {}),
+    ...(datosPerfil && datosPerfil.email !== cuenta.email ? { email: cuenta.email } : {}),
+  };
+  if (Object.keys(ajustes).length) await perfil.update(ajustes);
   return { token: await auth.createCustomToken(cuenta.uid) };
 };
 
