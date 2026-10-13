@@ -102,7 +102,6 @@ const TABLAS_PENDIENTES = new Set([
   'modulos/operaciones/hemodinamia/gestionHemodinamia/components/Cargastab/CotizacionCard.jsx',
   'modulos/operaciones/hemodinamia/gestionHemodinamia/components/GestionesHemodinamiaTable.jsx',
   'modulos/operaciones/hemodinamia/resumenHemodinamia/ResumenHemodinamia.jsx',
-  'modulos/operaciones/hemodinamia/solicitudHemodinamia/SolicitudHemodinamia.jsx',
   'modulos/operaciones/implantes/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx',
   'modulos/operaciones/implantes/gestionImplantes/components/Cargastab/Cargastab.jsx',
   'modulos/operaciones/implantes/gestionImplantes/components/Cargastab/CotizacionCard.jsx',
@@ -114,7 +113,8 @@ const TABLAS_PENDIENTES = new Set([
   'modulos/operaciones/shared/ocIndex/SincronizarOCResumenModal.jsx',
   'modulos/operaciones/implantes/resumenImplantes/ResumenImplantes.jsx',
   'modulos/operaciones/implantes/sincronizacionImputadas/SincronizacionImputadas.jsx',
-  'modulos/operaciones/implantes/solicitudImplantes/SolicitudImplantes.jsx',
+  // Solicitud de Implantes y Hemodinamia (pantalla compartida).
+  'modulos/operaciones/shared/solicitud/SolicitudGestiones.jsx',
   'ui/TablaRedimensionable.jsx',
 ]);
 

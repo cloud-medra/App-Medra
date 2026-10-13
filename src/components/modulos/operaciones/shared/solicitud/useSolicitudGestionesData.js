@@ -12,15 +12,133 @@ import {
   documentId
 } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
-import { db } from '../../../../../../firebaseConfig';
-import { onSnapshotVisible } from '../../../../../../hooks/useVisibleSnapshot';
-import { useToast } from '../../../../../../context/ToastContext';
-import { useModal } from '../../../../../../context/ModalContext';
-import { useUser } from '../../../../../../context/UserContext';
-import { CENTRO_HEMODINAMIA } from '../../gestionHemodinamia/utils/constantesHemodinamia';
-import { camposPeriodoSolicitud } from '../../../shared/periodoImputacion';
+import { db } from '../../../../../firebaseConfig';
+import { onSnapshotVisible } from '../../../../../hooks/useVisibleSnapshot';
+import { useToast } from '../../../../../context/ToastContext';
+import { useModal } from '../../../../../context/ModalContext';
+import { useUser } from '../../../../../context/UserContext';
+import { camposPeriodoSolicitud } from '../periodoImputacion';
+import { moduloGestion, rangoGestiones } from '../modulosGestion';
 
-export const useSolicitudHemodinamiaData = () => {
+export const formatearFechaExcel = (fechaString) => {
+  if (!fechaString || !fechaString.includes('-')) return fechaString || '';
+  const [yyyy, mm, dd] = fechaString.split('-');
+  return `${dd}-${mm}-${yyyy}`;
+};
+
+const formatearFechaDeTimestamp = (valor) => {
+  if (!valor) return '';
+  const date = valor.toDate ? valor.toDate() : new Date(valor);
+  if (isNaN(date.getTime())) return '';
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yyyy = date.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+};
+
+const descomponerFecha = (fechaString) => {
+  if (fechaString && fechaString.includes('-')) {
+    const [anio, mes, dia] = fechaString.split('-');
+    return { anio, mes, dia };
+  }
+  return { anio: '0000', mes: '00', dia: '00' };
+};
+
+const formatearPeriodoTexto = (periodo) => {
+  if (!periodo || !periodo.mes || !periodo.anio) return '';
+  const mesCapitalizado = periodo.mes.charAt(0).toUpperCase() + periodo.mes.slice(1).toLowerCase();
+  return `${mesCapitalizado} ${periodo.anio}`;
+};
+
+// Filas de las dos hojas del Excel de Solicitud (misma estructura en todos
+// los módulos: solo cambia el nombre de la hoja principal y del archivo).
+export const construirFilasExcelSolicitud = (bloquesSeleccionados, fechaHoyFormato) => {
+  const filas = [];
+  const filasResumen = [];
+
+  bloquesSeleccionados.forEach(bloque => {
+    // "FECHA REGISTRO" = cuándo se ingresó el ID de admisión (no la creación del registro).
+    const fechaRegistroBloque = formatearFechaDeTimestamp(bloque.fechaRegistroAdmision);
+
+    if (bloque.items.length === 0) {
+      filas.push({
+        "ID": bloque.gestionId,
+        "PACIENTE": bloque.nombre,
+        "MEDICO": bloque.medico,
+        "FECHA": formatearFechaExcel(bloque.fecha),
+        "EMPRESA": bloque.empresa,
+        "CODIGO": "",
+        "DESCRIPCION": "",
+        "CANTIDAD": "",
+        "PRECIO": "",
+        "ATRIBUTO": "",
+        "FECHA REGISTRO": fechaRegistroBloque,
+        "FECHA CARGA": formatearFechaExcel(bloque.fecha),
+        "N° COTIZACION": bloque.numCotizacion,
+        "FECHA INGRESO": fechaHoyFormato,
+        "LOTE": "",
+        "VENCIMIENTO": ""
+      });
+
+      filasResumen.push({
+        "Ingreso": fechaHoyFormato,
+        "Area": bloque.centro,
+        "Previsión": bloque.prevision,
+        "Id": bloque.gestionId,
+        "Cód": "",
+        "Cant": "",
+        "Venta": "",
+        "Médico": bloque.medico,
+        "Fecha": formatearFechaExcel(bloque.fecha),
+        "Descripción": "",
+        "Estado": ""
+      });
+      return;
+    }
+
+    bloque.items.forEach(it => {
+      filas.push({
+        "ID": bloque.gestionId,
+        "PACIENTE": bloque.nombre,
+        "MEDICO": bloque.medico,
+        "FECHA": formatearFechaExcel(bloque.fecha),
+        "EMPRESA": bloque.empresa,
+        "CODIGO": it.codigo || 'P',
+        "DESCRIPCION": it.descriptorAuto || 'P',
+        "CANTIDAD": it.cantidad || 0,
+        "PRECIO": it.precio || 0,
+        "ATRIBUTO": it.tipoVinculado || 'P',
+        "FECHA REGISTRO": fechaRegistroBloque,
+        "FECHA CARGA": formatearFechaExcel(bloque.fecha),
+        "N° COTIZACION": it.numCotizacion || bloque.numCotizacion,
+        "FECHA INGRESO": fechaHoyFormato,
+        "LOTE": it.lote || 'P',
+        "VENCIMIENTO": formatearFechaExcel(it.vencimiento)
+      });
+
+      filasResumen.push({
+        "Ingreso": fechaHoyFormato,
+        "Area": bloque.centro,
+        "Previsión": bloque.prevision,
+        "Id": bloque.gestionId,
+        "Cód": it.codigo || 'P',
+        "Cant": it.cantidad || 0,
+        "Venta": it.venta || 0,
+        "Médico": bloque.medico,
+        "Fecha": formatearFechaExcel(bloque.fecha),
+        "Descripción": it.descriptorAuto || 'P',
+        "Estado": it.estadoCarga || 'PENDIENTE'
+      });
+    });
+  });
+  return { filas, filasResumen };
+};
+
+// Solicitud de un módulo de Gestión (Implantes, Hemodinamia): bloques con
+// solicitud == 'SOLICITAR', exportación a Excel y copia a imputadas del
+// período abierto. `modulo`: clave de shared/modulosGestion.js.
+export const useSolicitudGestionesData = (modulo) => {
+  const config = moduloGestion(modulo);
   const [bloques, setBloques] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [exportando, setExportando] = useState(false);
@@ -30,8 +148,23 @@ export const useSolicitudHemodinamiaData = () => {
   const { confirmAction } = useModal();
   const { userData } = useUser();
 
-  const RANGO_MIN_GESTIONES = "hemodinamia_gestiones/0000";
-  const RANGO_MAX_GESTIONES = "hemodinamia_gestiones/9999";
+    // Antes esto escuchaba, en TODA la app, cualquier documento con
+  // solicitud=='SOLICITAR' dentro de una subcolección "detalles" (incluye
+  // otros módulos, como Consignación) y filtraba recién en el cliente por
+  // el prefijo de la colección del módulo. Ahora se acota también por rango de
+  // __name__ para que Firestore entregue solo documentos de este módulo.
+  //
+  // OJO: en un collectionGroup, los límites de documentId() deben ser rutas
+  // de documento COMPLETAS (número PAR de segmentos) — 'implantes_gestiones/'
+  // (1 segmento) es inválido. La ruta real es
+  // 'implantes_gestiones/{anio}/mes/.../detalles/{id}', con {anio} variable,
+  // así que se acota el año a un rango de 2 segmentos válido que cubre
+  // cualquier año de 4 dígitos: 'implantes_gestiones/0000' a
+  // 'implantes_gestiones/9999'.
+  // Nota: esta combinación (equality + rango de __name__) requiere crear un
+  // índice compuesto en Firestore (documentId, solicitud) la primera vez
+  // que corra; la consola de Firebase entrega el link para crearlo.
+  const { min: RANGO_MIN_GESTIONES, max: RANGO_MAX_GESTIONES } = rangoGestiones(config);
 
   useEffect(() => {
     const q = query(
@@ -43,9 +176,9 @@ export const useSolicitudHemodinamiaData = () => {
     );
 
     const unsubscribe = onSnapshotVisible(q, (snapshot) => {
-      const docsImplantes = snapshot.docs;
+      const docsModulo = snapshot.docs;
 
-      const lista = docsImplantes.map(document => {
+      const lista = docsModulo.map(document => {
         const data = document.data();
         const items = data.cotizaciones?.[0]?.items || [];
         return {
@@ -62,8 +195,8 @@ export const useSolicitudHemodinamiaData = () => {
           convenio: data.convenio || 'P',
           prevision: data.prevision || 'P',
           descripcion: data.descripcion || 'P',
-          centro: CENTRO_HEMODINAMIA,
-          atributo: data.atributo || 'HEMODINAMIA',
+          centro: config.centroDe(data),
+          atributo: data.atributo || config.atributoPorDefecto,
           estado: data.estado || 'AGENDANDO',
           costo: data.costo || 0,
           registradoPor: data.registradoPor || 'Usuario',
@@ -82,7 +215,7 @@ export const useSolicitudHemodinamiaData = () => {
     });
 
     return () => unsubscribe();
-  }, [showToast]);
+  }, [showToast, RANGO_MIN_GESTIONES, RANGO_MAX_GESTIONES, config]);
 
   const toggleSeleccion = (refPath) => {
     setSeleccionados(prev => {
@@ -102,36 +235,6 @@ export const useSolicitudHemodinamiaData = () => {
     } else {
       setSeleccionados(new Set(bloques.map(b => b.refPath)));
     }
-  };
-
-  const formatearFechaExcel = (fechaString) => {
-    if (!fechaString || !fechaString.includes('-')) return fechaString || '';
-    const [yyyy, mm, dd] = fechaString.split('-');
-    return `${dd}-${mm}-${yyyy}`;
-  };
-
-  const formatearFechaDeTimestamp = (valor) => {
-    if (!valor) return '';
-    const date = valor.toDate ? valor.toDate() : new Date(valor);
-    if (isNaN(date.getTime())) return '';
-    const dd = String(date.getDate()).padStart(2, '0');
-    const mm = String(date.getMonth() + 1).padStart(2, '0');
-    const yyyy = date.getFullYear();
-    return `${dd}-${mm}-${yyyy}`;
-  };
-
-  const descomponerFecha = (fechaString) => {
-    if (fechaString && fechaString.includes('-')) {
-      const [anio, mes, dia] = fechaString.split('-');
-      return { anio, mes, dia };
-    }
-    return { anio: '0000', mes: '00', dia: '00' };
-  };
-
-  const formatearPeriodoTexto = (periodo) => {
-    if (!periodo || !periodo.mes || !periodo.anio) return '';
-    const mesCapitalizado = periodo.mes.charAt(0).toUpperCase() + periodo.mes.slice(1).toLowerCase();
-    return `${mesCapitalizado} ${periodo.anio}`;
   };
 
   const registrarLog = async (docRef, accion, detalles) => {
@@ -159,7 +262,7 @@ export const useSolicitudHemodinamiaData = () => {
     }
 
     if (!periodoActivo || !periodoActivo.anio || !periodoActivo.mes) {
-      showToast("No hay un período abierto para Hemodinamia en Control Mensual. Ábrelo antes de exportar.", "error");
+      showToast(`No hay un período abierto para ${config.etiqueta} en Control Mensual. Ábrelo antes de exportar.`, "error");
       return;
     }
 
@@ -173,92 +276,15 @@ export const useSolicitudHemodinamiaData = () => {
         try {
           const fechaHoyFormato = formatearFechaExcel(new Date().toISOString().slice(0, 10));
 
-          const filas = [];
-          const filasResumen = [];
-
-          bloquesSeleccionados.forEach(bloque => {
-            // "FECHA REGISTRO" = cuándo se ingresó el ID de admisión (no la creación del registro).
-            const fechaRegistroBloque = formatearFechaDeTimestamp(bloque.fechaRegistroAdmision);
-
-            if (bloque.items.length === 0) {
-              filas.push({
-                "ID": bloque.gestionId,
-                "PACIENTE": bloque.nombre,
-                "MEDICO": bloque.medico,
-                "FECHA": formatearFechaExcel(bloque.fecha),
-                "EMPRESA": bloque.empresa,
-                "CODIGO": "",
-                "DESCRIPCION": "",
-                "CANTIDAD": "",
-                "PRECIO": "",
-                "ATRIBUTO": "",
-                "FECHA REGISTRO": fechaRegistroBloque,
-                "FECHA CARGA": formatearFechaExcel(bloque.fecha),
-                "N° COTIZACION": bloque.numCotizacion,
-                "FECHA INGRESO": fechaHoyFormato,
-                "LOTE": "",
-                "VENCIMIENTO": ""
-              });
-
-              filasResumen.push({
-                "Ingreso": fechaHoyFormato,
-                "Area": bloque.centro,
-                "Previsión": bloque.prevision,
-                "Id": bloque.gestionId,
-                "Cód": "",
-                "Cant": "",
-                "Venta": "",
-                "Médico": bloque.medico,
-                "Fecha": formatearFechaExcel(bloque.fecha),
-                "Descripción": "",
-                "Estado": ""
-              });
-              return;
-            }
-
-            bloque.items.forEach(it => {
-              filas.push({
-                "ID": bloque.gestionId,
-                "PACIENTE": bloque.nombre,
-                "MEDICO": bloque.medico,
-                "FECHA": formatearFechaExcel(bloque.fecha),
-                "EMPRESA": bloque.empresa,
-                "CODIGO": it.codigo || 'P',
-                "DESCRIPCION": it.descriptorAuto || 'P',
-                "CANTIDAD": it.cantidad || 0,
-                "PRECIO": it.precio || 0,
-                "ATRIBUTO": it.tipoVinculado || 'P',
-                "FECHA REGISTRO": fechaRegistroBloque,
-                "FECHA CARGA": formatearFechaExcel(bloque.fecha),
-                "N° COTIZACION": it.numCotizacion || bloque.numCotizacion,
-                "FECHA INGRESO": fechaHoyFormato,
-                "LOTE": it.lote || 'P',
-                "VENCIMIENTO": formatearFechaExcel(it.vencimiento)
-              });
-
-              filasResumen.push({
-                "Ingreso": fechaHoyFormato,
-                "Area": bloque.centro,
-                "Previsión": bloque.prevision,
-                "Id": bloque.gestionId,
-                "Cód": it.codigo || 'P',
-                "Cant": it.cantidad || 0,
-                "Venta": it.venta || 0,
-                "Médico": bloque.medico,
-                "Fecha": formatearFechaExcel(bloque.fecha),
-                "Descripción": it.descriptorAuto || 'P',
-                "Estado": it.estadoCarga || 'PENDIENTE'
-              });
-            });
-          });
+          const { filas, filasResumen } = construirFilasExcelSolicitud(bloquesSeleccionados, fechaHoyFormato);
 
           const worksheet = XLSX.utils.json_to_sheet(filas);
           const worksheetResumen = XLSX.utils.json_to_sheet(filasResumen);
           const workbook = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(workbook, worksheet, "Solicitud Hemodinamia");
+          XLSX.utils.book_append_sheet(workbook, worksheet, config.hojaSolicitud);
           XLSX.utils.book_append_sheet(workbook, worksheetResumen, "Resumen");
           const fechaHoy = new Date().toISOString().slice(0, 10);
-          XLSX.writeFile(workbook, `solicitud_hemodinamia_${fechaHoy}.xlsx`);
+          XLSX.writeFile(workbook, `${config.archivoSolicitud}_${fechaHoy}.xlsx`);
 
           const batch = writeBatch(db);
           let opsEnBatch = 0;
@@ -291,7 +317,7 @@ export const useSolicitudHemodinamiaData = () => {
             bloque.items.forEach(it => {
               const imputadaRef = doc(
                 db,
-                'hemodinamia_imputadas', String(periodoActivo.anio),
+                config.coleccionImputadas, String(periodoActivo.anio),
                 'meses', periodoActivo.mes,
                 'documentos', it.id
               );

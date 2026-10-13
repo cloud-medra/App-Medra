@@ -1,4 +1,4 @@
-import { usePeriodoAbiertoStore } from '../../../../../../../hooks/usePeriodoAbiertoStore';
+import { usePeriodoAbiertoStore } from '../../../../hooks/usePeriodoAbiertoStore';
 
 /**
  * Período ABIERTO o REABIERTO del módulo, en tiempo real, desde el listener
