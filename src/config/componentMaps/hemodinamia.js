@@ -1,4 +1,5 @@
-import { mapaRespaldoDocumentos, mapaSincronizacionImputadas } from './operacionesCompartidas.js';
+import { mapaRespaldoDocumentos, mapaSincronizacionImputadas, reubicarMapa } from './operacionesCompartidas.js';
+import { maestrosComponentMaps } from './maestros.js';
 
 export const hemodinamiaComponentMaps = {
   // Mismo criterio que componentMaps/implantes.js: las 4 pestañas de la
@@ -203,6 +204,14 @@ export const hemodinamiaComponentMaps = {
 
   '/hemodinamia/respaldoDocumentos': mapaRespaldoDocumentos('Hemodinamia'),
 
+  // Misma pantalla y datos que Maestros → Códigos, con permisos propios (igual que Implantes).
+  '/hemodinamia/codigosHemodinamia': reubicarMapa(
+    maestrosComponentMaps['/maestros/codigosMaestros'],
+    '/maestros/codigosMaestros',
+    '/hemodinamia/codigosHemodinamia',
+    'Códigos (Hemodinamia) — misma pantalla y datos que Maestros → Códigos, con permisos propios',
+  ),
+
   '/hemodinamia/solicitudHemodinamia': {
     label: 'Solicitud de Hemodinamia (SolicitudHemodinamia.jsx) — sin granularidad cableada aún',
     sections: {
@@ -240,7 +249,7 @@ export const hemodinamiaComponentMaps = {
   },
 
   '/hemodinamia/resumenHemodinamia': {
-    label: 'Resumen de Hemodinamia Imputada (ResumenHemodinamia.jsx) — solo lectura, sin granularidad cableada aún',
+    label: 'Resumen de Hemodinamia Imputada (shared/resumen/ResumenGestiones.jsx) — solo lectura, sin granularidad cableada aún',
     sections: {
       header: {
         label: 'Sección: Encabezado',

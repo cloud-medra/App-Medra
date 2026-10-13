@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useResumenImputadas, TODOS_LOS_MESES } from '../../../shared/useResumenImputadas';
+import { useResumenImputadas, TODOS_LOS_MESES } from '../useResumenImputadas';
+import { moduloGestion } from '../modulosGestion';
 
 export const NOMBRES_MESES = {
   "01": "Enero", "02": "Febrero", "03": "Marzo", "04": "Abril",
@@ -10,7 +11,8 @@ export const NOMBRES_MESES = {
 export const ESTADO_CARGA_OPTIONS = ['PENDIENTE', 'CARGADO', 'REVISAR', 'S/COTIZACION'];
 export { TODOS_LOS_MESES };
 
-export const useResumenImplantesData = () => {
+// Resumen de imputadas de un módulo de Gestión (Implantes, Hemodinamia).
+export const useResumenGestionesData = (modulo) => {
   // Años/meses por sondeo y documentos con lectura única al elegir el mes
   // (antes: listener sobre todas las imputadas de todos los años).
   const {
@@ -21,7 +23,7 @@ export const useResumenImplantesData = () => {
     documentos,
     cargando,
     actualizar
-  } = useResumenImputadas('implantes_imputadas');
+  } = useResumenImputadas(moduloGestion(modulo).coleccionImputadas);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstadoCarga, setFiltroEstadoCarga] = useState('');
 

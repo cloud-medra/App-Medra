@@ -26,7 +26,7 @@ import { RUTA_CODIGOS_MAESTROS } from './rutasCodigos';
 // sección compartido entre las 3 (ver nota de useGranularPermission.js).
 //
 // La misma pantalla (y la misma colección maestros_codigos) se monta en
-// Maestros → Códigos y en Implantes → Códigos: `rutaBase` decide de qué
+// Maestros → Códigos, Implantes → Códigos y Hemodinamia → Códigos: `rutaBase` decide de qué
 // ítem del menú salen los permisos, así cada módulo se asigna por separado.
 const PESTANAS = [
   { id: 'pendientes', label: 'Sin Código / Pendientes', Icon: Clock, sub: 'pendientes' },

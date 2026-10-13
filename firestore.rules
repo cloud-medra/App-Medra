@@ -489,11 +489,13 @@ service cloud.firestore {
     }
 
     // Códigos: los edita el módulo Maestros (como antes) o quien tenga el
-    // ítem Implantes → Códigos (misma pantalla, permisos propios).
+    // ítem Implantes → Códigos o Hemodinamia → Códigos (misma pantalla,
+    // permisos propios).
     match /maestros_codigos/{document=**} {
       allow read: if estaActivo();
       allow write: if estaActivo() && (esDev() || tienePermiso('maestros')
-        || tieneItem('implantes', '/implantes/codigosImplantes'));
+        || tieneItem('implantes', '/implantes/codigosImplantes')
+        || tieneItem('hemodinamia', '/hemodinamia/codigosHemodinamia'));
     }
 
     // Registro de auditoría de cada importación masiva de precios

@@ -1,18 +1,10 @@
 import { columnas } from './columnas.js';
-import { mapaRespaldoDocumentos, mapaSincronizacionImputadas } from './operacionesCompartidas.js';
+import { mapaRespaldoDocumentos, mapaSincronizacionImputadas, reubicarMapa } from './operacionesCompartidas.js';
 import { mapaReportesInfo } from './documentos.js';
 import { maestrosComponentMaps } from './maestros.js';
 
-// Implantes → Códigos: la misma pantalla que Maestros → Códigos
-// (CodigosMaestros.jsx, colección maestros_codigos) con su propio ítem de
-// menú y sus propios permisos granulares. Se deriva del mapa de Maestros
-// (mismas secciones, acciones, columnas y pestañas) cambiando las rutas,
-// así ambos quedan siempre iguales pero se asignan por separado.
-const reubicarMapa = (config, de, a, label) => ({
-  ...config,
-  label,
-  procesos: Object.fromEntries(Object.entries(config.procesos || {}).map(([ruta, proceso]) => [ruta.replace(de, a), proceso])),
-});
+// Implantes → Códigos: la misma pantalla que Maestros → Códigos con su propio
+// ítem de menú y permisos (ver reubicarMapa en operacionesCompartidas.js).
 
 export const implantesComponentMaps = {
   '/implantes/codigosImplantes': reubicarMapa(
@@ -283,7 +275,7 @@ export const implantesComponentMaps = {
   },
 
   '/implantes/resumenImplantes': {
-    label: 'Resumen de Implantes Imputados (ResumenImplantes.jsx) — solo lectura, sin granularidad cableada aún',
+    label: 'Resumen de Implantes Imputados (shared/resumen/ResumenGestiones.jsx) — solo lectura, sin granularidad cableada aún',
     sections: {
       header: {
         label: 'Sección: Encabezado',

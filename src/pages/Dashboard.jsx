@@ -295,6 +295,7 @@ const Dashboard = () => {
     // Misma pantalla en Maestros y en Implantes; la key separa su estado.
     '/maestros/codigosMaestros': <CodigosMaestros key="maestros" />,
     '/implantes/codigosImplantes': <CodigosMaestros key="implantes" rutaBase="/implantes/codigosImplantes" />,
+    '/hemodinamia/codigosHemodinamia': <CodigosMaestros key="hemodinamia" rutaBase="/hemodinamia/codigosHemodinamia" />,
     '/maestros/padMaestros': <PadMaestros />,
     '/maestros/actualizacionPreciosMaestros': <ActualizacionPreciosMaestros />,
     '/consignacion/ingresarGuiaDespacho': <IngresarGuiaDespacho />,
