@@ -75,6 +75,7 @@ const MAESTRO_BODEGA = '/bodega/maestroBodega';
 const CATALOGOS_BODEGA = '/bodega/catalogosBodega';
 const INGRESO_BODEGA = '/bodega/ingresoBodega';
 const CARGA_BODEGA = '/bodega/cargaInicialBodega';
+const RUTAS_TRANSITO_BODEGA = ['/bodega/egresoBodega', '/bodega/transitoBodega', '/bodega/centrosBodega'];
 
 const USUARIOS = [
   { nombreUsuario: 'dev', nombreCompleto: 'Dev Prueba', rol: 'dev', permisos: {}, permisosGranulares: {} },
@@ -102,8 +103,9 @@ const USUARIOS = [
   { nombreUsuario: 'nuevo', nombreCompleto: 'Usuario Nuevo', rol: 'operador', passwordChanged: false, ...listado({}) },
   {
     nombreUsuario: 'bodega', nombreCompleto: 'Encargado Bodega', rol: 'operador', centroCostoId: 'lab',
-    permisos: { bodega: [MAESTRO_BODEGA, INGRESO_BODEGA, CARGA_BODEGA, CATALOGOS_BODEGA] },
+    permisos: { bodega: [MAESTRO_BODEGA, INGRESO_BODEGA, CARGA_BODEGA, ...RUTAS_TRANSITO_BODEGA, CATALOGOS_BODEGA] },
     permisosGranulares: {
+      ...Object.fromEntries(RUTAS_TRANSITO_BODEGA.map((r) => [r, {}])),
       [MAESTRO_BODEGA]: { productos: { visible: true, elements: { btn_inactivar: true } }, codigos: { visible: true, elements: { btn_desvincular: true } } },
       [INGRESO_BODEGA]: {},
       [CARGA_BODEGA]: { carga: { visible: true, elements: { btn_confirmar: true, btn_cerrar_carga: true } } },
@@ -112,8 +114,8 @@ const USUARIOS = [
   },
   {
     nombreUsuario: 'bodegaop', nombreCompleto: 'Operador Bodega', rol: 'operador', centroCostoId: 'lab',
-    permisos: { bodega: [MAESTRO_BODEGA, INGRESO_BODEGA, CARGA_BODEGA] },
-    permisosGranulares: { [MAESTRO_BODEGA]: {}, [INGRESO_BODEGA]: {}, [CARGA_BODEGA]: {} },
+    permisos: { bodega: [MAESTRO_BODEGA, INGRESO_BODEGA, CARGA_BODEGA, ...RUTAS_TRANSITO_BODEGA] },
+    permisosGranulares: { [MAESTRO_BODEGA]: {}, [INGRESO_BODEGA]: {}, [CARGA_BODEGA]: {}, ...Object.fromEntries(RUTAS_TRANSITO_BODEGA.map((r) => [r, {}])) },
   },
 ];
 

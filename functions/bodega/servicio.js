@@ -27,6 +27,8 @@ const {
   MAX_LINEAS_DOCUMENTO, MAX_OBSERVACION,
   validarCatalogo, validarProducto, codigoAutomatico, idUnico, validarCabecera, validarLinea, agruparLineas,
   idUnicoDocumento, aplicarMovimiento, normalizarLote, productoEnInventario, ErrorStock,
+  MAX_LINEAS_EGRESO, MAX_ACCIONES_TRANSITO, MAX_NOTA, ESTADOS_TRANSITO, MOVIMIENTO_DE_ACCION,
+  agruparLineasEgreso, aplicarMovimientoCentro, aplicarAccionTransito, accionTransito, normalizarIdEntrega,
 } = require('./nucleo.mjs');
 const { interpretarLectura, idVinculo, MAX_CODIGO_LEIDO } = require('./gs1.mjs');
 
@@ -583,7 +585,312 @@ const configurarCargaInicial = async (db, uid, datos = {}) => {
   return { cargaInicialCerrada: cerrada };
 };
 
+// --- Egreso (salida a tránsito) y gestión del tránsito ----------------------
+//
+//   bodega_salidas/{id} = { numero, fecha, usuario, solicitante, observacion,
+//     lineas, resumenPorCentro: { [centroId]: { nombre, lineas, unidades } } }
+//   bodega_transitos/{id} = uno por producto + lote + centro de una salida:
+//     { salidaId, salidaNumero, productoId, productoNombre, codigoMaestro,
+//       loteId, lote, vencimiento, centroId, centroNombre, cantidadSalida,
+//       pendiente, entregado, devuelto, estado: ABIERTO|CERRADO, fechaSalida,
+//       usuario, solicitante, observacion, ultimaAccionEn }
+//     /historial/{id} = { accion: SALIDA|ENTREGAR|DEVOLVER|NOTA, cantidad,
+//       idEntrega, observacion, nota, usuario, fecha }
+//   bodega_transito_centros/{centroId} = { centroNombre, unidades,
+//     productos: { [productoId]: n }, productosDistintos, transitosAbiertos }
+
+const refTransitoCentro = (db, centroId) => db.collection(COL.transitoCentros).doc(centroId);
+const conErrorStock = (fn) => {
+  try {
+    return fn();
+  } catch (error) {
+    if (error instanceof ErrorStock) throw new HttpsError('failed-precondition', error.message);
+    throw error;
+  }
+};
+const exigirSinInventario = (snapEstado, productos, accion = 'mover stock') => {
+  const inventario = snapEstado.data()?.inventarioAbierto;
+  const bloqueados = productos.filter((p) => productoEnInventario(inventario, p));
+  if (bloqueados.length) {
+    throw new HttpsError('failed-precondition', `Hay un inventario abierto que incluye: ${[...new Set(bloqueados.map((p) => p.nombre))].join(', ')}. Ciérralo antes de ${accion}.`);
+  }
+};
+
+// Salida a tránsito: cada línea { productoId, loteId, cantidad, centroId }.
+// En UNA transacción baja el disponible de cada lote y producto, sube el
+// tránsito del centro de cada línea y crea la salida, sus tránsitos y los
+// movimientos SALIDA_A_TRANSITO. Solo centros activos.
+const egresarComo = (db, por, datos = {}) => {
+  const entrada = Array.isArray(datos.lineas) ? datos.lineas : [];
+  if (!entrada.length) throw new HttpsError('invalid-argument', 'La salida no tiene líneas.');
+  if (entrada.length > MAX_LINEAS_EGRESO) throw new HttpsError('invalid-argument', `Máximo ${MAX_LINEAS_EGRESO} líneas por salida.`);
+  const texto = (v, max) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
+  const solicitante = texto(datos.solicitante, 120);
+  const observacion = texto(datos.observacion, MAX_OBSERVACION);
+  const lineas = agruparLineasEgreso(entrada.map((l) => {
+    const cantidad = Number(l?.cantidad);
+    if (!l?.productoId || !l?.loteId || !l?.centroId) throw new HttpsError('invalid-argument', 'Cada línea necesita producto, lote y centro.');
+    if (!Number.isInteger(cantidad) || cantidad <= 0) throw new HttpsError('invalid-argument', 'La cantidad debe ser un número entero mayor a cero.');
+    return { productoId: String(l.productoId), loteId: String(l.loteId), centroId: String(l.centroId), cantidad };
+  }));
+
+  return db.runTransaction(async (t) => {
+    const productoIds = [...new Set(lineas.map((l) => l.productoId))];
+    const loteIds = [...new Set(lineas.map((l) => l.loteId))];
+    const centroIds = [...new Set(lineas.map((l) => l.centroId))];
+    const [snapEstado, snapContadores, ...resto] = await Promise.all([
+      t.get(refEstado(db)),
+      t.get(refControl(db)),
+      ...productoIds.map((id) => t.get(db.collection(COL.productos).doc(id))),
+      ...loteIds.map((id) => t.get(db.collection(COL.lotes).doc(id))),
+      ...centroIds.map((id) => t.get(db.collection('maestros_centros').doc(id))),
+      ...centroIds.map((id) => t.get(refTransitoCentro(db, id))),
+    ]);
+    const snapsProductos = resto.slice(0, productoIds.length);
+    const snapsLotes = resto.slice(productoIds.length, productoIds.length + loteIds.length);
+    const snapsCentros = resto.slice(productoIds.length + loteIds.length, productoIds.length + loteIds.length + centroIds.length);
+    const snapsTotales = resto.slice(productoIds.length + loteIds.length + centroIds.length);
+
+    const productos = new Map(snapsProductos.filter((x) => x.exists).map((x) => [x.id, { id: x.id, ...x.data() }]));
+    const lotes = new Map(snapsLotes.filter((x) => x.exists).map((x) => [x.id, x.data()]));
+    const centros = new Map(snapsCentros.filter((x) => x.exists).map((x) => [x.id, x.data()]));
+    const errores = [];
+    lineas.forEach((l) => {
+      const p = productos.get(l.productoId);
+      const lote = lotes.get(l.loteId);
+      const centro = centros.get(l.centroId);
+      if (!p) errores.push('Un producto ya no existe.');
+      if (!lote || lote.productoId !== l.productoId) errores.push(`${p?.nombre || 'Producto'}: el lote ya no existe.`);
+      if (!centro) errores.push('Un centro elegido ya no existe.');
+      else if (centro.estado === 'INACTIVO') errores.push(`El centro ${centro.nombre} está inactivo.`);
+    });
+    exigirSinErrores([...new Set(errores)]);
+    exigirSinInventario(snapEstado, [...productos.values()], 'sacar stock');
+
+    // Saldos en memoria.
+    const saldoLote = new Map(loteIds.map((id) => [id, saldoDe(lotes.get(id))]));
+    const saldoProducto = new Map(productoIds.map((id) => [id, saldoDe(productos.get(id))]));
+    const totalesCentro = new Map(centroIds.map((id, i) => [id, snapsTotales[i].exists ? snapsTotales[i].data() : {}]));
+    const nuevosAbiertos = new Map(centroIds.map((id) => [id, 0]));
+    const pasos = conErrorStock(() => lineas.map((l, orden) => {
+      const mov = { tipo: 'SALIDA_A_TRANSITO', cantidad: l.cantidad, centroId: l.centroId, productoId: l.productoId };
+      const p = productos.get(l.productoId);
+      try {
+        saldoLote.set(l.loteId, aplicarMovimiento(saldoLote.get(l.loteId), mov));
+      } catch (error) {
+        const lote = lotes.get(l.loteId);
+        throw new ErrorStock(`${p.nombre} lote ${lote.lote || 'S/L'}: ${error.message}`);
+      }
+      saldoProducto.set(l.productoId, aplicarMovimiento(saldoProducto.get(l.productoId), mov));
+      totalesCentro.set(l.centroId, aplicarMovimientoCentro(totalesCentro.get(l.centroId), mov));
+      nuevosAbiertos.set(l.centroId, nuevosAbiertos.get(l.centroId) + 1);
+      return { l, orden, saldoLote: saldoLote.get(l.loteId), saldoProducto: saldoProducto.get(l.productoId) };
+    }));
+
+    // Escrituras.
+    const numero = (snapContadores.data()?.salidas || 0) + 1;
+    t.set(refControl(db), { salidas: numero }, { merge: true });
+    const refSalida = db.collection(COL.salidas).doc();
+    loteIds.forEach((id) => {
+      const s = saldoLote.get(id);
+      t.set(db.collection(COL.lotes).doc(id), {
+        ...lotes.get(id), disponible: s.disponible, transito: s.transito, transitoPorCentro: s.transitoPorCentro,
+        soloCargaInicial: false, ultimoMovimiento: ahora(), ultimoMovimientoTipo: 'SALIDA_A_TRANSITO',
+      });
+    });
+    const productosActualizados = productoIds.map((id) => {
+      const s = saldoProducto.get(id);
+      t.update(db.collection(COL.productos).doc(id), { ...s, conMovimientos: true, actualizadoEn: ahora() });
+      return { id, ...s, conMovimientos: true };
+    });
+    centroIds.forEach((id, i) => {
+      const previo = snapsTotales[i].exists ? snapsTotales[i].data() : {};
+      const tot = totalesCentro.get(id);
+      t.set(refTransitoCentro(db, id), {
+        centroId: id, centroNombre: centros.get(id).nombre || '', unidades: tot.unidades, productos: tot.productos,
+        productosDistintos: tot.productosDistintos, transitosAbiertos: (previo.transitosAbiertos || 0) + nuevosAbiertos.get(id),
+        actualizadoEn: ahora(),
+      });
+    });
+    const resumenPorCentro = {};
+    pasos.forEach(({ l, orden, saldoLote: sl, saldoProducto: sp }) => {
+      const p = productos.get(l.productoId);
+      const lote = lotes.get(l.loteId);
+      const centroNombre = centros.get(l.centroId).nombre || '';
+      const refTransito = db.collection(COL.transitos).doc();
+      const base = {
+        productoId: l.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
+        loteId: l.loteId, lote: lote.lote || '', vencimiento: lote.vencimiento || '', centroId: l.centroId, centroNombre,
+      };
+      t.set(refTransito, {
+        ...base, salidaId: refSalida.id, salidaNumero: numero, cantidadSalida: l.cantidad, pendiente: l.cantidad, entregado: 0, devuelto: 0,
+        estado: ESTADOS_TRANSITO.ABIERTO, fechaSalida: ahora(), usuario: por, solicitante, observacion, ultimaAccionEn: ahora(),
+      });
+      t.set(refTransito.collection('historial').doc(), { accion: 'SALIDA', cantidad: l.cantidad, observacion, usuario: por, fecha: ahora() });
+      t.set(db.collection(COL.movimientos).doc(), {
+        ...base, tipo: 'SALIDA_A_TRANSITO', fecha: ahora(), orden, usuario: por, cantidad: l.cantidad,
+        saldoLote: { disponible: sl.disponible, transito: sl.transito }, saldoProducto: { disponible: sp.disponible, transito: sp.transito },
+        transitoId: refTransito.id, documentoRef: { id: refSalida.id, tipo: 'SALIDA', numero: String(numero) },
+        observacion, solicitante,
+      });
+      const r = resumenPorCentro[l.centroId] || { nombre: centroNombre, lineas: 0, unidades: 0 };
+      resumenPorCentro[l.centroId] = { ...r, lineas: r.lineas + 1, unidades: r.unidades + l.cantidad };
+    });
+    t.set(refSalida, {
+      numero, fecha: ahora(), usuario: por, solicitante, observacion, resumenPorCentro,
+      lineas: lineas.map((l) => ({ ...l, productoNombre: productos.get(l.productoId).nombre, lote: lotes.get(l.loteId).lote || '', centroNombre: centros.get(l.centroId).nombre || '' })),
+      totalUnidades: lineas.reduce((n, l) => n + l.cantidad, 0),
+    });
+    return { id: refSalida.id, numero, lineas: lineas.length, productos: productosActualizados };
+  });
+};
+
+const egresar = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.confirmarEgreso);
+  return egresarComo(db, datosPor(uid, perfil), datos);
+};
+
+// Acciones sobre tránsitos (de a una o varias): ENTREGAR (sale
+// definitivamente; exige ID y observación), DEVOLVER (vuelve al disponible
+// de la Bodega General) o NOTA (seguimiento, no mueve stock). Cantidades
+// parciales. Todo en UNA transacción.
+//   datos: { origen: 'transito'|'centros', acciones: [{ transitoId, accion,
+//            cantidad, idEntrega, observacion, nota }] }
+const gestionarTransitoComo = (db, por, datos = {}) => {
+  const acciones = Array.isArray(datos.acciones) ? datos.acciones : [];
+  if (!acciones.length) throw new HttpsError('invalid-argument', 'No hay acciones.');
+  if (acciones.length > MAX_ACCIONES_TRANSITO) throw new HttpsError('invalid-argument', `Máximo ${MAX_ACCIONES_TRANSITO} registros por vez.`);
+  const texto = (v, max) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
+  const normalizadas = acciones.map((a) => {
+    const accion = String(a?.accion || '');
+    if (!['ENTREGAR', 'DEVOLVER', 'NOTA'].includes(accion)) throw new HttpsError('invalid-argument', 'Acción inválida.');
+    if (!a?.transitoId) throw new HttpsError('invalid-argument', 'Falta el registro de tránsito.');
+    const n = { transitoId: String(a.transitoId), accion, cantidad: Number(a.cantidad), observacion: texto(a.observacion, MAX_OBSERVACION), nota: texto(a.nota, MAX_NOTA), idEntrega: '' };
+    if (accion === 'ENTREGAR') {
+      const { valor, error } = normalizarIdEntrega(a.idEntrega);
+      if (error) throw new HttpsError('invalid-argument', error);
+      if (!n.observacion) throw new HttpsError('invalid-argument', 'La observación es obligatoria para entregar.');
+      n.idEntrega = valor;
+    }
+    if (accion === 'NOTA' && !n.nota) throw new HttpsError('invalid-argument', 'Escribe la nota.');
+    return n;
+  });
+
+  return db.runTransaction(async (t) => {
+    const transitoIds = [...new Set(normalizadas.map((a) => a.transitoId))];
+    const snapsTransitos = await Promise.all(transitoIds.map((id) => t.get(db.collection(COL.transitos).doc(id))));
+    const transitos = new Map(snapsTransitos.filter((x) => x.exists).map((x) => [x.id, x.data()]));
+    if (transitos.size !== transitoIds.length) throw new HttpsError('not-found', 'Un registro de tránsito ya no existe.');
+    const mueven = normalizadas.filter((a) => a.accion !== 'NOTA');
+    const loteIds = [...new Set(mueven.map((a) => transitos.get(a.transitoId).loteId))];
+    const productoIds = [...new Set(mueven.map((a) => transitos.get(a.transitoId).productoId))];
+    const centroIds = [...new Set(mueven.map((a) => transitos.get(a.transitoId).centroId))];
+    const [snapEstado, ...resto] = await Promise.all([
+      t.get(refEstado(db)),
+      ...loteIds.map((id) => t.get(db.collection(COL.lotes).doc(id))),
+      ...productoIds.map((id) => t.get(db.collection(COL.productos).doc(id))),
+      ...centroIds.map((id) => t.get(refTransitoCentro(db, id))),
+    ]);
+    const lotes = new Map(resto.slice(0, loteIds.length).map((x) => [x.id, x.data()]));
+    const productos = new Map(resto.slice(loteIds.length, loteIds.length + productoIds.length).map((x) => [x.id, x.exists ? { id: x.id, ...x.data() } : null]));
+    const totales = new Map(resto.slice(loteIds.length + productoIds.length).map((x) => [x.id, x.exists ? x.data() : {}]));
+    if ([...lotes.values()].some((l) => !l) || [...productos.values()].some((p) => !p)) throw new HttpsError('failed-precondition', 'El lote o el producto de un tránsito ya no existe.');
+    // Devolver suma al disponible: no se permite con un inventario abierto
+    // que incluya el producto. Entregar sí (no toca la bodega).
+    exigirSinInventario(snapEstado, normalizadas.filter((a) => a.accion === 'DEVOLVER').map((a) => productos.get(transitos.get(a.transitoId).productoId)), 'devolver stock');
+
+    const estadoTransito = new Map([...transitos.entries()].map(([id, tr]) => [id, { ...tr }]));
+    const saldoLote = new Map(loteIds.map((id) => [id, saldoDe(lotes.get(id))]));
+    const saldoProducto = new Map(productoIds.map((id) => [id, saldoDe(productos.get(id))]));
+    const totalesCentro = new Map(centroIds.map((id) => [id, totales.get(id)]));
+    const cerrados = new Map(centroIds.map((id) => [id, 0]));
+    const pasos = conErrorStock(() => normalizadas.map((a, orden) => {
+      const tr = estadoTransito.get(a.transitoId);
+      if (tr.estado !== ESTADOS_TRANSITO.ABIERTO && a.accion !== 'NOTA') throw new ErrorStock(`${tr.productoNombre} (${tr.centroNombre}): el registro ya está cerrado.`);
+      if (a.accion === 'NOTA') return { a, orden, tr };
+      let nuevo;
+      try {
+        nuevo = aplicarAccionTransito(tr, a);
+      } catch (error) {
+        throw new ErrorStock(`${tr.productoNombre} (${tr.centroNombre}): ${error.message}`);
+      }
+      estadoTransito.set(a.transitoId, nuevo);
+      if (nuevo.estado === ESTADOS_TRANSITO.CERRADO) cerrados.set(tr.centroId, cerrados.get(tr.centroId) + 1);
+      const mov = { tipo: MOVIMIENTO_DE_ACCION[a.accion], cantidad: a.cantidad, centroId: tr.centroId, productoId: tr.productoId };
+      saldoLote.set(tr.loteId, aplicarMovimiento(saldoLote.get(tr.loteId), mov));
+      saldoProducto.set(tr.productoId, aplicarMovimiento(saldoProducto.get(tr.productoId), mov));
+      totalesCentro.set(tr.centroId, aplicarMovimientoCentro(totalesCentro.get(tr.centroId), mov));
+      return { a, orden, tr, mov, sl: saldoLote.get(tr.loteId), sp: saldoProducto.get(tr.productoId) };
+    }));
+
+    // Escrituras.
+    transitoIds.forEach((id) => {
+      const tr = estadoTransito.get(id);
+      t.update(db.collection(COL.transitos).doc(id), {
+        pendiente: tr.pendiente, entregado: tr.entregado || 0, devuelto: tr.devuelto || 0, estado: tr.estado,
+        ultimaAccionEn: ahora(), ...(tr.estado === ESTADOS_TRANSITO.CERRADO && transitos.get(id).estado !== ESTADOS_TRANSITO.CERRADO ? { cerradoEn: ahora() } : {}),
+      });
+    });
+    loteIds.forEach((id) => {
+      const s = saldoLote.get(id);
+      t.set(db.collection(COL.lotes).doc(id), {
+        ...lotes.get(id), disponible: s.disponible, transito: s.transito, transitoPorCentro: s.transitoPorCentro,
+        soloCargaInicial: false, ultimoMovimiento: ahora(),
+      });
+    });
+    const productosActualizados = productoIds.map((id) => {
+      const s = saldoProducto.get(id);
+      t.update(db.collection(COL.productos).doc(id), { ...s, actualizadoEn: ahora() });
+      return { id, ...s };
+    });
+    centroIds.forEach((id) => {
+      const tot = totalesCentro.get(id);
+      t.set(refTransitoCentro(db, id), {
+        ...totales.get(id), unidades: tot.unidades, productos: tot.productos, productosDistintos: tot.productosDistintos,
+        transitosAbiertos: Math.max(0, (totales.get(id).transitosAbiertos || 0) - cerrados.get(id)), actualizadoEn: ahora(),
+      });
+    });
+    pasos.forEach(({ a, orden, tr, mov, sl, sp }) => {
+      const refT = db.collection(COL.transitos).doc(a.transitoId);
+      t.set(refT.collection('historial').doc(), {
+        accion: a.accion, cantidad: a.accion === 'NOTA' ? null : a.cantidad, idEntrega: a.idEntrega || '',
+        observacion: a.observacion, nota: a.nota, usuario: por, fecha: ahora(),
+      });
+      if (!mov) return;
+      t.set(db.collection(COL.movimientos).doc(), {
+        tipo: mov.tipo, fecha: ahora(), orden, usuario: por,
+        productoId: tr.productoId, productoNombre: tr.productoNombre, codigoMaestro: tr.codigoMaestro, categoriaId: tr.categoriaId || null,
+        loteId: tr.loteId, lote: tr.lote, vencimiento: tr.vencimiento, cantidad: a.cantidad,
+        saldoLote: { disponible: sl.disponible, transito: sl.transito }, saldoProducto: { disponible: sp.disponible, transito: sp.transito },
+        centroId: tr.centroId, centroNombre: tr.centroNombre, transitoId: a.transitoId,
+        documentoRef: { id: tr.salidaId, tipo: 'SALIDA', numero: String(tr.salidaNumero) },
+        idEntrega: a.idEntrega || '', observacion: a.observacion,
+      });
+    });
+    return {
+      transitos: transitoIds.map((id) => ({ id, ...(({ pendiente, entregado, devuelto, estado }) => ({ pendiente, entregado, devuelto, estado }))(estadoTransito.get(id)) })),
+      productos: productosActualizados,
+    };
+  });
+};
+
+const gestionarTransito = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  const origen = datos.origen === 'centros' ? 'centros' : 'transito';
+  const acciones = Array.isArray(datos.acciones) ? datos.acciones : [];
+  [...new Set(acciones.map((a) => a?.accion))].forEach((accion) => {
+    if (!['ENTREGAR', 'DEVOLVER', 'NOTA'].includes(accion)) throw new HttpsError('invalid-argument', 'Acción inválida.');
+    exigir(perfil, accionTransito(origen, accion));
+  });
+  return gestionarTransitoComo(db, datosPor(uid, perfil), datos);
+};
+
 module.exports = {
+  egresar,
+  egresarComo,
+  gestionarTransito,
+  gestionarTransitoComo,
   guardarBorrador,
   eliminarBorrador,
   confirmarDocumento,

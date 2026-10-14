@@ -90,6 +90,9 @@ import InventarioPorCajas from '../components/modulos/inventario/inventarioCajas
 import MaestroBodega from '../components/modulos/bodega/maestroBodega/MaestroBodega';
 import IngresoBodega from '../components/modulos/bodega/ingresoBodega/IngresoBodega';
 import CargaInicialBodega from '../components/modulos/bodega/cargaInicialBodega/CargaInicialBodega';
+import EgresoBodega from '../components/modulos/bodega/egresoBodega/EgresoBodega';
+import TransitoBodega from '../components/modulos/bodega/transitoBodega/TransitoBodega';
+import CentrosBodega from '../components/modulos/bodega/centrosBodega/CentrosBodega';
 import CatalogosBodega from '../components/modulos/bodega/catalogosBodega/CatalogosBodega';
 
 // --- DOCUMENTOS ---
@@ -335,6 +338,9 @@ const Dashboard = () => {
     '/bodega/maestroBodega': <MaestroBodega />,
     '/bodega/ingresoBodega': <IngresoBodega />,
     '/bodega/cargaInicialBodega': <CargaInicialBodega />,
+    '/bodega/egresoBodega': <EgresoBodega />,
+    '/bodega/transitoBodega': <TransitoBodega />,
+    '/bodega/centrosBodega': <CentrosBodega />,
     '/bodega/catalogosBodega': <CatalogosBodega />,
 
     // ── Documentos ──

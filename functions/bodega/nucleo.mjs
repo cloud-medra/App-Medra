@@ -19,6 +19,9 @@ export const RUTAS = Object.freeze({
   maestro: '/bodega/maestroBodega',
   ingreso: '/bodega/ingresoBodega',
   cargaInicial: '/bodega/cargaInicialBodega',
+  egreso: '/bodega/egresoBodega',
+  transito: '/bodega/transitoBodega',
+  centros: '/bodega/centrosBodega',
   catalogos: '/bodega/catalogosBodega',
 });
 
@@ -41,7 +44,17 @@ export const ACCIONES = Object.freeze({
   confirmarCarga: [MODULO, RUTAS.cargaInicial, 'carga', 'btn_confirmar'],
   cerrarCarga: [MODULO, RUTAS.cargaInicial, 'carga', 'btn_cerrar_carga'],
   eliminarBorradorCarga: [MODULO, RUTAS.cargaInicial, 'carga', 'btn_eliminar_borrador'],
+  confirmarEgreso: [MODULO, RUTAS.egreso, 'egreso', 'btn_confirmar'],
 });
+
+// Acciones sobre un tránsito: desde la vista Tránsito o desde Tránsito por
+// centro (cada una con su propio permiso).
+export const ACCIONES_TRANSITO = Object.freeze({
+  ENTREGAR: 'btn_entregar',
+  DEVOLVER: 'btn_devolver',
+  NOTA: 'btn_nota',
+});
+export const accionTransito = (origen, accion) => [MODULO, origen === 'centros' ? RUTAS.centros : RUTAS.transito, 'acciones', ACCIONES_TRANSITO[accion]];
 
 export const COL = Object.freeze({
   productos: 'bodega_productos',
@@ -350,3 +363,65 @@ export const normalizarRut = (texto) => {
   const esperado = resto === 11 ? '0' : resto === 10 ? 'K' : String(resto);
   return dv === esperado ? `${cuerpo}-${dv}` : '';
 };
+
+// ---------------- Egreso y tránsito ----------------
+
+export const MAX_LINEAS_EGRESO = 60;
+export const MAX_ACCIONES_TRANSITO = 50;
+export const ESTADOS_TRANSITO = Object.freeze({ ABIERTO: 'ABIERTO', CERRADO: 'CERRADO' });
+export const MAX_ID_ENTREGA = 60;
+export const MAX_NOTA = 500;
+
+// Número de ID de la entrega. 'LIBRE' = texto obligatorio; 'RUT' = RUT
+// chileno con dígito verificador (cambiar aquí si se confirma que es RUT).
+export const TIPO_ID_ENTREGA = 'LIBRE';
+export const ETIQUETA_ID_ENTREGA = TIPO_ID_ENTREGA === 'RUT' ? 'RUT del paciente' : 'N° de ID';
+
+// Texto ingresado -> { valor, error }.
+export const normalizarIdEntrega = (texto, tipo = TIPO_ID_ENTREGA) => {
+  const limpio = limpiar(texto).toUpperCase();
+  if (!limpio) return { valor: '', error: `El ${ETIQUETA_ID_ENTREGA} es obligatorio para entregar.` };
+  if (tipo === 'RUT') {
+    const rut = normalizarRut(limpio);
+    return rut ? { valor: rut, error: null } : { valor: limpio, error: 'El RUT no es válido (revisa el dígito verificador).' };
+  }
+  if (limpio.length > MAX_ID_ENTREGA) return { valor: limpio, error: `El ${ETIQUETA_ID_ENTREGA} no puede superar ${MAX_ID_ENTREGA} caracteres.` };
+  return { valor: limpio, error: null };
+};
+
+// Lotes de un producto para egresar, en orden FEFO (vence primero; sin
+// vencimiento al final). Solo los que tienen disponible.
+export const lotesFEFO = (lotes) => lotes
+  .filter((l) => (Number(l.disponible) || 0) > 0)
+  .sort((a, b) => (a.vencimiento || '9999-99-99').localeCompare(b.vencimiento || '9999-99-99') || String(a.lote || '').localeCompare(String(b.lote || '')));
+
+// Une las líneas de egreso del mismo lote y centro (suma la cantidad).
+export const agruparLineasEgreso = (lineas) => {
+  const mapa = new Map();
+  lineas.forEach((l) => {
+    const clave = `${l.loteId}|${l.centroId}`;
+    const previa = mapa.get(clave);
+    if (previa) previa.cantidad += l.cantidad;
+    else mapa.set(clave, { ...l });
+  });
+  return [...mapa.values()];
+};
+
+// Estado de un tránsito tras una acción. `transito`: { pendiente, entregado,
+// devuelto }. Lanza ErrorStock si la cantidad no corresponde.
+export const aplicarAccionTransito = (transito, { accion, cantidad }) => {
+  if (accion === 'NOTA') return { ...transito };
+  if (accion !== 'ENTREGAR' && accion !== 'DEVOLVER') throw new ErrorStock('Acción inválida.');
+  if (!Number.isInteger(cantidad) || cantidad <= 0) throw new ErrorStock('La cantidad debe ser un número entero mayor a cero.');
+  const pendiente = (Number(transito.pendiente) || 0) - cantidad;
+  if (pendiente < 0) throw new ErrorStock(`Solo quedan ${transito.pendiente} en tránsito en este registro.`);
+  return {
+    ...transito,
+    pendiente,
+    entregado: (Number(transito.entregado) || 0) + (accion === 'ENTREGAR' ? cantidad : 0),
+    devuelto: (Number(transito.devuelto) || 0) + (accion === 'DEVOLVER' ? cantidad : 0),
+    estado: pendiente === 0 ? ESTADOS_TRANSITO.CERRADO : ESTADOS_TRANSITO.ABIERTO,
+  };
+};
+
+export const MOVIMIENTO_DE_ACCION = Object.freeze({ ENTREGAR: 'ENTREGA', DEVOLVER: 'DEVOLUCION' });

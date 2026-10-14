@@ -314,6 +314,56 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "bodega_transitos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaSalida",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "bodega_transitos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "centroId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fechaSalida",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "bodega_transitos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "centroId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "vencimiento",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

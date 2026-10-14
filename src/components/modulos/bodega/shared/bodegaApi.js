@@ -124,3 +124,51 @@ export const confirmarDocumento = async (datos) => {
   (r.productos || []).forEach(({ id, ...saldo }) => upsertLocal('bodegaProductos', id, saldo));
   return r;
 };
+
+// ---------------- Egreso y tránsito (Fase 3) ----------------
+
+const reflejarProductos = (productos = []) => productos.forEach(({ id, ...saldo }) => upsertLocal('bodegaProductos', id, saldo));
+
+export const egresar = async (datos) => {
+  const r = await llamar('bodegaEgresar')(datos);
+  reflejarProductos(r.productos);
+  return r;
+};
+
+// origen: 'transito' | 'centros' (vista desde la que se actúa: su permiso).
+export const gestionarTransito = async ({ origen, acciones }) => {
+  const r = await llamar('bodegaGestionarTransito')({ origen, acciones });
+  reflejarProductos(r.productos);
+  return r;
+};
+
+// Tránsitos abiertos (todos o de un centro), del más antiguo al más nuevo.
+export const leerTransitosAbiertos = async ({ centroId = null, max = 500 } = {}) => {
+  const filtros = [where('estado', '==', 'ABIERTO'), ...(centroId ? [where('centroId', '==', centroId)] : [])];
+  const snap = await getDocs(query(collection(db, COL.transitos), ...filtros, orderBy('fechaSalida', 'asc'), limit(max)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+export const leerHistorialTransito = async (transitoId) => {
+  const snap = await getDocs(query(collection(db, COL.transitos, transitoId, 'historial'), orderBy('fecha', 'asc'), limit(200)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+// Centros con unidades en tránsito (totales denormalizados).
+export const leerCentrosConTransito = async () => {
+  const snap = await getDocs(query(collection(db, COL.transitoCentros), where('unidades', '>', 0), limit(300)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+// Tránsito más antiguo y próximo vencimiento de un centro (2 lecturas).
+export const leerResumenCentro = async (centroId) => {
+  const base = [where('centroId', '==', centroId), where('estado', '==', 'ABIERTO')];
+  const [antiguo, vence] = await Promise.all([
+    getDocs(query(collection(db, COL.transitos), ...base, orderBy('fechaSalida', 'asc'), limit(1))),
+    getDocs(query(collection(db, COL.transitos), ...base, where('vencimiento', '>', ''), orderBy('vencimiento', 'asc'), limit(1))),
+  ]);
+  return {
+    masAntiguo: antiguo.docs[0]?.data().fechaSalida || null,
+    proximoVencimiento: vence.docs[0]?.data().vencimiento || '',
+  };
+};

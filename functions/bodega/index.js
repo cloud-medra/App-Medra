@@ -7,6 +7,8 @@
 //   - bodegaGuardarBorrador / bodegaEliminarBorrador / bodegaConfirmarDocumento:
 //     ingreso por documento y carga inicial (Fase 2).
 //   - bodegaConfigurarCargaInicial: cerrar/reabrir la carga inicial.
+//   - bodegaEgresar: salida a tránsito hacia uno o varios centros (Fase 3).
+//   - bodegaGestionarTransito: entregar, devolver o anotar (Fase 3).
 
 const { onCall } = require('firebase-functions/v2/https');
 const logger = require('firebase-functions/logger');
@@ -33,3 +35,5 @@ exports.bodegaGuardarBorrador = callable('guardarBorrador');
 exports.bodegaEliminarBorrador = callable('eliminarBorrador');
 exports.bodegaConfirmarDocumento = callable('confirmarDocumento');
 exports.bodegaConfigurarCargaInicial = callable('configurarCargaInicial');
+exports.bodegaEgresar = callable('egresar');
+exports.bodegaGestionarTransito = callable('gestionarTransito');

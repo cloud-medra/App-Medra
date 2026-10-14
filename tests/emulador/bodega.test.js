@@ -29,6 +29,9 @@ const MAESTRO = '/bodega/maestroBodega';
 const CATALOGOS = '/bodega/catalogosBodega';
 const INGRESO = '/bodega/ingresoBodega';
 const CARGA = '/bodega/cargaInicialBodega';
+const EGRESO = '/bodega/egresoBodega';
+const TRANSITO = '/bodega/transitoBodega';
+const CENTROS = '/bodega/centrosBodega';
 const GTIN = '07612345678900';
 
 let db;
@@ -55,8 +58,8 @@ const leer = async (col, id) => (await db.collection(col).doc(id).get()).data();
 // Operador con el Maestro de Bodega (acciones sin configurar: permitidas,
 // salvo las sensibles) y Categorías.
 const PERMISOS_BODEGA = {
-  permisos: { bodega: [MAESTRO, CATALOGOS, INGRESO, CARGA] },
-  permisosGranulares: { [MAESTRO]: {}, [CATALOGOS]: {}, [INGRESO]: {}, [CARGA]: {} },
+  permisos: { bodega: [MAESTRO, CATALOGOS, INGRESO, CARGA, EGRESO, TRANSITO, CENTROS] },
+  permisosGranulares: { [MAESTRO]: {}, [CATALOGOS]: {}, [INGRESO]: {}, [CARGA]: {}, [EGRESO]: {}, [TRANSITO]: {}, [CENTROS]: {} },
 };
 const conSensibles = {
   permisos: { bodega: [MAESTRO] },
@@ -86,6 +89,8 @@ beforeEach(async () => {
   await db.collection('bodega_catalogos').doc('cat').set({ tipo: 'CATEGORIA', nombre: 'INSUMOS', activo: true });
   await db.collection('maestros_codigos').doc('mc1').set({ codigo: '0301001', referencia: 'REF-9', descriptorAuto: 'GUANTE NITRILO', empresa: 'ACME', precioNeto: 1200 });
   await db.collection('maestros_centros').doc('pab').set({ nombre: 'PABELLÓN', estado: 'ACTIVO' });
+  await db.collection('maestros_centros').doc('uci').set({ nombre: 'UCI', estado: 'ACTIVO' });
+  await db.collection('maestros_centros').doc('viejo').set({ nombre: 'CENTRO VIEJO', estado: 'INACTIVO' });
   await db.collection('maestros_empresas').doc('acme').set({ nombre: 'ACME SPA', rut: '76.000.000-0', estado: 'ACTIVO' });
   await db.collection('maestros_empresas').doc('otra').set({ nombre: 'OTRA SPA', estado: 'ACTIVO' });
 });
@@ -426,5 +431,141 @@ describe('ingreso por documento y carga inicial (Fase 2)', () => {
     await expect(setDoc(doc(op, 'bodega_documentos', r.id), { estado: 'BORRADOR' }, { merge: true })).rejects.toEqual(DENEGADO_REGLAS);
     await expect(setDoc(doc(op, 'bodega_movimientos', 'x'), { cantidad: 1 })).rejects.toEqual(DENEGADO_REGLAS);
     await expect(setDoc(doc(op, 'bodega_control', 'config'), { cargaInicialCerrada: false })).rejects.toEqual(DENEGADO_REGLAS);
+  });
+});
+
+describe('egreso a tránsito por centro y gestión del tránsito (Fase 3)', () => {
+  let sonda;
+  let gasa;
+  const L1 = () => `${sonda}__L1__2027-01-31`;
+  const L2 = () => `${sonda}__L2__2028-06-30`;
+  const GASA = () => `${gasa}__SL__SV`;
+  const egresar = (uid, lineas, extra = {}) => bodega.egresar(db, uid, { lineas, solicitante: 'Dr. Prueba', observacion: 'Pabellón 3', ...extra });
+  const gestionar = (uid, acciones, origen = 'transito') => bodega.gestionarTransito(db, uid, { origen, acciones });
+  const transitosDe = async (centroId) => (await db.collection('bodega_transitos').where('centroId', '==', centroId).get()).docs.map((d) => ({ id: d.id, ...d.data() }));
+  const kardex = async (productoId) => (await db.collection('bodega_movimientos').where('productoId', '==', productoId).get()).docs.map((d) => d.data());
+
+  beforeEach(async () => {
+    sonda = (await crearProducto('op', { nombre: 'PRUEBA SONDA', categoriaId: 'cat' })).id;
+    gasa = (await crearProducto('op', { nombre: 'PRUEBA GASA', manejaLote: false, manejaVencimiento: false })).id;
+    await bodega.confirmarDocumento(db, 'op', {
+      tipo: 'INGRESO',
+      cabecera: { tipoDocumento: 'GUIA', numero: 'T-1', proveedorId: 'acme', fecha: '2026-10-14' },
+      lineas: [
+        { productoId: sonda, lote: 'L1', vencimiento: '2027-01-31', cantidad: 5 },
+        { productoId: sonda, lote: 'L2', vencimiento: '2028-06-30', cantidad: 5 },
+        { productoId: gasa, cantidad: 20 },
+      ],
+    });
+  });
+
+  it('una salida con líneas para varios centros: disponible -> tránsito del centro, en una transacción', async () => {
+    const r = await egresar('op', [
+      { productoId: sonda, loteId: L1(), cantidad: 2, centroId: 'pab' },
+      { productoId: sonda, loteId: L1(), cantidad: 1, centroId: 'pab' }, // se agrupa
+      { productoId: sonda, loteId: L1(), cantidad: 1, centroId: 'uci' },
+      { productoId: gasa, loteId: GASA(), cantidad: 10, centroId: 'pab' },
+    ]);
+    expect(r).toMatchObject({ numero: 1, lineas: 3 });
+    expect(await leer('bodega_lotes', L1())).toMatchObject({ disponible: 1, transito: 4, transitoPorCentro: { pab: 3, uci: 1 }, soloCargaInicial: false });
+    expect(await leer('bodega_productos', sonda)).toMatchObject({ disponible: 6, transito: 4, transitoPorCentro: { pab: 3, uci: 1 } });
+    expect(await leer('bodega_transito_centros', 'pab')).toMatchObject({ centroNombre: 'PABELLÓN', unidades: 13, productos: { [sonda]: 3, [gasa]: 10 }, productosDistintos: 2, transitosAbiertos: 2 });
+    expect(await leer('bodega_transito_centros', 'uci')).toMatchObject({ unidades: 1, transitosAbiertos: 1 });
+    const pab = await transitosDe('pab');
+    expect(pab.map((t) => [t.productoNombre, t.lote, t.cantidadSalida, t.pendiente, t.estado, t.centroNombre]).sort()).toEqual([
+      ['PRUEBA GASA', '', 10, 10, 'ABIERTO', 'PABELLÓN'], ['PRUEBA SONDA', 'L1', 3, 3, 'ABIERTO', 'PABELLÓN'],
+    ]);
+    expect(pab[0]).toMatchObject({ salidaNumero: 1, solicitante: 'Dr. Prueba', usuario: { uid: 'op' } });
+    const salidas = (await kardex(sonda)).filter((m) => m.tipo === 'SALIDA_A_TRANSITO');
+    expect(salidas.map((m) => [m.centroId, m.cantidad]).sort()).toEqual([['pab', 3], ['uci', 1]]);
+    expect(salidas[0]).toMatchObject({ documentoRef: { tipo: 'SALIDA', numero: '1' }, transitoId: expect.any(String) });
+    expect((await leer('bodega_salidas', r.id)).resumenPorCentro).toMatchObject({ pab: { nombre: 'PABELLÓN', lineas: 2, unidades: 13 }, uci: { unidades: 1 } });
+    expect((await egresar('op', [{ productoId: gasa, loteId: GASA(), cantidad: 1, centroId: 'uci' }])).numero).toBe(2);
+  });
+
+  it('valida centro activo, stock suficiente y es todo o nada', async () => {
+    await expect(egresar('op', [{ productoId: sonda, loteId: L1(), cantidad: 1, centroId: 'viejo' }])).rejects.toEqual(rechazo('invalid-argument'));
+    await expect(egresar('op', [{ productoId: sonda, loteId: L1(), cantidad: 1, centroId: 'nadie' }])).rejects.toEqual(rechazo('invalid-argument'));
+    await expect(egresar('op', [{ productoId: sonda, loteId: L1(), cantidad: 1 }])).rejects.toEqual(rechazo('invalid-argument'));
+    await expect(egresar('op', [{ productoId: gasa, loteId: L1(), cantidad: 1, centroId: 'pab' }])).rejects.toEqual(rechazo('invalid-argument')); // lote de otro producto
+    const err = await egresar('op', [
+      { productoId: gasa, loteId: GASA(), cantidad: 5, centroId: 'pab' },
+      { productoId: sonda, loteId: L1(), cantidad: 4, centroId: 'pab' },
+      { productoId: sonda, loteId: L1(), cantidad: 2, centroId: 'uci' }, // 6 > 5
+    ]).catch((e) => e);
+    expect(err.code).toBe('failed-precondition');
+    expect(err.message).toContain('lote L1');
+    expect((await leer('bodega_lotes', GASA())).disponible).toBe(20);
+    expect(await leer('bodega_transito_centros', 'pab')).toBeUndefined();
+    await expect(egresar('ajeno', [{ productoId: gasa, loteId: GASA(), cantidad: 1, centroId: 'pab' }])).rejects.toEqual(rechazo('permission-denied'));
+  });
+
+  it('entregar (parcial, con ID y observación), devolver y nota; cierra al quedar en cero', async () => {
+    await egresar('op', [{ productoId: sonda, loteId: L1(), cantidad: 3, centroId: 'pab' }]);
+    const [t] = await transitosDe('pab');
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, observacion: 'usado' }])).rejects.toEqual(rechazo('invalid-argument')); // sin ID
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: '123' }])).rejects.toEqual(rechazo('invalid-argument')); // sin observación
+    await gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: ' cx-55 ', observacion: 'Usado en cirugía' }]);
+    expect(await leer('bodega_transitos', t.id)).toMatchObject({ pendiente: 2, entregado: 1, estado: 'ABIERTO' });
+    expect(await leer('bodega_lotes', L1())).toMatchObject({ disponible: 2, transito: 2, transitoPorCentro: { pab: 2 } });
+    await gestionar('op', [{ transitoId: t.id, accion: 'NOTA', nota: 'Pendiente de confirmar uso' }]);
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'DEVOLVER', cantidad: 3 }])).rejects.toEqual(rechazo('failed-precondition'));
+    await gestionar('op', [{ transitoId: t.id, accion: 'DEVOLVER', cantidad: 2 }]);
+    expect(await leer('bodega_transitos', t.id)).toMatchObject({ pendiente: 0, entregado: 1, devuelto: 2, estado: 'CERRADO' });
+    expect(await leer('bodega_lotes', L1())).toMatchObject({ disponible: 4, transito: 0, transitoPorCentro: {} });
+    expect(await leer('bodega_productos', sonda)).toMatchObject({ disponible: 9, transito: 0, transitoPorCentro: {} });
+    expect(await leer('bodega_transito_centros', 'pab')).toMatchObject({ unidades: 0, productos: {}, productosDistintos: 0, transitosAbiertos: 0 });
+    const historial = (await db.collection('bodega_transitos').doc(t.id).collection('historial').get()).docs.map((d) => d.data());
+    expect(historial.map((h) => h.accion).sort()).toEqual(['DEVOLVER', 'ENTREGAR', 'NOTA', 'SALIDA']);
+    expect(historial.find((h) => h.accion === 'ENTREGAR')).toMatchObject({ idEntrega: 'CX-55', observacion: 'Usado en cirugía', cantidad: 1 });
+    const movs = await kardex(sonda);
+    expect(movs.find((m) => m.tipo === 'ENTREGA')).toMatchObject({ centroId: 'pab', idEntrega: 'CX-55', cantidad: 1, saldoLote: { disponible: 2, transito: 2 } });
+    expect(movs.find((m) => m.tipo === 'DEVOLUCION')).toMatchObject({ centroId: 'pab', cantidad: 2, saldoLote: { disponible: 4, transito: 0 } });
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: 'x', observacion: 'y' }])).rejects.toEqual(rechazo('failed-precondition'));
+    // Ahora el centro sí se puede borrar (reglas).
+    const maestros = await sesion('maestros');
+    await expect(deleteDoc(doc(maestros, 'maestros_centros', 'pab'))).resolves.toBeUndefined();
+  });
+
+  it('acción masiva: varias en una transacción; si una falla no se aplica ninguna', async () => {
+    await egresar('op', [
+      { productoId: sonda, loteId: L1(), cantidad: 2, centroId: 'uci' },
+      { productoId: sonda, loteId: L2(), cantidad: 2, centroId: 'uci' },
+    ]);
+    const [a, b] = await transitosDe('uci');
+    const err = await gestionar('op', [
+      { transitoId: a.id, accion: 'ENTREGAR', cantidad: 2, idEntrega: 'ID-1', observacion: 'común' },
+      { transitoId: b.id, accion: 'ENTREGAR', cantidad: 3, idEntrega: 'ID-1', observacion: 'común' },
+    ], 'centros').catch((e) => e);
+    expect(err.code).toBe('failed-precondition');
+    expect((await leer('bodega_transitos', a.id)).pendiente).toBe(2);
+    await gestionar('op', [
+      { transitoId: a.id, accion: 'ENTREGAR', cantidad: 2, idEntrega: 'ID-1', observacion: 'común' },
+      { transitoId: b.id, accion: 'ENTREGAR', cantidad: 2, idEntrega: 'ID-2', observacion: 'otra' },
+    ], 'centros');
+    expect(await leer('bodega_transito_centros', 'uci')).toMatchObject({ unidades: 0, transitosAbiertos: 0 });
+    expect(await leer('bodega_productos', sonda)).toMatchObject({ disponible: 6, transito: 0 });
+  });
+
+  it('permisos por vista de origen; con inventario abierto: no se egresa ni se devuelve, sí se entrega', async () => {
+    await egresar('op', [{ productoId: sonda, loteId: L1(), cantidad: 2, centroId: 'pab' }]);
+    const [t] = await transitosDe('pab');
+    await db.collection('usuarios').doc('op').set({ permisosGranulares: { [CENTROS]: { acciones: { visible: true, elements: { btn_entregar: false } } } } }, { merge: true });
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: 'A', observacion: 'B' }], 'centros')).rejects.toEqual(rechazo('permission-denied'));
+    await db.collection('bodega_control').doc('estado').set({ inventarioAbierto: { id: 'inv', alcance: { categorias: [] } } });
+    await expect(egresar('op', [{ productoId: gasa, loteId: GASA(), cantidad: 1, centroId: 'pab' }])).rejects.toEqual(rechazo('failed-precondition'));
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'DEVOLVER', cantidad: 1 }])).rejects.toEqual(rechazo('failed-precondition'));
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: 'A', observacion: 'B' }])).resolves.toBeTruthy();
+  });
+
+  it('reglas: no se borra un centro con tránsito; los tránsitos se leen pero no se escriben', async () => {
+    await egresar('op', [{ productoId: gasa, loteId: GASA(), cantidad: 1, centroId: 'uci' }]);
+    const maestros = await sesion('maestros');
+    await expect(deleteDoc(doc(maestros, 'maestros_centros', 'uci'))).rejects.toEqual(DENEGADO_REGLAS);
+    const op = await sesion('op');
+    const [t] = await transitosDe('uci');
+    await expect(getDoc(doc(op, 'bodega_transitos', t.id))).resolves.toBeTruthy();
+    await expect(setDoc(doc(op, 'bodega_transitos', t.id), { pendiente: 0 }, { merge: true })).rejects.toEqual(DENEGADO_REGLAS);
+    await expect(setDoc(doc(op, 'bodega_transito_centros', 'uci'), { unidades: 0 })).rejects.toEqual(DENEGADO_REGLAS);
   });
 });

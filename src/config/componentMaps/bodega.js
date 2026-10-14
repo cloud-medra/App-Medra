@@ -1,5 +1,12 @@
 import { columnas } from './columnas.js';
 
+// Columnas de la tabla de tránsitos (Tránsito y detalle de Tránsito por centro).
+const COLUMNAS_TRANSITO = [
+  ['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'],
+  ['cantidad', 'Pendiente / salida'], ['fechaSalida', 'Fecha de salida'], ['dias', 'Días en tránsito'],
+  ['usuario', 'Usuario'], ['solicitante', 'Destino / solicitante'], ['salida', 'N° salida'],
+];
+
 // Bodega (módulo nuevo, independiente de Inventario). Las acciones que
 // escriben se validan además en las Cloud Functions (functions/bodega,
 // puedeAccion). btn_inactivar y btn_desvincular son sensibles: denegadas
@@ -79,6 +86,70 @@ export const bodegaComponentMaps = {
         label: 'Sección: Líneas escaneadas',
         elements: {
           ...columnas([['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad']]),
+        },
+      },
+    },
+  },
+
+  '/bodega/egresoBodega': {
+    label: 'Egreso: salida a tránsito por centro (EgresoBodega.jsx)',
+    sections: {
+      egreso: {
+        label: 'Sección: Salida (producto, lote FEFO, cantidad, centro)',
+        elements: {
+          btn_confirmar: { label: 'Acción: Confirmar salida a tránsito' },
+        },
+      },
+      lineas: {
+        label: 'Sección: Líneas de la salida',
+        elements: {
+          ...columnas([['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'], ['cantidad', 'Cantidad']]),
+        },
+      },
+    },
+  },
+
+  '/bodega/transitoBodega': {
+    label: 'Tránsito: entregar, devolver o anotar (TransitoBodega.jsx)',
+    sections: {
+      listado: {
+        label: 'Sección: Listado de lo que está en tránsito',
+        elements: {
+          ...columnas(COLUMNAS_TRANSITO),
+        },
+      },
+      acciones: {
+        label: 'Sección: Acciones sobre el tránsito',
+        elements: {
+          btn_entregar: { label: 'Acción: Entregar (usado; exige ID y observación)' },
+          btn_devolver: { label: 'Acción: Devolver a stock (no usado)' },
+          btn_nota: { label: 'Acción: Mantener en tránsito (nota de seguimiento)' },
+        },
+      },
+    },
+  },
+
+  '/bodega/centrosBodega': {
+    label: 'Tránsito por centro (CentrosBodega.jsx)',
+    sections: {
+      centros: {
+        label: 'Sección: Centros con stock en tránsito',
+        elements: {
+          ...columnas([['productos', 'Productos distintos'], ['unidades', 'Unidades'], ['antiguo', 'Tránsito más antiguo (días)'], ['vencimiento', 'Próximo vencimiento']]),
+        },
+      },
+      listado: {
+        label: 'Sección: Detalle del centro',
+        elements: {
+          ...columnas(COLUMNAS_TRANSITO),
+        },
+      },
+      acciones: {
+        label: 'Sección: Acciones sobre el tránsito del centro',
+        elements: {
+          btn_entregar: { label: 'Acción: Entregar (usado; exige ID y observación)' },
+          btn_devolver: { label: 'Acción: Devolver a stock (no usado)' },
+          btn_nota: { label: 'Acción: Mantener en tránsito (nota de seguimiento)' },
         },
       },
     },
