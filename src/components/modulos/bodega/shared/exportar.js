@@ -32,8 +32,10 @@ export const exportarCsv = async (base, columnas, filas) => {
   URL.revokeObjectURL(url);
 };
 
-// PDF horizontal con título, subtítulo y tabla.
-export const exportarPdf = async (base, { titulo, subtitulo = '', columnas, filas }) => {
+// PDF horizontal con título, subtítulo y tabla. Con `secciones`
+// ([{ titulo, columnas, filas }]) imprime varias tablas, cada una con su
+// encabezado, en vez de una sola.
+export const exportarPdf = async (base, { titulo, subtitulo = '', columnas, filas, secciones }) => {
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
   const doc = new jsPDF({ orientation: 'landscape' });
   doc.setFontSize(13);
@@ -41,14 +43,24 @@ export const exportarPdf = async (base, { titulo, subtitulo = '', columnas, fila
   doc.setFontSize(9);
   doc.setTextColor(100);
   doc.text(`${subtitulo}${subtitulo ? ' · ' : ''}Generado el ${new Date().toLocaleString('es-CL')}`, 14, 21);
-  autoTable(doc, {
-    startY: 26,
-    head: [columnas.map((c) => c.titulo)],
-    body: filas.map((f) => columnas.map((c) => String(c.valor(f) ?? ''))),
-    headStyles: { fillColor: [35, 131, 194], textColor: 255, fontStyle: 'bold' },
-    bodyStyles: { fontSize: 8 },
-    alternateRowStyles: { fillColor: [245, 245, 245] },
-    margin: { left: 14, right: 14 },
+  let y = 26;
+  (secciones || [{ columnas, filas }]).forEach((sec) => {
+    if (sec.titulo) {
+      doc.setFontSize(10);
+      doc.setTextColor(40);
+      doc.text(sec.titulo, 14, y + 4);
+      y += 7;
+    }
+    autoTable(doc, {
+      startY: y,
+      head: [sec.columnas.map((c) => c.titulo)],
+      body: sec.filas.map((f) => sec.columnas.map((c) => String(c.valor(f) ?? ''))),
+      headStyles: { fillColor: [35, 131, 194], textColor: 255, fontStyle: 'bold' },
+      bodyStyles: { fontSize: 8 },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { left: 14, right: 14 },
+    });
+    y = doc.lastAutoTable.finalY + 8;
   });
   doc.save(nombreArchivo(base, 'pdf'));
 };

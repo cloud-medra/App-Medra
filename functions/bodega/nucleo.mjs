@@ -25,6 +25,7 @@ export const RUTAS = Object.freeze({
   centros: '/bodega/centrosBodega',
   inventario: '/bodega/inventarioBodega',
   catalogos: '/bodega/catalogosBodega',
+  cajas: '/bodega/cajasBodega',
 });
 
 // Acciones granulares: [modulo, ruta, seccion, accion] (puedeAccion).
@@ -52,6 +53,9 @@ export const ACCIONES = Object.freeze({
   // Sensibles (denegadas por defecto): cerrar con ajuste y anular.
   cerrarInventario: [MODULO, RUTAS.inventario, 'inventario', 'btn_cerrar'],
   anularInventario: [MODULO, RUTAS.inventario, 'inventario', 'btn_anular'],
+  guardarCaja: [MODULO, RUTAS.cajas, 'cajas', 'btn_guardar'],
+  inventariarCaja: [MODULO, RUTAS.cajas, 'caja', 'btn_inventario'],
+  reponerCaja: [MODULO, RUTAS.cajas, 'caja', 'btn_reponer'],
 });
 
 // Acciones sobre un tránsito: desde la vista Tránsito o desde Tránsito por
@@ -76,6 +80,7 @@ export const COL = Object.freeze({
   transitos: 'bodega_transitos',
   transitoCentros: 'bodega_transito_centros',
   inventarios: 'bodega_inventarios',
+  cajas: 'bodega_cajas',
 });
 
 export const TIPOS_CATALOGO = Object.freeze({
@@ -91,6 +96,8 @@ export const TIPOS_MOVIMIENTO = Object.freeze({
   DEVOLUCION: { etiqueta: 'Devolución', disponible: 1, transito: -1, centro: true },
   AJUSTE_POSITIVO: { etiqueta: 'Ajuste positivo', disponible: 1, transito: 0 },
   AJUSTE_NEGATIVO: { etiqueta: 'Ajuste negativo', disponible: -1, transito: 0 },
+  // Sale de la Bodega General hacia una caja (kit); no pasa por tránsito.
+  REPOSICION_CAJA: { etiqueta: 'Reposición caja', disponible: -1, transito: 0 },
 });
 
 export const MAX = Object.freeze({
@@ -114,6 +121,7 @@ export const idUnico = Object.freeze({
   codigoMaestro: (codigo) => `codigo__${idVinculo(normalizarClave(codigo))}`,
   maestroClinico: (id) => `maestro__${idVinculo(id)}`,
   catalogo: (tipo, nombre) => `catalogo__${tipo}__${idVinculo(normalizarClave(nombre))}`,
+  caja: (nombre) => `caja__${idVinculo(normalizarClave(nombre))}`,
 });
 
 // ---------------- Catálogos (categorías y unidades) ----------------
@@ -304,7 +312,9 @@ export const validarCabecera = (tipo, datos = {}) => {
 };
 
 // Línea + su producto -> { errores, linea } normalizada. Si el producto no
-// maneja lote/vencimiento se descartan; si los maneja, son obligatorios.
+// maneja lote/vencimiento se descartan; si los maneja, son opcionales (hay
+// stock sin lote ni vencimiento) y vacíos quedan en null. Un vencimiento
+// escrito debe ser una fecha válida.
 export const validarLinea = (linea = {}, producto = null) => {
   const errores = [];
   const cantidad = Number(linea.cantidad);
@@ -314,15 +324,14 @@ export const validarLinea = (linea = {}, producto = null) => {
   if (!Number.isInteger(cantidad) || cantidad <= 0 || cantidad > MAX_CANTIDAD_LINEA) errores.push(`${nombre}: la cantidad debe ser un número entero mayor a cero.`);
   const lote = producto?.manejaLote ? normalizarLote(linea.lote) : '';
   const vencimiento = producto?.manejaVencimiento ? String(linea.vencimiento || '').trim() : '';
-  if (producto?.manejaLote && !lote) errores.push(`${nombre}: el lote es obligatorio.`);
   if (lote.length > 40) errores.push(`${nombre}: el lote no puede superar 40 caracteres.`);
-  if (producto?.manejaVencimiento && !fechaValida(vencimiento)) errores.push(`${nombre}: el vencimiento es obligatorio.`);
+  if (vencimiento && !fechaValida(vencimiento)) errores.push(`${nombre}: el vencimiento no es una fecha válida.`);
   return {
     errores,
     linea: {
       productoId: String(linea.productoId || ''),
-      lote,
-      vencimiento,
+      lote: lote || null,
+      vencimiento: vencimiento || null,
       cantidad,
       codigoLeido: String(linea.codigoLeido || '').slice(0, 300),
     },
@@ -499,4 +508,125 @@ export const aplicarConteo = (contadoActual, { cantidad, modo }) => {
   const n = Number(cantidad);
   if (!Number.isInteger(n) || n < 0 || (modo !== 'reemplazar' && n === 0)) throw new ErrorStock('La cantidad contada debe ser un número entero (mayor a cero al sumar).');
   return modo === 'reemplazar' ? n : (Number(contadoActual) || 0) + n;
+};
+
+// ---------------- Cajas (kits con stock objetivo) ----------------
+//
+// Una caja tiene una lista fija de productos, cada uno con stock objetivo
+// (lo que debe tener siempre) y stock actual (lo que tiene; solo cambia
+// por inventario de la caja o reposición desde la Bodega General).
+
+export const MAX_PRODUCTOS_CAJA = 150;
+export const MAX_NOMBRE_CAJA = 80;
+export const MAX_DESCRIPCION_CAJA = 300;
+export const MAX_STOCK_CAJA = 100000;
+
+const enteroNoNegativo = (n) => Number.isInteger(n) && n >= 0;
+
+// datos: { nombre, descripcion, activa, productos: [{ productoId, stockObjetivo }] }
+export const validarCaja = (datos = {}) => {
+  const errores = [];
+  const nombre = String(datos.nombre ?? '').trim().replace(/\s+/g, ' ');
+  const descripcion = String(datos.descripcion ?? '').trim().slice(0, MAX_DESCRIPCION_CAJA);
+  if (!nombre) errores.push('El nombre de la caja es obligatorio.');
+  if (nombre.length > MAX_NOMBRE_CAJA) errores.push(`El nombre no puede superar ${MAX_NOMBRE_CAJA} caracteres.`);
+  const entrada = Array.isArray(datos.productos) ? datos.productos : [];
+  if (entrada.length > MAX_PRODUCTOS_CAJA) errores.push(`Máximo ${MAX_PRODUCTOS_CAJA} productos por caja.`);
+  const vistos = new Set();
+  const productos = [];
+  entrada.forEach((p) => {
+    const productoId = String(p?.productoId || '');
+    const stockObjetivo = Number(p?.stockObjetivo);
+    if (!productoId) { errores.push('Hay un producto sin identificar.'); return; }
+    if (vistos.has(productoId)) { errores.push('Un producto está repetido en la caja.'); return; }
+    vistos.add(productoId);
+    if (!enteroNoNegativo(stockObjetivo) || stockObjetivo > MAX_STOCK_CAJA) errores.push('El stock objetivo debe ser un número entero mayor o igual a cero.');
+    productos.push({ productoId, stockObjetivo });
+  });
+  return { errores: [...new Set(errores)], caja: { nombre, descripcion, activa: datos.activa !== false }, productos };
+};
+
+// Faltante de un producto de la caja para llegar al objetivo (nunca negativo).
+export const faltanteCaja = (p) => Math.max(0, (Number(p?.stockObjetivo) || 0) - (Number(p?.stockActual) || 0));
+
+// Totales de la caja (productos: { [productoId]: { stockObjetivo, stockActual } }).
+// La completitud no premia el sobrante: cada producto aporta como máximo su objetivo.
+export const totalesCaja = (productos = {}) => {
+  const lista = Object.values(productos);
+  const totalObjetivo = lista.reduce((n, p) => n + (Number(p.stockObjetivo) || 0), 0);
+  const totalCubierto = lista.reduce((n, p) => n + Math.min(Number(p.stockActual) || 0, Number(p.stockObjetivo) || 0), 0);
+  return {
+    cantidadProductos: lista.length,
+    totalObjetivo,
+    totalActual: lista.reduce((n, p) => n + (Number(p.stockActual) || 0), 0),
+    totalFaltante: lista.reduce((n, p) => n + faltanteCaja(p), 0),
+    completitud: totalObjetivo ? Math.round((totalCubierto / totalObjetivo) * 1000) / 10 : 100,
+  };
+};
+
+// Resultado de un inventario de caja. conteos: { [productoId]: contado }.
+// Por producto: consumo = actual previo − contado (lo usado o perdido desde
+// la última vez; negativo si apareció de más) y faltante = objetivo −
+// contado (lo que hay que reponer; nunca negativo). Exige contar todos.
+export const resultadoInventarioCaja = (productos = {}, conteos = {}) => {
+  const errores = [];
+  const lineas = Object.entries(productos).map(([productoId, p]) => {
+    const contado = Number(conteos[productoId]);
+    if (conteos[productoId] === undefined || conteos[productoId] === null || conteos[productoId] === '' || !enteroNoNegativo(contado) || contado > MAX_STOCK_CAJA) {
+      errores.push(`${p.nombre}: ingresa la cantidad contada (entero mayor o igual a cero).`);
+    }
+    const actualPrevio = Number(p.stockActual) || 0;
+    const objetivo = Number(p.stockObjetivo) || 0;
+    return {
+      productoId, nombre: p.nombre, codigoMaestro: p.codigoMaestro || '', objetivo, actualPrevio, contado,
+      consumo: actualPrevio - contado, faltante: Math.max(0, objetivo - contado),
+    };
+  }).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  return {
+    errores,
+    lineas,
+    resumen: {
+      consumo: lineas.reduce((n, l) => n + Math.max(0, l.consumo), 0),
+      faltante: lineas.reduce((n, l) => n + l.faltante, 0),
+      productosConFaltante: lineas.filter((l) => l.faltante > 0).length,
+    },
+  };
+};
+
+// Reparte `cantidad` entre los lotes de un producto en orden FEFO (la misma
+// regla de las salidas: vence primero; sin vencimiento al final). Devuelve
+// [{ loteId, lote, vencimiento, cantidad }]. Lanza ErrorStock si no alcanza.
+export const repartirFEFO = (lotes, cantidad) => {
+  const partes = [];
+  let resta = cantidad;
+  for (const l of lotesFEFO(lotes)) {
+    if (resta <= 0) break;
+    const toma = Math.min(resta, Number(l.disponible) || 0);
+    partes.push({ loteId: l.id, lote: l.lote || null, vencimiento: l.vencimiento || null, cantidad: toma });
+    resta -= toma;
+  }
+  if (resta > 0) throw new ErrorStock(`Stock disponible insuficiente (faltan ${resta}).`);
+  return partes;
+};
+
+// Plan de reposición de una caja. cantidades: { [productoId]: n }
+// (0/vacío = no se repone ahora); disponibles: { [productoId]: n } en la
+// Bodega General. No se puede reponer más del faltante ni más de lo
+// disponible. Las líneas cubren todo producto con faltante o con cantidad,
+// así el historial muestra lo repuesto y lo que quedó pendiente.
+export const planReposicionCaja = (productos = {}, cantidades = {}, disponibles = {}) => {
+  const errores = [];
+  Object.keys(cantidades).forEach((id) => { if (!productos[id] && Number(cantidades[id])) errores.push('Un producto ya no está en la caja.'); });
+  const lineas = Object.entries(productos).map(([productoId, p]) => {
+    const bruto = cantidades[productoId];
+    const cantidad = bruto === undefined || bruto === null || bruto === '' ? 0 : Number(bruto);
+    const faltanteAntes = faltanteCaja(p);
+    if (!enteroNoNegativo(cantidad)) errores.push(`${p.nombre}: la cantidad a reponer debe ser un número entero.`);
+    else if (cantidad > faltanteAntes) errores.push(`${p.nombre}: no se puede reponer más del faltante (${faltanteAntes}).`);
+    else if (cantidad > (Number(disponibles[productoId]) || 0)) errores.push(`${p.nombre}: la Bodega General solo tiene ${Number(disponibles[productoId]) || 0}.`);
+    return { productoId, nombre: p.nombre, codigoMaestro: p.codigoMaestro || '', faltanteAntes, cantidad, pendiente: Math.max(0, faltanteAntes - (enteroNoNegativo(cantidad) ? cantidad : 0)) };
+  }).filter((l) => l.faltanteAntes > 0 || l.cantidad > 0)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  if (!errores.length && !lineas.some((l) => l.cantidad > 0)) errores.push('Ingresa al menos una cantidad a reponer.');
+  return { errores: [...new Set(errores)], lineas };
 };

@@ -670,6 +670,10 @@ service cloud.firestore {
     match /bodega_control/{document=**} {
       allow read: if leeBodega();
     }
+    // Cajas (kits) con su historial de inventarios y reposiciones.
+    match /bodega_cajas/{document=**} {
+      allow read: if leeBodega();
+    }
     // Totales del tránsito por centro: también los lee Maestros → Centros
     // para avisar antes de borrar un centro con tránsito.
     match /bodega_transito_centros/{centroId} {

@@ -9,7 +9,7 @@ import BuscadorProducto from '../BuscadorProducto';
 import { mensajeError } from '../bodegaApi';
 import { formatoCantidad } from '../catalogosBodega';
 import { estadoVencimiento } from '../vencimientos';
-import { agregarLinea, campoFaltante, cambiarCantidad, quitarLinea, totalUnidades } from './lineasDocumento';
+import { agregarLinea, campoFaltante, campoSugerido, cambiarCantidad, quitarLinea, totalUnidades } from './lineasDocumento';
 
 // Columnas de la tabla de líneas (permiso col_<key> en la sección "lineas"
 // de la vista que monta el editor: Ingreso o Carga inicial).
@@ -75,10 +75,12 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
       setSenal({ tipo: 'aviso', mensaje: `Se descartó ${pendiente.producto.nombre} (no se agregó).` });
     }
     const falta = campoFaltante(nuevo);
-    if (!falta && auto) { agregar(nuevo); return; }
+    const sugerido = campoSugerido(nuevo);
+    if (!falta && !sugerido && auto) { agregar(nuevo); return; }
     setPendiente(nuevo);
-    if (!pendiente || pendiente.producto.id === producto.id) setSenal({ tipo: 'ok', mensaje: `${producto.nombre}: ${falta ? `ingresa ${falta}` : 'presiona Enter para agregar'}.` });
-    enfocar(falta || 'cantidad');
+    const indicacion = falta ? `ingresa ${falta}` : sugerido ? `ingresa ${sugerido} (opcional) y presiona Enter` : 'presiona Enter para agregar';
+    if (!pendiente || pendiente.producto.id === producto.id) setSenal({ tipo: 'ok', mensaje: `${producto.nombre}: ${indicacion}.` });
+    enfocar(falta || sugerido || 'cantidad');
   };
 
   const onLectura = async (texto) => {
@@ -94,10 +96,11 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
           vencimiento: datos.vencimiento || pendiente.vencimiento,
         };
         const falta = campoFaltante(completado);
-        if (!falta && auto) { agregar(completado); return; }
+        const sugerido = campoSugerido(completado);
+        if (!falta && !sugerido && auto) { agregar(completado); return; }
         setPendiente(completado);
         setSenal({ tipo: 'ok', mensaje: `Lote/vencimiento completados para ${pendiente.producto.nombre}.` });
-        enfocar(falta || 'cantidad');
+        enfocar(falta || sugerido || 'cantidad');
         return;
       }
       if (r.tipo === 'sinVincular') { setLecturaSinVincular(r.lectura); return; }
@@ -142,13 +145,13 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
           </label>
           {pendiente.producto.manejaLote && (
             <label className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Lote</span>
+              <span className="text-[10px] font-bold uppercase text-gray-500">Lote <span className="normal-case font-normal">(opcional)</span></span>
               <input ref={loteRef} value={pendiente.lote} onChange={cambiar('lote')} onKeyDown={alPresionarEnter} maxLength={40} className={`${INPUT} w-36 font-num uppercase`} />
             </label>
           )}
           {pendiente.producto.manejaVencimiento && (
             <label className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Vencimiento</span>
+              <span className="text-[10px] font-bold uppercase text-gray-500">Vencimiento <span className="normal-case font-normal">(opcional)</span></span>
               <input ref={vencimientoRef} type="date" value={pendiente.vencimiento} onChange={cambiar('vencimiento')} onKeyDown={alPresionarEnter} className={`${INPUT} w-40 font-num`} />
             </label>
           )}

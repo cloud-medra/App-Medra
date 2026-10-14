@@ -33,7 +33,7 @@ export const rangoVencimiento = (modo, dias, hoy) => (modo === 'vencidos'
 // Lotes leídos -> { [productoId]: { vencimiento (el más próximo), lotes } }
 // según el modo (próximos: desde hoy en adelante).
 export const vencimientoPorProducto = (lotes, modo, hoy) => lotes
-  .filter((l) => (modo === 'vencidos' ? l.vencimiento < hoy : l.vencimiento >= hoy))
+  .filter((l) => l.vencimiento && (modo === 'vencidos' ? l.vencimiento < hoy : l.vencimiento >= hoy))
   .reduce((acc, l) => {
     const previo = acc[l.productoId];
     acc[l.productoId] = {

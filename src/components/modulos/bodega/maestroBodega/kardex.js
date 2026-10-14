@@ -22,5 +22,6 @@ export const referenciaMovimiento = (m) => {
   if (r.tipo === 'CARGA_INICIAL') return 'Carga inicial';
   if (r.tipo === 'SALIDA') return `Salida N° ${r.numero}`;
   if (r.tipo === 'INVENTARIO') return `Inventario ${r.nombre || ''}`.trim();
+  if (r.tipo === 'REPOSICION_CAJA') return `Reposición caja: ${r.numero || ''}`.trim();
   return '';
 };

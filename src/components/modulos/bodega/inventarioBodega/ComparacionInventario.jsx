@@ -49,8 +49,8 @@ const ComparacionInventario = ({ inventario, lineas, editable, onCambio }) => {
   const filas = useMemo(() => {
     const palabras = normalizarClave(texto).split(' ').filter(Boolean);
     return filtrarComparacion(lineas, filtro, noContados)
-      .filter((l) => !palabras.length || palabras.every((w) => normalizarClave(`${l.productoNombre} ${l.codigoMaestro} ${l.lote}`).includes(w)))
-      .sort((a, b) => a.productoNombre.localeCompare(b.productoNombre, 'es') || String(a.lote).localeCompare(String(b.lote)));
+      .filter((l) => !palabras.length || palabras.every((w) => normalizarClave(`${l.productoNombre} ${l.codigoMaestro} ${l.lote || ''}`).includes(w)))
+      .sort((a, b) => a.productoNombre.localeCompare(b.productoNombre, 'es') || String(a.lote || '').localeCompare(String(b.lote || '')));
   }, [lineas, filtro, texto, noContados]);
 
   const corregir = async (l) => {
@@ -68,8 +68,8 @@ const ComparacionInventario = ({ inventario, lineas, editable, onCambio }) => {
   const columnasExport = [
     { titulo: 'Código', valor: (l) => l.codigoMaestro },
     { titulo: 'Producto', valor: (l) => l.productoNombre },
-    { titulo: 'Lote', valor: (l) => l.lote },
-    { titulo: 'Vencimiento', valor: (l) => l.vencimiento },
+    { titulo: 'Lote', valor: (l) => l.lote || '—' },
+    { titulo: 'Vencimiento', valor: (l) => l.vencimiento || '—' },
     { titulo: 'Teórico', valor: (l) => l.teorico },
     { titulo: 'Contado', valor: (l) => (l.contado ?? 'No contado') },
     { titulo: 'Diferencia', valor: (l) => diferenciaLinea(l, noContados).diferencia },

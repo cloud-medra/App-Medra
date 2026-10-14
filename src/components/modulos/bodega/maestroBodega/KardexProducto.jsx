@@ -61,8 +61,8 @@ const KardexProducto = ({ producto }) => {
   const columnasExport = [
     { titulo: 'Fecha', valor: (m) => fechaHora(m.fecha) },
     { titulo: 'Tipo', valor: (m) => TIPOS_MOVIMIENTO[m.tipo]?.etiqueta || m.tipo },
-    { titulo: 'Lote', valor: (m) => m.lote },
-    { titulo: 'Vencimiento', valor: (m) => m.vencimiento },
+    { titulo: 'Lote', valor: (m) => m.lote || '—' },
+    { titulo: 'Vencimiento', valor: (m) => m.vencimiento || '—' },
     { titulo: 'Centro', valor: (m) => m.centroNombre || '' },
     { titulo: 'Cantidad', valor: (m) => m.cantidad },
     { titulo: 'Saldo lote disponible', valor: (m) => m.saldoLote?.disponible },

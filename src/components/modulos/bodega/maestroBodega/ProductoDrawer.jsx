@@ -111,7 +111,7 @@ const PestanaStock = ({ producto, nombreCentro }) => {
                 const venc = estadoVencimiento(l.vencimiento);
                 return (
                   <tr key={l.id} className={venc.fila}>
-                    <td className="px-2 py-1 font-num">{l.lote || 'S/L'}</td>
+                    <td className="px-2 py-1 font-num">{l.lote || '—'}</td>
                     {ver('vencimiento') && (
                       <td className="px-2 py-1 font-num">
                         {l.vencimiento || '—'} {venc.etiqueta && <span className={`ml-1 px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}
