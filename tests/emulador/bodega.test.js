@@ -27,6 +27,8 @@ const DENEGADO_REGLAS = expect.objectContaining({ code: 'permission-denied' });
 
 const MAESTRO = '/bodega/maestroBodega';
 const CATALOGOS = '/bodega/catalogosBodega';
+const INGRESO = '/bodega/ingresoBodega';
+const CARGA = '/bodega/cargaInicialBodega';
 const GTIN = '07612345678900';
 
 let db;
@@ -52,7 +54,10 @@ const leer = async (col, id) => (await db.collection(col).doc(id).get()).data();
 
 // Operador con el Maestro de Bodega (acciones sin configurar: permitidas,
 // salvo las sensibles) y Categorías.
-const PERMISOS_BODEGA = { permisos: { bodega: [MAESTRO, CATALOGOS] }, permisosGranulares: { [MAESTRO]: {}, [CATALOGOS]: {} } };
+const PERMISOS_BODEGA = {
+  permisos: { bodega: [MAESTRO, CATALOGOS, INGRESO, CARGA] },
+  permisosGranulares: { [MAESTRO]: {}, [CATALOGOS]: {}, [INGRESO]: {}, [CARGA]: {} },
+};
 const conSensibles = {
   permisos: { bodega: [MAESTRO] },
   permisosGranulares: { [MAESTRO]: { productos: { visible: true, elements: { btn_inactivar: true } }, codigos: { visible: true, elements: { btn_desvincular: true } } } },
@@ -81,6 +86,8 @@ beforeEach(async () => {
   await db.collection('bodega_catalogos').doc('cat').set({ tipo: 'CATEGORIA', nombre: 'INSUMOS', activo: true });
   await db.collection('maestros_codigos').doc('mc1').set({ codigo: '0301001', referencia: 'REF-9', descriptorAuto: 'GUANTE NITRILO', empresa: 'ACME', precioNeto: 1200 });
   await db.collection('maestros_centros').doc('pab').set({ nombre: 'PABELLÓN', estado: 'ACTIVO' });
+  await db.collection('maestros_empresas').doc('acme').set({ nombre: 'ACME SPA', rut: '76.000.000-0', estado: 'ACTIVO' });
+  await db.collection('maestros_empresas').doc('otra').set({ nombre: 'OTRA SPA', estado: 'ACTIVO' });
 });
 
 describe('catálogos (categorías y unidades)', () => {
@@ -298,5 +305,126 @@ describe('migración de códigos de barra desde Inventario (functions/scripts/mi
     const otraVez = await migracion.planificar(db);
     expect(otraVez.crear).toEqual([]);
     expect(otraVez.completar).toEqual([]);
+  });
+});
+
+describe('ingreso por documento y carga inicial (Fase 2)', () => {
+  const cabeceraIngreso = (extra = {}) => ({ tipoDocumento: 'GUIA', numero: 'g-100', ordenCompra: 'oc-9', proveedorId: 'acme', fecha: '2026-10-14', observacion: 'Prueba', ...extra });
+  const ingresar = (uid, lineas, extra = {}) => bodega.confirmarDocumento(db, uid, { tipo: 'INGRESO', cabecera: cabeceraIngreso(extra.cabecera), lineas, ...(extra.id ? { id: extra.id } : {}) });
+  const cargar = (uid, lineas, extra = {}) => bodega.confirmarDocumento(db, uid, { tipo: 'CARGA_INICIAL', cabecera: { observacion: 'Carga E1' }, lineas, ...extra });
+  const conCargaSensible = async (uid) => db.collection('usuarios').doc(uid).set({ permisosGranulares: { [CARGA]: { carga: { visible: true, elements: { btn_confirmar: true, btn_cerrar_carga: true } } } } }, { merge: true });
+  const movimientos = async (productoId) => (await db.collection('bodega_movimientos').where('productoId', '==', productoId).get()).docs.map((d) => d.data()).sort((a, b) => a.orden - b.orden);
+  let sonda;
+  let gasa;
+
+  beforeEach(async () => {
+    sonda = (await crearProducto('op', { nombre: 'PRUEBA SONDA', categoriaId: 'cat' })).id;
+    gasa = (await crearProducto('op', { nombre: 'PRUEBA GASA', manejaLote: false, manejaVencimiento: false })).id;
+  });
+
+  it('confirma un ingreso: agrupa líneas del mismo lote, suma stock, deja kardex y documento', async () => {
+    const r = await ingresar('op', [
+      { productoId: sonda, lote: ' l 1', vencimiento: '2027-06-30', cantidad: 2, codigoLeido: '(01)X' },
+      { productoId: sonda, lote: 'L1', vencimiento: '2027-06-30', cantidad: 3 },
+      { productoId: sonda, lote: 'L2', vencimiento: '2027-01-31', cantidad: 1 },
+      { productoId: gasa, lote: 'ignorado', vencimiento: '2030-01-01', cantidad: 10 },
+    ]);
+    expect(r).toMatchObject({ lineas: 3, unidades: 16 });
+    expect(await leer('bodega_lotes', `${sonda}__L1__2027-06-30`)).toMatchObject({ disponible: 5, transito: 0, soloCargaInicial: false, ultimoMovimientoTipo: 'INGRESO' });
+    expect(await leer('bodega_lotes', `${gasa}__SL__SV`)).toMatchObject({ disponible: 10, lote: '', vencimiento: '' });
+    expect(await leer('bodega_productos', sonda)).toMatchObject({ disponible: 6, transito: 0, conMovimientos: true });
+    const kardex = await movimientos(sonda);
+    expect(kardex.map((m) => [m.tipo, m.lote, m.cantidad, m.saldoLote.disponible, m.saldoProducto.disponible])).toEqual([
+      ['INGRESO', 'L1', 5, 5, 5], ['INGRESO', 'L2', 1, 1, 6],
+    ]);
+    expect(kardex[0]).toMatchObject({ usuario: { uid: 'op' }, documentoRef: { id: r.id, tipo: 'INGRESO', tipoDocumento: 'GUIA', numero: 'G-100', proveedorNombre: 'ACME SPA' }, observacion: 'Prueba' });
+    expect(await leer('bodega_documentos', r.id)).toMatchObject({ estado: 'CONFIRMADO', numero: 'G-100', ordenCompra: 'OC-9', proveedorNombre: 'ACME SPA', numeroLineas: 3, totalUnidades: 16 });
+  });
+
+  it('no repite tipo + número del mismo proveedor (otro proveedor u otro tipo sí)', async () => {
+    const linea = [{ productoId: gasa, cantidad: 1 }];
+    await ingresar('op', linea);
+    await expect(ingresar('op', linea, { cabecera: { numero: ' G-100 ' } })).rejects.toEqual(rechazo('already-exists'));
+    await expect(ingresar('op', linea, { cabecera: { proveedorId: 'otra' } })).resolves.toBeTruthy();
+    await expect(ingresar('op', linea, { cabecera: { tipoDocumento: 'FACTURA' } })).resolves.toBeTruthy();
+  });
+
+  it('valida en servidor y es todo o nada', async () => {
+    await expect(ingresar('op', [{ productoId: sonda, lote: '', vencimiento: '2027-01-01', cantidad: 1 }])).rejects.toEqual(rechazo('invalid-argument'));
+    await expect(ingresar('op', [{ productoId: sonda, lote: 'L', vencimiento: '2027-02-30', cantidad: 1 }])).rejects.toEqual(rechazo('invalid-argument'));
+    await expect(ingresar('op', [{ productoId: gasa, cantidad: 1.5 }])).rejects.toEqual(rechazo('invalid-argument'));
+    await expect(ingresar('op', [{ productoId: 'no-existe', cantidad: 1 }])).rejects.toEqual(rechazo('invalid-argument'));
+    await expect(ingresar('op', [])).rejects.toEqual(rechazo('invalid-argument'));
+    await expect(ingresar('op', [{ productoId: gasa, cantidad: 1 }], { cabecera: { numero: '' } })).rejects.toEqual(rechazo('invalid-argument'));
+    await expect(ingresar('op', [{ productoId: gasa, cantidad: 1 }], { cabecera: { proveedorId: 'nadie' } })).rejects.toEqual(rechazo('invalid-argument'));
+    await expect(ingresar('op', Array.from({ length: 151 }, () => ({ productoId: gasa, cantidad: 1 })))).rejects.toEqual(rechazo('invalid-argument'));
+    // Una línea mala (producto inactivo) no deja nada escrito de las buenas.
+    await db.collection('bodega_productos').doc(sonda).update({ activo: false });
+    await expect(ingresar('op', [{ productoId: gasa, cantidad: 5 }, { productoId: sonda, lote: 'L', vencimiento: '2027-01-01', cantidad: 1 }])).rejects.toEqual(rechazo('invalid-argument'));
+    expect((await db.collection('bodega_lotes').get()).size).toBe(0);
+    expect((await db.collection('bodega_movimientos').get()).size).toBe(0);
+    expect((await leer('bodega_productos', gasa)).disponible).toBe(0);
+    await expect(ingresar('ajeno', [{ productoId: gasa, cantidad: 1 }])).rejects.toEqual(rechazo('permission-denied'));
+  });
+
+  it('borradores: guardar incompleto, avisar duplicado, confirmar desde el borrador; un confirmado no se edita ni se borra', async () => {
+    const { id } = await bodega.guardarBorrador(db, 'op', { tipo: 'INGRESO', cabecera: { numero: 'g-200' }, lineas: [{ productoId: sonda, lote: 'x', cantidad: 2 }] });
+    expect(await leer('bodega_documentos', id)).toMatchObject({ estado: 'BORRADOR', numero: 'G-200', lineas: [{ productoId: sonda, lote: 'X', cantidad: 2 }], creadoPor: { uid: 'op' } });
+    await bodega.guardarBorrador(db, 'op', { id, tipo: 'INGRESO', cabecera: cabeceraIngreso({ numero: 'G-200' }), lineas: [{ productoId: gasa, cantidad: 4 }] });
+    const r = await ingresar('op', [{ productoId: gasa, cantidad: 4 }], { id, cabecera: { numero: 'G-200' } });
+    expect(r.id).toBe(id);
+    expect(await leer('bodega_documentos', id)).toMatchObject({ estado: 'CONFIRMADO', creadoPor: { uid: 'op' }, confirmadoPor: { uid: 'op' } });
+    await expect(bodega.guardarBorrador(db, 'op', { id, tipo: 'INGRESO', cabecera: {}, lineas: [] })).rejects.toEqual(rechazo('failed-precondition'));
+    await expect(bodega.eliminarBorrador(db, 'op', { id })).rejects.toEqual(rechazo('failed-precondition'));
+    await expect(ingresar('op', [{ productoId: gasa, cantidad: 1 }], { id, cabecera: { numero: 'G-201' } })).rejects.toEqual(rechazo('failed-precondition'));
+    // Otro borrador con el mismo documento: se guarda, pero avisa.
+    const dup = await bodega.guardarBorrador(db, 'op', { tipo: 'INGRESO', cabecera: cabeceraIngreso({ numero: 'g-200' }), lineas: [] });
+    expect(dup.duplicado).toBe(true);
+    await bodega.eliminarBorrador(db, 'op', { id: dup.id });
+    expect(await leer('bodega_documentos', dup.id)).toBeUndefined();
+  });
+
+  it('carga inicial: acción sensible; un lote se carga varias veces mientras solo tenga cargas iniciales', async () => {
+    const linea = [{ productoId: sonda, lote: 'C1', vencimiento: '2028-01-01', cantidad: 3 }];
+    await expect(cargar('op', linea)).rejects.toEqual(rechazo('permission-denied'));
+    await conCargaSensible('op');
+    await cargar('op', linea);
+    await cargar('op', linea);
+    const idLote = `${sonda}__C1__2028-01-01`;
+    expect(await leer('bodega_lotes', idLote)).toMatchObject({ disponible: 6, soloCargaInicial: true });
+    expect((await movimientos(sonda)).map((m) => m.tipo)).toEqual(['CARGA_INICIAL', 'CARGA_INICIAL']);
+    // Un ingreso sobre ese lote lo saca de "solo carga inicial".
+    await ingresar('op', linea);
+    expect((await leer('bodega_lotes', idLote)).soloCargaInicial).toBe(false);
+    await expect(cargar('op', linea)).rejects.toEqual(rechazo('failed-precondition'));
+    // Otro lote del mismo producto sí.
+    await expect(cargar('op', [{ ...linea[0], lote: 'C2' }])).resolves.toBeTruthy();
+  });
+
+  it('cerrar la carga inicial (sensible) la bloquea para todos', async () => {
+    await expect(bodega.configurarCargaInicial(db, 'op', { cerrada: true })).rejects.toEqual(rechazo('permission-denied'));
+    await conCargaSensible('op');
+    await bodega.configurarCargaInicial(db, 'op', { cerrada: true });
+    await expect(cargar('dev1', [{ productoId: gasa, cantidad: 1 }])).rejects.toEqual(rechazo('failed-precondition'));
+    await bodega.configurarCargaInicial(db, 'op', { cerrada: false });
+    await expect(cargar('dev1', [{ productoId: gasa, cantidad: 1 }])).resolves.toBeTruthy();
+  });
+
+  it('con un inventario abierto no se mueve stock de los productos de su alcance', async () => {
+    await db.collection('bodega_control').doc('estado').set({ inventarioAbierto: { id: 'inv1', alcance: { categorias: ['cat'] } } });
+    await expect(ingresar('op', [{ productoId: sonda, lote: 'L', vencimiento: '2027-01-01', cantidad: 1 }])).rejects.toEqual(rechazo('failed-precondition'));
+    await expect(ingresar('op', [{ productoId: gasa, cantidad: 1 }])).resolves.toBeTruthy(); // sin categoría: fuera del alcance
+    await db.collection('bodega_control').doc('estado').set({ inventarioAbierto: { id: 'inv2', alcance: { categorias: [] } } });
+    await expect(ingresar('op', [{ productoId: gasa, cantidad: 1 }], { cabecera: { numero: 'G-300' } })).rejects.toEqual(rechazo('failed-precondition'));
+  });
+
+  it('reglas: se leen documentos, lotes y movimientos; no se escriben desde el navegador', async () => {
+    const r = await ingresar('op', [{ productoId: gasa, cantidad: 1 }]);
+    const op = await sesion('op');
+    await expect(getDoc(doc(op, 'bodega_documentos', r.id))).resolves.toBeTruthy();
+    await expect(getDocs(collection(op, 'bodega_movimientos'))).resolves.toBeTruthy();
+    await expect(setDoc(doc(op, 'bodega_documentos', r.id), { estado: 'BORRADOR' }, { merge: true })).rejects.toEqual(DENEGADO_REGLAS);
+    await expect(setDoc(doc(op, 'bodega_movimientos', 'x'), { cantidad: 1 })).rejects.toEqual(DENEGADO_REGLAS);
+    await expect(setDoc(doc(op, 'bodega_control', 'config'), { cargaInicialCerrada: false })).rejects.toEqual(DENEGADO_REGLAS);
   });
 });

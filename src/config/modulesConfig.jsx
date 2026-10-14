@@ -174,6 +174,8 @@ export const MODULES = {
     icon: <PackageOpen size={18} />,
     subItems: [
       { label: 'Maestro / Kardex', path: '/bodega/maestroBodega', icon: <Boxes size={14} /> },
+      { label: 'Ingreso', path: '/bodega/ingresoBodega', icon: <ArrowDownToLine size={14} /> },
+      { label: 'Carga inicial', path: '/bodega/cargaInicialBodega', icon: <PackagePlus size={14} /> },
       { label: 'Categorías y unidades', path: '/bodega/catalogosBodega', icon: <Tags size={14} /> },
     ]
   },

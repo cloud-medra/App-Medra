@@ -1,5 +1,5 @@
 import { httpsCallable } from 'firebase/functions';
-import { collection, doc, getDoc, getDocs, limit, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db, functions } from '../../../../firebaseConfig';
 import { leerCatalogo, upsertLocal } from '../../../../stores/catalogosStore';
 import { COL } from '../../../../../functions/bodega/nucleo.mjs';
@@ -97,5 +97,30 @@ export const vincularCodigo = async ({ productoId, codigoLeido, reasignar = fals
 export const desvincularCodigo = async ({ productoId, clave }) => {
   const r = await llamar('bodegaDesvincularCodigo')({ productoId, clave });
   actualizarCodigosLocal(productoId, (c) => c.filter((x) => x !== clave));
+  return r;
+};
+
+// ---------------- Documentos (Fase 2) ----------------
+
+// Borradores o confirmados de un tipo, más recientes primero.
+export const leerDocumentos = async ({ tipo, estado, max = 30 }) => {
+  const campoOrden = estado === 'CONFIRMADO' ? 'confirmadoEn' : 'actualizadoEn';
+  const snap = await getDocs(query(collection(db, COL.documentos), where('tipo', '==', tipo), where('estado', '==', estado), orderBy(campoOrden, 'desc'), limit(max)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+export const leerConfigBodega = async () => {
+  const snap = await getDoc(doc(db, COL.control, 'config'));
+  return snap.exists() ? snap.data() : {};
+};
+
+export const guardarBorrador = (datos) => llamar('bodegaGuardarBorrador')(datos);
+export const eliminarBorrador = (id) => llamar('bodegaEliminarBorrador')({ id });
+export const configurarCargaInicial = (cerrada) => llamar('bodegaConfigurarCargaInicial')({ cerrada });
+
+// Confirma y refleja los nuevos saldos de los productos en la copia local.
+export const confirmarDocumento = async (datos) => {
+  const r = await llamar('bodegaConfirmarDocumento')(datos);
+  (r.productos || []).forEach(({ id, ...saldo }) => upsertLocal('bodegaProductos', id, saldo));
   return r;
 };

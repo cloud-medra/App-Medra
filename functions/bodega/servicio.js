@@ -23,8 +23,10 @@ const { HttpsError } = require('firebase-functions/v2/https');
 const { FieldValue } = require('firebase-admin/firestore');
 const { puedeAccion } = require('../permisos/nucleo.mjs');
 const {
-  ACCIONES, COL, TIPOS_CATALOGO, CAMPOS_BLOQUEADOS_CON_MOVIMIENTOS,
-  validarCatalogo, validarProducto, codigoAutomatico, idUnico,
+  ACCIONES, COL, TIPOS_CATALOGO, CAMPOS_BLOQUEADOS_CON_MOVIMIENTOS, TIPOS_DOCUMENTO_BODEGA, ESTADOS_DOCUMENTO,
+  MAX_LINEAS_DOCUMENTO, MAX_OBSERVACION,
+  validarCatalogo, validarProducto, codigoAutomatico, idUnico, validarCabecera, validarLinea, agruparLineas,
+  idUnicoDocumento, aplicarMovimiento, normalizarLote, productoEnInventario, ErrorStock,
 } = require('./nucleo.mjs');
 const { interpretarLectura, idVinculo, MAX_CODIGO_LEIDO } = require('./gs1.mjs');
 
@@ -346,7 +348,247 @@ const desvincularCodigo = async (db, uid, datos = {}) => {
   });
 };
 
+// --- Documentos: ingreso y carga inicial -----------------------------------
+//
+//   bodega_documentos/{id} = { tipo: INGRESO|CARGA_INICIAL, estado:
+//     BORRADOR|CONFIRMADO, tipoDocumento, numero, ordenCompra, proveedorId,
+//     proveedorNombre, fecha, observacion, lineas: [{ productoId, lote,
+//     vencimiento, cantidad, codigoLeido, (al confirmar) productoNombre,
+//     codigoMaestro, loteId }], totalUnidades, creadoPor, confirmadoPor… }
+//   bodega_lotes/{productoId__lote__venc} = { productoId, lote, vencimiento,
+//     disponible, transito, transitoPorCentro, soloCargaInicial, … }
+//   bodega_movimientos/{id} = kardex (un movimiento por línea agrupada).
+//   bodega_control/estado = { inventarioAbierto: { id, alcance } } (Fase 5)
+//   bodega_control/config = { cargaInicialCerrada }
+
+const refEstado = (db) => db.collection(COL.control).doc('estado');
+const refConfig = (db) => db.collection(COL.control).doc('config');
+const ACCIONES_DOCUMENTO = {
+  INGRESO: { borrador: ACCIONES.guardarBorradorIngreso, confirmar: ACCIONES.confirmarIngreso, eliminar: ACCIONES.eliminarBorradorIngreso },
+  CARGA_INICIAL: { borrador: ACCIONES.guardarBorradorCarga, confirmar: ACCIONES.confirmarCarga, eliminar: ACCIONES.eliminarBorradorCarga },
+};
+const accionesDe = (tipo) => {
+  const acciones = ACCIONES_DOCUMENTO[tipo];
+  if (!acciones) throw new HttpsError('invalid-argument', 'Tipo de documento inválido.');
+  return acciones;
+};
+const saldoDe = (d) => ({ disponible: d?.disponible || 0, transito: d?.transito || 0, transitoPorCentro: d?.transitoPorCentro || {} });
+
+// Borrador: cabecera y líneas tal como están (pueden estar incompletas);
+// solo se normalizan formatos y largos.
+const normalizarBorrador = (tipo, datos = {}) => {
+  const cab = datos.cabecera || {};
+  const texto = (v, max) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
+  const cabecera = tipo === 'INGRESO'
+    ? {
+      tipoDocumento: texto(cab.tipoDocumento, 10), numero: texto(cab.numero, 40).toUpperCase(), ordenCompra: texto(cab.ordenCompra, 40).toUpperCase(),
+      proveedorId: texto(cab.proveedorId, 100), fecha: texto(cab.fecha, 10), observacion: texto(cab.observacion, MAX_OBSERVACION),
+    }
+    : { observacion: texto(cab.observacion, MAX_OBSERVACION) };
+  const lineas = Array.isArray(datos.lineas) ? datos.lineas : [];
+  if (lineas.length > MAX_LINEAS_DOCUMENTO) throw new HttpsError('invalid-argument', `Máximo ${MAX_LINEAS_DOCUMENTO} líneas por documento.`);
+  return {
+    cabecera,
+    lineas: lineas.map((l) => {
+      const cantidad = Number(l?.cantidad);
+      if (!l?.productoId || !Number.isInteger(cantidad) || cantidad <= 0) throw new HttpsError('invalid-argument', 'Hay líneas sin producto o con cantidad inválida.');
+      return { productoId: String(l.productoId), lote: normalizarLote(l.lote).slice(0, 40), vencimiento: texto(l.vencimiento, 10), cantidad, codigoLeido: String(l.codigoLeido || '').slice(0, 300) };
+    }),
+  };
+};
+
+const guardarBorrador = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  const tipo = String(datos.tipo || '');
+  exigir(perfil, accionesDe(tipo).borrador);
+  const por = datosPor(uid, perfil);
+  const { cabecera, lineas } = normalizarBorrador(tipo, datos);
+  const id = datos.id ? String(datos.id) : null;
+
+  return db.runTransaction(async (t) => {
+    const ref = id ? db.collection(COL.documentos).doc(id) : db.collection(COL.documentos).doc();
+    const conDatosUnicos = tipo === 'INGRESO' && cabecera.proveedorId && cabecera.tipoDocumento && cabecera.numero;
+    const [snap, snapUnico] = await Promise.all([
+      id ? t.get(ref) : null,
+      conDatosUnicos ? t.get(refUnico(db, idUnicoDocumento(cabecera))) : null,
+    ]);
+    if (id && !snap.exists) throw new HttpsError('not-found', 'El borrador ya no existe.');
+    if (snap?.exists && (snap.data().estado !== ESTADOS_DOCUMENTO.BORRADOR || snap.data().tipo !== tipo)) {
+      throw new HttpsError('failed-precondition', 'Ese documento ya fue confirmado y no se puede modificar.');
+    }
+    t.set(ref, {
+      tipo, estado: ESTADOS_DOCUMENTO.BORRADOR, ...cabecera, lineas,
+      ...(snap?.exists ? {} : { creadoPor: por, creadoEn: ahora() }),
+      actualizadoPor: por, actualizadoEn: ahora(),
+    }, { merge: true });
+    return { id: ref.id, duplicado: Boolean(snapUnico?.exists) };
+  });
+};
+
+const eliminarBorrador = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  const id = String(datos.id || '');
+  if (!id) throw new HttpsError('invalid-argument', 'Falta el borrador.');
+  const ref = db.collection(COL.documentos).doc(id);
+  return db.runTransaction(async (t) => {
+    const snap = await t.get(ref);
+    if (!snap.exists) return { id, eliminado: false };
+    exigir(perfil, accionesDe(snap.data().tipo).eliminar);
+    if (snap.data().estado !== ESTADOS_DOCUMENTO.BORRADOR) throw new HttpsError('failed-precondition', 'Un documento confirmado no se puede eliminar.');
+    t.delete(ref);
+    return { id, eliminado: true };
+  });
+};
+
+// Confirma un ingreso o carga inicial (desde cero o desde su borrador) en
+// UNA transacción: valida cabecera, productos, lotes y unicidad; suma al
+// disponible de cada lote y producto; deja un movimiento por línea
+// (agrupada por lote) y el documento CONFIRMADO. Si algo falla, no se
+// escribe nada.
+const confirmarDocumentoComo = (db, por, datos = {}) => {
+  const tipo = String(datos.tipo || '');
+  const { errores, cabecera } = validarCabecera(tipo, datos.cabecera);
+  exigirSinErrores(errores);
+  const lineasEntrada = Array.isArray(datos.lineas) ? datos.lineas : [];
+  if (!lineasEntrada.length) throw new HttpsError('invalid-argument', 'El documento no tiene líneas.');
+  if (lineasEntrada.length > MAX_LINEAS_DOCUMENTO) throw new HttpsError('invalid-argument', `Máximo ${MAX_LINEAS_DOCUMENTO} líneas por documento.`);
+  const tipoMovimiento = TIPOS_DOCUMENTO_BODEGA[tipo].movimiento;
+  const id = datos.id ? String(datos.id) : null;
+
+  return db.runTransaction(async (t) => {
+    const ref = id ? db.collection(COL.documentos).doc(id) : db.collection(COL.documentos).doc();
+    const productoIds = [...new Set(lineasEntrada.map((l) => String(l?.productoId || '')).filter(Boolean))];
+    const [snapDoc, snapUnico, snapProveedor, snapEstado, snapConfig, ...snapsProductos] = await Promise.all([
+      id ? t.get(ref) : null,
+      tipo === 'INGRESO' ? t.get(refUnico(db, idUnicoDocumento(cabecera))) : null,
+      tipo === 'INGRESO' ? t.get(db.collection('maestros_empresas').doc(cabecera.proveedorId)) : null,
+      t.get(refEstado(db)),
+      tipo === 'CARGA_INICIAL' ? t.get(refConfig(db)) : null,
+      ...productoIds.map((pid) => t.get(db.collection(COL.productos).doc(pid))),
+    ]);
+    if (id && !snapDoc.exists) throw new HttpsError('not-found', 'El borrador ya no existe.');
+    if (snapDoc?.exists && (snapDoc.data().estado !== ESTADOS_DOCUMENTO.BORRADOR || snapDoc.data().tipo !== tipo)) {
+      throw new HttpsError('failed-precondition', 'Ese documento ya fue confirmado.');
+    }
+    if (snapConfig?.data()?.cargaInicialCerrada) throw new HttpsError('failed-precondition', 'La carga inicial está cerrada. Usa Ingreso por documento.');
+    let proveedorNombre = '';
+    if (tipo === 'INGRESO') {
+      if (!snapProveedor.exists) throw new HttpsError('invalid-argument', 'El proveedor elegido no existe.');
+      proveedorNombre = snapProveedor.data().nombre || '';
+      if (snapUnico.exists) {
+        throw new HttpsError('already-exists', `Ya se ingresó la ${cabecera.tipoDocumento === 'GUIA' ? 'guía' : 'factura'} N° ${cabecera.numero} de ${proveedorNombre}.`);
+      }
+    }
+
+    const productos = new Map(snapsProductos.filter((s) => s.exists).map((s) => [s.id, { id: s.id, ...s.data() }]));
+    const erroresLineas = [];
+    const lineasValidas = lineasEntrada.map((l) => {
+      const r = validarLinea(l, productos.get(String(l?.productoId || '')) || null);
+      erroresLineas.push(...r.errores);
+      return r.linea;
+    });
+    exigirSinErrores([...new Set(erroresLineas)]);
+
+    const inventario = snapEstado.data()?.inventarioAbierto;
+    const bloqueados = [...productos.values()].filter((p) => productoEnInventario(inventario, p));
+    if (bloqueados.length) {
+      throw new HttpsError('failed-precondition', `Hay un inventario abierto que incluye: ${bloqueados.map((p) => p.nombre).join(', ')}. Ciérralo antes de mover stock.`);
+    }
+
+    const lineas = agruparLineas(lineasValidas);
+    const snapsLotes = await Promise.all(lineas.map((l) => t.get(db.collection(COL.lotes).doc(l.loteId))));
+    const lotesPrevios = new Map(snapsLotes.map((s) => [s.id, s.exists ? s.data() : null]));
+    if (tipo === 'CARGA_INICIAL') {
+      const conMovimientos = lineas.filter((l) => lotesPrevios.get(l.loteId) && lotesPrevios.get(l.loteId).soloCargaInicial === false);
+      if (conMovimientos.length) {
+        throw new HttpsError('failed-precondition', `Estos lotes ya tienen movimientos distintos a carga inicial (usa Ingreso): ${conMovimientos.map((l) => `${productos.get(l.productoId).nombre} lote ${l.lote || 'S/L'}`).join('; ')}.`);
+      }
+    }
+
+    // Saldos: se aplican en orden, sobre copias en memoria.
+    const saldosProducto = new Map([...productos.values()].map((p) => [p.id, saldoDe(p)]));
+    const saldosLote = new Map();
+    const movimientos = [];
+    try {
+      lineas.forEach((l, orden) => {
+        const loteAntes = saldosLote.get(l.loteId) || saldoDe(lotesPrevios.get(l.loteId));
+        const loteDespues = aplicarMovimiento(loteAntes, { tipo: tipoMovimiento, cantidad: l.cantidad });
+        const productoDespues = aplicarMovimiento(saldosProducto.get(l.productoId), { tipo: tipoMovimiento, cantidad: l.cantidad });
+        saldosLote.set(l.loteId, loteDespues);
+        saldosProducto.set(l.productoId, productoDespues);
+        movimientos.push({ l, orden, loteDespues, productoDespues });
+      });
+    } catch (error) {
+      if (error instanceof ErrorStock) throw new HttpsError('failed-precondition', error.message);
+      throw error;
+    }
+
+    // Escrituras.
+    lineas.forEach((l) => {
+      const previo = lotesPrevios.get(l.loteId);
+      const saldo = saldosLote.get(l.loteId);
+      t.set(db.collection(COL.lotes).doc(l.loteId), {
+        productoId: l.productoId, lote: l.lote, vencimiento: l.vencimiento,
+        disponible: saldo.disponible, transito: saldo.transito, transitoPorCentro: saldo.transitoPorCentro,
+        soloCargaInicial: tipo === 'CARGA_INICIAL' && (previo ? previo.soloCargaInicial !== false : true),
+        creadoEn: previo?.creadoEn || ahora(),
+        ultimoMovimiento: ahora(), ultimoMovimientoTipo: tipoMovimiento,
+      });
+    });
+    const productosActualizados = [...new Set(lineas.map((l) => l.productoId))].map((pid) => {
+      const saldo = saldosProducto.get(pid);
+      t.update(db.collection(COL.productos).doc(pid), { ...saldo, conMovimientos: true, actualizadoEn: ahora() });
+      return { id: pid, ...saldo, conMovimientos: true };
+    });
+    const documentoRef = {
+      id: ref.id, tipo,
+      ...(tipo === 'INGRESO' ? { tipoDocumento: cabecera.tipoDocumento, numero: cabecera.numero, proveedorNombre } : {}),
+    };
+    movimientos.forEach(({ l, orden, loteDespues, productoDespues }) => {
+      const p = productos.get(l.productoId);
+      t.set(db.collection(COL.movimientos).doc(), {
+        tipo: tipoMovimiento, fecha: ahora(), orden, usuario: por,
+        productoId: l.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
+        loteId: l.loteId, lote: l.lote, vencimiento: l.vencimiento, cantidad: l.cantidad,
+        saldoLote: { disponible: loteDespues.disponible, transito: loteDespues.transito },
+        saldoProducto: { disponible: productoDespues.disponible, transito: productoDespues.transito },
+        centroId: null, documentoRef, observacion: cabecera.observacion, codigoLeido: l.codigoLeido,
+      });
+    });
+    const lineasDocumento = lineas.map((l) => ({ ...l, productoNombre: productos.get(l.productoId).nombre, codigoMaestro: productos.get(l.productoId).codigoMaestro }));
+    const totalUnidades = lineas.reduce((n, l) => n + l.cantidad, 0);
+    t.set(ref, {
+      tipo, estado: ESTADOS_DOCUMENTO.CONFIRMADO, ...cabecera, proveedorNombre,
+      lineas: lineasDocumento, numeroLineas: lineas.length, totalUnidades,
+      creadoPor: snapDoc?.data()?.creadoPor || por, creadoEn: snapDoc?.data()?.creadoEn || ahora(),
+      confirmadoPor: por, confirmadoEn: ahora(), actualizadoPor: por, actualizadoEn: ahora(),
+    });
+    if (tipo === 'INGRESO') t.set(refUnico(db, idUnicoDocumento(cabecera)), { tipo: 'documento', refId: ref.id });
+    return { id: ref.id, lineas: lineas.length, unidades: totalUnidades, productos: productosActualizados };
+  });
+};
+
+const confirmarDocumento = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, accionesDe(String(datos.tipo || '')).confirmar);
+  return confirmarDocumentoComo(db, datosPor(uid, perfil), datos);
+};
+
+// Cierra (o reabre) la carga inicial para todos.
+const configurarCargaInicial = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.cerrarCarga);
+  const cerrada = datos.cerrada === true;
+  await refConfig(db).set({ cargaInicialCerrada: cerrada, cargaInicialActualizadaPor: datosPor(uid, perfil), cargaInicialActualizadaEn: ahora() }, { merge: true });
+  return { cargaInicialCerrada: cerrada };
+};
+
 module.exports = {
+  guardarBorrador,
+  eliminarBorrador,
+  confirmarDocumento,
+  confirmarDocumentoComo,
+  configurarCargaInicial,
   guardarCatalogo,
   guardarCatalogoComo,
   guardarProducto,

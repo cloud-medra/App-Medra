@@ -4,6 +4,9 @@
 //   - bodegaGuardarCatalogo: categorías y unidades de medida.
 //   - bodegaGuardarProducto: crear/editar producto (y vincular códigos al crearlo).
 //   - bodegaVincularCodigo / bodegaDesvincularCodigo: códigos de barra.
+//   - bodegaGuardarBorrador / bodegaEliminarBorrador / bodegaConfirmarDocumento:
+//     ingreso por documento y carga inicial (Fase 2).
+//   - bodegaConfigurarCargaInicial: cerrar/reabrir la carga inicial.
 
 const { onCall } = require('firebase-functions/v2/https');
 const logger = require('firebase-functions/logger');
@@ -26,3 +29,7 @@ exports.bodegaGuardarCatalogo = callable('guardarCatalogo');
 exports.bodegaGuardarProducto = callable('guardarProducto');
 exports.bodegaVincularCodigo = callable('vincularCodigo');
 exports.bodegaDesvincularCodigo = callable('desvincularCodigo');
+exports.bodegaGuardarBorrador = callable('guardarBorrador');
+exports.bodegaEliminarBorrador = callable('eliminarBorrador');
+exports.bodegaConfirmarDocumento = callable('confirmarDocumento');
+exports.bodegaConfigurarCargaInicial = callable('configurarCargaInicial');

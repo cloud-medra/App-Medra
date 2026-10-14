@@ -26,9 +26,11 @@
 //                                         deshabilitarInactivosAuth)
 //   bloqueado    bloqueado@prueba.cl      bloqueado por 5 intentos fallidos
 //   nuevo        nuevo@prueba.cl          primer ingreso (Cambiar contraseña)
-//   bodega       bodega@prueba.cl         Bodega: Maestro (con las acciones sensibles
-//                                         inactivar y quitar códigos) y Categorías
-//   bodegaop     bodegaop@prueba.cl       Bodega: solo Maestro, sin acciones sensibles
+//   bodega       bodega@prueba.cl         Bodega: todas las vistas, con las acciones
+//                                         sensibles (inactivar, quitar códigos,
+//                                         confirmar y cerrar la carga inicial)
+//   bodegaop     bodegaop@prueba.cl       Bodega: Maestro, Ingreso y Carga inicial,
+//                                         sin acciones sensibles
 //   (sinpermiso, inactivo, bloqueado y nuevo no tienen centro: en Lista de
 //   usuarios aparecen "Por reasignar")
 //
@@ -71,6 +73,8 @@ const listado = (elements) => ({
 
 const MAESTRO_BODEGA = '/bodega/maestroBodega';
 const CATALOGOS_BODEGA = '/bodega/catalogosBodega';
+const INGRESO_BODEGA = '/bodega/ingresoBodega';
+const CARGA_BODEGA = '/bodega/cargaInicialBodega';
 
 const USUARIOS = [
   { nombreUsuario: 'dev', nombreCompleto: 'Dev Prueba', rol: 'dev', permisos: {}, permisosGranulares: {} },
@@ -98,15 +102,18 @@ const USUARIOS = [
   { nombreUsuario: 'nuevo', nombreCompleto: 'Usuario Nuevo', rol: 'operador', passwordChanged: false, ...listado({}) },
   {
     nombreUsuario: 'bodega', nombreCompleto: 'Encargado Bodega', rol: 'operador', centroCostoId: 'lab',
-    permisos: { bodega: [MAESTRO_BODEGA, CATALOGOS_BODEGA] },
+    permisos: { bodega: [MAESTRO_BODEGA, INGRESO_BODEGA, CARGA_BODEGA, CATALOGOS_BODEGA] },
     permisosGranulares: {
       [MAESTRO_BODEGA]: { productos: { visible: true, elements: { btn_inactivar: true } }, codigos: { visible: true, elements: { btn_desvincular: true } } },
+      [INGRESO_BODEGA]: {},
+      [CARGA_BODEGA]: { carga: { visible: true, elements: { btn_confirmar: true, btn_cerrar_carga: true } } },
       [CATALOGOS_BODEGA]: {},
     },
   },
   {
     nombreUsuario: 'bodegaop', nombreCompleto: 'Operador Bodega', rol: 'operador', centroCostoId: 'lab',
-    permisos: { bodega: [MAESTRO_BODEGA] }, permisosGranulares: { [MAESTRO_BODEGA]: {} },
+    permisos: { bodega: [MAESTRO_BODEGA, INGRESO_BODEGA, CARGA_BODEGA] },
+    permisosGranulares: { [MAESTRO_BODEGA]: {}, [INGRESO_BODEGA]: {}, [CARGA_BODEGA]: {} },
   },
 ];
 

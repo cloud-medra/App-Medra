@@ -4,6 +4,7 @@
 // sembrarEmulador.js, después de crear los usuarios). Crea con las mismas
 // funciones que usa la app (servicio de Bodega):
 //   - centros PABELLÓN CENTRAL, UCI ADULTO y URGENCIA (maestros_centros)
+//   - proveedores MEDISUR SPA y ORTOMED LTDA (maestros_empresas)
 //   - unidades UNIDAD, CAJA, PAR y categorías INSUMOS, IMPLANTE, SUTURAS
 //   - 5 productos con códigos de barra:
 //       GUANTE NITRILO M     EAN 7801234567894
@@ -26,6 +27,10 @@ const sembrarBodega = async (db) => {
   for (const [id, nombre] of Object.entries(centros)) {
     await db.collection('maestros_centros').doc(id).set({ nombre, estado: 'ACTIVO', usarEnGestiones: false });
   }
+
+  // Proveedores (maestro de Empresas) para Ingreso.
+  await db.collection('maestros_empresas').doc('prov-medisur').set({ nombre: 'MEDISUR SPA', rut: '76.111.111-1', estado: 'ACTIVO' });
+  await db.collection('maestros_empresas').doc('prov-ortomed').set({ nombre: 'ORTOMED LTDA', rut: '77.222.222-2', estado: 'ACTIVO' });
 
   const cat = {};
   for (const [tipo, nombre] of [['UNIDAD', 'UNIDAD'], ['UNIDAD', 'CAJA'], ['UNIDAD', 'PAR'], ['CATEGORIA', 'INSUMOS'], ['CATEGORIA', 'IMPLANTE'], ['CATEGORIA', 'SUTURAS']]) {
@@ -51,7 +56,7 @@ const sembrarBodega = async (db) => {
   await inv.doc('07612345678917').set({ clave: '07612345678917', codigoLeido: '(01)07612345678917(10)X1', productoId: 'mc-tornillo' });
   await inv.doc('7802222222221').set({ clave: '7802222222221', codigoLeido: '7802222222221', productoId: 'mc-tornillo' });
 
-  console.log('  Bodega: 3 centros, 6 categorías/unidades, 5 productos, 3 códigos de Inventario para migrar');
+  console.log('  Bodega: 3 centros, 2 proveedores, 6 categorías/unidades, 5 productos, 3 códigos de Inventario para migrar');
 };
 
 module.exports = { sembrarBodega };

@@ -79,6 +79,9 @@ export const ACCIONES_DENEGADAS_POR_DEFECTO = Object.freeze([
   // Bodega (functions/bodega): inactivar productos y quitar/reasignar códigos de barra.
   claveElemento('/bodega/maestroBodega', 'productos', 'btn_inactivar'),
   claveElemento('/bodega/maestroBodega', 'codigos', 'btn_desvincular'),
+  // Bodega: confirmar la carga inicial (stock sin documento) y cerrarla/reabrirla.
+  claveElemento('/bodega/cargaInicialBodega', 'carga', 'btn_confirmar'),
+  claveElemento('/bodega/cargaInicialBodega', 'carga', 'btn_cerrar_carga'),
 ]);
 const DENEGADAS = new Set(ACCIONES_DENEGADAS_POR_DEFECTO);
 export const deniegaSinConfigurar = (ruta, seccion, accion) => DENEGADAS.has(claveElemento(ruta, seccion, accion));

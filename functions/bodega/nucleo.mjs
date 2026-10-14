@@ -17,6 +17,8 @@ export const MODULO = 'bodega';
 
 export const RUTAS = Object.freeze({
   maestro: '/bodega/maestroBodega',
+  ingreso: '/bodega/ingresoBodega',
+  cargaInicial: '/bodega/cargaInicialBodega',
   catalogos: '/bodega/catalogosBodega',
 });
 
@@ -30,6 +32,15 @@ export const ACCIONES = Object.freeze({
   vincularCodigo: [MODULO, RUTAS.maestro, 'codigos', 'btn_vincular'],
   desvincularCodigo: [MODULO, RUTAS.maestro, 'codigos', 'btn_desvincular'],
   guardarCatalogo: [MODULO, RUTAS.catalogos, 'catalogos', 'btn_guardar'],
+  guardarBorradorIngreso: [MODULO, RUTAS.ingreso, 'documento', 'btn_guardar_borrador'],
+  confirmarIngreso: [MODULO, RUTAS.ingreso, 'documento', 'btn_confirmar'],
+  eliminarBorradorIngreso: [MODULO, RUTAS.ingreso, 'documento', 'btn_eliminar_borrador'],
+  guardarBorradorCarga: [MODULO, RUTAS.cargaInicial, 'carga', 'btn_guardar_borrador'],
+  // Sensibles (denegadas por defecto): confirmar la carga inicial y
+  // cerrarla/reabrirla para todos.
+  confirmarCarga: [MODULO, RUTAS.cargaInicial, 'carga', 'btn_confirmar'],
+  cerrarCarga: [MODULO, RUTAS.cargaInicial, 'carga', 'btn_cerrar_carga'],
+  eliminarBorradorCarga: [MODULO, RUTAS.cargaInicial, 'carga', 'btn_eliminar_borrador'],
 });
 
 export const COL = Object.freeze({
@@ -220,4 +231,122 @@ export const aplicarMovimientoCentro = (centro, { tipo, cantidad, productoId } =
   if (enProducto === 0) delete productos[productoId];
   else productos[productoId] = enProducto;
   return { unidades, productos, productosDistintos: Object.keys(productos).length };
+};
+
+// ---------------- Documentos (ingreso y carga inicial) ----------------
+
+export const TIPOS_DOCUMENTO_BODEGA = Object.freeze({
+  INGRESO: { etiqueta: 'Ingreso', movimiento: 'INGRESO' },
+  CARGA_INICIAL: { etiqueta: 'Carga inicial', movimiento: 'CARGA_INICIAL' },
+});
+export const TIPOS_DOCUMENTO_INGRESO = Object.freeze({ GUIA: 'Guía de despacho', FACTURA: 'Factura' });
+export const ESTADOS_DOCUMENTO = Object.freeze({ BORRADOR: 'BORRADOR', CONFIRMADO: 'CONFIRMADO' });
+
+// Límite por documento: cada línea escribe su lote y su movimiento, más el
+// total de cada producto, en UNA transacción (máx. 500 escrituras).
+export const MAX_LINEAS_DOCUMENTO = 150;
+export const MAX_OBSERVACION = 500;
+const MAX_NUMERO_DOCUMENTO = 40;
+const MAX_CANTIDAD_LINEA = 1e6;
+
+const fechaValida = (f) => {
+  if (!PATRON_FECHA.test(f || '')) return false;
+  const d = new Date(`${f}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === f;
+};
+export { fechaValida };
+
+// Candado: mismo proveedor + tipo + número de documento (sin espacios ni
+// mayúsculas/minúsculas) solo se confirma una vez.
+export const idUnicoDocumento = ({ proveedorId, tipoDocumento, numero }) =>
+  `documento__${idVinculo(proveedorId)}__${tipoDocumento}__${idVinculo(normalizarClave(numero).replace(/\s/g, ''))}`;
+
+// Cabecera de un documento -> { errores, cabecera }. La carga inicial no
+// pide guía, factura ni orden de compra.
+export const validarCabecera = (tipo, datos = {}) => {
+  const errores = [];
+  const observacion = limpiar(datos.observacion);
+  if (!TIPOS_DOCUMENTO_BODEGA[tipo]) errores.push('Tipo de documento inválido.');
+  if (observacion.length > MAX_OBSERVACION) errores.push(`La observación no puede superar ${MAX_OBSERVACION} caracteres.`);
+  if (tipo !== 'INGRESO') return { errores, cabecera: { observacion } };
+
+  const tipoDocumento = String(datos.tipoDocumento || '');
+  const numero = limpiar(datos.numero).toUpperCase();
+  const ordenCompra = limpiar(datos.ordenCompra).toUpperCase();
+  const proveedorId = String(datos.proveedorId || '').trim();
+  const fecha = String(datos.fecha || '').trim();
+  if (!TIPOS_DOCUMENTO_INGRESO[tipoDocumento]) errores.push('Elige si es guía de despacho o factura.');
+  if (!numero) errores.push('El número de documento es obligatorio.');
+  if (numero.length > MAX_NUMERO_DOCUMENTO || ordenCompra.length > MAX_NUMERO_DOCUMENTO) errores.push(`El número de documento y la orden de compra no pueden superar ${MAX_NUMERO_DOCUMENTO} caracteres.`);
+  if (!proveedorId) errores.push('El proveedor es obligatorio.');
+  if (!fechaValida(fecha)) errores.push('La fecha del documento es obligatoria.');
+  return { errores, cabecera: { tipoDocumento, numero, ordenCompra, proveedorId, fecha, observacion } };
+};
+
+// Línea + su producto -> { errores, linea } normalizada. Si el producto no
+// maneja lote/vencimiento se descartan; si los maneja, son obligatorios.
+export const validarLinea = (linea = {}, producto = null) => {
+  const errores = [];
+  const cantidad = Number(linea.cantidad);
+  const nombre = producto?.nombre || 'Producto';
+  if (!producto) errores.push('El producto no existe.');
+  else if (producto.activo === false) errores.push(`${nombre}: el producto está inactivo.`);
+  if (!Number.isInteger(cantidad) || cantidad <= 0 || cantidad > MAX_CANTIDAD_LINEA) errores.push(`${nombre}: la cantidad debe ser un número entero mayor a cero.`);
+  const lote = producto?.manejaLote ? normalizarLote(linea.lote) : '';
+  const vencimiento = producto?.manejaVencimiento ? String(linea.vencimiento || '').trim() : '';
+  if (producto?.manejaLote && !lote) errores.push(`${nombre}: el lote es obligatorio.`);
+  if (lote.length > 40) errores.push(`${nombre}: el lote no puede superar 40 caracteres.`);
+  if (producto?.manejaVencimiento && !fechaValida(vencimiento)) errores.push(`${nombre}: el vencimiento es obligatorio.`);
+  return {
+    errores,
+    linea: {
+      productoId: String(linea.productoId || ''),
+      lote,
+      vencimiento,
+      cantidad,
+      codigoLeido: String(linea.codigoLeido || '').slice(0, 300),
+    },
+  };
+};
+
+// Une las líneas del mismo producto + lote + vencimiento sumando la
+// cantidad (conserva el orden de la primera aparición).
+export const agruparLineas = (lineas) => {
+  const porLote = new Map();
+  lineas.forEach((l) => {
+    const id = idLote(l.productoId, l.lote, l.vencimiento);
+    const previa = porLote.get(id);
+    if (previa) previa.cantidad += l.cantidad;
+    else porLote.set(id, { ...l, loteId: id });
+  });
+  return [...porLote.values()];
+};
+
+// ---------------- Inventario abierto (bloqueo de movimientos) ----------------
+
+// ¿El inventario abierto (bodega_control/estado.inventarioAbierto) incluye
+// este producto? `alcance.categorias` vacío o ausente = todos.
+export const productoEnInventario = (inventarioAbierto, producto) => {
+  if (!inventarioAbierto?.id) return false;
+  const categorias = inventarioAbierto.alcance?.categorias || [];
+  return categorias.length === 0 || categorias.includes(producto?.categoriaId || '');
+};
+
+// ---------------- RUT chileno ----------------
+
+// '12.345.678-5' / '12345678-5' / '123456785' -> '12345678-5' o '' si no es válido.
+export const normalizarRut = (texto) => {
+  const limpio = String(texto ?? '').replace(/[.\s-]/g, '').toUpperCase();
+  if (!/^\d{7,8}[0-9K]$/.test(limpio)) return '';
+  const cuerpo = limpio.slice(0, -1);
+  const dv = limpio.slice(-1);
+  let suma = 0;
+  let multiplicador = 2;
+  for (let i = cuerpo.length - 1; i >= 0; i -= 1) {
+    suma += Number(cuerpo[i]) * multiplicador;
+    multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+  }
+  const resto = 11 - (suma % 11);
+  const esperado = resto === 11 ? '0' : resto === 10 ? 'K' : String(resto);
+  return dv === esperado ? `${cuerpo}-${dv}` : '';
 };

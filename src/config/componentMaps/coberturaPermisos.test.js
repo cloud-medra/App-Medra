@@ -41,6 +41,9 @@ const RUTAS_DINAMICAS = {
   // Pantallas compartidas por Implantes y Hemodinamia (shared/modulosGestion.js).
   'modulos/operaciones/shared/respaldoDocumentos/RespaldoDocumentos.jsx': ['/implantes/respaldoDocumentos', '/hemodinamia/respaldoDocumentos'],
   'modulos/operaciones/shared/sincronizacionImputadas/SincronizacionImputadas.jsx': ['/implantes/sincronizacionImputadas', '/hemodinamia/sincronizacionImputadas'],
+  // Bodega: pantalla común de Ingreso y Carga inicial (prop ruta).
+  'modulos/bodega/shared/documentos/PantallaDocumento.jsx': ['/bodega/ingresoBodega', '/bodega/cargaInicialBodega'],
+  'modulos/bodega/shared/documentos/EditorLineasStock.jsx': ['/bodega/ingresoBodega', '/bodega/cargaInicialBodega'],
 };
 
 const usos = [];

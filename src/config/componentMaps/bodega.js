@@ -43,6 +43,47 @@ export const bodegaComponentMaps = {
     },
   },
 
+  '/bodega/ingresoBodega': {
+    label: 'Ingreso por documento de Bodega (IngresoBodega.jsx)',
+    sections: {
+      documento: {
+        label: 'Sección: Documento (guía/factura, proveedor, OC) y confirmación',
+        elements: {
+          btn_guardar_borrador: { label: 'Acción: Guardar borrador' },
+          btn_confirmar: { label: 'Acción: Confirmar ingreso (suma stock)' },
+          btn_eliminar_borrador: { label: 'Acción: Eliminar borrador' },
+        },
+      },
+      lineas: {
+        label: 'Sección: Líneas escaneadas',
+        elements: {
+          ...columnas([['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad']]),
+        },
+      },
+    },
+  },
+
+  '/bodega/cargaInicialBodega': {
+    label: 'Carga inicial de stock de Bodega (CargaInicialBodega.jsx)',
+    sections: {
+      carga: {
+        label: 'Sección: Carga inicial (sin guía ni factura)',
+        elements: {
+          btn_guardar_borrador: { label: 'Acción: Guardar borrador' },
+          btn_confirmar: { label: 'Acción: Confirmar carga inicial (sensible)' },
+          btn_eliminar_borrador: { label: 'Acción: Eliminar borrador' },
+          btn_cerrar_carga: { label: 'Acción: Cerrar / reabrir la carga inicial para todos (sensible)' },
+        },
+      },
+      lineas: {
+        label: 'Sección: Líneas escaneadas',
+        elements: {
+          ...columnas([['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad']]),
+        },
+      },
+    },
+  },
+
   '/bodega/catalogosBodega': {
     label: 'Categorías y unidades de Bodega (CatalogosBodega.jsx)',
     sections: {
