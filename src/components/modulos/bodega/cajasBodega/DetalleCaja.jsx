@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Pencil } from 'lucide-react';
+import { ArrowLeft, Pencil, ClipboardCheck, History } from 'lucide-react';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import { formatoCantidad } from '../shared/catalogosBodega';
 import { fechaHora } from '../shared/transito/transitos';
 import FormCajaModal from './FormCajaModal';
+import InventarioCajaModal from './InventarioCajaModal';
+import HistorialCaja from './HistorialCaja';
 import { productosDeCaja } from './cajas';
 import { BarraCompletitud } from './comunes';
 
@@ -23,6 +25,10 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
   const { hasPermission } = useGranularPermission();
   const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'caja', COLUMNAS);
   const [editando, setEditando] = useState(false);
+  const [inventariando, setInventariando] = useState(false);
+  const [verHistorial, setVerHistorial] = useState(false);
+  const [versionHistorial, setVersionHistorial] = useState(0);
+  const cambio = () => { onCambio(); setVersionHistorial((v) => v + 1); };
   const productos = useMemo(() => productosDeCaja(caja), [caja]);
 
   return (
@@ -34,6 +40,10 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
         <BarraCompletitud valor={caja.completitud} />
         <span className="text-gray-500">{formatoCantidad(caja.totalFaltante)} u. faltantes</span>
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          {hasPermission(PATH_VISTA, 'caja', 'btn_inventario') && productos.length > 0 && (
+            <button type="button" onClick={() => setInventariando(true)} className="h-7 px-2 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><ClipboardCheck size={12} /> Hacer inventario</button>
+          )}
+          <button type="button" onClick={() => setVerHistorial((v) => !v)} className={`h-7 px-2 rounded border font-semibold flex items-center gap-1 ${verHistorial ? 'border-[#2383C2] text-[#2383C2]' : 'border-gray-300 dark:border-gray-600'}`}><History size={12} /> Historial</button>
           {hasPermission(PATH_VISTA, 'cajas', 'btn_guardar') && (
             <button type="button" onClick={() => setEditando(true)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><Pencil size={12} /> Editar</button>
           )}
@@ -60,6 +70,9 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
         </tbody>
       </table>
 
+      {verHistorial && <HistorialCaja key={versionHistorial} caja={caja} />}
+
+      {inventariando && <InventarioCajaModal caja={caja} onCerrar={() => setInventariando(false)} onHecho={cambio} />}
       {editando && <FormCajaModal caja={caja} onCerrar={() => setEditando(false)} onGuardada={() => { setEditando(false); onCambio(); }} />}
     </div>
   );

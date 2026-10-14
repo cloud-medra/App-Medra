@@ -31,7 +31,7 @@ const {
   agruparLineasEgreso, aplicarMovimientoCentro, aplicarAccionTransito, accionTransito, normalizarIdEntrega,
   ESTADOS_INVENTARIO, NO_CONTADOS, MAX_CONTEOS_POR_ENVIO, MAX_NOMBRE_INVENTARIO, diferenciaLinea, resumenInventario,
   aplicarConteo, idLote,
-  validarCaja, totalesCaja,
+  validarCaja, totalesCaja, resultadoInventarioCaja,
 } = require('./nucleo.mjs');
 const { interpretarLectura, idVinculo, MAX_CODIGO_LEIDO } = require('./gs1.mjs');
 
@@ -1207,7 +1207,42 @@ const guardarCaja = async (db, uid, datos) => {
   return guardarCajaComo(db, datosPor(uid, perfil), datos);
 };
 
+// Inventario de la caja: { cajaId, conteos: { [productoId]: contado } }.
+// El stock actual pasa a ser lo contado y queda en el historial (actual
+// previo, contado, consumo y faltante por producto). No mueve la Bodega General.
+const inventariarCajaComo = (db, por, datos = {}) => {
+  const cajaId = String(datos.cajaId || '');
+  if (!cajaId) throw new HttpsError('invalid-argument', 'Falta la caja.');
+  const conteos = datos.conteos && typeof datos.conteos === 'object' ? datos.conteos : {};
+  return db.runTransaction(async (t) => {
+    const ref = refCaja(db, cajaId);
+    const snap = await t.get(ref);
+    if (!snap.exists) throw new HttpsError('not-found', 'La caja ya no existe.');
+    const caja = snap.data();
+    if (!Object.keys(caja.productos || {}).length) throw new HttpsError('failed-precondition', 'La caja no tiene productos.');
+    const { errores, lineas, resumen } = resultadoInventarioCaja(caja.productos, conteos);
+    exigirSinErrores([...new Set(errores)]);
+    const productos = Object.fromEntries(Object.entries(caja.productos).map(([id, p]) => [id, { ...p, stockActual: Number(conteos[id]) }]));
+    const refInv = ref.collection('inventarios').doc();
+    t.set(refInv, { fecha: ahora(), usuario: por, cajaNombre: caja.nombre, lineas, resumen });
+    t.update(ref, {
+      ...conTotales(productos),
+      ultimoInventario: { id: refInv.id, fecha: ahora(), usuario: por.nombre },
+      actualizadoPor: por, actualizadoEn: ahora(),
+    });
+    return { id: refInv.id, lineas, resumen };
+  });
+};
+
+const inventariarCaja = async (db, uid, datos) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.inventariarCaja);
+  return inventariarCajaComo(db, datosPor(uid, perfil), datos);
+};
+
 module.exports = {
+  inventariarCaja,
+  inventariarCajaComo,
   guardarCaja,
   guardarCajaComo,
   iniciarInventario,

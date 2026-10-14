@@ -47,3 +47,4 @@ exports.bodegaCerrarInventario = callable('cerrarInventario', { timeoutSeconds: 
 exports.bodegaAnularInventario = callable('anularInventario');
 // Cajas (kits): mantenedor, inventario de la caja y reposición desde la Bodega General.
 exports.bodegaGuardarCaja = callable('guardarCaja');
+exports.bodegaInventariarCaja = callable('inventariarCaja');

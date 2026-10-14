@@ -561,3 +561,32 @@ export const totalesCaja = (productos = {}) => {
     completitud: totalObjetivo ? Math.round((totalCubierto / totalObjetivo) * 1000) / 10 : 100,
   };
 };
+
+// Resultado de un inventario de caja. conteos: { [productoId]: contado }.
+// Por producto: consumo = actual previo − contado (lo usado o perdido desde
+// la última vez; negativo si apareció de más) y faltante = objetivo −
+// contado (lo que hay que reponer; nunca negativo). Exige contar todos.
+export const resultadoInventarioCaja = (productos = {}, conteos = {}) => {
+  const errores = [];
+  const lineas = Object.entries(productos).map(([productoId, p]) => {
+    const contado = Number(conteos[productoId]);
+    if (conteos[productoId] === undefined || conteos[productoId] === null || conteos[productoId] === '' || !enteroNoNegativo(contado) || contado > MAX_STOCK_CAJA) {
+      errores.push(`${p.nombre}: ingresa la cantidad contada (entero mayor o igual a cero).`);
+    }
+    const actualPrevio = Number(p.stockActual) || 0;
+    const objetivo = Number(p.stockObjetivo) || 0;
+    return {
+      productoId, nombre: p.nombre, codigoMaestro: p.codigoMaestro || '', objetivo, actualPrevio, contado,
+      consumo: actualPrevio - contado, faltante: Math.max(0, objetivo - contado),
+    };
+  }).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  return {
+    errores,
+    lineas,
+    resumen: {
+      consumo: lineas.reduce((n, l) => n + Math.max(0, l.consumo), 0),
+      faltante: lineas.reduce((n, l) => n + l.faltante, 0),
+      productosConFaltante: lineas.filter((l) => l.faltante > 0).length,
+    },
+  };
+};

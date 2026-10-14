@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validarCaja, totalesCaja, faltanteCaja } from './nucleo.mjs';
+import { validarCaja, totalesCaja, faltanteCaja, resultadoInventarioCaja } from './nucleo.mjs';
 
 describe('cajas: validarCaja', () => {
   it('nombre obligatorio, objetivo entero >= 0 y sin productos repetidos', () => {
