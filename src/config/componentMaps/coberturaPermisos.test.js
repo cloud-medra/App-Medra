@@ -106,6 +106,7 @@ const TABLAS_PENDIENTES = new Set([
   'modulos/operaciones/documentos/ingresoOrdenes/components/OCSinPdf.jsx',
   'modulos/operaciones/documentos/ingresoOrdenes/components/RegistrosOrdenes.jsx',
   'modulos/operaciones/documentos/seguimientoFacturasGuias/SeguimientoFacturasGuias.jsx',
+  'modulos/operaciones/documentos/seguimientoFacturasGuias/ResumenMensual.jsx',
   'modulos/operaciones/hemodinamia/gestionHemodinamia/components/Cargastab/Cargastab.jsx',
   'modulos/operaciones/hemodinamia/gestionHemodinamia/components/Cargastab/CotizacionCard.jsx',
   'modulos/operaciones/shared/cargaMasivaDocumentos/CargaMasivaDocumentos.jsx',

@@ -60,7 +60,7 @@ export const documentosComponentMaps = {
     label: 'Seguimiento de Facturas y Guías (SeguimientoFacturasGuias.jsx) — sin granularidad cableada aún',
     sections: {
       selector_tipo: {
-        label: 'Sección: Selector inicial (Facturas / Guías)',
+        label: 'Sección: Selector inicial (Facturas / Guías / Resumen Mensual)',
         elements: {},
       },
       barra_filtros: {
@@ -68,7 +68,11 @@ export const documentosComponentMaps = {
         elements: {},
       },
       tabla_registros: {
-        label: 'Sección: Tabla — ESTADO="Pendiente factura" (Facturas) o NUMERO_GUIA vacío/"0" (Guías), paginada de 50 en 50, con TOTAL de Monto OC y registros filtrados',
+        label: 'Sección: Tabla — ESTADO="Pendiente factura" o NUMERO_FACTURA vacío/"0" (Facturas) o NUMERO_GUIA vacío/"0" (Guías), paginada de 50 en 50, con TOTAL de Monto OC y registros filtrados',
+        elements: {},
+      },
+      resumen_mensual: {
+        label: 'Sección: Resumen Mensual — Año (por defecto el actual) + tabla de 12 meses Total/Facturado/Pendiente y % con fila de totales; botón "Recalcular" solo para administradores',
         elements: {},
       },
     },

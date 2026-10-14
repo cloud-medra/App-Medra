@@ -9,15 +9,16 @@
 //
 // A diferencia de Detalles OC, acá el año solo ya dispara la consulta (el
 // mes es opcional) — así que sin mes elegido el rango cubre el año completo.
-// `filtroServidor` ({campo, operador, valor}) agrega un where(...) del lado
+// `filtroServidor` ({campo, operador, valor}, o {o: [...]} para un or()) agrega un where(...) del lado
 // del servidor en vez de traer todo el período y descartar casi todo
 // client-side (ej. "Pendiente factura" o "sin número de guía" son una
 // fracción chica del total) — cada combinación de campo/operador nueva
 // puede exigir su propio índice compuesto (campo + __name__, COLLECTION_GROUP).
 import { useCallback, useEffect, useState } from 'react';
-import { collection, collectionGroup, query, where, orderBy, limit, documentId, getDocs } from 'firebase/firestore';
+import { collection, collectionGroup, query, where, and, orderBy, limit, documentId, getDocs } from 'firebase/firestore';
 import { db } from '../../../../../firebaseConfig';
 import { ordenarMeses } from '../../../../../utils/ordenarMeses';
+import { restriccionDeFiltro } from '../resumenFacturacion/resumenFacturacionService';
 
 export const COL_BASE = 'documentos_sistema';
 // Tope defensivo: un mes es chico, pero un año completo sin filtro de estado
@@ -90,11 +91,12 @@ export const useDocumentosSistemaPeriodo = (filtroServidor = null) => {
           where(documentId(), '>=', min),
           where(documentId(), '<', max)
         ];
-        if (filtroServidor) restricciones.push(where(filtroServidor.campo, filtroServidor.operador, filtroServidor.valor));
-        restricciones.push(orderBy(documentId(), 'desc'));
-        restricciones.push(limit(LIMITE_FILAS_PERIODO));
+        if (filtroServidor) restricciones.push(restriccionDeFiltro(filtroServidor));
 
-        const q = query(collectionGroup(db, 'detalles'), ...restricciones);
+        // Con un or(...) Firestore exige un solo filtro de nivel superior: se
+        // envuelve todo en and(...).
+        const filtros = filtroServidor?.o ? [and(...restricciones)] : restricciones;
+        const q = query(collectionGroup(db, 'detalles'), ...filtros, orderBy(documentId(), 'desc'), limit(LIMITE_FILAS_PERIODO));
         const snap = await getDocs(q);
         if (cancelado) return;
         setFilas(snap.docs.map(d => ({ id: d.id, refPath: d.ref.path, ...d.data() })));

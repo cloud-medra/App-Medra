@@ -11,6 +11,7 @@
 //      por esas filas (ocPendiente: true), salvo que otra fila que queda
 //      respalde la misma OC para esa admisión, fecha y código.
 import { doc, writeBatch, setDoc, serverTimestamp } from 'firebase/firestore';
+import { actualizarMeses } from '../../resumenFacturacion/resumenFacturacionService';
 import { db } from '../../../../../../firebaseConfig';
 import { normalizarProveedorId } from './normalizarProveedor';
 import { normalizarCodigo } from '../../../shared/ocIndex/normalizacionOC.js';
@@ -146,6 +147,14 @@ export const eliminarFilasDetallesOC = async (filas, { liberarOC = true, usuario
     await setDoc(doc(db, 'ocImport', 'meta'), metaSnapshot, { merge: true });
     escrituras += 1;
   }
+
+  // Resumen Mensual de los meses de las filas eliminadas (su ruta dice el
+  // mes), calculado desde el snapshot nuevo: 0 lecturas. Un fallo acá no invalida el borrado.
+  const idsEliminados = new Set(confirmados);
+  const mesesTocados = filas.filter(f => idsEliminados.has(f.id))
+    .map(f => f.refPath.match(/^documentos_sistema\/(\d{4})\/meses\/(\d{2})\//)?.slice(1).join('-') || '');
+  resultado.resumenFacturacion = await actualizarMeses(nuevoSnapshot, mesesTocados);
+  escrituras += resultado.resumenFacturacion.escrituras;
 
   // Liberar OC en las gestiones.
   if (liberarOC && ocALiberar.length > 0) {

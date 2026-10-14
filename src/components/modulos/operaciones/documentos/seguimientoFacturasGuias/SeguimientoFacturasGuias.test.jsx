@@ -17,6 +17,8 @@ vi.mock('firebase/firestore', () => ({
   collectionGroup: vi.fn((_db, nombre) => ({ _type: 'collectionGroup', nombre })),
   query: vi.fn((ref, ...c) => ({ ...ref, _c: c })),
   where: (...args) => mockWhere(...args),
+  and: vi.fn((...c) => ({ _type: 'and', c })),
+  or: vi.fn((...c) => ({ _type: 'or', c })),
   orderBy: vi.fn(),
   limit: vi.fn(),
   documentId: vi.fn(),

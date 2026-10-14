@@ -12,6 +12,8 @@ vi.mock('firebase/firestore', () => ({
   collectionGroup: vi.fn((_db, nombre) => ({ _type: 'collectionGroup', nombre })),
   query: vi.fn((ref, ...constraints) => ({ ...ref, _constraints: constraints })),
   where: (...args) => mockWhere(...args),
+  and: vi.fn((...c) => ({ _type: 'and', c })),
+  or: vi.fn((...c) => ({ _type: 'or', c })),
   orderBy: vi.fn(),
   limit: vi.fn(),
   documentId: vi.fn(),
@@ -91,6 +93,29 @@ describe('useDocumentosSistemaPeriodo', () => {
 
     const llamadaEstado = mockWhere.mock.calls.find(c => c[0] === 'estado');
     expect(llamadaEstado).toEqual(['estado', '==', 'Pendiente factura']);
+  });
+
+  it('un filtro { o: [...] } va como or(...) dentro de and(...) junto al rango de ruta', async () => {
+    mockGetDocs.mockResolvedValueOnce(docsDeIds(['2026']));
+    const filtro = { o: [
+      { campo: 'estado', operador: '==', valor: 'Pendiente factura' },
+      { campo: 'numero_factura', operador: 'in', valor: ['', '0'] }
+    ] };
+    const { result } = renderHook(() => useDocumentosSistemaPeriodo(filtro));
+    await flush();
+
+    mockGetDocs.mockResolvedValue(docsDeIds([]));
+    act(() => { result.current.setAnio('2026'); });
+    await flush();
+
+    const consulta = mockGetDocs.mock.calls.map(c => c[0]).find(q => q._type === 'collectionGroup');
+    const [filtroRaiz] = consulta._constraints;
+    expect(filtroRaiz._type).toBe('and');
+    const ramaOr = filtroRaiz.c.find(c => c._type === 'or');
+    expect(ramaOr.c.map(w => w.args)).toEqual([
+      ['estado', '==', 'Pendiente factura'],
+      ['numero_factura', 'in', ['', '0']]
+    ]);
   });
 
   it('soporta operador "in" (ej. numero_guia vacío o "0")', async () => {

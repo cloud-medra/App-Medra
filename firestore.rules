@@ -761,6 +761,15 @@ service cloud.firestore {
       }
     }
 
+    // Resumen Mensual de facturación de Detalles OC: un documento por año
+    // ({anio, meses: {MM: totales}, actualizadoEn}). Lo escriben Importar
+    // Detalles OC / Eliminar filas al terminar y "Recalcular" (Seguimiento →
+    // Resumen Mensual), con el mismo permiso que escribe las filas.
+    match /resumen_facturacion_mensual/{anio} {
+      allow read: if estaActivo();
+      allow write: if estaActivo() && (esDev() || tienePermiso('documentos'));
+    }
+
     // =================================================================
     // IMPLANTES
     // =================================================================

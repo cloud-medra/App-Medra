@@ -9,6 +9,8 @@
 //      confirmado, así reimportar el mismo archivo reintenta lo pendiente.
 //   4. OC cambiadas → se liberan en las gestiones de Implantes afectadas.
 //   5. Snapshot + índice de OC + ocImport/meta.
+//   6. Resumen Mensual de facturación de los meses tocados (desde el
+//      snapshot nuevo, 0 lecturas).
 import { doc, writeBatch, setDoc } from 'firebase/firestore';
 import { db } from '../../../../../../firebaseConfig';
 import { normalizarProveedorId } from './normalizarProveedor';
@@ -18,6 +20,7 @@ import { obtenerSnapshotDetallesOC, guardarSnapshotDetallesOC, camposMetaSnapsho
 import { mezclarIndiceOC } from '../../../shared/ocIndex/indiceOC';
 import { leerMetaOC, obtenerIndiceOC, publicarIndiceOC, agregarInvalidacionesPendientes } from '../../../shared/ocIndex/indiceOCRemoto';
 import { invalidarOCGestiones } from '../../../shared/ocIndex/invalidarOCGestiones';
+import { actualizarMeses } from '../../resumenFacturacion/resumenFacturacionService';
 
 export { leerFilasDelExcel } from './leerFilasDelExcel';
 export { SnapshotAntiguoError } from './snapshotStorageDetallesOC';
@@ -139,6 +142,7 @@ export const procesarImportacionDetallesOC = async (file, { onProgreso, usuario 
   const errores = [...invalidas];
   const confirmadas = { nueva: 0, actualizada: 0, movida: 0 };
   const idsConfirmados = new Set();
+  const mesesTocados = new Set(); // 'YYYY-MM' de lo confirmado (incluye el mes de origen de las movidas)
   let pendientes = 0;
   let procesadas = 0;
   onProgreso?.({ etapa: 'escribiendo', actual: 0, total: ops.length });
@@ -170,7 +174,11 @@ export const procesarImportacionDetallesOC = async (file, { onProgreso, usuario 
     try {
       await batch.commit();
       escrituras += usadas;
-      lote.forEach((op) => { op.aplicar(nuevoSnapshot); confirmadas[op.tipo]++; idsConfirmados.add(op.id); });
+      lote.forEach((op) => {
+        op.aplicar(nuevoSnapshot); confirmadas[op.tipo]++; idsConfirmados.add(op.id);
+        mesesTocados.add(`${op.ruta.anio}-${op.ruta.mes}`);
+        if (op.idAntes) mesesTocados.add(String(snapshot.filas[op.idAntes]?.f || '').slice(0, 7));
+      });
     } catch (err) {
       console.error('[Importar Detalles OC] Falló un lote de escritura:', err);
       pendientes += lote.length;
@@ -235,6 +243,14 @@ export const procesarImportacionDetallesOC = async (file, { onProgreso, usuario 
     escrituras += 1;
   }
 
+  // 6) Resumen Mensual: un fallo acá no invalida la importación.
+  let resumenFacturacion = null;
+  if (huboCambios) {
+    onProgreso?.({ etapa: 'resumen_facturacion' });
+    resumenFacturacion = await actualizarMeses(nuevoSnapshot, [...mesesTocados]);
+    escrituras += resumenFacturacion.escrituras;
+  }
+
   const camposActualizados = {};
   plan.actualizadas.filter(a => idsConfirmados.has(a.id))
     .forEach(a => a.campos.forEach((c) => { camposActualizados[c] = (camposActualizados[c] || 0) + 1; }));
@@ -257,6 +273,7 @@ export const procesarImportacionDetallesOC = async (file, { onProgreso, usuario 
     pendientes,
     errores,
     indiceOC,
+    resumenFacturacion,
     snapshotDesdeCache: snapshot.desdeCache,
     lecturasFirestore: lecturas,
     escriturasFirestore: escrituras

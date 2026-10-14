@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Receipt, Truck, Loader2, AlertTriangle, CalendarSearch, ArrowLeft, Search, FileSpreadsheet, Sigma } from 'lucide-react';
+import { Receipt, Truck, Loader2, AlertTriangle, CalendarSearch, ArrowLeft, Search, FileSpreadsheet, Sigma, CalendarRange } from 'lucide-react';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
 import PaginacionSimple from '../../../../ui/PaginacionSimple';
 import { useDocumentosSistemaPeriodo } from '../hooks/useDocumentosSistemaPeriodo';
@@ -12,6 +12,8 @@ import { nombreDeMes } from '../../../../../utils/ordenarMeses';
 import { useToast } from '../../../../../context/ToastContext';
 import { COLUMNAS, formatearMonedaCLP } from './utils/columnasSeguimiento';
 import { exportarSeguimientoExcel } from './utils/exportarSeguimientoExcel';
+import { filtroPendienteFactura } from '../resumenFacturacion/resumenFacturacionService';
+import ResumenMensual from './ResumenMensual';
 
 const PATH_VISTA = '/documentos/seguimientoFacturasGuias';
 
@@ -19,13 +21,15 @@ const PATH_VISTA = '/documentos/seguimientoFacturasGuias';
 // pasan tal cual a useDocumentosSistemaPeriodo(filtroServidor). NUMERO_GUIA
 // se guarda siempre como texto recortado (nunca number) — ver CAMPOS_TEXTO
 // en parsearFilaDetalleOC.js — así que 'in' cubre tanto vacío como el caso
-// de una guía cargada literalmente como "0".
+// de una guía cargada literalmente como "0". Facturas muestra lo contrario
+// de criterioFacturado (estado "Pendiente factura" o sin N° de factura), el
+// mismo criterio del Resumen Mensual.
 const CRITERIOS = {
   facturas: {
     id: 'facturas',
     label: 'Seguimiento de Facturas',
     Icon: Receipt,
-    filtro: { campo: 'estado', operador: '==', valor: 'Pendiente factura' },
+    filtro: filtroPendienteFactura,
     mensajeVacio: 'No hay registros pendientes de factura para los filtros seleccionados.'
   },
   guias: {
@@ -36,6 +40,10 @@ const CRITERIOS = {
     mensajeVacio: 'No hay registros con despacho pendiente para los filtros seleccionados.'
   }
 };
+
+// Resumen Mensual no es un criterio de lista: tiene su propia pantalla.
+const RESUMEN = { id: 'resumen', label: 'Resumen Mensual', Icon: CalendarRange };
+const TARJETAS = [...Object.values(CRITERIOS), RESUMEN];
 
 const TH = 'px-2 py-1.5 border-b border-r border-slate-200 dark:border-gray-700';
 const TD = 'px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 truncate';
@@ -81,7 +89,7 @@ const SelectorTipoSeguimiento = ({ onElegir }) => (
       ¿Qué querés revisar?
     </span>
     <div className="flex flex-wrap items-center justify-center gap-3">
-      {Object.values(CRITERIOS).map(({ id, label, Icon }) => (
+      {TARJETAS.map(({ id, label, Icon }) => (
         <button
           key={id}
           type="button"
@@ -102,6 +110,7 @@ const SeguimientoFacturasGuias = () => {
   const [exportando, setExportando] = useState(false);
   const [tipoId, setTipoId] = useState(null);
   const criterio = tipoId ? CRITERIOS[tipoId] : null;
+  const vista = tipoId === RESUMEN.id ? RESUMEN : criterio;
 
   const {
     anio, setAnio, anios, cargandoAnios,
@@ -139,7 +148,7 @@ const SeguimientoFacturasGuias = () => {
   return (
     <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden font-sans text-[11px]">
       <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center gap-2">
-        {criterio && (
+        {vista && (
           <button
             onClick={() => setTipoId(null)}
             className="p-1 rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50 transition"
@@ -148,14 +157,16 @@ const SeguimientoFacturasGuias = () => {
             <ArrowLeft size={13} />
           </button>
         )}
-        {criterio ? <criterio.Icon size={16} className="text-[#2383C2]" /> : <Receipt size={16} className="text-[#2383C2]" />}
+        {vista ? <vista.Icon size={16} className="text-[#2383C2]" /> : <Receipt size={16} className="text-[#2383C2]" />}
         <span className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-wide uppercase">
-          {criterio ? criterio.label : 'Seguimiento de Facturas y Guías'}
+          {vista ? vista.label : 'Seguimiento de Facturas y Guías'}
         </span>
       </header>
 
-      {!criterio ? (
+      {!vista ? (
         <SelectorTipoSeguimiento onElegir={setTipoId} />
+      ) : vista === RESUMEN ? (
+        <ResumenMensual />
       ) : (
         <>
           {hasPermission(PATH_VISTA, 'barra_filtros') && (

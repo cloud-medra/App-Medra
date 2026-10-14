@@ -128,6 +128,7 @@ const ImportarDetallesOC = () => {
       setResultadoEliminacion(r);
       setModalEliminar(false);
       showToast(`${r.eliminadas} fila(s) eliminada(s)${r.errores.length ? `, ${r.errores.length} con error` : ''}.`, r.errores.length ? 'error' : 'success');
+      if (r.resumenFacturacion?.ok === false) showToast(r.resumenFacturacion.error, 'error');
     } catch (err) {
       console.error('Error al eliminar filas de Detalles OC:', err);
       showToast(err instanceof SnapshotAntiguoError ? err.message : 'No se pudieron eliminar las filas: ' + err.message, 'error');
@@ -157,6 +158,7 @@ const ImportarDetallesOC = () => {
         resultado.errores.length || resultado.pendientes ? 'info' : 'success'
       );
       if (!resultado.indiceOC?.ok) showToast(resultado.indiceOC?.error || 'No se actualizó el índice de OC', 'error');
+      if (resultado.resumenFacturacion?.ok === false) showToast(resultado.resumenFacturacion.error, 'error');
       if (resultado.nuevas + resultado.actualizadas + resultado.fechasCambiadas.length > 0) recargarFilas();
     } catch (err) {
       console.error('Error al importar Detalles OC:', err);
@@ -216,6 +218,7 @@ const ImportarDetallesOC = () => {
     if (progreso.etapa === 'gestiones_oc') return 'Marcando gestiones con OC cambiada...';
     if (progreso.etapa === 'guardando_snapshot') return 'Guardando snapshot de comparación...';
     if (progreso.etapa === 'indice_oc') return 'Actualizando índice de OC...';
+    if (progreso.etapa === 'resumen_facturacion') return 'Actualizando Resumen Mensual de facturación...';
     return 'Procesando...';
   };
 
