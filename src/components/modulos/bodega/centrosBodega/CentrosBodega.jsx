@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Building2, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Building2, RefreshCw, ArrowLeft, FileSpreadsheet, FileDown } from 'lucide-react';
 import { useToast } from '../../../../context/ToastContext';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
+import { useGranularPermission } from '../../../../hooks/useGranularPermission';
+import { exportarExcel, exportarPdf } from '../shared/exportar';
 import BuscadorConLimpiar from '../../../ui/BuscadorConLimpiar';
 import { leerCentrosConTransito, leerResumenCentro, leerTransitosAbiertos, mensajeError } from '../shared/bodegaApi';
 import { formatoCantidad } from '../shared/catalogosBodega';
 import { estadoVencimiento } from '../shared/vencimientos';
 import TablaTransitos from '../shared/transito/TablaTransitos';
-import { diasEnTransito, filtrarTransitos } from '../shared/transito/transitos';
+import { diasEnTransito, filtrarTransitos, fechaHora } from '../shared/transito/transitos';
 
 const PATH_VISTA = '/bodega/centrosBodega';
 const COLUMNAS = [
@@ -18,9 +20,24 @@ const COLUMNAS = [
   { key: 'vencimiento', label: 'Próximo vencimiento' },
 ];
 
+const COLUMNAS_EXPORT = [
+  { titulo: 'Código', valor: (t) => t.codigoMaestro },
+  { titulo: 'Producto', valor: (t) => t.productoNombre },
+  { titulo: 'Lote', valor: (t) => t.lote },
+  { titulo: 'Vencimiento', valor: (t) => t.vencimiento },
+  { titulo: 'Pendiente', valor: (t) => t.pendiente },
+  { titulo: 'Salida', valor: (t) => t.cantidadSalida },
+  { titulo: 'Fecha salida', valor: (t) => fechaHora(t.fechaSalida) },
+  { titulo: 'Días', valor: (t) => diasEnTransito(t.fechaSalida) },
+  { titulo: 'Solicitante', valor: (t) => t.solicitante },
+  { titulo: 'N° salida', valor: (t) => t.salidaNumero },
+  { titulo: 'Usuario', valor: (t) => t.usuario?.nombre || '' },
+];
+
 // Detalle de un centro: su tránsito por producto y lote, con acciones.
 const DetalleCentro = ({ centro, onVolver }) => {
   const { showToast } = useToast();
+  const { hasPermission } = useGranularPermission();
   const [transitos, setTransitos] = useState(null);
   const [version, setVersion] = useState(0);
   const [texto, setTexto] = useState('');
@@ -39,7 +56,17 @@ const DetalleCentro = ({ centro, onVolver }) => {
         <button type="button" onClick={onVolver} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><ArrowLeft size={12} /> Centros</button>
         <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-100">{centro.centroNombre}</h3>
         <span className="text-gray-500">{formatoCantidad(filtrados.reduce((n, t) => n + (t.pendiente || 0), 0))} u. en {filtrados.length} registro(s)</span>
-        <div className="ml-auto"><BuscadorConLimpiar value={texto} onChange={setTexto} className="w-64" placeholder="Buscar producto, lote…" /></div>
+        <div className="ml-auto flex items-center gap-1.5">
+          <BuscadorConLimpiar value={texto} onChange={setTexto} className="w-64" placeholder="Buscar producto, lote…" />
+          {hasPermission(PATH_VISTA, 'exportar', 'btn_exportar') && (
+            <>
+              <button type="button" disabled={!filtrados.length} onClick={() => exportarExcel(`transito_${centro.centroNombre}`, [{ nombre: 'Tránsito', columnas: COLUMNAS_EXPORT, filas: filtrados }])}
+                className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1 disabled:opacity-40"><FileSpreadsheet size={12} /> Excel</button>
+              <button type="button" disabled={!filtrados.length} onClick={() => exportarPdf(`transito_${centro.centroNombre}`, { titulo: `Tránsito en ${centro.centroNombre}`, subtitulo: `${filtrados.length} registro(s) · ${filtrados.reduce((n, t) => n + (t.pendiente || 0), 0)} u.`, columnas: COLUMNAS_EXPORT, filas: filtrados })}
+                className="h-7 px-2 rounded border border-red-600 text-red-700 dark:text-red-300 font-semibold flex items-center gap-1 disabled:opacity-40"><FileDown size={12} /> PDF</button>
+            </>
+          )}
+        </div>
       </div>
       {transitos === null
         ? <p className="text-gray-400 italic">Cargando…</p>

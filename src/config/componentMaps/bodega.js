@@ -19,6 +19,7 @@ export const bodegaComponentMaps = {
         label: 'Sección: Listado de productos (buscador, escaneo, filtros, stock)',
         elements: {
           btn_actualizar: { label: 'Acción: Actualizar listado' },
+          btn_exportar: { label: 'Acción: Exportar listado a Excel/CSV' },
           ...columnas([
             ['codigo', 'Código maestro'], ['categoria', 'Categoría'], ['unidad', 'Unidad'], ['ubicacion', 'Ubicación'],
             ['loteVencimiento', 'Maneja lote / vencimiento'], ['disponible', 'Disponible Bodega General'],
@@ -38,6 +39,13 @@ export const bodegaComponentMaps = {
         label: 'Sección: Ficha del producto · Lotes con stock',
         elements: {
           ...columnas([['vencimiento', 'Vencimiento'], ['disponible', 'Disponible'], ['transito', 'En tránsito'], ['centros', 'En centros']]),
+        },
+      },
+      kardex: {
+        label: 'Sección: Ficha del producto · Kardex',
+        elements: {
+          btn_exportar: { label: 'Acción: Exportar kardex a Excel/CSV' },
+          ...columnas([['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'], ['saldoLote', 'Saldo del lote'], ['saldo', 'Saldo del producto'], ['documento', 'Documento'], ['usuario', 'Usuario'], ['observacion', 'ID / observación']]),
         },
       },
       codigos: {
@@ -144,12 +152,31 @@ export const bodegaComponentMaps = {
           ...columnas(COLUMNAS_TRANSITO),
         },
       },
+      exportar: {
+        label: 'Sección: Exportar el tránsito de un centro',
+        elements: {
+          btn_exportar: { label: 'Acción: Exportar a Excel/PDF' },
+        },
+      },
       acciones: {
         label: 'Sección: Acciones sobre el tránsito del centro',
         elements: {
           btn_entregar: { label: 'Acción: Entregar (usado; exige ID y observación)' },
           btn_devolver: { label: 'Acción: Devolver a stock (no usado)' },
           btn_nota: { label: 'Acción: Mantener en tránsito (nota de seguimiento)' },
+        },
+      },
+    },
+  },
+
+  '/bodega/consumoBodega': {
+    label: 'Consumo por centro (ConsumoBodega.jsx) — solo lectura',
+    sections: {
+      reporte: {
+        label: 'Sección: Reporte de entregas por centro y producto',
+        elements: {
+          btn_exportar: { label: 'Acción: Exportar a Excel' },
+          ...columnas([['codigo', 'Código maestro'], ['entregas', 'Entregas'], ['unidades', 'Unidades']]),
         },
       },
     },

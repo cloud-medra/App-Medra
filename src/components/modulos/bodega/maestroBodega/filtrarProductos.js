@@ -18,3 +18,27 @@ export const filtrarProductos = (productos, { texto = '', categoriaId = '', esta
     return true;
   });
 };
+
+const sumarDias = (iso, dias) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+};
+
+// Hasta qué fecha leer lotes: vencidos = antes de hoy; próximos = hasta hoy + días.
+export const rangoVencimiento = (modo, dias, hoy) => (modo === 'vencidos'
+  ? { hasta: sumarDias(hoy, -1) }
+  : { hasta: sumarDias(hoy, Number(dias) || 0) });
+
+// Lotes leídos -> { [productoId]: { vencimiento (el más próximo), lotes } }
+// según el modo (próximos: desde hoy en adelante).
+export const vencimientoPorProducto = (lotes, modo, hoy) => lotes
+  .filter((l) => (modo === 'vencidos' ? l.vencimiento < hoy : l.vencimiento >= hoy))
+  .reduce((acc, l) => {
+    const previo = acc[l.productoId];
+    acc[l.productoId] = {
+      vencimiento: previo && previo.vencimiento < l.vencimiento ? previo.vencimiento : l.vencimiento,
+      lotes: (previo?.lotes || 0) + 1,
+    };
+    return acc;
+  }, {});

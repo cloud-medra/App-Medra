@@ -558,6 +558,23 @@ describe('egreso a tránsito por centro y gestión del tránsito (Fase 3)', () =
     await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: 'A', observacion: 'B' }])).resolves.toBeTruthy();
   });
 
+  it('verificarBodega.js: todo cuadra después de ingresos, salidas, entregas y devoluciones; detecta un descuadre', async () => {
+    const { verificar } = require('./scripts/verificarBodega.js');
+    await egresar('op', [
+      { productoId: sonda, loteId: L1(), cantidad: 3, centroId: 'pab' },
+      { productoId: sonda, loteId: L2(), cantidad: 1, centroId: 'uci' },
+      { productoId: gasa, loteId: GASA(), cantidad: 4, centroId: 'pab' },
+    ]);
+    const pab = await transitosDe('pab');
+    await gestionar('op', [
+      { transitoId: pab[0].id, accion: 'ENTREGAR', cantidad: 1, idEntrega: 'A', observacion: 'B' },
+      { transitoId: pab[1].id, accion: 'DEVOLVER', cantidad: pab[1].pendiente },
+    ]);
+    expect(await verificar(db)).toEqual([]);
+    await db.collection('bodega_productos').doc(gasa).update({ disponible: 999 });
+    expect((await verificar(db)).join(' ')).toContain('disponible 999');
+  });
+
   it('reglas: no se borra un centro con tránsito; los tránsitos se leen pero no se escriben', async () => {
     await egresar('op', [{ productoId: gasa, loteId: GASA(), cantidad: 1, centroId: 'uci' }]);
     const maestros = await sesion('maestros');

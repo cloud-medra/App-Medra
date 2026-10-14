@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filtrarProductos } from './filtrarProductos';
+import { filtrarProductos, rangoVencimiento, vencimientoPorProducto } from './filtrarProductos';
 
 const P = [
   { id: '1', nombre: 'Guante nitrilo M', codigoMaestro: 'GN-M', categoriaId: 'c1', disponible: 10, transito: 0, stockMinimo: 20, codigosBarra: ['7801'] },
@@ -19,5 +19,21 @@ describe('filtrarProductos', () => {
     expect(ids(filtrarProductos(P, { conStock: true }))).toEqual(['1', '2']);
     expect(ids(filtrarProductos(P, { soloBajoMinimo: true }))).toEqual(['1']);
     expect(ids(filtrarProductos(P, { estado: 'inactivos' }))).toEqual(['3']);
+  });
+});
+
+describe('filtro de vencimiento', () => {
+  const HOY = '2026-10-14';
+  it('rango a leer', () => {
+    expect(rangoVencimiento('vencidos', 90, HOY)).toEqual({ hasta: '2026-10-13' });
+    expect(rangoVencimiento('proximos', 30, HOY)).toEqual({ hasta: '2026-11-13' });
+  });
+  it('agrupa por producto con el vencimiento más próximo', () => {
+    const lotes = [
+      { productoId: 'a', vencimiento: '2026-10-01' }, { productoId: 'a', vencimiento: '2026-11-01' },
+      { productoId: 'a', vencimiento: '2026-10-20' }, { productoId: 'b', vencimiento: '2026-10-14' },
+    ];
+    expect(vencimientoPorProducto(lotes, 'vencidos', HOY)).toEqual({ a: { vencimiento: '2026-10-01', lotes: 1 } });
+    expect(vencimientoPorProducto(lotes, 'proximos', HOY)).toEqual({ a: { vencimiento: '2026-10-20', lotes: 2 }, b: { vencimiento: '2026-10-14', lotes: 1 } });
   });
 });

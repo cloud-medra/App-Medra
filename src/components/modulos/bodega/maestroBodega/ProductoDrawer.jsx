@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { X, Package, Layers, Barcode, FileText, Trash2, RefreshCw, Truck } from 'lucide-react';
+import { X, Package, Layers, Barcode, FileText, Trash2, RefreshCw, Truck, ListOrdered } from 'lucide-react';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { useToast } from '../../../../context/ToastContext';
 import { useModal } from '../../../../context/ModalContext';
@@ -12,6 +12,7 @@ import {
   mensajeError, detalleError
 } from '../shared/bodegaApi';
 import FormProducto from '../shared/FormProducto';
+import KardexProducto from './KardexProducto';
 import CampoEscaneoBodega from '../shared/escaneo/CampoEscaneoBodega';
 import { formatoCantidad, nombresPorId } from '../shared/catalogosBodega';
 import { estadoVencimiento } from '../shared/vencimientos';
@@ -28,6 +29,7 @@ const COLUMNAS_LOTES = [
 
 const PESTANAS = [
   { id: 'stock', label: 'Stock', icon: Layers },
+  { id: 'kardex', label: 'Kardex', icon: ListOrdered },
   { id: 'codigos', label: 'Códigos de barra', icon: Barcode },
   { id: 'datos', label: 'Datos', icon: FileText },
 ];
@@ -253,7 +255,7 @@ const PestanaDatos = ({ producto }) => {
 };
 
 // Ficha del producto (panel lateral): stock por lote y por centro,
-// códigos de barra vinculados y datos. El kardex se suma en la Fase 4.
+// kardex, códigos de barra vinculados y datos.
 const ProductoDrawer = ({ productoId, pestanaInicial = 'stock', onCerrar }) => {
   const { datos: productos } = useCatalogo('bodegaProductos');
   const { datos: catalogos } = useCatalogo('bodegaCatalogos');
@@ -310,6 +312,7 @@ const ProductoDrawer = ({ productoId, pestanaInicial = 'stock', onCerrar }) => {
 
         <div className="flex-1 overflow-auto p-4">
           {pestana === 'stock' && <PestanaStock producto={producto} nombreCentro={nombreCentro} />}
+          {pestana === 'kardex' && <KardexProducto producto={producto} />}
           {pestana === 'codigos' && <PestanaCodigos producto={producto} />}
           {pestana === 'datos' && <PestanaDatos producto={producto} />}
         </div>

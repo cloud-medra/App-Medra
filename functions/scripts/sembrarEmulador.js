@@ -75,7 +75,7 @@ const MAESTRO_BODEGA = '/bodega/maestroBodega';
 const CATALOGOS_BODEGA = '/bodega/catalogosBodega';
 const INGRESO_BODEGA = '/bodega/ingresoBodega';
 const CARGA_BODEGA = '/bodega/cargaInicialBodega';
-const RUTAS_TRANSITO_BODEGA = ['/bodega/egresoBodega', '/bodega/transitoBodega', '/bodega/centrosBodega'];
+const RUTAS_TRANSITO_BODEGA = ['/bodega/egresoBodega', '/bodega/transitoBodega', '/bodega/centrosBodega', '/bodega/consumoBodega'];
 
 const USUARIOS = [
   { nombreUsuario: 'dev', nombreCompleto: 'Dev Prueba', rol: 'dev', permisos: {}, permisosGranulares: {} },

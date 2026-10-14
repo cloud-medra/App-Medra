@@ -1,5 +1,5 @@
-import { Fragment, useMemo, useRef, useState } from 'react';
-import { Boxes, RefreshCw, PackagePlus, Info, ChevronDown, ChevronRight, AlertCircle, X } from 'lucide-react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Boxes, RefreshCw, PackagePlus, Info, ChevronDown, ChevronRight, AlertCircle, X, FileSpreadsheet, FileText } from 'lucide-react';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { useToast } from '../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
@@ -10,7 +10,11 @@ import { stockTotal, bajoMinimo } from '../../../../../functions/bodega/nucleo.m
 import { filtrarProductos } from './filtrarProductos';
 import { formatoCantidad, nombresPorId, opcionesCatalogo } from '../shared/catalogosBodega';
 import { identificarLectura } from '../shared/escaneo/identificarLectura';
-import { guardarProducto, mensajeError } from '../shared/bodegaApi';
+import { guardarProducto, leerLotesPorVencer, mensajeError } from '../shared/bodegaApi';
+import { exportarExcel, exportarCsv } from '../shared/exportar';
+import { estadoVencimiento } from '../shared/vencimientos';
+import { hoyISO } from '../shared/documentos/lineasDocumento';
+import { rangoVencimiento, vencimientoPorProducto } from './filtrarProductos';
 import FormProducto from '../shared/FormProducto';
 import { PRODUCTO_VACIO } from '../shared/productoFormulario';
 import ModalVincularCodigo from '../shared/ModalVincularCodigo';
@@ -85,14 +89,34 @@ const MaestroBodega = () => {
   const [abierto, setAbierto] = useState(null); // { id, pestana }
   const [lecturaSinVincular, setLecturaSinVincular] = useState(null);
   const [creando, setCreando] = useState(false);
+  // Filtro de vencimiento: '' | 'vencidos' | 'proximos' (en `dias` días).
+  const [vencimiento, setVencimiento] = useState({ modo: '', dias: 90 });
+  const [lotesVenc, setLotesVenc] = useState(null);
   const buscandoRef = useRef(false);
 
   const categorias = useMemo(() => nombresPorId(catalogos, 'CATEGORIA'), [catalogos]);
   const unidades = useMemo(() => nombresPorId(catalogos, 'UNIDAD'), [catalogos]);
   const nombresCentros = useMemo(() => Object.fromEntries(centros.map((c) => [c.id, c.nombre])), [centros]);
+  // Al elegir vencidos / próximos se leen los lotes que vencen hasta esa
+  // fecha (1 consulta) y se filtra el listado a sus productos.
+  useEffect(() => {
+    if (!vencimiento.modo) return undefined;
+    let vigente = true;
+    const { hasta } = rangoVencimiento(vencimiento.modo, vencimiento.dias, hoyISO());
+    leerLotesPorVencer(hasta)
+      .then((l) => { if (vigente) setLotesVenc(l); })
+      .catch((e) => { if (vigente) { setLotesVenc([]); showToast(mensajeError(e), 'error'); } });
+    return () => { vigente = false; };
+  }, [vencimiento.modo, vencimiento.dias, showToast]);
+  const vencePorProducto = useMemo(
+    () => (vencimiento.modo && lotesVenc ? vencimientoPorProducto(lotesVenc, vencimiento.modo, hoyISO()) : null),
+    [lotesVenc, vencimiento.modo]
+  );
   const filtrados = useMemo(
-    () => filtrarProductos(productos, { texto, ...filtros }).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')),
-    [productos, texto, filtros]
+    () => filtrarProductos(productos, { texto, ...filtros })
+      .filter((p) => !vencePorProducto || vencePorProducto[p.id])
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')),
+    [productos, texto, filtros, vencePorProducto]
   );
   const totales = useMemo(() => filtrados.reduce((acc, p) => ({
     disponible: acc.disponible + (p.disponible || 0), transito: acc.transito + (p.transito || 0)
@@ -136,7 +160,26 @@ const MaestroBodega = () => {
     }
   };
 
-  const actualizar = () => { refrescar(); refrescarCatalogos(); };
+  const actualizar = () => { refrescar(); refrescarCatalogos(); setLotesVenc(null); setVencimiento((v) => ({ ...v })); };
+
+  const columnasExport = [
+    { titulo: 'Código maestro', valor: (p) => p.codigoMaestro },
+    { titulo: 'Nombre', valor: (p) => p.nombre },
+    { titulo: 'Referencia', valor: (p) => p.referencia },
+    { titulo: 'Categoría', valor: (p) => categorias[p.categoriaId] || '' },
+    { titulo: 'Unidad', valor: (p) => unidades[p.unidadId] || '' },
+    { titulo: 'Ubicación', valor: (p) => p.ubicacion },
+    { titulo: 'Maneja lote', valor: (p) => (p.manejaLote ? 'Sí' : 'No') },
+    { titulo: 'Maneja vencimiento', valor: (p) => (p.manejaVencimiento ? 'Sí' : 'No') },
+    { titulo: 'Disponible Bodega General', valor: (p) => p.disponible || 0 },
+    { titulo: 'En tránsito', valor: (p) => p.transito || 0 },
+    { titulo: 'Total', valor: (p) => stockTotal(p) },
+    { titulo: 'Tránsito por centro', valor: (p) => Object.entries(p.transitoPorCentro || {}).map(([c, n]) => `${nombresCentros[c] || c}: ${n}`).join('; ') },
+    { titulo: 'Stock mínimo', valor: (p) => p.stockMinimo ?? '' },
+    { titulo: 'Próximo vencimiento (filtro)', valor: (p) => vencePorProducto?.[p.id]?.vencimiento || '' },
+    { titulo: 'Activo', valor: (p) => (p.activo === false ? 'No' : 'Sí') },
+    { titulo: 'Códigos de barra', valor: (p) => (p.codigosBarra || []).join(' ') },
+  ];
 
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden relative text-[11px]">
@@ -192,6 +235,22 @@ const MaestroBodega = () => {
         <label className="flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300">
           <input type="checkbox" checked={filtros.soloBajoMinimo} onChange={cambiarFiltro('soloBajoMinimo')} /> Bajo mínimo
         </label>
+        <select value={vencimiento.modo} onChange={(e) => { setLotesVenc(null); setVencimiento((v) => ({ ...v, modo: e.target.value })); }} className={SELECT} aria-label="Vencimiento">
+          <option value="">Cualquier vencimiento</option>
+          <option value="vencidos">Con lotes vencidos</option>
+          <option value="proximos">Próximos a vencer</option>
+        </select>
+        {vencimiento.modo === 'proximos' && (
+          <label className="flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300">en
+            <input type="number" min="1" max="3650" value={vencimiento.dias} onChange={(e) => { setLotesVenc(null); setVencimiento((v) => ({ ...v, dias: Math.max(1, Number(e.target.value) || 1) })); }} className={`${SELECT} w-16`} aria-label="Días" /> días
+          </label>
+        )}
+        {hasPermission(PATH_VISTA, 'listado', 'btn_exportar') && (
+          <>
+            <button type="button" disabled={!filtrados.length} onClick={() => exportarExcel('bodega_productos', [{ nombre: 'Productos', columnas: columnasExport, filas: filtrados }])} className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1 disabled:opacity-40"><FileSpreadsheet size={12} /> Excel</button>
+            <button type="button" disabled={!filtrados.length} onClick={() => exportarCsv('bodega_productos', columnasExport, filtrados)} className="h-7 px-2 rounded border border-gray-400 text-gray-700 dark:text-gray-200 font-semibold flex items-center gap-1 disabled:opacity-40"><FileText size={12} /> CSV</button>
+          </>
+        )}
         <div className="ml-auto flex items-center gap-3 font-medium text-gray-600 dark:text-gray-300">
           <span>Disponible: <strong className="text-emerald-600 dark:text-emerald-400 font-num">{formatoCantidad(totales.disponible)}</strong></span>
           <span>En tránsito: <strong className="text-amber-600 dark:text-amber-400 font-num">{formatoCantidad(totales.transito)}</strong></span>
@@ -226,6 +285,11 @@ const MaestroBodega = () => {
                       <button type="button" onClick={() => setAbierto({ id: p.id, pestana: 'stock' })} className="text-left font-semibold hover:text-[#2383C2] hover:underline">{p.nombre}</button>
                       {p.referencia && <div className="text-[10px] text-gray-500">Ref. {p.referencia}</div>}
                       {p.activo === false && <span className="text-[9px] font-bold px-1 rounded bg-gray-200 dark:bg-gray-700">INACTIVO</span>}
+                      {vencePorProducto?.[p.id] && (
+                        <span className={`ml-1 text-[9px] font-bold px-1 rounded ${estadoVencimiento(vencePorProducto[p.id].vencimiento, { diasAviso: vencimiento.dias }).badge}`}>
+                          {vencePorProducto[p.id].lotes} lote(s) · vence {vencePorProducto[p.id].vencimiento}
+                        </span>
+                      )}
                     </td>
                   ),
                   categoria: <td className={TD}>{categorias[p.categoriaId] || '—'}</td>,

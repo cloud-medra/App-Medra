@@ -1,5 +1,5 @@
 import { httpsCallable } from 'firebase/functions';
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
 import { db, functions } from '../../../../firebaseConfig';
 import { leerCatalogo, upsertLocal } from '../../../../stores/catalogosStore';
 import { COL } from '../../../../../functions/bodega/nucleo.mjs';
@@ -171,4 +171,47 @@ export const leerResumenCentro = async (centroId) => {
     masAntiguo: antiguo.docs[0]?.data().fechaSalida || null,
     proximoVencimiento: vence.docs[0]?.data().vencimiento || '',
   };
+};
+
+// ---------------- Kardex y reportes (Fase 4) ----------------
+
+const PAGINA_KARDEX = 200;
+
+// Kardex de un producto, más reciente primero. filtros: { desde, hasta
+// ('AAAA-MM-DD', hora local), tipo, centroId }. `despues`: último doc de la
+// página anterior (para "Cargar más").
+export const leerKardex = async (productoId, { desde, hasta, tipo, centroId } = {}, despues = null) => {
+  const restricciones = [where('productoId', '==', productoId)];
+  if (tipo) restricciones.push(where('tipo', '==', tipo));
+  if (centroId) restricciones.push(where('centroId', '==', centroId));
+  if (desde) restricciones.push(where('fecha', '>=', new Date(`${desde}T00:00:00`)));
+  if (hasta) restricciones.push(where('fecha', '<=', new Date(`${hasta}T23:59:59.999`)));
+  restricciones.push(orderBy('fecha', 'desc'), ...(despues ? [startAfter(despues)] : []), limit(PAGINA_KARDEX));
+  const snap = await getDocs(query(collection(db, COL.movimientos), ...restricciones));
+  return {
+    movimientos: snap.docs.map((d) => ({ id: d.id, ...d.data() })),
+    ultimo: snap.docs.length === PAGINA_KARDEX ? snap.docs[snap.docs.length - 1] : null,
+  };
+};
+
+// Lotes con vencimiento hasta `hasta` ('AAAA-MM-DD'), para los filtros de
+// vencidos / próximos a vencer del Maestro (solo los que tienen stock).
+export const leerLotesPorVencer = async (hasta) => {
+  const snap = await getDocs(query(collection(db, COL.lotes), where('vencimiento', '>', ''), where('vencimiento', '<=', hasta), orderBy('vencimiento', 'asc'), limit(3000)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((l) => (l.disponible || 0) + (l.transito || 0) > 0);
+};
+
+// Entregas (consumo) en un rango, opcionalmente de un centro y/o producto.
+export const leerEntregas = async ({ desde, hasta, centroId, productoId, max = 5000 }) => {
+  const restricciones = [where('tipo', '==', 'ENTREGA')];
+  if (centroId) restricciones.push(where('centroId', '==', centroId));
+  if (productoId) restricciones.push(where('productoId', '==', productoId));
+  restricciones.push(
+    where('fecha', '>=', new Date(`${desde}T00:00:00`)),
+    where('fecha', '<=', new Date(`${hasta}T23:59:59.999`)),
+    orderBy('fecha', 'desc'),
+    limit(max),
+  );
+  const snap = await getDocs(query(collection(db, COL.movimientos), ...restricciones));
+  return { entregas: snap.docs.map((d) => ({ id: d.id, ...d.data() })), truncado: snap.size === max };
 };
