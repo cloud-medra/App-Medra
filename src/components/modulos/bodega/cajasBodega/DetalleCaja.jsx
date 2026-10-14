@@ -9,7 +9,11 @@ import InventarioCajaModal from './InventarioCajaModal';
 import HistorialCaja from './HistorialCaja';
 import ReponerCajaModal from './ReponerCajaModal';
 import { productosDeCaja, cajaTrasInventario } from './cajas';
-import { BarraCompletitud } from './comunes';
+import { BarraCompletitud, BotonesExportar } from './comunes';
+import { exportarContenidoCaja, exportarInventarioCaja, exportarReposicionCaja } from './exportarCajas';
+import { useUser } from '../../../../context/UserContext';
+import { useToast } from '../../../../context/ToastContext';
+import { mensajeError } from '../shared/bodegaApi';
 
 const PATH_VISTA = '/bodega/cajasBodega';
 
@@ -29,6 +33,16 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
   const [inventariando, setInventariando] = useState(false);
   const [reponiendo, setReponiendo] = useState(null); // caja a reponer (la actual o la recién inventariada)
   const puedeReponer = hasPermission(PATH_VISTA, 'caja', 'btn_reponer');
+  const puedeExportar = hasPermission(PATH_VISTA, 'caja', 'btn_exportar');
+  const { userData } = useUser() || {};
+  const { showToast } = useToast();
+  // Un registro recién hecho no trae usuario (lo pone el servidor): se usa el actual.
+  const conUsuario = (r) => ({ ...r, usuario: r.usuario || { nombre: userData?.nombreCompleto || userData?.email || '' } });
+  const exportarCon = (fn) => async (formato) => {
+    try { await fn(formato); } catch (e) { showToast(mensajeError(e, 'No se pudo exportar.'), 'error'); }
+  };
+  const botonesInventario = (inv) => puedeExportar && <BotonesExportar alto="h-9" exportar={exportarCon((f) => exportarInventarioCaja(caja, conUsuario(inv), f))} />;
+  const botonesReposicion = (rep) => puedeExportar && <BotonesExportar alto="h-9" exportar={exportarCon((f) => exportarReposicionCaja(caja, conUsuario(rep), f))} />;
   const [verHistorial, setVerHistorial] = useState(false);
   const [versionHistorial, setVersionHistorial] = useState(0);
   const cambio = () => { onCambio(); setVersionHistorial((v) => v + 1); };
@@ -49,6 +63,7 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
           {puedeReponer && caja.activa !== false && (
             <button type="button" onClick={() => setReponiendo(caja)} disabled={!caja.totalFaltante} title={caja.totalFaltante ? 'Reponer faltantes desde la Bodega General' : 'La caja está completa'} className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1 disabled:opacity-40"><PackagePlus size={12} /> Reponer</button>
           )}
+          {puedeExportar && <BotonesExportar deshabilitado={!productos.length} exportar={exportarCon((f) => exportarContenidoCaja(caja, f))} />}
           <button type="button" onClick={() => setVerHistorial((v) => !v)} className={`h-7 px-2 rounded border font-semibold flex items-center gap-1 ${verHistorial ? 'border-[#2383C2] text-[#2383C2]' : 'border-gray-300 dark:border-gray-600'}`}><History size={12} /> Historial</button>
           {hasPermission(PATH_VISTA, 'cajas', 'btn_guardar') && (
             <button type="button" onClick={() => setEditando(true)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><Pencil size={12} /> Editar</button>
@@ -76,19 +91,24 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
         </tbody>
       </table>
 
-      {verHistorial && <HistorialCaja key={versionHistorial} caja={caja} />}
+      {verHistorial && <HistorialCaja key={versionHistorial} caja={caja} accionesInventario={botonesInventario} accionesReposicion={botonesReposicion} />}
 
       {inventariando && (
         <InventarioCajaModal
           caja={caja}
           onCerrar={() => setInventariando(false)}
           onHecho={cambio}
-          pie={(inv) => puedeReponer && caja.activa !== false && inv.resumen?.faltante > 0 && (
-            <button type="button" onClick={() => { setInventariando(false); setReponiendo(cajaTrasInventario(caja, inv.lineas)); }} className="h-9 px-3 rounded bg-emerald-600 text-white font-bold flex items-center gap-1"><PackagePlus size={14} /> Reponer faltantes</button>
+          pie={(inv) => (
+            <>
+              {botonesInventario(inv)}
+              {puedeReponer && caja.activa !== false && inv.resumen?.faltante > 0 && (
+                <button type="button" onClick={() => { setInventariando(false); setReponiendo(cajaTrasInventario(caja, inv.lineas)); }} className="h-9 px-3 rounded bg-emerald-600 text-white font-bold flex items-center gap-1"><PackagePlus size={14} /> Reponer faltantes</button>
+              )}
+            </>
           )}
         />
       )}
-      {reponiendo && <ReponerCajaModal caja={reponiendo} onCerrar={() => setReponiendo(null)} onHecho={cambio} />}
+      {reponiendo && <ReponerCajaModal caja={reponiendo} onCerrar={() => setReponiendo(null)} onHecho={cambio} pie={botonesReposicion} />}
       {editando && <FormCajaModal caja={caja} onCerrar={() => setEditando(false)} onGuardada={() => { setEditando(false); onCambio(); }} />}
     </div>
   );
