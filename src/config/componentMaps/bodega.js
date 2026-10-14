@@ -169,6 +169,34 @@ export const bodegaComponentMaps = {
     },
   },
 
+  '/bodega/inventarioBodega': {
+    label: 'Inventario físico y ajuste (InventarioBodega.jsx)',
+    sections: {
+      inventario: {
+        label: 'Sección: Inventario (iniciar, contar, cerrar)',
+        elements: {
+          btn_iniciar: { label: 'Acción: Iniciar inventario (bloquea movimientos del alcance)' },
+          btn_contar: { label: 'Acción: Registrar y corregir conteos' },
+          btn_cerrar: { label: 'Acción: Cerrar con ajuste de stock (sensible)' },
+          btn_anular: { label: 'Acción: Anular inventario abierto (sensible)' },
+          btn_exportar: { label: 'Acción: Exportar comparación a Excel/PDF' },
+        },
+      },
+      lineas: {
+        label: 'Sección: Conteo por escaneo',
+        elements: {
+          ...columnas([['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad']]),
+        },
+      },
+      comparacion: {
+        label: 'Sección: Comparación teórico / contado',
+        elements: {
+          ...columnas([['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['teorico', 'Stock teórico'], ['diferencia', 'Diferencia'], ['valor', 'Valor de la diferencia'], ['contadoPor', 'Contado por']]),
+        },
+      },
+    },
+  },
+
   '/bodega/consumoBodega': {
     label: 'Consumo por centro (ConsumoBodega.jsx) — solo lectura',
     sections: {

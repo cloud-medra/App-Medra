@@ -158,6 +158,7 @@ const EgresoBodega = () => {
         setSenal({ tipo: 'ok', mensaje: `Salida N° ${r.numero} confirmada.` });
       } catch (error) {
         showToast(mensajeError(error), 'error');
+        setSenal({ tipo: 'error', mensaje: `No se confirmó la salida: ${mensajeError(error)}` });
         setLotesCache({});
       } finally {
         setOcupado(false);

@@ -22,6 +22,7 @@ export const RUTAS = Object.freeze({
   egreso: '/bodega/egresoBodega',
   transito: '/bodega/transitoBodega',
   centros: '/bodega/centrosBodega',
+  inventario: '/bodega/inventarioBodega',
   catalogos: '/bodega/catalogosBodega',
 });
 
@@ -45,6 +46,11 @@ export const ACCIONES = Object.freeze({
   cerrarCarga: [MODULO, RUTAS.cargaInicial, 'carga', 'btn_cerrar_carga'],
   eliminarBorradorCarga: [MODULO, RUTAS.cargaInicial, 'carga', 'btn_eliminar_borrador'],
   confirmarEgreso: [MODULO, RUTAS.egreso, 'egreso', 'btn_confirmar'],
+  iniciarInventario: [MODULO, RUTAS.inventario, 'inventario', 'btn_iniciar'],
+  contarInventario: [MODULO, RUTAS.inventario, 'inventario', 'btn_contar'],
+  // Sensibles (denegadas por defecto): cerrar con ajuste y anular.
+  cerrarInventario: [MODULO, RUTAS.inventario, 'inventario', 'btn_cerrar'],
+  anularInventario: [MODULO, RUTAS.inventario, 'inventario', 'btn_anular'],
 });
 
 // Acciones sobre un tránsito: desde la vista Tránsito o desde Tránsito por
@@ -425,3 +431,73 @@ export const aplicarAccionTransito = (transito, { accion, cantidad }) => {
 };
 
 export const MOVIMIENTO_DE_ACCION = Object.freeze({ ENTREGAR: 'ENTREGA', DEVOLVER: 'DEVOLUCION' });
+
+// ---------------- Inventario físico ----------------
+//
+// Cuenta el DISPONIBLE de la Bodega General (lo que está en tránsito no
+// está físicamente en la bodega). Al iniciarse se guarda la foto del stock
+// teórico por lote; mientras está abierto no se mueve stock de los
+// productos de su alcance (salvo entregas desde tránsito). Al cerrarlo se
+// generan AJUSTE_POSITIVO / AJUSTE_NEGATIVO para dejar cada lote igual a
+// lo contado.
+
+export const ESTADOS_INVENTARIO = Object.freeze({
+  PREPARANDO: 'PREPARANDO', ABIERTO: 'ABIERTO', CERRANDO: 'CERRANDO', CERRADO: 'CERRADO', ANULADO: 'ANULADO',
+});
+// Qué hacer al cerrar con las líneas que nadie contó.
+export const NO_CONTADOS = Object.freeze({
+  IGNORAR: 'Dejarlos como están (sin ajuste)',
+  CERO: 'Ajustarlos a cero (no se encontraron)',
+});
+export const MAX_CONTEOS_POR_ENVIO = 100;
+export const MAX_NOMBRE_INVENTARIO = 80;
+
+// Línea { teorico, contado (null = no contado) } -> { contadoFinal, diferencia }.
+export const diferenciaLinea = (linea, noContados = 'IGNORAR') => {
+  const teorico = Number(linea.teorico) || 0;
+  const contado = linea.contado === null || linea.contado === undefined ? null : Number(linea.contado);
+  if (contado === null) {
+    return noContados === 'CERO' ? { contadoFinal: 0, diferencia: -teorico } : { contadoFinal: teorico, diferencia: 0 };
+  }
+  return { contadoFinal: contado, diferencia: contado - teorico };
+};
+
+// Resumen para la comparación y el cierre (valor = diferencia × precio).
+export const resumenInventario = (lineas, noContados = 'IGNORAR') => lineas.reduce((r, l) => {
+  const { diferencia } = diferenciaLinea(l, noContados);
+  const precio = Number(l.precio) || 0;
+  const contada = l.contado !== null && l.contado !== undefined;
+  return {
+    lineas: r.lineas + 1,
+    contadas: r.contadas + (contada ? 1 : 0),
+    noContadas: r.noContadas + (contada ? 0 : 1),
+    agregadas: r.agregadas + (l.agregado ? 1 : 0),
+    teorico: r.teorico + (Number(l.teorico) || 0),
+    sobrantes: r.sobrantes + (diferencia > 0 ? 1 : 0),
+    faltantes: r.faltantes + (diferencia < 0 ? 1 : 0),
+    unidadesSobrantes: r.unidadesSobrantes + Math.max(0, diferencia),
+    unidadesFaltantes: r.unidadesFaltantes + Math.max(0, -diferencia),
+    valorSobrante: r.valorSobrante + Math.max(0, diferencia) * precio,
+    valorFaltante: r.valorFaltante + Math.max(0, -diferencia) * precio,
+    conPrecio: r.conPrecio || precio > 0,
+  };
+}, { lineas: 0, contadas: 0, noContadas: 0, agregadas: 0, teorico: 0, sobrantes: 0, faltantes: 0, unidadesSobrantes: 0, unidadesFaltantes: 0, valorSobrante: 0, valorFaltante: 0, conPrecio: false });
+
+// Filtros de la comparación: todos | diferencias | faltantes | sobrantes | noContados.
+export const filtrarComparacion = (lineas, filtro, noContados = 'IGNORAR') => lineas.filter((l) => {
+  const contada = l.contado !== null && l.contado !== undefined;
+  if (filtro === 'noContados') return !contada;
+  if (filtro === 'todos' || !filtro) return true;
+  const { diferencia } = diferenciaLinea(l, noContados);
+  if (filtro === 'diferencias') return diferencia !== 0;
+  if (filtro === 'faltantes') return diferencia < 0;
+  if (filtro === 'sobrantes') return diferencia > 0;
+  return true;
+});
+
+// Conteo enviado sobre una línea: sumar (escaneo) o reemplazar (corrección).
+export const aplicarConteo = (contadoActual, { cantidad, modo }) => {
+  const n = Number(cantidad);
+  if (!Number.isInteger(n) || n < 0 || (modo !== 'reemplazar' && n === 0)) throw new ErrorStock('La cantidad contada debe ser un número entero (mayor a cero al sumar).');
+  return modo === 'reemplazar' ? n : (Number(contadoActual) || 0) + n;
+};

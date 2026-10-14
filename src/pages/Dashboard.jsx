@@ -94,6 +94,7 @@ import EgresoBodega from '../components/modulos/bodega/egresoBodega/EgresoBodega
 import TransitoBodega from '../components/modulos/bodega/transitoBodega/TransitoBodega';
 import CentrosBodega from '../components/modulos/bodega/centrosBodega/CentrosBodega';
 import ConsumoBodega from '../components/modulos/bodega/consumoBodega/ConsumoBodega';
+import InventarioBodega from '../components/modulos/bodega/inventarioBodega/InventarioBodega';
 import CatalogosBodega from '../components/modulos/bodega/catalogosBodega/CatalogosBodega';
 
 // --- DOCUMENTOS ---
@@ -343,6 +344,7 @@ const Dashboard = () => {
     '/bodega/transitoBodega': <TransitoBodega />,
     '/bodega/centrosBodega': <CentrosBodega />,
     '/bodega/consumoBodega': <ConsumoBodega />,
+    '/bodega/inventarioBodega': <InventarioBodega />,
     '/bodega/catalogosBodega': <CatalogosBodega />,
 
     // ── Documentos ──

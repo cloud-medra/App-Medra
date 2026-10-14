@@ -150,6 +150,7 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
         recargarListas();
       } catch (error) {
         showToast(mensajeError(error), 'error');
+        setErrores([`No se confirmó: ${mensajeError(error)}`]);
       } finally {
         setOcupado(false);
       }

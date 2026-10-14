@@ -29,6 +29,8 @@ const {
   idUnicoDocumento, aplicarMovimiento, normalizarLote, productoEnInventario, ErrorStock,
   MAX_LINEAS_EGRESO, MAX_ACCIONES_TRANSITO, MAX_NOTA, ESTADOS_TRANSITO, MOVIMIENTO_DE_ACCION,
   agruparLineasEgreso, aplicarMovimientoCentro, aplicarAccionTransito, accionTransito, normalizarIdEntrega,
+  ESTADOS_INVENTARIO, NO_CONTADOS, MAX_CONTEOS_POR_ENVIO, MAX_NOMBRE_INVENTARIO, diferenciaLinea, resumenInventario,
+  aplicarConteo, idLote,
 } = require('./nucleo.mjs');
 const { interpretarLectura, idVinculo, MAX_CODIGO_LEIDO } = require('./gs1.mjs');
 
@@ -886,7 +888,264 @@ const gestionarTransito = async (db, uid, datos = {}) => {
   return gestionarTransitoComo(db, datosPor(uid, perfil), datos);
 };
 
+// --- Inventario físico -------------------------------------------------------
+//
+//   bodega_inventarios/{id} = { nombre, alcance: { categorias: [] (vacío =
+//     todo) }, estado: PREPARANDO|ABIERTO|CERRANDO|CERRADO|ANULADO,
+//     iniciadoPor, fechaInicio, lineasTotal, motivoAjuste, noContados,
+//     cerradoPor, fechaCierre, resumen }
+//     /lineas/{loteId} = { productoId, productoNombre, codigoMaestro,
+//       categoriaId, loteId, lote, vencimiento, teorico (foto del disponible),
+//       contado (null = no contado), agregado (lote que no estaba), precio,
+//       contadoPor, contadoEn, ajuste, ajustado }
+//   bodega_control/estado.inventarioAbierto = { id, nombre, alcance } (uno a
+//   la vez): bloquea mover stock de los productos del alcance.
+
+const refInventario = (db, id) => db.collection(COL.inventarios).doc(id);
+const LOTE_ESCRITURA = 400;
+const LINEAS_POR_AJUSTE = 50;
+const precioDe = (p) => Number(p?.maestroCodigo?.precioNeto) || 0;
+const enAlcance = (alcance, producto) => !(alcance?.categorias || []).length || alcance.categorias.includes(producto?.categoriaId || '');
+
+// Foto del stock: una línea por lote con disponible > 0 de los productos
+// del alcance. Idempotente (id de línea = id del lote): se puede reanudar.
+const prepararLineas = async (db, id) => {
+  const inv = (await refInventario(db, id).get()).data();
+  const [snapProductos, snapLotes] = await Promise.all([
+    db.collection(COL.productos).get(),
+    db.collection(COL.lotes).where('disponible', '>', 0).get(),
+  ]);
+  const productos = new Map(snapProductos.docs.map((d) => [d.id, { id: d.id, ...d.data() }]));
+  const lineas = snapLotes.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((l) => productos.has(l.productoId) && enAlcance(inv.alcance, productos.get(l.productoId)));
+  for (let i = 0; i < lineas.length; i += LOTE_ESCRITURA) {
+    const lote = db.batch();
+    lineas.slice(i, i + LOTE_ESCRITURA).forEach((l) => {
+      const p = productos.get(l.productoId);
+      lote.set(refInventario(db, id).collection('lineas').doc(l.id), {
+        productoId: l.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
+        loteId: l.id, lote: l.lote || '', vencimiento: l.vencimiento || '', teorico: l.disponible, contado: null,
+        agregado: false, precio: precioDe(p), ajustado: false,
+      }, { merge: true });
+    });
+    await lote.commit();
+  }
+  await refInventario(db, id).update({ estado: ESTADOS_INVENTARIO.ABIERTO, lineasTotal: lineas.length, preparadoEn: ahora() });
+  return lineas.length;
+};
+
+// Inicia un inventario (total o por categorías). Primero bloquea los
+// movimientos (bodega_control/estado) y recién después saca la foto: así el
+// teórico no cambia mientras se arma.
+const iniciarInventario = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.iniciarInventario);
+  const por = datosPor(uid, perfil);
+  const nombre = String(datos.nombre || '').trim().replace(/\s+/g, ' ').slice(0, MAX_NOMBRE_INVENTARIO);
+  if (!nombre) throw new HttpsError('invalid-argument', 'Escribe un nombre para el inventario.');
+  const categorias = [...new Set((Array.isArray(datos.categorias) ? datos.categorias : []).map(String).filter(Boolean))].slice(0, 30);
+
+  const id = await db.runTransaction(async (t) => {
+    const [snapEstado, ...snapsCategorias] = await Promise.all([
+      t.get(refEstado(db)),
+      ...categorias.map((c) => t.get(db.collection(COL.catalogos).doc(c))),
+    ]);
+    const abierto = snapEstado.data()?.inventarioAbierto;
+    if (abierto?.id) throw new HttpsError('failed-precondition', `Ya hay un inventario abierto: ${abierto.nombre}. Ciérralo o anúlalo antes de iniciar otro.`);
+    if (snapsCategorias.some((c) => !c.exists || c.data().tipo !== 'CATEGORIA')) throw new HttpsError('invalid-argument', 'Una categoría elegida no existe.');
+    const ref = db.collection(COL.inventarios).doc();
+    const alcance = { categorias, categoriasNombres: snapsCategorias.map((c) => c.data().nombre) };
+    t.set(ref, { nombre, alcance, estado: ESTADOS_INVENTARIO.PREPARANDO, iniciadoPor: por, fechaInicio: ahora(), lineasTotal: 0 });
+    t.set(refEstado(db), { inventarioAbierto: { id: ref.id, nombre, alcance } }, { merge: true });
+    return ref.id;
+  });
+  const lineas = await prepararLineas(db, id);
+  return { id, lineas };
+};
+
+// Reanuda la preparación si se cortó (estado PREPARANDO).
+const reanudarInventario = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.iniciarInventario);
+  const id = String(datos.id || '');
+  const inv = (await refInventario(db, id).get()).data();
+  if (!inv) throw new HttpsError('not-found', 'El inventario no existe.');
+  if (inv.estado === ESTADOS_INVENTARIO.PREPARANDO) return { id, lineas: await prepararLineas(db, id) };
+  if (inv.estado === ESTADOS_INVENTARIO.CERRANDO) return cerrarInventarioComo(db, inv.cerradoPor, { id, motivo: inv.motivoAjuste, noContados: inv.noContados });
+  return { id, estado: inv.estado };
+};
+
+// Registra conteos: [{ productoId, lote, vencimiento, cantidad }] con
+// modo 'sumar' (escaneo) o 'reemplazar' (corrección). Un lote que no
+// estaba en la foto se agrega (teórico 0 o su disponible actual si existe).
+const registrarConteo = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.contarInventario);
+  const por = datosPor(uid, perfil);
+  const id = String(datos.inventarioId || '');
+  const modo = datos.modo === 'reemplazar' ? 'reemplazar' : 'sumar';
+  const entrada = Array.isArray(datos.conteos) ? datos.conteos : [];
+  if (!entrada.length) throw new HttpsError('invalid-argument', 'No hay conteos.');
+  if (entrada.length > MAX_CONTEOS_POR_ENVIO) throw new HttpsError('invalid-argument', `Máximo ${MAX_CONTEOS_POR_ENVIO} conteos por envío.`);
+
+  return db.runTransaction(async (t) => {
+    const productoIds = [...new Set(entrada.map((c) => String(c?.productoId || '')).filter(Boolean))];
+    const [snapInv, ...snapsProductos] = await Promise.all([
+      t.get(refInventario(db, id)),
+      ...productoIds.map((pid) => t.get(db.collection(COL.productos).doc(pid))),
+    ]);
+    if (!snapInv.exists) throw new HttpsError('not-found', 'El inventario no existe.');
+    const inv = snapInv.data();
+    if (inv.estado !== ESTADOS_INVENTARIO.ABIERTO) throw new HttpsError('failed-precondition', 'El inventario no está abierto para contar.');
+    const productos = new Map(snapsProductos.filter((x) => x.exists).map((x) => [x.id, { id: x.id, ...x.data() }]));
+    const errores = [];
+    const conteos = entrada.map((c) => {
+      const p = productos.get(String(c?.productoId || '')) || null;
+      const cantidad = Number(c?.cantidad);
+      const r = validarLinea({ ...c, cantidad: modo === 'reemplazar' && cantidad === 0 ? 1 : cantidad }, p);
+      errores.push(...r.errores.filter((e) => !/inactivo/.test(e)));
+      if (p && !enAlcance(inv.alcance, p)) errores.push(`${p.nombre} no está en el alcance de este inventario.`);
+      return { ...r.linea, cantidad, loteId: idLote(r.linea.productoId, r.linea.lote, r.linea.vencimiento) };
+    });
+    exigirSinErrores([...new Set(errores)]);
+
+    const loteIds = [...new Set(conteos.map((c) => c.loteId))];
+    const snapsLineas = await Promise.all(loteIds.map((l) => t.get(refInventario(db, id).collection('lineas').doc(l))));
+    const lineasNuevas = loteIds.filter((l, i) => !snapsLineas[i].exists);
+    const snapsLotes = await Promise.all(lineasNuevas.map((l) => t.get(db.collection(COL.lotes).doc(l))));
+    const lotesExistentes = new Map(lineasNuevas.map((l, i) => [l, snapsLotes[i].exists ? snapsLotes[i].data() : null]));
+    const estado = new Map(loteIds.map((l, i) => [l, snapsLineas[i].exists ? snapsLineas[i].data() : null]));
+
+    conErrorStock(() => conteos.forEach((c) => {
+      const p = productos.get(c.productoId);
+      const previa = estado.get(c.loteId) || {
+        productoId: c.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
+        loteId: c.loteId, lote: c.lote, vencimiento: c.vencimiento, teorico: lotesExistentes.get(c.loteId)?.disponible || 0,
+        contado: null, agregado: true, precio: precioDe(p), ajustado: false,
+      };
+      estado.set(c.loteId, { ...previa, contado: aplicarConteo(previa.contado, { cantidad: c.cantidad, modo }) });
+    }));
+    loteIds.forEach((l) => {
+      t.set(refInventario(db, id).collection('lineas').doc(l), { ...estado.get(l), contadoPor: por, contadoEn: ahora() });
+    });
+    if (lineasNuevas.length) t.update(refInventario(db, id), { lineasTotal: FieldValue.increment(lineasNuevas.length) });
+    return { lineas: loteIds.map((l) => ({ id: l, contado: estado.get(l).contado, teorico: estado.get(l).teorico, agregado: estado.get(l).agregado })) };
+  });
+};
+
+// Cierra con ajuste: deja cada lote igual a lo contado con movimientos
+// AJUSTE_POSITIVO / AJUSTE_NEGATIVO (motivo obligatorio). Se hace por
+// tandas (cada línea queda marcada `ajustado`), así que si se corta se
+// puede reanudar sin duplicar. Al terminar, el inventario queda CERRADO
+// (no editable) y se liberan los movimientos.
+const cerrarInventarioComo = async (db, por, { id, motivo, noContados }) => {
+  const motivoLimpio = String(motivo || '').trim().replace(/\s+/g, ' ').slice(0, MAX_OBSERVACION);
+  if (!motivoLimpio) throw new HttpsError('invalid-argument', 'El motivo del ajuste es obligatorio.');
+  const criterio = NO_CONTADOS[noContados] ? noContados : 'IGNORAR';
+  const ref = refInventario(db, id);
+
+  const inv = await db.runTransaction(async (t) => {
+    const snap = await t.get(ref);
+    if (!snap.exists) throw new HttpsError('not-found', 'El inventario no existe.');
+    const d = snap.data();
+    if (d.estado !== ESTADOS_INVENTARIO.ABIERTO && d.estado !== ESTADOS_INVENTARIO.CERRANDO) throw new HttpsError('failed-precondition', 'El inventario no está abierto.');
+    if (d.estado === ESTADOS_INVENTARIO.ABIERTO) {
+      t.update(ref, { estado: ESTADOS_INVENTARIO.CERRANDO, motivoAjuste: motivoLimpio, noContados: criterio, cerradoPor: por, inicioCierre: ahora() });
+      return { ...d, motivoAjuste: motivoLimpio, noContados: criterio, cerradoPor: por };
+    }
+    return d; // reanudación: se respetan motivo y criterio guardados
+  });
+
+  const lineas = (await ref.collection('lineas').get()).docs.map((d) => ({ id: d.id, ...d.data() }));
+  const pendientes = lineas.filter((l) => !l.ajustado);
+  for (let i = 0; i < pendientes.length; i += LINEAS_POR_AJUSTE) {
+    const tanda = pendientes.slice(i, i + LINEAS_POR_AJUSTE);
+    await db.runTransaction(async (t) => {
+      const productoIds = [...new Set(tanda.map((l) => l.productoId))];
+      const [snapsLineas, snapsLotes, snapsProductos] = await Promise.all([
+        Promise.all(tanda.map((l) => t.get(ref.collection('lineas').doc(l.id)))),
+        Promise.all(tanda.map((l) => t.get(db.collection(COL.lotes).doc(l.loteId)))),
+        Promise.all(productoIds.map((pid) => t.get(db.collection(COL.productos).doc(pid)))),
+      ]);
+      const saldoProducto = new Map(snapsProductos.map((x) => [x.id, saldoDe(x.data())]));
+      let orden = 0;
+      tanda.forEach((l, k) => {
+        const linea = snapsLineas[k].data();
+        if (linea.ajustado) return;
+        const loteActual = snapsLotes[k].exists ? snapsLotes[k].data() : null;
+        const disponibleActual = loteActual?.disponible || 0;
+        const { contadoFinal } = diferenciaLinea(linea, inv.noContados);
+        const ajuste = contadoFinal - disponibleActual;
+        if (ajuste !== 0) {
+          const tipo = ajuste > 0 ? 'AJUSTE_POSITIVO' : 'AJUSTE_NEGATIVO';
+          const mov = { tipo, cantidad: Math.abs(ajuste) };
+          const sl = conErrorStock(() => aplicarMovimiento(saldoDe(loteActual), mov));
+          const sp = conErrorStock(() => aplicarMovimiento(saldoProducto.get(linea.productoId), mov));
+          saldoProducto.set(linea.productoId, sp);
+          t.set(db.collection(COL.lotes).doc(linea.loteId), {
+            ...(loteActual || { productoId: linea.productoId, lote: linea.lote, vencimiento: linea.vencimiento, creadoEn: ahora() }),
+            disponible: sl.disponible, transito: sl.transito, transitoPorCentro: sl.transitoPorCentro,
+            soloCargaInicial: false, ultimoMovimiento: ahora(), ultimoMovimientoTipo: tipo,
+          });
+          t.set(db.collection(COL.movimientos).doc(), {
+            tipo, fecha: ahora(), orden: orden++, usuario: inv.cerradoPor,
+            productoId: linea.productoId, productoNombre: linea.productoNombre, codigoMaestro: linea.codigoMaestro, categoriaId: linea.categoriaId || null,
+            loteId: linea.loteId, lote: linea.lote, vencimiento: linea.vencimiento, cantidad: Math.abs(ajuste),
+            saldoLote: { disponible: sl.disponible, transito: sl.transito }, saldoProducto: { disponible: sp.disponible, transito: sp.transito },
+            centroId: null, documentoRef: { id, tipo: 'INVENTARIO', nombre: inv.nombre }, observacion: inv.motivoAjuste,
+          });
+        }
+        t.update(ref.collection('lineas').doc(linea.loteId), { ajustado: true, ajuste, contadoFinal });
+      });
+      productoIds.forEach((pid) => {
+        const s = saldoProducto.get(pid);
+        t.update(db.collection(COL.productos).doc(pid), { ...s, conMovimientos: true, actualizadoEn: ahora() });
+      });
+    });
+  }
+
+  const resumen = resumenInventario(lineas, inv.noContados);
+  await db.runTransaction(async (t) => {
+    const snapEstado = await t.get(refEstado(db));
+    t.update(ref, { estado: ESTADOS_INVENTARIO.CERRADO, fechaCierre: ahora(), resumen });
+    if (snapEstado.data()?.inventarioAbierto?.id === id) t.set(refEstado(db), { inventarioAbierto: null }, { merge: true });
+  });
+  return { id, estado: ESTADOS_INVENTARIO.CERRADO, resumen };
+};
+
+const cerrarInventario = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.cerrarInventario);
+  return cerrarInventarioComo(db, datosPor(uid, perfil), { id: String(datos.id || ''), motivo: datos.motivo, noContados: datos.noContados });
+};
+
+// Anula un inventario abierto sin tocar el stock (libera los movimientos).
+const anularInventario = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.anularInventario);
+  const id = String(datos.id || '');
+  const motivo = String(datos.motivo || '').trim().slice(0, MAX_OBSERVACION);
+  if (!motivo) throw new HttpsError('invalid-argument', 'Escribe el motivo de la anulación.');
+  return db.runTransaction(async (t) => {
+    const [snap, snapEstado] = await Promise.all([t.get(refInventario(db, id)), t.get(refEstado(db))]);
+    if (!snap.exists) throw new HttpsError('not-found', 'El inventario no existe.');
+    if (![ESTADOS_INVENTARIO.ABIERTO, ESTADOS_INVENTARIO.PREPARANDO].includes(snap.data().estado)) {
+      throw new HttpsError('failed-precondition', 'Solo se puede anular un inventario abierto (uno en cierre se termina de cerrar).');
+    }
+    t.update(snap.ref, { estado: ESTADOS_INVENTARIO.ANULADO, anuladoPor: datosPor(uid, perfil), fechaAnulacion: ahora(), motivoAnulacion: motivo });
+    if (snapEstado.data()?.inventarioAbierto?.id === id) t.set(refEstado(db), { inventarioAbierto: null }, { merge: true });
+    return { id, estado: ESTADOS_INVENTARIO.ANULADO };
+  });
+};
+
 module.exports = {
+  iniciarInventario,
+  reanudarInventario,
+  registrarConteo,
+  cerrarInventario,
+  cerrarInventarioComo,
+  anularInventario,
   egresar,
   egresarComo,
   gestionarTransito,

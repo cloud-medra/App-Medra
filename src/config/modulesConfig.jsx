@@ -180,6 +180,7 @@ export const MODULES = {
       { label: 'Tránsito', path: '/bodega/transitoBodega', icon: <Truck size={14} /> },
       { label: 'Tránsito por centro', path: '/bodega/centrosBodega', icon: <Building2 size={14} /> },
       { label: 'Consumo por centro', path: '/bodega/consumoBodega', icon: <BarChart3 size={14} /> },
+      { label: 'Inventario físico', path: '/bodega/inventarioBodega', icon: <ClipboardCheck size={14} /> },
       { label: 'Categorías y unidades', path: '/bodega/catalogosBodega', icon: <Tags size={14} /> },
     ]
   },

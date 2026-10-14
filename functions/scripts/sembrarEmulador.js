@@ -28,7 +28,8 @@
 //   nuevo        nuevo@prueba.cl          primer ingreso (Cambiar contraseña)
 //   bodega       bodega@prueba.cl         Bodega: todas las vistas, con las acciones
 //                                         sensibles (inactivar, quitar códigos,
-//                                         confirmar y cerrar la carga inicial)
+//                                         confirmar y cerrar la carga inicial,
+//                                         cerrar y anular el inventario)
 //   bodegaop     bodegaop@prueba.cl       Bodega: Maestro, Ingreso y Carga inicial,
 //                                         sin acciones sensibles
 //   (sinpermiso, inactivo, bloqueado y nuevo no tienen centro: en Lista de
@@ -75,6 +76,7 @@ const MAESTRO_BODEGA = '/bodega/maestroBodega';
 const CATALOGOS_BODEGA = '/bodega/catalogosBodega';
 const INGRESO_BODEGA = '/bodega/ingresoBodega';
 const CARGA_BODEGA = '/bodega/cargaInicialBodega';
+const INVENTARIO_BODEGA = '/bodega/inventarioBodega';
 const RUTAS_TRANSITO_BODEGA = ['/bodega/egresoBodega', '/bodega/transitoBodega', '/bodega/centrosBodega', '/bodega/consumoBodega'];
 
 const USUARIOS = [
@@ -103,12 +105,13 @@ const USUARIOS = [
   { nombreUsuario: 'nuevo', nombreCompleto: 'Usuario Nuevo', rol: 'operador', passwordChanged: false, ...listado({}) },
   {
     nombreUsuario: 'bodega', nombreCompleto: 'Encargado Bodega', rol: 'operador', centroCostoId: 'lab',
-    permisos: { bodega: [MAESTRO_BODEGA, INGRESO_BODEGA, CARGA_BODEGA, ...RUTAS_TRANSITO_BODEGA, CATALOGOS_BODEGA] },
+    permisos: { bodega: [MAESTRO_BODEGA, INGRESO_BODEGA, CARGA_BODEGA, ...RUTAS_TRANSITO_BODEGA, INVENTARIO_BODEGA, CATALOGOS_BODEGA] },
     permisosGranulares: {
       ...Object.fromEntries(RUTAS_TRANSITO_BODEGA.map((r) => [r, {}])),
       [MAESTRO_BODEGA]: { productos: { visible: true, elements: { btn_inactivar: true } }, codigos: { visible: true, elements: { btn_desvincular: true } } },
       [INGRESO_BODEGA]: {},
       [CARGA_BODEGA]: { carga: { visible: true, elements: { btn_confirmar: true, btn_cerrar_carga: true } } },
+      [INVENTARIO_BODEGA]: { inventario: { visible: true, elements: { btn_cerrar: true, btn_anular: true } } },
       [CATALOGOS_BODEGA]: {},
     },
   },

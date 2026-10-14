@@ -9,6 +9,8 @@
 //   - bodegaConfigurarCargaInicial: cerrar/reabrir la carga inicial.
 //   - bodegaEgresar: salida a tránsito hacia uno o varios centros (Fase 3).
 //   - bodegaGestionarTransito: entregar, devolver o anotar (Fase 3).
+//   - bodegaIniciarInventario / bodegaReanudarInventario / bodegaRegistrarConteo /
+//     bodegaCerrarInventario / bodegaAnularInventario: inventario físico (Fase 5).
 
 const { onCall } = require('firebase-functions/v2/https');
 const logger = require('firebase-functions/logger');
@@ -21,7 +23,7 @@ const db = getFirestore();
 
 const REGION = 'us-central1';
 
-const callable = (nombre) => onCall({ region: REGION }, async (request) => {
+const callable = (nombre, opciones = {}) => onCall({ region: REGION, ...opciones }, async (request) => {
   const resultado = await servicio[nombre](db, request.auth?.uid, request.data);
   logger.info(`bodega.${nombre}`, { por: request.auth?.uid, id: resultado?.id || resultado?.productoId || null });
   return resultado;
@@ -37,3 +39,9 @@ exports.bodegaConfirmarDocumento = callable('confirmarDocumento');
 exports.bodegaConfigurarCargaInicial = callable('configurarCargaInicial');
 exports.bodegaEgresar = callable('egresar');
 exports.bodegaGestionarTransito = callable('gestionarTransito');
+// Iniciar (foto del stock) y cerrar (ajustes por tandas) pueden tardar más.
+exports.bodegaIniciarInventario = callable('iniciarInventario', { timeoutSeconds: 300 });
+exports.bodegaReanudarInventario = callable('reanudarInventario', { timeoutSeconds: 540 });
+exports.bodegaRegistrarConteo = callable('registrarConteo');
+exports.bodegaCerrarInventario = callable('cerrarInventario', { timeoutSeconds: 540 });
+exports.bodegaAnularInventario = callable('anularInventario');

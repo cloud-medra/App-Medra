@@ -1,7 +1,7 @@
 import { httpsCallable } from 'firebase/functions';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
 import { db, functions } from '../../../../firebaseConfig';
-import { leerCatalogo, upsertLocal } from '../../../../stores/catalogosStore';
+import { leerCatalogo, upsertLocal, refrescarCatalogo } from '../../../../stores/catalogosStore';
 import { COL } from '../../../../../functions/bodega/nucleo.mjs';
 import { idVinculo } from '../../../../../functions/bodega/gs1.mjs';
 
@@ -214,4 +214,34 @@ export const leerEntregas = async ({ desde, hasta, centroId, productoId, max = 5
   );
   const snap = await getDocs(query(collection(db, COL.movimientos), ...restricciones));
   return { entregas: snap.docs.map((d) => ({ id: d.id, ...d.data() })), truncado: snap.size === max };
+};
+
+// ---------------- Inventario físico (Fase 5) ----------------
+
+export const leerEstadoBodega = async () => {
+  const snap = await getDoc(doc(db, COL.control, 'estado'));
+  return snap.exists() ? snap.data() : {};
+};
+export const leerInventario = async (id) => {
+  const snap = await getDoc(doc(db, COL.inventarios, id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+};
+export const leerLineasInventario = async (id) => {
+  const snap = await getDocs(query(collection(db, COL.inventarios, id, 'lineas'), limit(10000)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+export const leerInventarios = async (max = 20) => {
+  const snap = await getDocs(query(collection(db, COL.inventarios), orderBy('fechaInicio', 'desc'), limit(max)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+export const iniciarInventario = (datos) => llamar('bodegaIniciarInventario')(datos);
+export const reanudarInventario = (id) => llamar('bodegaReanudarInventario')({ id });
+export const registrarConteo = (datos) => llamar('bodegaRegistrarConteo')(datos);
+export const anularInventario = (datos) => llamar('bodegaAnularInventario')(datos);
+// Al cerrar cambian los saldos: se vuelve a leer el maestro.
+export const cerrarInventario = async (datos) => {
+  const r = await llamar('bodegaCerrarInventario')(datos);
+  refrescarCatalogo('bodegaProductos').catch(() => {});
+  return r;
 };

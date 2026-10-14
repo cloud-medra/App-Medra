@@ -82,6 +82,9 @@ export const ACCIONES_DENEGADAS_POR_DEFECTO = Object.freeze([
   // Bodega: confirmar la carga inicial (stock sin documento) y cerrarla/reabrirla.
   claveElemento('/bodega/cargaInicialBodega', 'carga', 'btn_confirmar'),
   claveElemento('/bodega/cargaInicialBodega', 'carga', 'btn_cerrar_carga'),
+  // Bodega: cerrar el inventario físico con ajuste de stock, y anularlo.
+  claveElemento('/bodega/inventarioBodega', 'inventario', 'btn_cerrar'),
+  claveElemento('/bodega/inventarioBodega', 'inventario', 'btn_anular'),
 ]);
 const DENEGADAS = new Set(ACCIONES_DENEGADAS_POR_DEFECTO);
 export const deniegaSinConfigurar = (ruta, seccion, accion) => DENEGADAS.has(claveElemento(ruta, seccion, accion));

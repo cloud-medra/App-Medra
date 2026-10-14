@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   aplicarMovimiento, aplicarMovimientoCentro, validarProducto, validarCatalogo, idLote, normalizarClave,
   codigoAutomatico, idUnico, ErrorStock, stockTotal, bajoMinimo, textoBusquedaProducto,
+  diferenciaLinea, resumenInventario, filtrarComparacion, aplicarConteo,
 } from './nucleo.mjs';
 
 const VACIO = { disponible: 0, transito: 0, transitoPorCentro: {} };
@@ -137,5 +138,43 @@ describe('helpers de stock', () => {
     expect(bajoMinimo(p)).toBe(true);
     expect(bajoMinimo({ ...p, stockMinimo: null })).toBe(false);
     expect(textoBusquedaProducto(p)).toContain('780');
+  });
+});
+
+describe('inventario físico', () => {
+  const L = [
+    { id: 'a', teorico: 10, contado: 8, precio: 100 },
+    { id: 'b', teorico: 5, contado: 7, precio: 0 },
+    { id: 'c', teorico: 3, contado: null, precio: 50 },
+    { id: 'd', teorico: 0, contado: 2, agregado: true, precio: 10 },
+    { id: 'e', teorico: 4, contado: 4 },
+  ];
+  it('diferencia por línea; no contados según la opción del cierre', () => {
+    expect(diferenciaLinea(L[0])).toEqual({ contadoFinal: 8, diferencia: -2 });
+    expect(diferenciaLinea(L[2])).toEqual({ contadoFinal: 3, diferencia: 0 });
+    expect(diferenciaLinea(L[2], 'CERO')).toEqual({ contadoFinal: 0, diferencia: -3 });
+  });
+  it('resumen: sobrantes, faltantes, unidades y valor', () => {
+    expect(resumenInventario(L)).toMatchObject({
+      lineas: 5, contadas: 4, noContadas: 1, agregadas: 1, sobrantes: 2, faltantes: 1,
+      unidadesSobrantes: 4, unidadesFaltantes: 2, valorSobrante: 20, valorFaltante: 200, conPrecio: true,
+    });
+    expect(resumenInventario(L, 'CERO')).toMatchObject({ faltantes: 2, unidadesFaltantes: 5, valorFaltante: 350 });
+  });
+  it('filtros de la comparación', () => {
+    const ids = (f, n) => filtrarComparacion(L, f, n).map((l) => l.id);
+    expect(ids('diferencias')).toEqual(['a', 'b', 'd']);
+    expect(ids('faltantes')).toEqual(['a']);
+    expect(ids('faltantes', 'CERO')).toEqual(['a', 'c']);
+    expect(ids('sobrantes')).toEqual(['b', 'd']);
+    expect(ids('noContados')).toEqual(['c']);
+    expect(ids('todos')).toHaveLength(5);
+  });
+  it('conteo: sumar (escaneo) o reemplazar (corrección, admite 0)', () => {
+    expect(aplicarConteo(null, { cantidad: 1, modo: 'sumar' })).toBe(1);
+    expect(aplicarConteo(3, { cantidad: 2, modo: 'sumar' })).toBe(5);
+    expect(aplicarConteo(3, { cantidad: 0, modo: 'reemplazar' })).toBe(0);
+    expect(() => aplicarConteo(3, { cantidad: 0, modo: 'sumar' })).toThrow();
+    expect(() => aplicarConteo(3, { cantidad: -1, modo: 'reemplazar' })).toThrow();
   });
 });

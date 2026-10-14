@@ -43,7 +43,7 @@ const RUTAS_DINAMICAS = {
   'modulos/operaciones/shared/sincronizacionImputadas/SincronizacionImputadas.jsx': ['/implantes/sincronizacionImputadas', '/hemodinamia/sincronizacionImputadas'],
   // Bodega: pantalla común de Ingreso y Carga inicial (prop ruta).
   'modulos/bodega/shared/documentos/PantallaDocumento.jsx': ['/bodega/ingresoBodega', '/bodega/cargaInicialBodega'],
-  'modulos/bodega/shared/documentos/EditorLineasStock.jsx': ['/bodega/ingresoBodega', '/bodega/cargaInicialBodega'],
+  'modulos/bodega/shared/documentos/EditorLineasStock.jsx': ['/bodega/ingresoBodega', '/bodega/cargaInicialBodega', '/bodega/inventarioBodega'],
   // Bodega: tabla de tránsitos de Tránsito y de Tránsito por centro (prop rutaVista).
   'modulos/bodega/shared/transito/TablaTransitos.jsx': ['/bodega/transitoBodega', '/bodega/centrosBodega'],
 };
