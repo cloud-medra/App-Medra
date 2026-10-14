@@ -7,12 +7,21 @@ import { idLote, normalizarLote, validarLinea, fechaValida } from '../../../../.
 export const claveLinea = (l) => idLote(l.productoId, l.lote, l.vencimiento);
 
 // ¿La línea en curso (producto escaneado) está lista para agregarse?
-// Devuelve el primer campo que falta ('cantidad' | 'lote' | 'vencimiento') o null.
+// Devuelve el campo que lo impide ('cantidad' | 'vencimiento' mal escrito) o null.
+// Lote y vencimiento son opcionales.
 export const campoFaltante = (pendiente) => {
   const cantidad = Number(pendiente?.cantidad);
   if (!Number.isInteger(cantidad) || cantidad <= 0) return 'cantidad';
+  if (pendiente?.producto?.manejaVencimiento && pendiente.vencimiento && !fechaValida(pendiente.vencimiento)) return 'vencimiento';
+  return null;
+};
+
+// Dato opcional vacío que el producto maneja ('lote' | 'vencimiento') o
+// null. No bloquea: solo evita agregar solo al escanear sin dar la opción
+// de escribirlo.
+export const campoSugerido = (pendiente) => {
   if (pendiente?.producto?.manejaLote && !normalizarLote(pendiente.lote)) return 'lote';
-  if (pendiente?.producto?.manejaVencimiento && !fechaValida(pendiente.vencimiento)) return 'vencimiento';
+  if (pendiente?.producto?.manejaVencimiento && !pendiente.vencimiento) return 'vencimiento';
   return null;
 };
 

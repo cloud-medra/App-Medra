@@ -1,16 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import { agregarLinea, campoFaltante, cambiarCantidad, quitarLinea, totalUnidades, erroresLineas, lineasDesdeDocumento } from './lineasDocumento';
+import { agregarLinea, campoFaltante, campoSugerido, cambiarCantidad, quitarLinea, totalUnidades, erroresLineas, lineasDesdeDocumento } from './lineasDocumento';
 
 const CON_LOTE = { id: 'p1', nombre: 'Sonda', manejaLote: true, manejaVencimiento: true };
 const SIN_LOTE = { id: 'p2', nombre: 'Gasa', manejaLote: false, manejaVencimiento: false };
 
 describe('líneas de documento', () => {
-  it('campo faltante en orden: cantidad, lote, vencimiento', () => {
+  it('solo la cantidad o un vencimiento mal escrito bloquean; lote y vencimiento son opcionales', () => {
     expect(campoFaltante({ producto: CON_LOTE, cantidad: 0 })).toBe('cantidad');
-    expect(campoFaltante({ producto: CON_LOTE, cantidad: 1, lote: ' ' })).toBe('lote');
+    expect(campoFaltante({ producto: CON_LOTE, cantidad: 1, lote: ' ' })).toBeNull();
     expect(campoFaltante({ producto: CON_LOTE, cantidad: 1, lote: 'a', vencimiento: '2026-02-30' })).toBe('vencimiento');
     expect(campoFaltante({ producto: CON_LOTE, cantidad: 1, lote: 'a', vencimiento: '2026-02-28' })).toBeNull();
     expect(campoFaltante({ producto: SIN_LOTE, cantidad: 2 })).toBeNull();
+  });
+
+  it('campo sugerido: el dato opcional vacío que el producto maneja', () => {
+    expect(campoSugerido({ producto: CON_LOTE, cantidad: 1, lote: ' ' })).toBe('lote');
+    expect(campoSugerido({ producto: CON_LOTE, cantidad: 1, lote: 'a' })).toBe('vencimiento');
+    expect(campoSugerido({ producto: CON_LOTE, cantidad: 1, lote: 'a', vencimiento: '2026-02-28' })).toBeNull();
+    expect(campoSugerido({ producto: SIN_LOTE, cantidad: 1 })).toBeNull();
   });
 
   it('el mismo producto + lote + vencimiento se suma (lote sin distinguir espacios/mayúsculas)', () => {

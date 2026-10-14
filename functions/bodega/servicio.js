@@ -396,7 +396,7 @@ const normalizarBorrador = (tipo, datos = {}) => {
     lineas: lineas.map((l) => {
       const cantidad = Number(l?.cantidad);
       if (!l?.productoId || !Number.isInteger(cantidad) || cantidad <= 0) throw new HttpsError('invalid-argument', 'Hay líneas sin producto o con cantidad inválida.');
-      return { productoId: String(l.productoId), lote: normalizarLote(l.lote).slice(0, 40), vencimiento: texto(l.vencimiento, 10), cantidad, codigoLeido: String(l.codigoLeido || '').slice(0, 300) };
+      return { productoId: String(l.productoId), lote: normalizarLote(l.lote).slice(0, 40) || null, vencimiento: texto(l.vencimiento, 10) || null, cantidad, codigoLeido: String(l.codigoLeido || '').slice(0, 300) };
     }),
   };
 };
@@ -722,7 +722,7 @@ const egresarComo = (db, por, datos = {}) => {
       const refTransito = db.collection(COL.transitos).doc();
       const base = {
         productoId: l.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
-        loteId: l.loteId, lote: lote.lote || '', vencimiento: lote.vencimiento || '', centroId: l.centroId, centroNombre,
+        loteId: l.loteId, lote: lote.lote || null, vencimiento: lote.vencimiento || null, centroId: l.centroId, centroNombre,
       };
       t.set(refTransito, {
         ...base, salidaId: refSalida.id, salidaNumero: numero, cantidadSalida: l.cantidad, pendiente: l.cantidad, entregado: 0, devuelto: 0,
@@ -740,7 +740,7 @@ const egresarComo = (db, por, datos = {}) => {
     });
     t.set(refSalida, {
       numero, fecha: ahora(), usuario: por, solicitante, observacion, resumenPorCentro,
-      lineas: lineas.map((l) => ({ ...l, productoNombre: productos.get(l.productoId).nombre, lote: lotes.get(l.loteId).lote || '', centroNombre: centros.get(l.centroId).nombre || '' })),
+      lineas: lineas.map((l) => ({ ...l, productoNombre: productos.get(l.productoId).nombre, lote: lotes.get(l.loteId).lote || null, centroNombre: centros.get(l.centroId).nombre || '' })),
       totalUnidades: lineas.reduce((n, l) => n + l.cantidad, 0),
     });
     return { id: refSalida.id, numero, lineas: lineas.length, productos: productosActualizados };
@@ -925,7 +925,7 @@ const prepararLineas = async (db, id) => {
       const p = productos.get(l.productoId);
       lote.set(refInventario(db, id).collection('lineas').doc(l.id), {
         productoId: l.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
-        loteId: l.id, lote: l.lote || '', vencimiento: l.vencimiento || '', teorico: l.disponible, contado: null,
+        loteId: l.id, lote: l.lote || null, vencimiento: l.vencimiento || null, teorico: l.disponible, contado: null,
         agregado: false, precio: precioDe(p), ajustado: false,
       }, { merge: true });
     });

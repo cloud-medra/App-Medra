@@ -304,7 +304,9 @@ export const validarCabecera = (tipo, datos = {}) => {
 };
 
 // Línea + su producto -> { errores, linea } normalizada. Si el producto no
-// maneja lote/vencimiento se descartan; si los maneja, son obligatorios.
+// maneja lote/vencimiento se descartan; si los maneja, son opcionales (hay
+// stock sin lote ni vencimiento) y vacíos quedan en null. Un vencimiento
+// escrito debe ser una fecha válida.
 export const validarLinea = (linea = {}, producto = null) => {
   const errores = [];
   const cantidad = Number(linea.cantidad);
@@ -314,15 +316,14 @@ export const validarLinea = (linea = {}, producto = null) => {
   if (!Number.isInteger(cantidad) || cantidad <= 0 || cantidad > MAX_CANTIDAD_LINEA) errores.push(`${nombre}: la cantidad debe ser un número entero mayor a cero.`);
   const lote = producto?.manejaLote ? normalizarLote(linea.lote) : '';
   const vencimiento = producto?.manejaVencimiento ? String(linea.vencimiento || '').trim() : '';
-  if (producto?.manejaLote && !lote) errores.push(`${nombre}: el lote es obligatorio.`);
   if (lote.length > 40) errores.push(`${nombre}: el lote no puede superar 40 caracteres.`);
-  if (producto?.manejaVencimiento && !fechaValida(vencimiento)) errores.push(`${nombre}: el vencimiento es obligatorio.`);
+  if (vencimiento && !fechaValida(vencimiento)) errores.push(`${nombre}: el vencimiento no es una fecha válida.`);
   return {
     errores,
     linea: {
       productoId: String(linea.productoId || ''),
-      lote,
-      vencimiento,
+      lote: lote || null,
+      vencimiento: vencimiento || null,
       cantidad,
       codigoLeido: String(linea.codigoLeido || '').slice(0, 300),
     },

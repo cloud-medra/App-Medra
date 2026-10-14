@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  validarLinea,
   aplicarMovimiento, aplicarMovimientoCentro, validarProducto, validarCatalogo, idLote, normalizarClave,
   codigoAutomatico, idUnico, ErrorStock, stockTotal, bajoMinimo, textoBusquedaProducto,
   diferenciaLinea, resumenInventario, filtrarComparacion, aplicarConteo, normalizarIdEntrega, ETIQUETA_ID_ENTREGA,
@@ -187,5 +188,17 @@ describe('N° de admisión de la entrega', () => {
     expect(normalizarIdEntrega('CX-55').error).toMatch(/solo números/);
     expect(normalizarIdEntrega('12 34').error).toMatch(/solo números/);
     expect(normalizarIdEntrega('0').error).toMatch(/solo números/);
+  });
+});
+
+describe('validarLinea: lote y vencimiento opcionales', () => {
+  const producto = { nombre: 'Tutor', manejaLote: true, manejaVencimiento: true };
+  it('sin lote ni vencimiento es válida y los deja en null', () => {
+    const r = validarLinea({ productoId: 'p1', cantidad: 2, lote: '', vencimiento: '' }, producto);
+    expect(r.errores).toEqual([]);
+    expect(r.linea).toMatchObject({ lote: null, vencimiento: null });
+  });
+  it('un vencimiento escrito debe ser una fecha válida', () => {
+    expect(validarLinea({ productoId: 'p1', cantidad: 1, vencimiento: '2026-02-30' }, producto).errores[0]).toMatch(/fecha válida/);
   });
 });
