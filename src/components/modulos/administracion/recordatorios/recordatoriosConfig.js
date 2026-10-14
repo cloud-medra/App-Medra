@@ -171,19 +171,3 @@ export const textoDias = (dias = []) => {
   if (orden.join() === '1,2,3,4,5') return 'Lunes a viernes';
   return orden.map((v) => DIAS_SEMANA.find((d) => d.valor === v)?.label).filter(Boolean).join(', ');
 };
-
-// --- Posición del recuadro flotante ---
-
-export const MARGEN_FLOTANTE = 8;
-
-// Mantiene el recuadro completo dentro de la ventana.
-export const limitarPosicion = ({ x, y }, { ancho, alto }, { anchoVentana, altoVentana }) => ({
-  x: Math.round(Math.min(Math.max(MARGEN_FLOTANTE, x), Math.max(MARGEN_FLOTANTE, anchoVentana - ancho - MARGEN_FLOTANTE))),
-  y: Math.round(Math.min(Math.max(MARGEN_FLOTANTE, y), Math.max(MARGEN_FLOTANTE, altoVentana - alto - MARGEN_FLOTANTE))),
-});
-
-export const clavePosicion = (uid) => `recordatorios.posicion.${uid}`;
-export const claveMinimizado = (uid) => `recordatorios.minimizado.${uid}`;
-// Repeticiones con hora que ya abrieron solas el recuadro (para no volver a
-// abrirlo cada vez que se minimiza).
-export const claveAbiertasPorHora = (uid) => `recordatorios.abiertasPorHora.${uid}`;

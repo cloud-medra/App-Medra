@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   fechaEnSantiago, horaEnSantiago, textoAtrasada, sumarDias, DIAS_MAX_ATRASO, diaSemana, ultimaRepeticion, proximaRepeticion, tareasPendientes, idRealizado,
-  puedeRecibirRecordatorios, puedeAdministrarRecordatorios, validarTarea, textoDias, limitarPosicion,
+  puedeRecibirRecordatorios, puedeAdministrarRecordatorios, validarTarea, textoDias,
   RUTA_RECORDATORIOS, RUTA_MIS_RECORDATORIOS, RUTA_ADMINISTRAR_RECORDATORIOS,
 } from './recordatoriosConfig';
 
@@ -169,15 +169,5 @@ describe('formulario y textos', () => {
     expect(textoDias([3, 1])).toBe('Lunes, Miércoles');
     expect(textoDias([1, 2, 3, 4, 5])).toBe('Lunes a viernes');
     expect(textoDias([1, 2, 3, 4, 5, 6, 7])).toBe('Todos los días');
-  });
-});
-
-describe('posición del recuadro flotante', () => {
-  const ventana = { anchoVentana: 1000, altoVentana: 800 };
-  const caja = { ancho: 300, alto: 200 };
-  it('no deja que se salga de la pantalla', () => {
-    expect(limitarPosicion({ x: -50, y: -20 }, caja, ventana)).toEqual({ x: 8, y: 8 });
-    expect(limitarPosicion({ x: 900, y: 790 }, caja, ventana)).toEqual({ x: 692, y: 592 });
-    expect(limitarPosicion({ x: 400, y: 300 }, caja, ventana)).toEqual({ x: 400, y: 300 });
   });
 });

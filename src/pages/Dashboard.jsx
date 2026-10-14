@@ -16,7 +16,7 @@ import {
 import { MODULES, AJUSTES_ITEMS, SPECIAL_VIEWS } from '../config/modulesConfig.jsx';
 
 // --- UTILIDADES DEL MENÚ Y DEL PANEL (no son vistas) ---
-import RecordatoriosFlotante from '../components/modulos/administracion/recordatorios/RecordatoriosFlotante';
+import RecordatoriosCampana from '../components/modulos/administracion/recordatorios/RecordatoriosCampana';
 import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
 import { subItemsVisibles, puedeAbrirVista, esAdministrador } from '../config/accesoMenu';
 import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
@@ -704,6 +704,11 @@ const Dashboard = () => {
             </nav>
           </div>
 
+          <div className="flex items-center gap-3 flex-shrink-0">
+          {/* Recordatorios del usuario: campana en todas las vistas (solo si
+              tiene permiso de recibirlos). */}
+          <RecordatoriosCampana />
+
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -771,6 +776,7 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+          </div>
         </header>
 
         <main className="flex-grow p-3 overflow-y-auto">
@@ -788,10 +794,6 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
-
-      {/* Recordatorios del usuario: en todas las vistas (se oculta solo si
-          no tiene pendientes o no tiene permiso). */}
-      <RecordatoriosFlotante />
     </div>
   );
 };

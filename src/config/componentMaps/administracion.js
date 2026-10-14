@@ -105,7 +105,7 @@ export const administracionComponentMaps = {
   },
 
   // Dos pestañas asignables por separado: "Mis recordatorios" = el usuario
-  // RECIBE los recordatorios que le asignen (recuadro flotante); "Administrar
+  // RECIBE los recordatorios que le asignen (campana del header); "Administrar
   // tareas" = crear/editar/desactivar/borrar y ver el historial. Esta última
   // no se marca sola al dar la vista (porDefecto: false, ver
   // permisosGranularesUtils.js). firestore.rules usa las mismas rutas.
@@ -114,7 +114,7 @@ export const administracionComponentMaps = {
     sections: {},
     procesos: {
       '/administracion/recordatorios/mis': {
-        label: 'Pestaña: Mis recordatorios — recibe los recordatorios asignados (recuadro flotante)',
+        label: 'Pestaña: Mis recordatorios — recibe los recordatorios asignados (campana del header)',
         sections: {},
       },
       '/administracion/recordatorios/administrar': {
