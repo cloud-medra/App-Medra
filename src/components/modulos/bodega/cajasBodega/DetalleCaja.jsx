@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Pencil, ClipboardCheck, History } from 'lucide-react';
+import { ArrowLeft, Pencil, ClipboardCheck, History, PackagePlus } from 'lucide-react';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import { formatoCantidad } from '../shared/catalogosBodega';
@@ -7,7 +7,8 @@ import { fechaHora } from '../shared/transito/transitos';
 import FormCajaModal from './FormCajaModal';
 import InventarioCajaModal from './InventarioCajaModal';
 import HistorialCaja from './HistorialCaja';
-import { productosDeCaja } from './cajas';
+import ReponerCajaModal from './ReponerCajaModal';
+import { productosDeCaja, cajaTrasInventario } from './cajas';
 import { BarraCompletitud } from './comunes';
 
 const PATH_VISTA = '/bodega/cajasBodega';
@@ -26,6 +27,8 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
   const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'caja', COLUMNAS);
   const [editando, setEditando] = useState(false);
   const [inventariando, setInventariando] = useState(false);
+  const [reponiendo, setReponiendo] = useState(null); // caja a reponer (la actual o la recién inventariada)
+  const puedeReponer = hasPermission(PATH_VISTA, 'caja', 'btn_reponer');
   const [verHistorial, setVerHistorial] = useState(false);
   const [versionHistorial, setVersionHistorial] = useState(0);
   const cambio = () => { onCambio(); setVersionHistorial((v) => v + 1); };
@@ -42,6 +45,9 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           {hasPermission(PATH_VISTA, 'caja', 'btn_inventario') && productos.length > 0 && (
             <button type="button" onClick={() => setInventariando(true)} className="h-7 px-2 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><ClipboardCheck size={12} /> Hacer inventario</button>
+          )}
+          {puedeReponer && caja.activa !== false && (
+            <button type="button" onClick={() => setReponiendo(caja)} disabled={!caja.totalFaltante} title={caja.totalFaltante ? 'Reponer faltantes desde la Bodega General' : 'La caja está completa'} className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1 disabled:opacity-40"><PackagePlus size={12} /> Reponer</button>
           )}
           <button type="button" onClick={() => setVerHistorial((v) => !v)} className={`h-7 px-2 rounded border font-semibold flex items-center gap-1 ${verHistorial ? 'border-[#2383C2] text-[#2383C2]' : 'border-gray-300 dark:border-gray-600'}`}><History size={12} /> Historial</button>
           {hasPermission(PATH_VISTA, 'cajas', 'btn_guardar') && (
@@ -72,7 +78,17 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
 
       {verHistorial && <HistorialCaja key={versionHistorial} caja={caja} />}
 
-      {inventariando && <InventarioCajaModal caja={caja} onCerrar={() => setInventariando(false)} onHecho={cambio} />}
+      {inventariando && (
+        <InventarioCajaModal
+          caja={caja}
+          onCerrar={() => setInventariando(false)}
+          onHecho={cambio}
+          pie={(inv) => puedeReponer && caja.activa !== false && inv.resumen?.faltante > 0 && (
+            <button type="button" onClick={() => { setInventariando(false); setReponiendo(cajaTrasInventario(caja, inv.lineas)); }} className="h-9 px-3 rounded bg-emerald-600 text-white font-bold flex items-center gap-1"><PackagePlus size={14} /> Reponer faltantes</button>
+          )}
+        />
+      )}
+      {reponiendo && <ReponerCajaModal caja={reponiendo} onCerrar={() => setReponiendo(null)} onHecho={cambio} />}
       {editando && <FormCajaModal caja={caja} onCerrar={() => setEditando(false)} onGuardada={() => { setEditando(false); onCambio(); }} />}
     </div>
   );

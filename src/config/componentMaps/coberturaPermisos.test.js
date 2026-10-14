@@ -129,6 +129,7 @@ const TABLAS_PENDIENTES = new Set([
   'modulos/bodega/cajasBodega/InventarioCajaModal.jsx',
   'modulos/bodega/cajasBodega/ResultadoInventario.jsx',
   'modulos/bodega/cajasBodega/DetalleReposicion.jsx',
+  'modulos/bodega/cajasBodega/ReponerCajaModal.jsx',
 ]);
 
 // Permisos por centro: vista de administración de usuarios (solo rol

@@ -96,6 +96,8 @@ export const TIPOS_MOVIMIENTO = Object.freeze({
   DEVOLUCION: { etiqueta: 'Devolución', disponible: 1, transito: -1, centro: true },
   AJUSTE_POSITIVO: { etiqueta: 'Ajuste positivo', disponible: 1, transito: 0 },
   AJUSTE_NEGATIVO: { etiqueta: 'Ajuste negativo', disponible: -1, transito: 0 },
+  // Sale de la Bodega General hacia una caja (kit); no pasa por tránsito.
+  REPOSICION_CAJA: { etiqueta: 'Reposición caja', disponible: -1, transito: 0 },
 });
 
 export const MAX = Object.freeze({
@@ -589,4 +591,42 @@ export const resultadoInventarioCaja = (productos = {}, conteos = {}) => {
       productosConFaltante: lineas.filter((l) => l.faltante > 0).length,
     },
   };
+};
+
+// Reparte `cantidad` entre los lotes de un producto en orden FEFO (la misma
+// regla de las salidas: vence primero; sin vencimiento al final). Devuelve
+// [{ loteId, lote, vencimiento, cantidad }]. Lanza ErrorStock si no alcanza.
+export const repartirFEFO = (lotes, cantidad) => {
+  const partes = [];
+  let resta = cantidad;
+  for (const l of lotesFEFO(lotes)) {
+    if (resta <= 0) break;
+    const toma = Math.min(resta, Number(l.disponible) || 0);
+    partes.push({ loteId: l.id, lote: l.lote || null, vencimiento: l.vencimiento || null, cantidad: toma });
+    resta -= toma;
+  }
+  if (resta > 0) throw new ErrorStock(`Stock disponible insuficiente (faltan ${resta}).`);
+  return partes;
+};
+
+// Plan de reposición de una caja. cantidades: { [productoId]: n }
+// (0/vacío = no se repone ahora); disponibles: { [productoId]: n } en la
+// Bodega General. No se puede reponer más del faltante ni más de lo
+// disponible. Las líneas cubren todo producto con faltante o con cantidad,
+// así el historial muestra lo repuesto y lo que quedó pendiente.
+export const planReposicionCaja = (productos = {}, cantidades = {}, disponibles = {}) => {
+  const errores = [];
+  Object.keys(cantidades).forEach((id) => { if (!productos[id] && Number(cantidades[id])) errores.push('Un producto ya no está en la caja.'); });
+  const lineas = Object.entries(productos).map(([productoId, p]) => {
+    const bruto = cantidades[productoId];
+    const cantidad = bruto === undefined || bruto === null || bruto === '' ? 0 : Number(bruto);
+    const faltanteAntes = faltanteCaja(p);
+    if (!enteroNoNegativo(cantidad)) errores.push(`${p.nombre}: la cantidad a reponer debe ser un número entero.`);
+    else if (cantidad > faltanteAntes) errores.push(`${p.nombre}: no se puede reponer más del faltante (${faltanteAntes}).`);
+    else if (cantidad > (Number(disponibles[productoId]) || 0)) errores.push(`${p.nombre}: la Bodega General solo tiene ${Number(disponibles[productoId]) || 0}.`);
+    return { productoId, nombre: p.nombre, codigoMaestro: p.codigoMaestro || '', faltanteAntes, cantidad, pendiente: Math.max(0, faltanteAntes - (enteroNoNegativo(cantidad) ? cantidad : 0)) };
+  }).filter((l) => l.faltanteAntes > 0 || l.cantidad > 0)
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  if (!errores.length && !lineas.some((l) => l.cantidad > 0)) errores.push('Ingresa al menos una cantidad a reponer.');
+  return { errores: [...new Set(errores)], lineas };
 };

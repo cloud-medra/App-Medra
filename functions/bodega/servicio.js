@@ -31,7 +31,7 @@ const {
   agruparLineasEgreso, aplicarMovimientoCentro, aplicarAccionTransito, accionTransito, normalizarIdEntrega,
   ESTADOS_INVENTARIO, NO_CONTADOS, MAX_CONTEOS_POR_ENVIO, MAX_NOMBRE_INVENTARIO, diferenciaLinea, resumenInventario,
   aplicarConteo, idLote,
-  validarCaja, totalesCaja, resultadoInventarioCaja,
+  validarCaja, totalesCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja,
 } = require('./nucleo.mjs');
 const { interpretarLectura, idVinculo, MAX_CODIGO_LEIDO } = require('./gs1.mjs');
 
@@ -1240,7 +1240,123 @@ const inventariarCaja = async (db, uid, datos) => {
   return inventariarCajaComo(db, datosPor(uid, perfil), datos);
 };
 
+// Reposición desde la Bodega General: { cajaId, cantidades: { [productoId]: n } }.
+// En UNA transacción: reparte cada cantidad entre los lotes en orden FEFO
+// (misma regla que las salidas), baja el disponible de cada lote y producto
+// con movimientos REPOSICION_CAJA (motivo "Reposición caja: {nombre}"),
+// suma lo repuesto al stock actual de la caja y guarda la reposición
+// (repuesto y pendiente) en su historial. Puede ser parcial.
+const reponerCajaComo = (db, por, datos = {}) => {
+  const cajaId = String(datos.cajaId || '');
+  if (!cajaId) throw new HttpsError('invalid-argument', 'Falta la caja.');
+  const cantidades = datos.cantidades && typeof datos.cantidades === 'object' ? datos.cantidades : {};
+  const productoIds = Object.keys(cantidades).filter((id) => Number(cantidades[id]) > 0);
+  if (!productoIds.length) throw new HttpsError('invalid-argument', 'Ingresa al menos una cantidad a reponer.');
+  if (productoIds.length > MAX_LINEAS_EGRESO) throw new HttpsError('invalid-argument', `Máximo ${MAX_LINEAS_EGRESO} productos por reposición.`);
+
+  return db.runTransaction(async (t) => {
+    const ref = refCaja(db, cajaId);
+    const [snapCaja, snapEstado, ...resto] = await Promise.all([
+      t.get(ref),
+      t.get(refEstado(db)),
+      ...productoIds.map((id) => t.get(db.collection(COL.productos).doc(id))),
+      ...productoIds.map((id) => t.get(db.collection(COL.lotes).where('productoId', '==', id).limit(300))),
+    ]);
+    if (!snapCaja.exists) throw new HttpsError('not-found', 'La caja ya no existe.');
+    const caja = snapCaja.data();
+    if (caja.activa === false) throw new HttpsError('failed-precondition', 'La caja está inactiva.');
+    const productos = new Map();
+    const lotesPorProducto = new Map();
+    productoIds.forEach((id, i) => {
+      const sp = resto[i];
+      if (!sp.exists) throw new HttpsError('not-found', 'Un producto ya no existe en el maestro.');
+      productos.set(id, { id, ...sp.data() });
+      lotesPorProducto.set(id, resto[productoIds.length + i].docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
+    exigirSinInventario(snapEstado, [...productos.values()], 'reponer cajas');
+
+    const disponibles = Object.fromEntries(productoIds.map((id) => [id, lotesPorProducto.get(id).reduce((n, l) => n + Math.max(0, Number(l.disponible) || 0), 0)]));
+    const { errores, lineas } = planReposicionCaja(caja.productos || {}, cantidades, disponibles);
+    exigirSinErrores(errores);
+
+    // Saldos en memoria (lotes y productos) con el mismo aplicarMovimiento de las salidas.
+    const lotesPorId = new Map();
+    lotesPorProducto.forEach((lista) => lista.forEach((l) => lotesPorId.set(l.id, l)));
+    const saldoLote = new Map();
+    const saldoProducto = new Map(productoIds.map((id) => [id, saldoDe(productos.get(id))]));
+    let orden = 0;
+    const pasos = [];
+    conErrorStock(() => lineas.filter((l) => l.cantidad > 0).forEach((linea) => {
+      const p = productos.get(linea.productoId);
+      let partes;
+      try {
+        partes = repartirFEFO(lotesPorProducto.get(linea.productoId), linea.cantidad);
+      } catch (error) {
+        throw new ErrorStock(`${p.nombre}: ${error.message}`);
+      }
+      linea.lotes = partes.map(({ lote, vencimiento, cantidad }) => ({ lote, vencimiento, cantidad }));
+      partes.forEach((parte) => {
+        const mov = { tipo: 'REPOSICION_CAJA', cantidad: parte.cantidad };
+        const sl = aplicarMovimiento(saldoLote.get(parte.loteId) || saldoDe(lotesPorId.get(parte.loteId)), mov);
+        const sp = aplicarMovimiento(saldoProducto.get(linea.productoId), mov);
+        saldoLote.set(parte.loteId, sl);
+        saldoProducto.set(linea.productoId, sp);
+        pasos.push({ parte, linea, orden: orden++, sl, sp });
+      });
+    }));
+
+    // Escrituras.
+    const refRepo = ref.collection('reposiciones').doc();
+    const observacion = `Reposición caja: ${caja.nombre}`;
+    saldoLote.forEach((s, id) => {
+      const { id: _id, ...datosLote } = lotesPorId.get(id); // eslint-disable-line no-unused-vars
+      t.set(db.collection(COL.lotes).doc(id), {
+        ...datosLote, disponible: s.disponible, transito: s.transito, transitoPorCentro: s.transitoPorCentro,
+        soloCargaInicial: false, ultimoMovimiento: ahora(), ultimoMovimientoTipo: 'REPOSICION_CAJA',
+      });
+    });
+    const productosActualizados = [...new Set(pasos.map((x) => x.linea.productoId))].map((id) => {
+      t.update(db.collection(COL.productos).doc(id), { ...saldoProducto.get(id), conMovimientos: true, actualizadoEn: ahora() });
+      return { id, ...saldoProducto.get(id), conMovimientos: true };
+    });
+    pasos.forEach(({ parte, linea, orden: o, sl, sp }) => {
+      const p = productos.get(linea.productoId);
+      t.set(db.collection(COL.movimientos).doc(), {
+        tipo: 'REPOSICION_CAJA', fecha: ahora(), orden: o, usuario: por,
+        productoId: p.id, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
+        loteId: parte.loteId, lote: parte.lote, vencimiento: parte.vencimiento, cantidad: parte.cantidad,
+        saldoLote: { disponible: sl.disponible, transito: sl.transito }, saldoProducto: { disponible: sp.disponible, transito: sp.transito },
+        centroId: null, cajaId, documentoRef: { id: refRepo.id, tipo: 'REPOSICION_CAJA', numero: caja.nombre, cajaId }, observacion,
+      });
+    });
+    const productosCaja = { ...caja.productos };
+    lineas.forEach((l) => {
+      if (l.cantidad > 0) productosCaja[l.productoId] = { ...productosCaja[l.productoId], stockActual: (Number(productosCaja[l.productoId].stockActual) || 0) + l.cantidad };
+    });
+    const totalRepuesto = lineas.reduce((n, l) => n + l.cantidad, 0);
+    const totalPendiente = lineas.reduce((n, l) => n + l.pendiente, 0);
+    t.set(refRepo, {
+      fecha: ahora(), usuario: por, cajaNombre: caja.nombre, observacion,
+      lineas: lineas.map((l) => ({ ...l, lotes: l.lotes || [] })), totalRepuesto, totalPendiente,
+    });
+    t.update(ref, {
+      ...conTotales(productosCaja),
+      ultimaReposicion: { id: refRepo.id, fecha: ahora(), usuario: por.nombre },
+      actualizadoPor: por, actualizadoEn: ahora(),
+    });
+    return { id: refRepo.id, lineas: lineas.map((l) => ({ ...l, lotes: l.lotes || [] })), totalRepuesto, totalPendiente, productos: productosActualizados };
+  });
+};
+
+const reponerCaja = async (db, uid, datos) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.reponerCaja);
+  return reponerCajaComo(db, datosPor(uid, perfil), datos);
+};
+
 module.exports = {
+  reponerCaja,
+  reponerCajaComo,
   inventariarCaja,
   inventariarCajaComo,
   guardarCaja,

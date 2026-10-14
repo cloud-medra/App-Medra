@@ -272,3 +272,12 @@ export const guardarCaja = (datos) => llamar('bodegaGuardarCaja')(datos);
 
 // { cajaId, conteos: { [productoId]: contado } } -> { id, lineas, resumen }
 export const inventariarCaja = (datos) => llamar('bodegaInventariarCaja')(datos);
+
+// { cajaId, cantidades: { [productoId]: n } } -> { id, lineas, totalRepuesto, totalPendiente }.
+// Descuenta de la Bodega General (FEFO por lote) y suma a la caja; refleja
+// el nuevo disponible de los productos en la copia local.
+export const reponerCaja = async (datos) => {
+  const r = await llamar('bodegaReponerCaja')(datos);
+  reflejarProductos(r.productos);
+  return r;
+};

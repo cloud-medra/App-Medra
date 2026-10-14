@@ -9,3 +9,13 @@ export const productosDeCaja = (caja) => Object.entries(caja?.productos || {})
 export const textoLotes = (lotes = []) => lotes
   .map((l) => `${l.lote || 'S/L'}${l.vencimiento ? ` (${l.vencimiento})` : ''} × ${l.cantidad}`)
   .join(', ') || '—';
+
+// La caja con el stock actual = lo contado en un inventario recién hecho
+// (para abrir "Reponer" sin esperar a releerla).
+export const cajaTrasInventario = (caja, lineas = []) => ({
+  ...caja,
+  productos: Object.fromEntries(Object.entries(caja?.productos || {}).map(([id, p]) => {
+    const l = lineas.find((x) => x.productoId === id);
+    return [id, l ? { ...p, stockActual: l.contado } : p];
+  })),
+});
