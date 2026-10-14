@@ -18,6 +18,7 @@ import { Building2, Plus, Trash2, Search, Pencil, Save, X, History, Settings, Re
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { useToast } from '../../../../context/ToastContext';
+import { unidadesEnTransitoCentro } from '../../bodega/shared/bodegaApi';
 import { useModal } from '../../../../context/ModalContext';
 import { useUser } from '../../../../context/UserContext';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
@@ -30,6 +31,7 @@ import { DrawersOverlay, LogDrawer, ConfigDrawer } from './CentrosMaestrosDrawer
 // centro de costo de un usuario (Administración → Usuarios).
 const FORM_VACIO = { nombre: '', comentario: '', estado: 'ACTIVO', usarEnGestiones: true };
 const usaEnGestiones = (c) => c?.usarEnGestiones !== false;
+const MENSAJE_CENTRO_CON_TRANSITO = 'Este centro tiene stock en tránsito en Bodega, inactívalo en vez de borrarlo.';
 
 const CentrosMaestros = () => {
   // Viene del catalogosStore (lectura única por sesión, compartida con los
@@ -164,6 +166,12 @@ const CentrosMaestros = () => {
       "¿Estás seguro de eliminar este registro? Esta acción no se puede deshacer.",
       async () => {
         try {
+          // Las reglas no dejan borrar un centro con stock en tránsito en
+          // Bodega; se avisa antes (sin dejar el log de ELIMINACION).
+          if (await unidadesEnTransitoCentro(id).catch(() => 0) > 0) {
+            showToast(MENSAJE_CENTRO_CON_TRANSITO, "error");
+            return;
+          }
           await registrarLog(id, 'ELIMINACION', {
             nombre: centroAEliminar?.nombre || ''
           });
@@ -173,7 +181,7 @@ const CentrosMaestros = () => {
 
           showToast("Centro eliminado correctamente", "info");
         } catch (error) {
-          showToast("Error al eliminar", "error");
+          showToast(error?.code === 'permission-denied' ? MENSAJE_CENTRO_CON_TRANSITO : "Error al eliminar", "error");
         }
       }
     );

@@ -13,7 +13,7 @@ const SIN_DATOS = [];
  * Lo carga la primera vez que alguien lo pide en la sesión; las demás
  * pantallas lo reutilizan sin nuevas lecturas.
  *
- * @param {'codigos'|'empresas'|'recargos'|'centros'|'prestadores'|'notas'} nombre
+ * @param {'codigos'|'empresas'|'recargos'|'centros'|'prestadores'|'notas'|'bodegaProductos'|'bodegaCatalogos'} nombre
  * @param {{ habilitado?: boolean, consulta?: { clave: string, restricciones: any[] } }} [opciones]
  *   habilitado=false no dispara la carga. `consulta` filtra la lectura (ver
  *   cargarCatalogo); solo se vuelve a leer cuando cambia su `clave`.

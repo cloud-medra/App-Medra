@@ -26,8 +26,14 @@
 //                                         deshabilitarInactivosAuth)
 //   bloqueado    bloqueado@prueba.cl      bloqueado por 5 intentos fallidos
 //   nuevo        nuevo@prueba.cl          primer ingreso (Cambiar contraseña)
+//   bodega       bodega@prueba.cl         Bodega: Maestro (con las acciones sensibles
+//                                         inactivar y quitar códigos) y Categorías
+//   bodegaop     bodegaop@prueba.cl       Bodega: solo Maestro, sin acciones sensibles
 //   (sinpermiso, inactivo, bloqueado y nuevo no tienen centro: en Lista de
 //   usuarios aparecen "Por reasignar")
+//
+// Además, datos de prueba de Bodega (centros, categorías, productos y
+// códigos): ver scripts/sembrarBodega.js.
 //
 // Contraseña de todos: Prueba123. Nombres de usuario indexados.
 //
@@ -42,6 +48,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 const servicio = require('../usuarios/servicio');
 const solicitudes = require('../solicitudes/servicio');
+const { sembrarBodega } = require('./sembrarBodega');
 
 const PROYECTO = process.env.GCLOUD_PROJECT || '';
 const FIRESTORE = process.env.FIRESTORE_EMULATOR_HOST;
@@ -61,6 +68,9 @@ const listado = (elements) => ({
   permisos: { administracion: [LISTADO] },
   permisosGranulares: { [LISTADO]: { tabla_usuarios: { visible: true, elements } } },
 });
+
+const MAESTRO_BODEGA = '/bodega/maestroBodega';
+const CATALOGOS_BODEGA = '/bodega/catalogosBodega';
 
 const USUARIOS = [
   { nombreUsuario: 'dev', nombreCompleto: 'Dev Prueba', rol: 'dev', permisos: {}, permisosGranulares: {} },
@@ -86,6 +96,18 @@ const USUARIOS = [
   { nombreUsuario: 'inactivoprevio', nombreCompleto: 'Inactivo Previo', rol: 'operador', activo: false, ...listado({}) },
   { nombreUsuario: 'bloqueado', nombreCompleto: 'Usuario Bloqueado', rol: 'operador', bloquear: true, ...listado({}) },
   { nombreUsuario: 'nuevo', nombreCompleto: 'Usuario Nuevo', rol: 'operador', passwordChanged: false, ...listado({}) },
+  {
+    nombreUsuario: 'bodega', nombreCompleto: 'Encargado Bodega', rol: 'operador', centroCostoId: 'lab',
+    permisos: { bodega: [MAESTRO_BODEGA, CATALOGOS_BODEGA] },
+    permisosGranulares: {
+      [MAESTRO_BODEGA]: { productos: { visible: true, elements: { btn_inactivar: true } }, codigos: { visible: true, elements: { btn_desvincular: true } } },
+      [CATALOGOS_BODEGA]: {},
+    },
+  },
+  {
+    nombreUsuario: 'bodegaop', nombreCompleto: 'Operador Bodega', rol: 'operador', centroCostoId: 'lab',
+    permisos: { bodega: [MAESTRO_BODEGA] }, permisosGranulares: { [MAESTRO_BODEGA]: {} },
+  },
 ];
 
 (async () => {
@@ -114,6 +136,7 @@ const USUARIOS = [
   // Una solicitud pendiente para ver en Administración → Alertas.
   const { uid: uidOperador } = await auth.getUserByEmail('operador@prueba.cl');
   await solicitudes.crearSolicitud(db, auth, uidOperador, { tipo: 'nombreCompleto', valorSolicitado: 'Operador Renombrado', motivo: 'Prueba del buzón' }, { notificar: async () => ({}) });
+  await sembrarBodega(db);
   console.log(`\nListo (proyecto ${PROYECTO}). Contraseña de todos: ${PASSWORD}`);
 })().catch((err) => {
   console.error(err);

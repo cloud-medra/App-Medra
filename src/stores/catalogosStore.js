@@ -37,6 +37,11 @@ export const CATALOGOS = {
   prestadores: { coleccion: 'maestros_prestadores', enVivo: false },
   // No es un maestro, pero se usa igual: notas del panel (Dashboard + Notas Admin).
   notas: { coleccion: 'administracion_notas', enVivo: false },
+  // Bodega: maestro de productos (con sus totales de stock) y categorías /
+  // unidades. Lectura única: las pantallas de Bodega reflejan sus propias
+  // escrituras con upsertLocal y los cambios de otros con "Actualizar".
+  bodegaProductos: { coleccion: 'bodega_productos', enVivo: false },
+  bodegaCatalogos: { coleccion: 'bodega_catalogos', enVivo: false },
 };
 
 const ESTADO_INICIAL = Object.freeze({ datos: null, cargando: false, error: null });

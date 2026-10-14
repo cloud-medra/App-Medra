@@ -86,6 +86,10 @@ import UnidadInventario from '../components/modulos/inventario/unidadInventario/
 import EscaneoInventario from '../components/modulos/inventario/escaneoInventario/EscaneoInventario';
 import InventarioPorCajas from '../components/modulos/inventario/inventarioCajas/InventarioPorCajas';
 
+// --- BODEGA ---
+import MaestroBodega from '../components/modulos/bodega/maestroBodega/MaestroBodega';
+import CatalogosBodega from '../components/modulos/bodega/catalogosBodega/CatalogosBodega';
+
 // --- DOCUMENTOS ---
 import ReportesInfo from '../components/modulos/operaciones/documentos/reportesInfo/ReportesInfo';
 import ImportarDetallesOC from '../components/modulos/operaciones/documentos/importarDetallesOC/ImportarDetallesOC';
@@ -324,6 +328,10 @@ const Dashboard = () => {
     '/inventario/unidadInventario': <UnidadInventario />,
     '/inventario/escaneoInventario': <EscaneoInventario />,
     '/inventario/inventarioCajas': <InventarioPorCajas />,
+
+    // ── Bodega ──
+    '/bodega/maestroBodega': <MaestroBodega />,
+    '/bodega/catalogosBodega': <CatalogosBodega />,
 
     // ── Documentos ──
     '/documentos/reportesInfo': <ReportesInfo pathVista="/documentos/reportesInfo" onAbrirGestionImplante={abrirGestionImplante} />,

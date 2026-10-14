@@ -445,9 +445,24 @@ service cloud.firestore {
       allow write: if estaActivo() && (esDev() || tienePermiso('maestros'));
     }
 
-    match /maestros_centros/{document=**} {
+    // Un centro con stock en tránsito en Bodega no se puede borrar (se
+    // inactiva): el tránsito quedaría apuntando a un centro inexistente.
+    function centroConTransitoBodega(centroId) {
+      let ruta = /databases/$(database)/documents/bodega_transito_centros/$(centroId);
+      return exists(ruta) && get(ruta).data.get('unidades', 0) > 0;
+    }
+    match /maestros_centros/{centroId} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('maestros'));
+      allow create, update: if estaActivo() && (esDev() || tienePermiso('maestros'));
+      allow delete: if estaActivo() && (esDev() || tienePermiso('maestros'))
+        && !centroConTransitoBodega(centroId);
+      // Subcolecciones (logs). Con {subcoleccion} delante: un {document=**}
+      // solo también calzaría con el propio centro (cero segmentos) y
+      // permitiría borrarlo.
+      match /{subcoleccion}/{document=**} {
+        allow read: if estaActivo();
+        allow write: if estaActivo() && (esDev() || tienePermiso('maestros'));
+      }
     }
 
     // Bodymap: Maestro "Zonas por diagnóstico". Lo lee quien ve gestiones;
@@ -614,6 +629,53 @@ service cloud.firestore {
       allow read: if estaActivo();
       allow write: if estaActivo() && (esDev() || tienePermiso('inventario'));
     }
+
+    // =================================================================
+    // BODEGA (módulo nuevo, independiente de INVENTARIO)
+    // =================================================================
+    // El navegador solo LEE: toda escritura (productos, códigos de barra,
+    // stock, kardex, tránsito, inventario) pasa por las Cloud Functions de
+    // functions/bodega, que validan permisos granulares y saldos dentro de
+    // una transacción.
+    function leeBodega() {
+      return estaActivo() && (esDev() || tienePermiso('bodega'));
+    }
+    match /bodega_productos/{document=**} {
+      allow read: if leeBodega();
+    }
+    match /bodega_codigos_barra/{document=**} {
+      allow read: if leeBodega();
+    }
+    match /bodega_catalogos/{document=**} {
+      allow read: if leeBodega();
+    }
+    match /bodega_lotes/{document=**} {
+      allow read: if leeBodega();
+    }
+    match /bodega_movimientos/{document=**} {
+      allow read: if leeBodega();
+    }
+    match /bodega_documentos/{document=**} {
+      allow read: if leeBodega();
+    }
+    match /bodega_salidas/{document=**} {
+      allow read: if leeBodega();
+    }
+    match /bodega_transitos/{document=**} {
+      allow read: if leeBodega();
+    }
+    match /bodega_inventarios/{document=**} {
+      allow read: if leeBodega();
+    }
+    match /bodega_control/{document=**} {
+      allow read: if leeBodega();
+    }
+    // Totales del tránsito por centro: también los lee Maestros → Centros
+    // para avisar antes de borrar un centro con tránsito.
+    match /bodega_transito_centros/{centroId} {
+      allow read: if leeBodega() || (estaActivo() && tienePermiso('maestros'));
+    }
+    // bodega_unicos (candados de unicidad): solo las Cloud Functions.
 
     // =================================================================
     // DOCUMENTOS

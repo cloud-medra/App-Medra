@@ -62,3 +62,7 @@ Object.assign(exports, require("./usuarios"));
 // Solicitudes de cambio de datos del usuario (Ajustes → Datos) y su
 // aprobación desde Administración → Alertas. Ver functions/solicitudes.
 Object.assign(exports, require("./solicitudes"));
+
+// Bodega: maestro de productos, códigos de barra y (por fases) stock por
+// lote, tránsito por centro e inventario. Ver functions/bodega/index.js.
+Object.assign(exports, require("./bodega"));

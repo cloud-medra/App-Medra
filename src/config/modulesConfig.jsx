@@ -43,6 +43,8 @@ import {
   PackagePlus,
   PackageMinus,
   PackageSearch,
+  PackageOpen,
+  Tags,
   Settings2,
   ShieldCheck,
   StickyNote,
@@ -165,6 +167,14 @@ export const MODULES = {
       { label: 'Stock Unidad', path: '/inventario/unidadInventario', icon: <Building2 size={14} /> },
       { label: 'Escaneo', path: '/inventario/escaneoInventario', icon: <ScanBarcode size={14} /> },
       { label: 'Inventario por cajas', path: '/inventario/inventarioCajas', icon: <ClipboardCheck size={14} /> },
+    ]
+  },
+  bodega: {
+    label: 'Bodega',
+    icon: <PackageOpen size={18} />,
+    subItems: [
+      { label: 'Maestro / Kardex', path: '/bodega/maestroBodega', icon: <Boxes size={14} /> },
+      { label: 'Categorías y unidades', path: '/bodega/catalogosBodega', icon: <Tags size={14} /> },
     ]
   },
   documentos: {
