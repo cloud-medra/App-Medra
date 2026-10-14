@@ -17,6 +17,7 @@ import {
   CheckCheck,
   ClipboardList,
   ClipboardCheck,
+  Package,
   Database,
   Factory,
   FileScan,
@@ -181,6 +182,7 @@ export const MODULES = {
       { label: 'Tránsito por centro', path: '/bodega/centrosBodega', icon: <Building2 size={14} /> },
       { label: 'Consumo por centro', path: '/bodega/consumoBodega', icon: <BarChart3 size={14} /> },
       { label: 'Inventario físico', path: '/bodega/inventarioBodega', icon: <ClipboardCheck size={14} /> },
+      { label: 'Cajas', path: '/bodega/cajasBodega', icon: <Package size={14} /> },
       { label: 'Categorías y unidades', path: '/bodega/catalogosBodega', icon: <Tags size={14} /> },
     ]
   },

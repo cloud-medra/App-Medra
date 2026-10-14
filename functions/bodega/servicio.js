@@ -31,6 +31,7 @@ const {
   agruparLineasEgreso, aplicarMovimientoCentro, aplicarAccionTransito, accionTransito, normalizarIdEntrega,
   ESTADOS_INVENTARIO, NO_CONTADOS, MAX_CONTEOS_POR_ENVIO, MAX_NOMBRE_INVENTARIO, diferenciaLinea, resumenInventario,
   aplicarConteo, idLote,
+  validarCaja, totalesCaja,
 } = require('./nucleo.mjs');
 const { interpretarLectura, idVinculo, MAX_CODIGO_LEIDO } = require('./gs1.mjs');
 
@@ -1139,7 +1140,76 @@ const anularInventario = async (db, uid, datos = {}) => {
   });
 };
 
+// --- Cajas (kits con stock objetivo) ------------------------------------------
+//
+//   bodega_cajas/{id} = { nombre, descripcion, activa,
+//     productos: { [productoId]: { nombre, codigoMaestro, stockObjetivo, stockActual } },
+//     cantidadProductos, totalObjetivo, totalActual, totalFaltante, completitud,
+//     ultimoInventario, ultimaReposicion, creadoPor/En, actualizadoPor/En }
+//     /inventarios/{id}  y  /reposiciones/{id}: historial (no los lee el listado).
+//   bodega_unicos/caja__{nombre}: candado del nombre único.
+
+const refCaja = (db, id) => db.collection(COL.cajas).doc(id);
+const conTotales = (productos) => ({ productos, ...totalesCaja(productos) });
+
+// Crear / editar / desactivar. El stock actual de un producto que ya estaba
+// se conserva (solo lo cambian inventario y reposición); uno nuevo parte en 0.
+const guardarCajaComo = (db, por, datos = {}) => {
+  const { errores, caja, productos } = validarCaja(datos);
+  exigirSinErrores(errores);
+  const id = datos.id ? String(datos.id) : null;
+  return db.runTransaction(async (t) => {
+    const ref = id ? refCaja(db, id) : db.collection(COL.cajas).doc();
+    const refNuevoUnico = refUnico(db, idUnico.caja(caja.nombre));
+    const [snap, snapUnico, ...snapsProductos] = await Promise.all([
+      id ? t.get(ref) : null,
+      t.get(refNuevoUnico),
+      ...productos.map((p) => t.get(db.collection(COL.productos).doc(p.productoId))),
+    ]);
+    const antes = snap?.data();
+    if (id && !antes) throw new HttpsError('not-found', 'La caja ya no existe.');
+    if (snapUnico.exists && snapUnico.data().refId !== ref.id) throw new HttpsError('already-exists', `Ya existe una caja llamada "${caja.nombre}".`);
+    const previos = antes?.productos || {};
+    const erroresProductos = [];
+    const mapa = {};
+    productos.forEach((p, i) => {
+      const s = snapsProductos[i];
+      if (!s.exists) { erroresProductos.push('Un producto ya no existe en el maestro.'); return; }
+      const d = s.data();
+      if (d.activo === false && !previos[p.productoId]) erroresProductos.push(`${d.nombre}: el producto está inactivo.`);
+      mapa[p.productoId] = {
+        nombre: d.nombre, codigoMaestro: d.codigoMaestro || '', stockObjetivo: p.stockObjetivo,
+        stockActual: Number(previos[p.productoId]?.stockActual) || 0,
+      };
+    });
+    exigirSinErrores([...new Set(erroresProductos)]);
+
+    if (antes && antes.nombre !== caja.nombre) t.delete(refUnico(db, idUnico.caja(antes.nombre)));
+    t.set(refNuevoUnico, { tipo: 'caja', refId: ref.id });
+    const documento = {
+      ...caja, ...conTotales(mapa),
+      ...(antes ? {} : { creadoPor: por, creadoEn: ahora(), ultimoInventario: null, ultimaReposicion: null }),
+      actualizadoPor: por, actualizadoEn: ahora(),
+    };
+    // set sin merge: el mapa de productos se reemplaza entero (los quitados desaparecen).
+    t.set(ref, antes ? { ...antes, ...documento } : documento);
+    registrarLog(t, ref, antes ? 'EDICION' : 'CREACION', por, {
+      antes: antes ? { nombre: antes.nombre, activa: antes.activa, productos: Object.keys(previos).length } : null,
+      despues: { ...caja, productos: Object.keys(mapa).length },
+    });
+    return { id: ref.id };
+  });
+};
+
+const guardarCaja = async (db, uid, datos) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.guardarCaja);
+  return guardarCajaComo(db, datosPor(uid, perfil), datos);
+};
+
 module.exports = {
+  guardarCaja,
+  guardarCajaComo,
   iniciarInventario,
   reanudarInventario,
   registrarConteo,

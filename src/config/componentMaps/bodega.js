@@ -221,4 +221,26 @@ export const bodegaComponentMaps = {
       },
     },
   },
+
+  '/bodega/cajasBodega': {
+    label: 'Cajas / kits con stock objetivo (CajasBodega.jsx)',
+    sections: {
+      cajas: {
+        label: 'Sección: Listado y mantenedor de cajas',
+        elements: {
+          btn_guardar: { label: 'Acción: Crear, editar o desactivar cajas y sus productos / stock objetivo' },
+          ...columnas([['productos', 'Productos'], ['completitud', '% completitud'], ['faltante', 'Unidades faltantes'], ['ultimoInventario', 'Último inventario']]),
+        },
+      },
+      caja: {
+        label: 'Sección: Contenido de la caja, inventario, reposición e historial',
+        elements: {
+          btn_inventario: { label: 'Acción: Hacer inventario de la caja' },
+          btn_reponer: { label: 'Acción: Reponer desde la Bodega General (descuenta stock)' },
+          btn_exportar: { label: 'Acción: Exportar a Excel/PDF (contenido, inventario, reposición)' },
+          ...columnas([['codigo', 'Código maestro'], ['objetivo', 'Stock objetivo'], ['actual', 'Stock actual'], ['faltante', 'Faltante']]),
+        },
+      },
+    },
+  },
 };

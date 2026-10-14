@@ -124,6 +124,8 @@ const TABLAS_PENDIENTES = new Set([
   // Solicitud de Implantes y Hemodinamia (pantalla compartida).
   'modulos/operaciones/shared/solicitud/SolicitudGestiones.jsx',
   'ui/TablaRedimensionable.jsx',
+  // Editor de productos de una caja (formulario, no listado).
+  'modulos/bodega/cajasBodega/FormCajaModal.jsx',
 ]);
 
 // Permisos por centro: vista de administración de usuarios (solo rol

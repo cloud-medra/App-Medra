@@ -245,3 +245,27 @@ export const cerrarInventario = async (datos) => {
   refrescarCatalogo('bodegaProductos').catch(() => {});
   return r;
 };
+
+// ---------------- Cajas (kits) ----------------
+
+// Listado: solo los documentos de las cajas (1 lectura por caja); el
+// historial de inventarios y reposiciones no se lee acá.
+export const leerCajas = async () => {
+  const snap = await getDocs(query(collection(db, COL.cajas), limit(500)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+};
+
+export const leerCaja = async (cajaId) => {
+  const snap = await getDoc(doc(db, COL.cajas, cajaId));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+};
+
+// Historial de una caja ('inventarios' | 'reposiciones'), más reciente primero.
+export const leerHistorialCaja = async (cajaId, tipo, maximo = 30) => {
+  const snap = await getDocs(query(collection(db, COL.cajas, cajaId, tipo), orderBy('fecha', 'desc'), limit(maximo)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+// { id?, nombre, descripcion, activa, productos: [{ productoId, stockObjetivo }] } -> { id }
+export const guardarCaja = (datos) => llamar('bodegaGuardarCaja')(datos);
