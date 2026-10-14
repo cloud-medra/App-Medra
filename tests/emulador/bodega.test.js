@@ -506,7 +506,8 @@ describe('egreso a tránsito por centro y gestión del tránsito (Fase 3)', () =
     const [t] = await transitosDe('pab');
     await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, observacion: 'usado' }])).rejects.toEqual(rechazo('invalid-argument')); // sin ID
     await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: '123' }])).rejects.toEqual(rechazo('invalid-argument')); // sin observación
-    await gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: ' cx-55 ', observacion: 'Usado en cirugía' }]);
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: 'CX-55', observacion: 'Usado' }])).rejects.toEqual(rechazo('invalid-argument')); // N° de admisión: solo números
+    await gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: ' 00102345 ', observacion: 'Usado en cirugía' }]);
     expect(await leer('bodega_transitos', t.id)).toMatchObject({ pendiente: 2, entregado: 1, estado: 'ABIERTO' });
     expect(await leer('bodega_lotes', L1())).toMatchObject({ disponible: 2, transito: 2, transitoPorCentro: { pab: 2 } });
     await gestionar('op', [{ transitoId: t.id, accion: 'NOTA', nota: 'Pendiente de confirmar uso' }]);
@@ -518,11 +519,11 @@ describe('egreso a tránsito por centro y gestión del tránsito (Fase 3)', () =
     expect(await leer('bodega_transito_centros', 'pab')).toMatchObject({ unidades: 0, productos: {}, productosDistintos: 0, transitosAbiertos: 0 });
     const historial = (await db.collection('bodega_transitos').doc(t.id).collection('historial').get()).docs.map((d) => d.data());
     expect(historial.map((h) => h.accion).sort()).toEqual(['DEVOLVER', 'ENTREGAR', 'NOTA', 'SALIDA']);
-    expect(historial.find((h) => h.accion === 'ENTREGAR')).toMatchObject({ idEntrega: 'CX-55', observacion: 'Usado en cirugía', cantidad: 1 });
+    expect(historial.find((h) => h.accion === 'ENTREGAR')).toMatchObject({ idEntrega: '102345', observacion: 'Usado en cirugía', cantidad: 1 });
     const movs = await kardex(sonda);
-    expect(movs.find((m) => m.tipo === 'ENTREGA')).toMatchObject({ centroId: 'pab', idEntrega: 'CX-55', cantidad: 1, saldoLote: { disponible: 2, transito: 2 } });
+    expect(movs.find((m) => m.tipo === 'ENTREGA')).toMatchObject({ centroId: 'pab', idEntrega: '102345', cantidad: 1, saldoLote: { disponible: 2, transito: 2 } });
     expect(movs.find((m) => m.tipo === 'DEVOLUCION')).toMatchObject({ centroId: 'pab', cantidad: 2, saldoLote: { disponible: 4, transito: 0 } });
-    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: 'x', observacion: 'y' }])).rejects.toEqual(rechazo('failed-precondition'));
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: '1', observacion: 'y' }])).rejects.toEqual(rechazo('failed-precondition'));
     // Ahora el centro sí se puede borrar (reglas).
     const maestros = await sesion('maestros');
     await expect(deleteDoc(doc(maestros, 'maestros_centros', 'pab'))).resolves.toBeUndefined();
@@ -535,14 +536,14 @@ describe('egreso a tránsito por centro y gestión del tránsito (Fase 3)', () =
     ]);
     const [a, b] = await transitosDe('uci');
     const err = await gestionar('op', [
-      { transitoId: a.id, accion: 'ENTREGAR', cantidad: 2, idEntrega: 'ID-1', observacion: 'común' },
-      { transitoId: b.id, accion: 'ENTREGAR', cantidad: 3, idEntrega: 'ID-1', observacion: 'común' },
+      { transitoId: a.id, accion: 'ENTREGAR', cantidad: 2, idEntrega: '1001', observacion: 'común' },
+      { transitoId: b.id, accion: 'ENTREGAR', cantidad: 3, idEntrega: '1001', observacion: 'común' },
     ], 'centros').catch((e) => e);
     expect(err.code).toBe('failed-precondition');
     expect((await leer('bodega_transitos', a.id)).pendiente).toBe(2);
     await gestionar('op', [
-      { transitoId: a.id, accion: 'ENTREGAR', cantidad: 2, idEntrega: 'ID-1', observacion: 'común' },
-      { transitoId: b.id, accion: 'ENTREGAR', cantidad: 2, idEntrega: 'ID-2', observacion: 'otra' },
+      { transitoId: a.id, accion: 'ENTREGAR', cantidad: 2, idEntrega: '1001', observacion: 'común' },
+      { transitoId: b.id, accion: 'ENTREGAR', cantidad: 2, idEntrega: '1002', observacion: 'otra' },
     ], 'centros');
     expect(await leer('bodega_transito_centros', 'uci')).toMatchObject({ unidades: 0, transitosAbiertos: 0 });
     expect(await leer('bodega_productos', sonda)).toMatchObject({ disponible: 6, transito: 0 });
@@ -552,11 +553,11 @@ describe('egreso a tránsito por centro y gestión del tránsito (Fase 3)', () =
     await egresar('op', [{ productoId: sonda, loteId: L1(), cantidad: 2, centroId: 'pab' }]);
     const [t] = await transitosDe('pab');
     await db.collection('usuarios').doc('op').set({ permisosGranulares: { [CENTROS]: { acciones: { visible: true, elements: { btn_entregar: false } } } } }, { merge: true });
-    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: 'A', observacion: 'B' }], 'centros')).rejects.toEqual(rechazo('permission-denied'));
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: '555', observacion: 'B' }], 'centros')).rejects.toEqual(rechazo('permission-denied'));
     await db.collection('bodega_control').doc('estado').set({ inventarioAbierto: { id: 'inv', alcance: { categorias: [] } } });
     await expect(egresar('op', [{ productoId: gasa, loteId: GASA(), cantidad: 1, centroId: 'pab' }])).rejects.toEqual(rechazo('failed-precondition'));
     await expect(gestionar('op', [{ transitoId: t.id, accion: 'DEVOLVER', cantidad: 1 }])).rejects.toEqual(rechazo('failed-precondition'));
-    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: 'A', observacion: 'B' }])).resolves.toBeTruthy();
+    await expect(gestionar('op', [{ transitoId: t.id, accion: 'ENTREGAR', cantidad: 1, idEntrega: '555', observacion: 'B' }])).resolves.toBeTruthy();
   });
 
   it('verificarBodega.js: todo cuadra después de ingresos, salidas, entregas y devoluciones; detecta un descuadre', async () => {
@@ -568,7 +569,7 @@ describe('egreso a tránsito por centro y gestión del tránsito (Fase 3)', () =
     ]);
     const pab = await transitosDe('pab');
     await gestionar('op', [
-      { transitoId: pab[0].id, accion: 'ENTREGAR', cantidad: 1, idEntrega: 'A', observacion: 'B' },
+      { transitoId: pab[0].id, accion: 'ENTREGAR', cantidad: 1, idEntrega: '555', observacion: 'B' },
       { transitoId: pab[1].id, accion: 'DEVOLVER', cantidad: pab[1].pendiente },
     ]);
     expect(await verificar(db)).toEqual([]);

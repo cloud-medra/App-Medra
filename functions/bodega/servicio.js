@@ -754,7 +754,7 @@ const egresar = async (db, uid, datos = {}) => {
 };
 
 // Acciones sobre tránsitos (de a una o varias): ENTREGAR (sale
-// definitivamente; exige ID y observación), DEVOLVER (vuelve al disponible
+// definitivamente; exige N° de admisión y observación), DEVOLVER (vuelve al disponible
 // de la Bodega General) o NOTA (seguimiento, no mueve stock). Cantidades
 // parciales. Todo en UNA transacción.
 //   datos: { origen: 'transito'|'centros', acciones: [{ transitoId, accion,

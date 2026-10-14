@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   aplicarMovimiento, aplicarMovimientoCentro, validarProducto, validarCatalogo, idLote, normalizarClave,
   codigoAutomatico, idUnico, ErrorStock, stockTotal, bajoMinimo, textoBusquedaProducto,
-  diferenciaLinea, resumenInventario, filtrarComparacion, aplicarConteo,
+  diferenciaLinea, resumenInventario, filtrarComparacion, aplicarConteo, normalizarIdEntrega, ETIQUETA_ID_ENTREGA,
 } from './nucleo.mjs';
 
 const VACIO = { disponible: 0, transito: 0, transitoPorCentro: {} };
@@ -176,5 +176,16 @@ describe('inventario físico', () => {
     expect(aplicarConteo(3, { cantidad: 0, modo: 'reemplazar' })).toBe(0);
     expect(() => aplicarConteo(3, { cantidad: 0, modo: 'sumar' })).toThrow();
     expect(() => aplicarConteo(3, { cantidad: -1, modo: 'reemplazar' })).toThrow();
+  });
+});
+
+describe('N° de admisión de la entrega', () => {
+  it('mismo formato que el resto del proyecto: solo dígitos, sin ceros a la izquierda ni espacios alrededor', () => {
+    expect(ETIQUETA_ID_ENTREGA).toBe('N° de admisión');
+    expect(normalizarIdEntrega(' 00102345 ')).toEqual({ valor: '102345', error: null });
+    expect(normalizarIdEntrega('').error).toMatch(/obligatorio/);
+    expect(normalizarIdEntrega('CX-55').error).toMatch(/solo números/);
+    expect(normalizarIdEntrega('12 34').error).toMatch(/solo números/);
+    expect(normalizarIdEntrega('0').error).toMatch(/solo números/);
   });
 });

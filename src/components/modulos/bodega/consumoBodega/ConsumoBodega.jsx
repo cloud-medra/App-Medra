@@ -3,6 +3,7 @@ import { BarChart3, Search, FileSpreadsheet, ChevronDown, ChevronRight } from 'l
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
+import { ETIQUETA_ID_ENTREGA } from '../../../../../functions/bodega/nucleo.mjs';
 import BuscadorProducto from '../shared/BuscadorProducto';
 import { leerEntregas, mensajeError } from '../shared/bodegaApi';
 import { exportarExcel } from '../shared/exportar';
@@ -72,7 +73,7 @@ const ConsumoBodega = () => {
         { titulo: 'Lote', valor: (m) => m.lote },
         { titulo: 'Vencimiento', valor: (m) => m.vencimiento },
         { titulo: 'Cantidad', valor: (m) => m.cantidad },
-        { titulo: 'ID entrega', valor: (m) => m.idEntrega },
+        { titulo: ETIQUETA_ID_ENTREGA, valor: (m) => m.idEntrega },
         { titulo: 'Observación', valor: (m) => m.observacion },
         { titulo: 'Usuario', valor: (m) => m.usuario?.nombre || '' },
         { titulo: 'N° salida', valor: (m) => m.documentoRef?.numero || '' },
@@ -140,7 +141,7 @@ const ConsumoBodega = () => {
                         {detalle.map((m) => (
                           <tr key={m.id} className="text-[11px] text-gray-600 dark:text-gray-300">
                             <td colSpan={columnasVisibles.length} className="px-2 py-0.5 pl-10">
-                              {fechaHora(m.fecha)} · lote {m.lote || 'S/L'} · <strong>{m.cantidad} u.</strong> · ID {m.idEntrega || '—'} · {m.observacion} · {m.usuario?.nombre || ''}
+                              {fechaHora(m.fecha)} · lote {m.lote || 'S/L'} · <strong>{m.cantidad} u.</strong> · {ETIQUETA_ID_ENTREGA} {m.idEntrega || '—'} · {m.observacion} · {m.usuario?.nombre || ''}
                             </td>
                           </tr>
                         ))}

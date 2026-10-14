@@ -45,7 +45,7 @@ export const bodegaComponentMaps = {
         label: 'Sección: Ficha del producto · Kardex',
         elements: {
           btn_exportar: { label: 'Acción: Exportar kardex a Excel/CSV' },
-          ...columnas([['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'], ['saldoLote', 'Saldo del lote'], ['saldo', 'Saldo del producto'], ['documento', 'Documento'], ['usuario', 'Usuario'], ['observacion', 'ID / observación']]),
+          ...columnas([['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'], ['saldoLote', 'Saldo del lote'], ['saldo', 'Saldo del producto'], ['documento', 'Documento'], ['usuario', 'Usuario'], ['observacion', 'N° de admisión / observación']]),
         },
       },
       codigos: {
@@ -129,7 +129,7 @@ export const bodegaComponentMaps = {
       acciones: {
         label: 'Sección: Acciones sobre el tránsito',
         elements: {
-          btn_entregar: { label: 'Acción: Entregar (usado; exige ID y observación)' },
+          btn_entregar: { label: 'Acción: Entregar (usado; exige N° de admisión y observación)' },
           btn_devolver: { label: 'Acción: Devolver a stock (no usado)' },
           btn_nota: { label: 'Acción: Mantener en tránsito (nota de seguimiento)' },
         },
@@ -161,7 +161,7 @@ export const bodegaComponentMaps = {
       acciones: {
         label: 'Sección: Acciones sobre el tránsito del centro',
         elements: {
-          btn_entregar: { label: 'Acción: Entregar (usado; exige ID y observación)' },
+          btn_entregar: { label: 'Acción: Entregar (usado; exige N° de admisión y observación)' },
           btn_devolver: { label: 'Acción: Devolver a stock (no usado)' },
           btn_nota: { label: 'Acción: Mantener en tránsito (nota de seguimiento)' },
         },

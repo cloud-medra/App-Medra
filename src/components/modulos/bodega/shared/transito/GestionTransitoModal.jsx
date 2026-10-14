@@ -13,7 +13,7 @@ const ACCIONES = {
 const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]';
 
 // Entregar, devolver o anotar uno o varios tránsitos (cantidades parciales).
-// En la entrega, el ID y la observación son comunes a todos los
+// En la entrega, el N° de admisión y la observación son comunes a todos los
 // seleccionados, con opción de cambiarlos en cada línea.
 //   origen: 'transito' | 'centros' (vista desde la que se actúa).
 const GestionTransitoModal = ({ accion, transitos, origen, onCerrar, onHecho }) => {
@@ -76,7 +76,7 @@ const GestionTransitoModal = ({ accion, transitos, origen, onCerrar, onHecho }) 
             <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-2">
               <label className="flex flex-col">
                 <span className="text-[10px] font-bold uppercase text-gray-500">{ETIQUETA_ID_ENTREGA} * {lineas.length > 1 && '(común)'}</span>
-                <input value={comun.idEntrega} onChange={(e) => setComun((c) => ({ ...c, idEntrega: e.target.value }))} maxLength={MAX_ID_ENTREGA} autoFocus className={`${INPUT} font-num uppercase`} />
+                <input value={comun.idEntrega} onChange={(e) => setComun((c) => ({ ...c, idEntrega: e.target.value }))} maxLength={MAX_ID_ENTREGA} autoFocus inputMode="numeric" className={`${INPUT} font-num`} />
               </label>
               <label className="flex flex-col">
                 <span className="text-[10px] font-bold uppercase text-gray-500">Observación * {lineas.length > 1 && '(común)'}</span>
@@ -98,7 +98,7 @@ const GestionTransitoModal = ({ accion, transitos, origen, onCerrar, onHecho }) 
           )}
           {accion === 'ENTREGAR' && lineas.length > 1 && (
             <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300">
-              <input type="checkbox" checked={porLinea} onChange={(e) => setPorLinea(e.target.checked)} /> Cambiar ID u observación en alguna línea
+              <input type="checkbox" checked={porLinea} onChange={(e) => setPorLinea(e.target.checked)} /> Cambiar N° de admisión u observación en alguna línea
             </label>
           )}
 
@@ -116,7 +116,7 @@ const GestionTransitoModal = ({ accion, transitos, origen, onCerrar, onHecho }) 
                 )}
                 {accion === 'ENTREGAR' && porLinea && (
                   <>
-                    <input value={l.idEntrega} onChange={(e) => cambiarLinea(i, 'idEntrega', e.target.value)} maxLength={MAX_ID_ENTREGA} placeholder={comun.idEntrega || ETIQUETA_ID_ENTREGA} className={`${INPUT} w-32 font-num uppercase`} aria-label={`${ETIQUETA_ID_ENTREGA} de la línea`} />
+                    <input value={l.idEntrega} onChange={(e) => cambiarLinea(i, 'idEntrega', e.target.value)} maxLength={MAX_ID_ENTREGA} placeholder={comun.idEntrega || ETIQUETA_ID_ENTREGA} inputMode="numeric" className={`${INPUT} w-32 font-num`} aria-label={`${ETIQUETA_ID_ENTREGA} de la línea`} />
                     <input value={l.observacion} onChange={(e) => cambiarLinea(i, 'observacion', e.target.value)} maxLength={MAX_OBSERVACION} placeholder={comun.observacion || 'Observación'} className={`${INPUT} w-48`} aria-label="Observación de la línea" />
                   </>
                 )}

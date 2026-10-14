@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { X, History } from 'lucide-react';
+import { ETIQUETA_ID_ENTREGA } from '../../../../../../functions/bodega/nucleo.mjs';
 import { leerHistorialTransito, mensajeError } from '../bodegaApi';
 import { fechaHora } from './transitos';
 
@@ -44,7 +45,7 @@ const HistorialTransitoModal = ({ transito, onCerrar }) => {
                 {h.cantidad !== null && h.cantidad !== undefined && <span className="font-num font-bold">{h.cantidad} u.</span>}
                 <span className="ml-auto text-[11px] text-gray-500">{fechaHora(h.fecha)} · {h.usuario?.nombre || ''}</span>
               </div>
-              {h.idEntrega && <div className="text-[11px]">ID: <span className="font-num font-bold">{h.idEntrega}</span></div>}
+              {h.idEntrega && <div className="text-[11px]">{ETIQUETA_ID_ENTREGA}: <span className="font-num font-bold">{h.idEntrega}</span></div>}
               {h.observacion && <div className="text-[11px] text-gray-600 dark:text-gray-300">{h.observacion}</div>}
               {h.nota && <div className="text-[11px] text-gray-700 dark:text-gray-200 whitespace-pre-wrap">{h.nota}</div>}
             </li>

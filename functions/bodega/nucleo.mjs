@@ -12,6 +12,7 @@
 //     en la misma transacción que el lote.
 
 import { idVinculo } from './gs1.mjs';
+import { admisionClaveDe } from '../descripcionesReporte/nucleo.mjs';
 
 export const MODULO = 'bodega';
 
@@ -375,24 +376,22 @@ export const normalizarRut = (texto) => {
 export const MAX_LINEAS_EGRESO = 60;
 export const MAX_ACCIONES_TRANSITO = 50;
 export const ESTADOS_TRANSITO = Object.freeze({ ABIERTO: 'ABIERTO', CERRADO: 'CERRADO' });
-export const MAX_ID_ENTREGA = 60;
+export const MAX_ID_ENTREGA = 20;
 export const MAX_NOTA = 500;
 
-// Número de ID de la entrega. 'LIBRE' = texto obligatorio; 'RUT' = RUT
-// chileno con dígito verificador (cambiar aquí si se confirma que es RUT).
-export const TIPO_ID_ENTREGA = 'LIBRE';
-export const ETIQUETA_ID_ENTREGA = TIPO_ID_ENTREGA === 'RUT' ? 'RUT del paciente' : 'N° de ID';
+// N° de admisión de la entrega (dato del paciente que usó el insumo). Mismo
+// formato que el resto del proyecto (admisionClaveDe, Reporte Info /
+// Implantes): solo dígitos, mayor a cero, sin ceros a la izquierda.
+export const ETIQUETA_ID_ENTREGA = 'N° de admisión';
 
 // Texto ingresado -> { valor, error }.
-export const normalizarIdEntrega = (texto, tipo = TIPO_ID_ENTREGA) => {
-  const limpio = limpiar(texto).toUpperCase();
+export const normalizarIdEntrega = (texto) => {
+  const limpio = String(texto ?? '').trim();
   if (!limpio) return { valor: '', error: `El ${ETIQUETA_ID_ENTREGA} es obligatorio para entregar.` };
-  if (tipo === 'RUT') {
-    const rut = normalizarRut(limpio);
-    return rut ? { valor: rut, error: null } : { valor: limpio, error: 'El RUT no es válido (revisa el dígito verificador).' };
-  }
   if (limpio.length > MAX_ID_ENTREGA) return { valor: limpio, error: `El ${ETIQUETA_ID_ENTREGA} no puede superar ${MAX_ID_ENTREGA} caracteres.` };
-  return { valor: limpio, error: null };
+  const admision = admisionClaveDe(limpio);
+  if (!admision) return { valor: limpio, error: `El ${ETIQUETA_ID_ENTREGA} debe tener solo números (sin letras ni espacios).` };
+  return { valor: admision, error: null };
 };
 
 // Lotes de un producto para egresar, en orden FEFO (vence primero; sin

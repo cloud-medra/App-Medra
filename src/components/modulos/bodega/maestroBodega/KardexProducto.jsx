@@ -3,7 +3,7 @@ import { RefreshCw, FileSpreadsheet, FileText } from 'lucide-react';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
-import { TIPOS_MOVIMIENTO } from '../../../../../functions/bodega/nucleo.mjs';
+import { TIPOS_MOVIMIENTO, ETIQUETA_ID_ENTREGA } from '../../../../../functions/bodega/nucleo.mjs';
 import { leerKardex, mensajeError } from '../shared/bodegaApi';
 import { exportarExcel, exportarCsv } from '../shared/exportar';
 import { fechaHora } from '../shared/transito/transitos';
@@ -21,7 +21,7 @@ const COLUMNAS = [
   { key: 'saldo', label: 'Saldo prod. (disp. / tráns.)', alinear: 'text-right' },
   { key: 'documento', label: 'Documento' },
   { key: 'usuario', label: 'Usuario' },
-  { key: 'observacion', label: 'ID / observación' },
+  { key: 'observacion', label: 'N° admisión / observación' },
 ];
 const COLOR = { 1: 'text-emerald-600 dark:text-emerald-400', '-1': 'text-red-600 dark:text-red-400', 0: 'text-amber-600 dark:text-amber-400' };
 const INPUT = 'h-8 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900';
@@ -71,7 +71,7 @@ const KardexProducto = ({ producto }) => {
     { titulo: 'Saldo producto tránsito', valor: (m) => m.saldoProducto?.transito },
     { titulo: 'Documento', valor: referenciaMovimiento },
     { titulo: 'Usuario', valor: (m) => m.usuario?.nombre || '' },
-    { titulo: 'ID entrega', valor: (m) => m.idEntrega || '' },
+    { titulo: ETIQUETA_ID_ENTREGA, valor: (m) => m.idEntrega || '' },
     { titulo: 'Observación', valor: (m) => m.observacion || '' },
   ];
   const base = `kardex_${producto.codigoMaestro}`;
@@ -124,7 +124,7 @@ const KardexProducto = ({ producto }) => {
                   {ver('saldo') && <td className="px-1.5 py-1 text-right font-num">{m.saldoProducto?.disponible} / {m.saldoProducto?.transito}</td>}
                   {ver('documento') && <td className="px-1.5 py-1">{referenciaMovimiento(m)}</td>}
                   {ver('usuario') && <td className="px-1.5 py-1">{m.usuario?.nombre || ''}</td>}
-                  {ver('observacion') && <td className="px-1.5 py-1">{m.idEntrega && <span className="font-num font-bold">ID {m.idEntrega} · </span>}{m.observacion || ''}</td>}
+                  {ver('observacion') && <td className="px-1.5 py-1">{m.idEntrega && <span className="font-num font-bold">Adm. {m.idEntrega} · </span>}{m.observacion || ''}</td>}
                 </tr>
               );
             })}
