@@ -65,9 +65,10 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
   const vencimientoRef = useRef(null);
 
   const refDe = (campo) => ({ cantidad: cantidadRef, precio: precioRef, lote: loteRef, vencimiento: vencimientoRef }[campo] || escanerRef);
-  // Carga inicial: el foco se mueve en un efecto, después de que React pinta
-  // el panel del producto (con setTimeout el campo a veces aún no existe).
-  // `seleccionar` deja el contenido seleccionado para escribir encima.
+  // El foco se mueve en un efecto, después de que React pinta el panel del
+  // producto (con setTimeout el campo a veces aún no existía y el foco se
+  // quedaba en el escáner). `seleccionar` deja el contenido seleccionado
+  // para escribir encima (Carga inicial).
   const [foco, setFoco] = useState(null); // { campo, seleccionar, n }
   useEffect(() => {
     if (!foco) return;
@@ -75,10 +76,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
     destino?.focus();
     if (foco.seleccionar && destino?.type !== 'date') destino?.select?.();
   }, [foco]);
-  const enfocar = (campo, seleccionar = false) => {
-    if (conPrecio) { setFoco((f) => ({ campo, seleccionar, n: (f?.n || 0) + 1 })); return; }
-    setTimeout(() => refDe(campo).current?.focus(), 0);
-  };
+  const enfocar = (campo, seleccionar = false) => setFoco((f) => ({ campo, seleccionar, n: (f?.n || 0) + 1 }));
 
   const agregar = (p) => {
     const r = agregarLinea(lineas, { ...p, productoId: p.producto.id });
