@@ -19,3 +19,9 @@ Favicon e íconos de la app (en `public/`): `favicon.svg`, `favicon.ico`
 y `site.webmanifest`.
 
 `anterior/`: logos e íconos que se usaban antes (respaldo).
+
+## EmeDigital (crédito "Desarrollado por")
+
+`emedigital-simbolo.svg` (a color) y `emedigital-simbolo-blanco.svg` (modo
+oscuro): solo el símbolo, recortado de `https://www.emedigital.cl/assets/logo.svg`
+y `logo-white.svg`. Se usan en la tarjeta del dashboard (`BrandingCard.jsx`).
