@@ -7,6 +7,7 @@ import { useModal } from '../../../../../../context/ModalContext';
 import { useUser } from '../../../../../../context/UserContext';
 import { registrarLogConsignacion } from '../../utils/registrarLogConsignacion';
 import { cargarCandidatosSolicitudConsignacion } from '../utils/cargarCandidatosSolicitudConsignacion';
+import { construirFilasResumenSolicitudConsignacion } from '../utils/filasResumenSolicitudConsignacion';
 
 const ESTADO_DESTINO = 'SOLICITADO';
 
@@ -125,29 +126,7 @@ export const useSolicitudConsignacionData = () => {
             'VENCIMIENTO': it.vencimiento
           }));
 
-          // Hoja "Resumen", mismo criterio que la de Solicitud Implantes
-          // (shared/solicitud/useSolicitudGestionesData.js): una fila por ítem, con las
-          // columnas Ingreso/Area/Previsión/Id/Cód/Cant/Venta/Médico/Fecha/
-          // Descripción/Estado. A diferencia de Implantes, en Consignación
-          // no existe un estado de carga por ítem: como el export solo
-          // toma documentos con estado=='CARGADO', ese es el valor fijo
-          // para todas las filas reales. Las filas de desglose de guía
-          // (esFilaGuia) no tienen documento propio, así que Previsión y
-          // Estado quedan en '-' (mismo criterio que ya usan esas filas
-          // para EMPRESA en la hoja principal).
-          const filasResumen = itemsSeleccionados.map(it => ({
-            'Ingreso': fechaIngresoHoy,
-            'Area': 'PABELLON',
-            'Previsión': it.esFilaGuia ? '-' : (it.datosOriginales?.prevision || 'P'),
-            'Id': it.gestionId,
-            'Cód': it.codigo,
-            'Cant': it.cantidad,
-            'Venta': it.ventaUnitaria,
-            'Médico': it.medico,
-            'Fecha': formatearFechaDDMMYYYY(it.fecha),
-            'Descripción': it.descripcion,
-            'Estado': it.esFilaGuia ? '-' : 'CARGADO'
-          }));
+          const filasResumen = construirFilasResumenSolicitudConsignacion(itemsSeleccionados, items, fechaIngresoHoy);
 
           const worksheet = XLSX.utils.json_to_sheet(filas);
           const worksheetResumen = XLSX.utils.json_to_sheet(filasResumen);

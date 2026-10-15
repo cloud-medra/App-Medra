@@ -18,10 +18,12 @@ import { MODULES, AJUSTES_ITEMS, SPECIAL_VIEWS } from '../config/modulesConfig.j
 // --- UTILIDADES DEL MENÚ Y DEL PANEL (no son vistas) ---
 import RecordatoriosCampana from '../components/modulos/administracion/recordatorios/RecordatoriosCampana';
 import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
-import { subItemsVisibles, puedeAbrirVista, esAdministrador } from '../config/accesoMenu';
+import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROLLADOR } from '../config/accesoMenu';
 import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
 import { vistaInicialDesdeURL } from '../components/modulos/operaciones/documentos/reportesInfo/urlDetalle';
 import { puedeConfigurarAtajos } from '../config/atajosDashboard';
+import { vistaActiva, itemDeRuta, RUTA_GESTION_MODULOS } from '../config/modulosActivos';
+import { useModulosActivos } from '../stores/modulosActivosStore';
 
 // --- DASHBOARD ---
 import ResumenGeneral from '../components/modulos/dashboard/ResumenGeneral';
@@ -37,6 +39,7 @@ import ListadoUsuario from '../components/modulos/administracion/usuarios/Listad
 import PermisosPorCentro from '../components/modulos/administracion/permisosCentro/PermisosPorCentro';
 import CargasConsolidado from '../components/modulos/administracion/cargasConsolidado/CargasConsolidado';
 import Estadisticas from '../components/modulos/administracion/estadisticas/Estadisticas';
+import GestionModulos from '../components/modulos/administracion/gestionModulos/GestionModulos';
 
 // --- LABORATORIO ---
 import EmpresasLaboratorio from '../components/modulos/gestiones/laboratorio/registros/EmpresasLaboratorio';
@@ -150,6 +153,9 @@ const Dashboard = () => {
   // hechos desde Ajustes (datos personales, tema, nombre a mostrar) se ven al
   // instante en el header y los saludos. ProtectedRoute garantiza que exista.
   const { userData, setUserData } = useUser();
+  // Módulos/ítems activos (global, Administración → Gestión de módulos):
+  // lo inactivo no sale en el sidebar ni se abre. null mientras carga.
+  const modulosActivos = useModulosActivos();
   // Al recargar con el detalle de Reporte Info en la URL (?vista=…&detalle=…)
   // se vuelve a abrir esa vista (ver reportesInfo/urlDetalle.js).
   const [vistaURL] = useState(() => vistaInicialDesdeURL(userData));
@@ -245,7 +251,7 @@ const Dashboard = () => {
 
   const irAPermisosCentro = () => abrirVistaDeModulo('administracion', '/administracion/permisosCentro');
   // Bloque "Período abierto": enlaza a Control Mensual solo si tiene el ítem.
-  const abrirControlMensual = subItemsVisibles(userData, 'administracion').some((s) => s.path === '/administracion/controlMensual')
+  const abrirControlMensual = subItemsVisibles(userData, 'administracion', modulosActivos).some((s) => s.path === '/administracion/controlMensual')
     ? () => abrirVistaDeModulo('administracion', '/administracion/controlMensual')
     : undefined;
 
@@ -259,6 +265,7 @@ const Dashboard = () => {
     '/administracion/ResumenPeriodoAbierto': <ResumenPeriodoAbierto />,
     '/administracion/notasAdmin': <NotasAdmin />,
     '/administracion/recordatorios': <Recordatorios />,
+    [RUTA_GESTION_MODULOS]: <GestionModulos />,
     '/administracion/crearUsuario': (
       <CrearUsuario
         resumeUsuarioId={resumeUsuarioId}
@@ -412,9 +419,12 @@ const Dashboard = () => {
     // El Desarrollador ve todos los ítems y Administrador/Desarrollador los
     // automáticos (Alertas) aunque no estén en sus permisos (ver
     // src/config/accesoMenu.js).
-    const base = Object.keys(MODULES).filter(
-      (mKey) => (userData.permisos[mKey] || []).length > 0 || subItemsVisibles(userData, mKey).length > 0
-    );
+    // Un módulo inactivo, o con todos sus ítems visibles inactivos, no sale.
+    const base = Object.keys(MODULES).filter((mKey) => {
+      const visibles = subItemsVisibles(userData, mKey, modulosActivos).length;
+      if (visibles === 0 && subItemsVisibles(userData, mKey).length > 0) return false;
+      return (userData.permisos[mKey] || []).length > 0 || visibles > 0;
+    });
     const orden = userData.ordenModulos;
     if (!orden || !orden.length) return base;
     const ordenados = orden.filter((k) => base.includes(k));
@@ -424,7 +434,7 @@ const Dashboard = () => {
 
   // --- ORDEN DE SUBITEMS APLICADO (usa userData.ordenSubItems[modulo] si existe) ---
   const getSubItemsOrdenados = (moduleKey) => {
-    const visibles = subItemsVisibles(userData, moduleKey);
+    const visibles = subItemsVisibles(userData, moduleKey, modulosActivos);
     const ordenGuardado = userData.ordenSubItems?.[moduleKey];
     if (!ordenGuardado || !ordenGuardado.length) return visibles;
     const ordenados = ordenGuardado
@@ -781,10 +791,21 @@ const Dashboard = () => {
 
         <main className="flex-grow p-3 overflow-y-auto">
           <div className="h-full">
-            {/* Guard: las vistas de solo administradores no se abren con otro rol. */}
+            {/* Guard: las vistas de solo administradores no se abren con otro
+                rol, ni las de módulos/ítems inactivos (aunque se lleguen por
+                URL o atajo). Mientras carga la configuración, las vistas de
+                módulos esperan. */}
             {!puedeAbrirVista(userData, activeView) ? (
               <div className="text-center text-gray-500 dark:text-gray-400">
-                Solo un administrador puede abrir esta vista.
+                {RUTAS_SOLO_DESARROLLADOR.has(activeView)
+                  ? 'Solo el rol Desarrollador puede abrir esta vista.'
+                  : 'Solo un administrador puede abrir esta vista.'}
+              </div>
+            ) : !modulosActivos && itemDeRuta(MODULES, activeView) ? (
+              <div className="text-center text-gray-400 dark:text-gray-500 text-xs">Cargando...</div>
+            ) : !vistaActiva(modulosActivos, MODULES, activeView) ? (
+              <div className="text-center text-gray-500 dark:text-gray-400">
+                Este módulo no está activo.
               </div>
             ) : VIEW_MAP[activeView] || (
               <div className="text-center text-gray-500 dark:text-gray-400">

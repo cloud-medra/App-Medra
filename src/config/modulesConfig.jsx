@@ -73,7 +73,8 @@ import {
   Zap,
   KeyRound,
   PersonStanding,
-  EyeOff
+  EyeOff,
+  ToggleRight
 } from "lucide-react";
 
 export const MODULES = {
@@ -99,7 +100,10 @@ export const MODULES = {
       // (o Desarrollador): ver src/config/accesoMenu.js y functions/permisos.
       { label: 'Permisos por centro', path: '/administracion/permisosCentro', icon: <KeyRound size={14} /> },
       { label: 'Cargas Consolidado', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} /> },
-      { label: 'Estadísticas', path: '/administracion/estadisticas', icon: <BarChart3 size={14} /> }
+      { label: 'Estadísticas', path: '/administracion/estadisticas', icon: <BarChart3 size={14} /> },
+      // Activar/inactivar módulos e ítems (config/modulosActivos.js): solo rol
+      // Desarrollador, no se asigna (src/config/accesoMenu.js). No se puede inactivar.
+      { label: 'Gestión de módulos', path: '/administracion/gestionModulos', icon: <ToggleRight size={14} />, soloDesarrollador: true }
     ]
   },
   laboratorio: {
