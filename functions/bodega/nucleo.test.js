@@ -202,3 +202,31 @@ describe('validarLinea: lote y vencimiento opcionales', () => {
     expect(validarLinea({ productoId: 'p1', cantidad: 1, vencimiento: '2026-02-30' }, producto).errores[0]).toMatch(/fecha válida/);
   });
 });
+
+describe('precio unitario de documentos', () => {
+  it('normaliza a pesos enteros; vacío = null', async () => {
+    const { normalizarPrecioUnitario } = await import('./nucleo.mjs');
+    expect(normalizarPrecioUnitario('')).toEqual({ valor: null, error: null });
+    expect(normalizarPrecioUnitario(undefined)).toEqual({ valor: null, error: null });
+    expect(normalizarPrecioUnitario(0)).toEqual({ valor: 0, error: null });
+    expect(normalizarPrecioUnitario('1234.6')).toEqual({ valor: 1235, error: null });
+    expect(normalizarPrecioUnitario(-1).error).toBeTruthy();
+    expect(normalizarPrecioUnitario('abc').error).toBeTruthy();
+  });
+  it('totales: las líneas sin precio suman 0', async () => {
+    const { totalLinea, totalValorLineas } = await import('./nucleo.mjs');
+    expect(totalLinea({ cantidad: 3, precioUnitario: 1500 })).toBe(4500);
+    expect(totalLinea({ cantidad: 3 })).toBe(0);
+    expect(totalValorLineas([{ cantidad: 3, precioUnitario: 1500 }, { cantidad: 2, precioUnitario: null }, { cantidad: 1, precioUnitario: 990 }])).toBe(5490);
+  });
+  it('agruparLineas conserva el precio de la primera línea que lo trae', async () => {
+    const { agruparLineas } = await import('./nucleo.mjs');
+    const r = agruparLineas([
+      { productoId: 'p', lote: 'A', vencimiento: null, cantidad: 2, precioUnitario: null },
+      { productoId: 'p', lote: 'A', vencimiento: null, cantidad: 3, precioUnitario: 700 },
+      { productoId: 'p', lote: 'A', vencimiento: null, cantidad: 1, precioUnitario: 900 },
+    ]);
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ cantidad: 6, precioUnitario: 700 });
+  });
+});

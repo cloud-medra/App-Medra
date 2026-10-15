@@ -1,7 +1,9 @@
-import { idLote, normalizarLote, validarLinea, fechaValida } from '../../../../../../functions/bodega/nucleo.mjs';
+import { idLote, normalizarLote, validarLinea, fechaValida, normalizarPrecioUnitario } from '../../../../../../functions/bodega/nucleo.mjs';
+
+export { totalLinea, totalValorLineas } from '../../../../../../functions/bodega/nucleo.mjs';
 
 // Líneas de un documento en pantalla: { key, productoId, lote, vencimiento,
-// cantidad, codigoLeido }. Lógica pura (la Cloud Function vuelve a validar
+// cantidad, codigoLeido, precioUnitario? (solo Carga inicial) }. Lógica pura (la Cloud Function vuelve a validar
 // y agrupar todo al confirmar).
 
 export const claveLinea = (l) => idLote(l.productoId, l.lote, l.vencimiento);
@@ -34,12 +36,15 @@ export const agregarLinea = (lineas, nueva) => {
     vencimiento: nueva.producto?.manejaVencimiento === false ? '' : (nueva.vencimiento || ''),
     cantidad: Number(nueva.cantidad),
     codigoLeido: nueva.codigoLeido || '',
+    ...('precioUnitario' in nueva ? { precioUnitario: normalizarPrecioUnitario(nueva.precioUnitario).valor } : {}),
   };
   const clave = claveLinea(linea);
   const i = lineas.findIndex((l) => claveLinea(l) === clave);
   if (i >= 0) {
     const copia = [...lineas];
-    copia[i] = { ...copia[i], cantidad: copia[i].cantidad + linea.cantidad };
+    // Al sumar se conserva el precio de la línea existente (si no tenía, se toma el nuevo).
+    const precio = copia[i].precioUnitario ?? linea.precioUnitario;
+    copia[i] = { ...copia[i], cantidad: copia[i].cantidad + linea.cantidad, ...(precio !== undefined ? { precioUnitario: precio } : {}) };
     return { lineas: copia, sumada: true, linea: copia[i] };
   }
   const conClave = { ...linea, key: `${clave}-${Date.now()}-${lineas.length}` };
@@ -47,6 +52,21 @@ export const agregarLinea = (lineas, nueva) => {
 };
 
 export const cambiarCantidad = (lineas, key, cantidad) => lineas.map((l) => (l.key === key ? { ...l, cantidad } : l));
+// Precio escrito en la tabla: '' se guarda como null; si no, pesos enteros.
+export const cambiarPrecio = (lineas, key, valor) => lineas.map((l) => (l.key === key
+  ? { ...l, precioUnitario: valor === '' ? null : normalizarPrecioUnitario(valor).valor ?? l.precioUnitario }
+  : l));
+
+// Precio con el que se precarga una línea: el precio neto del maestro
+// clínico vinculado, redondeado a pesos enteros ('' si no hay).
+export const precioSugerido = (producto) => {
+  const precio = Number(producto?.maestroCodigo?.precioNeto);
+  return precio > 0 ? Math.round(precio) : '';
+};
+
+// Referencia que se muestra del producto: la propia o la del maestro clínico.
+export const referenciaProducto = (producto) => producto?.referencia || producto?.maestroCodigo?.referencia || '';
+
 export const quitarLinea = (lineas, key) => lineas.filter((l) => l.key !== key);
 
 export const totalUnidades = (lineas) => lineas.reduce((n, l) => n + (Number(l.cantidad) || 0), 0);

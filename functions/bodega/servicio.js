@@ -25,7 +25,7 @@ const { puedeAccion } = require('../permisos/nucleo.mjs');
 const {
   ACCIONES, COL, TIPOS_CATALOGO, CAMPOS_BLOQUEADOS_CON_MOVIMIENTOS, TIPOS_DOCUMENTO_BODEGA, ESTADOS_DOCUMENTO,
   MAX_LINEAS_DOCUMENTO, MAX_OBSERVACION,
-  validarCatalogo, validarProducto, codigoAutomatico, idUnico, validarCabecera, validarLinea, agruparLineas,
+  validarCatalogo, validarProducto, codigoAutomatico, idUnico, validarCabecera, validarLinea, agruparLineas, normalizarPrecioUnitario, totalValorLineas,
   idUnicoDocumento, aplicarMovimiento, normalizarLote, productoEnInventario, ErrorStock,
   MAX_LINEAS_EGRESO, MAX_ACCIONES_TRANSITO, MAX_NOTA, ESTADOS_TRANSITO, MOVIMIENTO_DE_ACCION,
   agruparLineasEgreso, aplicarMovimientoCentro, aplicarAccionTransito, accionTransito, normalizarIdEntrega,
@@ -358,8 +358,10 @@ const desvincularCodigo = async (db, uid, datos = {}) => {
 //   bodega_documentos/{id} = { tipo: INGRESO|CARGA_INICIAL, estado:
 //     BORRADOR|CONFIRMADO, tipoDocumento, numero, ordenCompra, proveedorId,
 //     proveedorNombre, fecha, observacion, lineas: [{ productoId, lote,
-//     vencimiento, cantidad, codigoLeido, (al confirmar) productoNombre,
-//     codigoMaestro, loteId }], totalUnidades, creadoPor, confirmadoPor… }
+//     vencimiento, cantidad, codigoLeido, precioUnitario (opcional, pesos
+//     enteros; solo informativo), (al confirmar) productoNombre,
+//     codigoMaestro, referencia, loteId }], totalUnidades, totalValor
+//     (Σ cantidad × precioUnitario), creadoPor, confirmadoPor… }
 //   bodega_lotes/{productoId__lote__venc} = { productoId, lote, vencimiento,
 //     disponible, transito, transitoPorCentro, soloCargaInicial, … }
 //   bodega_movimientos/{id} = kardex (un movimiento por línea agrupada).
@@ -397,7 +399,12 @@ const normalizarBorrador = (tipo, datos = {}) => {
     lineas: lineas.map((l) => {
       const cantidad = Number(l?.cantidad);
       if (!l?.productoId || !Number.isInteger(cantidad) || cantidad <= 0) throw new HttpsError('invalid-argument', 'Hay líneas sin producto o con cantidad inválida.');
-      return { productoId: String(l.productoId), lote: normalizarLote(l.lote).slice(0, 40) || null, vencimiento: texto(l.vencimiento, 10) || null, cantidad, codigoLeido: String(l.codigoLeido || '').slice(0, 300) };
+      const precio = normalizarPrecioUnitario(l.precioUnitario);
+      if (precio.error) throw new HttpsError('invalid-argument', precio.error);
+      return {
+        productoId: String(l.productoId), lote: normalizarLote(l.lote).slice(0, 40) || null, vencimiento: texto(l.vencimiento, 10) || null, cantidad,
+        codigoLeido: String(l.codigoLeido || '').slice(0, 300), precioUnitario: precio.valor,
+      };
     }),
   };
 };
@@ -489,8 +496,9 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
     const erroresLineas = [];
     const lineasValidas = lineasEntrada.map((l) => {
       const r = validarLinea(l, productos.get(String(l?.productoId || '')) || null);
-      erroresLineas.push(...r.errores);
-      return r.linea;
+      const precio = normalizarPrecioUnitario(l?.precioUnitario);
+      erroresLineas.push(...r.errores, ...(precio.error ? [`${productos.get(String(l?.productoId || ''))?.nombre || 'Producto'}: ${precio.error}`] : []));
+      return { ...r.linea, precioUnitario: precio.valor };
     });
     exigirSinErrores([...new Set(erroresLineas)]);
 
@@ -560,11 +568,15 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
         centroId: null, documentoRef, observacion: cabecera.observacion, codigoLeido: l.codigoLeido,
       });
     });
-    const lineasDocumento = lineas.map((l) => ({ ...l, productoNombre: productos.get(l.productoId).nombre, codigoMaestro: productos.get(l.productoId).codigoMaestro }));
+    // El precio unitario queda solo en el documento (no en movimientos ni saldos).
+    const lineasDocumento = lineas.map((l) => ({
+      ...l, productoNombre: productos.get(l.productoId).nombre, codigoMaestro: productos.get(l.productoId).codigoMaestro,
+      referencia: productos.get(l.productoId).referencia || productos.get(l.productoId).maestroCodigo?.referencia || '',
+    }));
     const totalUnidades = lineas.reduce((n, l) => n + l.cantidad, 0);
     t.set(ref, {
       tipo, estado: ESTADOS_DOCUMENTO.CONFIRMADO, ...cabecera, proveedorNombre,
-      lineas: lineasDocumento, numeroLineas: lineas.length, totalUnidades,
+      lineas: lineasDocumento, numeroLineas: lineas.length, totalUnidades, totalValor: totalValorLineas(lineas),
       creadoPor: snapDoc?.data()?.creadoPor || por, creadoEn: snapDoc?.data()?.creadoEn || ahora(),
       confirmadoPor: por, confirmadoEn: ahora(), actualizadoPor: por, actualizadoEn: ahora(),
     });

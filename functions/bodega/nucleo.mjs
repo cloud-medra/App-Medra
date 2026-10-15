@@ -338,15 +338,32 @@ export const validarLinea = (linea = {}, producto = null) => {
   };
 };
 
+// Precio unitario (opcional) de una línea de documento, en pesos enteros.
+// Vacío -> null. Solo se guarda en el documento: no afecta saldos ni kardex.
+export const MAX_PRECIO_UNITARIO = 1e10;
+export const normalizarPrecioUnitario = (valor) => {
+  if (valor === '' || valor === null || valor === undefined) return { valor: null, error: null };
+  const n = Number(valor);
+  if (!Number.isFinite(n) || n < 0 || n > MAX_PRECIO_UNITARIO) return { valor: null, error: 'El precio unitario debe ser un número mayor o igual a cero.' };
+  return { valor: Math.round(n), error: null };
+};
+
+// Total de una línea y de un documento (las líneas sin precio suman 0).
+export const totalLinea = (l) => (Number(l?.cantidad) || 0) * (Number(l?.precioUnitario) || 0);
+export const totalValorLineas = (lineas = []) => lineas.reduce((n, l) => n + totalLinea(l), 0);
+
 // Une las líneas del mismo producto + lote + vencimiento sumando la
-// cantidad (conserva el orden de la primera aparición).
+// cantidad (conserva el orden de la primera aparición y, si tiene, el precio
+// unitario de la primera línea que lo trae).
 export const agruparLineas = (lineas) => {
   const porLote = new Map();
   lineas.forEach((l) => {
     const id = idLote(l.productoId, l.lote, l.vencimiento);
     const previa = porLote.get(id);
-    if (previa) previa.cantidad += l.cantidad;
-    else porLote.set(id, { ...l, loteId: id });
+    if (previa) {
+      previa.cantidad += l.cantidad;
+      if (previa.precioUnitario == null && l.precioUnitario != null) previa.precioUnitario = l.precioUnitario;
+    } else porLote.set(id, { ...l, loteId: id });
   });
   return [...porLote.values()];
 };

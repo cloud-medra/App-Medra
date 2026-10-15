@@ -13,7 +13,8 @@ import {
 import { formatoCantidad } from '../catalogosBodega';
 import EditorLineasStock from './EditorLineasStock';
 import SelectorProveedor from './SelectorProveedor';
-import { erroresLineas, totalUnidades, lineasDesdeDocumento, hoyISO } from './lineasDocumento';
+import { erroresLineas, totalUnidades, totalValorLineas, lineasDesdeDocumento, hoyISO } from './lineasDocumento';
+import { formatoPesos } from '../../inventarioBodega/formato';
 import { ponerPrimero } from '../listasLocales';
 
 // Largo de las listas de borradores y confirmados recientes.
@@ -54,7 +55,8 @@ const ListaDocumentos = ({ titulo, documentos, cargando, onActualizar, onAbrir, 
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-gray-800 dark:text-gray-100 truncate">{etiquetaDocumento(d)}</div>
                 <div className="text-gray-500">
-                  {(d.lineas || []).length} línea(s) · {formatoCantidad(d.totalUnidades ?? totalUnidades(d.lineas || []))} u. · {(d.confirmadoPor || d.actualizadoPor || d.creadoPor)?.nombre || ''} · {fechaCorta(d.confirmadoEn || d.actualizadoEn)}
+                  {(d.lineas || []).length} línea(s) · {formatoCantidad(d.totalUnidades ?? totalUnidades(d.lineas || []))} u. ·
+                  {d.tipo === 'CARGA_INICIAL' && <> {formatoPesos(d.totalValor ?? totalValorLineas(d.lineas || []))} ·</>} {(d.confirmadoPor || d.actualizadoPor || d.creadoPor)?.nombre || ''} · {fechaCorta(d.confirmadoEn || d.actualizadoEn)}
                 </div>
               </div>
               {onAbrir && <button type="button" onClick={() => onAbrir(d)} title="Abrir borrador" className="p-1.5 rounded text-gray-500 hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700"><FolderOpen size={14} /></button>}
@@ -65,6 +67,7 @@ const ListaDocumentos = ({ titulo, documentos, cargando, onActualizar, onAbrir, 
                 {(d.lineas || []).map((l) => (
                   <li key={l.loteId || `${l.productoId}-${l.lote}-${l.vencimiento}`}>
                     {l.cantidad} × {l.productoNombre || nombreProducto(l.productoId)}{l.lote ? ` · lote ${l.lote}` : ''}{l.vencimiento ? ` · vence ${l.vencimiento}` : ''}
+                    {l.precioUnitario != null && ` · ${formatoPesos(l.precioUnitario)} c/u`}
                   </li>
                 ))}
               </ul>
@@ -265,7 +268,7 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
             </div>
           )}
 
-          <EditorLineasStock key={reinicio} rutaVista={ruta} lineas={lineas} onCambiar={setLineas} deshabilitado={bloqueado} />
+          <EditorLineasStock key={reinicio} rutaVista={ruta} lineas={lineas} onCambiar={setLineas} deshabilitado={bloqueado} conPrecio={esCarga} />
 
           {errores.length > 0 && (
             <ul className="text-[12px] text-red-600 dark:text-red-400 list-disc pl-5">{errores.map((e) => <li key={e}>{e}</li>)}</ul>
