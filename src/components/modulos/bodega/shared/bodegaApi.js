@@ -109,6 +109,13 @@ export const leerDocumentos = async ({ tipo, estado, max = 30 }) => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
+// Un documento (o null). 1 lectura: tras guardar o confirmar se relee solo
+// ese documento en vez de las listas completas.
+export const leerDocumento = async (id) => {
+  const snap = await getDoc(doc(db, COL.documentos, id));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+};
+
 export const leerConfigBodega = async () => {
   const snap = await getDoc(doc(db, COL.control, 'config'));
   return snap.exists() ? snap.data() : {};
@@ -160,6 +167,13 @@ export const leerCentrosConTransito = async () => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
+// Totales de tránsito de un centro (o null si ya no tiene). 1 lectura.
+export const leerCentroConTransito = async (centroId) => {
+  const snap = await getDoc(doc(db, COL.transitoCentros, centroId));
+  const centro = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  return centro && (Number(centro.unidades) || 0) > 0 ? centro : null;
+};
+
 // Tránsito más antiguo y próximo vencimiento de un centro (2 lecturas).
 export const leerResumenCentro = async (centroId) => {
   const base = [where('centroId', '==', centroId), where('estado', '==', 'ABIERTO')];
@@ -196,9 +210,14 @@ export const leerKardex = async (productoId, { desde, hasta, tipo, centroId } = 
 
 // Lotes con vencimiento hasta `hasta` ('AAAA-MM-DD'), para los filtros de
 // vencidos / próximos a vencer del Maestro (solo los que tienen stock).
+// `completo` = false si se llegó al límite (puede faltar el final del rango).
+const MAX_LOTES_POR_VENCER = 3000;
 export const leerLotesPorVencer = async (hasta) => {
-  const snap = await getDocs(query(collection(db, COL.lotes), where('vencimiento', '>', ''), where('vencimiento', '<=', hasta), orderBy('vencimiento', 'asc'), limit(3000)));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((l) => (l.disponible || 0) + (l.transito || 0) > 0);
+  const snap = await getDocs(query(collection(db, COL.lotes), where('vencimiento', '>', ''), where('vencimiento', '<=', hasta), orderBy('vencimiento', 'asc'), limit(MAX_LOTES_POR_VENCER)));
+  return {
+    lotes: snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((l) => (l.disponible || 0) + (l.transito || 0) > 0),
+    completo: snap.size < MAX_LOTES_POR_VENCER,
+  };
 };
 
 // Entregas (consumo) en un rango, opcionalmente de un centro y/o producto.
@@ -229,6 +248,12 @@ export const leerInventario = async (id) => {
 export const leerLineasInventario = async (id) => {
   const snap = await getDocs(query(collection(db, COL.inventarios, id, 'lineas'), limit(10000)));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+// Solo las líneas indicadas (1 lectura por línea): tras registrar un conteo
+// se releen las líneas tocadas, no el inventario completo.
+export const leerLineasInventarioPorId = async (id, lineaIds) => {
+  const snaps = await Promise.all(lineaIds.map((l) => getDoc(doc(db, COL.inventarios, id, 'lineas', l))));
+  return snaps.filter((s) => s.exists()).map((s) => ({ id: s.id, ...s.data() }));
 };
 export const leerInventarios = async (max = 20) => {
   const snap = await getDocs(query(collection(db, COL.inventarios), orderBy('fechaInicio', 'desc'), limit(max)));

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Truck, RefreshCw } from 'lucide-react';
 import { useToast } from '../../../../context/ToastContext';
+import { aplicarResultadoTransitos } from '../shared/listasLocales';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import BuscadorConLimpiar from '../../../ui/BuscadorConLimpiar';
 import { leerTransitosAbiertos, mensajeError } from '../shared/bodegaApi';
@@ -28,6 +29,9 @@ const TransitoBodega = () => {
     return () => { vigente = false; };
   }, [centroId, version, showToast]);
   const recargar = () => { setTransitos(null); setVersion((v) => v + 1); };
+  // Tras entregar / devolver / anotar se aplica lo que devolvió la función
+  // (sin releer la lista); "Actualizar" trae los cambios de otros.
+  const alCambiar = (r) => (r?.transitos ? setTransitos((t) => aplicarResultadoTransitos(t || [], r.transitos)) : recargar());
 
   // Filtro: todos los centros del maestro (también inactivos: pueden tener
   // tránsito de antes).
@@ -53,7 +57,7 @@ const TransitoBodega = () => {
       <div className="flex-1 overflow-auto p-3">
         {transitos === null
           ? <p className="text-gray-400 italic">Cargando…</p>
-          : <TablaTransitos transitos={filtrados} rutaVista={PATH_VISTA} origen="transito" onCambio={recargar} />}
+          : <TablaTransitos transitos={filtrados} rutaVista={PATH_VISTA} origen="transito" onCambio={alCambiar} />}
       </div>
     </div>
   );

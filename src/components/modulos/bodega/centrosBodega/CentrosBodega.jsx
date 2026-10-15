@@ -5,7 +5,8 @@ import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { exportarExcel, exportarPdf } from '../shared/exportar';
 import BuscadorConLimpiar from '../../../ui/BuscadorConLimpiar';
-import { leerCentrosConTransito, leerResumenCentro, leerTransitosAbiertos, mensajeError } from '../shared/bodegaApi';
+import { leerCentroConTransito, leerCentrosConTransito, leerResumenCentro, leerTransitosAbiertos, mensajeError } from '../shared/bodegaApi';
+import { aplicarResultadoTransitos } from '../shared/listasLocales';
 import { formatoCantidad } from '../shared/catalogosBodega';
 import { estadoVencimiento } from '../shared/vencimientos';
 import TablaTransitos from '../shared/transito/TablaTransitos';
@@ -41,6 +42,8 @@ const DetalleCentro = ({ centro, onVolver }) => {
   const [transitos, setTransitos] = useState(null);
   const [version, setVersion] = useState(0);
   const [texto, setTexto] = useState('');
+  // true si se hizo alguna acción: al volver se relee solo este centro.
+  const [huboCambios, setHuboCambios] = useState(false);
   useEffect(() => {
     let vigente = true;
     leerTransitosAbiertos({ centroId: centro.id })
@@ -53,7 +56,7 @@ const DetalleCentro = ({ centro, onVolver }) => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={onVolver} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><ArrowLeft size={12} /> Centros</button>
+        <button type="button" onClick={() => onVolver(huboCambios)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><ArrowLeft size={12} /> Centros</button>
         <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-100">{centro.centroNombre}</h3>
         <span className="text-gray-500">{formatoCantidad(filtrados.reduce((n, t) => n + (t.pendiente || 0), 0))} u. en {filtrados.length} registro(s)</span>
         <div className="ml-auto flex items-center gap-1.5">
@@ -70,7 +73,11 @@ const DetalleCentro = ({ centro, onVolver }) => {
       </div>
       {transitos === null
         ? <p className="text-gray-400 italic">Cargando…</p>
-        : <TablaTransitos transitos={filtrados} rutaVista={PATH_VISTA} origen="centros" ocultarCentro onCambio={() => { setTransitos(null); setVersion((v) => v + 1); }} />}
+        : <TablaTransitos transitos={filtrados} rutaVista={PATH_VISTA} origen="centros" ocultarCentro onCambio={(r) => {
+            setHuboCambios(true);
+            if (r?.transitos) setTransitos((t) => aplicarResultadoTransitos(t || [], r.transitos));
+            else { setTransitos(null); setVersion((v) => v + 1); }
+          }} />}
     </div>
   );
 };
@@ -99,6 +106,22 @@ const CentrosBodega = () => {
     return () => { vigente = false; };
   }, [version, showToast]);
   const recargar = () => { setCentros(null); setResumenes({}); setVersion((v) => v + 1); };
+  // Al volver del detalle: si no se hizo nada no se relee; si hubo
+  // acciones se relee solo ese centro (3 lecturas) en vez de todos.
+  const volver = async (huboCambios) => {
+    const id = abierto.id;
+    setAbierto(null);
+    if (!huboCambios) return;
+    try {
+      const [centro, resumen] = await Promise.all([leerCentroConTransito(id), leerResumenCentro(id)]);
+      setCentros((lista) => (centro
+        ? (lista || []).map((c) => (c.id === id ? centro : c))
+        : (lista || []).filter((c) => c.id !== id)));
+      setResumenes((r) => ({ ...r, [id]: resumen }));
+    } catch {
+      recargar();
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[11px]">
@@ -108,7 +131,7 @@ const CentrosBodega = () => {
       </div>
       <div className="flex-1 overflow-auto p-3">
         {abierto ? (
-          <DetalleCentro centro={abierto} onVolver={() => { setAbierto(null); recargar(); }} />
+          <DetalleCentro centro={abierto} onVolver={volver} />
         ) : centros === null ? (
           <p className="text-gray-400 italic">Cargando…</p>
         ) : (

@@ -4,6 +4,7 @@ import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { useToast } from '../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
+import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
 import Spinner from '../../../ui/Spinner';
 import BuscadorConLimpiar from '../../../ui/BuscadorConLimpiar';
 import { stockTotal, bajoMinimo } from '../../../../../functions/bodega/nucleo.mjs';
@@ -13,6 +14,7 @@ import { identificarLectura } from '../shared/escaneo/identificarLectura';
 import { guardarProducto, leerLotesPorVencer, mensajeError } from '../shared/bodegaApi';
 import { exportarExcel, exportarCsv } from '../shared/exportar';
 import { estadoVencimiento } from '../shared/vencimientos';
+import { lotesHasta } from '../shared/listasLocales';
 import { hoyISO } from '../shared/documentos/lineasDocumento';
 import { rangoVencimiento, vencimientoPorProducto } from './filtrarProductos';
 import FormProducto from '../shared/FormProducto';
@@ -92,6 +94,12 @@ const MaestroBodega = () => {
   // Filtro de vencimiento: '' | 'vencidos' | 'proximos' (en `dias` días).
   const [vencimiento, setVencimiento] = useState({ modo: '', dias: 90 });
   const [lotesVenc, setLotesVenc] = useState(null);
+  // Los días se consultan cuando el usuario deja de escribir (no por tecla).
+  const diasConsulta = useDebouncedValue(vencimiento.dias, 500);
+  // Última lectura completa de lotes por vencer ({ hasta, lotes }): un rango
+  // menor o igual se filtra en memoria sin volver a leer. "Actualizar" la borra.
+  const lotesLeidosRef = useRef(null);
+  const [versionVenc, setVersionVenc] = useState(0);
   const buscandoRef = useRef(false);
 
   const categorias = useMemo(() => nombresPorId(catalogos, 'CATEGORIA'), [catalogos]);
@@ -101,13 +109,19 @@ const MaestroBodega = () => {
   // fecha (1 consulta) y se filtra el listado a sus productos.
   useEffect(() => {
     if (!vencimiento.modo) return undefined;
+    const { hasta } = rangoVencimiento(vencimiento.modo, diasConsulta, hoyISO());
+    const previa = lotesLeidosRef.current;
+    if (previa && hasta <= previa.hasta) { setLotesVenc(lotesHasta(previa.lotes, hasta)); return undefined; }
     let vigente = true;
-    const { hasta } = rangoVencimiento(vencimiento.modo, vencimiento.dias, hoyISO());
     leerLotesPorVencer(hasta)
-      .then((l) => { if (vigente) setLotesVenc(l); })
+      .then(({ lotes, completo }) => {
+        if (!vigente) return;
+        if (completo) lotesLeidosRef.current = { hasta, lotes };
+        setLotesVenc(lotes);
+      })
       .catch((e) => { if (vigente) { setLotesVenc([]); showToast(mensajeError(e), 'error'); } });
     return () => { vigente = false; };
-  }, [vencimiento.modo, vencimiento.dias, showToast]);
+  }, [vencimiento.modo, diasConsulta, versionVenc, showToast]);
   const vencePorProducto = useMemo(
     () => (vencimiento.modo && lotesVenc ? vencimientoPorProducto(lotesVenc, vencimiento.modo, hoyISO()) : null),
     [lotesVenc, vencimiento.modo]
@@ -160,7 +174,7 @@ const MaestroBodega = () => {
     }
   };
 
-  const actualizar = () => { refrescar(); refrescarCatalogos(); setLotesVenc(null); setVencimiento((v) => ({ ...v })); };
+  const actualizar = () => { refrescar(); refrescarCatalogos(); lotesLeidosRef.current = null; setLotesVenc(null); setVersionVenc((n) => n + 1); };
 
   const columnasExport = [
     { titulo: 'Código maestro', valor: (p) => p.codigoMaestro },
@@ -242,7 +256,7 @@ const MaestroBodega = () => {
         </select>
         {vencimiento.modo === 'proximos' && (
           <label className="flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300">en
-            <input type="number" min="1" max="3650" value={vencimiento.dias} onChange={(e) => { setLotesVenc(null); setVencimiento((v) => ({ ...v, dias: Math.max(1, Number(e.target.value) || 1) })); }} className={`${SELECT} w-16`} aria-label="Días" /> días
+            <input type="number" min="1" max="3650" value={vencimiento.dias} onChange={(e) => { setVencimiento((v) => ({ ...v, dias: Math.max(1, Number(e.target.value) || 1) })); }} className={`${SELECT} w-16`} aria-label="Días" /> días
           </label>
         )}
         {hasPermission(PATH_VISTA, 'listado', 'btn_exportar') && (

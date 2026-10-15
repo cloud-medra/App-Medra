@@ -53,7 +53,7 @@ const TablaTransitos = ({ transitos, rutaVista, origen, onCambio, ocultarCentro 
     return n;
   });
   const abrir = (accion, lista) => setModal({ accion, transitos: lista.slice(0, MAX_ACCIONES_TRANSITO) });
-  const hecho = () => { setModal(null); setSeleccion(new Set()); onCambio(); };
+  const hecho = (r) => { setModal(null); setSeleccion(new Set()); onCambio(r); };
 
   return (
     <div className="flex flex-col gap-2">

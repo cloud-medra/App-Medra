@@ -49,9 +49,9 @@ const GestionTransitoModal = ({ accion, transitos, origen, onCerrar, onHecho }) 
     if (lista.length) return;
     setGuardando(true);
     try {
-      await gestionarTransito({ origen, acciones: construirAcciones(accion, lineas, comun) });
+      const r = await gestionarTransito({ origen, acciones: construirAcciones(accion, lineas, comun) });
       showToast(`${def.titulo}: ${lineas.length} registro(s) actualizado(s).`, 'success');
-      onHecho();
+      onHecho(r);
     } catch (error) {
       setErrores([mensajeError(error)]);
     } finally {

@@ -8,12 +8,17 @@ import {
   TIPOS_DOCUMENTO_INGRESO, MAX_LINEAS_DOCUMENTO, MAX_OBSERVACION, validarCabecera,
 } from '../../../../../../functions/bodega/nucleo.mjs';
 import {
-  guardarBorrador, eliminarBorrador, confirmarDocumento, leerDocumentos, leerConfigBodega, configurarCargaInicial, mensajeError,
+  guardarBorrador, eliminarBorrador, confirmarDocumento, leerDocumento, leerDocumentos, leerConfigBodega, configurarCargaInicial, mensajeError,
 } from '../bodegaApi';
 import { formatoCantidad } from '../catalogosBodega';
 import EditorLineasStock from './EditorLineasStock';
 import SelectorProveedor from './SelectorProveedor';
 import { erroresLineas, totalUnidades, lineasDesdeDocumento, hoyISO } from './lineasDocumento';
+import { ponerPrimero } from '../listasLocales';
+
+// Largo de las listas de borradores y confirmados recientes.
+const MAX_BORRADORES = 30;
+const MAX_CONFIRMADOS = 15;
 
 const INPUT = 'w-full h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-60';
 const LABEL = 'block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5';
@@ -104,8 +109,8 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
   useEffect(() => {
     let vigente = true;
     Promise.all([
-      leerDocumentos({ tipo, estado: 'BORRADOR' }),
-      leerDocumentos({ tipo, estado: 'CONFIRMADO', max: 15 }),
+      leerDocumentos({ tipo, estado: 'BORRADOR', max: MAX_BORRADORES }),
+      leerDocumentos({ tipo, estado: 'CONFIRMADO', max: MAX_CONFIRMADOS }),
       esCarga ? leerConfigBodega() : Promise.resolve(null),
     ]).then(([b, c, cfg]) => {
       if (!vigente) return;
@@ -114,6 +119,19 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
     return () => { vigente = false; };
   }, [tipo, esCarga, version, showToast]);
   const recargarListas = useCallback(() => { setCargandoListas(true); setVersion((v) => v + 1); }, []);
+  // Tras guardar o confirmar se relee solo ese documento (1 lectura) y se
+  // ubica en su lista; si falla, se recargan las listas. Los documentos de
+  // otros usuarios llegan con "Actualizar".
+  const reflejarDocumento = useCallback(async (id) => {
+    try {
+      const d = await leerDocumento(id);
+      if (!d) { recargarListas(); return; }
+      setBorradores((l) => (d.estado === 'BORRADOR' ? ponerPrimero(l, d, MAX_BORRADORES) : l.filter((x) => x.id !== d.id)));
+      if (d.estado === 'CONFIRMADO') setConfirmados((l) => ponerPrimero(l, d, MAX_CONFIRMADOS));
+    } catch {
+      recargarListas();
+    }
+  }, [recargarListas]);
 
   const limpiar = () => { setDocId(null); setCabecera(cabeceraVacia(tipo)); setLineas([]); setErrores([]); setReinicio((n) => n + 1); };
   const cambiarCabecera = (campo) => (e) => setCabecera((c) => ({ ...c, [campo]: e?.target ? e.target.value : e }));
@@ -125,7 +143,7 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
       const r = await guardarBorrador(datosEnvio());
       setDocId(r.id);
       showToast(r.duplicado ? 'Borrador guardado. Ojo: ese documento de ese proveedor ya fue ingresado.' : 'Borrador guardado.', r.duplicado ? 'error' : 'success');
-      recargarListas();
+      reflejarDocumento(r.id);
     } catch (error) {
       showToast(mensajeError(error), 'error');
     } finally {
@@ -147,7 +165,7 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
         const r = await confirmarDocumento(datosEnvio());
         showToast(`${esCarga ? 'Carga inicial' : 'Ingreso'} confirmado: ${r.lineas} línea(s), ${formatoCantidad(r.unidades)} unidad(es).`, 'success');
         limpiar();
-        recargarListas();
+        if (r.id) reflejarDocumento(r.id); else recargarListas();
       } catch (error) {
         showToast(mensajeError(error), 'error');
         setErrores([`No se confirmó: ${mensajeError(error)}`]);
@@ -168,7 +186,7 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
     try {
       await eliminarBorrador(d.id);
       if (d.id === docId) limpiar();
-      recargarListas();
+      setBorradores((l) => l.filter((x) => x.id !== d.id));
     } catch (error) {
       showToast(mensajeError(error), 'error');
     }

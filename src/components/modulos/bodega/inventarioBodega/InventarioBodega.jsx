@@ -5,7 +5,7 @@ import { useToast } from '../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { MAX_CONTEOS_POR_ENVIO, MAX_NOMBRE_INVENTARIO, MAX_OBSERVACION } from '../../../../../functions/bodega/nucleo.mjs';
 import {
-  leerEstadoBodega, leerInventario, leerLineasInventario, leerInventarios, iniciarInventario, reanudarInventario,
+  leerEstadoBodega, leerInventario, leerLineasInventario, leerLineasInventarioPorId, leerInventarios, iniciarInventario, reanudarInventario,
   registrarConteo, anularInventario, mensajeError,
 } from '../shared/bodegaApi';
 import { formatoCantidad, opcionesCatalogo } from '../shared/catalogosBodega';
@@ -15,6 +15,7 @@ import { fechaHora } from '../shared/transito/transitos';
 import ComparacionInventario from './ComparacionInventario';
 import CierreInventarioModal from './CierreInventarioModal';
 import { formatoPesos } from './formato';
+import { mezclarPorId } from '../shared/listasLocales';
 
 const PATH_VISTA = '/bodega/inventarioBodega';
 const ESTADO_BADGE = {
@@ -121,7 +122,22 @@ const DetalleInventario = ({ id, onSalir, puedeVolver }) => {
       .catch((e) => { if (vigente) showToast(mensajeError(e), 'error'); });
     return () => { vigente = false; };
   }, [id, version, showToast]);
+  // Recarga completa (botón Actualizar, reanudar, cerrar): trae también
+  // los conteos de los demás usuarios.
   const recargar = useCallback(() => setVersion((v) => v + 1), []);
+  // Tras registrar un conteo propio: relee solo el inventario y las líneas
+  // tocadas (con lo que quedó en el servidor, incluidos conteos de otros
+  // sobre esas mismas líneas), no todas. Si falla, recarga completa.
+  const reflejarConteo = useCallback(async (resultados) => {
+    const ids = [...new Set(resultados.flatMap((r) => (r?.lineas || []).map((l) => l.id)))];
+    try {
+      const [inv, actualizadas] = await Promise.all([leerInventario(id), leerLineasInventarioPorId(id, ids)]);
+      if (inv) setInventario(inv);
+      setLineas((l) => mezclarPorId(l || [], actualizadas));
+    } catch {
+      recargar();
+    }
+  }, [id, recargar]);
 
   if (!inventario || !lineas) return <p className="text-gray-400 italic">Cargando inventario…</p>;
   const abierto = inventario.estado === 'ABIERTO';
@@ -131,13 +147,14 @@ const DetalleInventario = ({ id, onSalir, puedeVolver }) => {
     setOcupado(true);
     try {
       const conteos = conteo.map(({ productoId, lote, vencimiento, cantidad }) => ({ productoId, lote, vencimiento, cantidad }));
+      const resultados = [];
       for (let i = 0; i < conteos.length; i += MAX_CONTEOS_POR_ENVIO) {
-        await registrarConteo({ inventarioId: id, modo: 'sumar', conteos: conteos.slice(i, i + MAX_CONTEOS_POR_ENVIO) });
+        resultados.push(await registrarConteo({ inventarioId: id, modo: 'sumar', conteos: conteos.slice(i, i + MAX_CONTEOS_POR_ENVIO) }));
       }
       showToast(`Conteo guardado: ${formatoCantidad(totalUnidades(conteo))} unidad(es).`, 'success');
       setConteo([]);
       setReinicio((n) => n + 1);
-      recargar();
+      reflejarConteo(resultados);
     } catch (e) {
       showToast(mensajeError(e), 'error');
     } finally {
@@ -213,7 +230,7 @@ const DetalleInventario = ({ id, onSalir, puedeVolver }) => {
           </div>
         </div>
       )}
-      {verPestana === 'comparacion' && <ComparacionInventario inventario={inventario} lineas={lineas} editable={abierto} onCambio={recargar} />}
+      {verPestana === 'comparacion' && <ComparacionInventario inventario={inventario} lineas={lineas} editable={abierto} onConteo={(r) => reflejarConteo([r])} />}
 
       {cerrando && (
         <CierreInventarioModal

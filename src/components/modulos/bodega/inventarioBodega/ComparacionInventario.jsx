@@ -34,7 +34,7 @@ const Tarjeta = ({ titulo, valor, detalle, clase = '' }) => (
 // Comparación por producto y lote: teórico (foto al iniciar), contado y
 // diferencia, con filtros, totales y exportación. Con el inventario
 // abierto, el contado se puede corregir aquí (reemplaza el valor).
-const ComparacionInventario = ({ inventario, lineas, editable, onCambio }) => {
+const ComparacionInventario = ({ inventario, lineas, editable, onConteo }) => {
   const { hasPermission } = useGranularPermission();
   const { showToast } = useToast();
   const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'comparacion', COLUMNAS);
@@ -57,9 +57,9 @@ const ComparacionInventario = ({ inventario, lineas, editable, onCambio }) => {
     const valor = edicion[l.id];
     if (valor === undefined || valor === '') return;
     try {
-      await registrarConteo({ inventarioId: inventario.id, modo: 'reemplazar', conteos: [{ productoId: l.productoId, lote: l.lote, vencimiento: l.vencimiento, cantidad: Number(valor) }] });
+      const r = await registrarConteo({ inventarioId: inventario.id, modo: 'reemplazar', conteos: [{ productoId: l.productoId, lote: l.lote, vencimiento: l.vencimiento, cantidad: Number(valor) }] });
       setEdicion((e) => { const n = { ...e }; delete n[l.id]; return n; });
-      onCambio();
+      onConteo(r);
     } catch (error) {
       showToast(mensajeError(error), 'error');
     }
