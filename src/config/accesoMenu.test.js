@@ -5,6 +5,7 @@ import { MODULES } from './modulesConfig.jsx';
 const RUTA = '/administracion/permisosCentro';
 const LISTADO = '/administracion/listadoUsuario';
 const ALERTAS = '/administracion/alertas';
+const GESTION_MODULOS = '/administracion/gestionModulos';
 const rutas = (u) => subItemsVisibles(u, 'administracion').map((s) => s.path);
 
 describe('Menú: el Administrador ve solo lo asignado; el Desarrollador, todo', () => {
@@ -29,6 +30,16 @@ describe('Menú: el Administrador ve solo lo asignado; el Desarrollador, todo', 
     expect(puedeAbrirVista({ rol: 'operador', permisos: {} }, LISTADO)).toBe(true);
     expect(puedeAbrirVista({ rol: 'encargado', permisos: {} }, ALERTAS)).toBe(false);
     expect(puedeAbrirVista({ rol: 'admin', permisos: {} }, ALERTAS)).toBe(true);
+  });
+
+  it('Gestión de módulos: solo el Desarrollador la ve y la abre; no se asigna', () => {
+    expect(rutas({ rol: 'dev', permisos: {} })).toContain(GESTION_MODULOS);
+    expect(rutas({ rol: 'admin', permisos: { administracion: [GESTION_MODULOS] } })).not.toContain(GESTION_MODULOS);
+    expect(rutas({ rol: 'operador', permisos: { administracion: [GESTION_MODULOS] } })).not.toContain(GESTION_MODULOS);
+    expect(puedeAbrirVista({ rol: 'dev', permisos: {} }, GESTION_MODULOS)).toBe(true);
+    expect(puedeAbrirVista({ rol: 'admin', permisos: {} }, GESTION_MODULOS)).toBe(false);
+    expect(puedeAbrirVista({ rol: 'dev', permisos: {}, activo: false }, GESTION_MODULOS)).toBe(false);
+    expect(subItemsAsignables(MODULES.administracion).map((s) => s.path)).not.toContain(GESTION_MODULOS);
   });
 
   it('Alertas no se asigna desde el editor de permisos', () => {

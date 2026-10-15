@@ -3,6 +3,8 @@ import { Zap } from 'lucide-react';
 import { MODULES } from '../../../../config/modulesConfig.jsx';
 import { resolverAtajos } from '../../../../config/atajosDashboard';
 import { useAtajosConfigurados } from '../../../../stores/atajosDashboardStore';
+import { useModulosActivos } from '../../../../stores/modulosActivosStore';
+import { itemActivo } from '../../../../config/modulosActivos';
 
 // Widget "Accesos rápidos": botones a pantallas del sidebar. La lista la
 // configura un admin/dev en Ajustes → Atajos (por defecto, la de
@@ -11,7 +13,11 @@ import { useAtajosConfigurados } from '../../../../stores/atajosDashboardStore';
 // módulo y deja activo el ítem).
 const AtajosCard = ({ permisos, onAbrir }) => {
   const configurados = useAtajosConfigurados();
-  const atajos = configurados ? resolverAtajos(configurados, MODULES, permisos) : [];
+  const modulosActivos = useModulosActivos();
+  // Los atajos a módulos/ítems inactivos (Gestión de módulos) no se muestran.
+  const atajos = configurados && modulosActivos
+    ? resolverAtajos(configurados, MODULES, permisos).filter((a) => itemActivo(modulosActivos, a.modulo, a.path))
+    : [];
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm flex flex-col gap-2 flex-grow min-h-0 overflow-hidden">
@@ -21,7 +27,7 @@ const AtajosCard = ({ permisos, onAbrir }) => {
         </span>
       </div>
 
-      {!configurados ? (
+      {!configurados || !modulosActivos ? (
         <div className="flex-1 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">
           Cargando accesos rápidos...
         </div>

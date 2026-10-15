@@ -250,6 +250,11 @@ export const administracionComponentMaps = {
       },
     },
   },
+  '/administracion/gestionModulos': {
+    label: 'Gestión de módulos (GestionModulos.jsx) — solo rol Desarrollador, no se asigna',
+    sections: {},
+  },
+
   '/administracion/estadisticas': {
     label: 'Estadísticas (Implantes, Consignación y Hemodinamia por período)',
     sections: {
