@@ -262,7 +262,18 @@ const LoginForm = () => {
       {/* Pie de página, fuera de la tarjeta. El año se toma de la fecha actual. */}
       <footer className="mt-6 text-center text-xs leading-relaxed text-gray-500">
         <p>© {new Date().getFullYear()} Medra Sistema Integral. Todos los derechos reservados.</p>
-        <p>Desarrollado por Medra.</p>
+        <p>
+          Desarrollado por{' '}
+          <a
+            href="https://www.emedigital.cl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline decoration-transparent underline-offset-2 transition-colors hover:text-[#208DD0] hover:decoration-current"
+          >
+            EmeDigital
+          </a>
+          .
+        </p>
       </footer>
     </div>
   );
