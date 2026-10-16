@@ -19,10 +19,14 @@
 // final: por eso lote y vencimiento quedan editables en pantalla.
 //
 // Segundo código del producto: algunos productos traen un código con el
-// GTIN y otro solo con lote/vencimiento. Ese segundo código se reconoce como
-// GS1 "sin GTIN" si viene con paréntesis, con prefijo de simbología o con
-// separador GS; uno crudo sin nada de eso no se interpreta (un código
-// interno numérico podría confundirse con AI).
+// GTIN y otro solo con lote/vencimiento (ej. "173412011035769P5" = (17)
+// 341201 + (10) 35769P5). Ese segundo código se reconoce como GS1 "sin
+// GTIN" si viene con paréntesis, con prefijo de simbología o con separador
+// GS. Crudo (sin nada de eso) solo si se lee entero como GS1 y trae
+// vencimiento (17) válido Y lote (10); en ese caso queda marcado `ambiguo`
+// (un código interno podría calzar por casualidad): la pantalla revisa
+// primero si ese texto está vinculado a un producto y, si lo está, gana el
+// vínculo.
 
 export const GS = '\u001d';
 
@@ -102,7 +106,7 @@ const parsearCrudo = (texto) => {
   return Object.keys(ais).length > 0 ? ais : null;
 };
 
-const VACIO = Object.freeze({ esGS1: false, gtin: '', lote: '', vencimiento: '', fabricacion: '', serie: '', ais: {} });
+const VACIO = Object.freeze({ esGS1: false, gtin: '', lote: '', vencimiento: '', fabricacion: '', serie: '', ais: {}, ambiguo: false });
 
 // Texto leído -> { esGS1, gtin, lote, vencimiento, fabricacion, serie, ais }.
 // Es GS1 si trae un (01) con dígito verificador válido, o si sin (01) trae
@@ -126,6 +130,7 @@ export const parsearGS1 = (valor) => {
     fabricacion: fechaGS1aISO(ais['11']),
     serie: String(ais['21'] || '').trim(),
     ais,
+    ambiguo: false,
   };
   if (ais['01'] !== undefined) {
     if (!gtinValido(ais['01'])) return VACIO;
@@ -133,7 +138,9 @@ export const parsearGS1 = (valor) => {
   }
   const inequivoco = conParentesis || conPrefijo || texto.includes(GS);
   const traeDatosLote = Boolean(resultado.lote || resultado.vencimiento || resultado.serie);
-  return inequivoco && traeDatosLote ? resultado : VACIO;
+  if (inequivoco) return traeDatosLote ? resultado : VACIO;
+  // Crudo sin GTIN: solo con vencimiento válido y lote (segundo código típico).
+  return resultado.vencimiento && resultado.lote ? { ...resultado, ambiguo: true } : VACIO;
 };
 
 // Texto del campo -> código limpio: sin espacios ni saltos alrededor y sin
@@ -148,7 +155,9 @@ export const MAX_CODIGO_LEIDO = 300;
 //   clave:  lo que se vincula al producto. En GS1 es el GTIN (el resto del
 //           código cambia con cada lote/vencimiento); si no, el código.
 //   soloDatosLote: GS1 sin GTIN (segundo código: solo lote/vencimiento);
-//           no identifica producto, clave vacía.
+//           no identifica producto, clave vacía. Si gs1.ambiguo, quien
+//           lee puede revisar antes si el código completo está vinculado
+//           (lecturaComoCodigoNormal).
 export const interpretarLectura = (texto) => {
   const codigo = normalizarCodigoLeido(texto);
   if (!codigo) return null;
@@ -157,6 +166,10 @@ export const interpretarLectura = (texto) => {
   const clave = gs1.gtin || (soloDatosLote ? '' : codigo.split(GS).join(''));
   return { codigo, clave, gs1, soloDatosLote };
 };
+
+// La misma lectura tratada como código normal (no GS1): para un segundo
+// código crudo `ambiguo` que en realidad está vinculado a un producto.
+export const lecturaComoCodigoNormal = (lectura) => ({ ...lectura, clave: lectura.codigo.split(GS).join(''), gs1: VACIO, soloDatosLote: false });
 
 // Clave del código -> id de documento válido en Firestore (no admite "/",
 // ni "." / ".." solos, ni el patrón __x__). Mismo criterio que el

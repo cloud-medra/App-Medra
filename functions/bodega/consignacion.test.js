@@ -113,3 +113,13 @@ describe('validarConsignacion', () => {
     expect(r.errores.join(' ')).toMatch(/ya no existe/);
   });
 });
+
+describe('código de lote leído en líneas', () => {
+  it('validarLinea lo conserva; agrupar mantiene el primero', async () => {
+    const { validarLinea, agruparLineas, agruparLineasEgreso } = await import('./nucleo.mjs');
+    const producto = { nombre: 'Stent', manejaLote: true, manejaVencimiento: true };
+    expect(validarLinea({ productoId: 'p1', lote: 'L1', cantidad: 1, codigoLote: '1734120110L1' }, producto).linea.codigoLote).toBe('1734120110L1');
+    expect(agruparLineas([{ productoId: 'p1', lote: 'L1', cantidad: 1, codigoLote: '' }, { productoId: 'p1', lote: 'L1', cantidad: 2, codigoLote: 'X' }])[0]).toMatchObject({ cantidad: 3, codigoLote: 'X' });
+    expect(agruparLineasEgreso([{ loteId: 'a', centroId: 'c', cantidad: 1, codigoLote: 'Y' }, { loteId: 'a', centroId: 'c', cantidad: 1, codigoLote: '' }])[0]).toMatchObject({ cantidad: 2, codigoLote: 'Y' });
+  });
+});

@@ -99,3 +99,12 @@ describe('precio neto al crear un producto en Carga inicial', () => {
     expect(precioInicialLinea({}, '')).toBe('');
   });
 });
+
+describe('código de lote leído (segundo código GS1)', () => {
+  it('se guarda en la línea y al sumar se conserva el primero que lo trae', () => {
+    let r = agregarLinea([], { productoId: 'p1', producto: CON_LOTE, lote: 'L1', vencimiento: '2034-12-01', cantidad: 1 });
+    expect(r.linea.codigoLote).toBe('');
+    r = agregarLinea(r.lineas, { productoId: 'p1', producto: CON_LOTE, lote: 'L1', vencimiento: '2034-12-01', cantidad: 2, codigoLote: '1734120110L1' });
+    expect(r.linea).toMatchObject({ cantidad: 3, codigoLote: '1734120110L1' });
+  });
+});

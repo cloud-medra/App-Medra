@@ -3,7 +3,8 @@ import { idLote, normalizarLote, validarLinea, fechaValida, normalizarPrecioUnit
 export { totalLinea, totalValorLineas } from '../../../../../../functions/bodega/nucleo.mjs';
 
 // Líneas de un documento en pantalla: { key, productoId, lote, vencimiento,
-// cantidad, codigoLeido, precioUnitario? (solo Carga inicial) }. Lógica pura (la Cloud Function vuelve a validar
+// cantidad, codigoLeido, codigoLote (segundo código GS1 leído, si hubo),
+// precioUnitario? (solo Carga inicial) }. Lógica pura (la Cloud Function vuelve a validar
 // y agrupar todo al confirmar).
 
 export const claveLinea = (l) => idLote(l.productoId, l.lote, l.vencimiento);
@@ -36,6 +37,7 @@ export const agregarLinea = (lineas, nueva) => {
     vencimiento: nueva.producto?.manejaVencimiento === false ? '' : (nueva.vencimiento || ''),
     cantidad: Number(nueva.cantidad),
     codigoLeido: nueva.codigoLeido || '',
+    codigoLote: nueva.codigoLote || '',
     ...('precioUnitario' in nueva ? { precioUnitario: normalizarPrecioUnitario(nueva.precioUnitario).valor } : {}),
   };
   const clave = claveLinea(linea);
@@ -44,7 +46,10 @@ export const agregarLinea = (lineas, nueva) => {
     const copia = [...lineas];
     // Al sumar se conserva el precio de la línea existente (si no tenía, se toma el nuevo).
     const precio = copia[i].precioUnitario ?? linea.precioUnitario;
-    copia[i] = { ...copia[i], cantidad: copia[i].cantidad + linea.cantidad, ...(precio !== undefined ? { precioUnitario: precio } : {}) };
+    copia[i] = {
+      ...copia[i], cantidad: copia[i].cantidad + linea.cantidad, codigoLote: copia[i].codigoLote || linea.codigoLote,
+      ...(precio !== undefined ? { precioUnitario: precio } : {}),
+    };
     return { lineas: copia, sumada: true, linea: copia[i] };
   }
   const conClave = { ...linea, key: `${clave}-${Date.now()}-${lineas.length}` };

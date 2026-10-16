@@ -8,7 +8,7 @@ import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import CentroSelect from '../../../ui/CentroSelect';
 import { lotesFEFO, normalizarLote, MAX_LINEAS_EGRESO, MAX_OBSERVACION } from '../../../../../functions/bodega/nucleo.mjs';
 import CampoEscaneoBodega from '../shared/escaneo/CampoEscaneoBodega';
-import { identificarLectura, datosLoteDeLectura } from '../shared/escaneo/identificarLectura';
+import { identificarLectura, datosLoteDeLectura, datosLoteEnEspera, combinarDatosLote } from '../shared/escaneo/identificarLectura';
 import ModalVincularCodigo from '../shared/ModalVincularCodigo';
 import BuscadorProducto from '../shared/BuscadorProducto';
 import { egresar, leerLotesDeProducto, mensajeError } from '../shared/bodegaApi';
@@ -46,6 +46,8 @@ const EgresoBodega = () => {
   const porId = useMemo(() => Object.fromEntries(productos.map((p) => [p.id, p])), [productos]);
   const [seleccion, setSeleccion] = useState(null); // { producto, lotes, loteId, cantidad }
   const [lotesCache, setLotesCache] = useState({});
+  // Segundo código (lote/vencimiento) escaneado antes que el producto.
+  const [espera, setEspera] = useState(null);
   const [centro, setCentro] = useState(leerUltimoCentro);
   const [lineas, setLineas] = useState([]);
   const [agrupar, setAgrupar] = useState(false);
@@ -92,7 +94,7 @@ const EgresoBodega = () => {
       lote = buscado;
       exacto = true;
     }
-    setSeleccion({ producto, loteId: lote.id, cantidad: 1 });
+    setSeleccion({ producto, loteId: lote.id, cantidad: 1, codigoLote: exacto ? (datosLote.codigoLote || '') : '' });
     setSenal({ tipo: 'ok', mensaje: `${producto.nombre}: lote ${lote.lote || 'S/L'}${lote.propietarioNombre ? ` (consignado ${lote.propietarioNombre})` : ''} ${exacto ? '(el del código)' : '(vence primero)'} · quedan ${lote.restante}.` });
     enfocar(lote.restante > 1 ? cantidadRef : escanerRef);
   };
@@ -101,7 +103,10 @@ const EgresoBodega = () => {
     if (producto.activo === false) { setSenal({ tipo: 'error', mensaje: `${producto.nombre} está inactivo.` }); return; }
     try {
       const lotes = await lotesDe(producto.id);
-      elegirLote(producto, lotes, datosLoteDeLectura(lectura));
+      // Lote/vencimiento del propio código o del segundo código leído antes.
+      const datosLote = combinarDatosLote(lectura, espera);
+      if (espera) setEspera(null);
+      elegirLote(producto, lotes, datosLote);
     } catch (error) {
       setSenal({ tipo: 'error', mensaje: mensajeError(error) });
     }
@@ -112,8 +117,13 @@ const EgresoBodega = () => {
       const r = await identificarLectura(texto);
       if (!r) return;
       if (r.tipo === 'datosLote') {
-        if (!seleccion) { setSenal({ tipo: 'aviso', mensaje: 'Ese código solo trae lote/vencimiento: escanea primero el producto.' }); return; }
-        elegirLote(seleccion.producto, lotesCache[seleccion.producto.id] || [], datosLoteDeLectura(r.lectura));
+        const datos = datosLoteDeLectura(r.lectura);
+        if (!seleccion) {
+          setEspera(datosLoteEnEspera(r.lectura));
+          setSenal({ tipo: 'aviso', mensaje: `Lote ${datos.lote || '—'} · vence ${datos.vencimiento || '—'} leído: escanea ahora el código del producto.` });
+          return;
+        }
+        elegirLote(seleccion.producto, lotesCache[seleccion.producto.id] || [], { ...datos, codigoLote: r.lectura.codigo });
         return;
       }
       if (r.tipo === 'sinVincular') { setLecturaSinVincular(r.lectura); return; }
@@ -133,7 +143,7 @@ const EgresoBodega = () => {
     if (cantidad > loteSeleccionado.restante) { setSenal({ tipo: 'error', mensaje: `Solo quedan ${loteSeleccionado.restante} en el lote ${loteSeleccionado.lote || 'S/L'}.` }); enfocar(cantidadRef); return; }
     if (!centro?.id) { setSenal({ tipo: 'error', mensaje: 'Elige el centro de destino.' }); return; }
     if (lineas.length >= MAX_LINEAS_EGRESO) { setSenal({ tipo: 'error', mensaje: `Máximo ${MAX_LINEAS_EGRESO} líneas por salida: confirma esta y sigue en otra.` }); return; }
-    const r = agregarLineaEgreso(lineas, { producto: seleccion.producto, lote: loteSeleccionado, cantidad, centro });
+    const r = agregarLineaEgreso(lineas, { producto: seleccion.producto, lote: loteSeleccionado, cantidad, centro, codigoLote: seleccion.codigoLote || '' });
     setLineas(r.lineas);
     setSenal({ tipo: 'ok', mensaje: `${r.sumada ? 'Sumado' : 'Agregado'}: ${cantidad} ${seleccion.producto.nombre} lote ${loteSeleccionado.lote || 'S/L'} → ${centro.nombre}.` });
     setSeleccion(null);
@@ -152,7 +162,7 @@ const EgresoBodega = () => {
     confirmAction('Confirmar salida a tránsito', `Se sacarán de la Bodega General ${formatoCantidad(lineas.reduce((n, l) => n + l.cantidad, 0))} unidad(es) en ${lineas.length} línea(s) y quedarán en tránsito en: ${resumen}. ¿Confirmar?`, async () => {
       setOcupado(true);
       try {
-        const r = await egresar({ lineas: lineas.map(({ productoId, loteId, cantidad, centroId }) => ({ productoId, loteId, cantidad, centroId })), solicitante, observacion });
+        const r = await egresar({ lineas: lineas.map(({ productoId, loteId, cantidad, centroId, codigoLote }) => ({ productoId, loteId, cantidad, centroId, codigoLote })), solicitante, observacion });
         showToast(`Salida N° ${r.numero} confirmada (${r.lineas} línea/s).`, 'success');
         setLineas([]); setSolicitante(''); setObservacion(''); setLotesCache({}); setSeleccion(null);
         setSenal({ tipo: 'ok', mensaje: `Salida N° ${r.numero} confirmada.` });
@@ -196,7 +206,7 @@ const EgresoBodega = () => {
                 const venc = estadoVencimiento(l.vencimiento);
                 const activo = l.id === seleccion.loteId;
                 return (
-                  <button key={l.id} type="button" role="radio" aria-checked={activo} onClick={() => setSeleccion((s) => ({ ...s, loteId: l.id }))}
+                  <button key={l.id} type="button" role="radio" aria-checked={activo} onClick={() => setSeleccion((s) => ({ ...s, loteId: l.id, codigoLote: '' }))}
                     className={`px-2.5 py-1.5 rounded border text-left ${activo ? 'border-[#2383C2] bg-white dark:bg-gray-900 ring-2 ring-[#2383C2]/40' : 'border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/50'}`}>
                     <div className="font-num font-bold">{l.lote || 'S/L'} {i === 0 && <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300">FEFO</span>}</div>
                     {l.propietarioNombre && <div className="text-[9px] font-bold text-violet-700 dark:text-violet-300">CONSIG. {l.propietarioNombre}</div>}

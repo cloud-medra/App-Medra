@@ -3,11 +3,11 @@
 // centroNombre }. Lógica pura.
 
 // Agrega; si ya hay una del mismo lote y centro, suma. { lineas, sumada }.
-export const agregarLineaEgreso = (lineas, { producto, lote, cantidad, centro }) => {
+export const agregarLineaEgreso = (lineas, { producto, lote, cantidad, centro, codigoLote = '' }) => {
   const i = lineas.findIndex((l) => l.loteId === lote.id && l.centroId === centro.id);
   if (i >= 0) {
     const copia = [...lineas];
-    copia[i] = { ...copia[i], cantidad: copia[i].cantidad + cantidad };
+    copia[i] = { ...copia[i], cantidad: copia[i].cantidad + cantidad, codigoLote: copia[i].codigoLote || codigoLote };
     return { lineas: copia, sumada: true };
   }
   return {
@@ -16,7 +16,7 @@ export const agregarLineaEgreso = (lineas, { producto, lote, cantidad, centro })
       key: `${lote.id}|${centro.id}`,
       productoId: producto.id, productoNombre: producto.nombre,
       loteId: lote.id, lote: lote.lote || '', vencimiento: lote.vencimiento || '', propietarioNombre: lote.propietarioNombre || '',
-      cantidad, centroId: centro.id, centroNombre: centro.nombre,
+      cantidad, centroId: centro.id, centroNombre: centro.nombre, codigoLote,
     }],
   };
 };

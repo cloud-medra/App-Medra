@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parsearGS1, gtinValido, fechaGS1aISO, interpretarLectura, normalizarCodigoLeido, idVinculo, GS } from './gs1.mjs';
+import { parsearGS1, gtinValido, fechaGS1aISO, interpretarLectura, normalizarCodigoLeido, idVinculo, GS, lecturaComoCodigoNormal } from './gs1.mjs';
 
 const GTIN = '07612345678900';
 
@@ -89,5 +89,45 @@ describe('idVinculo', () => {
     expect(idVinculo('.')).toBe('%2E');
     expect(idVinculo('__x__')).toBe('cb___x__');
     expect(idVinculo('  ')).toBe('');
+  });
+});
+
+describe('dos códigos GS1-128 (GTIN + lote/vencimiento)', () => {
+  it('código 1: (01) GTIN + (20) variante', () => {
+    const l = interpretarLectura('01076118191390912016');
+    expect(l).toMatchObject({ clave: '07611819139091', soloDatosLote: false });
+    expect(l.gs1.ais).toEqual({ '01': '07611819139091', 20: '16' });
+  });
+
+  it('código 2 crudo (sin prefijo ni GS): (17) vencimiento + (10) lote, marcado ambiguo', () => {
+    const l = interpretarLectura('173412011035769P5');
+    expect(l).toMatchObject({ clave: '', soloDatosLote: true });
+    expect(l.gs1).toMatchObject({ lote: '35769P5', vencimiento: '2034-12-01', ambiguo: true });
+    expect(interpretarLectura('173412001035769P5').gs1.vencimiento).toBe('2034-12-31'); // día 00
+  });
+
+  it('código 2 con prefijo de simbología, paréntesis o GS: no ambiguo', () => {
+    for (const c of [']C1173412011035769P5', '(17)341201(10)35769P5', `1035769P5${GS}17341201`]) {
+      const l = interpretarLectura(c);
+      expect(l.soloDatosLote).toBe(true);
+      expect(l.gs1).toMatchObject({ lote: '35769P5', vencimiento: '2034-12-01', ambiguo: false });
+    }
+  });
+
+  it('todo en uno (DataMatrix ]d2 o GS-128 con separador): producto + lote + vencimiento', () => {
+    expect(interpretarLectura(']d20107611819139091173412001035769P5')).toMatchObject({ clave: '07611819139091', gs1: { lote: '35769P5', vencimiento: '2034-12-31' } });
+    expect(interpretarLectura(`0107611819139091173412011035769P5${GS}2016`)).toMatchObject({ clave: '07611819139091', gs1: { lote: '35769P5', vencimiento: '2034-12-01' } });
+  });
+
+  it('códigos normales siguen siendo códigos normales', () => {
+    for (const c of ['7801234567893', '17341201', '1035769P5', '1712345610X', 'ABC-17']) {
+      const l = interpretarLectura(c);
+      expect(l.soloDatosLote).toBe(false);
+      expect(l.clave).toBe(c);
+    }
+  });
+
+  it('lecturaComoCodigoNormal: el código crudo completo como clave', () => {
+    expect(lecturaComoCodigoNormal(interpretarLectura('173412011035769P5'))).toMatchObject({ clave: '173412011035769P5', soloDatosLote: false, gs1: { esGS1: false } });
   });
 });
