@@ -24,6 +24,8 @@ import {
   calcularCamposFinancieros,
   ESTADO_CARGA_OPTIONS,
   getEstadoCargaStyle,
+  camposCambioEstadoCarga,
+  ESTADO_SIN_CARGO,
   getEstadoCargaRowStyle,
   CODIGO_SIN_OC,
   VALOR_LOTE_VENCIMIENTO_PAD,
@@ -386,8 +388,16 @@ export const CotizacionCard = ({
   // estado se maneja con la lógica propia del flujo PAD. Los que ya están
   // en CARGADO tampoco se tocan (no hay nada que cambiar).
   const itemsElegiblesCargaMasiva = items.filter(it =>
-    !it.esPad && !it.padPadreId && !it.sinCodigo && (it.estadoCarga || 'PENDIENTE') !== 'CARGADO'
+    !it.esPad && !it.padPadreId && !it.sinCodigo && (it.estadoCarga || 'PENDIENTE') !== 'CARGADO' && it.estadoCarga !== ESTADO_SIN_CARGO
   );
+
+  // Cambiar Estado Carga: entrar o salir de SIN CARGO también cambia
+  // código, precio y totales (camposCambioEstadoCarga); el resto solo el estado.
+  const cambiarEstadoCarga = (it, nuevoEstado) => {
+    const campos = camposCambioEstadoCarga(it, nuevoEstado, recargosActivos);
+    if (Object.keys(campos).length === 1) onActualizarEstadoItem(it.id, nuevoEstado);
+    else onEditarItem(it.id, campos);
+  };
   const cantidadElegibles = itemsElegiblesCargaMasiva.length;
   const textoCantidadElegibles = `${cantidadElegibles} ítem${cantidadElegibles === 1 ? '' : 's'}`;
 
@@ -839,7 +849,7 @@ export const CotizacionCard = ({
                               <div className="flex flex-col gap-0.5">
                                 <select
                                   value={it.estadoCarga || 'PENDIENTE'}
-                                  onChange={(e) => onActualizarEstadoItem(it.id, e.target.value)}
+                                  onChange={(e) => cambiarEstadoCarga(it, e.target.value)}
                                   disabled={soloLectura}
                                   className={`w-full min-w-0 h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${estilo.bg} ${estilo.border} ${estilo.text}`}
                                 >
