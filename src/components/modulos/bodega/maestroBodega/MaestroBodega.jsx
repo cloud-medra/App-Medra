@@ -5,6 +5,10 @@ import { useToast } from '../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
+import { useColumnResize } from '../../../../hooks/useColumnResize';
+import { useUser } from '../../../../context/UserContext';
+import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../ui/ThRedimensionable';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
 import Spinner from '../../../ui/Spinner';
 import BuscadorConLimpiar from '../../../ui/BuscadorConLimpiar';
 import { stockTotal, bajoMinimo } from '../../../../../functions/bodega/nucleo.mjs';
@@ -15,7 +19,9 @@ import { guardarProducto, leerLotesPorVencer, mensajeError } from '../shared/bod
 import { exportarExcel, exportarCsv } from '../shared/exportar';
 import { estadoVencimiento } from '../shared/vencimientos';
 import { lotesHasta } from '../shared/listasLocales';
-import { hoyISO } from '../shared/documentos/lineasDocumento';
+import { hoyISO, referenciaProducto } from '../shared/documentos/lineasDocumento';
+import { formatoPesos } from '../inventarioBodega/formato';
+import { precioNetoProducto, totalValorizado, totalValorizadoLista } from './valorizacion';
 import { rangoVencimiento, vencimientoPorProducto } from './filtrarProductos';
 import FormProducto from '../shared/FormProducto';
 import { PRODUCTO_VACIO } from '../shared/productoFormulario';
@@ -25,21 +31,24 @@ import ProductoDrawer from './ProductoDrawer';
 // Literal (no RUTAS.maestro) para que coberturaPermisos.test.js la verifique.
 const PATH_VISTA = '/bodega/maestroBodega';
 const TH = 'py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700';
-const TD = 'py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70';
+// Misma celda que la tabla de Gestiones (una línea, se corta con "…").
+const TD = 'py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 whitespace-nowrap overflow-hidden text-ellipsis';
 // Columnas del listado (permiso granular col_<key> en la sección listado).
 const COLUMNAS = [
-  { key: 'codigo', label: 'Código' },
-  { key: 'producto', label: 'Producto', fija: true },
-  { key: 'categoria', label: 'Categoría' },
-  { key: 'unidad', label: 'Unidad' },
-  { key: 'ubicacion', label: 'Ubicación' },
-  { key: 'loteVencimiento', label: 'Lote / Venc.', alinear: 'text-center' },
-  { key: 'disponible', label: 'Disponible B.G.', alinear: 'text-right' },
-  { key: 'transito', label: 'En tránsito', alinear: 'text-right' },
-  { key: 'enCentro', label: 'Dejado en centros', alinear: 'text-right' },
-  { key: 'total', label: 'Total', alinear: 'text-right' },
-  { key: 'minimo', label: 'Mínimo', alinear: 'text-right' },
-  { key: 'ficha', label: 'Ficha', alinear: 'text-center', fija: true },
+  { key: 'referencia', label: 'Referencia', ancho: 130, min: 70 },
+  { key: 'producto', label: 'Producto', fija: true, ancho: 260, min: 120 },
+  { key: 'categoria', label: 'Categoría', ancho: 120, min: 70 },
+  { key: 'unidad', label: 'Unidad', ancho: 80, min: 55 },
+  { key: 'ubicacion', label: 'Ubicación', ancho: 90, min: 60 },
+  { key: 'loteVencimiento', label: 'Lote / Venc.', alinear: 'text-center', ancho: 85, min: 60 },
+  { key: 'disponible', label: 'Disponible B.G.', alinear: 'text-right', ancho: 100, min: 60 },
+  { key: 'transito', label: 'En tránsito', alinear: 'text-right', ancho: 95, min: 60 },
+  { key: 'enCentro', label: 'Dejado en centros', alinear: 'text-right', ancho: 110, min: 60 },
+  { key: 'total', label: 'Stock total', alinear: 'text-right', ancho: 85, min: 55 },
+  { key: 'precio', label: 'Precio neto', alinear: 'text-right', ancho: 100, min: 60 },
+  { key: 'valor', label: 'Total $', alinear: 'text-right', ancho: 115, min: 70 },
+  { key: 'minimo', label: 'Mínimo', alinear: 'text-right', ancho: 70, min: 50 },
+  { key: 'ficha', label: 'Ficha', alinear: 'text-center', fija: true, ancho: 50, min: 40 },
 ];
 const SELECT = 'h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
 
@@ -83,6 +92,10 @@ const MaestroBodega = () => {
   const { hasPermission } = useGranularPermission();
   const { showToast } = useToast();
   const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'listado', COLUMNAS);
+  // Columnas redimensionables como en Gestiones (anchos recordados por usuario).
+  const usuario = useUser()?.userData?.uid;
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useColumnResize(columnasVisibles, { clave: 'bodega.maestro', usuario });
+  const anchoTabla = columnasVisibles.reduce((n, c) => n + (anchos[c.key] ?? c.ancho), 0);
   const { datos: productos, cargando, error, refrescar } = useCatalogo('bodegaProductos');
   const { datos: catalogos, refrescar: refrescarCatalogos } = useCatalogo('bodegaCatalogos');
   const { datos: centros } = useCatalogo('centros');
@@ -136,6 +149,7 @@ const MaestroBodega = () => {
   const totales = useMemo(() => filtrados.reduce((acc, p) => ({
     disponible: acc.disponible + (p.disponible || 0), transito: acc.transito + (p.transito || 0), enCentro: acc.enCentro + (p.enCentro || 0),
   }), { disponible: 0, transito: 0, enCentro: 0 }), [filtrados]);
+  const valorTotal = useMemo(() => totalValorizadoLista(filtrados), [filtrados]);
 
   const cambiarFiltro = (campo) => (e) => {
     const valor = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -180,7 +194,7 @@ const MaestroBodega = () => {
   const columnasExport = [
     { titulo: 'Código maestro', valor: (p) => p.codigoMaestro },
     { titulo: 'Nombre', valor: (p) => p.nombre },
-    { titulo: 'Referencia', valor: (p) => p.referencia },
+    { titulo: 'Referencia', valor: (p) => referenciaProducto(p) },
     { titulo: 'Categoría', valor: (p) => categorias[p.categoriaId] || '' },
     { titulo: 'Unidad', valor: (p) => unidades[p.unidadId] || '' },
     { titulo: 'Ubicación', valor: (p) => p.ubicacion },
@@ -189,7 +203,9 @@ const MaestroBodega = () => {
     { titulo: 'Disponible Bodega General', valor: (p) => p.disponible || 0 },
     { titulo: 'En tránsito', valor: (p) => p.transito || 0 },
     { titulo: 'Dejado en centros', valor: (p) => p.enCentro || 0 },
-    { titulo: 'Total', valor: (p) => stockTotal(p) },
+    { titulo: 'Stock total', valor: (p) => stockTotal(p) },
+    { titulo: 'Precio neto', valor: (p) => precioNetoProducto(p) ?? '' },
+    { titulo: 'Total $ (precio neto × disponible B.G.)', valor: (p) => totalValorizado(p) },
     { titulo: 'Tránsito por centro', valor: (p) => Object.entries(p.transitoPorCentro || {}).map(([c, n]) => `${nombresCentros[c] || c}: ${n}`).join('; ') },
     { titulo: 'Dejado por centro', valor: (p) => Object.entries(p.enCentroPorCentro || {}).map(([c, n]) => `${nombresCentros[c] || c}: ${n}`).join('; ') },
     { titulo: 'Stock mínimo', valor: (p) => p.stockMinimo ?? '' },
@@ -272,6 +288,8 @@ const MaestroBodega = () => {
           <span>Disponible: <strong className="text-emerald-600 dark:text-emerald-400 font-num">{formatoCantidad(totales.disponible)}</strong></span>
           <span>En tránsito: <strong className="text-amber-600 dark:text-amber-400 font-num">{formatoCantidad(totales.transito)}</strong></span>
           {totales.enCentro > 0 && <span>Dejado en centros: <strong className="text-violet-600 dark:text-violet-400 font-num">{formatoCantidad(totales.enCentro)}</strong></span>}
+          <span title="Precio neto × disponible B.G. de los productos filtrados">Total $: <strong className="text-gray-800 dark:text-gray-100 font-num">{formatoPesos(valorTotal)}</strong></span>
+          <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} />
         </div>
       </div>
 
@@ -285,10 +303,14 @@ const MaestroBodega = () => {
             {productos.length === 0 ? 'Aún no hay productos en Bodega.' : 'Ningún producto coincide con la búsqueda o los filtros.'}
           </div>
         ) : (
-          <table className="w-full text-left text-[11px] border-collapse">
-            <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10">
+          <table className="text-left text-[11px] border-collapse" style={{ tableLayout: 'fixed', width: anchoTabla, minWidth: '100%' }}>
+            <ColgroupRedimensionable columnas={columnasVisibles} anchos={anchos} relleno />
+            <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10 select-none">
               <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
-                {columnasVisibles.map((col) => <th key={col.key} className={`${TH} ${col.alinear || ''}`}>{col.label}</th>)}
+                {columnasVisibles.map((col) => (
+                  <ThRedimensionable key={col.key} col={col} anchos={anchos} onResize={handleResize} title={col.label} className={`${TH} ${col.alinear || ''}`}>{col.label}</ThRedimensionable>
+                ))}
+                <ThRelleno className="border-b border-gray-200 dark:border-gray-700" />
               </tr>
             </thead>
             <tbody>
@@ -297,12 +319,11 @@ const MaestroBodega = () => {
                 const expandido = expandidos.has(p.id);
                 const alerta = bajoMinimo(p);
                 const celdas = {
-                  codigo: <td className={`${TD} font-num font-bold text-[#2383C2] dark:text-sky-400 whitespace-nowrap`}>{p.codigoMaestro}</td>,
+                  referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referenciaProducto(p)}>{referenciaProducto(p) || '—'}</td>,
                   producto: (
-                    <td className={`${TD} text-gray-800 dark:text-gray-100`}>
+                    <td className={`${TD} text-gray-800 dark:text-gray-100`} title={`${p.nombre} · ${p.codigoMaestro}`}>
                       <button type="button" onClick={() => setAbierto({ id: p.id, pestana: 'stock' })} className="text-left font-semibold hover:text-[#2383C2] hover:underline">{p.nombre}</button>
-                      {p.referencia && <div className="text-[10px] text-gray-500">Ref. {p.referencia}</div>}
-                      {p.activo === false && <span className="text-[9px] font-bold px-1 rounded bg-gray-200 dark:bg-gray-700">INACTIVO</span>}
+                      {p.activo === false && <span className="ml-1 text-[9px] font-bold px-1 rounded bg-gray-200 dark:bg-gray-700">INACTIVO</span>}
                       {vencePorProducto?.[p.id] && (
                         <span className={`ml-1 text-[9px] font-bold px-1 rounded ${estadoVencimiento(vencePorProducto[p.id].vencimiento, { diasAviso: vencimiento.dias }).badge}`}>
                           {vencePorProducto[p.id].lotes} lote(s) · vence {vencePorProducto[p.id].vencimiento}
@@ -330,6 +351,8 @@ const MaestroBodega = () => {
                     </td>
                   ),
                   total: <td className={`${TD} text-right font-num font-bold`}>{formatoCantidad(stockTotal(p))}</td>,
+                  precio: <td className={`${TD} text-right font-num`}>{precioNetoProducto(p) === null ? <span className="text-gray-400">—</span> : formatoPesos(precioNetoProducto(p))}</td>,
+                  valor: <td className={`${TD} text-right font-num font-bold`}>{formatoPesos(totalValorizado(p))}</td>,
                   minimo: <td className={`${TD} text-right font-num ${alerta ? 'text-red-600 font-bold' : ''}`} title={alerta ? 'Disponible bajo el mínimo' : ''}>{p.stockMinimo ?? '—'}</td>,
                   ficha: (
                     <td className={`${TD} text-center`}>
@@ -341,12 +364,14 @@ const MaestroBodega = () => {
                 };
                 return (
                   <Fragment key={p.id}>
-                    <tr className={`hover:bg-gray-100/80 dark:hover:bg-gray-700/50 ${p.activo === false ? 'opacity-60' : ''}`}>
+                    {/* Hover como en Gestiones: fondo y barra lateral azul. */}
+                    <tr className={`group border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors ${p.activo === false ? 'opacity-60' : ''}`}>
                       {columnasVisibles.map((col) => <Fragment key={col.key}>{celdas[col.key]}</Fragment>)}
+                      <TdRelleno className="border-b border-gray-200 dark:border-gray-700/70" />
                     </tr>
                     {expandido && (
                       <tr className="bg-amber-50/50 dark:bg-amber-950/10">
-                        <td colSpan={columnasVisibles.length} className="py-1 px-2 border-b border-gray-200 dark:border-gray-700/70">
+                        <td colSpan={columnasVisibles.length + 1} className="py-1 px-2 border-b border-gray-200 dark:border-gray-700/70">
                           <div className="ml-auto max-w-sm">
                             <div className="text-[10px] font-bold uppercase text-gray-500 mb-0.5">En tránsito por centro</div>
                             {centrosConTransito
