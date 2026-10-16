@@ -35,6 +35,18 @@ export const datosLoteDeLectura = (lectura) => ({
   vencimiento: lectura?.gs1?.vencimiento || '',
 });
 
+// Texto escaneado dentro de un campo (Lote, buscador del modal "Código sin
+// vincular"…): si es GS1 con lote o vencimiento, los datos para rellenar
+// { lote, vencimiento, codigoLote, lectura } en vez de dejar el código
+// completo como texto. null si no lo es (texto escrito a mano).
+export const datosLoteEnTexto = (texto) => {
+  const lectura = interpretarLectura(texto);
+  if (!lectura?.gs1?.esGS1) return null;
+  const datos = datosLoteDeLectura(lectura);
+  if (!datos.lote && !datos.vencimiento) return null;
+  return { ...datos, codigoLote: lectura.soloDatosLote ? lectura.codigo : '', lectura };
+};
+
 // ---- Segundo código antes que el producto ----
 // Si se escanea primero el código de lote/vencimiento, queda "en espera"
 // y se aplica al producto que se escanee a continuación (vence a los 2

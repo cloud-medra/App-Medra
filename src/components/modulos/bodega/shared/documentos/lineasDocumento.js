@@ -28,6 +28,31 @@ export const campoSugerido = (pendiente) => {
   return null;
 };
 
+// Orden de los campos del producto en curso: primero Lote y Vencimiento
+// (el cursor queda listo para escanear el segundo código GS1), después
+// Cantidad y, en Carga inicial, Precio.
+const camposEnOrden = (pendiente, conPrecio) => [
+  ...(pendiente?.producto?.manejaLote ? ['lote'] : []),
+  ...(pendiente?.producto?.manejaVencimiento ? ['vencimiento'] : []),
+  'cantidad',
+  ...(conPrecio ? ['precio'] : []),
+];
+const pendienteDeLlenar = (pendiente, campo) => (campo === 'lote' ? !normalizarLote(pendiente.lote)
+  : campo === 'vencimiento' ? !pendiente.vencimiento : true);
+
+// Campo donde queda el cursor al tomar un producto: Lote/Vencimiento si
+// faltan (listo para escanear el código 2); si no, Cantidad.
+export const campoInicial = (pendiente, conPrecio = false) => camposEnOrden(pendiente, conPrecio).find((c) => pendienteDeLlenar(pendiente, c)) || 'cantidad';
+
+// Carga inicial: campo siguiente al presionar Enter en `actual` (salta
+// Lote y Vencimiento ya completos); null = agregar la línea.
+export const siguienteCampo = (pendiente, actual, conPrecio = true) => {
+  const campos = camposEnOrden(pendiente, conPrecio);
+  const i = campos.indexOf(actual);
+  if (i < 0) return null;
+  return campos.slice(i + 1).find((c) => pendienteDeLlenar(pendiente, c)) || null;
+};
+
 // Agrega una línea; si ya hay una del mismo producto + lote + vencimiento,
 // suma la cantidad. Devuelve { lineas, sumada, linea }.
 export const agregarLinea = (lineas, nueva) => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agregarLinea, campoFaltante, campoSugerido, cambiarCantidad, quitarLinea, totalUnidades, erroresLineas, lineasDesdeDocumento, cambiarPrecio, precioSugerido, referenciaProducto, totalValorLineas, precioMaestroClinico, precioInicialLinea } from './lineasDocumento';
+import { agregarLinea, campoFaltante, campoSugerido, cambiarCantidad, quitarLinea, totalUnidades, erroresLineas, lineasDesdeDocumento, cambiarPrecio, precioSugerido, referenciaProducto, totalValorLineas, precioMaestroClinico, precioInicialLinea, campoInicial, siguienteCampo } from './lineasDocumento';
 
 const CON_LOTE = { id: 'p1', nombre: 'Sonda', manejaLote: true, manejaVencimiento: true };
 const SIN_LOTE = { id: 'p2', nombre: 'Gasa', manejaLote: false, manejaVencimiento: false };
@@ -106,5 +106,22 @@ describe('código de lote leído (segundo código GS1)', () => {
     expect(r.linea.codigoLote).toBe('');
     r = agregarLinea(r.lineas, { productoId: 'p1', producto: CON_LOTE, lote: 'L1', vencimiento: '2034-12-01', cantidad: 2, codigoLote: '1734120110L1' });
     expect(r.linea).toMatchObject({ cantidad: 3, codigoLote: '1734120110L1' });
+  });
+});
+
+describe('orden de los campos: listo para escanear el código 2', () => {
+  const p = (extra = {}) => ({ producto: CON_LOTE, cantidad: 1, lote: '', vencimiento: '', ...extra });
+  it('el cursor parte en Lote si falta; si lote y vencimiento vienen, en Cantidad', () => {
+    expect(campoInicial(p(), true)).toBe('lote');
+    expect(campoInicial(p({ lote: 'L1' }), true)).toBe('vencimiento');
+    expect(campoInicial(p({ lote: 'L1', vencimiento: '2034-12-01' }), true)).toBe('cantidad');
+    expect(campoInicial({ producto: SIN_LOTE, cantidad: 1 }, false)).toBe('cantidad');
+  });
+  it('Carga inicial: Enter avanza Lote → Vencimiento → Cantidad → Precio, saltando lo ya completo', () => {
+    expect(siguienteCampo(p(), 'lote')).toBe('vencimiento');
+    expect(siguienteCampo(p({ lote: 'L1', vencimiento: '2034-12-01' }), 'lote')).toBe('cantidad');
+    expect(siguienteCampo(p({ lote: 'L1', vencimiento: '2034-12-01' }), 'cantidad')).toBe('precio');
+    expect(siguienteCampo(p(), 'precio')).toBeNull();
+    expect(siguienteCampo({ producto: SIN_LOTE, cantidad: 1 }, 'cantidad')).toBe('precio');
   });
 });

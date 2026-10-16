@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../bodegaApi', () => ({ leerVinculo: vi.fn(), obtenerProducto: vi.fn() }));
-const { identificarLectura, datosLoteDeLectura, datosLoteEnEspera, combinarDatosLote, opcionesLote, VIGENCIA_DATOS_LOTE_MS } = await import('./identificarLectura');
+const { identificarLectura, datosLoteDeLectura, datosLoteEnEspera, combinarDatosLote, opcionesLote, VIGENCIA_DATOS_LOTE_MS, datosLoteEnTexto } = await import('./identificarLectura');
 
 const GTIN = '07612345678900';
 const PRODUCTO = { id: 'p1', nombre: 'Sonda' };
@@ -76,5 +76,19 @@ describe('dos códigos GS1 (GTIN + lote/vencimiento)', () => {
       { lote: 'B', vencimiento: '2030-01-01', disponible: 2 },
       { lote: '', vencimiento: '', disponible: 0 },
     ]);
+  });
+});
+
+describe('código 2 escaneado dentro de un campo (Lote o modal)', () => {
+  it('GS1 de lote/vencimiento: rellena en vez de dejar el texto', () => {
+    expect(datosLoteEnTexto('173412011035769P5')).toMatchObject({ lote: '35769P5', vencimiento: '2034-12-01', codigoLote: '173412011035769P5' });
+    expect(datosLoteEnTexto(']C1173412001035769P5')).toMatchObject({ lote: '35769P5', vencimiento: '2034-12-31' });
+    expect(datosLoteEnTexto(']d20107611819139091173412011035769P5')).toMatchObject({ lote: '35769P5', vencimiento: '2034-12-01', codigoLote: '' });
+  });
+  it('un lote escrito a mano o un GTIN solo no se tocan', () => {
+    expect(datosLoteEnTexto('35769P5')).toBeNull();
+    expect(datosLoteEnTexto('L-2024')).toBeNull();
+    expect(datosLoteEnTexto('01076118191390912016')).toBeNull();
+    expect(datosLoteEnTexto('')).toBeNull();
   });
 });

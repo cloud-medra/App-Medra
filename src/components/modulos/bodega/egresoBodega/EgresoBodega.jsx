@@ -95,8 +95,11 @@ const EgresoBodega = () => {
       exacto = true;
     }
     setSeleccion({ producto, loteId: lote.id, cantidad: 1, codigoLote: exacto ? (datosLote.codigoLote || '') : '' });
-    setSenal({ tipo: 'ok', mensaje: `${producto.nombre}: lote ${lote.lote || 'S/L'}${lote.propietarioNombre ? ` (consignado ${lote.propietarioNombre})` : ''} ${exacto ? '(el del código)' : '(vence primero)'} · quedan ${lote.restante}.` });
-    enfocar(lote.restante > 1 ? cantidadRef : escanerRef);
+    // Sin código de lote y con lote/vencimiento: el cursor queda en el
+    // escáner, listo para el código 2 (o se ingresa la cantidad del FEFO).
+    const esperaCodigoLote = !exacto && (producto.manejaLote || producto.manejaVencimiento);
+    setSenal({ tipo: 'ok', mensaje: `${producto.nombre}: lote ${lote.lote || 'S/L'}${lote.propietarioNombre ? ` (consignado ${lote.propietarioNombre})` : ''} ${exacto ? '(el del código)' : '(vence primero)'} · quedan ${lote.restante}.${esperaCodigoLote ? ' Escanea el código de lote para elegir ese lote, o ingresa la cantidad.' : ''}` });
+    enfocar(esperaCodigoLote ? escanerRef : lote.restante > 1 ? cantidadRef : escanerRef);
   };
 
   const tomarProducto = async (producto, lectura) => {
@@ -302,6 +305,7 @@ const EgresoBodega = () => {
         <ModalVincularCodigo
           lectura={lecturaSinVincular}
           productoSugerido={seleccion?.producto || null}
+          onDatosLote={(datos) => setEspera(datosLoteEnEspera(datos.lectura))}
           onCerrar={() => { setLecturaSinVincular(null); enfocar(); }}
           onVinculado={(producto) => { const lectura = lecturaSinVincular; setLecturaSinVincular(null); tomarProducto(producto, lectura); }}
         />

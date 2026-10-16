@@ -8,6 +8,7 @@ import { RUTAS, textoBusquedaProducto, normalizarClave } from '../../../../../fu
 import { guardarProducto, vincularCodigo, mensajeError, detalleError } from './bodegaApi';
 import FormProducto from './FormProducto';
 import { PRODUCTO_VACIO } from './productoFormulario';
+import { datosLoteEnTexto, esTeclaFinEscaneo } from './escaneo/identificarLectura';
 
 const MAX_RESULTADOS = 30;
 
@@ -17,10 +18,13 @@ const MAX_RESULTADOS = 30;
 // siga con su flujo sin perder lo que se estaba ingresando.
 //   lectura: interpretarLectura (codigo, clave, gs1)
 //   productoSugerido: producto en curso (ofrece vincular a él con un clic)
+//   onDatosLote(datos): si en el modal se escanea el código 2 (GS1 de
+//     lote/vencimiento), se entrega a la pantalla para aplicarlo al producto
+//     que se elija. Sin la prop, el modal no ofrece ese campo.
 //   conPrecioNeto (Carga inicial): al crear, el formulario pide "Precio
 //     neto" en vez de "Código maestro" (que queda automático) y lo entrega
 //     en onVinculado(producto, { precioNeto }) para la línea.
-const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto = false, onVinculado, onCerrar }) => {
+const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto = false, onDatosLote, onVinculado, onCerrar }) => {
   const { showToast } = useToast();
   const { confirmAction } = useModal();
   const { hasPermission } = useGranularPermission();
@@ -31,6 +35,18 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
   const [modo, setModo] = useState('buscar');
   const [texto, setTexto] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [loteLeido, setLoteLeido] = useState(null);
+  const [codigoLote, setCodigoLote] = useState('');
+
+  // Código 2 escaneado en el modal (campo propio o buscador): se guarda para
+  // el producto que se elija. Devuelve true si lo era.
+  const tomarCodigoLote = (texto) => {
+    const datos = onDatosLote ? datosLoteEnTexto(texto) : null;
+    if (!datos) return false;
+    setLoteLeido(datos);
+    onDatosLote(datos);
+    return true;
+  };
 
   const resultados = useMemo(() => {
     const q = normalizarClave(texto);
@@ -102,6 +118,25 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
           <p className="p-4 text-gray-600 dark:text-gray-300">No tienes permiso para vincular códigos de barra. Pide a un administrador que lo vincule desde el Maestro de Bodega.</p>
         ) : (
           <>
+            {onDatosLote && (
+              <div className="px-4 pt-3 flex flex-wrap items-center gap-2">
+                <input value={codigoLote} onChange={(e) => setCodigoLote(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (!esTeclaFinEscaneo(e)) return;
+                    e.preventDefault();
+                    if (!tomarCodigoLote(codigoLote)) showToast('Ese código no trae lote ni vencimiento GS1.', 'error');
+                    setCodigoLote('');
+                  }}
+                  placeholder="Código 2: escanea aquí el código de lote/vencimiento (opcional)"
+                  aria-label="Código de lote y vencimiento"
+                  className="flex-1 min-w-[240px] h-8 px-2 border border-dashed border-amber-400 rounded outline-none bg-white dark:bg-gray-900 font-num focus:border-[#2383C2]" />
+                {loteLeido && (
+                  <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 text-[11px] font-semibold">
+                    Lote <span className="font-num">{loteLeido.lote || '—'}</span> · vence <span className="font-num">{loteLeido.vencimiento || '—'}</span>: se aplicará al producto
+                  </span>
+                )}
+              </div>
+            )}
             <div className="px-4 pt-3 flex gap-1.5">
               <button type="button" onClick={() => setModo('buscar')} className={`h-8 px-3 rounded font-semibold flex items-center gap-1.5 ${modo === 'buscar' ? 'bg-[#2383C2] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}>
                 <Link2 size={13} /> Vincular a un producto existente
@@ -126,6 +161,7 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
                   <div className="relative">
                     <Search className="absolute left-2 top-2.5 text-gray-400" size={14} />
                     <input value={texto} onChange={(e) => setTexto(e.target.value)} autoFocus
+                      onKeyDown={(e) => { if (e.key === 'Enter' && tomarCodigoLote(texto)) { e.preventDefault(); setTexto(''); } }}
                       placeholder="Buscar por nombre, código maestro, referencia…"
                       className="w-full h-9 pl-8 pr-2 border border-gray-300 dark:border-gray-600 rounded outline-none bg-white dark:bg-gray-900 focus:border-[#2383C2]" />
                   </div>
