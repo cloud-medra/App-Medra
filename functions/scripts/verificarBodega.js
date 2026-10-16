@@ -1,12 +1,12 @@
 // functions/scripts/verificarBodega.js
 //
 // Revisión de SOLO LECTURA de la consistencia de Bodega (no escribe nada):
-//   - el disponible / tránsito / tránsito por centro de cada producto es la
-//     suma de sus lotes;
-//   - el tránsito de cada lote (y por centro) es la suma de lo pendiente en
-//     sus registros de tránsito abiertos;
+//   - el disponible / tránsito / dejado en centro (y por centro) de cada
+//     producto es la suma de sus lotes;
+//   - el tránsito y lo dejado en centro de cada lote (por centro) es la suma
+//     de lo pendiente / enCentro en sus registros de tránsito abiertos;
 //   - bodega_transito_centros/{centro} cuadra con los tránsitos abiertos;
-//   - no hay saldos negativos ni tránsitos cerrados con pendiente.
+//   - no hay saldos negativos ni tránsitos abiertos vacíos.
 // Lee las colecciones bodega_productos, bodega_lotes, bodega_transitos
 // (abiertos) y bodega_transito_centros completas: cuesta 1 lectura por
 // documento.
@@ -44,44 +44,57 @@ const verificar = async (db) => {
   const porProducto = {};
   lotes.docs.forEach((d) => {
     const l = d.data();
-    if ((l.disponible || 0) < 0 || (l.transito || 0) < 0) problemas.push(`Lote ${d.id}: saldo negativo.`);
-    const acc = porProducto[l.productoId] || { disponible: 0, transito: 0, transitoPorCentro: {} };
+    if ((l.disponible || 0) < 0 || (l.transito || 0) < 0 || (l.enCentro || 0) < 0) problemas.push(`Lote ${d.id}: saldo negativo.`);
+    const acc = porProducto[l.productoId] || { disponible: 0, transito: 0, transitoPorCentro: {}, enCentro: 0, enCentroPorCentro: {} };
     acc.disponible += l.disponible || 0;
     acc.transito += l.transito || 0;
+    acc.enCentro += l.enCentro || 0;
     sumarMapa(acc.transitoPorCentro, l.transitoPorCentro);
+    sumarMapa(acc.enCentroPorCentro, l.enCentroPorCentro);
     porProducto[l.productoId] = acc;
     const suma = Object.values(l.transitoPorCentro || {}).reduce((n, v) => n + v, 0);
     if (suma !== (l.transito || 0)) problemas.push(`Lote ${d.id}: tránsito ${l.transito} pero por centro suma ${suma}.`);
+    const sumaEnCentro = Object.values(l.enCentroPorCentro || {}).reduce((n, v) => n + v, 0);
+    if (sumaEnCentro !== (l.enCentro || 0)) problemas.push(`Lote ${d.id}: dejado en centro ${l.enCentro || 0} pero por centro suma ${sumaEnCentro}.`);
   });
   productos.docs.forEach((d) => {
     const p = d.data();
-    const s = porProducto[d.id] || { disponible: 0, transito: 0, transitoPorCentro: {} };
+    const s = porProducto[d.id] || { disponible: 0, transito: 0, transitoPorCentro: {}, enCentro: 0, enCentroPorCentro: {} };
     if ((p.disponible || 0) !== s.disponible) problemas.push(`Producto ${p.codigoMaestro}: disponible ${p.disponible || 0}, lotes suman ${s.disponible}.`);
     if ((p.transito || 0) !== s.transito) problemas.push(`Producto ${p.codigoMaestro}: tránsito ${p.transito || 0}, lotes suman ${s.transito}.`);
     if (!igualMapa(p.transitoPorCentro || {}, s.transitoPorCentro)) problemas.push(`Producto ${p.codigoMaestro}: tránsito por centro no cuadra con sus lotes.`);
+    if ((p.enCentro || 0) !== s.enCentro) problemas.push(`Producto ${p.codigoMaestro}: dejado en centro ${p.enCentro || 0}, lotes suman ${s.enCentro}.`);
+    if (!igualMapa(p.enCentroPorCentro || {}, s.enCentroPorCentro)) problemas.push(`Producto ${p.codigoMaestro}: dejado en centro por centro no cuadra con sus lotes.`);
   });
 
   const porLote = {};
+  const enCentroPorLote = {};
   const porCentro = {};
   transitos.docs.forEach((d) => {
     const t = d.data();
-    if ((t.pendiente || 0) <= 0) problemas.push(`Tránsito ${d.id}: abierto sin pendiente.`);
+    if ((t.pendiente || 0) + (t.enCentro || 0) <= 0) problemas.push(`Tránsito ${d.id}: abierto sin pendiente ni dejado en centro.`);
     porLote[t.loteId] = sumarMapa(porLote[t.loteId] || {}, { [t.centroId]: t.pendiente || 0 });
-    const c = porCentro[t.centroId] || { unidades: 0, productos: {}, abiertos: 0 };
+    enCentroPorLote[t.loteId] = sumarMapa(enCentroPorLote[t.loteId] || {}, { [t.centroId]: t.enCentro || 0 });
+    const c = porCentro[t.centroId] || { unidades: 0, productos: {}, abiertos: 0, enCentro: 0, productosEnCentro: {} };
     c.unidades += t.pendiente || 0;
+    c.enCentro += t.enCentro || 0;
     sumarMapa(c.productos, { [t.productoId]: t.pendiente || 0 });
+    sumarMapa(c.productosEnCentro, { [t.productoId]: t.enCentro || 0 });
     c.abiertos += 1;
     porCentro[t.centroId] = c;
   });
   lotes.docs.forEach((d) => {
     if (!igualMapa(d.data().transitoPorCentro || {}, porLote[d.id] || {})) problemas.push(`Lote ${d.id}: tránsito por centro no cuadra con sus tránsitos abiertos.`);
+    if (!igualMapa(d.data().enCentroPorCentro || {}, enCentroPorLote[d.id] || {})) problemas.push(`Lote ${d.id}: dejado en centro no cuadra con sus tránsitos abiertos.`);
   });
   const idsCentros = new Set([...centros.docs.map((d) => d.id), ...Object.keys(porCentro)]);
   idsCentros.forEach((id) => {
     const doc = centros.docs.find((d) => d.id === id)?.data() || {};
-    const real = porCentro[id] || { unidades: 0, productos: {}, abiertos: 0 };
+    const real = porCentro[id] || { unidades: 0, productos: {}, abiertos: 0, enCentro: 0, productosEnCentro: {} };
     if ((doc.unidades || 0) !== real.unidades) problemas.push(`Centro ${doc.centroNombre || id}: unidades ${doc.unidades || 0}, tránsitos abiertos suman ${real.unidades}.`);
     if (!igualMapa(doc.productos || {}, real.productos)) problemas.push(`Centro ${doc.centroNombre || id}: productos no cuadran con sus tránsitos abiertos.`);
+    if ((doc.enCentro || 0) !== real.enCentro) problemas.push(`Centro ${doc.centroNombre || id}: dejado en centro ${doc.enCentro || 0}, tránsitos abiertos suman ${real.enCentro}.`);
+    if (!igualMapa(doc.productosEnCentro || {}, real.productosEnCentro)) problemas.push(`Centro ${doc.centroNombre || id}: productos dejados no cuadran con sus tránsitos abiertos.`);
     if ((doc.transitosAbiertos || 0) !== real.abiertos) problemas.push(`Centro ${doc.centroNombre || id}: transitosAbiertos ${doc.transitosAbiertos || 0}, hay ${real.abiertos}.`);
   });
   return problemas;

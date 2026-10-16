@@ -93,7 +93,7 @@ const EgresoBodega = () => {
       exacto = true;
     }
     setSeleccion({ producto, loteId: lote.id, cantidad: 1 });
-    setSenal({ tipo: 'ok', mensaje: `${producto.nombre}: lote ${lote.lote || 'S/L'} ${exacto ? '(el del código)' : '(vence primero)'} · quedan ${lote.restante}.` });
+    setSenal({ tipo: 'ok', mensaje: `${producto.nombre}: lote ${lote.lote || 'S/L'}${lote.propietarioNombre ? ` (consignado ${lote.propietarioNombre})` : ''} ${exacto ? '(el del código)' : '(vence primero)'} · quedan ${lote.restante}.` });
     enfocar(lote.restante > 1 ? cantidadRef : escanerRef);
   };
 
@@ -199,6 +199,7 @@ const EgresoBodega = () => {
                   <button key={l.id} type="button" role="radio" aria-checked={activo} onClick={() => setSeleccion((s) => ({ ...s, loteId: l.id }))}
                     className={`px-2.5 py-1.5 rounded border text-left ${activo ? 'border-[#2383C2] bg-white dark:bg-gray-900 ring-2 ring-[#2383C2]/40' : 'border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/50'}`}>
                     <div className="font-num font-bold">{l.lote || 'S/L'} {i === 0 && <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300">FEFO</span>}</div>
+                    {l.propietarioNombre && <div className="text-[9px] font-bold text-violet-700 dark:text-violet-300">CONSIG. {l.propietarioNombre}</div>}
                     <div className="text-[11px] text-gray-600 dark:text-gray-300 font-num">
                       {l.vencimiento || 'sin venc.'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>} · disp. {l.restante}
                     </div>
@@ -253,7 +254,7 @@ const EgresoBodega = () => {
                     <tr>
                       {ver('codigo') && <td className="px-2 py-1 font-num text-[#2383C2]">{p?.codigoMaestro || '—'}</td>}
                       <td className="px-2 py-1 font-semibold">{l.productoNombre}</td>
-                      {ver('lote') && <td className="px-2 py-1 font-num">{l.lote || '—'}</td>}
+                      {ver('lote') && <td className="px-2 py-1 font-num">{l.lote || '—'}{l.propietarioNombre && <span className="ml-1 px-1 rounded text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span>}</td>}
                       {ver('vencimiento') && <td className="px-2 py-1 font-num">{l.vencimiento || '—'}</td>}
                       {ver('centro') && <td className="px-2 py-1">{l.centroNombre}</td>}
                       {ver('cantidad') && <td className="px-2 py-1 text-right font-num font-bold">{l.cantidad}</td>}

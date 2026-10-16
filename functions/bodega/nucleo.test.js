@@ -7,28 +7,31 @@ import {
 } from './nucleo.mjs';
 
 const VACIO = { disponible: 0, transito: 0, transitoPorCentro: {} };
+// Saldo "dejado en centro" vacío (lo devuelven siempre aplicarMovimiento y aplicarMovimientoCentro).
+const SIN_EN_CENTRO = { enCentro: 0, enCentroPorCentro: {} };
+const SIN_EN_CENTRO_TOTALES = { enCentro: 0, productosEnCentro: {} };
 
 describe('aplicarMovimiento (stock por lote y totales del producto)', () => {
   it('carga inicial e ingreso suman al disponible', () => {
     const a = aplicarMovimiento(VACIO, { tipo: 'CARGA_INICIAL', cantidad: 5 });
-    expect(aplicarMovimiento(a, { tipo: 'INGRESO', cantidad: 3 })).toEqual({ disponible: 8, transito: 0, transitoPorCentro: {} });
+    expect(aplicarMovimiento(a, { tipo: 'INGRESO', cantidad: 3 })).toEqual({ ...SIN_EN_CENTRO, disponible: 8, transito: 0, transitoPorCentro: {} });
   });
 
   it('salida a tránsito: baja disponible y sube el tránsito del centro', () => {
     const s = aplicarMovimiento({ ...VACIO, disponible: 10 }, { tipo: 'SALIDA_A_TRANSITO', cantidad: 4, centroId: 'pab' });
-    expect(s).toEqual({ disponible: 6, transito: 4, transitoPorCentro: { pab: 4 } });
+    expect(s).toEqual({ ...SIN_EN_CENTRO, disponible: 6, transito: 4, transitoPorCentro: { pab: 4 } });
     const s2 = aplicarMovimiento(s, { tipo: 'SALIDA_A_TRANSITO', cantidad: 1, centroId: 'uci' });
-    expect(s2).toEqual({ disponible: 5, transito: 5, transitoPorCentro: { pab: 4, uci: 1 } });
+    expect(s2).toEqual({ ...SIN_EN_CENTRO, disponible: 5, transito: 5, transitoPorCentro: { pab: 4, uci: 1 } });
   });
 
   it('entrega: baja el tránsito del centro (sale definitivamente)', () => {
     const s = { disponible: 6, transito: 4, transitoPorCentro: { pab: 4 } };
-    expect(aplicarMovimiento(s, { tipo: 'ENTREGA', cantidad: 1, centroId: 'pab' })).toEqual({ disponible: 6, transito: 3, transitoPorCentro: { pab: 3 } });
+    expect(aplicarMovimiento(s, { tipo: 'ENTREGA', cantidad: 1, centroId: 'pab' })).toEqual({ ...SIN_EN_CENTRO, disponible: 6, transito: 3, transitoPorCentro: { pab: 3 } });
   });
 
   it('devolución: baja el tránsito del centro y vuelve al disponible; el centro en 0 desaparece', () => {
     const s = { disponible: 6, transito: 4, transitoPorCentro: { pab: 4 } };
-    expect(aplicarMovimiento(s, { tipo: 'DEVOLUCION', cantidad: 4, centroId: 'pab' })).toEqual({ disponible: 10, transito: 0, transitoPorCentro: {} });
+    expect(aplicarMovimiento(s, { tipo: 'DEVOLUCION', cantidad: 4, centroId: 'pab' })).toEqual({ ...SIN_EN_CENTRO, disponible: 10, transito: 0, transitoPorCentro: {} });
   });
 
   it('ajustes', () => {
@@ -70,7 +73,7 @@ describe('aplicarMovimiento (stock por lote y totales del producto)', () => {
       s = aplicarMovimiento(s, { tipo, cantidad, centroId });
       expect(Object.values(s.transitoPorCentro).reduce((a, b) => a + b, 0)).toBe(s.transito);
     });
-    expect(s).toEqual({ disponible: 9, transito: 6, transitoPorCentro: { b: 6 } });
+    expect(s).toEqual({ ...SIN_EN_CENTRO, disponible: 9, transito: 6, transitoPorCentro: { b: 6 } });
   });
 });
 
@@ -78,9 +81,9 @@ describe('aplicarMovimientoCentro (bodega_transito_centros)', () => {
   it('suma y resta por producto y cuenta productos distintos', () => {
     let c = aplicarMovimientoCentro({}, { tipo: 'SALIDA_A_TRANSITO', cantidad: 3, productoId: 'p1' });
     c = aplicarMovimientoCentro(c, { tipo: 'SALIDA_A_TRANSITO', cantidad: 2, productoId: 'p2' });
-    expect(c).toEqual({ unidades: 5, productos: { p1: 3, p2: 2 }, productosDistintos: 2 });
+    expect(c).toEqual({ ...SIN_EN_CENTRO_TOTALES, unidades: 5, productos: { p1: 3, p2: 2 }, productosDistintos: 2 });
     c = aplicarMovimientoCentro(c, { tipo: 'ENTREGA', cantidad: 3, productoId: 'p1' });
-    expect(c).toEqual({ unidades: 2, productos: { p2: 2 }, productosDistintos: 1 });
+    expect(c).toEqual({ ...SIN_EN_CENTRO_TOTALES, unidades: 2, productos: { p2: 2 }, productosDistintos: 1 });
   });
   it('rechaza movimientos que no son de tránsito o que dejan negativo', () => {
     expect(() => aplicarMovimientoCentro({}, { tipo: 'INGRESO', cantidad: 1, productoId: 'p' })).toThrow(ErrorStock);

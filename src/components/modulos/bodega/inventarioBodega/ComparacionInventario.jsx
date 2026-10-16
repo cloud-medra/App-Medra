@@ -57,7 +57,7 @@ const ComparacionInventario = ({ inventario, lineas, editable, onConteo }) => {
     const valor = edicion[l.id];
     if (valor === undefined || valor === '') return;
     try {
-      const r = await registrarConteo({ inventarioId: inventario.id, modo: 'reemplazar', conteos: [{ productoId: l.productoId, lote: l.lote, vencimiento: l.vencimiento, cantidad: Number(valor) }] });
+      const r = await registrarConteo({ inventarioId: inventario.id, modo: 'reemplazar', conteos: [{ productoId: l.productoId, lote: l.lote, vencimiento: l.vencimiento, propietarioId: l.propietarioId || null, cantidad: Number(valor) }] });
       setEdicion((e) => { const n = { ...e }; delete n[l.id]; return n; });
       onConteo(r);
     } catch (error) {
@@ -68,6 +68,7 @@ const ComparacionInventario = ({ inventario, lineas, editable, onConteo }) => {
   const columnasExport = [
     { titulo: 'Código', valor: (l) => l.codigoMaestro },
     { titulo: 'Producto', valor: (l) => l.productoNombre },
+    { titulo: 'Dueño', valor: (l) => l.propietarioNombre || 'Propio' },
     { titulo: 'Lote', valor: (l) => l.lote || '—' },
     { titulo: 'Vencimiento', valor: (l) => l.vencimiento || '—' },
     { titulo: 'Teórico', valor: (l) => l.teorico },
@@ -124,7 +125,10 @@ const ComparacionInventario = ({ inventario, lineas, editable, onConteo }) => {
               return (
                 <tr key={l.id} className={diferencia < 0 ? 'bg-red-50/60 dark:bg-red-950/20' : diferencia > 0 ? 'bg-emerald-50/60 dark:bg-emerald-950/20' : ''}>
                   {ver('codigo') && <td className="px-2 py-1 font-num text-[#2383C2]">{l.codigoMaestro}</td>}
-                  <td className="px-2 py-1 font-semibold">{l.productoNombre} {l.agregado && <span className="text-[9px] font-bold px-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">AGREGADO</span>}</td>
+                  <td className="px-2 py-1 font-semibold">
+                    {l.productoNombre} {l.agregado && <span className="text-[9px] font-bold px-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">AGREGADO</span>}
+                    {l.propietarioNombre && <span className="ml-1 text-[9px] font-bold px-1 rounded bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span>}
+                  </td>
                   {ver('lote') && <td className="px-2 py-1 font-num">{l.lote || '—'}</td>}
                   {ver('vencimiento') && <td className="px-2 py-1 font-num">{l.vencimiento || '—'}</td>}
                   {ver('teorico') && <td className="px-2 py-1 text-right font-num">{l.teorico}</td>}

@@ -16,6 +16,7 @@ import ComparacionInventario from './ComparacionInventario';
 import CierreInventarioModal from './CierreInventarioModal';
 import { formatoPesos } from './formato';
 import { mezclarPorId } from '../shared/listasLocales';
+import { resolverDuenos } from './duenosConteo';
 
 const PATH_VISTA = '/bodega/inventarioBodega';
 const ESTADO_BADGE = {
@@ -23,6 +24,36 @@ const ESTADO_BADGE = {
   CERRADO: 'bg-emerald-100 text-emerald-700', ANULADO: 'bg-gray-200 text-gray-600',
 };
 const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] bg-white dark:bg-gray-900';
+
+// El mismo lote existe como propio y consignado (o de dos empresas): elegir
+// a quién corresponde lo contado de cada línea.
+const ElegirDuenoModal = ({ ambiguos, onCancelar, onConfirmar }) => {
+  const [elecciones, setElecciones] = useState(() => Object.fromEntries(ambiguos.map((a) => [a.linea.key, a.opciones[0].propietarioId || ''])));
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Elegir dueño del lote">
+      <div className="w-full max-w-xl max-h-[90vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-[12px]">
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-100">¿De quién es lo contado?</h3>
+          <p className="text-[11px] text-gray-500">Estos lotes existen como stock propio y en consignación (o de más de una empresa). Elige a cuál sumar el conteo.</p>
+        </div>
+        <ul className="p-4 overflow-auto flex flex-col gap-2">
+          {ambiguos.map(({ linea, opciones, productoNombre }) => (
+            <li key={linea.key} className="flex flex-wrap items-center gap-2">
+              <span className="flex-1 min-w-[200px]"><strong>{productoNombre || 'Producto'}</strong> · lote {linea.lote || 'S/L'} · {linea.vencimiento || 'sin venc.'} · {linea.cantidad} u.</span>
+              <select value={elecciones[linea.key]} onChange={(e) => setElecciones((x) => ({ ...x, [linea.key]: e.target.value }))} className={INPUT} aria-label="Dueño">
+                {opciones.map((o) => <option key={o.propietarioId || 'propio'} value={o.propietarioId || ''}>{o.propietarioId ? `Consignado · ${o.propietarioNombre}` : 'Propio'}</option>)}
+              </select>
+            </li>
+          ))}
+        </ul>
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+          <button type="button" onClick={onCancelar} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 font-semibold">Cancelar</button>
+          <button type="button" onClick={() => onConfirmar(elecciones)} className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Guardar conteo</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Inicio: nombre + alcance (todas o algunas categorías) e historial.
 const InicioInventario = ({ onIniciado, onAbrirHistorial }) => {
@@ -114,6 +145,7 @@ const DetalleInventario = ({ id, onSalir, puedeVolver }) => {
   const [reinicio, setReinicio] = useState(0);
   const [ocupado, setOcupado] = useState(false);
   const [cerrando, setCerrando] = useState(false);
+  const [ambiguos, setAmbiguos] = useState(null);
 
   useEffect(() => {
     let vigente = true;
@@ -143,10 +175,14 @@ const DetalleInventario = ({ id, onSalir, puedeVolver }) => {
   const abierto = inventario.estado === 'ABIERTO';
   const verPestana = abierto ? pestana : 'comparacion';
 
-  const guardarConteo = async () => {
+  // elecciones: { [key de la línea]: propietarioId } para los lotes con más
+  // de un dueño; sin ellas, si hay alguno ambiguo se pregunta primero.
+  const guardarConteo = async (elecciones = null) => {
+    const { conteos, ambiguos: porElegir } = resolverDuenos(conteo, lineas, elecciones || {});
+    if (porElegir.length) { setAmbiguos(porElegir); return; }
+    setAmbiguos(null);
     setOcupado(true);
     try {
-      const conteos = conteo.map(({ productoId, lote, vencimiento, cantidad }) => ({ productoId, lote, vencimiento, cantidad }));
       const resultados = [];
       for (let i = 0; i < conteos.length; i += MAX_CONTEOS_POR_ENVIO) {
         resultados.push(await registrarConteo({ inventarioId: id, modo: 'sumar', conteos: conteos.slice(i, i + MAX_CONTEOS_POR_ENVIO) }));
@@ -224,12 +260,13 @@ const DetalleInventario = ({ id, onSalir, puedeVolver }) => {
           <p className="text-[11px] text-gray-500">Escanea lo que hay físicamente en la bodega. Cada lectura <strong>se suma</strong> a lo ya contado de ese lote al guardar; para corregir un valor usa la pestaña Comparación. Un lote que no estaba en el sistema se agrega.</p>
           <EditorLineasStock key={reinicio} rutaVista={PATH_VISTA} lineas={conteo} onCambiar={setConteo} deshabilitado={ocupado} />
           <div className="flex justify-end">
-            <button type="button" onClick={guardarConteo} disabled={ocupado || !conteo.length} className="h-10 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 disabled:opacity-50">
+            <button type="button" onClick={() => guardarConteo()} disabled={ocupado || !conteo.length} className="h-10 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 disabled:opacity-50">
               <Save size={15} /> {ocupado ? 'Guardando…' : `Guardar conteo (${formatoCantidad(totalUnidades(conteo))} u.)`}
             </button>
           </div>
         </div>
       )}
+      {ambiguos && <ElegirDuenoModal ambiguos={ambiguos} onCancelar={() => setAmbiguos(null)} onConfirmar={guardarConteo} />}
       {verPestana === 'comparacion' && <ComparacionInventario inventario={inventario} lineas={lineas} editable={abierto} onConteo={(r) => reflejarConteo([r])} />}
 
       {cerrando && (

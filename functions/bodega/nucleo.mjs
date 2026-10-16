@@ -7,9 +7,15 @@
 //     `disponible`.
 //   - Lo egresado queda EN TRÁNSITO en un centro (maestros_centros): el
 //     tránsito siempre pertenece a un `centroId`.
-//   - El stock se lleva por producto + lote + vencimiento ("lote"); el
-//     producto y el centro guardan totales denormalizados que se actualizan
-//     en la misma transacción que el lote.
+//   - El stock se lleva por producto + lote + vencimiento + dueño ("lote");
+//     el producto y el centro guardan totales denormalizados que se
+//     actualizan en la misma transacción que el lote.
+//   - Dueño: propio (propietarioId null) o una empresa consignante
+//     (maestros_empresas). El stock consignado entra por Ingreso ("en
+//     consignación") o Carga inicial y se mueve igual que el propio.
+//   - Desde el tránsito, lo no usado se puede DEJAR EN EL CENTRO (saldo
+//     `enCentro`): sigue siendo stock, pero físicamente está en ese centro;
+//     después se entrega (usado) o se devuelve a la Bodega General.
 
 import { idVinculo } from './gs1.mjs';
 import { admisionClaveDe } from '../descripcionesReporte/nucleo.mjs';
@@ -26,6 +32,7 @@ export const RUTAS = Object.freeze({
   inventario: '/bodega/inventarioBodega',
   catalogos: '/bodega/catalogosBodega',
   cajas: '/bodega/cajasBodega',
+  consignaciones: '/bodega/consignacionesBodega',
 });
 
 // Acciones granulares: [modulo, ruta, seccion, accion] (puedeAccion).
@@ -56,6 +63,7 @@ export const ACCIONES = Object.freeze({
   guardarCaja: [MODULO, RUTAS.cajas, 'cajas', 'btn_guardar'],
   inventariarCaja: [MODULO, RUTAS.cajas, 'caja', 'btn_inventario'],
   reponerCaja: [MODULO, RUTAS.cajas, 'caja', 'btn_reponer'],
+  guardarConsignacion: [MODULO, RUTAS.consignaciones, 'consignacion', 'btn_guardar'],
 });
 
 // Acciones sobre un tránsito: desde la vista Tránsito o desde Tránsito por
@@ -64,6 +72,7 @@ export const ACCIONES_TRANSITO = Object.freeze({
   ENTREGAR: 'btn_entregar',
   DEVOLVER: 'btn_devolver',
   NOTA: 'btn_nota',
+  DEJAR_EN_CENTRO: 'btn_dejar_centro',
 });
 export const accionTransito = (origen, accion) => [MODULO, origen === 'centros' ? RUTAS.centros : RUTAS.transito, 'acciones', ACCIONES_TRANSITO[accion]];
 
@@ -81,6 +90,7 @@ export const COL = Object.freeze({
   transitoCentros: 'bodega_transito_centros',
   inventarios: 'bodega_inventarios',
   cajas: 'bodega_cajas',
+  consignaciones: 'bodega_consignaciones',
 });
 
 export const TIPOS_CATALOGO = Object.freeze({
@@ -98,7 +108,15 @@ export const TIPOS_MOVIMIENTO = Object.freeze({
   AJUSTE_NEGATIVO: { etiqueta: 'Ajuste negativo', disponible: -1, transito: 0 },
   // Sale de la Bodega General hacia una caja (kit); no pasa por tránsito.
   REPOSICION_CAJA: { etiqueta: 'Reposición caja', disponible: -1, transito: 0 },
+  // Lo no usado queda en el centro (sigue siendo stock) y desde ahí se
+  // entrega o se devuelve.
+  DEJADO_EN_CENTRO: { etiqueta: 'Dejado en centro', disponible: 0, transito: -1, enCentro: 1, centro: true },
+  ENTREGA_DESDE_CENTRO: { etiqueta: 'Entrega desde centro', disponible: 0, transito: 0, enCentro: -1, centro: true },
+  DEVOLUCION_DESDE_CENTRO: { etiqueta: 'Devolución desde centro', disponible: 1, transito: 0, enCentro: -1, centro: true },
 });
+
+// Movimientos que son consumo (lo usado): reportes de consumo por centro.
+export const TIPOS_ENTREGA = Object.freeze(['ENTREGA', 'ENTREGA_DESDE_CENTRO']);
 
 export const MAX = Object.freeze({
   nombre: 150, codigoMaestro: 40, referencia: 80, ubicacion: 60, catalogo: 60, stockMinimo: 1e9,
@@ -194,7 +212,7 @@ export const textoBusquedaProducto = (p) => normalizarClave([
   p?.nombre, p?.codigoMaestro, p?.referencia, p?.ubicacion, p?.maestroCodigo?.codigo, ...(p?.codigosBarra || []),
 ].filter(Boolean).join(' '));
 
-export const stockTotal = (p) => (Number(p?.disponible) || 0) + (Number(p?.transito) || 0);
+export const stockTotal = (p) => (Number(p?.disponible) || 0) + (Number(p?.transito) || 0) + (Number(p?.enCentro) || 0);
 export const bajoMinimo = (p) => p?.stockMinimo !== null && p?.stockMinimo !== undefined
   && (Number(p?.disponible) || 0) < Number(p.stockMinimo);
 
@@ -206,13 +224,20 @@ export const PATRON_FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
 export const normalizarLote = (lote) => normalizarClave(lote).replace(/\s/g, '');
 
-// Producto + lote + vencimiento -> id del documento en bodega_lotes. Es
-// determinista: el mismo lote siempre cae en el mismo documento.
-export const idLote = (productoId, lote, vencimiento) => [
+// Producto + lote + vencimiento (+ dueño) -> id del documento en
+// bodega_lotes. Es determinista: el mismo lote siempre cae en el mismo
+// documento. El stock propio conserva el id de siempre; el consignado lleva
+// además `__C_<empresaId>`, así el mismo lote de dos dueños son dos saldos.
+export const PREFIJO_PROPIETARIO = 'C_';
+export const idLote = (productoId, lote, vencimiento, propietarioId = null) => [
   productoId,
   idVinculo(normalizarLote(lote)) || SIN_LOTE,
   PATRON_FECHA.test(vencimiento || '') ? vencimiento : SIN_VENCIMIENTO,
+  ...(propietarioId ? [`${PREFIJO_PROPIETARIO}${idVinculo(String(propietarioId))}`] : []),
 ].join('__');
+
+// Datos de dueño que se copian al lote, tránsitos, movimientos y líneas.
+export const datosPropietario = (x) => ({ propietarioId: x?.propietarioId || null, propietarioNombre: x?.propietarioId ? (x.propietarioNombre || '') : '' });
 
 // ---------------- Movimientos ----------------
 
@@ -220,45 +245,72 @@ export class ErrorStock extends Error {}
 
 const entero = (n) => Number.isInteger(n) && n > 0;
 
-// Saldo { disponible, transito, transitoPorCentro } + movimiento
-// { tipo, cantidad, centroId } -> saldo nuevo. Sirve igual para el lote y
-// para los totales del producto. No modifica el saldo recibido. Lanza
-// ErrorStock si el movimiento es inválido o deja algo negativo.
+// Suma `delta` al centro en un mapa { [centroId]: n } (copia). El centro
+// en 0 desaparece; lanza ErrorStock si queda negativo.
+const sumarEnMapa = (mapa, centroId, delta, error) => {
+  const copia = { ...(mapa || {}) };
+  if (!delta) return copia;
+  const n = (Number(copia[centroId]) || 0) + delta;
+  if (n < 0) throw new ErrorStock(error(n - delta));
+  if (n === 0) delete copia[centroId];
+  else copia[centroId] = n;
+  return copia;
+};
+
+// Saldo { disponible, transito, transitoPorCentro, enCentro,
+// enCentroPorCentro } + movimiento { tipo, cantidad, centroId } -> saldo
+// nuevo. Sirve igual para el lote y para los totales del producto. No
+// modifica el saldo recibido. Lanza ErrorStock si el movimiento es inválido
+// o deja algo negativo.
 export const aplicarMovimiento = (saldo, { tipo, cantidad, centroId } = {}) => {
   const def = TIPOS_MOVIMIENTO[tipo];
   if (!def) throw new ErrorStock(`Tipo de movimiento inválido: ${tipo}.`);
   if (!entero(cantidad)) throw new ErrorStock('La cantidad debe ser un número entero mayor a cero.');
   if (def.centro && !centroId) throw new ErrorStock('El movimiento requiere un centro.');
+  const deltaEnCentro = (def.enCentro || 0) * cantidad;
 
   const disponible = (Number(saldo?.disponible) || 0) + def.disponible * cantidad;
   const transito = (Number(saldo?.transito) || 0) + def.transito * cantidad;
-  const transitoPorCentro = { ...(saldo?.transitoPorCentro || {}) };
+  const enCentro = (Number(saldo?.enCentro) || 0) + deltaEnCentro;
+  let transitoPorCentro = { ...(saldo?.transitoPorCentro || {}) };
+  let enCentroPorCentro = { ...(saldo?.enCentroPorCentro || {}) };
   if (def.centro) {
-    const enCentro = (Number(transitoPorCentro[centroId]) || 0) + def.transito * cantidad;
-    if (enCentro < 0) throw new ErrorStock(`No hay suficiente en tránsito en ese centro (hay ${enCentro + cantidad}).`);
-    if (enCentro === 0) delete transitoPorCentro[centroId];
-    else transitoPorCentro[centroId] = enCentro;
+    transitoPorCentro = sumarEnMapa(transitoPorCentro, centroId, def.transito * cantidad, (hay) => `No hay suficiente en tránsito en ese centro (hay ${hay}).`);
+    enCentroPorCentro = sumarEnMapa(enCentroPorCentro, centroId, deltaEnCentro, (hay) => `No hay suficiente dejado en ese centro (hay ${hay}).`);
   }
   if (disponible < 0) throw new ErrorStock(`Stock disponible insuficiente (hay ${disponible - def.disponible * cantidad}).`);
   if (transito < 0) throw new ErrorStock(`No hay suficiente en tránsito (hay ${transito - def.transito * cantidad}).`);
-  return { disponible, transito, transitoPorCentro };
+  if (enCentro < 0) throw new ErrorStock(`No hay suficiente dejado en centros (hay ${enCentro - deltaEnCentro}).`);
+  return { disponible, transito, transitoPorCentro, enCentro, enCentroPorCentro };
 };
 
+// Campos de saldo de un documento (lote o producto), con ceros por defecto.
+export const saldoDe = (d) => ({
+  disponible: d?.disponible || 0, transito: d?.transito || 0, transitoPorCentro: d?.transitoPorCentro || {},
+  enCentro: d?.enCentro || 0, enCentroPorCentro: d?.enCentroPorCentro || {},
+});
+
+// Lo que queda de un saldo en el kardex (foto después del movimiento).
+export const fotoSaldo = (s) => ({ disponible: s.disponible, transito: s.transito, enCentro: s.enCentro || 0 });
+
 // Totales del tránsito de un centro (bodega_transito_centros/{centroId}):
-// { unidades, productos: { [productoId]: cantidad }, productosDistintos }.
-// Solo cambian con SALIDA_A_TRANSITO, ENTREGA y DEVOLUCION.
+// { unidades (en tránsito), productos: { [productoId]: cantidad },
+// productosDistintos, enCentro (dejado en el centro), productosEnCentro }.
+// Solo cambian con los movimientos de centro (salida, entrega, devolución,
+// dejar en centro y entregar/devolver desde el centro).
 export const aplicarMovimientoCentro = (centro, { tipo, cantidad, productoId } = {}) => {
   const def = TIPOS_MOVIMIENTO[tipo];
   if (!def?.centro) throw new ErrorStock(`El movimiento ${tipo} no afecta el tránsito de un centro.`);
   if (!entero(cantidad)) throw new ErrorStock('La cantidad debe ser un número entero mayor a cero.');
   if (!productoId) throw new ErrorStock('Falta el producto.');
-  const productos = { ...(centro?.productos || {}) };
-  const enProducto = (Number(productos[productoId]) || 0) + def.transito * cantidad;
+  const deltaEnCentro = (def.enCentro || 0) * cantidad;
+  const productos = sumarEnMapa(centro?.productos, productoId, def.transito * cantidad, () => 'No hay suficiente en tránsito en ese centro.');
+  const productosEnCentro = sumarEnMapa(centro?.productosEnCentro, productoId, deltaEnCentro, () => 'No hay suficiente dejado en ese centro.');
   const unidades = (Number(centro?.unidades) || 0) + def.transito * cantidad;
-  if (enProducto < 0 || unidades < 0) throw new ErrorStock('No hay suficiente en tránsito en ese centro.');
-  if (enProducto === 0) delete productos[productoId];
-  else productos[productoId] = enProducto;
-  return { unidades, productos, productosDistintos: Object.keys(productos).length };
+  const enCentro = (Number(centro?.enCentro) || 0) + deltaEnCentro;
+  if (unidades < 0) throw new ErrorStock('No hay suficiente en tránsito en ese centro.');
+  if (enCentro < 0) throw new ErrorStock('No hay suficiente dejado en ese centro.');
+  return { unidades, productos, productosDistintos: Object.keys(productos).length, enCentro, productosEnCentro };
 };
 
 // ---------------- Documentos (ingreso y carga inicial) ----------------
@@ -296,7 +348,7 @@ export const validarCabecera = (tipo, datos = {}) => {
   const observacion = limpiar(datos.observacion);
   if (!TIPOS_DOCUMENTO_BODEGA[tipo]) errores.push('Tipo de documento inválido.');
   if (observacion.length > MAX_OBSERVACION) errores.push(`La observación no puede superar ${MAX_OBSERVACION} caracteres.`);
-  if (tipo !== 'INGRESO') return { errores, cabecera: { observacion } };
+  if (tipo !== 'INGRESO') return { errores, cabecera: { observacion, propietarioId: String(datos.propietarioId || '').trim() || null } };
 
   const tipoDocumento = String(datos.tipoDocumento || '');
   const numero = limpiar(datos.numero).toUpperCase();
@@ -308,7 +360,8 @@ export const validarCabecera = (tipo, datos = {}) => {
   if (numero.length > MAX_NUMERO_DOCUMENTO || ordenCompra.length > MAX_NUMERO_DOCUMENTO) errores.push(`El número de documento y la orden de compra no pueden superar ${MAX_NUMERO_DOCUMENTO} caracteres.`);
   if (!proveedorId) errores.push('El proveedor es obligatorio.');
   if (!fechaValida(fecha)) errores.push('La fecha del documento es obligatoria.');
-  return { errores, cabecera: { tipoDocumento, numero, ordenCompra, proveedorId, fecha, observacion } };
+  // En consignación: el stock que entra es del proveedor (no propio).
+  return { errores, cabecera: { tipoDocumento, numero, ordenCompra, proveedorId, fecha, observacion, consignacion: datos.consignacion === true } };
 };
 
 // Línea + su producto -> { errores, linea } normalizada. Si el producto no
@@ -352,13 +405,13 @@ export const normalizarPrecioUnitario = (valor) => {
 export const totalLinea = (l) => (Number(l?.cantidad) || 0) * (Number(l?.precioUnitario) || 0);
 export const totalValorLineas = (lineas = []) => lineas.reduce((n, l) => n + totalLinea(l), 0);
 
-// Une las líneas del mismo producto + lote + vencimiento sumando la
-// cantidad (conserva el orden de la primera aparición y, si tiene, el precio
-// unitario de la primera línea que lo trae).
+// Une las líneas del mismo producto + lote + vencimiento (+ dueño) sumando
+// la cantidad (conserva el orden de la primera aparición y, si tiene, el
+// precio unitario de la primera línea que lo trae).
 export const agruparLineas = (lineas) => {
   const porLote = new Map();
   lineas.forEach((l) => {
-    const id = idLote(l.productoId, l.lote, l.vencimiento);
+    const id = idLote(l.productoId, l.lote, l.vencimiento, l.propietarioId);
     const previa = porLote.get(id);
     if (previa) {
       previa.cantidad += l.cantidad;
@@ -401,6 +454,7 @@ export const normalizarRut = (texto) => {
 
 export const MAX_LINEAS_EGRESO = 60;
 export const MAX_ACCIONES_TRANSITO = 50;
+// Un tránsito sigue ABIERTO mientras tenga algo pendiente o dejado en el centro.
 export const ESTADOS_TRANSITO = Object.freeze({ ABIERTO: 'ABIERTO', CERRADO: 'CERRADO' });
 export const MAX_ID_ENTREGA = 20;
 export const MAX_NOTA = 500;
@@ -421,7 +475,8 @@ export const normalizarIdEntrega = (texto) => {
 };
 
 // Lotes de un producto para egresar, en orden FEFO (vence primero; sin
-// vencimiento al final). Solo los que tienen disponible.
+// vencimiento al final). Solo los que tienen disponible. No distingue
+// dueño (el lote consignado se muestra marcado y el usuario puede elegir otro).
 export const lotesFEFO = (lotes) => lotes
   .filter((l) => (Number(l.disponible) || 0) > 0)
   .sort((a, b) => (a.vencimiento || '9999-99-99').localeCompare(b.vencimiento || '9999-99-99') || String(a.lote || '').localeCompare(String(b.lote || '')));
@@ -438,23 +493,47 @@ export const agruparLineasEgreso = (lineas) => {
   return [...mapa.values()];
 };
 
-// Estado de un tránsito tras una acción. `transito`: { pendiente, entregado,
-// devuelto }. Lanza ErrorStock si la cantidad no corresponde.
-export const aplicarAccionTransito = (transito, { accion, cantidad }) => {
+export const ACCIONES_SOBRE_TRANSITO = Object.freeze(['ENTREGAR', 'DEVOLVER', 'NOTA', 'DEJAR_EN_CENTRO']);
+// Desde dónde se entrega o devuelve: lo pendiente en tránsito o lo dejado
+// en el centro.
+export const DESDE = Object.freeze({ TRANSITO: 'TRANSITO', CENTRO: 'CENTRO' });
+
+// Estado de un tránsito tras una acción. `transito`: { pendiente, enCentro,
+// entregado, devuelto }; `desde` (ENTREGAR/DEVOLVER): TRANSITO (por
+// defecto) o CENTRO. Lanza ErrorStock si la cantidad no corresponde.
+export const aplicarAccionTransito = (transito, { accion, cantidad, desde = DESDE.TRANSITO }) => {
   if (accion === 'NOTA') return { ...transito };
-  if (accion !== 'ENTREGAR' && accion !== 'DEVOLVER') throw new ErrorStock('Acción inválida.');
+  if (!ACCIONES_SOBRE_TRANSITO.includes(accion)) throw new ErrorStock('Acción inválida.');
   if (!Number.isInteger(cantidad) || cantidad <= 0) throw new ErrorStock('La cantidad debe ser un número entero mayor a cero.');
-  const pendiente = (Number(transito.pendiente) || 0) - cantidad;
-  if (pendiente < 0) throw new ErrorStock(`Solo quedan ${transito.pendiente} en tránsito en este registro.`);
+  const delCentro = accion !== 'DEJAR_EN_CENTRO' && desde === DESDE.CENTRO;
+  let pendiente = Number(transito.pendiente) || 0;
+  let enCentro = Number(transito.enCentro) || 0;
+  if (delCentro) {
+    if (cantidad > enCentro) throw new ErrorStock(`Solo quedan ${enCentro} dejados en el centro en este registro.`);
+    enCentro -= cantidad;
+  } else {
+    if (cantidad > pendiente) throw new ErrorStock(`Solo quedan ${pendiente} en tránsito en este registro.`);
+    pendiente -= cantidad;
+    if (accion === 'DEJAR_EN_CENTRO') enCentro += cantidad;
+  }
   return {
     ...transito,
     pendiente,
+    enCentro,
     entregado: (Number(transito.entregado) || 0) + (accion === 'ENTREGAR' ? cantidad : 0),
     devuelto: (Number(transito.devuelto) || 0) + (accion === 'DEVOLVER' ? cantidad : 0),
-    estado: pendiente === 0 ? ESTADOS_TRANSITO.CERRADO : ESTADOS_TRANSITO.ABIERTO,
+    estado: pendiente === 0 && enCentro === 0 ? ESTADOS_TRANSITO.CERRADO : ESTADOS_TRANSITO.ABIERTO,
   };
 };
 
+// Movimiento del kardex de cada acción (NOTA no mueve stock).
+export const movimientoDeAccion = (accion, desde = DESDE.TRANSITO) => {
+  if (accion === 'DEJAR_EN_CENTRO') return 'DEJADO_EN_CENTRO';
+  const delCentro = desde === DESDE.CENTRO;
+  if (accion === 'ENTREGAR') return delCentro ? 'ENTREGA_DESDE_CENTRO' : 'ENTREGA';
+  if (accion === 'DEVOLVER') return delCentro ? 'DEVOLUCION_DESDE_CENTRO' : 'DEVOLUCION';
+  return null;
+};
 export const MOVIMIENTO_DE_ACCION = Object.freeze({ ENTREGAR: 'ENTREGA', DEVOLVER: 'DEVOLUCION' });
 
 // ---------------- Inventario físico ----------------
@@ -611,7 +690,9 @@ export const resultadoInventarioCaja = (productos = {}, conteos = {}) => {
 };
 
 // Reparte `cantidad` entre los lotes de un producto en orden FEFO (la misma
-// regla de las salidas: vence primero; sin vencimiento al final). Devuelve
+// regla de las salidas: vence primero; sin vencimiento al final). Quien la
+// llama decide qué lotes entran (la reposición de cajas usa solo los
+// propios: ver lotesPropios). Devuelve
 // [{ loteId, lote, vencimiento, cantidad }]. Lanza ErrorStock si no alcanza.
 export const repartirFEFO = (lotes, cantidad) => {
   const partes = [];
@@ -625,6 +706,9 @@ export const repartirFEFO = (lotes, cantidad) => {
   if (resta > 0) throw new ErrorStock(`Stock disponible insuficiente (faltan ${resta}).`);
   return partes;
 };
+
+// Solo los lotes de stock propio (no consignado).
+export const lotesPropios = (lotes) => lotes.filter((l) => !l.propietarioId);
 
 // Plan de reposición de una caja. cantidades: { [productoId]: n }
 // (0/vacío = no se repone ahora); disponibles: { [productoId]: n } en la
@@ -646,4 +730,50 @@ export const planReposicionCaja = (productos = {}, cantidades = {}, disponibles 
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   if (!errores.length && !lineas.some((l) => l.cantidad > 0)) errores.push('Ingresa al menos una cantidad a reponer.');
   return { errores: [...new Set(errores)], lineas };
+};
+
+// ---------------- Stock consignado ----------------
+//
+// Lo que cada empresa consignante dejó (lo que "debo tener") por producto +
+// lote + vencimiento. No mueve stock: el stock consignado entra por Ingreso
+// en consignación o Carga inicial con dueño, y se compara contra los lotes
+// de esa empresa (bodega_lotes con propietarioId = empresa).
+
+export const MAX_LINEAS_CONSIGNACION = 300;
+export const MAX_CANTIDAD_CONSIGNADA = 1e6;
+
+// datos: { empresaId, observacion, lineas: [{ productoId, lote, vencimiento,
+// cantidadConsignada }] } + productos { [id]: producto } -> { errores,
+// consignacion, lineas } normalizadas (con su loteId del dueño). El lote y
+// el vencimiento siguen la misma regla que los documentos (solo si el
+// producto los maneja). Cantidad 0 se permite (consignación ya retirada).
+export const validarConsignacion = (datos = {}, productos = {}) => {
+  const errores = [];
+  const empresaId = String(datos.empresaId || '').trim();
+  const observacion = limpiar(datos.observacion).slice(0, MAX_OBSERVACION);
+  if (!empresaId) errores.push('Elige la empresa consignante.');
+  const entrada = Array.isArray(datos.lineas) ? datos.lineas : [];
+  if (entrada.length > MAX_LINEAS_CONSIGNACION) errores.push(`Máximo ${MAX_LINEAS_CONSIGNACION} líneas por consignación.`);
+  const vistos = new Set();
+  const lineas = [];
+  entrada.forEach((l) => {
+    const productoId = String(l?.productoId || '');
+    const producto = productos[productoId];
+    const nombre = producto?.nombre || 'Producto';
+    if (!producto) { errores.push('Un producto ya no existe en el maestro.'); return; }
+    const cantidad = Number(l?.cantidadConsignada);
+    if (!Number.isInteger(cantidad) || cantidad < 0 || cantidad > MAX_CANTIDAD_CONSIGNADA) errores.push(`${nombre}: la cantidad consignada debe ser un número entero mayor o igual a cero.`);
+    const lote = producto.manejaLote ? normalizarLote(l?.lote) : '';
+    const vencimiento = producto.manejaVencimiento ? String(l?.vencimiento || '').trim() : '';
+    if (lote.length > 40) errores.push(`${nombre}: el lote no puede superar 40 caracteres.`);
+    if (vencimiento && !fechaValida(vencimiento)) errores.push(`${nombre}: el vencimiento no es una fecha válida.`);
+    const loteId = idLote(productoId, lote, vencimiento, empresaId || null);
+    if (vistos.has(loteId)) { errores.push(`${nombre}${lote ? ` lote ${lote}` : ''}: está repetido en la consignación.`); return; }
+    vistos.add(loteId);
+    lineas.push({
+      productoId, productoNombre: producto.nombre || '', codigoMaestro: producto.codigoMaestro || '',
+      lote: lote || null, vencimiento: vencimiento || null, cantidadConsignada: cantidad, loteId,
+    });
+  });
+  return { errores: [...new Set(errores)], consignacion: { empresaId, observacion }, lineas };
 };

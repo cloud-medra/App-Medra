@@ -4,7 +4,8 @@ import { useCatalogo } from '../../../../../hooks/useCatalogo';
 import { normalizarClave } from '../../../../../../functions/bodega/nucleo.mjs';
 
 // Proveedor = empresa del maestro de Empresas (maestros_empresas, activas).
-const SelectorProveedor = ({ valor, onCambiar, deshabilitado = false }) => {
+// También elige la empresa consignante (dueña del stock).
+const SelectorProveedor = ({ valor, onCambiar, deshabilitado = false, placeholder = 'Buscar proveedor por nombre o RUT…', tituloCambiar = 'Cambiar proveedor' }) => {
   const { datos: empresas } = useCatalogo('empresas');
   const [texto, setTexto] = useState('');
   const [abierto, setAbierto] = useState(false);
@@ -23,7 +24,7 @@ const SelectorProveedor = ({ valor, onCambiar, deshabilitado = false }) => {
       <div className="h-9 px-2 flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-[12px]">
         <span className="flex-1 truncate font-semibold">{elegida.nombre}</span>
         {elegida.rut && <span className="font-num text-[11px] text-gray-500">{elegida.rut}</span>}
-        {!deshabilitado && <button type="button" onClick={() => onCambiar('')} title="Cambiar proveedor" className="p-0.5 text-gray-400 hover:text-red-600"><X size={13} /></button>}
+        {!deshabilitado && <button type="button" onClick={() => onCambiar('')} title={tituloCambiar} className="p-0.5 text-gray-400 hover:text-red-600"><X size={13} /></button>}
       </div>
     );
   }
@@ -35,7 +36,7 @@ const SelectorProveedor = ({ valor, onCambiar, deshabilitado = false }) => {
         onChange={(e) => { setTexto(e.target.value); setAbierto(true); }}
         onFocus={() => setAbierto(true)}
         onBlur={() => setTimeout(() => setAbierto(false), 150)}
-        placeholder="Buscar proveedor por nombre o RUT…"
+        placeholder={placeholder}
         className="w-full h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]"
       />
       {abierto && opciones.length > 0 && (

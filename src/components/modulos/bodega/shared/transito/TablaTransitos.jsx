@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { PackageCheck, Undo2, StickyNote, History } from 'lucide-react';
+import { PackageCheck, Undo2, StickyNote, History, Building2 } from 'lucide-react';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitidas';
 import { MAX_ACCIONES_TRANSITO } from '../../../../../../functions/bodega/nucleo.mjs';
@@ -18,6 +18,7 @@ const COLUMNAS = [
   { key: 'vencimiento', label: 'Vencimiento' },
   { key: 'centro', label: 'Centro' },
   { key: 'cantidad', label: 'Pend. / salida', alinear: 'text-right' },
+  { key: 'enCentro', label: 'Dejado en centro', alinear: 'text-right' },
   { key: 'fechaSalida', label: 'Salida' },
   { key: 'dias', label: 'Días', alinear: 'text-right' },
   { key: 'usuario', label: 'Usuario' },
@@ -43,6 +44,7 @@ const TablaTransitos = ({ transitos, rutaVista, origen, onCambio, ocultarCentro 
     ENTREGAR: hasPermission(rutaVista, 'acciones', 'btn_entregar'),
     DEVOLVER: hasPermission(rutaVista, 'acciones', 'btn_devolver'),
     NOTA: hasPermission(rutaVista, 'acciones', 'btn_nota'),
+    DEJAR_EN_CENTRO: hasPermission(rutaVista, 'acciones', 'btn_dejar_centro'),
   };
   const seleccionados = useMemo(() => transitos.filter((t) => seleccion.has(t.id)), [transitos, seleccion]);
   const todos = transitos.length > 0 && seleccionados.length === transitos.length;
@@ -63,6 +65,7 @@ const TablaTransitos = ({ transitos, rutaVista, origen, onCambio, ocultarCentro 
           {seleccionados.length > MAX_ACCIONES_TRANSITO && <span className="text-amber-700">Se procesan los primeros {MAX_ACCIONES_TRANSITO}.</span>}
           {puede.ENTREGAR && <button type="button" onClick={() => abrir('ENTREGAR', seleccionados)} className="h-8 px-2.5 rounded bg-emerald-600 text-white font-bold flex items-center gap-1"><PackageCheck size={13} /> Entregar</button>}
           {puede.DEVOLVER && <button type="button" onClick={() => abrir('DEVOLVER', seleccionados)} className="h-8 px-2.5 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><Undo2 size={13} /> Devolver</button>}
+          {puede.DEJAR_EN_CENTRO && <button type="button" onClick={() => abrir('DEJAR_EN_CENTRO', seleccionados)} className="h-8 px-2.5 rounded bg-violet-600 text-white font-bold flex items-center gap-1"><Building2 size={13} /> Dejar en centro</button>}
           {puede.NOTA && <button type="button" onClick={() => abrir('NOTA', seleccionados)} className="h-8 px-2.5 rounded bg-amber-600 text-white font-bold flex items-center gap-1"><StickyNote size={13} /> Nota</button>}
           <button type="button" onClick={() => setSeleccion(new Set())} className="ml-auto text-[11px] underline text-gray-600">Quitar selección</button>
         </div>
@@ -89,11 +92,15 @@ const TablaTransitos = ({ transitos, rutaVista, origen, onCambio, ocultarCentro 
                 <tr key={t.id} className={`${seleccion.has(t.id) ? 'bg-blue-50/60 dark:bg-sky-950/20' : venc.fila}`}>
                   <td className="px-2 py-1"><input type="checkbox" aria-label="Seleccionar" checked={seleccion.has(t.id)} onChange={() => alternar(t.id)} /></td>
                   {ver('codigo') && <td className="px-2 py-1 font-num text-[#2383C2]">{t.codigoMaestro}</td>}
-                  <td className="px-2 py-1 font-semibold text-gray-800 dark:text-gray-100">{t.productoNombre}</td>
+                  <td className="px-2 py-1 font-semibold text-gray-800 dark:text-gray-100">
+                    {t.productoNombre}
+                    {t.propietarioNombre && <span className="ml-1 px-1 rounded text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300" title="Stock en consignación">CONSIG. {t.propietarioNombre}</span>}
+                  </td>
                   {ver('lote') && <td className="px-2 py-1 font-num">{t.lote || '—'}</td>}
                   {ver('vencimiento') && <td className="px-2 py-1 font-num whitespace-nowrap">{t.vencimiento || '—'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>}
                   {ver('centro') && !ocultarCentro && <td className="px-2 py-1">{t.centroNombre}</td>}
                   {ver('cantidad') && <td className="px-2 py-1 text-right font-num"><strong className="text-amber-600 dark:text-amber-400">{t.pendiente}</strong> / {t.cantidadSalida}</td>}
+                  {ver('enCentro') && <td className="px-2 py-1 text-right font-num">{t.enCentro ? <strong className="text-violet-600 dark:text-violet-400">{t.enCentro}</strong> : '—'}</td>}
                   {ver('fechaSalida') && <td className="px-2 py-1 whitespace-nowrap">{fechaHora(t.fechaSalida)}</td>}
                   {ver('dias') && <td className={`px-2 py-1 text-right font-num ${dias > 7 ? 'text-red-600 font-bold' : ''}`}>{dias ?? '—'}</td>}
                   {ver('usuario') && <td className="px-2 py-1">{t.usuario?.nombre || ''}</td>}
@@ -102,6 +109,7 @@ const TablaTransitos = ({ transitos, rutaVista, origen, onCambio, ocultarCentro 
                   <td className="px-1 py-1 whitespace-nowrap">
                     {puede.ENTREGAR && <button type="button" onClick={() => abrir('ENTREGAR', [t])} title="Entregar (usado)" className={`${BOTON} text-emerald-600`}><PackageCheck size={14} /></button>}
                     {puede.DEVOLVER && <button type="button" onClick={() => abrir('DEVOLVER', [t])} title="Devolver a stock" className={`${BOTON} text-[#2383C2]`}><Undo2 size={14} /></button>}
+                    {puede.DEJAR_EN_CENTRO && (t.pendiente || 0) > 0 && <button type="button" onClick={() => abrir('DEJAR_EN_CENTRO', [t])} title="Dejar en centro (no usado)" className={`${BOTON} text-violet-600`}><Building2 size={14} /></button>}
                     {puede.NOTA && <button type="button" onClick={() => abrir('NOTA', [t])} title="Mantener en tránsito (nota)" className={`${BOTON} text-amber-600`}><StickyNote size={14} /></button>}
                     <button type="button" onClick={() => setHistorial(t)} title="Historial" className={`${BOTON} text-gray-500`}><History size={14} /></button>
                   </td>

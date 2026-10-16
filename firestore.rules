@@ -445,11 +445,12 @@ service cloud.firestore {
       allow write: if estaActivo() && (esDev() || tienePermiso('maestros'));
     }
 
-    // Un centro con stock en tránsito en Bodega no se puede borrar (se
-    // inactiva): el tránsito quedaría apuntando a un centro inexistente.
+    // Un centro con stock en tránsito (o dejado en el centro) en Bodega no se
+    // puede borrar (se inactiva): el tránsito quedaría apuntando a un centro
+    // inexistente.
     function centroConTransitoBodega(centroId) {
       let ruta = /databases/$(database)/documents/bodega_transito_centros/$(centroId);
-      return exists(ruta) && get(ruta).data.get('unidades', 0) > 0;
+      return exists(ruta) && (get(ruta).data.get('unidades', 0) > 0 || get(ruta).data.get('enCentro', 0) > 0);
     }
     match /maestros_centros/{centroId} {
       allow read: if estaActivo();
@@ -672,6 +673,10 @@ service cloud.firestore {
     }
     // Cajas (kits) con su historial de inventarios y reposiciones.
     match /bodega_cajas/{document=**} {
+      allow read: if leeBodega();
+    }
+    // Stock consignado: lo que cada empresa dejó (con su auditoría).
+    match /bodega_consignaciones/{document=**} {
       allow read: if leeBodega();
     }
     // Totales del tránsito por centro: también los lee Maestros → Centros

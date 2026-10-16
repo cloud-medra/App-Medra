@@ -15,10 +15,11 @@ const COLUMNAS = [
   { key: 'tipo', label: 'Tipo', fija: true },
   { key: 'lote', label: 'Lote' },
   { key: 'vencimiento', label: 'Venc.' },
+  { key: 'propietario', label: 'Dueño' },
   { key: 'centro', label: 'Centro' },
   { key: 'cantidad', label: 'Cant.', alinear: 'text-right', fija: true },
   { key: 'saldoLote', label: 'Saldo lote', alinear: 'text-right' },
-  { key: 'saldo', label: 'Saldo prod. (disp. / tráns.)', alinear: 'text-right' },
+  { key: 'saldo', label: 'Saldo prod. (disp. / tráns. / en centro)', alinear: 'text-right' },
   { key: 'documento', label: 'Documento' },
   { key: 'usuario', label: 'Usuario' },
   { key: 'observacion', label: 'N° admisión / observación' },
@@ -63,12 +64,15 @@ const KardexProducto = ({ producto }) => {
     { titulo: 'Tipo', valor: (m) => TIPOS_MOVIMIENTO[m.tipo]?.etiqueta || m.tipo },
     { titulo: 'Lote', valor: (m) => m.lote || '—' },
     { titulo: 'Vencimiento', valor: (m) => m.vencimiento || '—' },
+    { titulo: 'Dueño', valor: (m) => m.propietarioNombre || 'Propio' },
     { titulo: 'Centro', valor: (m) => m.centroNombre || '' },
     { titulo: 'Cantidad', valor: (m) => m.cantidad },
     { titulo: 'Saldo lote disponible', valor: (m) => m.saldoLote?.disponible },
     { titulo: 'Saldo lote tránsito', valor: (m) => m.saldoLote?.transito },
+    { titulo: 'Saldo lote dejado en centro', valor: (m) => m.saldoLote?.enCentro || 0 },
     { titulo: 'Saldo producto disponible', valor: (m) => m.saldoProducto?.disponible },
     { titulo: 'Saldo producto tránsito', valor: (m) => m.saldoProducto?.transito },
+    { titulo: 'Saldo producto dejado en centro', valor: (m) => m.saldoProducto?.enCentro || 0 },
     { titulo: 'Documento', valor: referenciaMovimiento },
     { titulo: 'Usuario', valor: (m) => m.usuario?.nombre || '' },
     { titulo: ETIQUETA_ID_ENTREGA, valor: (m) => m.idEntrega || '' },
@@ -118,10 +122,11 @@ const KardexProducto = ({ producto }) => {
                   <td className="px-1.5 py-1 whitespace-nowrap font-semibold">{TIPOS_MOVIMIENTO[m.tipo]?.etiqueta || m.tipo}</td>
                   {ver('lote') && <td className="px-1.5 py-1 font-num">{m.lote || '—'}</td>}
                   {ver('vencimiento') && <td className="px-1.5 py-1 font-num">{m.vencimiento || '—'}</td>}
+                  {ver('propietario') && <td className="px-1.5 py-1">{m.propietarioNombre ? <span className="text-violet-700 dark:text-violet-300 font-semibold">{m.propietarioNombre}</span> : 'Propio'}</td>}
                   {ver('centro') && <td className="px-1.5 py-1">{m.centroNombre || '—'}</td>}
                   <td className={`px-1.5 py-1 text-right font-num font-bold ${COLOR[signo]}`}>{signo > 0 ? '+' : signo < 0 ? '−' : ''}{m.cantidad}</td>
-                  {ver('saldoLote') && <td className="px-1.5 py-1 text-right font-num">{m.saldoLote?.disponible} / {m.saldoLote?.transito}</td>}
-                  {ver('saldo') && <td className="px-1.5 py-1 text-right font-num">{m.saldoProducto?.disponible} / {m.saldoProducto?.transito}</td>}
+                  {ver('saldoLote') && <td className="px-1.5 py-1 text-right font-num">{m.saldoLote?.disponible} / {m.saldoLote?.transito}{m.saldoLote?.enCentro ? ` / ${m.saldoLote.enCentro}` : ''}</td>}
+                  {ver('saldo') && <td className="px-1.5 py-1 text-right font-num">{m.saldoProducto?.disponible} / {m.saldoProducto?.transito}{m.saldoProducto?.enCentro ? ` / ${m.saldoProducto.enCentro}` : ''}</td>}
                   {ver('documento') && <td className="px-1.5 py-1">{referenciaMovimiento(m)}</td>}
                   {ver('usuario') && <td className="px-1.5 py-1">{m.usuario?.nombre || ''}</td>}
                   {ver('observacion') && <td className="px-1.5 py-1">{m.idEntrega && <span className="font-num font-bold">Adm. {m.idEntrega} · </span>}{m.observacion || ''}</td>}

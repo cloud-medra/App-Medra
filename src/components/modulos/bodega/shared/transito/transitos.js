@@ -26,11 +26,23 @@ export const filtrarTransitos = (transitos, texto) => {
   });
 };
 
+// Cuánto se puede mover de un tránsito con la acción: lo pendiente en
+// tránsito o, al entregar/devolver desde el centro, lo dejado ahí.
+export const disponibleParaAccion = (transito, accion, desde = 'TRANSITO') => (
+  accion !== 'DEJAR_EN_CENTRO' && desde === 'CENTRO' ? Number(transito.enCentro) || 0 : Number(transito.pendiente) || 0
+);
+
+// "Desde" sugerido al abrir Entregar/Devolver: tránsito si alguno tiene
+// pendiente; si no, lo dejado en el centro.
+export const desdeSugerido = (transitos) => (transitos.some((t) => (Number(t.pendiente) || 0) > 0) ? 'TRANSITO' : 'CENTRO');
+
 // Acciones a enviar desde el formulario del modal. `lineas`: [{ transito,
 // cantidad, idEntrega, observacion }]; los vacíos por línea toman el común.
-export const construirAcciones = (accion, lineas, comun) => lineas.map((l) => ({
+// `desde` (ENTREGAR/DEVOLVER): 'TRANSITO' o 'CENTRO'.
+export const construirAcciones = (accion, lineas, comun, desde = 'TRANSITO') => lineas.map((l) => ({
   transitoId: l.transito.id,
   accion,
+  ...(accion === 'ENTREGAR' || accion === 'DEVOLVER' ? { desde } : {}),
   cantidad: accion === 'NOTA' ? null : Number(l.cantidad),
   idEntrega: accion === 'ENTREGAR' ? (String(l.idEntrega || '').trim() || comun.idEntrega) : '',
   observacion: String(l.observacion || '').trim() || comun.observacion || '',

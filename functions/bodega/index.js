@@ -8,7 +8,7 @@
 //     ingreso por documento y carga inicial (Fase 2).
 //   - bodegaConfigurarCargaInicial: cerrar/reabrir la carga inicial.
 //   - bodegaEgresar: salida a tránsito hacia uno o varios centros (Fase 3).
-//   - bodegaGestionarTransito: entregar, devolver o anotar (Fase 3).
+//   - bodegaGestionarTransito: entregar, devolver, dejar en centro o anotar (Fase 3).
 //   - bodegaIniciarInventario / bodegaReanudarInventario / bodegaRegistrarConteo /
 //     bodegaCerrarInventario / bodegaAnularInventario: inventario físico (Fase 5).
 
@@ -49,3 +49,5 @@ exports.bodegaAnularInventario = callable('anularInventario');
 exports.bodegaGuardarCaja = callable('guardarCaja');
 exports.bodegaInventariarCaja = callable('inventariarCaja');
 exports.bodegaReponerCaja = callable('reponerCaja');
+// Stock consignado: lo que cada empresa consignante dejó (no mueve stock).
+exports.bodegaGuardarConsignacion = callable('guardarConsignacion');

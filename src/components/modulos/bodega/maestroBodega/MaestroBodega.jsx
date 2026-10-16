@@ -36,6 +36,7 @@ const COLUMNAS = [
   { key: 'loteVencimiento', label: 'Lote / Venc.', alinear: 'text-center' },
   { key: 'disponible', label: 'Disponible B.G.', alinear: 'text-right' },
   { key: 'transito', label: 'En tránsito', alinear: 'text-right' },
+  { key: 'enCentro', label: 'Dejado en centros', alinear: 'text-right' },
   { key: 'total', label: 'Total', alinear: 'text-right' },
   { key: 'minimo', label: 'Mínimo', alinear: 'text-right' },
   { key: 'ficha', label: 'Ficha', alinear: 'text-center', fija: true },
@@ -133,8 +134,8 @@ const MaestroBodega = () => {
     [productos, texto, filtros, vencePorProducto]
   );
   const totales = useMemo(() => filtrados.reduce((acc, p) => ({
-    disponible: acc.disponible + (p.disponible || 0), transito: acc.transito + (p.transito || 0)
-  }), { disponible: 0, transito: 0 }), [filtrados]);
+    disponible: acc.disponible + (p.disponible || 0), transito: acc.transito + (p.transito || 0), enCentro: acc.enCentro + (p.enCentro || 0),
+  }), { disponible: 0, transito: 0, enCentro: 0 }), [filtrados]);
 
   const cambiarFiltro = (campo) => (e) => {
     const valor = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -187,8 +188,10 @@ const MaestroBodega = () => {
     { titulo: 'Maneja vencimiento', valor: (p) => (p.manejaVencimiento ? 'Sí' : 'No') },
     { titulo: 'Disponible Bodega General', valor: (p) => p.disponible || 0 },
     { titulo: 'En tránsito', valor: (p) => p.transito || 0 },
+    { titulo: 'Dejado en centros', valor: (p) => p.enCentro || 0 },
     { titulo: 'Total', valor: (p) => stockTotal(p) },
     { titulo: 'Tránsito por centro', valor: (p) => Object.entries(p.transitoPorCentro || {}).map(([c, n]) => `${nombresCentros[c] || c}: ${n}`).join('; ') },
+    { titulo: 'Dejado por centro', valor: (p) => Object.entries(p.enCentroPorCentro || {}).map(([c, n]) => `${nombresCentros[c] || c}: ${n}`).join('; ') },
     { titulo: 'Stock mínimo', valor: (p) => p.stockMinimo ?? '' },
     { titulo: 'Próximo vencimiento (filtro)', valor: (p) => vencePorProducto?.[p.id]?.vencimiento || '' },
     { titulo: 'Activo', valor: (p) => (p.activo === false ? 'No' : 'Sí') },
@@ -268,6 +271,7 @@ const MaestroBodega = () => {
         <div className="ml-auto flex items-center gap-3 font-medium text-gray-600 dark:text-gray-300">
           <span>Disponible: <strong className="text-emerald-600 dark:text-emerald-400 font-num">{formatoCantidad(totales.disponible)}</strong></span>
           <span>En tránsito: <strong className="text-amber-600 dark:text-amber-400 font-num">{formatoCantidad(totales.transito)}</strong></span>
+          {totales.enCentro > 0 && <span>Dejado en centros: <strong className="text-violet-600 dark:text-violet-400 font-num">{formatoCantidad(totales.enCentro)}</strong></span>}
         </div>
       </div>
 
@@ -318,6 +322,11 @@ const MaestroBodega = () => {
                           {expandido ? <ChevronDown size={11} /> : <ChevronRight size={11} />} {formatoCantidad(p.transito)}
                         </button>
                       ) : <span className="text-gray-400">0</span>}
+                    </td>
+                  ),
+                  enCentro: (
+                    <td className={`${TD} text-right font-num`} title={Object.entries(p.enCentroPorCentro || {}).map(([c, n]) => `${nombresCentros[c] || c}: ${n}`).join('\n')}>
+                      {p.enCentro ? <strong className="text-violet-600 dark:text-violet-400">{formatoCantidad(p.enCentro)}</strong> : <span className="text-gray-400">0</span>}
                     </td>
                   ),
                   total: <td className={`${TD} text-right font-num font-bold`}>{formatoCantidad(stockTotal(p))}</td>,
