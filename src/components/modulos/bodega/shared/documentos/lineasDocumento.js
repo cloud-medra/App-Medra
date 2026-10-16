@@ -3,7 +3,8 @@ import { idLote, normalizarLote, validarLinea, fechaValida, normalizarPrecioUnit
 export { totalLinea, totalValorLineas } from '../../../../../../functions/bodega/nucleo.mjs';
 
 // Líneas de un documento en pantalla: { key, productoId, lote, vencimiento,
-// cantidad, codigoLeido, precioUnitario? (solo Carga inicial) }. Lógica pura (la Cloud Function vuelve a validar
+// cantidad, codigoLeido, codigoLote (segundo código GS1 leído, si hubo),
+// precioUnitario? (solo Carga inicial) }. Lógica pura (la Cloud Function vuelve a validar
 // y agrupar todo al confirmar).
 
 export const claveLinea = (l) => idLote(l.productoId, l.lote, l.vencimiento);
@@ -27,6 +28,31 @@ export const campoSugerido = (pendiente) => {
   return null;
 };
 
+// Orden de los campos del producto en curso: primero Lote y Vencimiento
+// (el cursor queda listo para escanear el segundo código GS1), después
+// Cantidad y, en Carga inicial, Precio.
+const camposEnOrden = (pendiente, conPrecio) => [
+  ...(pendiente?.producto?.manejaLote ? ['lote'] : []),
+  ...(pendiente?.producto?.manejaVencimiento ? ['vencimiento'] : []),
+  'cantidad',
+  ...(conPrecio ? ['precio'] : []),
+];
+const pendienteDeLlenar = (pendiente, campo) => (campo === 'lote' ? !normalizarLote(pendiente.lote)
+  : campo === 'vencimiento' ? !pendiente.vencimiento : true);
+
+// Campo donde queda el cursor al tomar un producto: Lote/Vencimiento si
+// faltan (listo para escanear el código 2); si no, Cantidad.
+export const campoInicial = (pendiente, conPrecio = false) => camposEnOrden(pendiente, conPrecio).find((c) => pendienteDeLlenar(pendiente, c)) || 'cantidad';
+
+// Carga inicial: campo siguiente al presionar Enter en `actual` (salta
+// Lote y Vencimiento ya completos); null = agregar la línea.
+export const siguienteCampo = (pendiente, actual, conPrecio = true) => {
+  const campos = camposEnOrden(pendiente, conPrecio);
+  const i = campos.indexOf(actual);
+  if (i < 0) return null;
+  return campos.slice(i + 1).find((c) => pendienteDeLlenar(pendiente, c)) || null;
+};
+
 // Agrega una línea; si ya hay una del mismo producto + lote + vencimiento,
 // suma la cantidad. Devuelve { lineas, sumada, linea }.
 export const agregarLinea = (lineas, nueva) => {
@@ -36,6 +62,7 @@ export const agregarLinea = (lineas, nueva) => {
     vencimiento: nueva.producto?.manejaVencimiento === false ? '' : (nueva.vencimiento || ''),
     cantidad: Number(nueva.cantidad),
     codigoLeido: nueva.codigoLeido || '',
+    codigoLote: nueva.codigoLote || '',
     ...('precioUnitario' in nueva ? { precioUnitario: normalizarPrecioUnitario(nueva.precioUnitario).valor } : {}),
   };
   const clave = claveLinea(linea);
@@ -44,7 +71,10 @@ export const agregarLinea = (lineas, nueva) => {
     const copia = [...lineas];
     // Al sumar se conserva el precio de la línea existente (si no tenía, se toma el nuevo).
     const precio = copia[i].precioUnitario ?? linea.precioUnitario;
-    copia[i] = { ...copia[i], cantidad: copia[i].cantidad + linea.cantidad, ...(precio !== undefined ? { precioUnitario: precio } : {}) };
+    copia[i] = {
+      ...copia[i], cantidad: copia[i].cantidad + linea.cantidad, codigoLote: copia[i].codigoLote || linea.codigoLote,
+      ...(precio !== undefined ? { precioUnitario: precio } : {}),
+    };
     return { lineas: copia, sumada: true, linea: copia[i] };
   }
   const conClave = { ...linea, key: `${clave}-${Date.now()}-${lineas.length}` };

@@ -405,7 +405,7 @@ const normalizarBorrador = (tipo, datos = {}) => {
       if (precio.error) throw new HttpsError('invalid-argument', precio.error);
       return {
         productoId: String(l.productoId), lote: normalizarLote(l.lote).slice(0, 40) || null, vencimiento: texto(l.vencimiento, 10) || null, cantidad,
-        codigoLeido: String(l.codigoLeido || '').slice(0, 300), precioUnitario: precio.valor,
+        codigoLeido: String(l.codigoLeido || '').slice(0, 300), codigoLote: String(l.codigoLote || '').slice(0, 300), precioUnitario: precio.valor,
       };
     }),
   };
@@ -575,7 +575,7 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
         productoId: l.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
         loteId: l.loteId, lote: l.lote, vencimiento: l.vencimiento, ...propietario, cantidad: l.cantidad,
         saldoLote: fotoSaldo(loteDespues), saldoProducto: fotoSaldo(productoDespues),
-        centroId: null, documentoRef, observacion: cabecera.observacion, codigoLeido: l.codigoLeido,
+        centroId: null, documentoRef, observacion: cabecera.observacion, codigoLeido: l.codigoLeido, codigoLote: l.codigoLote || '',
       });
     });
     // El precio unitario queda solo en el documento (no en movimientos ni saldos).
@@ -658,7 +658,7 @@ const egresarComo = (db, por, datos = {}) => {
     const cantidad = Number(l?.cantidad);
     if (!l?.productoId || !l?.loteId || !l?.centroId) throw new HttpsError('invalid-argument', 'Cada línea necesita producto, lote y centro.');
     if (!Number.isInteger(cantidad) || cantidad <= 0) throw new HttpsError('invalid-argument', 'La cantidad debe ser un número entero mayor a cero.');
-    return { productoId: String(l.productoId), loteId: String(l.loteId), centroId: String(l.centroId), cantidad };
+    return { productoId: String(l.productoId), loteId: String(l.loteId), centroId: String(l.centroId), cantidad, codigoLote: String(l.codigoLote || '').slice(0, 300) };
   }));
 
   return db.runTransaction(async (t) => {
@@ -758,7 +758,7 @@ const egresarComo = (db, por, datos = {}) => {
         ...base, tipo: 'SALIDA_A_TRANSITO', fecha: ahora(), orden, usuario: por, cantidad: l.cantidad,
         saldoLote: fotoSaldo(sl), saldoProducto: fotoSaldo(sp),
         transitoId: refTransito.id, documentoRef: { id: refSalida.id, tipo: 'SALIDA', numero: String(numero) },
-        observacion, solicitante,
+        observacion, solicitante, codigoLote: l.codigoLote || '',
       });
       const r = resumenPorCentro[l.centroId] || { nombre: centroNombre, lineas: 0, unidades: 0 };
       resumenPorCentro[l.centroId] = { ...r, lineas: r.lineas + 1, unidades: r.unidades + l.cantidad };

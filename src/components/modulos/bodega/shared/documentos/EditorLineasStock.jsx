@@ -3,17 +3,17 @@ import { Plus, Trash2, X, PackageCheck } from 'lucide-react';
 import { useCatalogo } from '../../../../../hooks/useCatalogo';
 import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitidas';
 import CampoEscaneoBodega from '../escaneo/CampoEscaneoBodega';
-import { identificarLectura, datosLoteDeLectura } from '../escaneo/identificarLectura';
+import { identificarLectura, datosLoteDeLectura, datosLoteEnEspera, combinarDatosLote, opcionesLote, datosLoteEnTexto } from '../escaneo/identificarLectura';
 import ModalVincularCodigo from '../ModalVincularCodigo';
 import BuscadorProducto from '../BuscadorProducto';
-import { mensajeError } from '../bodegaApi';
+import { mensajeError, leerLotesDeProducto } from '../bodegaApi';
 import { formatoCantidad } from '../catalogosBodega';
 import { estadoVencimiento } from '../vencimientos';
 import { formatoPesos } from '../../inventarioBodega/formato';
-import { normalizarPrecioUnitario } from '../../../../../../functions/bodega/nucleo.mjs';
+import { normalizarPrecioUnitario, normalizarLote } from '../../../../../../functions/bodega/nucleo.mjs';
 import {
   agregarLinea, campoFaltante, campoSugerido, cambiarCantidad, cambiarPrecio, quitarLinea, totalUnidades,
-  totalLinea, totalValorLineas, precioInicialLinea, referenciaProducto,
+  totalLinea, totalValorLineas, precioInicialLinea, referenciaProducto, campoInicial, siguienteCampo,
 } from './lineasDocumento';
 import { useColumnasCarga } from './columnasCarga';
 
@@ -48,6 +48,33 @@ const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text
 // clínico, editable), total por línea y total general; al tomar un producto
 // el foco va a Cantidad con el valor seleccionado, y Enter pasa al siguiente
 // campo (Precio, Lote, Vencimiento) hasta el último, que agrega la línea.
+// Lotes que ya existen del producto en curso (al escanear solo el GTIN):
+// clic para usar ese lote y vencimiento. Si lo escrito no calza con
+// ninguno, se avisa que se creará un lote nuevo al confirmar.
+const LotesExistentes = ({ opciones, lote, vencimiento, onElegir }) => {
+  if (opciones === undefined) return null;
+  const actual = normalizarLote(lote);
+  const existe = opciones !== 'cargando' && opciones.some((o) => normalizarLote(o.lote) === actual && (o.vencimiento || '') === (vencimiento || ''));
+  return (
+    <div className="w-full flex flex-wrap items-center gap-1.5 text-[11px]">
+      <span className="text-[10px] font-bold uppercase text-gray-500">Lotes existentes:</span>
+      {opciones === 'cargando' && <span className="text-gray-400 italic">cargando…</span>}
+      {opciones !== 'cargando' && opciones.length === 0 && <span className="text-gray-400 italic">ninguno</span>}
+      {opciones !== 'cargando' && opciones.slice(0, 20).map((o) => {
+        const activo = normalizarLote(o.lote) === actual && (o.vencimiento || '') === (vencimiento || '');
+        const venc = estadoVencimiento(o.vencimiento);
+        return (
+          <button key={`${o.lote}|${o.vencimiento}`} type="button" onClick={() => onElegir(o)}
+            className={`px-2 py-0.5 rounded border font-num ${activo ? 'border-[#2383C2] bg-white dark:bg-gray-900 ring-2 ring-[#2383C2]/40 font-bold' : 'border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/50'}`}>
+            {o.lote || 'S/L'} · {o.vencimiento || 'sin venc.'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>} · stock {formatoCantidad(o.disponible)}
+          </button>
+        );
+      })}
+      {opciones !== 'cargando' && (actual || vencimiento) && !existe && <span className="px-1.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold text-[10px]">LOTE NUEVO: se crea al confirmar</span>}
+    </div>
+  );
+};
+
 const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false, conPrecio = false }) => {
   const { datos: productos } = useCatalogo('bodegaProductos');
   const porId = useMemo(() => Object.fromEntries(productos.map((p) => [p.id, p])), [productos]);
@@ -57,6 +84,10 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
   const [pendiente, setPendiente] = useState(null); // { producto, cantidad, lote, vencimiento, codigoLeido }
   const [senal, setSenal] = useState({ tipo: null, mensaje: '' });
   const [lecturaSinVincular, setLecturaSinVincular] = useState(null);
+  // Segundo código (lote/vencimiento) escaneado antes que el producto.
+  const [espera, setEspera] = useState(null);
+  // Lotes existentes por producto, para elegir al escanear solo el GTIN.
+  const [lotesProducto, setLotesProducto] = useState({});
   const [auto, setAuto] = useState(leerAuto);
   const escanerRef = useRef(null);
   const cantidadRef = useRef(null);
@@ -90,13 +121,26 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
   // Deja el producto en curso; si está completo y "Agregar al escanear"
   // está activo, lo agrega; si no, enfoca el primer dato que falta.
   // `precioNeto`: el escrito al crear el producto (Carga inicial).
+  const cargarLotes = (producto) => {
+    if (!(producto.manejaLote || producto.manejaVencimiento) || lotesProducto[producto.id]) return;
+    setLotesProducto((m) => ({ ...m, [producto.id]: 'cargando' }));
+    leerLotesDeProducto(producto.id)
+      .then((lotes) => setLotesProducto((m) => ({ ...m, [producto.id]: opcionesLote(lotes) })))
+      .catch(() => setLotesProducto((m) => ({ ...m, [producto.id]: [] })));
+  };
+
   const tomarProducto = (producto, lectura, precioNeto = '') => {
     if (producto.activo === false) {
       setSenal({ tipo: 'error', mensaje: `${producto.nombre} está inactivo.` });
       return;
     }
+    // Lote/vencimiento: los del propio código o los del segundo código
+    // escaneado antes (en espera).
+    const { usoEspera, ...datosLote } = combinarDatosLote(lectura, espera);
+    if (espera) setEspera(null);
+    cargarLotes(producto);
     const nuevo = {
-      producto, cantidad: 1, ...datosLoteDeLectura(lectura), codigoLeido: lectura?.codigo || '',
+      producto, cantidad: 1, ...datosLote, codigoLeido: lectura?.codigo || '',
       ...(conPrecio ? { precioUnitario: precioInicialLinea(producto, precioNeto) } : {}),
     };
     if (pendiente && pendiente.producto.id !== producto.id) {
@@ -106,10 +150,12 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
     const sugerido = campoSugerido(nuevo);
     if (!falta && !sugerido && auto) { agregar(nuevo); return; }
     setPendiente(nuevo);
-    const indicacion = falta ? `ingresa ${falta}` : sugerido ? `ingresa ${sugerido} (opcional) y presiona Enter` : 'presiona Enter para agregar';
-    if (!pendiente || pendiente.producto.id === producto.id) setSenal({ tipo: 'ok', mensaje: `${producto.nombre}: ${indicacion}.` });
-    if (conPrecio) enfocar('cantidad', true);
-    else enfocar(falta || sugerido || 'cantidad');
+    const primero = campoInicial(nuevo, conPrecio);
+    const indicacion = primero === 'lote' ? 'escanea el código de lote (o escribe el lote) y luego la cantidad'
+      : falta ? `ingresa ${falta}` : sugerido ? `ingresa ${sugerido} (opcional) y presiona Enter` : 'presiona Enter para agregar';
+    const conLote = usoEspera ? ` (lote ${datosLote.lote || '—'} del código anterior)` : '';
+    if (!pendiente || pendiente.producto.id === producto.id) setSenal({ tipo: 'ok', mensaje: `${producto.nombre}${conLote}: ${indicacion}.` });
+    enfocar(primero, true);
   };
 
   const onLectura = async (texto) => {
@@ -117,19 +163,25 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
       const r = await identificarLectura(texto);
       if (!r) return;
       if (r.tipo === 'datosLote') {
-        if (!pendiente) { setSenal({ tipo: 'aviso', mensaje: 'Ese código solo trae lote/vencimiento: escanea primero el producto.' }); return; }
         const datos = datosLoteDeLectura(r.lectura);
+        if (!pendiente) {
+          // Se aplica al próximo producto que se escanee.
+          setEspera(datosLoteEnEspera(r.lectura));
+          setSenal({ tipo: 'aviso', mensaje: `Lote ${datos.lote || '—'} · vence ${datos.vencimiento || '—'} leído: escanea ahora el código del producto.` });
+          return;
+        }
         const completado = {
           ...pendiente,
           lote: datos.lote || pendiente.lote,
           vencimiento: datos.vencimiento || pendiente.vencimiento,
+          codigoLote: r.lectura.codigo,
         };
         const falta = campoFaltante(completado);
         const sugerido = campoSugerido(completado);
         if (!falta && !sugerido && auto) { agregar(completado); return; }
         setPendiente(completado);
         setSenal({ tipo: 'ok', mensaje: `Lote/vencimiento completados para ${pendiente.producto.nombre}.` });
-        enfocar(falta || sugerido || 'cantidad');
+        enfocar(campoInicial(completado, conPrecio), true);
         return;
       }
       if (r.tipo === 'sinVincular') { setLecturaSinVincular(r.lectura); return; }
@@ -149,24 +201,37 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
     }
     agregar({ ...pendiente, cantidad: Number(pendiente.cantidad) });
   };
-  // Campos del producto en curso, en orden (Carga inicial).
-  const camposPendiente = () => [
-    'cantidad', 'precio',
-    ...(pendiente?.producto.manejaLote ? ['lote'] : []),
-    ...(pendiente?.producto.manejaVencimiento ? ['vencimiento'] : []),
-  ];
-  // Enter: en Carga inicial pasa al siguiente campo y el último agrega la
-  // línea; en Ingreso e Inventario agrega la línea desde cualquier campo.
-  // El campo sale de data-campo del input.
+  // Enter: en Carga inicial pasa al siguiente campo (Lote → Vencimiento →
+  // Cantidad → Precio, saltando lote/vencimiento ya completos) y el último
+  // agrega la línea; en Ingreso e Inventario agrega la línea desde
+  // cualquier campo. El campo sale de data-campo del input.
   const alPresionarEnter = (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
     if (conPrecio) {
-      const campos = camposPendiente();
-      const i = campos.indexOf(e.currentTarget.dataset.campo);
-      if (i >= 0 && i < campos.length - 1) { enfocar(campos[i + 1], true); return; }
+      const siguiente = siguienteCampo(pendiente, e.currentTarget.dataset.campo);
+      if (siguiente) { enfocar(siguiente, true); return; }
     }
     confirmarPendiente();
+  };
+  // En el campo Lote: si lo escaneado es el código GS1 de lote/vencimiento
+  // (código 2), rellena Lote y Vencimiento en vez de dejar el código como
+  // texto y pasa a Cantidad. Si no, Enter funciona como siempre.
+  const alTeclaEnLote = (e) => {
+    if (e.key !== 'Enter' && e.key !== 'Tab') return;
+    const datos = datosLoteEnTexto(e.currentTarget.value);
+    if (!datos) { alPresionarEnter(e); return; }
+    e.preventDefault();
+    const completado = {
+      ...pendiente,
+      lote: datos.lote || '',
+      vencimiento: datos.vencimiento || pendiente.vencimiento,
+      codigoLote: datos.codigoLote || pendiente.codigoLote || '',
+    };
+    setSenal({ tipo: 'ok', mensaje: `Código de lote leído: lote ${datos.lote || '—'} · vence ${datos.vencimiento || '—'}. Ingresa la cantidad.` });
+    if (!campoFaltante(completado) && !campoSugerido(completado) && auto) { agregar(completado); return; }
+    setPendiente(completado);
+    enfocar(campoInicial(completado, conPrecio), true);
   };
   const cambiar = (campo) => (e) => setPendiente((p) => ({ ...p, [campo]: e.target.value }));
 
@@ -193,6 +258,18 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
               {conPrecio ? (referenciaProducto(pendiente.producto) ? `Ref. ${referenciaProducto(pendiente.producto)}` : 'Sin referencia') : pendiente.producto.codigoMaestro}
             </span>
           </div>
+          {pendiente.producto.manejaLote && (
+            <label className="flex flex-col">
+              <span className="text-[10px] font-bold uppercase text-gray-500">Lote <span className="normal-case font-normal">(opcional)</span></span>
+              <input ref={loteRef} value={pendiente.lote} onChange={cambiar('lote')} data-campo="lote" onKeyDown={alTeclaEnLote} maxLength={300} placeholder="Escanea el código de lote" title="Escanea aquí el código 2 (lote/vencimiento) o escribe el lote" className={`${INPUT} w-36 font-num uppercase`} />
+            </label>
+          )}
+          {pendiente.producto.manejaVencimiento && (
+            <label className="flex flex-col">
+              <span className="text-[10px] font-bold uppercase text-gray-500">Vencimiento <span className="normal-case font-normal">(opcional)</span></span>
+              <input ref={vencimientoRef} type="date" value={pendiente.vencimiento} onChange={cambiar('vencimiento')} data-campo="vencimiento" onKeyDown={alPresionarEnter} className={`${INPUT} w-40 font-num`} />
+            </label>
+          )}
           <label className="flex flex-col">
             <span className="text-[10px] font-bold uppercase text-gray-500">Cantidad</span>
             <input ref={cantidadRef} type="number" min="1" step="1" inputMode="numeric" value={pendiente.cantidad} onChange={cambiar('cantidad')} data-campo="cantidad" onKeyDown={alPresionarEnter} className={`${INPUT} w-24 font-num`} />
@@ -203,20 +280,18 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
               <input ref={precioRef} type="number" min="0" step="1" inputMode="numeric" value={pendiente.precioUnitario ?? ''} onChange={cambiar('precioUnitario')} data-campo="precio" onKeyDown={alPresionarEnter} className={`${INPUT} w-32 font-num`} aria-label="Precio unitario" />
             </label>
           )}
-          {pendiente.producto.manejaLote && (
-            <label className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Lote <span className="normal-case font-normal">(opcional)</span></span>
-              <input ref={loteRef} value={pendiente.lote} onChange={cambiar('lote')} data-campo="lote" onKeyDown={alPresionarEnter} maxLength={40} className={`${INPUT} w-36 font-num uppercase`} />
-            </label>
-          )}
-          {pendiente.producto.manejaVencimiento && (
-            <label className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Vencimiento <span className="normal-case font-normal">(opcional)</span></span>
-              <input ref={vencimientoRef} type="date" value={pendiente.vencimiento} onChange={cambiar('vencimiento')} data-campo="vencimiento" onKeyDown={alPresionarEnter} className={`${INPUT} w-40 font-num`} />
-            </label>
-          )}
           <button type="button" onClick={confirmarPendiente} className="h-9 px-3 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><Plus size={14} /> Agregar</button>
           <button type="button" onClick={() => { setPendiente(null); enfocar(null); }} title="Descartar" className="h-9 px-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-200"><X size={14} /></button>
+          {(pendiente.producto.manejaLote || pendiente.producto.manejaVencimiento) && (
+            <LotesExistentes opciones={lotesProducto[pendiente.producto.id]} lote={pendiente.lote} vencimiento={pendiente.vencimiento}
+              onElegir={(o) => { setPendiente((p) => ({ ...p, lote: o.lote, vencimiento: o.vencimiento })); enfocar('cantidad', true); }} />
+          )}
+        </div>
+      )}
+      {espera && !pendiente && (
+        <div className="flex items-center gap-2 px-2 py-1 rounded border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-[11px] text-amber-800 dark:text-amber-200">
+          <span>Lote <strong className="font-num">{espera.lote || '—'}</strong> · vence <strong className="font-num">{espera.vencimiento || '—'}</strong> en espera: escanea el código del producto.</span>
+          <button type="button" onClick={() => setEspera(null)} title="Descartar" className="ml-auto p-0.5"><X size={12} /></button>
         </div>
       )}
 
@@ -281,6 +356,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
           lectura={lecturaSinVincular}
           productoSugerido={pendiente?.producto || null}
           conPrecioNeto={conPrecio}
+          onDatosLote={(datos) => setEspera(datosLoteEnEspera(datos.lectura))}
           onCerrar={() => { setLecturaSinVincular(null); enfocar(null); }}
           onVinculado={(producto, extra) => { const lectura = lecturaSinVincular; setLecturaSinVincular(null); tomarProducto(producto, lectura, extra?.precioNeto); }}
         />

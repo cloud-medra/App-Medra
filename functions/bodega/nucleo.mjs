@@ -387,6 +387,8 @@ export const validarLinea = (linea = {}, producto = null) => {
       vencimiento: vencimiento || null,
       cantidad,
       codigoLeido: String(linea.codigoLeido || '').slice(0, 300),
+      // Segundo código GS1 (lote/vencimiento) leído: solo trazabilidad.
+      codigoLote: String(linea.codigoLote || '').slice(0, 300),
     },
   };
 };
@@ -416,6 +418,7 @@ export const agruparLineas = (lineas) => {
     if (previa) {
       previa.cantidad += l.cantidad;
       if (previa.precioUnitario == null && l.precioUnitario != null) previa.precioUnitario = l.precioUnitario;
+      if (!previa.codigoLote && l.codigoLote) previa.codigoLote = l.codigoLote;
     } else porLote.set(id, { ...l, loteId: id });
   });
   return [...porLote.values()];
@@ -487,8 +490,10 @@ export const agruparLineasEgreso = (lineas) => {
   lineas.forEach((l) => {
     const clave = `${l.loteId}|${l.centroId}`;
     const previa = mapa.get(clave);
-    if (previa) previa.cantidad += l.cantidad;
-    else mapa.set(clave, { ...l });
+    if (previa) {
+      previa.cantidad += l.cantidad;
+      if (!previa.codigoLote && l.codigoLote) previa.codigoLote = l.codigoLote;
+    } else mapa.set(clave, { ...l });
   });
   return [...mapa.values()];
 };
