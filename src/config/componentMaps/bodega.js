@@ -29,9 +29,10 @@ export const bodegaComponentMaps = {
           btn_actualizar: { label: 'Acción: Actualizar listado' },
           btn_exportar: { label: 'Acción: Exportar listado a Excel/CSV' },
           ...columnas([
-            ['codigo', 'Código maestro'], ['categoria', 'Categoría'], ['unidad', 'Unidad'], ['ubicacion', 'Ubicación'],
+            ['referencia', 'Referencia'], ['categoria', 'Categoría'], ['unidad', 'Unidad'], ['ubicacion', 'Ubicación'],
             ['loteVencimiento', 'Maneja lote / vencimiento'], ['disponible', 'Disponible Bodega General'],
-            ['transito', 'En tránsito (con desglose por centro)'], ['enCentro', 'Dejado en centros (con desglose)'], ['total', 'Total'], ['minimo', 'Stock mínimo'],
+            ['transito', 'En tránsito (con desglose por centro)'], ['enCentro', 'Dejado en centros (con desglose)'], ['total', 'Stock total (unidades)'],
+            ['precio', 'Precio neto'], ['valor', 'Total $ (precio neto × disponible B.G.)'], ['minimo', 'Stock mínimo'],
           ]),
         },
       },
