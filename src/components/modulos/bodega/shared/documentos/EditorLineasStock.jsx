@@ -32,7 +32,7 @@ const CLAVE_AUTO = 'bodega.autoAgregarEscaneo';
 const leerAuto = () => { try { return localStorage.getItem(CLAVE_AUTO) !== 'no'; } catch { return true; } };
 const guardarAuto = (v) => { try { localStorage.setItem(CLAVE_AUTO, v ? 'si' : 'no'); } catch { /* sin almacenamiento */ } };
 
-const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[13px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]';
+const INPUT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]';
 
 // Editor de líneas por escaneo, común a Ingreso y Carga inicial.
 // Flujo: escanear (o buscar) producto -> cantidad -> lote -> vencimiento ->
@@ -201,17 +201,15 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
     }
     agregar({ ...pendiente, cantidad: Number(pendiente.cantidad) });
   };
-  // Enter: en Carga inicial pasa al siguiente campo (Lote → Vencimiento →
-  // Cantidad → Precio, saltando lote/vencimiento ya completos) y el último
-  // agrega la línea; en Ingreso e Inventario agrega la línea desde
-  // cualquier campo. El campo sale de data-campo del input.
+  // Enter pasa al siguiente campo (Lote → Vencimiento → Cantidad y, en
+  // Carga inicial, Precio), saltando lote/vencimiento ya completos; el
+  // último agrega la línea. Igual en Carga inicial, Ingreso e Inventario.
+  // El campo sale de data-campo del input.
   const alPresionarEnter = (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    if (conPrecio) {
-      const siguiente = siguienteCampo(pendiente, e.currentTarget.dataset.campo);
-      if (siguiente) { enfocar(siguiente, true); return; }
-    }
+    const siguiente = siguienteCampo(pendiente, e.currentTarget.dataset.campo, conPrecio);
+    if (siguiente) { enfocar(siguiente, true); return; }
     confirmarPendiente();
   };
   // En el campo Lote: si lo escaneado es el código GS1 de lote/vencimiento
@@ -238,7 +236,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
   const total = totalUnidades(lineas);
 
   return (
-    <div className="flex flex-col gap-2 text-[12px]">
+    <div className="flex flex-col gap-1.5 text-[11px]">
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-2 items-start">
         <CampoEscaneoBodega ref={escanerRef} autoFocus onLectura={onLectura} deshabilitado={deshabilitado} senal={senal.tipo} mensaje={senal.mensaje} />
         <div className="flex flex-col gap-1">
@@ -250,7 +248,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
       </div>
 
       {pendiente && (
-        <div className="flex flex-wrap items-end gap-2 p-2 rounded-lg border-2 border-[#2383C2]/50 bg-blue-50/50 dark:bg-sky-950/20">
+        <div className="flex flex-wrap items-end gap-1.5 px-2 py-1.5 rounded-lg border-2 border-[#2383C2]/50 bg-blue-50/50 dark:bg-sky-950/20">
           <div className="flex-1 min-w-[180px]">
             <span className="block text-[10px] font-bold uppercase text-gray-500">Producto</span>
             <span className="font-bold text-gray-800 dark:text-gray-100">{pendiente.producto.nombre}</span>
@@ -280,8 +278,8 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
               <input ref={precioRef} type="number" min="0" step="1" inputMode="numeric" value={pendiente.precioUnitario ?? ''} onChange={cambiar('precioUnitario')} data-campo="precio" onKeyDown={alPresionarEnter} className={`${INPUT} w-32 font-num`} aria-label="Precio unitario" />
             </label>
           )}
-          <button type="button" onClick={confirmarPendiente} className="h-9 px-3 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><Plus size={14} /> Agregar</button>
-          <button type="button" onClick={() => { setPendiente(null); enfocar(null); }} title="Descartar" className="h-9 px-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-200"><X size={14} /></button>
+          <button type="button" onClick={confirmarPendiente} className="h-7 px-2.5 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><Plus size={13} /> Agregar</button>
+          <button type="button" onClick={() => { setPendiente(null); enfocar(null); }} title="Descartar" className="h-7 px-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-200"><X size={14} /></button>
           {(pendiente.producto.manejaLote || pendiente.producto.manejaVencimiento) && (
             <LotesExistentes opciones={lotesProducto[pendiente.producto.id]} lote={pendiente.lote} vencimiento={pendiente.vencimiento}
               onElegir={(o) => { setPendiente((p) => ({ ...p, lote: o.lote, vencimiento: o.vencimiento })); enfocar('cantidad', true); }} />
@@ -296,9 +294,9 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
       )}
 
       <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
-        <table className="w-full text-left text-[12px] border-collapse">
+        <table className="w-full text-left text-[11px] border-collapse">
           <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-            <tr>{columnasVisibles.map((c) => <th key={c.key} className={`px-2 py-1.5 ${c.alinear || ''}`}>{c.label}</th>)}</tr>
+            <tr>{columnasVisibles.map((c) => <th key={c.key} className={`px-2 py-1 ${c.alinear || ''}`}>{c.label}</th>)}</tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {lineas.length === 0 && (
@@ -320,14 +318,14 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
                     <td className="px-2 py-1 text-right">
                       <input type="number" min="1" step="1" inputMode="numeric" value={l.cantidad} disabled={deshabilitado}
                         onChange={(e) => onCambiar(cambiarCantidad(lineas, l.key, e.target.value === '' ? '' : Number(e.target.value)))}
-                        className="w-20 h-8 px-1.5 text-right font-num border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900" aria-label="Cantidad" />
+                        className="w-20 h-6 px-1.5 text-right font-num border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900" aria-label="Cantidad" />
                     </td>
                   )}
                   {ver('precio') && (
                     <td className="px-2 py-1 text-right">
                       <input type="number" min="0" step="1" inputMode="numeric" value={l.precioUnitario ?? ''} disabled={deshabilitado}
                         onChange={(e) => onCambiar(cambiarPrecio(lineas, l.key, e.target.value))}
-                        className="w-28 h-8 px-1.5 text-right font-num border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900" aria-label="Precio unitario" />
+                        className="w-28 h-6 px-1.5 text-right font-num border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900" aria-label="Precio unitario" />
                     </td>
                   )}
                   {ver('total') && <td className="px-2 py-1 text-right font-num font-semibold">{formatoPesos(totalLinea(l))}</td>}
@@ -341,7 +339,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
           {lineas.length > 0 && (
             <tfoot className="bg-gray-50 dark:bg-gray-900 font-bold text-[11px]">
               <tr>
-                <td colSpan={columnasVisibles.length} className="px-2 py-1.5 text-right">
+                <td colSpan={columnasVisibles.length} className="px-2 py-1 text-right">
                   <PackageCheck size={13} className="inline mr-1 text-emerald-600" />{lineas.length} línea(s) · {formatoCantidad(total)} unidad(es)
                   {conPrecio && <> · Total carga <span className="font-num">{formatoPesos(totalValorLineas(lineas))}</span></>}
                 </td>

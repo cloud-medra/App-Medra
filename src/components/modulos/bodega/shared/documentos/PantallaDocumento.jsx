@@ -21,9 +21,9 @@ import { ponerPrimero } from '../listasLocales';
 const MAX_BORRADORES = 30;
 const MAX_CONFIRMADOS = 15;
 
-const INPUT = 'w-full h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-60';
+const INPUT = 'w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-60';
 const LABEL = 'block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5';
-const BOTON = 'h-9 px-3 rounded font-bold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed';
+const BOTON = 'h-7 px-2.5 rounded text-[11px] font-bold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed';
 
 const cabeceraVacia = (tipo) => (tipo === 'INGRESO'
   ? { tipoDocumento: 'GUIA', numero: '', ordenCompra: '', proveedorId: '', fecha: hoyISO(), observacion: '', consignacion: false }
@@ -214,7 +214,7 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
   const bloqueado = ocupado || cargaCerrada;
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[12px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[11px]">
       <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
         <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase">
           <Icono size={14} className="text-[#2383C2]" /> {titulo}
@@ -227,10 +227,10 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
         )}
       </div>
 
-      <div className="flex-1 overflow-auto p-3 grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-3">
-        <div className="flex flex-col gap-3 min-w-0">
+      <div className="flex-1 overflow-auto p-2 grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-2">
+        <div className="flex flex-col gap-2 min-w-0">
           {aviso && (
-            <div className="flex items-start gap-2 px-3 py-2 rounded border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-[12px]">
+            <div className="flex items-start gap-2 px-2 py-1 rounded border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-[11px]">
               <AlertTriangle size={15} className="shrink-0 mt-0.5" /> <span>{cargaCerrada ? 'La carga inicial está CERRADA: el stock nuevo se ingresa por Ingreso (guía o factura).' : aviso}</span>
             </div>
           )}
@@ -263,7 +263,7 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
                 <label className={LABEL} htmlFor="doc-obs">Observación</label>
                 <input id="doc-obs" value={cabecera.observacion} onChange={cambiarCabecera('observacion')} disabled={bloqueado} maxLength={MAX_OBSERVACION} className={INPUT} />
               </div>
-              <label className="col-span-2 md:col-span-1 flex items-end gap-1.5 pb-2 text-[11px] font-semibold text-violet-700 dark:text-violet-300" title="El stock que entra queda a nombre del proveedor (Stock consignado), no como propio.">
+              <label className="col-span-2 md:col-span-1 flex items-end gap-1.5 pb-1.5 text-[11px] font-semibold text-violet-700 dark:text-violet-300" title="El stock que entra queda a nombre del proveedor (Stock consignado), no como propio.">
                 <input type="checkbox" checked={cabecera.consignacion === true} onChange={(e) => setCabecera((c) => ({ ...c, consignacion: e.target.checked }))} disabled={bloqueado} />
                 En consignación
               </label>
@@ -285,7 +285,7 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
           <EditorLineasStock key={reinicio} rutaVista={ruta} lineas={lineas} onCambiar={setLineas} deshabilitado={bloqueado} conPrecio={esCarga} />
 
           {errores.length > 0 && (
-            <ul className="text-[12px] text-red-600 dark:text-red-400 list-disc pl-5">{errores.map((e) => <li key={e}>{e}</li>)}</ul>
+            <ul className="text-[11px] text-red-600 dark:text-red-400 list-disc pl-5">{errores.map((e) => <li key={e}>{e}</li>)}</ul>
           )}
 
           <div className="flex flex-wrap justify-end gap-2">
@@ -299,7 +299,7 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
           <ListaDocumentos titulo="Borradores" documentos={borradores} cargando={cargandoListas} onActualizar={recargarListas}
             onAbrir={abrirBorrador} onEliminar={puede('btn_eliminar_borrador') ? quitarBorrador : null} nombreProducto={(id) => porId[id]?.nombre || id} />
           <ListaDocumentos titulo="Confirmados recientes" documentos={confirmados} cargando={cargandoListas} onActualizar={recargarListas} nombreProducto={(id) => porId[id]?.nombre || id} />

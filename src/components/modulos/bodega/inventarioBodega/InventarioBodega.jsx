@@ -23,7 +23,7 @@ const ESTADO_BADGE = {
   PREPARANDO: 'bg-amber-100 text-amber-700', ABIERTO: 'bg-blue-100 text-blue-700', CERRANDO: 'bg-amber-100 text-amber-700',
   CERRADO: 'bg-emerald-100 text-emerald-700', ANULADO: 'bg-gray-200 text-gray-600',
 };
-const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] bg-white dark:bg-gray-900';
+const INPUT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900';
 
 // El mismo lote existe como propio y consignado (o de dos empresas): elegir
 // a quién corresponde lo contado de cada línea.
@@ -104,7 +104,7 @@ const InicioInventario = ({ onIniciado, onAbrirHistorial }) => {
               ))}
             </div>
           </div>
-          <button type="button" onClick={iniciar} disabled={iniciando || !nombre.trim()} className="self-start h-9 px-4 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1.5 disabled:opacity-50"><Play size={14} /> {iniciando ? 'Iniciando…' : 'Iniciar inventario'}</button>
+          <button type="button" onClick={iniciar} disabled={iniciando || !nombre.trim()} className="self-start h-7 px-3 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1.5 disabled:opacity-50"><Play size={14} /> {iniciando ? 'Iniciando…' : 'Iniciar inventario'}</button>
         </section>
       ) : <p className="text-gray-500 italic">No hay un inventario abierto.</p>}
       <section className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -260,7 +260,7 @@ const DetalleInventario = ({ id, onSalir, puedeVolver }) => {
           <p className="text-[11px] text-gray-500">Escanea lo que hay físicamente en la bodega. Cada lectura <strong>se suma</strong> a lo ya contado de ese lote al guardar; para corregir un valor usa la pestaña Comparación. Un lote que no estaba en el sistema se agrega.</p>
           <EditorLineasStock key={reinicio} rutaVista={PATH_VISTA} lineas={conteo} onCambiar={setConteo} deshabilitado={ocupado} />
           <div className="flex justify-end">
-            <button type="button" onClick={() => guardarConteo()} disabled={ocupado || !conteo.length} className="h-10 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 disabled:opacity-50">
+            <button type="button" onClick={() => guardarConteo()} disabled={ocupado || !conteo.length} className="h-7 px-3 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 disabled:opacity-50">
               <Save size={15} /> {ocupado ? 'Guardando…' : `Guardar conteo (${formatoCantidad(totalUnidades(conteo))} u.)`}
             </button>
           </div>
