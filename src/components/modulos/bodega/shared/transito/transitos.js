@@ -1,4 +1,5 @@
 import { normalizarClave } from '../../../../../../functions/bodega/nucleo.mjs';
+import { referenciaProducto } from '../documentos/lineasDocumento';
 
 // Utilidades puras de la vista de tránsitos.
 
@@ -16,12 +17,17 @@ export const fechaHora = (ts) => {
   return f ? f.toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' }) : '';
 };
 
-// Filtro por texto: producto, código, lote, centro, solicitante, usuario o N° salida.
+// Agrega a cada tránsito la referencia de su producto (propia o del
+// maestro clínico), tomada del maestro de productos en memoria: el registro
+// de tránsito no la guarda.
+export const conReferencia = (transitos, productosPorId) => transitos.map((t) => ({ ...t, referencia: referenciaProducto(productosPorId[t.productoId]) }));
+
+// Filtro por texto: producto, referencia, código, lote, centro, solicitante, usuario o N° salida.
 export const filtrarTransitos = (transitos, texto) => {
   const palabras = normalizarClave(texto).split(' ').filter(Boolean);
   if (!palabras.length) return transitos;
   return transitos.filter((t) => {
-    const base = normalizarClave([t.productoNombre, t.codigoMaestro, t.lote, t.centroNombre, t.solicitante, t.usuario?.nombre, t.salidaNumero].join(' '));
+    const base = normalizarClave([t.productoNombre, t.referencia, t.codigoMaestro, t.lote, t.centroNombre, t.solicitante, t.usuario?.nombre, t.salidaNumero].join(' '));
     return palabras.every((w) => base.includes(w));
   });
 };

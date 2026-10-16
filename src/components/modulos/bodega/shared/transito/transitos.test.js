@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { diasEnTransito, filtrarTransitos, construirAcciones, disponibleParaAccion, desdeSugerido } from './transitos';
+import { diasEnTransito, filtrarTransitos, construirAcciones, disponibleParaAccion, desdeSugerido, conReferencia } from './transitos';
 
 describe('tránsitos', () => {
   it('días en tránsito', () => {
@@ -32,5 +32,12 @@ describe('tránsitos', () => {
     expect(desdeSugerido([{ pendiente: 0, enCentro: 3 }, t])).toBe('TRANSITO');
     expect(construirAcciones('DEVOLVER', [{ transito: t, cantidad: 3 }], {}, 'CENTRO')[0]).toMatchObject({ accion: 'DEVOLVER', desde: 'CENTRO', cantidad: 3 });
     expect(construirAcciones('DEJAR_EN_CENTRO', [{ transito: t, cantidad: 1 }], {}, 'CENTRO')[0]).not.toHaveProperty('desde');
+  });
+
+  it('referencia del producto (propia o del maestro clínico) para la tabla, el buscador y la exportación', () => {
+    const productos = { p1: { referencia: 'REF-1' }, p2: { referencia: '', maestroCodigo: { referencia: 'MC-2' } } };
+    const lista = conReferencia([{ id: 'a', productoId: 'p1', productoNombre: 'Sonda' }, { id: 'b', productoId: 'p2', productoNombre: 'Gasa' }, { id: 'c', productoId: 'x' }], productos);
+    expect(lista.map((t) => t.referencia)).toEqual(['REF-1', 'MC-2', '']);
+    expect(filtrarTransitos(lista, 'mc-2').map((t) => t.id)).toEqual(['b']);
   });
 });

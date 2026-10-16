@@ -10,7 +10,8 @@ import { aplicarResultadoTransitos } from '../shared/listasLocales';
 import { formatoCantidad } from '../shared/catalogosBodega';
 import { estadoVencimiento } from '../shared/vencimientos';
 import TablaTransitos from '../shared/transito/TablaTransitos';
-import { diasEnTransito, filtrarTransitos, fechaHora } from '../shared/transito/transitos';
+import { conReferencia, diasEnTransito, filtrarTransitos, fechaHora } from '../shared/transito/transitos';
+import { useCatalogo } from '../../../../hooks/useCatalogo';
 
 const PATH_VISTA = '/bodega/centrosBodega';
 const COLUMNAS = [
@@ -23,7 +24,7 @@ const COLUMNAS = [
 ];
 
 const COLUMNAS_EXPORT = [
-  { titulo: 'Código', valor: (t) => t.codigoMaestro },
+  { titulo: 'Referencia', valor: (t) => t.referencia || '' },
   { titulo: 'Producto', valor: (t) => t.productoNombre },
   { titulo: 'Lote', valor: (t) => t.lote || '—' },
   { titulo: 'Vencimiento', valor: (t) => t.vencimiento || '—' },
@@ -54,7 +55,9 @@ const DetalleCentro = ({ centro, onVolver }) => {
       .catch((e) => { if (vigente) { setTransitos([]); showToast(mensajeError(e), 'error'); } });
     return () => { vigente = false; };
   }, [centro.id, version, showToast]);
-  const filtrados = useMemo(() => filtrarTransitos(transitos || [], texto), [transitos, texto]);
+  const { datos: productos } = useCatalogo('bodegaProductos');
+  const productosPorId = useMemo(() => Object.fromEntries(productos.map((p) => [p.id, p])), [productos]);
+  const filtrados = useMemo(() => filtrarTransitos(conReferencia(transitos || [], productosPorId), texto), [transitos, productosPorId, texto]);
 
   return (
     <div className="flex flex-col gap-2">

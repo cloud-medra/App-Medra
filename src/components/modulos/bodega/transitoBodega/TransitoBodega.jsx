@@ -7,7 +7,7 @@ import BuscadorConLimpiar from '../../../ui/BuscadorConLimpiar';
 import { leerTransitosAbiertos, mensajeError } from '../shared/bodegaApi';
 import { formatoCantidad } from '../shared/catalogosBodega';
 import TablaTransitos from '../shared/transito/TablaTransitos';
-import { filtrarTransitos } from '../shared/transito/transitos';
+import { conReferencia, filtrarTransitos } from '../shared/transito/transitos';
 
 const PATH_VISTA = '/bodega/transitoBodega';
 
@@ -37,7 +37,9 @@ const TransitoBodega = () => {
   // tránsito de antes).
   const { datos: centros } = useCatalogo('centros');
   const opcionesCentro = useMemo(() => centros.filter((c) => c.nombre).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')), [centros]);
-  const filtrados = useMemo(() => filtrarTransitos(transitos || [], texto), [transitos, texto]);
+  const { datos: productos } = useCatalogo('bodegaProductos');
+  const productosPorId = useMemo(() => Object.fromEntries(productos.map((p) => [p.id, p])), [productos]);
+  const filtrados = useMemo(() => filtrarTransitos(conReferencia(transitos || [], productosPorId), texto), [transitos, productosPorId, texto]);
   const unidades = filtrados.reduce((n, t) => n + (t.pendiente || 0), 0);
   const dejadas = filtrados.reduce((n, t) => n + (t.enCentro || 0), 0);
 

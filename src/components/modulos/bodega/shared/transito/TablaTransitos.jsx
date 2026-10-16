@@ -16,7 +16,7 @@ import { diasEnTransito, fechaHora } from './transitos';
 // Mismo diseño que el Maestro (TablaBodega): columnas redimensionables.
 const COLUMNAS = [
   { key: 'sel', label: '', fija: true, ancho: 30, min: 26 },
-  { key: 'codigo', label: 'Código', ancho: 105, min: 60 },
+  { key: 'referencia', label: 'Referencia', ancho: 120, min: 60 },
   { key: 'producto', label: 'Producto', fija: true, ancho: 240, min: 110 },
   { key: 'lote', label: 'Lote', ancho: 100, min: 55 },
   { key: 'vencimiento', label: 'Vencimiento', ancho: 125, min: 80 },
@@ -94,7 +94,7 @@ const TablaTransitos = ({ transitos, rutaVista, origen, onCambio, ocultarCentro 
             const dias = diasEnTransito(t.fechaSalida);
             const celdas = {
               sel: <td className={`${TD} text-center`}><input type="checkbox" aria-label="Seleccionar" checked={seleccion.has(t.id)} onChange={() => alternar(t.id)} /></td>,
-              codigo: <td className={`${TD} font-num text-[#2383C2]`}>{t.codigoMaestro}</td>,
+              referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={t.referencia ? `${t.referencia} · ${t.codigoMaestro}` : t.codigoMaestro}>{t.referencia || '—'}</td>,
               producto: (
                 <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={`${t.productoNombre}${t.propietarioNombre ? ` · consignado ${t.propietarioNombre}` : ''}`}>
                   {t.productoNombre}

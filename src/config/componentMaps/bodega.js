@@ -2,7 +2,7 @@ import { columnas } from './columnas.js';
 
 // Columnas de la tabla de tránsitos (Tránsito y detalle de Tránsito por centro).
 const COLUMNAS_TRANSITO = [
-  ['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'],
+  ['referencia', 'Referencia'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'],
   ['cantidad', 'Pendiente / salida'], ['enCentro', 'Dejado en centro'], ['fechaSalida', 'Fecha de salida'], ['dias', 'Días en tránsito'],
   ['usuario', 'Usuario'], ['solicitante', 'Destino / solicitante'], ['salida', 'N° salida'],
 ];
