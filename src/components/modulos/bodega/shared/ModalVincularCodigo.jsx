@@ -17,7 +17,10 @@ const MAX_RESULTADOS = 30;
 // siga con su flujo sin perder lo que se estaba ingresando.
 //   lectura: interpretarLectura (codigo, clave, gs1)
 //   productoSugerido: producto en curso (ofrece vincular a él con un clic)
-const ModalVincularCodigo = ({ lectura, productoSugerido = null, onVinculado, onCerrar }) => {
+//   conPrecioNeto (Carga inicial): al crear, el formulario pide "Precio
+//     neto" en vez de "Código maestro" (que queda automático) y lo entrega
+//     en onVinculado(producto, { precioNeto }) para la línea.
+const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto = false, onVinculado, onCerrar }) => {
   const { showToast } = useToast();
   const { confirmAction } = useModal();
   const { hasPermission } = useGranularPermission();
@@ -58,12 +61,12 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, onVinculado, on
     }
   };
 
-  const crear = async (form) => {
+  const crear = async (form, extra = {}) => {
     setGuardando(true);
     try {
       const r = await guardarProducto({ producto: form, codigos: [lectura.codigo] });
       showToast(`Producto ${r.producto.codigoMaestro} creado y código vinculado.`, 'success');
-      onVinculado({ id: r.id, ...r.producto });
+      onVinculado({ id: r.id, ...r.producto }, extra);
     } catch (error) {
       showToast(mensajeError(error), 'error');
     } finally {
@@ -147,7 +150,7 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, onVinculado, on
                   </ul>
                 </div>
               ) : (
-                <FormProducto esNuevo inicial={PRODUCTO_VACIO} guardando={guardando} onGuardar={crear} onCancelar={() => setModo('buscar')} textoGuardar="Crear y vincular código" />
+                <FormProducto esNuevo conPrecioNeto={conPrecioNeto} inicial={PRODUCTO_VACIO} guardando={guardando} onGuardar={crear} onCancelar={() => setModo('buscar')} textoGuardar="Crear y vincular código" />
               )}
             </div>
           </>

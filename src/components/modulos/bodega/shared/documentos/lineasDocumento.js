@@ -64,6 +64,18 @@ export const precioSugerido = (producto) => {
   return precio > 0 ? Math.round(precio) : '';
 };
 
+// Precio neto de un producto del maestro clínico (maestros_codigos) para
+// precargar el campo "Precio neto" al crear un producto en Carga inicial.
+export const precioMaestroClinico = (codigo) => precioSugerido({ maestroCodigo: codigo });
+
+// Precio de la línea al volver de crear un producto en Carga inicial: el
+// "Precio neto" escrito en el formulario (si es válido); si viene vacío, el
+// sugerido por el maestro clínico vinculado.
+export const precioInicialLinea = (producto, precioNeto) => {
+  const { valor, error } = normalizarPrecioUnitario(precioNeto);
+  return valor !== null && !error ? valor : precioSugerido(producto);
+};
+
 // Referencia que se muestra del producto: la propia o la del maestro clínico.
 export const referenciaProducto = (producto) => producto?.referencia || producto?.maestroCodigo?.referencia || '';
 
