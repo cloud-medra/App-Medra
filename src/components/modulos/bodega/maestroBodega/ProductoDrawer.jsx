@@ -22,9 +22,11 @@ const PATH_VISTA = '/bodega/maestroBodega';
 const COLUMNAS_LOTES = [
   { key: 'lote', label: 'Lote', fija: true },
   { key: 'vencimiento', label: 'Vencimiento' },
+  { key: 'propietario', label: 'Dueño' },
   { key: 'disponible', label: 'Disponible', alinear: 'text-right' },
   { key: 'transito', label: 'Tránsito', alinear: 'text-right' },
   { key: 'centros', label: 'En centros' },
+  { key: 'enCentro', label: 'Dejado en centros' },
 ];
 
 const PESTANAS = [
@@ -60,7 +62,8 @@ const PestanaStock = ({ producto, nombreCentro }) => {
   const porCentro = Object.entries(producto.transitoPorCentro || {})
     .filter(([, n]) => n > 0)
     .sort(([a], [b]) => nombreCentro(a).localeCompare(nombreCentro(b), 'es'));
-  const lotesConStock = (lotes || []).filter((l) => (l.disponible || 0) > 0 || (l.transito || 0) > 0);
+  const lotesConStock = (lotes || []).filter((l) => (l.disponible || 0) > 0 || (l.transito || 0) > 0 || (l.enCentro || 0) > 0);
+  const dejadoPorCentro = Object.entries(producto.enCentroPorCentro || {}).filter(([, n]) => n > 0);
 
   return (
     <div className="flex flex-col gap-3">
@@ -70,6 +73,11 @@ const PestanaStock = ({ producto, nombreCentro }) => {
         <Tarjeta titulo="Total" valor={formatoCantidad(stockTotal(producto))} />
         <Tarjeta titulo="Mínimo" valor={producto.stockMinimo ?? '—'} />
       </div>
+      {dejadoPorCentro.length > 0 && (
+        <p className="text-[11px] text-violet-700 dark:text-violet-300">
+          Dejado en centros (no usado, sigue siendo stock): <strong className="font-num">{formatoCantidad(producto.enCentro)}</strong> · {dejadoPorCentro.map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ')}
+        </p>
+      )}
 
       <section>
         <h4 className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-300 mb-1 flex items-center gap-1"><Truck size={12} /> Tránsito por centro</h4>
@@ -117,11 +125,17 @@ const PestanaStock = ({ producto, nombreCentro }) => {
                         {l.vencimiento || '—'} {venc.etiqueta && <span className={`ml-1 px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}
                       </td>
                     )}
+                    {ver('propietario') && <td className="px-2 py-1">{l.propietarioNombre ? <span className="px-1 rounded text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span> : 'Propio'}</td>}
                     {ver('disponible') && <td className="px-2 py-1 text-right font-num font-bold text-emerald-600 dark:text-emerald-400">{formatoCantidad(l.disponible)}</td>}
                     {ver('transito') && <td className="px-2 py-1 text-right font-num text-amber-600 dark:text-amber-400">{formatoCantidad(l.transito)}</td>}
                     {ver('centros') && (
                       <td className="px-2 py-1 text-[10px] text-gray-600 dark:text-gray-300">
                         {Object.entries(l.transitoPorCentro || {}).map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ') || '—'}
+                      </td>
+                    )}
+                    {ver('enCentro') && (
+                      <td className="px-2 py-1 text-[10px] text-violet-700 dark:text-violet-300">
+                        {Object.entries(l.enCentroPorCentro || {}).map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ') || '—'}
                       </td>
                     )}
                   </tr>

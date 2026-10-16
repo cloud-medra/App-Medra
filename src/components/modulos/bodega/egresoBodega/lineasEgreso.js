@@ -1,5 +1,6 @@
 // Líneas de una salida en pantalla: { key, productoId, productoNombre,
-// loteId, lote, vencimiento, cantidad, centroId, centroNombre }. Lógica pura.
+// loteId, lote, vencimiento, propietarioNombre, cantidad, centroId,
+// centroNombre }. Lógica pura.
 
 // Agrega; si ya hay una del mismo lote y centro, suma. { lineas, sumada }.
 export const agregarLineaEgreso = (lineas, { producto, lote, cantidad, centro }) => {
@@ -14,7 +15,7 @@ export const agregarLineaEgreso = (lineas, { producto, lote, cantidad, centro })
     lineas: [...lineas, {
       key: `${lote.id}|${centro.id}`,
       productoId: producto.id, productoNombre: producto.nombre,
-      loteId: lote.id, lote: lote.lote || '', vencimiento: lote.vencimiento || '',
+      loteId: lote.id, lote: lote.lote || '', vencimiento: lote.vencimiento || '', propietarioNombre: lote.propietarioNombre || '',
       cantidad, centroId: centro.id, centroNombre: centro.nombre,
     }],
   };

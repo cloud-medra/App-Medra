@@ -97,6 +97,7 @@ import EgresoBodega from '../components/modulos/bodega/egresoBodega/EgresoBodega
 import TransitoBodega from '../components/modulos/bodega/transitoBodega/TransitoBodega';
 import CentrosBodega from '../components/modulos/bodega/centrosBodega/CentrosBodega';
 import CajasBodega from '../components/modulos/bodega/cajasBodega/CajasBodega';
+import ConsignacionesBodega from '../components/modulos/bodega/consignacionesBodega/ConsignacionesBodega';
 import ConsumoBodega from '../components/modulos/bodega/consumoBodega/ConsumoBodega';
 import InventarioBodega from '../components/modulos/bodega/inventarioBodega/InventarioBodega';
 import CatalogosBodega from '../components/modulos/bodega/catalogosBodega/CatalogosBodega';
@@ -352,6 +353,7 @@ const Dashboard = () => {
     '/bodega/transitoBodega': <TransitoBodega />,
     '/bodega/centrosBodega': <CentrosBodega />,
     '/bodega/cajasBodega': <CajasBodega />,
+    '/bodega/consignacionesBodega': <ConsignacionesBodega />,
     '/bodega/consumoBodega': <ConsumoBodega />,
     '/bodega/inventarioBodega': <InventarioBodega />,
     '/bodega/catalogosBodega': <CatalogosBodega />,

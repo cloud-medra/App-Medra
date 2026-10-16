@@ -187,6 +187,7 @@ export const MODULES = {
       { label: 'Consumo por centro', path: '/bodega/consumoBodega', icon: <BarChart3 size={14} /> },
       { label: 'Inventario físico', path: '/bodega/inventarioBodega', icon: <ClipboardCheck size={14} /> },
       { label: 'Cajas', path: '/bodega/cajasBodega', icon: <Package size={14} /> },
+      { label: 'Stock consignado', path: '/bodega/consignacionesBodega', icon: <Handshake size={14} /> },
       { label: 'Categorías y unidades', path: '/bodega/catalogosBodega', icon: <Tags size={14} /> },
     ]
   },

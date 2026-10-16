@@ -2,7 +2,7 @@ import { httpsCallable } from 'firebase/functions';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
 import { db, functions } from '../../../../firebaseConfig';
 import { leerCatalogo, upsertLocal, refrescarCatalogo } from '../../../../stores/catalogosStore';
-import { COL } from '../../../../../functions/bodega/nucleo.mjs';
+import { COL, TIPOS_ENTREGA } from '../../../../../functions/bodega/nucleo.mjs';
 import { idVinculo } from '../../../../../functions/bodega/gs1.mjs';
 
 // Acceso a datos de Bodega desde la pantalla.
@@ -60,11 +60,11 @@ export const leerLotesDeProducto = async (productoId) => {
     .sort((a, b) => (a.vencimiento || '9999').localeCompare(b.vencimiento || '9999') || String(a.lote || '').localeCompare(String(b.lote || '')));
 };
 
-// Unidades en tránsito en un centro (0 si no tiene). Lo usa Maestros →
-// Centros para avisar antes de borrar.
+// Unidades en tránsito o dejadas en un centro (0 si no tiene). Lo usa
+// Maestros → Centros para avisar antes de borrar.
 export const unidadesEnTransitoCentro = async (centroId) => {
   const snap = await getDoc(doc(db, COL.transitoCentros, centroId));
-  return snap.exists() ? Number(snap.data().unidades) || 0 : 0;
+  return snap.exists() ? (Number(snap.data().unidades) || 0) + (Number(snap.data().enCentro) || 0) : 0;
 };
 
 // ---------------- Escrituras (Cloud Functions) ----------------
@@ -161,17 +161,24 @@ export const leerHistorialTransito = async (transitoId) => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
-// Centros con unidades en tránsito (totales denormalizados).
+const conStockEnCentro = (c) => (Number(c?.unidades) || 0) > 0 || (Number(c?.enCentro) || 0) > 0;
+
+// Centros con unidades en tránsito o dejadas en el centro (totales
+// denormalizados). Dos consultas (una por campo) unidas por id.
 export const leerCentrosConTransito = async () => {
-  const snap = await getDocs(query(collection(db, COL.transitoCentros), where('unidades', '>', 0), limit(300)));
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const [enTransito, dejados] = await Promise.all([
+    getDocs(query(collection(db, COL.transitoCentros), where('unidades', '>', 0), limit(300))),
+    getDocs(query(collection(db, COL.transitoCentros), where('enCentro', '>', 0), limit(300))),
+  ]);
+  const porId = new Map([...enTransito.docs, ...dejados.docs].map((d) => [d.id, { id: d.id, ...d.data() }]));
+  return [...porId.values()];
 };
 
 // Totales de tránsito de un centro (o null si ya no tiene). 1 lectura.
 export const leerCentroConTransito = async (centroId) => {
   const snap = await getDoc(doc(db, COL.transitoCentros, centroId));
   const centro = snap.exists() ? { id: snap.id, ...snap.data() } : null;
-  return centro && (Number(centro.unidades) || 0) > 0 ? centro : null;
+  return conStockEnCentro(centro) ? centro : null;
 };
 
 // Tránsito más antiguo y próximo vencimiento de un centro (2 lecturas).
@@ -215,14 +222,15 @@ const MAX_LOTES_POR_VENCER = 3000;
 export const leerLotesPorVencer = async (hasta) => {
   const snap = await getDocs(query(collection(db, COL.lotes), where('vencimiento', '>', ''), where('vencimiento', '<=', hasta), orderBy('vencimiento', 'asc'), limit(MAX_LOTES_POR_VENCER)));
   return {
-    lotes: snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((l) => (l.disponible || 0) + (l.transito || 0) > 0),
+    lotes: snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((l) => (l.disponible || 0) + (l.transito || 0) + (l.enCentro || 0) > 0),
     completo: snap.size < MAX_LOTES_POR_VENCER,
   };
 };
 
 // Entregas (consumo) en un rango, opcionalmente de un centro y/o producto.
+// Incluye lo entregado desde lo dejado en el centro.
 export const leerEntregas = async ({ desde, hasta, centroId, productoId, max = 5000 }) => {
-  const restricciones = [where('tipo', '==', 'ENTREGA')];
+  const restricciones = [where('tipo', 'in', TIPOS_ENTREGA)];
   if (centroId) restricciones.push(where('centroId', '==', centroId));
   if (productoId) restricciones.push(where('productoId', '==', productoId));
   restricciones.push(
@@ -306,3 +314,29 @@ export const reponerCaja = async (datos) => {
   reflejarProductos(r.productos);
   return r;
 };
+
+// ---------------- Stock consignado ----------------
+
+// Consignaciones registradas (una por empresa).
+export const leerConsignaciones = async () => {
+  const snap = await getDocs(query(collection(db, COL.consignaciones), limit(500)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+export const leerConsignacion = async (empresaId) => {
+  const snap = await getDoc(doc(db, COL.consignaciones, empresaId));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+};
+
+// Lotes consignados (con dueño): todos o de una empresa. Incluye los que
+// quedaron en cero (sirven para mostrar lo consignado ya consumido).
+const MAX_LOTES_CONSIGNADOS = 5000;
+export const leerLotesConsignados = async (empresaId = null) => {
+  const filtro = empresaId ? where('propietarioId', '==', empresaId) : where('propietarioId', '>', '');
+  const snap = await getDocs(query(collection(db, COL.lotes), filtro, limit(MAX_LOTES_CONSIGNADOS)));
+  return { lotes: snap.docs.map((d) => ({ id: d.id, ...d.data() })), completo: snap.size < MAX_LOTES_CONSIGNADOS };
+};
+
+// { empresaId, observacion, lineas: [{ productoId, lote, vencimiento, cantidadConsignada }] }
+//   -> { id, empresaNombre, lineas, cantidadLineas, totalConsignado, observacion }
+export const guardarConsignacion = (datos) => llamar('bodegaGuardarConsignacion')(datos);

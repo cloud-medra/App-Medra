@@ -54,6 +54,6 @@ describe('cajas: reposición', () => {
   });
 
   it('REPOSICION_CAJA baja el disponible y no toca el tránsito', () => {
-    expect(aplicarMovimiento({ disponible: 5, transito: 2 }, { tipo: 'REPOSICION_CAJA', cantidad: 3 })).toEqual({ disponible: 2, transito: 2, transitoPorCentro: {} });
+    expect(aplicarMovimiento({ disponible: 5, transito: 2 }, { tipo: 'REPOSICION_CAJA', cantidad: 3 })).toEqual({ disponible: 2, transito: 2, transitoPorCentro: {}, enCentro: 0, enCentroPorCentro: {} });
   });
 });

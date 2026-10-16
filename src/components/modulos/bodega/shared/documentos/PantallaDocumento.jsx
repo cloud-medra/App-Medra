@@ -26,14 +26,14 @@ const LABEL = 'block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppe
 const BOTON = 'h-9 px-3 rounded font-bold flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed';
 
 const cabeceraVacia = (tipo) => (tipo === 'INGRESO'
-  ? { tipoDocumento: 'GUIA', numero: '', ordenCompra: '', proveedorId: '', fecha: hoyISO(), observacion: '' }
-  : { observacion: '' });
+  ? { tipoDocumento: 'GUIA', numero: '', ordenCompra: '', proveedorId: '', fecha: hoyISO(), observacion: '', consignacion: false }
+  : { observacion: '', propietarioId: '' });
 
 const fechaCorta = (ts) => (ts?.toDate ? ts.toDate().toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' }) : '');
 
 const etiquetaDocumento = (d) => (d.tipo === 'INGRESO'
-  ? `${TIPOS_DOCUMENTO_INGRESO[d.tipoDocumento] || 'Documento'} N° ${d.numero || '—'} · ${d.proveedorNombre || 'sin proveedor'}`
-  : `Carga inicial${d.observacion ? ` · ${d.observacion}` : ''}`);
+  ? `${TIPOS_DOCUMENTO_INGRESO[d.tipoDocumento] || 'Documento'} N° ${d.numero || '—'} · ${d.proveedorNombre || 'sin proveedor'}${d.consignacion ? ' · EN CONSIGNACIÓN' : ''}`
+  : `Carga inicial${d.propietarioNombre ? ` · consignado ${d.propietarioNombre}` : ''}${d.observacion ? ` · ${d.observacion}` : ''}`);
 
 // Lista de borradores o de confirmados recientes.
 const ListaDocumentos = ({ titulo, documentos, cargando, onActualizar, onAbrir, onEliminar, nombreProducto }) => {
@@ -161,7 +161,10 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
     setErrores(lista);
     if (lista.length) return;
     const proveedor = empresas.find((e) => e.id === cabecera.proveedorId)?.nombre;
-    const mensaje = `Se sumarán ${formatoCantidad(totalUnidades(lineas))} unidad(es) en ${lineas.length} línea(s) al stock disponible de la Bodega General${proveedor ? ` (${TIPOS_DOCUMENTO_INGRESO[cabecera.tipoDocumento]} N° ${cabecera.numero}, ${proveedor})` : ''}. Después no se puede editar. ¿Confirmar?`;
+    const duenio = tipo === 'INGRESO'
+      ? (cabecera.consignacion ? proveedor : '')
+      : empresas.find((e) => e.id === cabecera.propietarioId)?.nombre;
+    const mensaje = `Se sumarán ${formatoCantidad(totalUnidades(lineas))} unidad(es) en ${lineas.length} línea(s) al stock disponible de la Bodega General${proveedor ? ` (${TIPOS_DOCUMENTO_INGRESO[cabecera.tipoDocumento]} N° ${cabecera.numero}, ${proveedor})` : ''}${duenio ? `, como stock EN CONSIGNACIÓN de ${duenio}` : ', como stock propio'}. Después no se puede editar. ¿Confirmar?`;
     confirmAction(esCarga ? 'Confirmar carga inicial' : 'Confirmar ingreso', mensaje, async () => {
       setOcupado(true);
       try {
@@ -256,15 +259,26 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
                 <label className={LABEL} htmlFor="doc-fecha">Fecha *</label>
                 <input id="doc-fecha" type="date" value={cabecera.fecha} onChange={cambiarCabecera('fecha')} disabled={bloqueado} className={`${INPUT} font-num`} />
               </div>
-              <div className="col-span-2 md:col-span-6">
+              <div className="col-span-2 md:col-span-5">
                 <label className={LABEL} htmlFor="doc-obs">Observación</label>
                 <input id="doc-obs" value={cabecera.observacion} onChange={cambiarCabecera('observacion')} disabled={bloqueado} maxLength={MAX_OBSERVACION} className={INPUT} />
               </div>
+              <label className="col-span-2 md:col-span-1 flex items-end gap-1.5 pb-2 text-[11px] font-semibold text-violet-700 dark:text-violet-300" title="El stock que entra queda a nombre del proveedor (Stock consignado), no como propio.">
+                <input type="checkbox" checked={cabecera.consignacion === true} onChange={(e) => setCabecera((c) => ({ ...c, consignacion: e.target.checked }))} disabled={bloqueado} />
+                En consignación
+              </label>
             </div>
           ) : (
-            <div>
-              <label className={LABEL} htmlFor="doc-obs">Observación</label>
-              <input id="doc-obs" value={cabecera.observacion} onChange={cambiarCabecera('observacion')} disabled={bloqueado} maxLength={MAX_OBSERVACION} className={INPUT} placeholder="Ej: Carga inicial estante E1" />
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-2">
+              <div>
+                <label className={LABEL} htmlFor="doc-obs">Observación</label>
+                <input id="doc-obs" value={cabecera.observacion} onChange={cambiarCabecera('observacion')} disabled={bloqueado} maxLength={MAX_OBSERVACION} className={INPUT} placeholder="Ej: Carga inicial estante E1" />
+              </div>
+              <div>
+                <span className={LABEL}>Dueño del stock (vacío = propio)</span>
+                <SelectorProveedor valor={cabecera.propietarioId} onCambiar={cambiarCabecera('propietarioId')} deshabilitado={bloqueado}
+                  placeholder="Propio · o busca la empresa consignante…" tituloCambiar="Volver a stock propio" />
+              </div>
             </div>
           )}
 

@@ -27,11 +27,13 @@ const {
   MAX_LINEAS_DOCUMENTO, MAX_OBSERVACION,
   validarCatalogo, validarProducto, codigoAutomatico, idUnico, validarCabecera, validarLinea, agruparLineas, normalizarPrecioUnitario, totalValorLineas,
   idUnicoDocumento, aplicarMovimiento, normalizarLote, productoEnInventario, ErrorStock,
-  MAX_LINEAS_EGRESO, MAX_ACCIONES_TRANSITO, MAX_NOTA, ESTADOS_TRANSITO, MOVIMIENTO_DE_ACCION,
+  MAX_LINEAS_EGRESO, MAX_ACCIONES_TRANSITO, MAX_NOTA, ESTADOS_TRANSITO,
   agruparLineasEgreso, aplicarMovimientoCentro, aplicarAccionTransito, accionTransito, normalizarIdEntrega,
   ESTADOS_INVENTARIO, NO_CONTADOS, MAX_CONTEOS_POR_ENVIO, MAX_NOMBRE_INVENTARIO, diferenciaLinea, resumenInventario,
   aplicarConteo, idLote,
   validarCaja, totalesCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja,
+  saldoDe, fotoSaldo, datosPropietario, movimientoDeAccion, DESDE, ACCIONES_SOBRE_TRANSITO, lotesPropios,
+  validarConsignacion,
 } = require('./nucleo.mjs');
 const { interpretarLectura, idVinculo, MAX_CODIGO_LEIDO } = require('./gs1.mjs');
 
@@ -196,8 +198,8 @@ const guardarProductoComo = (db, por, datos = {}) => {
       const bloqueado = CAMPOS_BLOQUEADOS_CON_MOVIMIENTOS.find((c) => Boolean(antes[c]) !== producto[c]);
       if (bloqueado) throw new HttpsError('failed-precondition', 'No se puede cambiar si maneja lote o vencimiento: el producto ya tiene movimientos.');
     }
-    if (antes && antes.activo !== false && !producto.activo && ((antes.disponible || 0) > 0 || (antes.transito || 0) > 0)) {
-      throw new HttpsError('failed-precondition', 'No se puede inactivar un producto con stock disponible o en tránsito.');
+    if (antes && antes.activo !== false && !producto.activo && ((antes.disponible || 0) > 0 || (antes.transito || 0) > 0 || (antes.enCentro || 0) > 0)) {
+      throw new HttpsError('failed-precondition', 'No se puede inactivar un producto con stock disponible, en tránsito o dejado en centros.');
     }
     const vinculosOtros = snapsVinculos.filter((s) => s.exists && s.data().productoId !== ref.id);
     if (vinculosOtros.length && !datos.reasignar) {
@@ -241,9 +243,7 @@ const guardarProductoComo = (db, por, datos = {}) => {
       codigoMaestro,
       maestroCodigo,
       codigosBarra,
-      disponible: antes?.disponible || 0,
-      transito: antes?.transito || 0,
-      transitoPorCentro: antes?.transitoPorCentro || {},
+      ...saldoDe(antes),
       conMovimientos: antes?.conMovimientos || false,
     };
     t.set(ref, {
@@ -357,13 +357,15 @@ const desvincularCodigo = async (db, uid, datos = {}) => {
 //
 //   bodega_documentos/{id} = { tipo: INGRESO|CARGA_INICIAL, estado:
 //     BORRADOR|CONFIRMADO, tipoDocumento, numero, ordenCompra, proveedorId,
-//     proveedorNombre, fecha, observacion, lineas: [{ productoId, lote,
+//     proveedorNombre, consignacion (ingreso), propietarioId (carga inicial),
+//     propietarioNombre, fecha, observacion, lineas: [{ productoId, lote,
 //     vencimiento, cantidad, codigoLeido, precioUnitario (opcional, pesos
 //     enteros; solo informativo), (al confirmar) productoNombre,
 //     codigoMaestro, referencia, loteId }], totalUnidades, totalValor
 //     (Σ cantidad × precioUnitario), creadoPor, confirmadoPor… }
-//   bodega_lotes/{productoId__lote__venc} = { productoId, lote, vencimiento,
-//     disponible, transito, transitoPorCentro, soloCargaInicial, … }
+//   bodega_lotes/{productoId__lote__venc[__C_empresa]} = { productoId, lote,
+//     vencimiento, propietarioId, propietarioNombre, disponible, transito,
+//     transitoPorCentro, enCentro, enCentroPorCentro, soloCargaInicial, … }
 //   bodega_movimientos/{id} = kardex (un movimiento por línea agrupada).
 //   bodega_control/estado = { inventarioAbierto: { id, alcance } } (Fase 5)
 //   bodega_control/config = { cargaInicialCerrada }
@@ -379,7 +381,6 @@ const accionesDe = (tipo) => {
   if (!acciones) throw new HttpsError('invalid-argument', 'Tipo de documento inválido.');
   return acciones;
 };
-const saldoDe = (d) => ({ disponible: d?.disponible || 0, transito: d?.transito || 0, transitoPorCentro: d?.transitoPorCentro || {} });
 
 // Borrador: cabecera y líneas tal como están (pueden estar incompletas);
 // solo se normalizan formatos y largos.
@@ -390,8 +391,9 @@ const normalizarBorrador = (tipo, datos = {}) => {
     ? {
       tipoDocumento: texto(cab.tipoDocumento, 10), numero: texto(cab.numero, 40).toUpperCase(), ordenCompra: texto(cab.ordenCompra, 40).toUpperCase(),
       proveedorId: texto(cab.proveedorId, 100), fecha: texto(cab.fecha, 10), observacion: texto(cab.observacion, MAX_OBSERVACION),
+      consignacion: cab.consignacion === true,
     }
-    : { observacion: texto(cab.observacion, MAX_OBSERVACION) };
+    : { observacion: texto(cab.observacion, MAX_OBSERVACION), propietarioId: texto(cab.propietarioId, 100) || null };
   const lineas = Array.isArray(datos.lineas) ? datos.lineas : [];
   if (lineas.length > MAX_LINEAS_DOCUMENTO) throw new HttpsError('invalid-argument', `Máximo ${MAX_LINEAS_DOCUMENTO} líneas por documento.`);
   return {
@@ -470,12 +472,13 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
   return db.runTransaction(async (t) => {
     const ref = id ? db.collection(COL.documentos).doc(id) : db.collection(COL.documentos).doc();
     const productoIds = [...new Set(lineasEntrada.map((l) => String(l?.productoId || '')).filter(Boolean))];
-    const [snapDoc, snapUnico, snapProveedor, snapEstado, snapConfig, ...snapsProductos] = await Promise.all([
+    const [snapDoc, snapUnico, snapProveedor, snapEstado, snapConfig, snapPropietario, ...snapsProductos] = await Promise.all([
       id ? t.get(ref) : null,
       tipo === 'INGRESO' ? t.get(refUnico(db, idUnicoDocumento(cabecera))) : null,
       tipo === 'INGRESO' ? t.get(db.collection('maestros_empresas').doc(cabecera.proveedorId)) : null,
       t.get(refEstado(db)),
       tipo === 'CARGA_INICIAL' ? t.get(refConfig(db)) : null,
+      tipo === 'CARGA_INICIAL' && cabecera.propietarioId ? t.get(db.collection('maestros_empresas').doc(cabecera.propietarioId)) : null,
       ...productoIds.map((pid) => t.get(db.collection(COL.productos).doc(pid))),
     ]);
     if (id && !snapDoc.exists) throw new HttpsError('not-found', 'El borrador ya no existe.');
@@ -491,6 +494,14 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
         throw new HttpsError('already-exists', `Ya se ingresó la ${cabecera.tipoDocumento === 'GUIA' ? 'guía' : 'factura'} N° ${cabecera.numero} de ${proveedorNombre}.`);
       }
     }
+    // Dueño del stock que entra: el proveedor si el ingreso es en
+    // consignación; la empresa elegida en la carga inicial; si no, propio.
+    let propietario = datosPropietario(null);
+    if (tipo === 'INGRESO' && cabecera.consignacion) propietario = datosPropietario({ propietarioId: cabecera.proveedorId, propietarioNombre: proveedorNombre });
+    if (snapPropietario) {
+      if (!snapPropietario.exists) throw new HttpsError('invalid-argument', 'La empresa consignante elegida no existe.');
+      propietario = datosPropietario({ propietarioId: snapPropietario.id, propietarioNombre: snapPropietario.data().nombre || '' });
+    }
 
     const productos = new Map(snapsProductos.filter((s) => s.exists).map((s) => [s.id, { id: s.id, ...s.data() }]));
     const erroresLineas = [];
@@ -498,7 +509,7 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
       const r = validarLinea(l, productos.get(String(l?.productoId || '')) || null);
       const precio = normalizarPrecioUnitario(l?.precioUnitario);
       erroresLineas.push(...r.errores, ...(precio.error ? [`${productos.get(String(l?.productoId || ''))?.nombre || 'Producto'}: ${precio.error}`] : []));
-      return { ...r.linea, precioUnitario: precio.valor };
+      return { ...r.linea, precioUnitario: precio.valor, propietarioId: propietario.propietarioId };
     });
     exigirSinErrores([...new Set(erroresLineas)]);
 
@@ -541,8 +552,8 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
       const previo = lotesPrevios.get(l.loteId);
       const saldo = saldosLote.get(l.loteId);
       t.set(db.collection(COL.lotes).doc(l.loteId), {
-        productoId: l.productoId, lote: l.lote, vencimiento: l.vencimiento,
-        disponible: saldo.disponible, transito: saldo.transito, transitoPorCentro: saldo.transitoPorCentro,
+        productoId: l.productoId, lote: l.lote, vencimiento: l.vencimiento, ...propietario,
+        ...saldo,
         soloCargaInicial: tipo === 'CARGA_INICIAL' && (previo ? previo.soloCargaInicial !== false : true),
         creadoEn: previo?.creadoEn || ahora(),
         ultimoMovimiento: ahora(), ultimoMovimientoTipo: tipoMovimiento,
@@ -562,9 +573,8 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
       t.set(db.collection(COL.movimientos).doc(), {
         tipo: tipoMovimiento, fecha: ahora(), orden, usuario: por,
         productoId: l.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
-        loteId: l.loteId, lote: l.lote, vencimiento: l.vencimiento, cantidad: l.cantidad,
-        saldoLote: { disponible: loteDespues.disponible, transito: loteDespues.transito },
-        saldoProducto: { disponible: productoDespues.disponible, transito: productoDespues.transito },
+        loteId: l.loteId, lote: l.lote, vencimiento: l.vencimiento, ...propietario, cantidad: l.cantidad,
+        saldoLote: fotoSaldo(loteDespues), saldoProducto: fotoSaldo(productoDespues),
         centroId: null, documentoRef, observacion: cabecera.observacion, codigoLeido: l.codigoLeido,
       });
     });
@@ -575,7 +585,7 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
     }));
     const totalUnidades = lineas.reduce((n, l) => n + l.cantidad, 0);
     t.set(ref, {
-      tipo, estado: ESTADOS_DOCUMENTO.CONFIRMADO, ...cabecera, proveedorNombre,
+      tipo, estado: ESTADOS_DOCUMENTO.CONFIRMADO, ...cabecera, proveedorNombre, ...propietario,
       lineas: lineasDocumento, numeroLineas: lineas.length, totalUnidades, totalValor: totalValorLineas(lineas),
       creadoPor: snapDoc?.data()?.creadoPor || por, creadoEn: snapDoc?.data()?.creadoEn || ahora(),
       confirmadoPor: por, confirmadoEn: ahora(), actualizadoPor: por, actualizadoEn: ahora(),
@@ -606,13 +616,15 @@ const configurarCargaInicial = async (db, uid, datos = {}) => {
 //     lineas, resumenPorCentro: { [centroId]: { nombre, lineas, unidades } } }
 //   bodega_transitos/{id} = uno por producto + lote + centro de una salida:
 //     { salidaId, salidaNumero, productoId, productoNombre, codigoMaestro,
-//       loteId, lote, vencimiento, centroId, centroNombre, cantidadSalida,
-//       pendiente, entregado, devuelto, estado: ABIERTO|CERRADO, fechaSalida,
-//       usuario, solicitante, observacion, ultimaAccionEn }
-//     /historial/{id} = { accion: SALIDA|ENTREGAR|DEVOLVER|NOTA, cantidad,
-//       idEntrega, observacion, nota, usuario, fecha }
+//       loteId, lote, vencimiento, propietarioId, propietarioNombre, centroId,
+//       centroNombre, cantidadSalida, pendiente (en tránsito), enCentro
+//       (dejado en el centro), entregado, devuelto, estado: ABIERTO|CERRADO,
+//       fechaSalida, usuario, solicitante, observacion, ultimaAccionEn }
+//     /historial/{id} = { accion: SALIDA|ENTREGAR|DEVOLVER|NOTA|DEJAR_EN_CENTRO,
+//       desde (TRANSITO|CENTRO), cantidad, idEntrega, observacion, nota, usuario, fecha }
 //   bodega_transito_centros/{centroId} = { centroNombre, unidades,
-//     productos: { [productoId]: n }, productosDistintos, transitosAbiertos }
+//     productos: { [productoId]: n }, productosDistintos, transitosAbiertos,
+//     enCentro, productosEnCentro: { [productoId]: n } }
 
 const refTransitoCentro = (db, centroId) => db.collection(COL.transitoCentros).doc(centroId);
 const conErrorStock = (fn) => {
@@ -709,7 +721,7 @@ const egresarComo = (db, por, datos = {}) => {
     loteIds.forEach((id) => {
       const s = saldoLote.get(id);
       t.set(db.collection(COL.lotes).doc(id), {
-        ...lotes.get(id), disponible: s.disponible, transito: s.transito, transitoPorCentro: s.transitoPorCentro,
+        ...lotes.get(id), ...s,
         soloCargaInicial: false, ultimoMovimiento: ahora(), ultimoMovimientoTipo: 'SALIDA_A_TRANSITO',
       });
     });
@@ -722,8 +734,8 @@ const egresarComo = (db, por, datos = {}) => {
       const previo = snapsTotales[i].exists ? snapsTotales[i].data() : {};
       const tot = totalesCentro.get(id);
       t.set(refTransitoCentro(db, id), {
-        centroId: id, centroNombre: centros.get(id).nombre || '', unidades: tot.unidades, productos: tot.productos,
-        productosDistintos: tot.productosDistintos, transitosAbiertos: (previo.transitosAbiertos || 0) + nuevosAbiertos.get(id),
+        centroId: id, centroNombre: centros.get(id).nombre || '', ...tot,
+        transitosAbiertos: (previo.transitosAbiertos || 0) + nuevosAbiertos.get(id),
         actualizadoEn: ahora(),
       });
     });
@@ -735,16 +747,16 @@ const egresarComo = (db, por, datos = {}) => {
       const refTransito = db.collection(COL.transitos).doc();
       const base = {
         productoId: l.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
-        loteId: l.loteId, lote: lote.lote || null, vencimiento: lote.vencimiento || null, centroId: l.centroId, centroNombre,
+        loteId: l.loteId, lote: lote.lote || null, vencimiento: lote.vencimiento || null, ...datosPropietario(lote), centroId: l.centroId, centroNombre,
       };
       t.set(refTransito, {
-        ...base, salidaId: refSalida.id, salidaNumero: numero, cantidadSalida: l.cantidad, pendiente: l.cantidad, entregado: 0, devuelto: 0,
+        ...base, salidaId: refSalida.id, salidaNumero: numero, cantidadSalida: l.cantidad, pendiente: l.cantidad, enCentro: 0, entregado: 0, devuelto: 0,
         estado: ESTADOS_TRANSITO.ABIERTO, fechaSalida: ahora(), usuario: por, solicitante, observacion, ultimaAccionEn: ahora(),
       });
       t.set(refTransito.collection('historial').doc(), { accion: 'SALIDA', cantidad: l.cantidad, observacion, usuario: por, fecha: ahora() });
       t.set(db.collection(COL.movimientos).doc(), {
         ...base, tipo: 'SALIDA_A_TRANSITO', fecha: ahora(), orden, usuario: por, cantidad: l.cantidad,
-        saldoLote: { disponible: sl.disponible, transito: sl.transito }, saldoProducto: { disponible: sp.disponible, transito: sp.transito },
+        saldoLote: fotoSaldo(sl), saldoProducto: fotoSaldo(sp),
         transitoId: refTransito.id, documentoRef: { id: refSalida.id, tipo: 'SALIDA', numero: String(numero) },
         observacion, solicitante,
       });
@@ -768,10 +780,12 @@ const egresar = async (db, uid, datos = {}) => {
 
 // Acciones sobre tránsitos (de a una o varias): ENTREGAR (sale
 // definitivamente; exige N° de admisión y observación), DEVOLVER (vuelve al disponible
-// de la Bodega General) o NOTA (seguimiento, no mueve stock). Cantidades
-// parciales. Todo en UNA transacción.
+// de la Bodega General), DEJAR_EN_CENTRO (no usado, queda en el centro como
+// stock) o NOTA (seguimiento, no mueve stock). ENTREGAR y DEVOLVER actúan
+// sobre lo pendiente en tránsito o, con desde: CENTRO, sobre lo dejado en
+// el centro. Cantidades parciales. Todo en UNA transacción.
 //   datos: { origen: 'transito'|'centros', acciones: [{ transitoId, accion,
-//            cantidad, idEntrega, observacion, nota }] }
+//            desde, cantidad, idEntrega, observacion, nota }] }
 const gestionarTransitoComo = (db, por, datos = {}) => {
   const acciones = Array.isArray(datos.acciones) ? datos.acciones : [];
   if (!acciones.length) throw new HttpsError('invalid-argument', 'No hay acciones.');
@@ -779,9 +793,10 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
   const texto = (v, max) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
   const normalizadas = acciones.map((a) => {
     const accion = String(a?.accion || '');
-    if (!['ENTREGAR', 'DEVOLVER', 'NOTA'].includes(accion)) throw new HttpsError('invalid-argument', 'Acción inválida.');
+    if (!ACCIONES_SOBRE_TRANSITO.includes(accion)) throw new HttpsError('invalid-argument', 'Acción inválida.');
     if (!a?.transitoId) throw new HttpsError('invalid-argument', 'Falta el registro de tránsito.');
-    const n = { transitoId: String(a.transitoId), accion, cantidad: Number(a.cantidad), observacion: texto(a.observacion, MAX_OBSERVACION), nota: texto(a.nota, MAX_NOTA), idEntrega: '' };
+    const desde = ['ENTREGAR', 'DEVOLVER'].includes(accion) && a.desde === DESDE.CENTRO ? DESDE.CENTRO : DESDE.TRANSITO;
+    const n = { transitoId: String(a.transitoId), accion, desde, cantidad: Number(a.cantidad), observacion: texto(a.observacion, MAX_OBSERVACION), nota: texto(a.nota, MAX_NOTA), idEntrega: '' };
     if (accion === 'ENTREGAR') {
       const { valor, error } = normalizarIdEntrega(a.idEntrega);
       if (error) throw new HttpsError('invalid-argument', error);
@@ -812,7 +827,7 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
     const totales = new Map(resto.slice(loteIds.length + productoIds.length).map((x) => [x.id, x.exists ? x.data() : {}]));
     if ([...lotes.values()].some((l) => !l) || [...productos.values()].some((p) => !p)) throw new HttpsError('failed-precondition', 'El lote o el producto de un tránsito ya no existe.');
     // Devolver suma al disponible: no se permite con un inventario abierto
-    // que incluya el producto. Entregar sí (no toca la bodega).
+    // que incluya el producto. Entregar y dejar en centro sí (no tocan la bodega).
     exigirSinInventario(snapEstado, normalizadas.filter((a) => a.accion === 'DEVOLVER').map((a) => productos.get(transitos.get(a.transitoId).productoId)), 'devolver stock');
 
     const estadoTransito = new Map([...transitos.entries()].map(([id, tr]) => [id, { ...tr }]));
@@ -832,7 +847,7 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
       }
       estadoTransito.set(a.transitoId, nuevo);
       if (nuevo.estado === ESTADOS_TRANSITO.CERRADO) cerrados.set(tr.centroId, cerrados.get(tr.centroId) + 1);
-      const mov = { tipo: MOVIMIENTO_DE_ACCION[a.accion], cantidad: a.cantidad, centroId: tr.centroId, productoId: tr.productoId };
+      const mov = { tipo: movimientoDeAccion(a.accion, a.desde), cantidad: a.cantidad, centroId: tr.centroId, productoId: tr.productoId };
       saldoLote.set(tr.loteId, aplicarMovimiento(saldoLote.get(tr.loteId), mov));
       saldoProducto.set(tr.productoId, aplicarMovimiento(saldoProducto.get(tr.productoId), mov));
       totalesCentro.set(tr.centroId, aplicarMovimientoCentro(totalesCentro.get(tr.centroId), mov));
@@ -843,14 +858,14 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
     transitoIds.forEach((id) => {
       const tr = estadoTransito.get(id);
       t.update(db.collection(COL.transitos).doc(id), {
-        pendiente: tr.pendiente, entregado: tr.entregado || 0, devuelto: tr.devuelto || 0, estado: tr.estado,
+        pendiente: tr.pendiente, enCentro: tr.enCentro || 0, entregado: tr.entregado || 0, devuelto: tr.devuelto || 0, estado: tr.estado,
         ultimaAccionEn: ahora(), ...(tr.estado === ESTADOS_TRANSITO.CERRADO && transitos.get(id).estado !== ESTADOS_TRANSITO.CERRADO ? { cerradoEn: ahora() } : {}),
       });
     });
     loteIds.forEach((id) => {
       const s = saldoLote.get(id);
       t.set(db.collection(COL.lotes).doc(id), {
-        ...lotes.get(id), disponible: s.disponible, transito: s.transito, transitoPorCentro: s.transitoPorCentro,
+        ...lotes.get(id), ...s,
         soloCargaInicial: false, ultimoMovimiento: ahora(),
       });
     });
@@ -862,29 +877,29 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
     centroIds.forEach((id) => {
       const tot = totalesCentro.get(id);
       t.set(refTransitoCentro(db, id), {
-        ...totales.get(id), unidades: tot.unidades, productos: tot.productos, productosDistintos: tot.productosDistintos,
+        ...totales.get(id), ...tot,
         transitosAbiertos: Math.max(0, (totales.get(id).transitosAbiertos || 0) - cerrados.get(id)), actualizadoEn: ahora(),
       });
     });
     pasos.forEach(({ a, orden, tr, mov, sl, sp }) => {
       const refT = db.collection(COL.transitos).doc(a.transitoId);
       t.set(refT.collection('historial').doc(), {
-        accion: a.accion, cantidad: a.accion === 'NOTA' ? null : a.cantidad, idEntrega: a.idEntrega || '',
+        accion: a.accion, desde: a.desde, cantidad: a.accion === 'NOTA' ? null : a.cantidad, idEntrega: a.idEntrega || '',
         observacion: a.observacion, nota: a.nota, usuario: por, fecha: ahora(),
       });
       if (!mov) return;
       t.set(db.collection(COL.movimientos).doc(), {
         tipo: mov.tipo, fecha: ahora(), orden, usuario: por,
         productoId: tr.productoId, productoNombre: tr.productoNombre, codigoMaestro: tr.codigoMaestro, categoriaId: tr.categoriaId || null,
-        loteId: tr.loteId, lote: tr.lote, vencimiento: tr.vencimiento, cantidad: a.cantidad,
-        saldoLote: { disponible: sl.disponible, transito: sl.transito }, saldoProducto: { disponible: sp.disponible, transito: sp.transito },
+        loteId: tr.loteId, lote: tr.lote, vencimiento: tr.vencimiento, ...datosPropietario(lotes.get(tr.loteId)), cantidad: a.cantidad,
+        saldoLote: fotoSaldo(sl), saldoProducto: fotoSaldo(sp),
         centroId: tr.centroId, centroNombre: tr.centroNombre, transitoId: a.transitoId,
         documentoRef: { id: tr.salidaId, tipo: 'SALIDA', numero: String(tr.salidaNumero) },
         idEntrega: a.idEntrega || '', observacion: a.observacion,
       });
     });
     return {
-      transitos: transitoIds.map((id) => ({ id, ...(({ pendiente, entregado, devuelto, estado }) => ({ pendiente, entregado, devuelto, estado }))(estadoTransito.get(id)) })),
+      transitos: transitoIds.map((id) => ({ id, ...(({ pendiente, enCentro, entregado, devuelto, estado }) => ({ pendiente, enCentro: enCentro || 0, entregado, devuelto, estado }))(estadoTransito.get(id)) })),
       productos: productosActualizados,
     };
   });
@@ -895,7 +910,7 @@ const gestionarTransito = async (db, uid, datos = {}) => {
   const origen = datos.origen === 'centros' ? 'centros' : 'transito';
   const acciones = Array.isArray(datos.acciones) ? datos.acciones : [];
   [...new Set(acciones.map((a) => a?.accion))].forEach((accion) => {
-    if (!['ENTREGAR', 'DEVOLVER', 'NOTA'].includes(accion)) throw new HttpsError('invalid-argument', 'Acción inválida.');
+    if (!ACCIONES_SOBRE_TRANSITO.includes(accion)) throw new HttpsError('invalid-argument', 'Acción inválida.');
     exigir(perfil, accionTransito(origen, accion));
   });
   return gestionarTransitoComo(db, datosPor(uid, perfil), datos);
@@ -908,7 +923,8 @@ const gestionarTransito = async (db, uid, datos = {}) => {
 //     iniciadoPor, fechaInicio, lineasTotal, motivoAjuste, noContados,
 //     cerradoPor, fechaCierre, resumen }
 //     /lineas/{loteId} = { productoId, productoNombre, codigoMaestro,
-//       categoriaId, loteId, lote, vencimiento, teorico (foto del disponible),
+//       categoriaId, loteId, lote, vencimiento, propietarioId,
+//       propietarioNombre, teorico (foto del disponible),
 //       contado (null = no contado), agregado (lote que no estaba), precio,
 //       contadoPor, contadoEn, ajuste, ajustado }
 //   bodega_control/estado.inventarioAbierto = { id, nombre, alcance } (uno a
@@ -938,7 +954,7 @@ const prepararLineas = async (db, id) => {
       const p = productos.get(l.productoId);
       lote.set(refInventario(db, id).collection('lineas').doc(l.id), {
         productoId: l.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
-        loteId: l.id, lote: l.lote || null, vencimiento: l.vencimiento || null, teorico: l.disponible, contado: null,
+        loteId: l.id, lote: l.lote || null, vencimiento: l.vencimiento || null, ...datosPropietario(l), teorico: l.disponible, contado: null,
         agregado: false, precio: precioDe(p), ajustado: false,
       }, { merge: true });
     });
@@ -989,9 +1005,10 @@ const reanudarInventario = async (db, uid, datos = {}) => {
   return { id, estado: inv.estado };
 };
 
-// Registra conteos: [{ productoId, lote, vencimiento, cantidad }] con
-// modo 'sumar' (escaneo) o 'reemplazar' (corrección). Un lote que no
-// estaba en la foto se agrega (teórico 0 o su disponible actual si existe).
+// Registra conteos: [{ productoId, lote, vencimiento, propietarioId,
+// cantidad }] con modo 'sumar' (escaneo) o 'reemplazar' (corrección). Un
+// lote que no estaba en la foto se agrega (teórico 0 o su disponible actual
+// si existe). Sin propietarioId = stock propio.
 const registrarConteo = async (db, uid, datos = {}) => {
   const perfil = await perfilActivo(db, uid);
   exigir(perfil, ACCIONES.contarInventario);
@@ -1004,10 +1021,14 @@ const registrarConteo = async (db, uid, datos = {}) => {
 
   return db.runTransaction(async (t) => {
     const productoIds = [...new Set(entrada.map((c) => String(c?.productoId || '')).filter(Boolean))];
-    const [snapInv, ...snapsProductos] = await Promise.all([
+    const propietarioIds = [...new Set(entrada.map((c) => String(c?.propietarioId || '')).filter(Boolean))];
+    const [snapInv, ...resto] = await Promise.all([
       t.get(refInventario(db, id)),
       ...productoIds.map((pid) => t.get(db.collection(COL.productos).doc(pid))),
+      ...propietarioIds.map((pid) => t.get(db.collection('maestros_empresas').doc(pid))),
     ]);
+    const snapsProductos = resto.slice(0, productoIds.length);
+    const propietarios = new Map(resto.slice(productoIds.length).filter((x) => x.exists).map((x) => [x.id, x.data().nombre || '']));
     if (!snapInv.exists) throw new HttpsError('not-found', 'El inventario no existe.');
     const inv = snapInv.data();
     if (inv.estado !== ESTADOS_INVENTARIO.ABIERTO) throw new HttpsError('failed-precondition', 'El inventario no está abierto para contar.');
@@ -1019,7 +1040,10 @@ const registrarConteo = async (db, uid, datos = {}) => {
       const r = validarLinea({ ...c, cantidad: modo === 'reemplazar' && cantidad === 0 ? 1 : cantidad }, p);
       errores.push(...r.errores.filter((e) => !/inactivo/.test(e)));
       if (p && !enAlcance(inv.alcance, p)) errores.push(`${p.nombre} no está en el alcance de este inventario.`);
-      return { ...r.linea, cantidad, loteId: idLote(r.linea.productoId, r.linea.lote, r.linea.vencimiento) };
+      const propietarioId = String(c?.propietarioId || '') || null;
+      if (propietarioId && !propietarios.has(propietarioId)) errores.push('La empresa dueña de un lote no existe.');
+      const propietario = datosPropietario({ propietarioId, propietarioNombre: propietarios.get(propietarioId) });
+      return { ...r.linea, ...propietario, cantidad, loteId: idLote(r.linea.productoId, r.linea.lote, r.linea.vencimiento, propietarioId) };
     });
     exigirSinErrores([...new Set(errores)]);
 
@@ -1034,7 +1058,7 @@ const registrarConteo = async (db, uid, datos = {}) => {
       const p = productos.get(c.productoId);
       const previa = estado.get(c.loteId) || {
         productoId: c.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
-        loteId: c.loteId, lote: c.lote, vencimiento: c.vencimiento, teorico: lotesExistentes.get(c.loteId)?.disponible || 0,
+        loteId: c.loteId, lote: c.lote, vencimiento: c.vencimiento, ...datosPropietario(c), teorico: lotesExistentes.get(c.loteId)?.disponible || 0,
         contado: null, agregado: true, precio: precioDe(p), ajustado: false,
       };
       estado.set(c.loteId, { ...previa, contado: aplicarConteo(previa.contado, { cantidad: c.cantidad, modo }) });
@@ -1097,15 +1121,15 @@ const cerrarInventarioComo = async (db, por, { id, motivo, noContados }) => {
           const sp = conErrorStock(() => aplicarMovimiento(saldoProducto.get(linea.productoId), mov));
           saldoProducto.set(linea.productoId, sp);
           t.set(db.collection(COL.lotes).doc(linea.loteId), {
-            ...(loteActual || { productoId: linea.productoId, lote: linea.lote, vencimiento: linea.vencimiento, creadoEn: ahora() }),
-            disponible: sl.disponible, transito: sl.transito, transitoPorCentro: sl.transitoPorCentro,
+            ...(loteActual || { productoId: linea.productoId, lote: linea.lote, vencimiento: linea.vencimiento, ...datosPropietario(linea), creadoEn: ahora() }),
+            ...sl,
             soloCargaInicial: false, ultimoMovimiento: ahora(), ultimoMovimientoTipo: tipo,
           });
           t.set(db.collection(COL.movimientos).doc(), {
             tipo, fecha: ahora(), orden: orden++, usuario: inv.cerradoPor,
             productoId: linea.productoId, productoNombre: linea.productoNombre, codigoMaestro: linea.codigoMaestro, categoriaId: linea.categoriaId || null,
-            loteId: linea.loteId, lote: linea.lote, vencimiento: linea.vencimiento, cantidad: Math.abs(ajuste),
-            saldoLote: { disponible: sl.disponible, transito: sl.transito }, saldoProducto: { disponible: sp.disponible, transito: sp.transito },
+            loteId: linea.loteId, lote: linea.lote, vencimiento: linea.vencimiento, ...datosPropietario(linea), cantidad: Math.abs(ajuste),
+            saldoLote: fotoSaldo(sl), saldoProducto: fotoSaldo(sp),
             centroId: null, documentoRef: { id, tipo: 'INVENTARIO', nombre: inv.nombre }, observacion: inv.motivoAjuste,
           });
         }
@@ -1253,6 +1277,7 @@ const inventariarCaja = async (db, uid, datos) => {
 };
 
 // Reposición desde la Bodega General: { cajaId, cantidades: { [productoId]: n } }.
+// Solo usa stock propio (nunca lotes consignados).
 // En UNA transacción: reparte cada cantidad entre los lotes en orden FEFO
 // (misma regla que las salidas), baja el disponible de cada lote y producto
 // con movimientos REPOSICION_CAJA (motivo "Reposición caja: {nombre}"),
@@ -1283,7 +1308,7 @@ const reponerCajaComo = (db, por, datos = {}) => {
       const sp = resto[i];
       if (!sp.exists) throw new HttpsError('not-found', 'Un producto ya no existe en el maestro.');
       productos.set(id, { id, ...sp.data() });
-      lotesPorProducto.set(id, resto[productoIds.length + i].docs.map((d) => ({ id: d.id, ...d.data() })));
+      lotesPorProducto.set(id, lotesPropios(resto[productoIds.length + i].docs.map((d) => ({ id: d.id, ...d.data() }))));
     });
     exigirSinInventario(snapEstado, [...productos.values()], 'reponer cajas');
 
@@ -1323,7 +1348,7 @@ const reponerCajaComo = (db, por, datos = {}) => {
     saldoLote.forEach((s, id) => {
       const { id: _id, ...datosLote } = lotesPorId.get(id); // eslint-disable-line no-unused-vars
       t.set(db.collection(COL.lotes).doc(id), {
-        ...datosLote, disponible: s.disponible, transito: s.transito, transitoPorCentro: s.transitoPorCentro,
+        ...datosLote, ...s,
         soloCargaInicial: false, ultimoMovimiento: ahora(), ultimoMovimientoTipo: 'REPOSICION_CAJA',
       });
     });
@@ -1336,8 +1361,8 @@ const reponerCajaComo = (db, por, datos = {}) => {
       t.set(db.collection(COL.movimientos).doc(), {
         tipo: 'REPOSICION_CAJA', fecha: ahora(), orden: o, usuario: por,
         productoId: p.id, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro, categoriaId: p.categoriaId || null,
-        loteId: parte.loteId, lote: parte.lote, vencimiento: parte.vencimiento, cantidad: parte.cantidad,
-        saldoLote: { disponible: sl.disponible, transito: sl.transito }, saldoProducto: { disponible: sp.disponible, transito: sp.transito },
+        loteId: parte.loteId, lote: parte.lote, vencimiento: parte.vencimiento, ...datosPropietario(null), cantidad: parte.cantidad,
+        saldoLote: fotoSaldo(sl), saldoProducto: fotoSaldo(sp),
         centroId: null, cajaId, documentoRef: { id: refRepo.id, tipo: 'REPOSICION_CAJA', numero: caja.nombre, cajaId }, observacion,
       });
     });
@@ -1366,7 +1391,69 @@ const reponerCaja = async (db, uid, datos) => {
   return reponerCajaComo(db, datosPor(uid, perfil), datos);
 };
 
+// --- Stock consignado ----------------------------------------------------------
+//
+//   bodega_consignaciones/{empresaId} = { empresaId, empresaNombre, observacion,
+//     lineas: [{ productoId, productoNombre, codigoMaestro, lote, vencimiento,
+//       cantidadConsignada, loteId }], cantidadLineas, totalConsignado,
+//     creadoPor/En, actualizadoPor/En }
+//     /logs/{id}: auditoría (antes / después por línea cambiada).
+// Solo registra lo que "debo tener"; el stock real son los lotes de la
+// empresa (bodega_lotes.propietarioId).
+
+const claveLineaConsignacion = (l) => l.loteId;
+
+// Crea o reemplaza la lista de productos consignados de una empresa
+// (agregar, editar y quitar líneas en un solo guardado).
+const guardarConsignacionComo = (db, por, datos = {}) => {
+  const entrada = Array.isArray(datos.lineas) ? datos.lineas : [];
+  const empresaId = String(datos.empresaId || '').trim();
+  if (!empresaId) throw new HttpsError('invalid-argument', 'Elige la empresa consignante.');
+  return db.runTransaction(async (t) => {
+    const productoIds = [...new Set(entrada.map((l) => String(l?.productoId || '')).filter(Boolean))];
+    const ref = db.collection(COL.consignaciones).doc(empresaId);
+    const [snap, snapEmpresa, ...snapsProductos] = await Promise.all([
+      t.get(ref),
+      t.get(db.collection('maestros_empresas').doc(empresaId)),
+      ...productoIds.map((id) => t.get(db.collection(COL.productos).doc(id))),
+    ]);
+    if (!snapEmpresa.exists) throw new HttpsError('invalid-argument', 'La empresa elegida no existe.');
+    const productos = Object.fromEntries(snapsProductos.filter((x) => x.exists).map((x) => [x.id, x.data()]));
+    const { errores, consignacion, lineas } = validarConsignacion({ ...datos, empresaId }, productos);
+    exigirSinErrores(errores);
+    const antes = snap.exists ? snap.data() : null;
+
+    const previas = new Map((antes?.lineas || []).map((l) => [claveLineaConsignacion(l), l]));
+    const nuevas = new Map(lineas.map((l) => [claveLineaConsignacion(l), l]));
+    const cambios = [
+      ...lineas.filter((l) => previas.get(l.loteId)?.cantidadConsignada !== l.cantidadConsignada)
+        .map((l) => ({ productoNombre: l.productoNombre, lote: l.lote, vencimiento: l.vencimiento, antes: previas.get(l.loteId)?.cantidadConsignada ?? null, despues: l.cantidadConsignada })),
+      ...[...previas.values()].filter((l) => !nuevas.has(l.loteId))
+        .map((l) => ({ productoNombre: l.productoNombre, lote: l.lote, vencimiento: l.vencimiento, antes: l.cantidadConsignada, despues: null })),
+    ];
+    const documento = {
+      ...consignacion, empresaNombre: snapEmpresa.data().nombre || '', lineas,
+      cantidadLineas: lineas.length, totalConsignado: lineas.reduce((n, l) => n + l.cantidadConsignada, 0),
+      ...(antes ? { creadoPor: antes.creadoPor, creadoEn: antes.creadoEn } : { creadoPor: por, creadoEn: ahora() }),
+      actualizadoPor: por, actualizadoEn: ahora(),
+    };
+    t.set(ref, documento);
+    if (!antes || cambios.length || (antes.observacion || '') !== consignacion.observacion) {
+      registrarLog(t, ref, antes ? 'EDICION' : 'CREACION', por, { cambios: cambios.slice(0, 200), observacion: consignacion.observacion });
+    }
+    return { id: empresaId, empresaNombre: documento.empresaNombre, lineas, cantidadLineas: documento.cantidadLineas, totalConsignado: documento.totalConsignado, observacion: consignacion.observacion };
+  });
+};
+
+const guardarConsignacion = async (db, uid, datos = {}) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.guardarConsignacion);
+  return guardarConsignacionComo(db, datosPor(uid, perfil), datos);
+};
+
 module.exports = {
+  guardarConsignacion,
+  guardarConsignacionComo,
   reponerCaja,
   reponerCajaComo,
   inventariarCaja,

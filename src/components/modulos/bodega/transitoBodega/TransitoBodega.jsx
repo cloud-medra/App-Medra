@@ -39,12 +39,13 @@ const TransitoBodega = () => {
   const opcionesCentro = useMemo(() => centros.filter((c) => c.nombre).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')), [centros]);
   const filtrados = useMemo(() => filtrarTransitos(transitos || [], texto), [transitos, texto]);
   const unidades = filtrados.reduce((n, t) => n + (t.pendiente || 0), 0);
+  const dejadas = filtrados.reduce((n, t) => n + (t.enCentro || 0), 0);
 
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[11px]">
       <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
         <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase"><Truck size={14} className="text-[#2383C2]" /> Tránsito</h2>
-        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 dark:bg-gray-700/60 px-2 py-0.5 rounded">{filtrados.length} registro(s) · {formatoCantidad(unidades)} u.</span>
+        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 dark:bg-gray-700/60 px-2 py-0.5 rounded">{filtrados.length} registro(s) · {formatoCantidad(unidades)} u.{dejadas > 0 && ` · ${formatoCantidad(dejadas)} dejadas en centros`}</span>
       </div>
       <div className="px-3 py-1.5 flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-700">
         <BuscadorConLimpiar value={texto} onChange={setTexto} className="w-72" placeholder="Buscar producto, lote, solicitante, N° salida…" />

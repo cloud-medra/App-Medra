@@ -3,9 +3,17 @@ import { columnas } from './columnas.js';
 // Columnas de la tabla de tránsitos (Tránsito y detalle de Tránsito por centro).
 const COLUMNAS_TRANSITO = [
   ['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'],
-  ['cantidad', 'Pendiente / salida'], ['fechaSalida', 'Fecha de salida'], ['dias', 'Días en tránsito'],
+  ['cantidad', 'Pendiente / salida'], ['enCentro', 'Dejado en centro'], ['fechaSalida', 'Fecha de salida'], ['dias', 'Días en tránsito'],
   ['usuario', 'Usuario'], ['solicitante', 'Destino / solicitante'], ['salida', 'N° salida'],
 ];
+
+// Acciones sobre el tránsito (Tránsito y Tránsito por centro).
+const ACCIONES_TRANSITO = {
+  btn_entregar: { label: 'Acción: Entregar (usado; exige N° de admisión y observación), desde tránsito o desde lo dejado en el centro' },
+  btn_devolver: { label: 'Acción: Devolver a stock (no usado), desde tránsito o desde lo dejado en el centro' },
+  btn_nota: { label: 'Acción: Mantener en tránsito (nota de seguimiento)' },
+  btn_dejar_centro: { label: 'Acción: Dejar en centro (no usado; sigue siendo stock, queda en el centro)' },
+};
 
 // Bodega (módulo nuevo, independiente de Inventario). Las acciones que
 // escriben se validan además en las Cloud Functions (functions/bodega,
@@ -23,7 +31,7 @@ export const bodegaComponentMaps = {
           ...columnas([
             ['codigo', 'Código maestro'], ['categoria', 'Categoría'], ['unidad', 'Unidad'], ['ubicacion', 'Ubicación'],
             ['loteVencimiento', 'Maneja lote / vencimiento'], ['disponible', 'Disponible Bodega General'],
-            ['transito', 'En tránsito (con desglose por centro)'], ['total', 'Total'], ['minimo', 'Stock mínimo'],
+            ['transito', 'En tránsito (con desglose por centro)'], ['enCentro', 'Dejado en centros (con desglose)'], ['total', 'Total'], ['minimo', 'Stock mínimo'],
           ]),
         },
       },
@@ -38,14 +46,14 @@ export const bodegaComponentMaps = {
       ficha_lotes: {
         label: 'Sección: Ficha del producto · Lotes con stock',
         elements: {
-          ...columnas([['vencimiento', 'Vencimiento'], ['disponible', 'Disponible'], ['transito', 'En tránsito'], ['centros', 'En centros']]),
+          ...columnas([['vencimiento', 'Vencimiento'], ['propietario', 'Dueño (propio / consignado)'], ['disponible', 'Disponible'], ['transito', 'En tránsito'], ['centros', 'En centros'], ['enCentro', 'Dejado en centros']]),
         },
       },
       kardex: {
         label: 'Sección: Ficha del producto · Kardex',
         elements: {
           btn_exportar: { label: 'Acción: Exportar kardex a Excel/CSV' },
-          ...columnas([['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'], ['saldoLote', 'Saldo del lote'], ['saldo', 'Saldo del producto'], ['documento', 'Documento'], ['usuario', 'Usuario'], ['observacion', 'N° de admisión / observación']]),
+          ...columnas([['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['propietario', 'Dueño (propio / consignado)'], ['centro', 'Centro'], ['saldoLote', 'Saldo del lote'], ['saldo', 'Saldo del producto'], ['documento', 'Documento'], ['usuario', 'Usuario'], ['observacion', 'N° de admisión / observación']]),
         },
       },
       codigos: {
@@ -128,11 +136,7 @@ export const bodegaComponentMaps = {
       },
       acciones: {
         label: 'Sección: Acciones sobre el tránsito',
-        elements: {
-          btn_entregar: { label: 'Acción: Entregar (usado; exige N° de admisión y observación)' },
-          btn_devolver: { label: 'Acción: Devolver a stock (no usado)' },
-          btn_nota: { label: 'Acción: Mantener en tránsito (nota de seguimiento)' },
-        },
+        elements: ACCIONES_TRANSITO,
       },
     },
   },
@@ -143,7 +147,7 @@ export const bodegaComponentMaps = {
       centros: {
         label: 'Sección: Centros con stock en tránsito',
         elements: {
-          ...columnas([['productos', 'Productos distintos'], ['unidades', 'Unidades'], ['antiguo', 'Tránsito más antiguo (días)'], ['vencimiento', 'Próximo vencimiento']]),
+          ...columnas([['productos', 'Productos distintos'], ['unidades', 'Unidades'], ['enCentro', 'Dejado en centro'], ['antiguo', 'Tránsito más antiguo (días)'], ['vencimiento', 'Próximo vencimiento']]),
         },
       },
       listado: {
@@ -160,11 +164,7 @@ export const bodegaComponentMaps = {
       },
       acciones: {
         label: 'Sección: Acciones sobre el tránsito del centro',
-        elements: {
-          btn_entregar: { label: 'Acción: Entregar (usado; exige N° de admisión y observación)' },
-          btn_devolver: { label: 'Acción: Devolver a stock (no usado)' },
-          btn_nota: { label: 'Acción: Mantener en tránsito (nota de seguimiento)' },
-        },
+        elements: ACCIONES_TRANSITO,
       },
     },
   },
@@ -239,6 +239,33 @@ export const bodegaComponentMaps = {
           btn_reponer: { label: 'Acción: Reponer desde la Bodega General (descuenta stock)' },
           btn_exportar: { label: 'Acción: Exportar a Excel/PDF (contenido, inventario, reposición)' },
           ...columnas([['codigo', 'Código maestro'], ['objetivo', 'Stock objetivo'], ['actual', 'Stock actual'], ['faltante', 'Faltante']]),
+        },
+      },
+    },
+  },
+
+  '/bodega/consignacionesBodega': {
+    label: 'Stock consignado por empresa (ConsignacionesBodega.jsx)',
+    sections: {
+      empresas: {
+        label: 'Sección: Empresas consignantes (totales)',
+        elements: {
+          btn_actualizar: { label: 'Acción: Actualizar' },
+          ...columnas([
+            ['lineas', 'Líneas'], ['consignada', 'Debo tener'], ['actual', 'En bodega'], ['transito', 'En tránsito'],
+            ['enCentro', 'En otro centro'], ['faltante', 'Faltante'], ['porVencer', 'Por vencer'],
+          ]),
+        },
+      },
+      consignacion: {
+        label: 'Sección: Detalle por empresa (debo tener / tengo)',
+        elements: {
+          btn_guardar: { label: 'Acción: Registrar o editar la consignación (productos, lote, vencimiento y cantidad consignada)' },
+          btn_exportar: { label: 'Acción: Exportar a Excel' },
+          ...columnas([
+            ['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['consignada', 'Cantidad consignada (debo tener)'],
+            ['actual', 'Stock actual (en bodega)'], ['transito', 'En tránsito'], ['enCentro', 'En otro centro'], ['diferencia', 'Diferencia'],
+          ]),
         },
       },
     },

@@ -8,12 +8,17 @@ export const nombreArchivo = (base, extension) => `${base.normalize('NFD').repla
 // [{ titulo, valor }] + filas -> [{ [titulo]: valor }]
 export const aTabla = (columnas, filas) => filas.map((f) => Object.fromEntries(columnas.map((c) => [c.titulo, c.valor(f) ?? ''])));
 
-// hojas: [{ nombre, columnas, filas }]
+// hojas: [{ nombre, columnas, filas, encabezado? }]. `encabezado`: filas
+// de texto ([[etiqueta, valor], …]) que van antes de la tabla, separadas
+// por una fila en blanco (p. ej. empresa y fecha de exportación).
 export const exportarExcel = async (base, hojas) => {
   const XLSX = await import('xlsx');
   const libro = XLSX.utils.book_new();
-  hojas.forEach(({ nombre, columnas, filas }) => {
-    const hoja = XLSX.utils.json_to_sheet(aTabla(columnas, filas), { header: columnas.map((c) => c.titulo) });
+  hojas.forEach(({ nombre, columnas, filas, encabezado = [] }) => {
+    const opciones = { header: columnas.map((c) => c.titulo) };
+    const hoja = encabezado.length
+      ? XLSX.utils.sheet_add_json(XLSX.utils.aoa_to_sheet(encabezado), aTabla(columnas, filas), { ...opciones, origin: encabezado.length + 1 })
+      : XLSX.utils.json_to_sheet(aTabla(columnas, filas), opciones);
     XLSX.utils.book_append_sheet(libro, hoja, nombre.slice(0, 31));
   });
   XLSX.writeFile(libro, nombreArchivo(base, 'xlsx'));
