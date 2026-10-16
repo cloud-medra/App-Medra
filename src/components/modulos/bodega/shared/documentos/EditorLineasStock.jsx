@@ -13,7 +13,7 @@ import { formatoPesos } from '../../inventarioBodega/formato';
 import { normalizarPrecioUnitario } from '../../../../../../functions/bodega/nucleo.mjs';
 import {
   agregarLinea, campoFaltante, campoSugerido, cambiarCantidad, cambiarPrecio, quitarLinea, totalUnidades,
-  totalLinea, totalValorLineas, precioSugerido, referenciaProducto,
+  totalLinea, totalValorLineas, precioInicialLinea, referenciaProducto,
 } from './lineasDocumento';
 import { useColumnasCarga } from './columnasCarga';
 
@@ -89,14 +89,15 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
 
   // Deja el producto en curso; si está completo y "Agregar al escanear"
   // está activo, lo agrega; si no, enfoca el primer dato que falta.
-  const tomarProducto = (producto, lectura) => {
+  // `precioNeto`: el escrito al crear el producto (Carga inicial).
+  const tomarProducto = (producto, lectura, precioNeto = '') => {
     if (producto.activo === false) {
       setSenal({ tipo: 'error', mensaje: `${producto.nombre} está inactivo.` });
       return;
     }
     const nuevo = {
       producto, cantidad: 1, ...datosLoteDeLectura(lectura), codigoLeido: lectura?.codigo || '',
-      ...(conPrecio ? { precioUnitario: precioSugerido(producto) } : {}),
+      ...(conPrecio ? { precioUnitario: precioInicialLinea(producto, precioNeto) } : {}),
     };
     if (pendiente && pendiente.producto.id !== producto.id) {
       setSenal({ tipo: 'aviso', mensaje: `Se descartó ${pendiente.producto.nombre} (no se agregó).` });
@@ -279,8 +280,9 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
         <ModalVincularCodigo
           lectura={lecturaSinVincular}
           productoSugerido={pendiente?.producto || null}
+          conPrecioNeto={conPrecio}
           onCerrar={() => { setLecturaSinVincular(null); enfocar(null); }}
-          onVinculado={(producto) => { const lectura = lecturaSinVincular; setLecturaSinVincular(null); tomarProducto(producto, lectura); }}
+          onVinculado={(producto, extra) => { const lectura = lecturaSinVincular; setLecturaSinVincular(null); tomarProducto(producto, lectura, extra?.precioNeto); }}
         />
       )}
     </div>

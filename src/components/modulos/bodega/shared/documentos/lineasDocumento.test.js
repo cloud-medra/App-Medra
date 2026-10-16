@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agregarLinea, campoFaltante, campoSugerido, cambiarCantidad, quitarLinea, totalUnidades, erroresLineas, lineasDesdeDocumento, cambiarPrecio, precioSugerido, referenciaProducto, totalValorLineas } from './lineasDocumento';
+import { agregarLinea, campoFaltante, campoSugerido, cambiarCantidad, quitarLinea, totalUnidades, erroresLineas, lineasDesdeDocumento, cambiarPrecio, precioSugerido, referenciaProducto, totalValorLineas, precioMaestroClinico, precioInicialLinea } from './lineasDocumento';
 
 const CON_LOTE = { id: 'p1', nombre: 'Sonda', manejaLote: true, manejaVencimiento: true };
 const SIN_LOTE = { id: 'p2', nombre: 'Gasa', manejaLote: false, manejaVencimiento: false };
@@ -79,5 +79,23 @@ describe('precio unitario (Carga inicial)', () => {
   });
   it('totales con líneas antiguas sin precio', () => {
     expect(totalValorLineas([{ cantidad: 2, precioUnitario: 1000 }, { cantidad: 5 }])).toBe(2000);
+  });
+});
+
+describe('precio neto al crear un producto en Carga inicial', () => {
+  it('precarga el precio neto del maestro clínico (pesos enteros; vacío si no tiene)', () => {
+    expect(precioMaestroClinico({ precioNeto: 1234.6 })).toBe(1235);
+    expect(precioMaestroClinico({ precioNeto: 0 })).toBe('');
+    expect(precioMaestroClinico({})).toBe('');
+  });
+
+  it('la línea usa el precio neto escrito; si viene vacío o inválido, el del maestro clínico', () => {
+    const producto = { maestroCodigo: { precioNeto: 5000 } };
+    expect(precioInicialLinea(producto, '4200')).toBe(4200);
+    expect(precioInicialLinea(producto, '0')).toBe(0);
+    expect(precioInicialLinea(producto, '')).toBe(5000);
+    expect(precioInicialLinea(producto, undefined)).toBe(5000);
+    expect(precioInicialLinea(producto, '-3')).toBe(5000);
+    expect(precioInicialLinea({}, '')).toBe('');
   });
 });

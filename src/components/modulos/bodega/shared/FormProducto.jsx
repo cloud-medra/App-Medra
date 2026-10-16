@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Search, X, Link2, Save } from 'lucide-react';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
-import { validarProducto, MAX } from '../../../../../functions/bodega/nucleo.mjs';
+import { validarProducto, normalizarPrecioUnitario, MAX } from '../../../../../functions/bodega/nucleo.mjs';
 import { opcionesCatalogo, buscarEnMaestroClinico, descriptorMaestroClinico } from './catalogosBodega';
 import { PRODUCTO_VACIO, productoAFormulario } from './productoFormulario';
+import { precioMaestroClinico } from './documentos/lineasDocumento';
 
 const INPUT = 'w-full h-8 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-60';
 const LABEL = 'block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5';
@@ -49,10 +50,14 @@ const SelectorMaestroClinico = ({ onElegir }) => {
 
 // Formulario de producto (crear o editar). Valida con las mismas reglas que
 // la Cloud Function (validarProducto); la función vuelve a validar todo.
-//   onGuardar(datosProducto) -> Promise
+//   onGuardar(datosProducto, { precioNeto }) -> Promise
 //   puedeEditar / puedeInactivar: permisos granulares de la pantalla.
-const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, onGuardar, onCancelar, guardando = false, puedeEditar = true, puedeInactivar = false, textoGuardar }) => {
+//   conPrecioNeto (crear desde Carga inicial): pide "Precio neto" en vez de
+//     "Código maestro" (queda automático). El precio no se guarda en el
+//     producto: se entrega aparte para la línea de la carga.
+const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, conPrecioNeto = false, onGuardar, onCancelar, guardando = false, puedeEditar = true, puedeInactivar = false, textoGuardar }) => {
   const [form, setForm] = useState(() => productoAFormulario(inicial));
+  const [precioNeto, setPrecioNeto] = useState('');
   const [errores, setErrores] = useState([]);
   const [buscandoMaestro, setBuscandoMaestro] = useState(false);
   const { datos: catalogos } = useCatalogo('bodegaCatalogos');
@@ -70,19 +75,22 @@ const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, onGuardar, onCancelar
     setForm((f) => ({
       ...f,
       maestroCodigoId: c.id,
-      maestroCodigo: { codigo: c.codigo || '', referencia: c.referencia || '', descriptor: descriptorMaestroClinico(c), empresa: c.empresa || '' },
+      maestroCodigo: { codigo: c.codigo || '', referencia: c.referencia || '', descriptor: descriptorMaestroClinico(c), empresa: c.empresa || '', precioNeto: Number(c.precioNeto) || 0 },
       nombre: f.nombre || descriptorMaestroClinico(c),
       referencia: f.referencia || c.referencia || '',
     }));
+    // Igual que la referencia: solo si el precio está vacío.
+    if (conPrecioNeto) setPrecioNeto((p) => (p === '' ? String(precioMaestroClinico(c)) : p));
     setBuscandoMaestro(false);
   };
 
   const enviar = async (e) => {
     e.preventDefault();
     const { errores: lista } = validarProducto(form);
+    if (conPrecioNeto && normalizarPrecioUnitario(precioNeto).error) lista.push('El precio neto debe ser un número mayor o igual a cero.');
     setErrores(lista);
     if (lista.length) return;
-    await onGuardar(form);
+    await onGuardar(form, conPrecioNeto ? { precioNeto } : {});
   };
 
   return (
@@ -118,11 +126,19 @@ const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, onGuardar, onCancelar
           <label className={LABEL} htmlFor="bp-nombre">Nombre *</label>
           <input id="bp-nombre" value={form.nombre} onChange={cambiar('nombre')} maxLength={MAX.nombre} disabled={bloqueado} className={INPUT} />
         </div>
-        <div>
-          <label className={LABEL} htmlFor="bp-codigo">Código maestro</label>
-          <input id="bp-codigo" value={form.codigoMaestro} onChange={(e) => cambiar('codigoMaestro')(e.target.value.toUpperCase())} maxLength={MAX.codigoMaestro} disabled={bloqueado}
-            className={`${INPUT} font-num`} placeholder={esNuevo ? 'Automático (BOD-00001)' : ''} />
-        </div>
+        {conPrecioNeto ? (
+          <div>
+            <label className={LABEL} htmlFor="bp-precio">Precio neto</label>
+            <input id="bp-precio" type="number" min="0" step="1" inputMode="numeric" value={precioNeto} onChange={(e) => setPrecioNeto(e.target.value)} disabled={bloqueado}
+              className={`${INPUT} font-num`} placeholder="Del maestro clínico" title="Precio unitario de esta línea de la carga inicial (código maestro automático)" />
+          </div>
+        ) : (
+          <div>
+            <label className={LABEL} htmlFor="bp-codigo">Código maestro</label>
+            <input id="bp-codigo" value={form.codigoMaestro} onChange={(e) => cambiar('codigoMaestro')(e.target.value.toUpperCase())} maxLength={MAX.codigoMaestro} disabled={bloqueado}
+              className={`${INPUT} font-num`} placeholder={esNuevo ? 'Automático (BOD-00001)' : ''} />
+          </div>
+        )}
         <div>
           <label className={LABEL} htmlFor="bp-ref">Referencia</label>
           <input id="bp-ref" value={form.referencia} onChange={cambiar('referencia')} maxLength={MAX.referencia} disabled={bloqueado} className={INPUT} />
