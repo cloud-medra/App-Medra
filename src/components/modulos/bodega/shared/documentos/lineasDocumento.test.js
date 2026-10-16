@@ -125,3 +125,19 @@ describe('orden de los campos: listo para escanear el código 2', () => {
     expect(siguienteCampo({ producto: SIN_LOTE, cantidad: 1 }, 'cantidad')).toBe('precio');
   });
 });
+
+describe('Ingreso e Inventario: mismo orden de Enter que Carga inicial, sin Precio', () => {
+  const p = (extra = {}) => ({ producto: CON_LOTE, cantidad: 1, lote: '', vencimiento: '', ...extra });
+  it('código normal: Lote → Vencimiento → Cantidad → agrega', () => {
+    expect(campoInicial(p(), false)).toBe('lote');
+    expect(siguienteCampo(p({ lote: 'L1' }), 'lote', false)).toBe('vencimiento');
+    expect(siguienteCampo(p({ lote: 'L1', vencimiento: '2030-01-01' }), 'vencimiento', false)).toBe('cantidad');
+    expect(siguienteCampo(p({ lote: 'L1', vencimiento: '2030-01-01' }), 'cantidad', false)).toBeNull();
+  });
+  it('lote y vencimiento leídos del código: directo a Cantidad y Enter agrega', () => {
+    const conDatos = p({ lote: '35769P5', vencimiento: '2034-12-01' });
+    expect(campoInicial(conDatos, false)).toBe('cantidad');
+    expect(siguienteCampo(conDatos, 'cantidad', false)).toBeNull();
+    expect(siguienteCampo({ producto: SIN_LOTE, cantidad: 1 }, 'cantidad', false)).toBeNull();
+  });
+});

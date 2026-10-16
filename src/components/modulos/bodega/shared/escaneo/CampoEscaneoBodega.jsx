@@ -37,8 +37,8 @@ const CampoEscaneoBodega = ({ ref, onLectura, senal = null, mensaje = '', deshab
 
   return (
     <div className="flex flex-col gap-1">
-      <div className={`flex items-center gap-2 h-11 px-3 rounded-lg border-2 transition-colors bg-white dark:bg-gray-900 ${ESTILOS[senal] || 'border-[#2383C2]/60'}`}>
-        <ScanBarcode size={20} className="text-[#2383C2] shrink-0" />
+      <div className={`flex items-center gap-2 h-8 px-2 rounded-lg border-2 transition-colors bg-white dark:bg-gray-900 ${ESTILOS[senal] || 'border-[#2383C2]/60'}`}>
+        <ScanBarcode size={16} className="text-[#2383C2] shrink-0" />
         <input
           ref={ref}
           value={texto}
@@ -51,13 +51,13 @@ const CampoEscaneoBodega = ({ ref, onLectura, senal = null, mensaje = '', deshab
           spellCheck={false}
           aria-label="Código de barra"
           placeholder={placeholder || 'Escanea o escribe un código y presiona Enter'}
-          className="flex-1 min-w-0 h-full bg-transparent outline-none text-[14px] font-num text-gray-800 dark:text-gray-100 placeholder:text-gray-400 placeholder:font-sans placeholder:text-[12px] disabled:opacity-50"
+          className="flex-1 min-w-0 h-full bg-transparent outline-none text-[12px] font-num text-gray-800 dark:text-gray-100 placeholder:text-gray-400 placeholder:font-sans placeholder:text-[11px] disabled:opacity-50"
         />
         <button
           type="button"
           onClick={leer}
           disabled={deshabilitado || !texto.trim()}
-          className="h-7 px-2.5 rounded bg-[#2383C2] text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="h-6 px-2 rounded bg-[#2383C2] text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <CornerDownLeft size={12} /> Leer
         </button>

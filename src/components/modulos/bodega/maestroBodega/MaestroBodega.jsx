@@ -5,10 +5,9 @@ import { useToast } from '../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import { useDebouncedValue } from '../../../../hooks/useDebouncedValue';
-import { useColumnResize } from '../../../../hooks/useColumnResize';
-import { useUser } from '../../../../context/UserContext';
-import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../ui/ThRedimensionable';
 import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
 import Spinner from '../../../ui/Spinner';
 import BuscadorConLimpiar from '../../../ui/BuscadorConLimpiar';
 import { stockTotal, bajoMinimo } from '../../../../../functions/bodega/nucleo.mjs';
@@ -30,9 +29,6 @@ import ProductoDrawer from './ProductoDrawer';
 
 // Literal (no RUTAS.maestro) para que coberturaPermisos.test.js la verifique.
 const PATH_VISTA = '/bodega/maestroBodega';
-const TH = 'py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700';
-// Misma celda que la tabla de Gestiones (una línea, se corta con "…").
-const TD = 'py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 whitespace-nowrap overflow-hidden text-ellipsis';
 // Columnas del listado (permiso granular col_<key> en la sección listado).
 const COLUMNAS = [
   { key: 'referencia', label: 'Referencia', ancho: 130, min: 70 },
@@ -93,9 +89,7 @@ const MaestroBodega = () => {
   const { showToast } = useToast();
   const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'listado', COLUMNAS);
   // Columnas redimensionables como en Gestiones (anchos recordados por usuario).
-  const usuario = useUser()?.userData?.uid;
-  const { anchos, handleResize, restablecerAnchos, personalizados } = useColumnResize(columnasVisibles, { clave: 'bodega.maestro', usuario });
-  const anchoTabla = columnasVisibles.reduce((n, c) => n + (anchos[c.key] ?? c.ancho), 0);
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(columnasVisibles, 'bodega.maestro');
   const { datos: productos, cargando, error, refrescar } = useCatalogo('bodegaProductos');
   const { datos: catalogos, refrescar: refrescarCatalogos } = useCatalogo('bodegaCatalogos');
   const { datos: centros } = useCatalogo('centros');
@@ -303,17 +297,7 @@ const MaestroBodega = () => {
             {productos.length === 0 ? 'Aún no hay productos en Bodega.' : 'Ningún producto coincide con la búsqueda o los filtros.'}
           </div>
         ) : (
-          <table className="text-left text-[11px] border-collapse" style={{ tableLayout: 'fixed', width: anchoTabla, minWidth: '100%' }}>
-            <ColgroupRedimensionable columnas={columnasVisibles} anchos={anchos} relleno />
-            <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10 select-none">
-              <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
-                {columnasVisibles.map((col) => (
-                  <ThRedimensionable key={col.key} col={col} anchos={anchos} onResize={handleResize} title={col.label} className={`${TH} ${col.alinear || ''}`}>{col.label}</ThRedimensionable>
-                ))}
-                <ThRelleno className="border-b border-gray-200 dark:border-gray-700" />
-              </tr>
-            </thead>
-            <tbody>
+          <TablaBodega columnas={columnasVisibles} anchos={anchos} onResize={handleResize}>
               {filtrados.map((p) => {
                 const centrosConTransito = Object.entries(p.transitoPorCentro || {}).filter(([, n]) => n > 0);
                 const expandido = expandidos.has(p.id);
@@ -364,14 +348,9 @@ const MaestroBodega = () => {
                 };
                 return (
                   <Fragment key={p.id}>
-                    {/* Hover como en Gestiones: fondo y barra lateral azul. */}
-                    <tr className={`group border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors ${p.activo === false ? 'opacity-60' : ''}`}>
-                      {columnasVisibles.map((col) => <Fragment key={col.key}>{celdas[col.key]}</Fragment>)}
-                      <TdRelleno className="border-b border-gray-200 dark:border-gray-700/70" />
-                    </tr>
+                    <FilaBodega columnas={columnasVisibles} celdas={celdas} className={p.activo === false ? 'opacity-60' : ''} />
                     {expandido && (
-                      <tr className="bg-amber-50/50 dark:bg-amber-950/10">
-                        <td colSpan={columnasVisibles.length + 1} className="py-1 px-2 border-b border-gray-200 dark:border-gray-700/70">
+                      <FilaAnchoCompleto columnas={columnasVisibles} className="bg-amber-50/50 dark:bg-amber-950/10" celdaClassName="py-1 px-2 border-b border-gray-200 dark:border-gray-700/70">
                           <div className="ml-auto max-w-sm">
                             <div className="text-[10px] font-bold uppercase text-gray-500 mb-0.5">En tránsito por centro</div>
                             {centrosConTransito
@@ -383,14 +362,12 @@ const MaestroBodega = () => {
                                 </div>
                               ))}
                           </div>
-                        </td>
-                      </tr>
+                      </FilaAnchoCompleto>
                     )}
                   </Fragment>
                 );
               })}
-            </tbody>
-          </table>
+          </TablaBodega>
         )}
       </div>
 

@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockExcel = vi.fn();
 const mockPdf = vi.fn();
 vi.mock('../shared/exportar', () => ({ exportarExcel: (...a) => mockExcel(...a), exportarPdf: (...a) => mockPdf(...a) }));
+// Maestro de productos en memoria: la exportación usa su referencia (no el código).
+vi.mock('../../../../stores/catalogosStore', () => ({ leerCatalogo: () => [{ id: 'a', referencia: 'REF-T1' }, { id: 'b', referencia: '' }] }));
 
 const { exportarContenidoCaja, exportarInventarioCaja, exportarReposicionCaja } = await import('./exportarCajas');
 
@@ -19,7 +21,7 @@ describe('exportarCajas', () => {
     await exportarContenidoCaja(caja, 'pdf');
     const [, opciones] = mockPdf.mock.calls[0];
     expect(opciones.titulo).toBe('Caja de tutores');
-    expect(valores(opciones.columnas, opciones.filas[0])).toEqual(['T1', 'Tutor S', 5, 2, 3]);
+    expect(valores(opciones.columnas, opciones.filas[0])).toEqual(['REF-T1', 'Tutor S', 5, 2, 3]);
   });
 
   it('inventario: dos hojas en Excel y dos secciones en PDF', async () => {
@@ -39,6 +41,6 @@ describe('exportarCajas', () => {
   it('reposición: lotes legibles y pendiente', async () => {
     await exportarReposicionCaja(caja, { lineas: [{ productoId: 'a', nombre: 'Tutor S', codigoMaestro: 'T1', faltanteAntes: 3, cantidad: 2, pendiente: 1, lotes: [{ lote: null, vencimiento: null, cantidad: 2 }] }] }, 'excel');
     const [{ columnas, filas }] = mockExcel.mock.calls[0][1];
-    expect(valores(columnas, filas[0])).toEqual(['T1', 'Tutor S', 3, 2, 1, 'S/L × 2']);
+    expect(valores(columnas, filas[0])).toEqual(['REF-T1', 'Tutor S', 3, 2, 1, 'S/L × 2']);
   });
 });
