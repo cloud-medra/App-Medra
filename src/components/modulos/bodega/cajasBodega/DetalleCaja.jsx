@@ -14,21 +14,30 @@ import { exportarContenidoCaja, exportarInventarioCaja, exportarReposicionCaja }
 import { useUser } from '../../../../context/UserContext';
 import { useToast } from '../../../../context/ToastContext';
 import { mensajeError } from '../shared/bodegaApi';
+import { useCatalogo } from '../../../../hooks/useCatalogo';
+import { referenciaProducto } from '../shared/documentos/lineasDocumento';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
 
 const PATH_VISTA = '/bodega/cajasBodega';
 
 const COLUMNAS = [
-  { key: 'producto', label: 'Producto', fija: true },
-  { key: 'codigo', label: 'Código' },
-  { key: 'objetivo', label: 'Objetivo', alinear: 'text-right' },
-  { key: 'actual', label: 'Actual', alinear: 'text-right' },
-  { key: 'faltante', label: 'Faltante', alinear: 'text-right' },
+  { key: 'producto', label: 'Producto', fija: true, ancho: 280, min: 120 },
+  { key: 'referencia', label: 'Referencia', ancho: 140, min: 70 },
+  { key: 'objetivo', label: 'Objetivo', alinear: 'text-right', ancho: 90, min: 60 },
+  { key: 'actual', label: 'Actual', alinear: 'text-right', ancho: 90, min: 60 },
+  { key: 'faltante', label: 'Faltante', alinear: 'text-right', ancho: 90, min: 60 },
 ];
 
 // Contenido de una caja (objetivo, actual, faltante) con sus acciones.
 const DetalleCaja = ({ caja, onVolver, onCambio }) => {
   const { hasPermission } = useGranularPermission();
-  const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'caja', COLUMNAS);
+  const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'caja', COLUMNAS);
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(columnasVisibles, 'bodega.caja');
+  // La caja guarda nombre y código; la referencia sale del maestro en memoria.
+  const { datos: maestro } = useCatalogo('bodegaProductos');
+  const porId = useMemo(() => Object.fromEntries(maestro.map((p) => [p.id, p])), [maestro]);
   const [editando, setEditando] = useState(false);
   const [inventariando, setInventariando] = useState(false);
   const [reponiendo, setReponiendo] = useState(null); // caja a reponer (la actual o la recién inventariada)
@@ -73,23 +82,24 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
       {caja.descripcion && <p className="text-gray-500">{caja.descripcion}</p>}
       {caja.ultimoInventario?.fecha && <p className="text-gray-500">Último inventario: {fechaHora(caja.ultimoInventario.fecha)} · {caja.ultimoInventario.usuario || ''}</p>}
 
-      <table className="w-full text-left text-[12px] border border-gray-200 dark:border-gray-700">
-        <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-          <tr>{columnasVisibles.map((c) => <th key={c.key} className={`px-2 py-1.5 ${c.alinear || ''}`}>{c.label}</th>)}</tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-          {productos.length === 0 && <tr><td colSpan={columnasVisibles.length} className="px-2 py-6 text-center text-gray-400 italic">La caja no tiene productos. Usa “Editar” para agregarlos.</td></tr>}
-          {productos.map((p) => (
-            <tr key={p.productoId}>
-              <td className="px-2 py-1.5">{p.nombre}</td>
-              {ver('codigo') && <td className="px-2 py-1.5 font-num text-gray-500">{p.codigoMaestro || '—'}</td>}
-              {ver('objetivo') && <td className="px-2 py-1.5 text-right font-num">{formatoCantidad(p.stockObjetivo)}</td>}
-              {ver('actual') && <td className="px-2 py-1.5 text-right font-num">{formatoCantidad(p.stockActual)}</td>}
-              {ver('faltante') && <td className={`px-2 py-1.5 text-right font-num ${p.faltante ? 'font-bold text-red-600 dark:text-red-400' : 'text-gray-400'}`}>{p.faltante ? formatoCantidad(p.faltante) : '—'}</td>}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
+      <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
+        <TablaBodega columnas={columnasVisibles} anchos={anchos} onResize={handleResize}>
+          {productos.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>La caja no tiene productos. Usa “Editar” para agregarlos.</FilaAnchoCompleto>}
+          {productos.map((p) => {
+            const referencia = referenciaProducto(porId[p.productoId]);
+            return (
+              <FilaBodega key={p.productoId} columnas={columnasVisibles} celdas={{
+                producto: <td className={TD} title={p.nombre}>{p.nombre}</td>,
+                referencia: <td className={`${TD} font-num text-gray-600 dark:text-gray-300`} title={`${referencia} · ${p.codigoMaestro || ''}`}>{referencia || '—'}</td>,
+                objetivo: <td className={`${TD} text-right font-num`}>{formatoCantidad(p.stockObjetivo)}</td>,
+                actual: <td className={`${TD} text-right font-num`}>{formatoCantidad(p.stockActual)}</td>,
+                faltante: <td className={`${TD} text-right font-num ${p.faltante ? 'font-bold text-red-600 dark:text-red-400' : 'text-gray-400'}`}>{p.faltante ? formatoCantidad(p.faltante) : '—'}</td>,
+              }} />
+            );
+          })}
+        </TablaBodega>
+      </div>
 
       {verHistorial && <HistorialCaja key={versionHistorial} caja={caja} accionesInventario={botonesInventario} accionesReposicion={botonesReposicion} />}
 

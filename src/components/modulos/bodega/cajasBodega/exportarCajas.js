@@ -4,9 +4,10 @@
 import { exportarExcel, exportarPdf } from '../shared/exportar';
 import { fechaHora } from '../shared/transito/transitos';
 import { productosDeCaja, textoLotes } from './cajas';
+import { referenciaPorId } from '../shared/referencias';
 
 const PRODUCTO = [
-  { titulo: 'Código', valor: (l) => l.codigoMaestro || '—' },
+  { titulo: 'Referencia', valor: (l) => referenciaPorId(l.productoId) || '—' },
   { titulo: 'Producto', valor: (l) => l.nombre },
 ];
 

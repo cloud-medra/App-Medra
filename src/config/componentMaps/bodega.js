@@ -205,7 +205,7 @@ export const bodegaComponentMaps = {
         label: 'Sección: Reporte de entregas por centro y producto',
         elements: {
           btn_exportar: { label: 'Acción: Exportar a Excel' },
-          ...columnas([['codigo', 'Código maestro'], ['entregas', 'Entregas'], ['unidades', 'Unidades']]),
+          ...columnas([['referencia', 'Referencia'], ['entregas', 'Entregas'], ['unidades', 'Unidades']]),
         },
       },
     },
@@ -239,7 +239,7 @@ export const bodegaComponentMaps = {
           btn_inventario: { label: 'Acción: Hacer inventario de la caja' },
           btn_reponer: { label: 'Acción: Reponer desde la Bodega General (descuenta stock)' },
           btn_exportar: { label: 'Acción: Exportar a Excel/PDF (contenido, inventario, reposición)' },
-          ...columnas([['codigo', 'Código maestro'], ['objetivo', 'Stock objetivo'], ['actual', 'Stock actual'], ['faltante', 'Faltante']]),
+          ...columnas([['referencia', 'Referencia'], ['objetivo', 'Stock objetivo'], ['actual', 'Stock actual'], ['faltante', 'Faltante']]),
         },
       },
     },
@@ -264,7 +264,7 @@ export const bodegaComponentMaps = {
           btn_guardar: { label: 'Acción: Registrar o editar la consignación (productos, lote, vencimiento y cantidad consignada)' },
           btn_exportar: { label: 'Acción: Exportar a Excel' },
           ...columnas([
-            ['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['consignada', 'Cantidad consignada (debo tener)'],
+            ['referencia', 'Referencia'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['consignada', 'Cantidad consignada (debo tener)'],
             ['actual', 'Stock actual (en bodega)'], ['transito', 'En tránsito'], ['enCentro', 'En otro centro'], ['diferencia', 'Diferencia'],
           ]),
         },

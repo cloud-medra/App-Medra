@@ -8,20 +8,23 @@ import { leerConsignaciones, leerLotesConsignados, mensajeError } from '../share
 import { formatoCantidad } from '../shared/catalogosBodega';
 import SelectorProveedor from '../shared/documentos/SelectorProveedor';
 import { resumenEmpresas } from './consignaciones';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
 import DetalleConsignacion from './DetalleConsignacion';
 import FormConsignacionModal from './FormConsignacionModal';
 
 const PATH_VISTA = '/bodega/consignacionesBodega';
 // Columnas del listado de empresas (permiso col_<key> en la sección "empresas").
 const COLUMNAS = [
-  { key: 'empresa', label: 'Empresa', fija: true },
-  { key: 'lineas', label: 'Líneas', alinear: 'text-right' },
-  { key: 'consignada', label: 'Debo tener', alinear: 'text-right' },
-  { key: 'actual', label: 'En bodega', alinear: 'text-right' },
-  { key: 'transito', label: 'En tránsito', alinear: 'text-right' },
-  { key: 'enCentro', label: 'En otro centro', alinear: 'text-right' },
-  { key: 'faltante', label: 'Faltante', alinear: 'text-right' },
-  { key: 'porVencer', label: 'Por vencer', alinear: 'text-right' },
+  { key: 'empresa', label: 'Empresa', fija: true, ancho: 260, min: 110 },
+  { key: 'lineas', label: 'Líneas', alinear: 'text-right', ancho: 70, min: 50 },
+  { key: 'consignada', label: 'Debo tener', alinear: 'text-right', ancho: 95, min: 60 },
+  { key: 'actual', label: 'En bodega', alinear: 'text-right', ancho: 95, min: 60 },
+  { key: 'transito', label: 'En tránsito', alinear: 'text-right', ancho: 95, min: 60 },
+  { key: 'enCentro', label: 'En otro centro', alinear: 'text-right', ancho: 105, min: 60 },
+  { key: 'faltante', label: 'Faltante', alinear: 'text-right', ancho: 90, min: 60 },
+  { key: 'porVencer', label: 'Por vencer', alinear: 'text-right', ancho: 85, min: 60 },
 ];
 
 // Stock consignado: por cada empresa consignante, lo que dejó (debo tener)
@@ -31,7 +34,8 @@ const COLUMNAS = [
 const ConsignacionesBodega = () => {
   const { showToast } = useToast();
   const { hasPermission } = useGranularPermission();
-  const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'empresas', COLUMNAS);
+  const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'empresas', COLUMNAS);
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(columnasVisibles, 'bodega.consignaciones');
   const { datos: empresas } = useCatalogo('empresas');
   const [datos, setDatos] = useState(null); // { consignaciones, lotes, completo }
   const [version, setVersion] = useState(0);
@@ -102,29 +106,31 @@ const ConsignacionesBodega = () => {
             onGuardada={alGuardar}
           />
         ) : (
-          <table className="w-full text-left text-[12px] border border-gray-200 dark:border-gray-700">
-            <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-              <tr>{columnasVisibles.map((c) => <th key={c.key} className={`px-2 py-1.5 ${c.alinear || ''}`}>{c.label}</th>)}</tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {resumen.length === 0 && <tr><td colSpan={columnasVisibles.length} className="px-2 py-6 text-center text-gray-400 italic">No hay stock consignado. Registra una consignación o ingresa stock marcado &quot;En consignación&quot;.</td></tr>}
-              {resumen.map((e) => (
-                <tr key={e.empresaId} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 cursor-pointer" onClick={() => setAbiertaId(e.empresaId)}>
-                  <td className="px-2 py-1.5 font-semibold text-[#2383C2] underline-offset-2 hover:underline">
-                    {e.empresaNombre}
-                    {!e.consignacion && <span className="ml-1 px-1 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">SIN REGISTRAR</span>}
-                  </td>
-                  {ver('lineas') && <td className="px-2 py-1.5 text-right font-num">{e.lineas}</td>}
-                  {ver('consignada') && <td className="px-2 py-1.5 text-right font-num font-bold">{formatoCantidad(e.consignada)}</td>}
-                  {ver('actual') && <td className="px-2 py-1.5 text-right font-num text-emerald-700 dark:text-emerald-400">{formatoCantidad(e.actual)}</td>}
-                  {ver('transito') && <td className="px-2 py-1.5 text-right font-num text-amber-600 dark:text-amber-400">{formatoCantidad(e.transito)}</td>}
-                  {ver('enCentro') && <td className="px-2 py-1.5 text-right font-num text-violet-600 dark:text-violet-400">{formatoCantidad(e.enCentro)}</td>}
-                  {ver('faltante') && <td className={`px-2 py-1.5 text-right font-num ${e.faltante ? 'font-bold text-red-600 dark:text-red-400' : ''}`}>{formatoCantidad(e.faltante)}</td>}
-                  {ver('porVencer') && <td className={`px-2 py-1.5 text-right font-num ${e.porVencer ? 'font-bold text-amber-600 dark:text-amber-400' : ''}`}>{e.porVencer || '—'}</td>}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
+            <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
+              <TablaBodega columnas={columnasVisibles} anchos={anchos} onResize={handleResize}>
+                {resumen.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>No hay stock consignado. Registra una consignación o ingresa stock marcado &quot;En consignación&quot;.</FilaAnchoCompleto>}
+                {resumen.map((e) => (
+                  <FilaBodega key={e.empresaId} columnas={columnasVisibles} className="cursor-pointer" onClick={() => setAbiertaId(e.empresaId)} celdas={{
+                    empresa: (
+                      <td className={`${TD} font-semibold text-[#2383C2] underline-offset-2 group-hover:underline`} title={e.empresaNombre}>
+                        {e.empresaNombre}
+                        {!e.consignacion && <span className="ml-1 px-1 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">SIN REGISTRAR</span>}
+                      </td>
+                    ),
+                    lineas: <td className={`${TD} text-right font-num`}>{e.lineas}</td>,
+                    consignada: <td className={`${TD} text-right font-num font-bold`}>{formatoCantidad(e.consignada)}</td>,
+                    actual: <td className={`${TD} text-right font-num text-emerald-700 dark:text-emerald-400`}>{formatoCantidad(e.actual)}</td>,
+                    transito: <td className={`${TD} text-right font-num text-amber-600 dark:text-amber-400`}>{formatoCantidad(e.transito)}</td>,
+                    enCentro: <td className={`${TD} text-right font-num text-violet-600 dark:text-violet-400`}>{formatoCantidad(e.enCentro)}</td>,
+                    faltante: <td className={`${TD} text-right font-num ${e.faltante ? 'font-bold text-red-600 dark:text-red-400' : ''}`}>{formatoCantidad(e.faltante)}</td>,
+                    porVencer: <td className={`${TD} text-right font-num ${e.porVencer ? 'font-bold text-amber-600 dark:text-amber-400' : ''}`}>{e.porVencer || '—'}</td>,
+                  }} />
+                ))}
+              </TablaBodega>
+            </div>
+          </div>
         )}
       </div>
 

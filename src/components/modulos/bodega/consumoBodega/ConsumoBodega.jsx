@@ -11,13 +11,17 @@ import { formatoCantidad } from '../shared/catalogosBodega';
 import { hoyISO } from '../shared/documentos/lineasDocumento';
 import { fechaHora } from '../shared/transito/transitos';
 import { agruparConsumo, primerDiaDelMes } from './consumo';
+import { referenciaProducto } from '../shared/documentos/lineasDocumento';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
 
 const PATH_VISTA = '/bodega/consumoBodega';
 const COLUMNAS = [
-  { key: 'producto', label: 'Centro / producto', fija: true },
-  { key: 'codigo', label: 'Código' },
-  { key: 'entregas', label: 'Entregas', alinear: 'text-right' },
-  { key: 'unidades', label: 'Unidades', alinear: 'text-right' },
+  { key: 'producto', label: 'Centro / producto', fija: true, ancho: 320, min: 140 },
+  { key: 'referencia', label: 'Referencia', ancho: 140, min: 70 },
+  { key: 'entregas', label: 'Entregas', alinear: 'text-right', ancho: 90, min: 60 },
+  { key: 'unidades', label: 'Unidades', alinear: 'text-right', ancho: 100, min: 60 },
 ];
 const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] bg-white dark:bg-gray-900';
 
@@ -26,8 +30,15 @@ const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text
 // producto, con el detalle de cada entrega. Exportable a Excel.
 const ConsumoBodega = () => {
   const { hasPermission } = useGranularPermission();
-  const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'reporte', COLUMNAS);
+  const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'reporte', COLUMNAS);
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(columnasVisibles, 'bodega.consumo');
   const { datos: centros } = useCatalogo('centros');
+  // Las entregas guardan el código, no la referencia: se toma del maestro en memoria.
+  const { datos: productos } = useCatalogo('bodegaProductos');
+  const referenciaDe = useMemo(() => {
+    const porId = Object.fromEntries(productos.map((p) => [p.id, p]));
+    return (productoId) => referenciaProducto(porId[productoId]);
+  }, [productos]);
   const [filtros, setFiltros] = useState(() => ({ desde: primerDiaDelMes(hoyISO()), hasta: hoyISO(), centroId: '', producto: null }));
   const [resultado, setResultado] = useState(null); // { entregas, truncado }
   const [cargando, setCargando] = useState(false);
@@ -56,19 +67,19 @@ const ConsumoBodega = () => {
       nombre: 'Resumen',
       columnas: [
         { titulo: 'Centro', valor: (f) => f.centro },
-        { titulo: 'Código', valor: (f) => f.codigo },
+        { titulo: 'Referencia', valor: (f) => f.referencia },
         { titulo: 'Producto', valor: (f) => f.producto },
         { titulo: 'Entregas', valor: (f) => f.entregas },
         { titulo: 'Unidades', valor: (f) => f.unidades },
       ],
-      filas: grupos.flatMap((c) => c.productos.map((p) => ({ centro: c.centroNombre, codigo: p.codigoMaestro, producto: p.productoNombre, entregas: p.entregas, unidades: p.unidades }))),
+      filas: grupos.flatMap((c) => c.productos.map((p) => ({ centro: c.centroNombre, referencia: referenciaDe(p.productoId), producto: p.productoNombre, entregas: p.entregas, unidades: p.unidades }))),
     },
     {
       nombre: 'Detalle',
       columnas: [
         { titulo: 'Fecha', valor: (m) => fechaHora(m.fecha) },
         { titulo: 'Centro', valor: (m) => m.centroNombre },
-        { titulo: 'Código', valor: (m) => m.codigoMaestro },
+        { titulo: 'Referencia', valor: (m) => referenciaDe(m.productoId) },
         { titulo: 'Producto', valor: (m) => m.productoNombre },
         { titulo: 'Lote', valor: (m) => m.lote || '—' },
         { titulo: 'Vencimiento', valor: (m) => m.vencimiento || '—' },
@@ -113,50 +124,47 @@ const ConsumoBodega = () => {
         {!resultado ? (
           <p className="text-gray-400 italic">Elige el rango y presiona Consultar.</p>
         ) : (
-          <table className="w-full text-left border border-gray-200 dark:border-gray-700">
-            <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-              <tr>{columnasVisibles.map((c) => <th key={c.key} className={`px-2 py-1.5 ${c.alinear || ''}`}>{c.label}</th>)}</tr>
-            </thead>
-            <tbody>
-              {grupos.length === 0 && <tr><td colSpan={columnasVisibles.length} className="px-2 py-6 text-center text-gray-400 italic">Sin entregas en el rango.</td></tr>}
-              {grupos.map((c) => (
-                <Fragment key={c.centroId}>
-                  <tr className="bg-amber-50 dark:bg-amber-950/20 font-bold">
-                    <td className="px-2 py-1.5">{c.centroNombre}</td>
-                    {ver('codigo') && <td />}
-                    {ver('entregas') && <td className="px-2 py-1.5 text-right font-num">{c.productos.reduce((n, p) => n + p.entregas, 0)}</td>}
-                    {ver('unidades') && <td className="px-2 py-1.5 text-right font-num">{formatoCantidad(c.unidades)}</td>}
-                  </tr>
-                  {c.productos.map((p) => {
-                    const clave = `${c.centroId}|${p.productoId}`;
-                    const detalle = abiertos.has(clave) ? resultado.entregas.filter((m) => m.centroId === c.centroId && m.productoId === p.productoId) : [];
-                    return (
-                      <Fragment key={clave}>
-                        <tr className="border-t border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/40 cursor-pointer" onClick={() => alternar(clave)}>
-                          <td className="px-2 py-1 pl-5">{abiertos.has(clave) ? <ChevronDown size={11} className="inline" /> : <ChevronRight size={11} className="inline" />} {p.productoNombre}</td>
-                          {ver('codigo') && <td className="px-2 py-1 font-num text-[#2383C2]">{p.codigoMaestro}</td>}
-                          {ver('entregas') && <td className="px-2 py-1 text-right font-num">{p.entregas}</td>}
-                          {ver('unidades') && <td className="px-2 py-1 text-right font-num font-bold">{formatoCantidad(p.unidades)}</td>}
-                        </tr>
-                        {detalle.map((m) => (
-                          <tr key={m.id} className="text-[11px] text-gray-600 dark:text-gray-300">
-                            <td colSpan={columnasVisibles.length} className="px-2 py-0.5 pl-10">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
+            <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
+              <TablaBodega columnas={columnasVisibles} anchos={anchos} onResize={handleResize}>
+                {grupos.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>Sin entregas en el rango.</FilaAnchoCompleto>}
+                {grupos.map((c) => (
+                  <Fragment key={c.centroId}>
+                    <FilaBodega columnas={columnasVisibles} className="bg-amber-50 dark:bg-amber-950/20 font-bold" celdas={{
+                      producto: <td className={TD} title={c.centroNombre}>{c.centroNombre}</td>,
+                      entregas: <td className={`${TD} text-right font-num`}>{c.productos.reduce((n, p) => n + p.entregas, 0)}</td>,
+                      unidades: <td className={`${TD} text-right font-num`}>{formatoCantidad(c.unidades)}</td>,
+                    }} />
+                    {c.productos.map((p) => {
+                      const clave = `${c.centroId}|${p.productoId}`;
+                      const detalle = abiertos.has(clave) ? resultado.entregas.filter((m) => m.centroId === c.centroId && m.productoId === p.productoId) : [];
+                      return (
+                        <Fragment key={clave}>
+                          <FilaBodega columnas={columnasVisibles} className="cursor-pointer" onClick={() => alternar(clave)} celdas={{
+                            producto: <td className={`${TD} pl-5`} title={p.productoNombre}>{abiertos.has(clave) ? <ChevronDown size={11} className="inline" /> : <ChevronRight size={11} className="inline" />} {p.productoNombre}</td>,
+                            referencia: <td className={`${TD} font-num`} title={`${referenciaDe(p.productoId)} · ${p.codigoMaestro}`}>{referenciaDe(p.productoId) || '—'}</td>,
+                            entregas: <td className={`${TD} text-right font-num`}>{p.entregas}</td>,
+                            unidades: <td className={`${TD} text-right font-num font-bold`}>{formatoCantidad(p.unidades)}</td>,
+                          }} />
+                          {detalle.map((m) => (
+                            <FilaAnchoCompleto key={m.id} columnas={columnasVisibles} className="text-[11px] text-gray-600 dark:text-gray-300" celdaClassName="px-2 py-0.5 pl-10 border-b border-gray-100 dark:border-gray-700/70">
                               {fechaHora(m.fecha)} · lote {m.lote || 'S/L'} · <strong>{m.cantidad} u.</strong> · {ETIQUETA_ID_ENTREGA} {m.idEntrega || '—'} · {m.observacion} · {m.usuario?.nombre || ''}
-                            </td>
-                          </tr>
-                        ))}
-                      </Fragment>
-                    );
-                  })}
-                </Fragment>
-              ))}
-            </tbody>
-            {grupos.length > 0 && (
-              <tfoot className="bg-gray-100 dark:bg-gray-900 font-bold">
-                <tr><td colSpan={columnasVisibles.length} className="px-2 py-1.5 text-right">Total: {formatoCantidad(total)} unidad(es) en {resultado.entregas.length} entrega(s)</td></tr>
-              </tfoot>
-            )}
-          </table>
+                            </FilaAnchoCompleto>
+                          ))}
+                        </Fragment>
+                      );
+                    })}
+                  </Fragment>
+                ))}
+                {grupos.length > 0 && (
+                  <FilaAnchoCompleto columnas={columnasVisibles} className="bg-gray-100 dark:bg-gray-900 font-bold" celdaClassName="px-2 py-1 text-right">
+                    Total: {formatoCantidad(total)} unidad(es) en {resultado.entregas.length} entrega(s)
+                  </FilaAnchoCompleto>
+                )}
+              </TablaBodega>
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -9,15 +9,18 @@ import { fechaHora } from '../shared/transito/transitos';
 import DetalleCaja from './DetalleCaja';
 import FormCajaModal from './FormCajaModal';
 import { BarraCompletitud } from './comunes';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
 
 const PATH_VISTA = '/bodega/cajasBodega';
 
 const COLUMNAS = [
-  { key: 'nombre', label: 'Caja', fija: true },
-  { key: 'productos', label: 'Productos', alinear: 'text-right' },
-  { key: 'completitud', label: '% completitud' },
-  { key: 'faltante', label: 'Unidades faltantes', alinear: 'text-right' },
-  { key: 'ultimoInventario', label: 'Último inventario' },
+  { key: 'nombre', label: 'Caja', fija: true, ancho: 260, min: 110 },
+  { key: 'productos', label: 'Productos', alinear: 'text-right', ancho: 90, min: 60 },
+  { key: 'completitud', label: '% completitud', ancho: 170, min: 110 },
+  { key: 'faltante', label: 'Unidades faltantes', alinear: 'text-right', ancho: 125, min: 70 },
+  { key: 'ultimoInventario', label: 'Último inventario', ancho: 140, min: 90 },
 ];
 
 // Cajas (kits): listado con cantidad de productos y % de completitud
@@ -26,7 +29,8 @@ const COLUMNAS = [
 const CajasBodega = () => {
   const { showToast } = useToast();
   const { hasPermission } = useGranularPermission();
-  const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'cajas', COLUMNAS);
+  const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'cajas', COLUMNAS);
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(columnasVisibles, 'bodega.cajas');
   const [cajas, setCajas] = useState(null);
   const [abierta, setAbierta] = useState(null);
   const [creando, setCreando] = useState(false);
@@ -75,25 +79,27 @@ const CajasBodega = () => {
         ) : cajas === null ? (
           <p className="text-gray-400 italic">Cargando…</p>
         ) : (
-          <table className="w-full text-left text-[12px] border border-gray-200 dark:border-gray-700">
-            <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-              <tr>{columnasVisibles.map((c) => <th key={c.key} className={`px-2 py-1.5 ${c.alinear || ''}`}>{c.label}</th>)}</tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {visibles.length === 0 && <tr><td colSpan={columnasVisibles.length} className="px-2 py-6 text-center text-gray-400 italic">No hay cajas.</td></tr>}
-              {visibles.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 cursor-pointer" onClick={() => setAbierta(c)}>
-                  <td className="px-2 py-1.5 font-semibold text-[#2383C2] underline-offset-2 hover:underline">
-                    {c.nombre} {c.activa === false && <span className="ml-1 px-1 rounded bg-gray-200 dark:bg-gray-700 text-[9px] font-bold text-gray-600">INACTIVA</span>}
-                  </td>
-                  {ver('productos') && <td className="px-2 py-1.5 text-right font-num">{c.cantidadProductos || 0}</td>}
-                  {ver('completitud') && <td className="px-2 py-1.5"><BarraCompletitud valor={c.completitud} /></td>}
-                  {ver('faltante') && <td className={`px-2 py-1.5 text-right font-num ${c.totalFaltante ? 'font-bold text-red-600 dark:text-red-400' : ''}`}>{formatoCantidad(c.totalFaltante)}</td>}
-                  {ver('ultimoInventario') && <td className="px-2 py-1.5 font-num">{c.ultimoInventario?.fecha ? fechaHora(c.ultimoInventario.fecha) : '—'}</td>}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
+            <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
+              <TablaBodega columnas={columnasVisibles} anchos={anchos} onResize={handleResize}>
+                {visibles.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>No hay cajas.</FilaAnchoCompleto>}
+                {visibles.map((c) => (
+                  <FilaBodega key={c.id} columnas={columnasVisibles} className="cursor-pointer" onClick={() => setAbierta(c)} celdas={{
+                    nombre: (
+                      <td className={`${TD} font-semibold text-[#2383C2] underline-offset-2 group-hover:underline`} title={c.nombre}>
+                        {c.nombre} {c.activa === false && <span className="ml-1 px-1 rounded bg-gray-200 dark:bg-gray-700 text-[9px] font-bold text-gray-600">INACTIVA</span>}
+                      </td>
+                    ),
+                    productos: <td className={`${TD} text-right font-num`}>{c.cantidadProductos || 0}</td>,
+                    completitud: <td className={TD}><BarraCompletitud valor={c.completitud} /></td>,
+                    faltante: <td className={`${TD} text-right font-num ${c.totalFaltante ? 'font-bold text-red-600 dark:text-red-400' : ''}`}>{formatoCantidad(c.totalFaltante)}</td>,
+                    ultimoInventario: <td className={`${TD} font-num`}>{c.ultimoInventario?.fecha ? fechaHora(c.ultimoInventario.fecha) : '—'}</td>,
+                  }} />
+                ))}
+              </TablaBodega>
+            </div>
+          </div>
         )}
       </div>
       {creando && <FormCajaModal onCerrar={() => setCreando(false)} onGuardada={(id) => { setCreando(false); recargar(); refrescarAbierta(id); }} />}

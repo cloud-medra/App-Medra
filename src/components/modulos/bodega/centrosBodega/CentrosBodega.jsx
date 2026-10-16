@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Building2, RefreshCw, ArrowLeft, FileSpreadsheet, FileDown } from 'lucide-react';
 import { useToast } from '../../../../context/ToastContext';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { exportarExcel, exportarPdf } from '../shared/exportar';
 import BuscadorConLimpiar from '../../../ui/BuscadorConLimpiar';
@@ -15,12 +18,12 @@ import { useCatalogo } from '../../../../hooks/useCatalogo';
 
 const PATH_VISTA = '/bodega/centrosBodega';
 const COLUMNAS = [
-  { key: 'centro', label: 'Centro', fija: true },
-  { key: 'productos', label: 'Productos', alinear: 'text-right' },
-  { key: 'unidades', label: 'En tránsito', alinear: 'text-right' },
-  { key: 'enCentro', label: 'Dejado en centro', alinear: 'text-right' },
-  { key: 'antiguo', label: 'Más antiguo (días)', alinear: 'text-right' },
-  { key: 'vencimiento', label: 'Próximo vencimiento' },
+  { key: 'centro', label: 'Centro', fija: true, ancho: 240, min: 100 },
+  { key: 'productos', label: 'Productos', alinear: 'text-right', ancho: 90, min: 60 },
+  { key: 'unidades', label: 'En tránsito', alinear: 'text-right', ancho: 100, min: 60 },
+  { key: 'enCentro', label: 'Dejado en centro', alinear: 'text-right', ancho: 115, min: 60 },
+  { key: 'antiguo', label: 'Más antiguo (días)', alinear: 'text-right', ancho: 125, min: 70 },
+  { key: 'vencimiento', label: 'Próximo vencimiento', ancho: 150, min: 90 },
 ];
 
 const COLUMNAS_EXPORT = [
@@ -97,7 +100,8 @@ const DetalleCentro = ({ centro, onVolver }) => {
 // nota de a uno o varios.
 const CentrosBodega = () => {
   const { showToast } = useToast();
-  const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'centros', COLUMNAS);
+  const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'centros', COLUMNAS);
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(columnasVisibles, 'bodega.centros');
   const [centros, setCentros] = useState(null);
   const [resumenes, setResumenes] = useState({});
   const [abierto, setAbierto] = useState(null);
@@ -145,29 +149,28 @@ const CentrosBodega = () => {
         ) : centros === null ? (
           <p className="text-gray-400 italic">Cargando…</p>
         ) : (
-          <table className="w-full text-left text-[12px] border border-gray-200 dark:border-gray-700">
-            <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-              <tr>{columnasVisibles.map((c) => <th key={c.key} className={`px-2 py-1.5 ${c.alinear || ''}`}>{c.label}</th>)}</tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {centros.length === 0 && <tr><td colSpan={columnasVisibles.length} className="px-2 py-6 text-center text-gray-400 italic">Ningún centro tiene stock en tránsito ni dejado en el centro.</td></tr>}
-              {centros.map((c) => {
-                const r = resumenes[c.id];
-                const dias = r ? diasEnTransito(r.masAntiguo) : null;
-                const venc = estadoVencimiento(r?.proximoVencimiento);
-                return (
-                  <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 cursor-pointer" onClick={() => setAbierto(c)}>
-                    <td className="px-2 py-1.5 font-semibold text-[#2383C2] underline-offset-2 hover:underline">{c.centroNombre}</td>
-                    {ver('productos') && <td className="px-2 py-1.5 text-right font-num">{c.productosDistintos}</td>}
-                    {ver('unidades') && <td className="px-2 py-1.5 text-right font-num font-bold text-amber-600 dark:text-amber-400">{formatoCantidad(c.unidades)}</td>}
-                    {ver('enCentro') && <td className="px-2 py-1.5 text-right font-num font-bold text-violet-600 dark:text-violet-400">{c.enCentro ? formatoCantidad(c.enCentro) : '—'}</td>}
-                    {ver('antiguo') && <td className={`px-2 py-1.5 text-right font-num ${dias > 7 ? 'text-red-600 font-bold' : ''}`}>{r ? (dias ?? '—') : '…'}</td>}
-                    {ver('vencimiento') && <td className="px-2 py-1.5 font-num">{r ? (r.proximoVencimiento || '—') : '…'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
+            <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
+              <TablaBodega columnas={columnasVisibles} anchos={anchos} onResize={handleResize}>
+                {centros.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>Ningún centro tiene stock en tránsito ni dejado en el centro.</FilaAnchoCompleto>}
+                {centros.map((c) => {
+                  const r = resumenes[c.id];
+                  const dias = r ? diasEnTransito(r.masAntiguo) : null;
+                  const venc = estadoVencimiento(r?.proximoVencimiento);
+                  const celdas = {
+                    centro: <td className={`${TD} font-semibold text-[#2383C2] underline-offset-2 group-hover:underline`} title={c.centroNombre}>{c.centroNombre}</td>,
+                    productos: <td className={`${TD} text-right font-num`}>{c.productosDistintos}</td>,
+                    unidades: <td className={`${TD} text-right font-num font-bold text-amber-600 dark:text-amber-400`}>{formatoCantidad(c.unidades)}</td>,
+                    enCentro: <td className={`${TD} text-right font-num font-bold text-violet-600 dark:text-violet-400`}>{c.enCentro ? formatoCantidad(c.enCentro) : '—'}</td>,
+                    antiguo: <td className={`${TD} text-right font-num ${dias > 7 ? 'text-red-600 font-bold' : ''}`}>{r ? (dias ?? '—') : '…'}</td>,
+                    vencimiento: <td className={`${TD} font-num`}>{r ? (r.proximoVencimiento || '—') : '…'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
+                  };
+                  return <FilaBodega key={c.id} columnas={columnasVisibles} celdas={celdas} className="cursor-pointer" onClick={() => setAbierto(c)} />;
+                })}
+              </TablaBodega>
+            </div>
+          </div>
         )}
       </div>
     </div>
