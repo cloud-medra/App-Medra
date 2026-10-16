@@ -2,6 +2,7 @@ import React from 'react';
 import { Loader2, Trash2 } from 'lucide-react';
 import { useAutocompleteReferencia } from './useAutocompleteReferencia';
 import { CODIGO_SIN_OC } from './cargasHelpers';
+import { CLASE_SIN_FLECHAS, SIN_CAMBIO_ACCIDENTAL } from '../../../../../../ui/numeroSinFlechas';
 
 export const crearFilaContenidoPadVacia = () => ({
   tempId: crypto.randomUUID(),
@@ -113,9 +114,10 @@ export const PadContenidoRow = ({ fila, onChange, onRemove, puedeEliminar }) => 
         <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Cant.</label>
         <input
           type="number"
+          {...SIN_CAMBIO_ACCIDENTAL}
           value={fila.cantidad}
           onChange={e => onChange({ ...fila, cantidad: e.target.value })}
-          className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+          className={`${CLASE_SIN_FLECHAS} h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none`}
           placeholder="1"
         />
       </div>

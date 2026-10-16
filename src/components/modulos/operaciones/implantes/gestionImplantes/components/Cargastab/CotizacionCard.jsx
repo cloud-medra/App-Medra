@@ -24,6 +24,8 @@ import {
   calcularCamposFinancieros,
   ESTADO_CARGA_OPTIONS,
   getEstadoCargaStyle,
+  camposCambioEstadoCarga,
+  ESTADO_SIN_CARGO,
   getEstadoCargaRowStyle,
   CODIGO_SIN_OC,
   VALOR_LOTE_VENCIMIENTO_PAD,
@@ -34,6 +36,7 @@ import { ManijaRedimension } from '../../../../../../ui/ManijaRedimension';
 import { useAutocompleteReferencia } from './useAutocompleteReferencia';
 import { PadContenidoRow, crearFilaContenidoPadVacia, construirItemContenidoPadDesdeFila } from './PadContenidoRow';
 import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
+import { CLASE_SIN_FLECHAS, SIN_CAMBIO_ACCIDENTAL } from '../../../../../../ui/numeroSinFlechas';
 
 // Mismo sistema de columnas redimensionables que usa el CotizacionCard de
 // Hemodinamia (Cargastab/CotizacionCard.jsx) — se agrega la columna "Veces
@@ -386,8 +389,16 @@ export const CotizacionCard = ({
   // estado se maneja con la lógica propia del flujo PAD. Los que ya están
   // en CARGADO tampoco se tocan (no hay nada que cambiar).
   const itemsElegiblesCargaMasiva = items.filter(it =>
-    !it.esPad && !it.padPadreId && !it.sinCodigo && (it.estadoCarga || 'PENDIENTE') !== 'CARGADO'
+    !it.esPad && !it.padPadreId && !it.sinCodigo && (it.estadoCarga || 'PENDIENTE') !== 'CARGADO' && it.estadoCarga !== ESTADO_SIN_CARGO
   );
+
+  // Cambiar Estado Carga: entrar o salir de SIN CARGO también cambia
+  // código, precio y totales (camposCambioEstadoCarga); el resto solo el estado.
+  const cambiarEstadoCarga = (it, nuevoEstado) => {
+    const campos = camposCambioEstadoCarga(it, nuevoEstado, recargosActivos);
+    if (Object.keys(campos).length === 1) onActualizarEstadoItem(it.id, nuevoEstado);
+    else onEditarItem(it.id, campos);
+  };
   const cantidadElegibles = itemsElegiblesCargaMasiva.length;
   const textoCantidadElegibles = `${cantidadElegibles} ítem${cantidadElegibles === 1 ? '' : 's'}`;
 
@@ -567,9 +578,10 @@ export const CotizacionCard = ({
                           <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center">
                             <input
                               type="number"
+                              {...SIN_CAMBIO_ACCIDENTAL}
                               value={borrador.cantidad}
                               onChange={e => setBorrador(prev => ({ ...prev, cantidad: e.target.value }))}
-                              className="w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-center"
+                              className={`${CLASE_SIN_FLECHAS} w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-center`}
                             />
                           </td>
 
@@ -635,10 +647,11 @@ export const CotizacionCard = ({
                             ) : (
                               <input
                                 type="number"
+                                {...SIN_CAMBIO_ACCIDENTAL}
                                 min="0"
                                 value={borrador.precio}
                                 onChange={e => setBorrador(prev => ({ ...prev, precio: e.target.value }))}
-                                className="w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                                className={`${CLASE_SIN_FLECHAS} w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none`}
                               />
                             )}
                           </td>
@@ -839,7 +852,7 @@ export const CotizacionCard = ({
                               <div className="flex flex-col gap-0.5">
                                 <select
                                   value={it.estadoCarga || 'PENDIENTE'}
-                                  onChange={(e) => onActualizarEstadoItem(it.id, e.target.value)}
+                                  onChange={(e) => cambiarEstadoCarga(it, e.target.value)}
                                   disabled={soloLectura}
                                   className={`w-full min-w-0 h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${estilo.bg} ${estilo.border} ${estilo.text}`}
                                 >

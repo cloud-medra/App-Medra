@@ -28,6 +28,7 @@ import { construirItemLoteDesdeFila } from './loteAdicionalHelpers';
 import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
 // Foco para ingresar ítems seguidos con el teclado (ver src/utils/foco.js).
 import { enfocar, alPresionarEnter } from '../../../../../../../utils/foco';
+import { CLASE_SIN_FLECHAS, SIN_CAMBIO_ACCIDENTAL } from '../../../../../../ui/numeroSinFlechas';
 
 const PATH_VISTA = '/implantes/gestionImplantes/cargas';
 const PATH_INFORMACION = '/implantes/gestionImplantes/informacion';
@@ -719,9 +720,10 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 ref={cantidadRef}
                 aria-label="Cantidad"
                 type="number"
+                {...SIN_CAMBIO_ACCIDENTAL}
                 value={nuevoItem.cantidad}
                 onChange={e => handleChange('cantidad', e.target.value)}
-                className={`h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
+                className={`${CLASE_SIN_FLECHAS} h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
                   }`}
                 placeholder="1"
               />
@@ -852,9 +854,10 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     ref={cantidadContenidoRef}
                     aria-label="Cantidad contenido"
                     type="number"
+                    {...SIN_CAMBIO_ACCIDENTAL}
                     value={draftContenido.cantidad}
                     onChange={e => handleDraftChange('cantidad', e.target.value)}
-                    className={`h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftContenido.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
+                    className={`${CLASE_SIN_FLECHAS} h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftContenido.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
                     placeholder="1"
                   />
                 </div>
@@ -942,9 +945,10 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     </label>
                     <input
                       type="number"
+                      {...SIN_CAMBIO_ACCIDENTAL}
                       value={draftLote.cantidad}
                       onChange={e => handleDraftLoteChange('cantidad', e.target.value)}
-                      className={`h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftLote.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
+                      className={`${CLASE_SIN_FLECHAS} h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftLote.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
                       placeholder="1"
                     />
                   </div>
