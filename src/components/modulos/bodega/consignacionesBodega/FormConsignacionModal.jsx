@@ -5,8 +5,22 @@ import { validarConsignacion, MAX_LINEAS_CONSIGNACION, MAX_OBSERVACION, stockTot
 import { guardarConsignacion, mensajeError } from '../shared/bodegaApi';
 import BuscadorProducto from '../shared/BuscadorProducto';
 import { formatoCantidad } from '../shared/catalogosBodega';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
+import { useReferenciaDe } from '../shared/referencias';
 
 const INPUT = 'h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-50';
+
+// Mismo diseño que el Maestro (TablaBodega): columnas redimensionables.
+const COLUMNAS = [
+  { key: 'producto', label: 'Producto', ancho: 260, min: 110 },
+  { key: 'referencia', label: 'Referencia', ancho: 120, min: 60 },
+  { key: 'lote', label: 'Lote', ancho: 130, min: 70 },
+  { key: 'vencimiento', label: 'Vencimiento', ancho: 135, min: 110 },
+  { key: 'cantidad', label: 'Cantidad consignada', alinear: 'text-right', ancho: 130, min: 80 },
+  { key: 'quitar', label: '', ancho: 36, min: 32 },
+];
 
 let siguienteKey = 0;
 const nuevaKey = () => { siguienteKey += 1; return `c${siguienteKey}`; };
@@ -26,6 +40,8 @@ const FormConsignacionModal = ({ empresa, consignacion, lotesEmpresa = [], onCer
   })));
   const [guardando, setGuardando] = useState(false);
   const [errores, setErrores] = useState([]);
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(COLUMNAS, 'bodega.modal.consignacion');
+  const referenciaDe = useReferenciaDe();
 
   const registrados = new Set((consignacion?.lineas || []).map((l) => l.loteId));
   const sinRegistrar = lotesEmpresa.filter((l) => stockTotal(l) > 0 && !registrados.has(l.id)
@@ -86,45 +102,46 @@ const FormConsignacionModal = ({ empresa, consignacion, lotesEmpresa = [], onCer
             )}
           </div>
 
+          <div className="flex justify-end -mb-2"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
           <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
-            <table className="w-full text-left text-[12px]">
-              <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-                <tr>
-                  <th className="px-2 py-1.5">Producto</th>
-                  <th className="px-2 py-1.5 w-36">Lote</th>
-                  <th className="px-2 py-1.5 w-40">Vencimiento</th>
-                  <th className="px-2 py-1.5 w-32 text-right">Cantidad consignada</th>
-                  <th className="px-2 py-1.5 w-10" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {lineas.length === 0 && <tr><td colSpan={5} className="px-2 py-4 text-center text-gray-400 italic">Agrega los productos que dejó la empresa.</td></tr>}
-                {lineas.map((l) => {
-                  const p = porId[l.productoId];
-                  return (
-                    <tr key={l.key}>
-                      <td className="px-2 py-1">{l.productoNombre || p?.nombre} <span className="font-num text-[11px] text-gray-500">{l.codigoMaestro || p?.codigoMaestro}</span></td>
-                      <td className="px-2 py-1">
-                        {p?.manejaLote === false
-                          ? <span className="text-gray-400 text-[11px]">No maneja lote</span>
-                          : <input value={l.lote} onChange={(e) => cambiar(l.key, 'lote', e.target.value.toUpperCase())} maxLength={40} disabled={guardando} aria-label="Lote" className={`${INPUT} w-full font-num uppercase`} />}
-                      </td>
-                      <td className="px-2 py-1">
-                        {p?.manejaVencimiento === false
-                          ? <span className="text-gray-400 text-[11px]">No maneja venc.</span>
-                          : <input type="date" value={l.vencimiento} onChange={(e) => cambiar(l.key, 'vencimiento', e.target.value)} disabled={guardando} aria-label="Vencimiento" className={`${INPUT} w-full font-num`} />}
-                      </td>
-                      <td className="px-2 py-1 text-right">
-                        <input type="number" min="0" step="1" inputMode="numeric" value={l.cantidadConsignada} onChange={(e) => cambiar(l.key, 'cantidadConsignada', e.target.value)} disabled={guardando} aria-label="Cantidad consignada" className={`${INPUT} w-24 text-right font-num`} />
-                      </td>
-                      <td className="px-2 py-1 text-center">
-                        <button type="button" onClick={() => quitar(l.key)} disabled={guardando} title="Quitar línea" className="p-1 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={13} /></button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <TablaBodega columnas={COLUMNAS} anchos={anchos} onResize={handleResize}>
+              {lineas.length === 0 && <FilaAnchoCompleto columnas={COLUMNAS} celdaClassName="px-2 py-4 text-center text-gray-400 italic">Agrega los productos que dejó la empresa.</FilaAnchoCompleto>}
+              {lineas.map((l) => {
+                const p = porId[l.productoId];
+                const nombre = l.productoNombre || p?.nombre;
+                const referencia = referenciaDe(l.productoId);
+                const codigo = l.codigoMaestro || p?.codigoMaestro;
+                const celdas = {
+                  producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={nombre}>{nombre}</td>,
+                  referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${codigo}` : codigo}>{referencia || '—'}</td>,
+                  lote: (
+                    <td className={`${TD} !py-0`}>
+                      {p?.manejaLote === false
+                        ? <span className="text-gray-400">No maneja lote</span>
+                        : <input value={l.lote} onChange={(e) => cambiar(l.key, 'lote', e.target.value.toUpperCase())} maxLength={40} disabled={guardando} aria-label="Lote" className={`${INPUT} !h-6 w-full font-num uppercase`} />}
+                    </td>
+                  ),
+                  vencimiento: (
+                    <td className={`${TD} !py-0`}>
+                      {p?.manejaVencimiento === false
+                        ? <span className="text-gray-400">No maneja venc.</span>
+                        : <input type="date" value={l.vencimiento} onChange={(e) => cambiar(l.key, 'vencimiento', e.target.value)} disabled={guardando} aria-label="Vencimiento" className={`${INPUT} !h-6 w-full font-num`} />}
+                    </td>
+                  ),
+                  cantidad: (
+                    <td className={`${TD} !py-0 text-right`}>
+                      <input type="number" min="0" step="1" inputMode="numeric" value={l.cantidadConsignada} onChange={(e) => cambiar(l.key, 'cantidadConsignada', e.target.value)} disabled={guardando} aria-label="Cantidad consignada" className={`${INPUT} !h-6 w-full max-w-24 text-right font-num`} />
+                    </td>
+                  ),
+                  quitar: (
+                    <td className={`${TD} !py-0 text-center`}>
+                      <button type="button" onClick={() => quitar(l.key)} disabled={guardando} title="Quitar línea" className="p-0.5 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={13} /></button>
+                    </td>
+                  ),
+                };
+                return <FilaBodega key={l.key} columnas={COLUMNAS} celdas={celdas} />;
+              })}
+            </TablaBodega>
           </div>
           <p className="text-[11px] text-gray-500">{lineas.length} línea(s) · {formatoCantidad(total)} u. consignadas · máx. {MAX_LINEAS_CONSIGNACION} líneas.</p>
 

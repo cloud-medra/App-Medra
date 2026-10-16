@@ -6,14 +6,14 @@ import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitida
 const PATH_CARGA = '/bodega/cargaInicialBodega';
 
 export const COLUMNAS_CARGA = [
-  { key: 'referencia', label: 'Referencia' },
-  { key: 'producto', label: 'Producto', fija: true },
-  { key: 'lote', label: 'Lote' },
-  { key: 'vencimiento', label: 'Vencimiento' },
-  { key: 'cantidad', label: 'Cantidad', alinear: 'text-right' },
-  { key: 'precio', label: 'Precio unitario', alinear: 'text-right' },
-  { key: 'total', label: 'Total', alinear: 'text-right' },
-  { key: 'quitar', label: '', fija: true },
+  { key: 'referencia', label: 'Referencia', ancho: 130, min: 60 },
+  { key: 'producto', label: 'Producto', fija: true, ancho: 260, min: 110 },
+  { key: 'lote', label: 'Lote', ancho: 110, min: 55 },
+  { key: 'vencimiento', label: 'Vencimiento', ancho: 130, min: 80 },
+  { key: 'cantidad', label: 'Cantidad', alinear: 'text-right', ancho: 95, min: 70 },
+  { key: 'precio', label: 'Precio unitario', alinear: 'text-right', ancho: 125, min: 90 },
+  { key: 'total', label: 'Total', alinear: 'text-right', ancho: 110, min: 70 },
+  { key: 'quitar', label: '', fija: true, ancho: 40, min: 34 },
 ];
 
 export const useColumnasCarga = () => useColumnasPermitidas(PATH_CARGA, 'lineas', COLUMNAS_CARGA);

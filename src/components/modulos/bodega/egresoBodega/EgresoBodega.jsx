@@ -15,16 +15,21 @@ import { egresar, leerLotesDeProducto, mensajeError } from '../shared/bodegaApi'
 import { formatoCantidad } from '../shared/catalogosBodega';
 import { estadoVencimiento } from '../shared/vencimientos';
 import { agregarLineaEgreso, reservadoPorLote, resumenPorCentro } from './lineasEgreso';
+import { referenciaProducto } from '../shared/documentos/lineasDocumento';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
 
 const PATH_VISTA = '/bodega/egresoBodega';
+// Mismo diseño que el Maestro (TablaBodega): columnas redimensionables.
 const COLUMNAS = [
-  { key: 'codigo', label: 'Código' },
-  { key: 'producto', label: 'Producto', fija: true },
-  { key: 'lote', label: 'Lote' },
-  { key: 'vencimiento', label: 'Vencimiento' },
-  { key: 'centro', label: 'Centro' },
-  { key: 'cantidad', label: 'Cantidad', alinear: 'text-right' },
-  { key: 'quitar', label: '', fija: true },
+  { key: 'referencia', label: 'Referencia', ancho: 130, min: 60 },
+  { key: 'producto', label: 'Producto', fija: true, ancho: 280, min: 110 },
+  { key: 'lote', label: 'Lote', ancho: 150, min: 55 },
+  { key: 'vencimiento', label: 'Vencimiento', ancho: 110, min: 80 },
+  { key: 'centro', label: 'Centro', ancho: 160, min: 70 },
+  { key: 'cantidad', label: 'Cantidad', alinear: 'text-right', ancho: 85, min: 60 },
+  { key: 'quitar', label: '', fija: true, ancho: 40, min: 34 },
 ];
 const CLAVE_CENTRO = 'bodega.ultimoCentroEgreso';
 const leerUltimoCentro = () => { try { return JSON.parse(localStorage.getItem(CLAVE_CENTRO) || 'null'); } catch { return null; } };
@@ -40,7 +45,8 @@ const EgresoBodega = () => {
   const { showToast } = useToast();
   const { confirmAction } = useModal();
   const { hasPermission } = useGranularPermission();
-  const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'lineas', COLUMNAS);
+  const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'lineas', COLUMNAS);
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(columnasVisibles, 'bodega.egreso.lineas');
   const { datos: productos } = useCatalogo('bodegaProductos');
   const { datos: centros } = useCatalogo('centros');
   const porId = useMemo(() => Object.fromEntries(productos.map((p) => [p.id, p])), [productos]);
@@ -240,46 +246,52 @@ const EgresoBodega = () => {
           <p className="text-[11px] text-gray-500">Centro por defecto para la próxima línea: <strong>{nombreCentroActual}</strong> (se puede cambiar en cada una).</p>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h3 className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-300">Líneas de la salida</h3>
-          <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300">
-            <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} /> <Layers size={12} /> Agrupar por centro
-          </label>
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300">
+              <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} /> <Layers size={12} /> Agrupar por centro
+            </label>
+            <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} />
+          </div>
         </div>
         <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
-          <table className="w-full text-left text-[12px] border-collapse">
-            <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-              <tr>{columnasVisibles.map((c) => <th key={c.key} className={`px-2 py-1.5 ${c.alinear || ''}`}>{c.label}</th>)}</tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {lineas.length === 0 && <tr><td colSpan={columnasVisibles.length} className="px-2 py-6 text-center text-gray-400 italic">Escanea o busca un producto para agregar líneas.</td></tr>}
-              {filas.map((l, i) => {
-                const p = porId[l.productoId];
-                const encabezado = agrupar && (i === 0 || filas[i - 1].centroId !== l.centroId);
-                const sub = subtotales.find((c) => c.centroId === l.centroId);
-                return (
-                  <Fragment key={l.key}>
-                    {encabezado && (
-                      <tr className="bg-amber-50 dark:bg-amber-950/20">
-                        <td colSpan={columnasVisibles.length} className="px-2 py-1 font-bold text-amber-800 dark:text-amber-200">{l.centroNombre} · {sub.lineas} línea(s) · {sub.unidades} u.</td>
-                      </tr>
-                    )}
-                    <tr>
-                      {ver('codigo') && <td className="px-2 py-1 font-num text-[#2383C2]">{p?.codigoMaestro || '—'}</td>}
-                      <td className="px-2 py-1 font-semibold">{l.productoNombre}</td>
-                      {ver('lote') && <td className="px-2 py-1 font-num">{l.lote || '—'}{l.propietarioNombre && <span className="ml-1 px-1 rounded text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span>}</td>}
-                      {ver('vencimiento') && <td className="px-2 py-1 font-num">{l.vencimiento || '—'}</td>}
-                      {ver('centro') && <td className="px-2 py-1">{l.centroNombre}</td>}
-                      {ver('cantidad') && <td className="px-2 py-1 text-right font-num font-bold">{l.cantidad}</td>}
-                      <td className="px-2 py-1 text-center">
-                        <button type="button" disabled={ocupado} onClick={() => setLineas((ls) => ls.filter((x) => x.key !== l.key))} title="Quitar línea" className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={14} /></button>
-                      </td>
-                    </tr>
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+          <TablaBodega columnas={columnasVisibles} anchos={anchos} onResize={handleResize}>
+            {lineas.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>Escanea o busca un producto para agregar líneas.</FilaAnchoCompleto>}
+            {filas.map((l, i) => {
+              const p = porId[l.productoId];
+              const referencia = referenciaProducto(p);
+              const encabezado = agrupar && (i === 0 || filas[i - 1].centroId !== l.centroId);
+              const sub = subtotales.find((c) => c.centroId === l.centroId);
+              const celdas = {
+                referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p?.codigoMaestro || ''}` : p?.codigoMaestro}>{referencia || '—'}</td>,
+                producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={l.productoNombre}>{l.productoNombre}</td>,
+                lote: (
+                  <td className={`${TD} font-num`} title={`${l.lote || ''}${l.propietarioNombre ? ` · consignado ${l.propietarioNombre}` : ''}`}>
+                    {l.lote || '—'}{l.propietarioNombre && <span className="ml-1 px-1 rounded text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span>}
+                  </td>
+                ),
+                vencimiento: <td className={`${TD} font-num`}>{l.vencimiento || '—'}</td>,
+                centro: <td className={TD} title={l.centroNombre}>{l.centroNombre}</td>,
+                cantidad: <td className={`${TD} text-right font-num font-bold`}>{l.cantidad}</td>,
+                quitar: (
+                  <td className={`${TD} !py-0 text-center`}>
+                    <button type="button" disabled={ocupado} onClick={() => setLineas((ls) => ls.filter((x) => x.key !== l.key))} title="Quitar línea" className="p-0.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={14} /></button>
+                  </td>
+                ),
+              };
+              return (
+                <Fragment key={l.key}>
+                  {encabezado && (
+                    <FilaAnchoCompleto columnas={columnasVisibles} className="bg-amber-50 dark:bg-amber-950/20" celdaClassName="px-2 py-1 font-bold text-amber-800 dark:text-amber-200 border-b border-gray-200 dark:border-gray-700/70">
+                      {l.centroNombre} · {sub.lineas} línea(s) · {sub.unidades} u.
+                    </FilaAnchoCompleto>
+                  )}
+                  <FilaBodega columnas={columnasVisibles} celdas={celdas} />
+                </Fragment>
+              );
+            })}
+          </TablaBodega>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">

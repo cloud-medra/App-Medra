@@ -5,6 +5,19 @@ import { inventariarCaja, mensajeError } from '../shared/bodegaApi';
 import { formatoCantidad } from '../shared/catalogosBodega';
 import ResultadoInventario from './ResultadoInventario';
 import { productosDeCaja } from './cajas';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
+import { useReferenciaDe } from '../shared/referencias';
+
+// Mismo diseño que el Maestro (TablaBodega): columnas redimensionables.
+const COLUMNAS = [
+  { key: 'producto', label: 'Producto', ancho: 280, min: 120 },
+  { key: 'referencia', label: 'Referencia', ancho: 120, min: 60 },
+  { key: 'objetivo', label: 'Objetivo', alinear: 'text-right', ancho: 80, min: 55 },
+  { key: 'actual', label: 'Actual registrado', alinear: 'text-right', ancho: 120, min: 70 },
+  { key: 'contado', label: 'Contado', alinear: 'text-right', ancho: 110, min: 80 },
+];
 
 // "Hacer inventario": cantidad contada de cada producto de la caja. Al
 // confirmar, el stock actual pasa a ser lo contado y se muestra el
@@ -16,6 +29,8 @@ const InventarioCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [resultado, setResultado] = useState(null);
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(COLUMNAS, 'bodega.modal.inventarioCaja');
+  const referenciaDe = useReferenciaDe();
 
   const confirmar = async () => {
     const { errores } = resultadoInventarioCaja(caja.productos, conteos);
@@ -44,29 +59,34 @@ const InventarioCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
           {resultado ? (
             <ResultadoInventario lineas={resultado.lineas} />
           ) : (
-            <table className="w-full text-left text-[12px] border border-gray-200 dark:border-gray-700">
-              <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-                <tr><th className="px-2 py-1.5">Producto</th><th className="px-2 py-1.5 text-right">Objetivo</th><th className="px-2 py-1.5 text-right">Actual registrado</th><th className="px-2 py-1.5 text-right w-32">Contado</th></tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {productos.map((p, i) => (
-                  <tr key={p.productoId}>
-                    <td className="px-2 py-1">{p.nombre} <span className="font-num text-[11px] text-gray-500">{p.codigoMaestro}</span></td>
-                    <td className="px-2 py-1 text-right font-num">{formatoCantidad(p.stockObjetivo)}</td>
-                    <td className="px-2 py-1 text-right font-num">{formatoCantidad(p.stockActual)}</td>
-                    <td className="px-2 py-1 text-right">
-                      <input
-                        type="number" min="0" step="1" inputMode="numeric" autoFocus={i === 0}
-                        value={conteos[p.productoId] ?? ''}
-                        onChange={(e) => setConteos((c) => ({ ...c, [p.productoId]: e.target.value }))}
-                        disabled={guardando} aria-label={`Contado de ${p.nombre}`}
-                        className="h-7 w-24 px-2 border border-gray-300 dark:border-gray-600 rounded text-right font-num bg-white dark:bg-gray-900 outline-none focus:border-[#2383C2]"
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
+              <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
+                <TablaBodega columnas={COLUMNAS} anchos={anchos} onResize={handleResize}>
+                  {productos.map((p, i) => {
+                    const referencia = referenciaDe(p.productoId);
+                    const celdas = {
+                      producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={p.nombre}>{p.nombre}</td>,
+                      referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p.codigoMaestro}` : p.codigoMaestro}>{referencia || '—'}</td>,
+                      objetivo: <td className={`${TD} text-right font-num`}>{formatoCantidad(p.stockObjetivo)}</td>,
+                      actual: <td className={`${TD} text-right font-num`}>{formatoCantidad(p.stockActual)}</td>,
+                      contado: (
+                        <td className={`${TD} !py-0 text-right`}>
+                          <input
+                            type="number" min="0" step="1" inputMode="numeric" autoFocus={i === 0}
+                            value={conteos[p.productoId] ?? ''}
+                            onChange={(e) => setConteos((c) => ({ ...c, [p.productoId]: e.target.value }))}
+                            disabled={guardando} aria-label={`Contado de ${p.nombre}`}
+                            className="h-6 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-right font-num bg-white dark:bg-gray-900 outline-none focus:border-[#2383C2] w-full max-w-24"
+                          />
+                        </td>
+                      ),
+                    };
+                    return <FilaBodega key={p.productoId} columnas={COLUMNAS} celdas={celdas} />;
+                  })}
+                </TablaBodega>
+              </div>
+            </div>
           )}
           {error && <p className="mt-2 text-red-600">{error}</p>}
         </div>

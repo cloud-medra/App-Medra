@@ -6,6 +6,19 @@ import { reponerCaja, mensajeError } from '../shared/bodegaApi';
 import { formatoCantidad } from '../shared/catalogosBodega';
 import DetalleReposicion from './DetalleReposicion';
 import { productosDeCaja } from './cajas';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
+import { useReferenciaDe } from '../shared/referencias';
+
+// Mismo diseño que el Maestro (TablaBodega): columnas redimensionables.
+const COLUMNAS = [
+  { key: 'producto', label: 'Producto', ancho: 280, min: 120 },
+  { key: 'referencia', label: 'Referencia', ancho: 120, min: 60 },
+  { key: 'faltante', label: 'Faltante', alinear: 'text-right', ancho: 80, min: 55 },
+  { key: 'disponible', label: 'Disponible bodega', alinear: 'text-right', ancho: 125, min: 70 },
+  { key: 'reponer', label: 'A reponer', alinear: 'text-right', ancho: 110, min: 80 },
+];
 
 // "Reponer": productos con faltante vs. objetivo, disponible en la Bodega
 // General y cantidad a reponer (por defecto el faltante, limitado a lo
@@ -20,6 +33,8 @@ const ReponerCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const [resultado, setResultado] = useState(null);
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(COLUMNAS, 'bodega.modal.reponerCaja');
+  const referenciaDe = useReferenciaDe();
 
   const confirmar = async () => {
     const { errores } = planReposicionCaja(caja.productos, cantidades, disponibles);
@@ -53,32 +68,35 @@ const ReponerCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
           ) : conFaltante.length === 0 ? (
             <p className="text-gray-500 italic">La caja está completa: no hay nada que reponer.</p>
           ) : (
-            <table className="w-full text-left text-[12px] border border-gray-200 dark:border-gray-700">
-              <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-                <tr><th className="px-2 py-1.5">Producto</th><th className="px-2 py-1.5 text-right">Faltante</th><th className="px-2 py-1.5 text-right">Disponible bodega</th><th className="px-2 py-1.5 text-right w-32">A reponer</th></tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                {conFaltante.map((p) => {
-                  const disp = disponibles[p.productoId] ?? 0;
-                  return (
-                    <tr key={p.productoId}>
-                      <td className="px-2 py-1">{p.nombre} <span className="font-num text-[11px] text-gray-500">{p.codigoMaestro}</span></td>
-                      <td className="px-2 py-1 text-right font-num font-bold text-red-600">{formatoCantidad(p.faltante)}</td>
-                      <td className={`px-2 py-1 text-right font-num ${disp < p.faltante ? 'text-amber-600 font-bold' : ''}`}>{formatoCantidad(disp)}</td>
-                      <td className="px-2 py-1 text-right">
-                        <input
-                          type="number" min="0" max={Math.min(p.faltante, disp)} step="1" inputMode="numeric"
-                          value={cantidades[p.productoId] ?? ''}
-                          onChange={(e) => setCantidades((c) => ({ ...c, [p.productoId]: e.target.value }))}
-                          disabled={guardando} aria-label={`A reponer de ${p.nombre}`}
-                          className="h-7 w-24 px-2 border border-gray-300 dark:border-gray-600 rounded text-right font-num bg-white dark:bg-gray-900 outline-none focus:border-[#2383C2]"
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
+              <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
+                <TablaBodega columnas={COLUMNAS} anchos={anchos} onResize={handleResize}>
+                  {conFaltante.map((p) => {
+                    const disp = disponibles[p.productoId] ?? 0;
+                    const referencia = referenciaDe(p.productoId);
+                    const celdas = {
+                      producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={p.nombre}>{p.nombre}</td>,
+                      referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p.codigoMaestro}` : p.codigoMaestro}>{referencia || '—'}</td>,
+                      faltante: <td className={`${TD} text-right font-num font-bold text-red-600`}>{formatoCantidad(p.faltante)}</td>,
+                      disponible: <td className={`${TD} text-right font-num ${disp < p.faltante ? 'text-amber-600 font-bold' : ''}`}>{formatoCantidad(disp)}</td>,
+                      reponer: (
+                        <td className={`${TD} !py-0 text-right`}>
+                          <input
+                            type="number" min="0" max={Math.min(p.faltante, disp)} step="1" inputMode="numeric"
+                            value={cantidades[p.productoId] ?? ''}
+                            onChange={(e) => setCantidades((c) => ({ ...c, [p.productoId]: e.target.value }))}
+                            disabled={guardando} aria-label={`A reponer de ${p.nombre}`}
+                            className="h-6 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-right font-num bg-white dark:bg-gray-900 outline-none focus:border-[#2383C2] w-full max-w-24"
+                          />
+                        </td>
+                      ),
+                    };
+                    return <FilaBodega key={p.productoId} columnas={COLUMNAS} celdas={celdas} />;
+                  })}
+                </TablaBodega>
+              </div>
+            </div>
           )}
           {!resultado && conFaltante.length > 0 && <p className="mt-2 text-[11px] text-gray-500">Se descuenta de la Bodega General por lote, el que vence primero (FEFO). Deja en 0 lo que no repongas ahora: queda como pendiente.</p>}
           {error && <p className="mt-2 text-red-600">{error}</p>}
