@@ -126,6 +126,9 @@ const TABLAS_PENDIENTES = new Set([
   // Solicitud de Implantes y Hemodinamia (pantalla compartida).
   'modulos/operaciones/shared/solicitud/SolicitudGestiones.jsx',
   'ui/TablaRedimensionable.jsx',
+  // Tabla genérica de Bodega: las columnas (y sus permisos) las define cada
+  // pantalla que la usa (Maestro, Tránsito, Tránsito por centro).
+  'modulos/bodega/shared/TablaBodega.jsx',
   // Cajas de Bodega: formularios y detalles en ventanas (no listados).
   'modulos/bodega/cajasBodega/FormCajaModal.jsx',
   'modulos/bodega/cajasBodega/InventarioCajaModal.jsx',
