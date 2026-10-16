@@ -16,17 +16,25 @@ import {
   totalLinea, totalValorLineas, precioInicialLinea, referenciaProducto, campoInicial, siguienteCampo,
 } from './lineasDocumento';
 import { useColumnasCarga } from './columnasCarga';
+import { BotonRestablecerAnchos } from '../../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../anchosTablaBodega';
 
 // Columnas de la tabla de líneas (permiso col_<key> en la sección "lineas"
-// de la vista que monta el editor: Ingreso o Carga inicial).
+// de la vista que monta el editor: Ingreso o Inventario; Carga inicial usa
+// las de columnasCarga). Mismo diseño que el Maestro (TablaBodega).
 const COLUMNAS = [
-  { key: 'codigo', label: 'Código' },
-  { key: 'producto', label: 'Producto', fija: true },
-  { key: 'lote', label: 'Lote' },
-  { key: 'vencimiento', label: 'Vencimiento' },
-  { key: 'cantidad', label: 'Cantidad', alinear: 'text-right' },
-  { key: 'quitar', label: '', fija: true },
+  { key: 'referencia', label: 'Referencia', ancho: 130, min: 60 },
+  { key: 'producto', label: 'Producto', fija: true, ancho: 280, min: 110 },
+  { key: 'lote', label: 'Lote', ancho: 110, min: 55 },
+  { key: 'vencimiento', label: 'Vencimiento', ancho: 130, min: 80 },
+  { key: 'cantidad', label: 'Cantidad', alinear: 'text-right', ancho: 95, min: 70 },
+  { key: 'quitar', label: '', fija: true, ancho: 40, min: 34 },
 ];
+// Celda con un campo editable: sin relleno vertical para que la fila quede
+// del mismo alto que las de solo texto.
+const TD_CAMPO = `${TD} !py-0 text-right`;
+const CAMPO_FILA = 'h-6 px-1.5 text-right font-num border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900';
 
 const CLAVE_AUTO = 'bodega.autoAgregarEscaneo';
 const leerAuto = () => { try { return localStorage.getItem(CLAVE_AUTO) !== 'no'; } catch { return true; } };
@@ -80,7 +88,8 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
   const porId = useMemo(() => Object.fromEntries(productos.map((p) => [p.id, p])), [productos]);
   const columnasGenerales = useColumnasPermitidas(rutaVista, 'lineas', COLUMNAS);
   const columnasCarga = useColumnasCarga();
-  const { columnasVisibles, ver } = conPrecio ? columnasCarga : columnasGenerales;
+  const { columnasVisibles } = conPrecio ? columnasCarga : columnasGenerales;
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(columnasVisibles, `bodega.lineas.${conPrecio ? 'cargaInicialBodega' : rutaVista.split('/').pop()}`);
   const [pendiente, setPendiente] = useState(null); // { producto, cantidad, lote, vencimiento, codigoLeido }
   const [senal, setSenal] = useState({ tipo: null, mensaje: '' });
   const [lecturaSinVincular, setLecturaSinVincular] = useState(null);
@@ -293,60 +302,51 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
         </div>
       )}
 
+      <div className="flex justify-end -mb-1">
+        <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} />
+      </div>
       <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
-        <table className="w-full text-left text-[11px] border-collapse">
-          <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-            <tr>{columnasVisibles.map((c) => <th key={c.key} className={`px-2 py-1 ${c.alinear || ''}`}>{c.label}</th>)}</tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-            {lineas.length === 0 && (
-              <tr><td colSpan={columnasVisibles.length} className="px-2 py-6 text-center text-gray-400 italic">Escanea o busca un producto para agregar líneas.</td></tr>
-            )}
-            {lineas.map((l) => {
-              const p = porId[l.productoId];
-              const venc = estadoVencimiento(l.vencimiento);
-              return (
-                <tr key={l.key} className={venc.fila}>
-                  {ver('codigo') && <td className="px-2 py-1 font-num text-[#2383C2]">{p?.codigoMaestro || '—'}</td>}
-                  {ver('referencia') && <td className="px-2 py-1 font-num text-[#2383C2]">{referenciaProducto(p) || '—'}</td>}
-                  <td className="px-2 py-1 font-semibold text-gray-800 dark:text-gray-100">{p?.nombre || <span className="text-red-600">Producto no encontrado</span>}</td>
-                  {ver('lote') && <td className="px-2 py-1 font-num">{l.lote || '—'}</td>}
-                  {ver('vencimiento') && (
-                    <td className="px-2 py-1 font-num">{l.vencimiento || '—'} {venc.etiqueta && <span className={`ml-1 px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>
-                  )}
-                  {ver('cantidad') && (
-                    <td className="px-2 py-1 text-right">
-                      <input type="number" min="1" step="1" inputMode="numeric" value={l.cantidad} disabled={deshabilitado}
-                        onChange={(e) => onCambiar(cambiarCantidad(lineas, l.key, e.target.value === '' ? '' : Number(e.target.value)))}
-                        className="w-20 h-6 px-1.5 text-right font-num border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900" aria-label="Cantidad" />
-                    </td>
-                  )}
-                  {ver('precio') && (
-                    <td className="px-2 py-1 text-right">
-                      <input type="number" min="0" step="1" inputMode="numeric" value={l.precioUnitario ?? ''} disabled={deshabilitado}
-                        onChange={(e) => onCambiar(cambiarPrecio(lineas, l.key, e.target.value))}
-                        className="w-28 h-6 px-1.5 text-right font-num border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900" aria-label="Precio unitario" />
-                    </td>
-                  )}
-                  {ver('total') && <td className="px-2 py-1 text-right font-num font-semibold">{formatoPesos(totalLinea(l))}</td>}
-                  <td className="px-2 py-1 text-center">
-                    <button type="button" disabled={deshabilitado} onClick={() => onCambiar(quitarLinea(lineas, l.key))} title="Quitar línea" className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={14} /></button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-          {lineas.length > 0 && (
-            <tfoot className="bg-gray-50 dark:bg-gray-900 font-bold text-[11px]">
-              <tr>
-                <td colSpan={columnasVisibles.length} className="px-2 py-1 text-right">
-                  <PackageCheck size={13} className="inline mr-1 text-emerald-600" />{lineas.length} línea(s) · {formatoCantidad(total)} unidad(es)
-                  {conPrecio && <> · Total carga <span className="font-num">{formatoPesos(totalValorLineas(lineas))}</span></>}
+        <TablaBodega columnas={columnasVisibles} anchos={anchos} onResize={handleResize}>
+          {lineas.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>Escanea o busca un producto para agregar líneas.</FilaAnchoCompleto>}
+          {lineas.map((l) => {
+            const p = porId[l.productoId];
+            const venc = estadoVencimiento(l.vencimiento);
+            const referencia = referenciaProducto(p);
+            const celdas = {
+              referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p?.codigoMaestro || ''}` : p?.codigoMaestro}>{referencia || '—'}</td>,
+              producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={p?.nombre || ''}>{p?.nombre || <span className="text-red-600">Producto no encontrado</span>}</td>,
+              lote: <td className={`${TD} font-num`} title={l.lote || ''}>{l.lote || '—'}</td>,
+              vencimiento: <td className={`${TD} font-num`}>{l.vencimiento || '—'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
+              cantidad: (
+                <td className={TD_CAMPO}>
+                  <input type="number" min="1" step="1" inputMode="numeric" value={l.cantidad} disabled={deshabilitado}
+                    onChange={(e) => onCambiar(cambiarCantidad(lineas, l.key, e.target.value === '' ? '' : Number(e.target.value)))}
+                    className={`${CAMPO_FILA} w-full max-w-20`} aria-label="Cantidad" />
                 </td>
-              </tr>
-            </tfoot>
+              ),
+              precio: (
+                <td className={TD_CAMPO}>
+                  <input type="number" min="0" step="1" inputMode="numeric" value={l.precioUnitario ?? ''} disabled={deshabilitado}
+                    onChange={(e) => onCambiar(cambiarPrecio(lineas, l.key, e.target.value))}
+                    className={`${CAMPO_FILA} w-full max-w-28`} aria-label="Precio unitario" />
+                </td>
+              ),
+              total: <td className={`${TD} text-right font-num font-semibold`}>{formatoPesos(totalLinea(l))}</td>,
+              quitar: (
+                <td className={`${TD} !py-0 text-center`}>
+                  <button type="button" disabled={deshabilitado} onClick={() => onCambiar(quitarLinea(lineas, l.key))} title="Quitar línea" className="p-0.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={14} /></button>
+                </td>
+              ),
+            };
+            return <FilaBodega key={l.key} columnas={columnasVisibles} celdas={celdas} className={venc.fila} />;
+          })}
+          {lineas.length > 0 && (
+            <FilaAnchoCompleto columnas={columnasVisibles} className="bg-gray-50 dark:bg-gray-900 font-bold" celdaClassName="px-2 py-1 text-right">
+              <PackageCheck size={13} className="inline mr-1 text-emerald-600" />{lineas.length} línea(s) · {formatoCantidad(total)} unidad(es)
+              {conPrecio && <> · Total carga <span className="font-num">{formatoPesos(totalValorLineas(lineas))}</span></>}
+            </FilaAnchoCompleto>
           )}
-        </table>
+        </TablaBodega>
       </div>
 
       {lecturaSinVincular && (

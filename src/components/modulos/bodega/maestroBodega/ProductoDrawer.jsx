@@ -16,17 +16,25 @@ import KardexProducto from './KardexProducto';
 import CampoEscaneoBodega from '../shared/escaneo/CampoEscaneoBodega';
 import { formatoCantidad, nombresPorId } from '../shared/catalogosBodega';
 import { estadoVencimiento } from '../shared/vencimientos';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
 
 const PATH_VISTA = '/bodega/maestroBodega';
 // Columnas de la tabla de lotes (permiso granular col_<key> en ficha_lotes).
+// Las tablas de la ficha tienen el diseño del Maestro (TablaBodega).
 const COLUMNAS_LOTES = [
-  { key: 'lote', label: 'Lote', fija: true },
-  { key: 'vencimiento', label: 'Vencimiento' },
-  { key: 'propietario', label: 'Dueño' },
-  { key: 'disponible', label: 'Disponible', alinear: 'text-right' },
-  { key: 'transito', label: 'Tránsito', alinear: 'text-right' },
-  { key: 'centros', label: 'En centros' },
-  { key: 'enCentro', label: 'Dejado en centros' },
+  { key: 'lote', label: 'Lote', fija: true, ancho: 110, min: 55 },
+  { key: 'vencimiento', label: 'Vencimiento', ancho: 125, min: 80 },
+  { key: 'propietario', label: 'Dueño', ancho: 110, min: 55 },
+  { key: 'disponible', label: 'Disponible', alinear: 'text-right', ancho: 80, min: 55 },
+  { key: 'transito', label: 'Tránsito', alinear: 'text-right', ancho: 70, min: 50 },
+  { key: 'centros', label: 'En centros', ancho: 150, min: 70 },
+  { key: 'enCentro', label: 'Dejado en centros', ancho: 150, min: 70 },
+];
+const COLUMNAS_TRANSITO = [
+  { key: 'centro', label: 'Centro', ancho: 300, min: 100 },
+  { key: 'transito', label: 'En tránsito', alinear: 'text-right', ancho: 100, min: 60 },
 ];
 
 const PESTANAS = [
@@ -48,7 +56,9 @@ const PestanaStock = ({ producto, nombreCentro }) => {
   const [lotes, setLotes] = useState(null);
   const [error, setError] = useState('');
   const [version, setVersion] = useState(0);
-  const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'ficha_lotes', COLUMNAS_LOTES);
+  const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'ficha_lotes', COLUMNAS_LOTES);
+  const lotesTabla = useAnchosTablaBodega(columnasVisibles, 'bodega.ficha.lotes');
+  const transitoTabla = useAnchosTablaBodega(COLUMNAS_TRANSITO, 'bodega.ficha.transito');
 
   useEffect(() => {
     let vigente = true;
@@ -84,23 +94,26 @@ const PestanaStock = ({ producto, nombreCentro }) => {
         {porCentro.length === 0 ? (
           <p className="text-[11px] text-gray-400 italic">Sin unidades en tránsito.</p>
         ) : (
-          <table className="w-full text-[11px] border border-gray-200 dark:border-gray-700">
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+          <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
+            <TablaBodega columnas={COLUMNAS_TRANSITO} anchos={transitoTabla.anchos} onResize={transitoTabla.handleResize}>
               {porCentro.map(([centroId, n]) => (
-                <tr key={centroId}>
-                  <td className="px-2 py-1">{nombreCentro(centroId)}</td>
-                  <td className="px-2 py-1 text-right font-bold font-num text-amber-600 dark:text-amber-400">{formatoCantidad(n)}</td>
-                </tr>
+                <FilaBodega key={centroId} columnas={COLUMNAS_TRANSITO} celdas={{
+                  centro: <td className={TD} title={nombreCentro(centroId)}>{nombreCentro(centroId)}</td>,
+                  transito: <td className={`${TD} text-right font-bold font-num text-amber-600 dark:text-amber-400`}>{formatoCantidad(n)}</td>,
+                }} />
               ))}
-            </tbody>
-          </table>
+            </TablaBodega>
+          </div>
         )}
       </section>
 
       <section>
         <div className="flex items-center justify-between mb-1">
           <h4 className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-300 flex items-center gap-1"><Layers size={12} /> Lotes con stock</h4>
-          <button type="button" onClick={recargar} title="Actualizar lotes" className="p-1 rounded text-gray-500 hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700"><RefreshCw size={12} /></button>
+          <div className="flex items-center gap-1">
+            <BotonRestablecerAnchos onClick={() => { lotesTabla.restablecerAnchos(); transitoTabla.restablecerAnchos(); }} personalizados={lotesTabla.personalizados || transitoTabla.personalizados} />
+            <button type="button" onClick={recargar} title="Actualizar lotes" className="p-1 rounded text-gray-500 hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700"><RefreshCw size={12} /></button>
+          </div>
         </div>
         {error && <p className="text-[11px] text-red-600">{error}</p>}
         {lotes === null ? (
@@ -108,41 +121,25 @@ const PestanaStock = ({ producto, nombreCentro }) => {
         ) : lotesConStock.length === 0 ? (
           <p className="text-[11px] text-gray-400 italic">Sin lotes con stock.</p>
         ) : (
-          <table className="w-full text-[11px] border border-gray-200 dark:border-gray-700">
-            <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-              <tr>
-                {columnasVisibles.map((c) => <th key={c.key} className={`px-2 py-1 ${c.alinear || 'text-left'}`}>{c.label}</th>)}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+          <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
+            <TablaBodega columnas={columnasVisibles} anchos={lotesTabla.anchos} onResize={lotesTabla.handleResize}>
               {lotesConStock.map((l) => {
                 const venc = estadoVencimiento(l.vencimiento);
-                return (
-                  <tr key={l.id} className={venc.fila}>
-                    <td className="px-2 py-1 font-num">{l.lote || '—'}</td>
-                    {ver('vencimiento') && (
-                      <td className="px-2 py-1 font-num">
-                        {l.vencimiento || '—'} {venc.etiqueta && <span className={`ml-1 px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}
-                      </td>
-                    )}
-                    {ver('propietario') && <td className="px-2 py-1">{l.propietarioNombre ? <span className="px-1 rounded text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span> : 'Propio'}</td>}
-                    {ver('disponible') && <td className="px-2 py-1 text-right font-num font-bold text-emerald-600 dark:text-emerald-400">{formatoCantidad(l.disponible)}</td>}
-                    {ver('transito') && <td className="px-2 py-1 text-right font-num text-amber-600 dark:text-amber-400">{formatoCantidad(l.transito)}</td>}
-                    {ver('centros') && (
-                      <td className="px-2 py-1 text-[10px] text-gray-600 dark:text-gray-300">
-                        {Object.entries(l.transitoPorCentro || {}).map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ') || '—'}
-                      </td>
-                    )}
-                    {ver('enCentro') && (
-                      <td className="px-2 py-1 text-[10px] text-violet-700 dark:text-violet-300">
-                        {Object.entries(l.enCentroPorCentro || {}).map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ') || '—'}
-                      </td>
-                    )}
-                  </tr>
-                );
+                const centrosTexto = Object.entries(l.transitoPorCentro || {}).map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ') || '—';
+                const enCentroTexto = Object.entries(l.enCentroPorCentro || {}).map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ') || '—';
+                const celdas = {
+                  lote: <td className={`${TD} font-num`} title={l.lote || ''}>{l.lote || '—'}</td>,
+                  vencimiento: <td className={`${TD} font-num`}>{l.vencimiento || '—'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
+                  propietario: <td className={TD} title={l.propietarioNombre || 'Propio'}>{l.propietarioNombre ? <span className="px-1 rounded text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span> : 'Propio'}</td>,
+                  disponible: <td className={`${TD} text-right font-num font-bold text-emerald-600 dark:text-emerald-400`}>{formatoCantidad(l.disponible)}</td>,
+                  transito: <td className={`${TD} text-right font-num text-amber-600 dark:text-amber-400`}>{formatoCantidad(l.transito)}</td>,
+                  centros: <td className={`${TD} text-gray-600 dark:text-gray-300`} title={centrosTexto}>{centrosTexto}</td>,
+                  enCentro: <td className={`${TD} text-violet-700 dark:text-violet-300`} title={enCentroTexto}>{enCentroTexto}</td>,
+                };
+                return <FilaBodega key={l.id} columnas={columnasVisibles} celdas={celdas} className={venc.fila} />;
               })}
-            </tbody>
-          </table>
+            </TablaBodega>
+          </div>
         )}
       </section>
     </div>

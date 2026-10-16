@@ -3,8 +3,21 @@ import { X, Trash2, Package } from 'lucide-react';
 import { validarCaja, MAX_NOMBRE_CAJA, MAX_DESCRIPCION_CAJA } from '../../../../../functions/bodega/nucleo.mjs';
 import { guardarCaja, mensajeError } from '../shared/bodegaApi';
 import BuscadorProducto from '../shared/BuscadorProducto';
+import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
+import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
+import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
+import { useReferenciaDe } from '../shared/referencias';
 
 const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-60';
+
+// Mismo diseño que el Maestro (TablaBodega): columnas redimensionables.
+const COLUMNAS = [
+  { key: 'producto', label: 'Producto', ancho: 300, min: 120 },
+  { key: 'referencia', label: 'Referencia', ancho: 130, min: 60 },
+  { key: 'objetivo', label: 'Stock objetivo', alinear: 'text-right', ancho: 115, min: 80 },
+  { key: 'actual', label: 'Stock actual', alinear: 'text-right', ancho: 95, min: 60 },
+  { key: 'quitar', label: '', ancho: 36, min: 32 },
+];
 
 // Crear o editar una caja: nombre (único), descripción, activa y sus
 // productos (del maestro de Bodega) con su stock objetivo. El stock actual
@@ -18,6 +31,8 @@ const FormCajaModal = ({ caja = null, onCerrar, onGuardada }) => {
     .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
+  const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(COLUMNAS, 'bodega.modal.caja');
+  const referenciaDe = useReferenciaDe();
   const enCaja = useMemo(() => new Set(productos.map((p) => p.productoId)), [productos]);
 
   const agregar = (p) => setProductos((lista) => [...lista, { productoId: p.id, nombre: p.nombre, codigoMaestro: p.codigoMaestro, stockObjetivo: '1', stockActual: 0 }]);
@@ -65,31 +80,31 @@ const FormCajaModal = ({ caja = null, onCerrar, onGuardada }) => {
             <span className="text-[10px] font-bold uppercase text-gray-500">Agregar producto del maestro</span>
             <BuscadorProducto onElegir={agregar} deshabilitado={guardando} filtro={(p) => !enCaja.has(p.id)} />
           </div>
-          <table className="w-full text-left text-[12px] border border-gray-200 dark:border-gray-700">
-            <thead className="bg-gray-100 dark:bg-gray-900 text-[10px] uppercase text-gray-600 dark:text-gray-400">
-              <tr>
-                <th className="px-2 py-1.5">Producto</th>
-                <th className="px-2 py-1.5 w-32 text-right">Stock objetivo</th>
-                <th className="px-2 py-1.5 w-24 text-right">Stock actual</th>
-                <th className="px-2 py-1.5 w-10" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-              {productos.length === 0 && <tr><td colSpan={4} className="px-2 py-4 text-center text-gray-400 italic">Agrega los productos que lleva la caja.</td></tr>}
-              {productos.map((p) => (
-                <tr key={p.productoId}>
-                  <td className="px-2 py-1">{p.nombre} <span className="font-num text-[11px] text-gray-500">{p.codigoMaestro}</span></td>
-                  <td className="px-2 py-1 text-right">
-                    <input type="number" min="0" step="1" inputMode="numeric" value={p.stockObjetivo} onChange={(e) => cambiarObjetivo(p.productoId, e.target.value)} disabled={guardando} aria-label={`Stock objetivo de ${p.nombre}`} className={`${INPUT} h-7 w-24 text-right font-num`} />
-                  </td>
-                  <td className="px-2 py-1 text-right font-num text-gray-500" title="Solo cambia por inventario o reposición">{p.stockActual}</td>
-                  <td className="px-2 py-1 text-center">
-                    <button type="button" onClick={() => quitar(p.productoId)} disabled={guardando} title="Quitar de la caja" className="p-1 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={13} /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="flex justify-end -mb-2"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
+          <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
+            <TablaBodega columnas={COLUMNAS} anchos={anchos} onResize={handleResize}>
+              {productos.length === 0 && <FilaAnchoCompleto columnas={COLUMNAS} celdaClassName="px-2 py-4 text-center text-gray-400 italic">Agrega los productos que lleva la caja.</FilaAnchoCompleto>}
+              {productos.map((p) => {
+                const referencia = referenciaDe(p.productoId);
+                const celdas = {
+                  producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={p.nombre}>{p.nombre}</td>,
+                  referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p.codigoMaestro}` : p.codigoMaestro}>{referencia || '—'}</td>,
+                  objetivo: (
+                    <td className={`${TD} !py-0 text-right`}>
+                      <input type="number" min="0" step="1" inputMode="numeric" value={p.stockObjetivo} onChange={(e) => cambiarObjetivo(p.productoId, e.target.value)} disabled={guardando} aria-label={`Stock objetivo de ${p.nombre}`} className={`${INPUT} !h-6 !px-1.5 w-full max-w-24 text-right font-num`} />
+                    </td>
+                  ),
+                  actual: <td className={`${TD} text-right font-num text-gray-500`} title="Solo cambia por inventario o reposición">{p.stockActual}</td>,
+                  quitar: (
+                    <td className={`${TD} !py-0 text-center`}>
+                      <button type="button" onClick={() => quitar(p.productoId)} disabled={guardando} title="Quitar de la caja" className="p-0.5 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={13} /></button>
+                    </td>
+                  ),
+                };
+                return <FilaBodega key={p.productoId} columnas={COLUMNAS} celdas={celdas} />;
+              })}
+            </TablaBodega>
+          </div>
           {error && <p className="text-red-600">{error}</p>}
         </div>
         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">

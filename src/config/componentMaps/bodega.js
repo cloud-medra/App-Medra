@@ -81,7 +81,7 @@ export const bodegaComponentMaps = {
       lineas: {
         label: 'Sección: Líneas escaneadas',
         elements: {
-          ...columnas([['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad']]),
+          ...columnas([['referencia', 'Referencia'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad']]),
         },
       },
     },
@@ -120,7 +120,7 @@ export const bodegaComponentMaps = {
       lineas: {
         label: 'Sección: Líneas de la salida',
         elements: {
-          ...columnas([['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'], ['cantidad', 'Cantidad']]),
+          ...columnas([['referencia', 'Referencia'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['centro', 'Centro'], ['cantidad', 'Cantidad']]),
         },
       },
     },
@@ -186,13 +186,13 @@ export const bodegaComponentMaps = {
       lineas: {
         label: 'Sección: Conteo por escaneo',
         elements: {
-          ...columnas([['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad']]),
+          ...columnas([['referencia', 'Referencia'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad']]),
         },
       },
       comparacion: {
         label: 'Sección: Comparación teórico / contado',
         elements: {
-          ...columnas([['codigo', 'Código maestro'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['teorico', 'Stock teórico'], ['diferencia', 'Diferencia'], ['valor', 'Valor de la diferencia'], ['contadoPor', 'Contado por']]),
+          ...columnas([['referencia', 'Referencia'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['teorico', 'Stock teórico'], ['diferencia', 'Diferencia'], ['valor', 'Valor de la diferencia'], ['contadoPor', 'Contado por']]),
         },
       },
     },
