@@ -36,6 +36,7 @@ import { ManijaRedimension } from '../../../../../../ui/ManijaRedimension';
 import { useAutocompleteReferencia } from './useAutocompleteReferencia';
 import { PadContenidoRow, crearFilaContenidoPadVacia, construirItemContenidoPadDesdeFila } from './PadContenidoRow';
 import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
+import { CLASE_SIN_FLECHAS, SIN_CAMBIO_ACCIDENTAL } from '../../../../../../ui/numeroSinFlechas';
 
 // Mismo sistema de columnas redimensionables que usa el CotizacionCard de
 // Hemodinamia (Cargastab/CotizacionCard.jsx) — se agrega la columna "Veces
@@ -577,9 +578,10 @@ export const CotizacionCard = ({
                           <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center">
                             <input
                               type="number"
+                              {...SIN_CAMBIO_ACCIDENTAL}
                               value={borrador.cantidad}
                               onChange={e => setBorrador(prev => ({ ...prev, cantidad: e.target.value }))}
-                              className="w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-center"
+                              className={`${CLASE_SIN_FLECHAS} w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-center`}
                             />
                           </td>
 
@@ -645,10 +647,11 @@ export const CotizacionCard = ({
                             ) : (
                               <input
                                 type="number"
+                                {...SIN_CAMBIO_ACCIDENTAL}
                                 min="0"
                                 value={borrador.precio}
                                 onChange={e => setBorrador(prev => ({ ...prev, precio: e.target.value }))}
-                                className="w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                                className={`${CLASE_SIN_FLECHAS} w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none`}
                               />
                             )}
                           </td>
