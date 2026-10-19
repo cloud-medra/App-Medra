@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Receipt, Truck, Loader2, AlertTriangle, CalendarSearch, ArrowLeft, Search, FileSpreadsheet, Sigma, CalendarRange } from 'lucide-react';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
 import PaginacionSimple from '../../../../ui/PaginacionSimple';
 import { useDocumentosSistemaPeriodo } from '../hooks/useDocumentosSistemaPeriodo';
 import { useSeguimientoFiltros } from './hooks/useSeguimientoFiltros';
+import { useMesesConPendientes } from './hooks/useMesesConPendientes';
 import { useUser } from '../../../../../context/UserContext';
 import { useColumnResize } from '../../../../../hooks/useColumnResize';
 import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../ui/ThRedimensionable';
@@ -30,6 +31,10 @@ const CRITERIOS = {
     label: 'Seguimiento de Facturas',
     Icon: Receipt,
     filtro: filtroPendienteFactura,
+    // El selector de mes muestra solo meses con filas (useMesesConPendientes)
+    // y la tabla no carga hasta elegir uno (no se lee el año completo).
+    filtrarMeses: true,
+    requiereMes: true,
     mensajeVacio: 'No hay registros pendientes de factura para los filtros seleccionados.'
   },
   guias: {
@@ -114,9 +119,10 @@ const SeguimientoFacturasGuias = () => {
 
   const {
     anio, setAnio, anios, cargandoAnios,
-    mes, setMes, meses, cargandoMeses,
+    mes, setMes, meses: mesesMarcador, cargandoMeses: cargandoMarcadores,
     filas, cargandoFilas, huboTope
-  } = useDocumentosSistemaPeriodo(criterio?.filtro);
+  } = useDocumentosSistemaPeriodo(criterio?.filtro, { requiereMes: !!criterio?.requiereMes, activo: !!criterio });
+  const faltaMes = !!criterio?.requiereMes && !mes;
 
   const {
     empresa, setEmpresa, opcionesEmpresas,
@@ -124,6 +130,19 @@ const SeguimientoFacturasGuias = () => {
     filasFiltradas, filasPagina, totalFilas, resumen,
     pagina, setPagina, totalPaginas
   } = useSeguimientoFiltros(filas);
+  const { meses, cargando: cargandoConteos } = useMesesConPendientes({
+    anio, meses: mesesMarcador, cargandoMeses: cargandoMarcadores, filtro: criterio?.filtrarMeses ? criterio.filtro : null
+  });
+  const cargandoMeses = cargandoMarcadores || cargandoConteos;
+  const sinMeses = !!anio && !cargandoMeses && meses.length === 0;
+
+  // Si el mes elegido ya no está entre los disponibles, queda sin mes: la
+  // tabla vuelve al mensaje, sin cargar nada.
+  useEffect(() => {
+    if (cargandoMeses || !mes || meses.includes(mes)) return;
+    setMes('');
+  }, [cargandoMeses, mes, meses, setMes]);
+
   const usuario = useUser()?.userData?.uid;
   const { anchos, handleResize, restablecerAnchos, anchoTotalTabla, personalizados } =
     useColumnResize(COLUMNAS, { clave: 'seguimientoFacturasGuias', usuario });
@@ -174,6 +193,7 @@ const SeguimientoFacturasGuias = () => {
               <select
                 value={anio}
                 onChange={(e) => setAnio(e.target.value)}
+                aria-label="Año"
                 disabled={cargandoAnios}
                 className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -186,10 +206,11 @@ const SeguimientoFacturasGuias = () => {
               <select
                 value={mes}
                 onChange={(e) => setMes(e.target.value)}
-                disabled={!anio || cargandoMeses}
+                aria-label="Mes"
+                disabled={!anio || cargandoMeses || sinMeses}
                 className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <option value="">{cargandoMeses ? 'Cargando meses...' : 'Mes'}</option>
+                <option value="">{cargandoMeses ? 'Cargando meses...' : sinMeses ? 'Sin meses pendientes' : 'Mes'}</option>
                 {meses.map((mm) => (
                   <option key={mm} value={mm}>{nombreDeMes(mm)}</option>
                 ))}
@@ -198,7 +219,7 @@ const SeguimientoFacturasGuias = () => {
               <select
                 value={empresa}
                 onChange={(e) => setEmpresa(e.target.value)}
-                disabled={!anio}
+                disabled={!anio || faltaMes}
                 className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Empresa</option>
@@ -238,6 +259,11 @@ const SeguimientoFacturasGuias = () => {
             <div className="flex-grow flex flex-col items-center justify-center gap-2 text-center text-slate-400 dark:text-gray-500 px-6">
               <CalendarSearch size={26} className="text-slate-300 dark:text-gray-600" />
               <span className="text-[11px] font-medium">Selecciona un año para ver los registros</span>
+            </div>
+          ) : faltaMes ? (
+            <div className="flex-grow flex flex-col items-center justify-center gap-2 text-center text-slate-400 dark:text-gray-500 px-6">
+              <CalendarSearch size={26} className="text-slate-300 dark:text-gray-600" />
+              <span className="text-[11px] font-medium">{sinMeses ? criterio.mensajeVacio : 'Selecciona un mes para ver los registros'}</span>
             </div>
           ) : cargandoFilas ? (
             <div className="flex-grow flex items-center justify-center gap-2 text-slate-400 dark:text-gray-500 text-[11px]">
