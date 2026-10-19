@@ -26,7 +26,29 @@ export const COL_BASE = 'documentos_sistema';
 // truncar en silencio (ver `huboTope`).
 const LIMITE_FILAS_PERIODO = 5000;
 
-export const useDocumentosSistemaPeriodo = (filtroServidor = null) => {
+// Filtros de la consulta de un período (año, o año + mes) + el filtro de
+// servidor opcional + `extras` (where(...) adicionales). Lo comparten la
+// tabla y los conteos de useMesesConPendientes, así ambos usan exactamente
+// la misma condición.
+export const filtrosPeriodo = (anio, mes, filtroServidor = null, extras = []) => {
+  const min = mes ? `${COL_BASE}/${anio}/meses/${mes}` : `${COL_BASE}/${anio}`;
+  const max = `${min}`;
+  const restricciones = [
+    where(documentId(), '>=', min),
+    where(documentId(), '<', max),
+    ...extras
+  ];
+  if (filtroServidor) restricciones.push(restriccionDeFiltro(filtroServidor));
+  // Con un or(...) Firestore exige un solo filtro de nivel superior: se
+  // envuelve todo en and(...).
+  return filtroServidor?.o ? [and(...restricciones)] : restricciones;
+};
+
+// `requiereMes`: sin mes elegido no se consulta nada (Seguimiento de
+// Facturas, para no leer el año completo); por defecto el año solo ya
+// consulta el año entero. `activo: false` no consulta filas (pantalla sin
+// lista visible, ej. el selector de tipo de Seguimiento).
+export const useDocumentosSistemaPeriodo = (filtroServidor = null, { requiereMes = false, activo = true } = {}) => {
   const [anio, setAnioState] = useState('');
   const [mes, setMesState] = useState('');
 
@@ -80,23 +102,12 @@ export const useDocumentosSistemaPeriodo = (filtroServidor = null) => {
   // completo (mismo truco de prefijo de documentId() ya usado en el resto
   // de la app, solo que acotado a un segmento menos de ruta).
   useEffect(() => {
-    if (!anio) { setFilas([]); setHuboTope(false); return; }
+    if (!activo || !anio || (requiereMes && !mes)) { setFilas([]); setHuboTope(false); return; }
     let cancelado = false;
     (async () => {
       setCargandoFilas(true);
       try {
-        const min = mes ? `${COL_BASE}/${anio}/meses/${mes}` : `${COL_BASE}/${anio}`;
-        const max = `${min}`;
-        const restricciones = [
-          where(documentId(), '>=', min),
-          where(documentId(), '<', max)
-        ];
-        if (filtroServidor) restricciones.push(restriccionDeFiltro(filtroServidor));
-
-        // Con un or(...) Firestore exige un solo filtro de nivel superior: se
-        // envuelve todo en and(...).
-        const filtros = filtroServidor?.o ? [and(...restricciones)] : restricciones;
-        const q = query(collectionGroup(db, 'detalles'), ...filtros, orderBy(documentId(), 'desc'), limit(LIMITE_FILAS_PERIODO));
+        const q = query(collectionGroup(db, 'detalles'), ...filtrosPeriodo(anio, mes, filtroServidor), orderBy(documentId(), 'desc'), limit(LIMITE_FILAS_PERIODO));
         const snap = await getDocs(q);
         if (cancelado) return;
         setFilas(snap.docs.map(d => ({ id: d.id, refPath: d.ref.path, ...d.data() })));
@@ -115,11 +126,15 @@ export const useDocumentosSistemaPeriodo = (filtroServidor = null) => {
     // cada render, el efecto se dispararía sin parar — mismo tipo de loop
     // infinito ya corregido una vez en useDetallesOCData.js).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anio, mes, JSON.stringify(filtroServidor), refrescarKey]);
+  }, [anio, mes, JSON.stringify(filtroServidor), requiereMes, activo, refrescarKey]);
 
+  // Los meses del año anterior se descartan en el mismo render: así nadie
+  // (ej. useMesesConPendientes) los usa con el año nuevo mientras cargan.
   const setAnio = useCallback((nuevoAnio) => {
     setAnioState(nuevoAnio);
     setMesState('');
+    setMeses([]);
+    setCargandoMeses(!!nuevoAnio);
   }, []);
 
   const setMes = useCallback((nuevoMes) => {

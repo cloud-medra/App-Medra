@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within, waitFor } from '@testing-library/react';
 import SeguimientoFacturasGuias from './SeguimientoFacturasGuias';
 
 const mockGetDocs = vi.fn();
 const mockWhere = vi.fn((...args) => ({ _type: 'where', args }));
+const mockCount = vi.fn();
 
 vi.mock('../../../../../firebaseConfig', () => ({ db: {} }));
 vi.mock('../../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
@@ -22,8 +23,16 @@ vi.mock('firebase/firestore', () => ({
   orderBy: vi.fn(),
   limit: vi.fn(),
   documentId: vi.fn(),
-  getDocs: (...args) => mockGetDocs(...args)
+  getDocs: (...args) => mockGetDocs(...args),
+  getCountFromServer: (...args) => mockCount(...args)
 }));
+
+// where(...) de una consulta de conteo (Facturas envuelve todo en and(...)).
+const wheresDe = (q) => q._c.flatMap((c) => (c?._type === 'and' ? c.c : [c])).filter((c) => c?._type === 'where');
+const mesDeConteo = (q) => wheresDe(q).find((w) => w.args[1] === '>=').args[2].match(/meses\/(\d{2})$/)[1];
+const anioDeConteo = (q) => wheresDe(q).find((w) => w.args[1] === '>=').args[2].split('/')[1];
+const consultasTabla = () => mockGetDocs.mock.calls.filter(([ref]) => ref._type === 'collectionGroup');
+const conteo = (n) => ({ data: () => ({ count: n }) });
 
 const docsDeIds = (ids, dataFn = () => ({})) => ({ docs: ids.map((id) => ({ id, ref: { path: `x/${id}` }, data: () => dataFn(id) })) });
 
@@ -31,6 +40,8 @@ describe('SeguimientoFacturasGuias', () => {
   beforeEach(() => {
     mockGetDocs.mockReset();
     mockWhere.mockClear();
+    mockCount.mockReset();
+    mockCount.mockResolvedValue(conteo(1));
   });
 
   afterEach(() => {
@@ -110,6 +121,8 @@ describe('SeguimientoFacturasGuias', () => {
       fireEvent.click(screen.getByText('Seguimiento de Facturas'));
       await screen.findByRole('option', { name: '2026' });
       fireEvent.change(screen.getByDisplayValue('Año'), { target: { value: '2026' } });
+      await screen.findByRole('option', { name: 'Octubre' });
+      fireEvent.change(screen.getByLabelText('Mes'), { target: { value: '10' } });
       await screen.findByTestId('total-monto-oc');
     };
 
@@ -129,10 +142,6 @@ describe('SeguimientoFacturasGuias', () => {
       const registros = () => screen.getByTestId('total-registros').textContent;
       expect(total()).toBe('$ 1.500.000');
       expect(registros()).toBe('3');
-
-      fireEvent.change(screen.getByDisplayValue('Mes'), { target: { value: '10' } });
-      await screen.findByText('LT-9');
-      expect(total()).toBe('$ 1.500.000');
 
       fireEvent.change(screen.getByDisplayValue('Empresa'), { target: { value: 'Empresa B' } });
       expect(total()).toBe('$ 0');
@@ -180,6 +189,139 @@ describe('SeguimientoFacturasGuias', () => {
     it('el botón Exportar Excel se habilita con registros', async () => {
       await abrirFacturas2026();
       expect(screen.getByRole('button', { name: /Exportar Excel/ })).toBeEnabled();
+    });
+  });
+
+  describe('meses del selector (Facturas)', () => {
+    let mesesMarcador;
+    beforeEach(() => {
+      mesesMarcador = ['01', '02', '10'];
+      mockGetDocs.mockImplementation(async (ref) => {
+        if (ref._type === 'collection' && ref.path === 'documentos_sistema') return docsDeIds(['2025', '2026']);
+        if (ref._type === 'collection') return docsDeIds(mesesMarcador);
+        return docsDeIds(['f0'], () => ({ proveedor: 'Empresa A', oc_monto: 1000 }));
+      });
+    });
+
+    const abrir = async () => {
+      render(<SeguimientoFacturasGuias />);
+      fireEvent.click(screen.getByText('Seguimiento de Facturas'));
+      await screen.findByRole('option', { name: '2026' });
+      fireEvent.change(screen.getByDisplayValue('Año'), { target: { value: '2026' } });
+    };
+    const opcionesMes = () => Array.from(screen.getByLabelText('Mes').options).map((o) => o.textContent);
+
+    it('oculta los meses sin pendientes, en orden cronológico', async () => {
+      mockCount.mockImplementation(async (q) => conteo(mesDeConteo(q) === '02' ? 0 : 3));
+      await abrir();
+      await screen.findByDisplayValue('Mes');
+      expect(opcionesMes()).toEqual(['Mes', 'Enero', 'Octubre']);
+      expect(mockCount).toHaveBeenCalledTimes(3);
+    });
+
+    it('muestra "Cargando meses..." mientras cuenta', async () => {
+      const pendientes = [];
+      mockCount.mockImplementation(() => new Promise((r) => { pendientes.push(r); }));
+      await abrir();
+      await waitFor(() => expect(pendientes).toHaveLength(3));
+      expect(screen.getByLabelText('Mes')).toHaveDisplayValue('Cargando meses...');
+      expect(screen.getByLabelText('Mes')).toBeDisabled();
+      pendientes.forEach((r) => r(conteo(1)));
+      expect(await screen.findByDisplayValue('Mes')).toBeEnabled();
+      expect(opcionesMes()).toEqual(['Mes', 'Enero', 'Febrero', 'Octubre']);
+    });
+
+    it('si un conteo falla, el mes se muestra igual', async () => {
+      const consola = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockCount.mockImplementation(async (q) => {
+        if (mesDeConteo(q) === '02') throw new Error('índice en construcción');
+        return conteo(0);
+      });
+      await abrir();
+      await screen.findByDisplayValue('Mes');
+      expect(opcionesMes()).toEqual(['Mes', 'Febrero']);
+      expect(consola).toHaveBeenCalled();
+      consola.mockRestore();
+    });
+
+    it('sin ningún mes pendiente, selector deshabilitado con "Sin meses pendientes"', async () => {
+      mockCount.mockResolvedValue(conteo(0));
+      await abrir();
+      expect(await screen.findByDisplayValue('Sin meses pendientes')).toBeDisabled();
+    });
+
+    it('con solo el año no consulta la tabla: muestra el mensaje y Empresa queda deshabilitada', async () => {
+      await abrir();
+      await screen.findByDisplayValue('Mes');
+      expect(screen.getByText('Selecciona un mes para ver los registros')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Empresa')).toBeDisabled();
+      expect(screen.queryByTestId('total-monto-oc')).not.toBeInTheDocument();
+      expect(mockGetDocs.mock.calls.some(([ref]) => ref._type === 'collectionGroup')).toBe(false);
+    });
+
+    it('al elegir un mes carga la tabla una vez y habilita Empresa', async () => {
+      await abrir();
+      await screen.findByDisplayValue('Mes');
+      fireEvent.change(screen.getByLabelText('Mes'), { target: { value: '10' } });
+      await screen.findByTestId('total-monto-oc');
+      expect(screen.getByDisplayValue('Empresa')).toBeEnabled();
+      const consultasTabla = mockGetDocs.mock.calls.filter(([ref]) => ref._type === 'collectionGroup');
+      expect(consultasTabla).toHaveLength(1);
+    });
+
+    it('cambiar de empresa no vuelve a contar meses ni a consultar la tabla', async () => {
+      await abrir();
+      await screen.findByDisplayValue('Mes');
+      fireEvent.change(screen.getByLabelText('Mes'), { target: { value: '10' } });
+      await screen.findByRole('option', { name: 'Empresa A' });
+      const conteosAntes = mockCount.mock.calls.length;
+      const consultasAntes = consultasTabla().length;
+
+      fireEvent.change(screen.getByDisplayValue('Empresa'), { target: { value: 'Empresa A' } });
+      expect(screen.getByLabelText('Mes')).toHaveValue('10');
+      expect(mockCount.mock.calls).toHaveLength(conteosAntes);
+      expect(consultasTabla()).toHaveLength(consultasAntes);
+      expect(mockCount.mock.calls.every(([q]) => !wheresDe(q).some((w) => w.args[0] === 'proveedor'))).toBe(true);
+    });
+
+    it('al cambiar de año cuenta solo los meses del año nuevo, y volver a un año ya contado no vuelve a contar', async () => {
+      await abrir();
+      await screen.findByDisplayValue('Mes');
+      expect(mockCount).toHaveBeenCalledTimes(3);
+
+      mesesMarcador = ['05'];
+      fireEvent.change(screen.getByLabelText('Año'), { target: { value: '2025' } });
+      await screen.findByRole('option', { name: 'Mayo' });
+      // Ningún conteo de 2025 con los meses de 2026 (01, 02, 10).
+      const de2025 = mockCount.mock.calls.filter(([q]) => anioDeConteo(q) === '2025').map(([q]) => mesDeConteo(q));
+      expect(de2025).toEqual(['05']);
+
+      mesesMarcador = ['01', '02', '10'];
+      fireEvent.change(screen.getByLabelText('Año'), { target: { value: '2026' } });
+      await screen.findByRole('option', { name: 'Octubre' });
+      expect(mockCount).toHaveBeenCalledTimes(4);
+    });
+
+    it('"Volver" con año y mes elegidos no consulta filas sin filtro', async () => {
+      await abrir();
+      await screen.findByDisplayValue('Mes');
+      fireEvent.change(screen.getByLabelText('Mes'), { target: { value: '10' } });
+      await screen.findByTestId('total-monto-oc');
+      const consultasAntes = consultasTabla().length;
+
+      fireEvent.click(screen.getByTitle('Volver'));
+      await new Promise((r) => setTimeout(r, 0));
+      expect(consultasTabla()).toHaveLength(consultasAntes);
+    });
+
+    it('Guías no cuenta: muestra todos los meses como antes', async () => {
+      render(<SeguimientoFacturasGuias />);
+      fireEvent.click(screen.getByText('Seguimiento de Guías'));
+      await screen.findByRole('option', { name: '2026' });
+      fireEvent.change(screen.getByDisplayValue('Año'), { target: { value: '2026' } });
+      await screen.findByRole('option', { name: 'Octubre' });
+      expect(opcionesMes()).toEqual(['Mes', 'Enero', 'Febrero', 'Octubre']);
+      expect(mockCount).not.toHaveBeenCalled();
     });
   });
 });
