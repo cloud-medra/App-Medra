@@ -7,7 +7,6 @@ import {
   limit,
   startAfter,
   getDocs,
-  getDoc,
   updateDoc,
   deleteDoc
 } from 'firebase/firestore';
@@ -22,6 +21,7 @@ import CargasConsignacionFiltros from './components/CargasConsignacionFiltros';
 import CargasConsignacionTable from './components/CargasConsignacionTable';
 import CargasConsignacionDetalleView from './components/CargasConsignacionDetalleView';
 import { ordenarMeses } from '../../../../../utils/ordenarMeses';
+import { combinarItemsActualizados } from './utils/combinarItemsActualizados';
 import { useSincronizarOC } from '../../shared/ocIndex/useSincronizarOC';
 import { SincronizarOCResumenModal } from '../../shared/ocIndex/SincronizarOCResumenModal';
 
@@ -196,20 +196,12 @@ const CargasConsignacion = () => {
     setRegistroSeleccionado(registro);
   };
 
-  const handleVolverDeDetalle = async () => {
-    const anterior = registroSeleccionado;
+  // El detalle escucha en vivo todas las filas de la admisión: al volver
+  // entrega esas filas y se actualizan en la tabla (ej. "Cargado" marcado
+  // en varias), sin volver a leer de Firestore.
+  const handleVolverDeDetalle = (itemsActualizados = []) => {
     setRegistroSeleccionado(null);
-
-    if (!anterior?.ref) return;
-    try {
-      const snap = await getDoc(anterior.ref);
-      if (snap.exists()) {
-        const actualizado = { id: snap.id, ref: snap.ref, ...snap.data() };
-        setRegistros((prev) => prev.map((r) => (r.id === actualizado.id ? actualizado : r)));
-      }
-    } catch (error) {
-      console.error('Error al refrescar el registro tras volver del detalle:', error);
-    }
+    setRegistros((prev) => combinarItemsActualizados(prev, itemsActualizados));
   };
 
   const anioActual = new Date().getFullYear().toString();

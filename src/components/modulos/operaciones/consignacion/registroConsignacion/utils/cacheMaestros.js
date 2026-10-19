@@ -32,6 +32,19 @@ export function buscarReporteInfoPorAdmisionCacheado(db, admisionId, forzar = fa
   return promesa;
 }
 
+// Como buscarReporteInfoPorAdmisionCacheado, pero una Admisión que antes
+// no se encontró (null) se vuelve a consultar: Carga Masiva la usa al
+// revalidar, por si mientras tanto se completó en Reportes Info. Las ya
+// encontradas salen de la caché (0 lecturas).
+export async function buscarReporteInfoReintentandoNoEncontradas(db, admisionId) {
+  const clave = String(admisionId || '').trim();
+  let noEncontrada = false;
+  if (cacheReportes.has(clave)) {
+    try { noEncontrada = (await cacheReportes.get(clave)) === null; } catch { noEncontrada = true; }
+  }
+  return buscarReporteInfoPorAdmisionCacheado(db, clave, noEncontrada);
+}
+
 export function invalidarReporteAdmision(admisionId) {
   const clave = String(admisionId || '').trim();
   if (clave) cacheReportes.delete(clave);

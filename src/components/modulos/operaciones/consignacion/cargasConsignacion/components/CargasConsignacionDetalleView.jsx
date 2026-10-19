@@ -89,6 +89,11 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
   const hayCambios = JSON.stringify(formData) !== snapshotInicialRef.current;
 
   const [itemsDeEstaAdmision, setItemsDeEstaAdmision] = useState(registro ? [registro] : []);
+  // Copias para leer al volver (siempre lo último, aunque el render no se
+  // haya actualizado aún): filas de la admisión y lo guardado en Información.
+  const itemsRef = useRef(itemsDeEstaAdmision);
+  const cambiosGuardadosRef = useRef({});
+  useEffect(() => { itemsRef.current = itemsDeEstaAdmision; }, [itemsDeEstaAdmision]);
   const [cargandoItems, setCargandoItems] = useState(false);
 
   useEffect(() => {
@@ -209,6 +214,7 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
         costo: formData.costo !== '' ? Number(formData.costo) : 0
       };
       await updateDoc(registro.ref, datosGuardados);
+      cambiosGuardadosRef.current = { ...cambiosGuardadosRef.current, ...datosGuardados };
       await registrarLogConsignacion(registro.ref, 'EDICION', datosGuardados, userData);
       snapshotInicialRef.current = JSON.stringify(formData);
       showToast('Cambios guardados correctamente', 'success');
@@ -222,23 +228,35 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
     }
   };
 
+  // Filas que se devuelven a la tabla al volver: las de la admisión (en
+  // vivo) con lo guardado en Información aplicado al registro abierto (el
+  // listener puede no haberlo entregado aún, o no existir si no hay Admisión).
+  const volver = () => {
+    const cambios = cambiosGuardadosRef.current;
+    const items = itemsRef.current;
+    const ruta = registro?.ref?.path;
+    const conCambios = items.map((it) => (it.ref?.path === ruta ? { ...it, ...cambios } : it));
+    if (registro && !items.some((it) => it.ref?.path === ruta)) conCambios.push({ ...registro, ...cambios });
+    onVolver(conCambios);
+  };
+
   const handleIntentarVolver = () => {
     if (hayCambios) {
       setShowConfirmSalir(true);
     } else {
-      onVolver();
+      volver();
     }
   };
 
   const handleGuardarYSalir = async () => {
     const ok = await handleGuardarCambios();
     setShowConfirmSalir(false);
-    if (ok) onVolver();
+    if (ok) volver();
   };
 
   const handleSalirSinGuardar = () => {
     setShowConfirmSalir(false);
-    onVolver();
+    volver();
   };
 
   return (

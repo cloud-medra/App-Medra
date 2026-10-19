@@ -1,16 +1,17 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { db } from '../../../../../firebaseConfig';
-import { Sheet, Plus, Trash2, Eraser, Search, Save, Loader2, AlertCircle, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Sheet, Plus, Trash2, Eraser, Search, Save, Loader2, AlertCircle, CheckCircle2, AlertTriangle, History } from 'lucide-react';
 import { useToast } from '../../../../../context/ToastContext';
 import { useModal } from '../../../../../context/ModalContext';
 import { useUser } from '../../../../../context/UserContext';
 import Spinner from '../../../../ui/Spinner';
-import { obtenerCodigosCacheados, buscarReporteInfoPorAdmisionCacheado } from '../registroConsignacion/utils/cacheMaestros';
+import { obtenerCodigosCacheados, buscarReporteInfoReintentandoNoEncontradas } from '../registroConsignacion/utils/cacheMaestros';
 import { TIPOS_CONSIGNACION, guardarRegistrosConsignacionEnLote } from '../utils/registroConsignacionService';
 import {
   COLUMNAS_INGRESO,
   crearFilasVacias,
   crearFilaVacia,
+  filaEstaVacia,
   parsearTextoPortapapeles,
   pegarMatrizEnFilas
 } from './utils/grillaPortapapeles';
@@ -22,6 +23,7 @@ import {
   resumirFilas,
   mensajeConfirmacionGuardado
 } from './utils/validacionesCargaMasiva';
+import { leerBorrador, guardarBorrador, borrarBorrador, filasDesdeBorrador } from './utils/borradorCargaMasiva';
 
 const FILAS_INICIALES = 20;
 
@@ -42,6 +44,8 @@ const ESTILO_ESTADO = {
   [ESTADOS_FILA.DATO_INVALIDO]: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
 };
 
+const formatearFechaHora = (ms) => new Date(ms).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
 const CargaMasivaConsignacion = () => {
   const [filas, setFilas] = useState(() => crearFilasVacias(FILAS_INICIALES));
   const [tipo, setTipo] = useState('CONSIGNACION');
@@ -55,6 +59,31 @@ const CargaMasivaConsignacion = () => {
   const { showToast } = useToast();
   const { confirmAction } = useModal();
   const { userData } = useUser();
+  const uid = userData?.uid || null;
+
+  // Borrador en el navegador (ver borradorCargaMasiva.js): se crea al
+  // presionar "Cargar" y, mientras exista, se actualiza con cada cambio.
+  const [borradorActivo, setBorradorActivo] = useState(false);
+  // Fecha del borrador restaurado al entrar (muestra el aviso), o null.
+  const [borradorRestaurado, setBorradorRestaurado] = useState(null);
+  // Se revisa una vez por usuario, apenas se conoce su uid (estado ajustado
+  // durante el render, sin efecto).
+  const [uidRevisado, setUidRevisado] = useState(null);
+  if (uid && uidRevisado !== uid) {
+    setUidRevisado(uid);
+    const borrador = leerBorrador(uid);
+    if (borrador) {
+      setFilas(filasDesdeBorrador(borrador.valores, FILAS_INICIALES));
+      if (TIPOS_CONSIGNACION.includes(borrador.tipo)) setTipo(borrador.tipo);
+      setCargado(false);
+      setBorradorActivo(true);
+      setBorradorRestaurado(borrador.guardadoEn);
+    }
+  }
+
+  useEffect(() => {
+    if (borradorActivo && uid) guardarBorrador(uid, { tipo, filas });
+  }, [borradorActivo, uid, tipo, filas]);
 
   const resumen = useMemo(() => resumirFilas(filas), [filas]);
 
@@ -153,16 +182,30 @@ const CargaMasivaConsignacion = () => {
     });
   };
 
+  const reiniciarGrilla = () => {
+    setFilas(crearFilasVacias(FILAS_INICIALES));
+    setCargado(false);
+    setFoco(null);
+    setBorradorActivo(false);
+    setBorradorRestaurado(null);
+    borrarBorrador(uid);
+  };
+
   const handleLimpiarTodo = () => {
     confirmAction(
       'Limpiar todo',
       'Se borrarán todas las filas de la grilla. ¿Continuar?',
-      () => {
-        setFilas(crearFilasVacias(FILAS_INICIALES));
-        setCargado(false);
-        setFoco(null);
-      },
+      reiniciarGrilla,
       { confirmText: 'Limpiar', type: 'danger' }
+    );
+  };
+
+  const handleDescartarBorrador = () => {
+    confirmAction(
+      'Descartar borrador',
+      'Se borrarán los datos de la grilla y el borrador guardado en este navegador. ¿Continuar?',
+      reiniciarGrilla,
+      { confirmText: 'Descartar', type: 'danger' }
     );
   };
 
@@ -180,12 +223,17 @@ const CargaMasivaConsignacion = () => {
       return;
     }
     const snapshot = filas;
+    guardarBorrador(uid, { tipo, filas: snapshot });
+    setBorradorActivo(true);
+    setBorradorRestaurado(null);
     setCargando(true);
     try {
+      // Revalidar: las Admisiones ya encontradas salen de la caché; solo las
+      // que antes no se encontraron se vuelven a consultar.
       const resultados = await resolverFilas(snapshot, {
         tipo,
         obtenerCodigos: (t) => obtenerCodigosCacheados(db, t),
-        buscarReporte: (admision) => buscarReporteInfoPorAdmisionCacheado(db, admision)
+        buscarReporte: (admision) => buscarReporteInfoReintentandoNoEncontradas(db, admision)
       });
       const valoresEvaluados = new Map(snapshot.map((f) => [f.id, f.valores]));
       // Solo se aplica el resultado si la fila no se editó mientras se cargaba.
@@ -226,6 +274,13 @@ const CargaMasivaConsignacion = () => {
         return restantes.length > 0 ? restantes : crearFilasVacias(FILAS_INICIALES);
       });
       setFoco(null);
+      // Sin filas con datos pendientes (todo guardado) se borra el borrador;
+      // si quedan (con error o sin cargar), el borrador queda solo con esas.
+      if (!filas.some((f) => !guardadas.has(f.id) && !filaEstaVacia(f))) {
+        setBorradorActivo(false);
+        setBorradorRestaurado(null);
+        borrarBorrador(uid);
+      }
 
       if (fallidas.size === 0) {
         showToast(`${guardadas.size} registro${guardadas.size === 1 ? '' : 's'} guardado${guardadas.size === 1 ? '' : 's'} correctamente`, 'success');
@@ -338,6 +393,32 @@ const CargaMasivaConsignacion = () => {
           </button>
         </div>
       </div>
+
+      {borradorActivo && (
+        <div
+          role={borradorRestaurado ? 'alert' : undefined}
+          className={`px-3 py-1.5 flex flex-wrap items-center gap-2 border-b text-[10.5px] ${borradorRestaurado
+            ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
+            : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'}`}
+        >
+          <History size={12} className="shrink-0" />
+          {borradorRestaurado ? (
+            <span className="font-semibold">
+              Tienes datos sin guardar de una carga anterior ({formatearFechaHora(borradorRestaurado)}). Presiona "Cargar" para revalidarlos.
+            </span>
+          ) : (
+            <span>Borrador guardado en este navegador hasta que guardes o lo descartes (vence en 2 días).</span>
+          )}
+          <button
+            type="button"
+            onClick={handleDescartarBorrador}
+            disabled={ocupado}
+            className="ml-auto h-6 px-2 rounded border border-current font-bold hover:bg-white/60 dark:hover:bg-black/20 transition disabled:opacity-50"
+          >
+            Descartar borrador
+          </button>
+        </div>
+      )}
 
       <div className="px-3 py-1.5 flex flex-wrap items-center gap-3 border-b border-gray-200 dark:border-gray-700 text-[10.5px]">
         {cargado ? (

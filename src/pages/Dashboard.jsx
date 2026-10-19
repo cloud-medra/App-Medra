@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { auth, limpiarCacheAlCerrarSesion } from '../firebaseConfig';
+import { borrarTodosLosBorradoresCargaMasiva } from '../components/modulos/operaciones/consignacion/cargaMasivaConsignacion/utils/borradorCargaMasiva';
 import { omitirSincronizacionEnProximaCarga } from '../services/sessionSync';
 import { signOut } from 'firebase/auth';
 import { useUser } from '../context/UserContext';
@@ -448,6 +449,9 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
+      // Borradores de Carga Masiva de Consignación (localStorage): traen
+      // nombres de pacientes.
+      borrarTodosLosBorradoresCargaMasiva();
       // Primero se cierra Firestore y se borra su caché local (IndexedDB),
       // para que el próximo usuario no vea datos de esta cuenta.
       await limpiarCacheAlCerrarSesion();
