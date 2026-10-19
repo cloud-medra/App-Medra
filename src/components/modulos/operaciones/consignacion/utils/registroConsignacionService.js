@@ -212,7 +212,9 @@ export const planificarBloques = (payloads, maxEscrituras = MAX_ESCRITURAS_BATCH
 // Guarda varios registros nuevos con writeBatch (bloques de <= 500
 // escrituras). Cada payload pasa por las mismas validaciones y la misma
 // estructura que el registro individual. Un bloque que falla no detiene
-// los siguientes.
+// los siguientes. Todos comparten `fechaRegistro` (identifica la carga) y
+// cada uno guarda `posicionCarga` (su índice en `payloads`): el orden en
+// que se ingresaron, para que Cargas los muestre igual (ordenarRegistrosCargas).
 // Devuelve un arreglo paralelo a `payloads`: { ok, id?, error? }.
 export const guardarRegistrosConsignacionEnLote = async (db, payloads, userData) => {
   const resultados = payloads.map(() => null);
@@ -242,7 +244,7 @@ export const guardarRegistrosConsignacionEnLote = async (db, payloads, userData)
         agregarCarpetasFecha(batch, db, claves);
         fechasAgregadas.add(payload.fecha);
       }
-      const nuevoDoc = construirNuevoRegistro(construirDatosDoc(payload), userData, fechaRegistro);
+      const nuevoDoc = { ...construirNuevoRegistro(construirDatosDoc(payload), userData, fechaRegistro), posicionCarga: indiceOriginal };
       const ref = agregarRegistroNuevoABatch(batch, db, claves, nuevoDoc, userData);
       escritos.push({ indiceOriginal, id: ref.id });
     });
@@ -303,6 +305,8 @@ export const guardarEdicionRegistroConsignacion = (db, registro, datosDoc, clave
       ...(actual.ocActualizadoEn ? { ocActualizadoEn: actual.ocActualizadoEn } : {}),
       despachado: actual.despachado || 'PENDIENTE',
       fechaRegistro: actual.fechaRegistro || new Date(),
+      // Sigue en el mismo lugar de su carga masiva (ver ordenarRegistrosCargas).
+      ...(Number.isInteger(actual.posicionCarga) ? { posicionCarga: actual.posicionCarga } : {}),
       registradoPor: actual.registradoPor || userData?.nombreCompleto || 'Usuario'
     };
     tx.set(nuevoRef, nuevoDoc);

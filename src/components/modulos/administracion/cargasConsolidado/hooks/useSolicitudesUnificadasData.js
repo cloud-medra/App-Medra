@@ -168,7 +168,9 @@ export const useSolicitudesUnificadasData = () => {
     const unsub = onSnapshotVisible(consultaCandidatosSolicitudConsignacion(), async (snap) => {
       const numero = ++ultimoSnapshot;
       try {
-        const lista = await construirCandidatosSolicitudConsignacion(snap.docs, false);
+        // ordenCarga: mismo orden que la pantalla nativa (carga masiva en el
+        // orden de ingreso, cada admisión junta). Solo afecta a estas filas.
+        const lista = await construirCandidatosSolicitudConsignacion(snap.docs, false, { ordenCarga: true });
         if (numero === ultimoSnapshot) setItemsConsignacion(lista);
       } catch (err) {
         console.error('Error al armar solicitudes de Consignación:', err);

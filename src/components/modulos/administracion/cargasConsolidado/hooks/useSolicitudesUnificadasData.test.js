@@ -317,4 +317,19 @@ describe('useSolicitudesUnificadasData — Exportar y Marcar como Solicitado', (
     expect(result.current.filas).toHaveLength(3);
     error.mockRestore();
   });
+
+  it('las filas de Consignación salen en el orden de la carga masiva, con cada admisión junta', async () => {
+    almacen.delete(RUTA_CON);
+    const carga = new Date(2026, 8, 17, 10);
+    // Insertadas en el orden en que Firestore las devolvería (id aleatorio).
+    [['c-z', '200', 3], ['c-a', '100', 2], ['c-m', '100', 0], ['c-b', '200', 1]].forEach(([id, adm, pos]) => {
+      almacen.set(`consignacion_registros/2026/mes/09/dia/17/admision/${adm}/empresa/E/detalles/${id}`,
+        { ...registroConsignacion(), gestionId: adm, nombre: `P-${pos}`, posicionCarga: pos, fechaRegistro: carga });
+    });
+    const result = await montar();
+    const consignacion = result.current.filas.filter(f => f.origen === ORIGEN.CONSIGNACION).map(f => f.paciente);
+    // 100 (pos 0, 2), 200 (pos 1, 3).
+    expect(consignacion).toEqual(['P-0', 'P-2', 'P-1', 'P-3']);
+  });
 });
+

@@ -7,6 +7,7 @@ import {
   construirQueryAnioGestion,
   calcularMesPorDefecto
 } from './periodoQueryHelpers';
+import { ordenarRegistrosCargas } from '../../../operaciones/consignacion/cargasConsignacion/utils/ordenarRegistrosCargas';
 import { normalizarFilaGestionImplantes, normalizarFilaGestionConsignacion, normalizarFilaGestionHemodinamia, filtrarPorBusquedaYOrigen } from '../utils/normalizarFila';
 
 const RAIZ_IMPLANTES = 'implantes_gestiones';
@@ -123,9 +124,12 @@ export const useGestionConsolidadaData = () => {
     return () => { cancelado = true; };
   }, [anio, version]);
 
+  // Consignación con el mismo orden que su pantalla de Cargas (por carga,
+  // cada admisión junta y en el orden de la carga masiva): la consulta
+  // ordena por ruta (mes alfabético, día, id aleatorio).
   const filasAnio = useMemo(() => [
     ...bloquesImplantes.map(normalizarFilaGestionImplantes),
-    ...itemsConsignacion.map(normalizarFilaGestionConsignacion),
+    ...ordenarRegistrosCargas(itemsConsignacion).map(normalizarFilaGestionConsignacion),
     ...bloquesHemodinamia.map(normalizarFilaGestionHemodinamia)
   ], [bloquesImplantes, itemsConsignacion, bloquesHemodinamia]);
 

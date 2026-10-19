@@ -40,6 +40,7 @@ import RegistroConsignacionForm from './components/RegistroConsignacionForm';
 import ConsignacionFiltros from './components/ConsignacionFiltros';
 import ConsignacionTable from './components/ConsignacionTable';
 import { ordenarMeses } from '../../../../../utils/ordenarMeses';
+import { ordenarRegistrosCargas } from '../cargasConsignacion/utils/ordenarRegistrosCargas';
 
 const TAMANO_PAGINA = 150;
 
@@ -330,7 +331,9 @@ const RegistroConsignacion = () => {
   const registrosFiltrados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
 
-    return registros.filter(r => {
+    // Mismo orden que Cargas: carga masiva en el orden de ingreso, con cada
+    // admisión junta (la consulta solo ordena por fechaRegistro).
+    return ordenarRegistrosCargas(registros).filter(r => {
       if (termino) {
         const coincideTexto =
           (r.gestionId || '').toLowerCase().includes(termino) ||

@@ -48,7 +48,9 @@ export const useSolicitudConsignacionData = () => {
   const cargarDatos = useCallback(async (forzarRelecturaGuias = false) => {
     setCargando(true);
     try {
-      const listaFinal = await cargarCandidatosSolicitudConsignacion(forzarRelecturaGuias);
+      // Mismo orden que Cargas (carga masiva en el orden de ingreso, cada
+      // admisión junta); el Excel exportado sigue este orden.
+      const listaFinal = await cargarCandidatosSolicitudConsignacion(forzarRelecturaGuias, { ordenCarga: true });
       setItems(listaFinal);
     } catch (error) {
       console.error('Error al cargar registros CARGADO de Consignación:', error);

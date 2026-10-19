@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useResumenImputadas, TODOS_LOS_MESES } from '../../../shared/useResumenImputadas';
+import { ordenarRegistrosCargas } from '../../cargasConsignacion/utils/ordenarRegistrosCargas';
 
 export const NOMBRES_MESES = {
   "01": "Enero", "02": "Febrero", "03": "Marzo", "04": "Abril",
@@ -25,6 +26,13 @@ export const agruparFilasGuiaPorDocumento = (documentos) => {
   });
   return mapa;
 };
+
+// Por fecha de cirugía (más nueva primero). Dentro del mismo día, el orden
+// de Cargas (ordenarRegistrosCargas: por carga, cada admisión junta y en el
+// orden de la carga masiva; la imputada copia fechaRegistro y posicionCarga
+// del registro). El sort es estable, así que ese orden se conserva.
+export const ordenarDocumentosResumen = (documentos) =>
+  ordenarRegistrosCargas(documentos).sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
 
 export const useResumenConsignacionData = () => {
   // Años/meses por sondeo y documentos con lectura única al elegir el mes
@@ -60,7 +68,7 @@ export const useResumenConsignacionData = () => {
       );
     }
 
-    return [...lista].sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')));
+    return ordenarDocumentosResumen(lista);
   }, [documentos, busqueda, filtroAtributo]);
 
   const filasGuiaPorDocumento = useMemo(
