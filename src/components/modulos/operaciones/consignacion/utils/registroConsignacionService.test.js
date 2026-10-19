@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { doc, writeBatch } from 'firebase/firestore';
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
@@ -11,7 +12,8 @@ vi.mock('firebase/firestore', () => ({
 
 import {
   descripcionDesdeMaestro, mapearItemMaestro, buscarItemMaestro,
-  esRegistroEditable, mensajeRegistroNoEditable, guardarEdicionRegistroConsignacion, RegistroNoEditableError
+  esRegistroEditable, mensajeRegistroNoEditable, guardarEdicionRegistroConsignacion, RegistroNoEditableError,
+  guardarRegistrosConsignacionEnLote
 } from './registroConsignacionService';
 
 const ITEM = {
@@ -112,5 +114,28 @@ describe('guardarEdicionRegistroConsignacion (revalida en Firestore)', () => {
     const res = await guardarEdicionRegistroConsignacion({}, registro, { cantidad: 2 }, claves, null);
     expect(globalThis.__txFalsa.update).toHaveBeenCalledWith(registro.ref, { cantidad: 2 });
     expect(res.movido).toBe(false);
+  });
+
+  it('al cambiar de fecha (se mueve de carpeta) conserva posicionCarga', async () => {
+    doc.mockImplementation(() => ({ id: 'nuevo' }));
+    globalThis.__txFalsa = crearTx({ estado: 'INGRESADO', fecha: '2026-10-08', posicionCarga: 4, fechaRegistro: 'F' });
+    const res = await guardarEdicionRegistroConsignacion({}, registro, { fecha: '2026-10-09' }, { ...claves, dia: '09' }, null);
+    expect(res.movido).toBe(true);
+    expect(res.datos).toMatchObject({ posicionCarga: 4, fechaRegistro: 'F' });
+  });
+});
+
+describe('guardarRegistrosConsignacionEnLote', () => {
+  const payload = (codigo) => ({ gestionId: '100', fecha: '2026-10-08', cantidad: '1', referencia: `REF-${codigo}`, codigo });
+
+  it('guarda posicionCarga = orden de ingreso y el mismo fechaRegistro en todas las filas', async () => {
+    const sets = [];
+    writeBatch.mockImplementation(() => ({ set: (ref, datos) => sets.push(datos), commit: vi.fn(async () => {}) }));
+    doc.mockImplementation(() => ({ id: 'x' }));
+    const res = await guardarRegistrosConsignacionEnLote({}, [payload('A'), payload('B'), payload('C')], null);
+    expect(res.every((r) => r.ok)).toBe(true);
+    const registros = sets.filter((d) => 'posicionCarga' in d && 'despachado' in d);
+    expect(registros.map((d) => [d.codigo, d.posicionCarga])).toEqual([['A', 0], ['B', 1], ['C', 2]]);
+    expect(new Set(registros.map((d) => d.fechaRegistro)).size).toBe(1);
   });
 });

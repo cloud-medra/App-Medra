@@ -12,6 +12,7 @@ import { db } from '../../../../../../firebaseConfig';
 import { codigosPorReferenciaSiDisponible } from '../../../../../../stores/catalogosStore';
 import { descripcionDesdeMaestro } from '../../utils/registroConsignacionService';
 import { estaExcluidoDeGuia } from '../../utils/exclusionKitsGuia';
+import { ordenarRegistrosCargas } from '../../cargasConsignacion/utils/ordenarRegistrosCargas';
 
 const NOMBRE_SUBCOL_DETALLES = 'detalles';
 const ESTADO_ORIGEN = 'CARGADO';
@@ -135,18 +136,29 @@ export const consultaCandidatosSolicitudConsignacion = () => query(
 // solicitar) más, para cada uno con un delivery vinculado a una guía, las
 // filas de desglose de esa guía (productos, sin costo propio — informativas,
 // no tienen documento propio en Firestore y no se marcan como SOLICITADO).
-export const cargarCandidatosSolicitudConsignacion = async (forzarRelecturaGuias = false) => {
+export const cargarCandidatosSolicitudConsignacion = async (forzarRelecturaGuias = false, opciones = {}) => {
   const snapshot = await getDocs(consultaCandidatosSolicitudConsignacion());
-  return construirCandidatosSolicitudConsignacion(snapshot.docs, forzarRelecturaGuias);
+  return construirCandidatosSolicitudConsignacion(snapshot.docs, forzarRelecturaGuias, opciones);
+};
+
+// Ítems en el mismo orden que Cargas (ordenarRegistrosCargas: por carga, con
+// cada admisión junta y en el orden de la carga masiva), con los datos
+// originales del documento (gestionId sin el "P" de relleno, posicionCarga).
+const ordenarItemsPorCarga = (items) => {
+  const porRuta = new Map(items.map((it) => [it.refPath, it]));
+  return ordenarRegistrosCargas(items.map((it) => ({ ...it.datosOriginales, id: it.refPath })))
+    .map((r) => porRuta.get(r.id));
 };
 
 // Arma las filas (ítems + desglose de guía) a partir de los docs que
 // devolvió consultaCandidatosSolicitudConsignacion, vengan de getDocs o de
-// un snapshot en vivo.
-export const construirCandidatosSolicitudConsignacion = async (docs, forzarRelecturaGuias = false) => {
+// un snapshot en vivo. `opciones.ordenCarga`: ordena los ítems como Cargas
+// (las filas de desglose de guía siguen debajo de su ítem); sin ella quedan
+// en el orden de la consulta.
+export const construirCandidatosSolicitudConsignacion = async (docs, forzarRelecturaGuias = false, { ordenCarga = false } = {}) => {
   const docsConsignacion = docs.filter(d => d.ref.path.startsWith('consignacion_registros/'));
 
-  const itemsCargados = docsConsignacion.map((document) => {
+  const itemsSinOrden = docsConsignacion.map((document) => {
     const data = document.data();
     const costo = Number(data.costo) || 0;
     const cantidad = Number(data.cantidad) || 0;
@@ -182,6 +194,7 @@ export const construirCandidatosSolicitudConsignacion = async (docs, forzarRelec
         : (deliveryValor ? 'PAD' : 'Sin fecha')
     };
   });
+  const itemsCargados = ordenCarga ? ordenarItemsPorCarga(itemsSinOrden) : itemsSinOrden;
 
   try {
     const deliveriesUnicos = [...new Set(itemsCargados.map(it => it.delivery).filter(Boolean))];

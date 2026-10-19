@@ -21,6 +21,7 @@ import CargasConsignacionFiltros from './components/CargasConsignacionFiltros';
 import CargasConsignacionTable from './components/CargasConsignacionTable';
 import CargasConsignacionDetalleView from './components/CargasConsignacionDetalleView';
 import { ordenarMeses } from '../../../../../utils/ordenarMeses';
+import { ordenarRegistrosCargas } from './utils/ordenarRegistrosCargas';
 import { combinarItemsActualizados } from './utils/combinarItemsActualizados';
 import { useSincronizarOC } from '../../shared/ocIndex/useSincronizarOC';
 import { SincronizarOCResumenModal } from '../../shared/ocIndex/SincronizarOCResumenModal';
@@ -260,7 +261,7 @@ const CargasConsignacion = () => {
     const hoyISO = obtenerFechaHoyISO();
     const termino = busqueda.trim().toLowerCase();
 
-    return registros.filter(r => {
+    return ordenarRegistrosCargas(registros).filter(r => {
       if (termino) {
         const coincideTexto =
           (r.gestionId || '').toLowerCase().includes(termino) ||

@@ -145,4 +145,39 @@ describe('cargarCandidatosSolicitudConsignacion', () => {
     expect(principal.filasGuia).toEqual([]);
     expect(principal.numeroGuiaParaImputar).toBe('333');
   });
+
+  describe('orden de la carga masiva (opción ordenCarga, pantalla nativa)', () => {
+    const CARGA = { toMillis: () => 1000 };
+    // Como los devuelve Firestore: por id aleatorio.
+    const docsCarga = () => [
+      docFake('zz', { estado: 'CARGADO', gestionId: '200', posicionCarga: 3, fechaRegistro: CARGA, delivery: 'GUIA-ORDEN' }),
+      docFake('aa', { estado: 'CARGADO', gestionId: '100', posicionCarga: 2, fechaRegistro: CARGA }),
+      docFake('mm', { estado: 'CARGADO', gestionId: '100', posicionCarga: 0, fechaRegistro: CARGA }),
+      docFake('bb', { estado: 'CARGADO', gestionId: '200', posicionCarga: 1, fechaRegistro: CARGA })
+    ];
+    const mockGuia = (getDocs) => {
+      getDocs.mockResolvedValueOnce({ empty: false, docs: [{ data: () => ({ numeroGuia: '7', codigo: 'PROD-Z', cantidad: 1 }) }] });
+      getDocs.mockResolvedValueOnce({ docs: [] });
+    };
+
+    it('ordena los ítems como Cargas y la fila de guía sigue debajo de su ítem', async () => {
+      const { getDocs } = await import('firebase/firestore');
+      const { cargarCandidatosSolicitudConsignacion } = await import('./cargarCandidatosSolicitudConsignacion');
+      getDocs.mockResolvedValueOnce({ docs: docsCarga() });
+      mockGuia(getDocs);
+
+      const resultado = await cargarCandidatosSolicitudConsignacion(false, { ordenCarga: true });
+      // 100 (pos 0, 2), 200 (pos 1, 3 + su fila de guía).
+      expect(resultado.map((f) => (f.esFilaGuia ? 'guia' : f.id))).toEqual(['mm', 'aa', 'bb', 'zz', 'guia']);
+    });
+
+    it('sin la opción (Cargas Consolidado) se mantiene el orden de la consulta', async () => {
+      const { getDocs } = await import('firebase/firestore');
+      const { cargarCandidatosSolicitudConsignacion } = await import('./cargarCandidatosSolicitudConsignacion');
+      getDocs.mockResolvedValueOnce({ docs: docsCarga() });
+
+      const resultado = await cargarCandidatosSolicitudConsignacion();
+      expect(resultado.filter((f) => !f.esFilaGuia).map((f) => f.id)).toEqual(['zz', 'aa', 'mm', 'bb']);
+    });
+  });
 });

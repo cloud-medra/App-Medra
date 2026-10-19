@@ -70,6 +70,13 @@ describe('CargasConsignacion', () => {
   });
   afterEach(cleanup);
 
+  it('muestra la carga masiva en el orden de ingreso, con cada admisión junta', async () => {
+    render(<CargasConsignacion />);
+    await screen.findByText('P-0');
+    expect(pacientesEnTabla()).toEqual(['P-0', 'P-1', 'P-2', 'P-3']);
+    expect(mockGetDocs).toHaveBeenCalledTimes(1);
+  });
+
   it('al volver del detalle, todas las filas de la admisión quedan CARGADO sin releer de Firestore', async () => {
     render(<CargasConsignacion />);
     await screen.findByText('P-0');
