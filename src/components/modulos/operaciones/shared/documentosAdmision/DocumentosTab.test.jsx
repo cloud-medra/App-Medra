@@ -3,12 +3,19 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
-vi.mock('../../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
-vi.mock('../../../../../context/UserContext', () => ({ useUser: () => ({ userData: { rol: 'dev' } }) }));
+const prueba = vi.hoisted(() => ({ showToast: null, usuario: { rol: 'dev' } }));
+vi.mock('../../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: prueba.showToast }) }));
+vi.mock('../../../../../context/UserContext', () => ({ useUser: () => ({ userData: prueba.usuario }) }));
+vi.mock('../../../../../firebaseConfig', () => ({ db: {} }));
+vi.mock('firebase/firestore', () => ({ doc: (_db, ruta) => ({ ruta }) }));
 vi.mock('../respaldoDocumentos/respaldoService', () => ({ subirRespaldo: vi.fn() }));
+vi.mock('../../implantes/gestionImplantes/utils/registrarLogImplantes', () => ({ registrarLogImplantes: vi.fn() }));
+vi.mock('../../hemodinamia/gestionHemodinamia/utils/registrarLogHemodinamia', () => ({ registrarLogHemodinamia: vi.fn() }));
 vi.mock('./documentosStorage', () => ({
   subirTandaAdmision: vi.fn(),
-  obtenerBlobDocumento: vi.fn(async (ruta) => new Blob([ruta], { type: 'application/pdf' }))
+  obtenerBlobDocumento: vi.fn(async (ruta) => new Blob([ruta], { type: 'application/pdf' })),
+  listarDocumentosAdmision: vi.fn(),
+  eliminarDocumentoAdmision: vi.fn()
 }));
 // La zona de subida simulada expone los archivos de prueba en `globalThis.__archivosPrueba`.
 vi.mock('./ZonaSubidaPdf', () => ({
@@ -20,6 +27,9 @@ vi.mock('./ZonaSubidaPdf', () => ({
 }));
 
 import { DocumentosTab } from './DocumentosTab';
+import { useDocumentosAdmision } from './useDocumentosAdmision';
+import { listarDocumentosAdmision, eliminarDocumentoAdmision } from './documentosStorage';
+import { registrarLogImplantes } from '../../implantes/gestionImplantes/utils/registrarLogImplantes';
 
 const doc = (nombre, tipo) => ({ nombre, ruta: `implantes/100/documentos/${nombre}`, tipo });
 const LISTA = [
@@ -33,6 +43,8 @@ const renderTab = (documentos) => render(
 );
 
 beforeEach(() => {
+  prueba.showToast = vi.fn();
+  prueba.usuario = { rol: 'dev' };
   globalThis.URL.createObjectURL = vi.fn((blob) => `blob:${blob.size}`);
   globalThis.URL.revokeObjectURL = vi.fn();
 });
@@ -120,5 +132,109 @@ describe('DocumentosTab en Hemodinamia', () => {
     fireEvent.click(screen.getByText('simular subida'));
     await waitFor(() => expect(subirTandaAdmision).toHaveBeenCalledWith(expect.objectContaining({ modulo: 'hemodinamia', idAdmision: '100' })));
     delete globalThis.__archivosPrueba;
+  });
+});
+
+// Con el hook real (useDocumentosAdmision), como lo monta el detalle de la gestión.
+const ConHook = ({ modulo = 'implantes' }) => {
+  const docs = useDocumentosAdmision(modulo, '100', true);
+  return <DocumentosTab modulo={modulo} idAdmision="100" gestionId="100" nombre="ANA" refPathBloque="implantes_gestiones/x/detalles/b1" {...docs} />;
+};
+const LISTA_COT = [...LISTA, doc('100 - ANA - COT 2 - EMP.pdf', 'COT')];
+const PESTANA = '/implantes/gestionImplantes/documentos';
+const operador = (elements) => ({
+  rol: 'operador',
+  permisos: { implantes: ['/implantes/gestionImplantes'] },
+  permisosGranulares: { [PESTANA]: { contenido: { visible: true, elements } } },
+});
+
+describe('DocumentosTab: eliminar', () => {
+  beforeEach(() => {
+    listarDocumentosAdmision.mockResolvedValue(LISTA_COT);
+    eliminarDocumentoAdmision.mockReset();
+    registrarLogImplantes.mockClear();
+  });
+
+  it('el botón Eliminar solo aparece con el permiso btn_eliminar_documento (denegado por defecto)', async () => {
+    prueba.usuario = operador({});
+    render(<ConHook />);
+    await screen.findByTitle('100 - ANA - DP.pdf');
+    expect(screen.queryAllByTitle('Eliminar')).toHaveLength(0);
+    cleanup();
+
+    prueba.usuario = operador({ btn_eliminar_documento: true });
+    render(<ConHook />);
+    await screen.findByTitle('100 - ANA - DP.pdf');
+    expect(screen.getAllByTitle('Eliminar')).toHaveLength(4);
+    cleanup();
+
+    // Sin onDocumentoEliminado (otra pantalla que monte la pestaña), tampoco.
+    renderTab({ lista: LISTA, cargando: false, error: null });
+    expect(screen.queryAllByTitle('Eliminar')).toHaveLength(0);
+  });
+
+  it('confirma con el nombre, elimina y actualiza contadores, toast y log sin recargar', async () => {
+    eliminarDocumentoAdmision.mockResolvedValue({ resultado: 'eliminado', rutaPapelera: 'implantes/100/eliminados/t_x.pdf' });
+    render(<ConHook />);
+    await screen.findByTitle('100 - ANA - DP.pdf');
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('COT — Cotización').closest('td')).toHaveTextContent('· 2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar 100 - ANA - COT 1 - EMP.pdf' }));
+    const dialogo = screen.getByRole('dialog', { name: 'Eliminar documento' });
+    expect(dialogo).toHaveTextContent('¿Seguro que deseas eliminar 100 - ANA - COT 1 - EMP.pdf?');
+    fireEvent.click(within(dialogo).getByRole('button', { name: /Eliminar/ }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(eliminarDocumentoAdmision).toHaveBeenCalledWith({ modulo: 'implantes', idAdmision: '100', ruta: 'implantes/100/documentos/100 - ANA - COT 1 - EMP.pdf' });
+    expect(screen.queryByTitle('100 - ANA - COT 1 - EMP.pdf')).not.toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('COT — Cotización').closest('td')).toHaveTextContent('· 1');
+    expect(listarDocumentosAdmision).toHaveBeenCalledTimes(1);
+    expect(prueba.showToast).toHaveBeenCalledWith('Documento eliminado.', 'success');
+    expect(registrarLogImplantes).toHaveBeenCalledWith(
+      { ruta: 'implantes_gestiones/x/detalles/b1' },
+      'DOCUMENTO_ELIMINADO',
+      expect.objectContaining({ nombre: '100 - ANA - COT 1 - EMP.pdf', idAdmision: '100', archivoInexistente: false }),
+      prueba.usuario
+    );
+  });
+
+  it('Cancelar no elimina', async () => {
+    render(<ConHook />);
+    await screen.findByTitle('100 - ANA - DP.pdf');
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar 100 - ANA - DP.pdf' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(eliminarDocumentoAdmision).not.toHaveBeenCalled();
+  });
+
+  it('error (sin permiso en el servidor): toast de error y el listado no cambia', async () => {
+    eliminarDocumentoAdmision.mockRejectedValue(Object.assign(new Error('x'), { code: 'functions/permission-denied' }));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<ConHook />);
+    await screen.findByTitle('100 - ANA - DP.pdf');
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar 100 - ANA - DP.pdf' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Eliminar/ }));
+
+    await waitFor(() => expect(prueba.showToast).toHaveBeenCalledWith('No tienes permiso para eliminar documentos.', 'error'));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByTitle('100 - ANA - DP.pdf')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(registrarLogImplantes).not.toHaveBeenCalled();
+    console.error.mockRestore();
+  });
+
+  it('archivo que ya no existía: se quita del listado con aviso', async () => {
+    eliminarDocumentoAdmision.mockResolvedValue({ resultado: 'inexistente' });
+    render(<ConHook />);
+    await screen.findByTitle('100 - ANA - DP.pdf');
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar 100 - ANA - DP.pdf' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Eliminar/ }));
+
+    await waitFor(() => expect(screen.queryByTitle('100 - ANA - DP.pdf')).not.toBeInTheDocument());
+    expect(screen.queryByText('DP — Datos Personales')).not.toBeInTheDocument();
+    expect(prueba.showToast).toHaveBeenCalledWith(expect.stringMatching(/ya no existía/), 'warning');
+    expect(registrarLogImplantes.mock.calls[0][2]).toMatchObject({ archivoInexistente: true });
   });
 });

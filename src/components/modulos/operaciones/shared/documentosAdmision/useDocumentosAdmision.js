@@ -7,8 +7,8 @@ import { listarDocumentosAdmision } from './documentosStorage';
 // mientras el panel esté abierto. `solicitadoRef` evita un segundo listAll si
 // se sale y se vuelve a la pestaña (antes o después de que termine el
 // primero, y también si falló: en ese caso solo "Reintentar" vuelve a listar).
-// Devuelve las props `documentos`, `onRecargar` y `onDocumentosSubidos` de
-// DocumentosTab.
+// Devuelve las props `documentos`, `onRecargar`, `onDocumentosSubidos` y
+// `onDocumentoEliminado` de DocumentosTab.
 export const useDocumentosAdmision = (modulo, idAdmision, activo) => {
   const [documentosAdmision, setDocumentosAdmision] = useState(null);
   const solicitadoRef = useRef(null);
@@ -43,6 +43,14 @@ export const useDocumentosAdmision = (modulo, idAdmision, activo) => {
     setDocumentosAdmision({ idAdmision, lista, error: null });
   };
 
+  // Al eliminar un PDF se quita del listado en memoria (los contadores del
+  // encabezado y de cada categoría salen de esta lista), sin volver a listar.
+  const onDocumentoEliminado = (ruta) => {
+    setDocumentosAdmision((prev) => (prev?.idAdmision === idAdmision
+      ? { ...prev, lista: prev.lista.filter((d) => d.ruta !== ruta) }
+      : prev));
+  };
+
   const actual = documentosAdmision?.idAdmision === idAdmision;
   return {
     documentos: {
@@ -52,5 +60,6 @@ export const useDocumentosAdmision = (modulo, idAdmision, activo) => {
     },
     onRecargar,
     onDocumentosSubidos,
+    onDocumentoEliminado,
   };
 };

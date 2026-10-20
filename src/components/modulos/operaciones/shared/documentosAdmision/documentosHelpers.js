@@ -152,3 +152,22 @@ export const mensajeErrorStorage = (err) => {
       return 'Ocurrió un error inesperado. Intenta nuevamente.';
   }
 };
+
+// Errores de la Cloud Function eliminarDocumentoAdmision: los suyos ya
+// vienen en español (HttpsError); el resto, genérico.
+export const mensajeErrorEliminar = (err) => {
+  switch (err?.code) {
+    case 'functions/permission-denied':
+      return 'No tienes permiso para eliminar documentos.';
+    case 'functions/unauthenticated':
+      return 'Tu sesión expiró. Vuelve a iniciar sesión.';
+    case 'functions/unavailable':
+    case 'functions/deadline-exceeded':
+      return 'Se perdió la conexión con el servidor. Intenta nuevamente.';
+    case 'functions/invalid-argument':
+    case 'functions/internal':
+      return err.message || 'No se pudo eliminar el documento.';
+    default:
+      return 'No se pudo eliminar el documento.';
+  }
+};

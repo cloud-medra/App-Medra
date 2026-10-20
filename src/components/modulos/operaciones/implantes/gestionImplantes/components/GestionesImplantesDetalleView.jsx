@@ -774,6 +774,7 @@ const GestionesImplantesDetalleView = forwardRef(({
               gestionId={formData.gestionId}
               nombre={formData.nombre}
               handleCopiarTexto={handleCopiarTexto}
+              refPathBloque={refPathBloqueActivo}
               {...docsAdmision}
             />
           )}

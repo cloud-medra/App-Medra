@@ -66,3 +66,8 @@ Object.assign(exports, require("./solicitudes"));
 // Bodega: maestro de productos, códigos de barra y (por fases) stock por
 // lote, tránsito por centro e inventario. Ver functions/bodega/index.js.
 Object.assign(exports, require("./bodega"));
+
+// Pestaña Documentos de Gestión (Implantes y Hemodinamia): eliminar un PDF
+// de la admisión (papelera de Storage + auditoría). Ver
+// functions/documentosAdmision/index.js.
+Object.assign(exports, require("./documentosAdmision"));

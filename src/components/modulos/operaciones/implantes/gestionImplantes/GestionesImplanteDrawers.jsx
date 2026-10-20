@@ -35,7 +35,8 @@ const ACCION_LABELS = {
   ITEM_EDITADO: 'Ítem Editado (Carga)',
   ITEM_ELIMINADO: 'Ítem Eliminado (Carga)',
   IMPUTACION_RESINCRONIZADA: 'Re-sincronización con Imputadas',
-  SOLICITUD_EXPORTADA: 'Solicitud Exportada'
+  SOLICITUD_EXPORTADA: 'Solicitud Exportada',
+  DOCUMENTO_ELIMINADO: 'Documento Eliminado'
 };
 
 const ACCION_ESTILOS = {
@@ -49,7 +50,8 @@ const ACCION_ESTILOS = {
   ITEM_EDITADO: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400',
   ITEM_ELIMINADO: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400',
   IMPUTACION_RESINCRONIZADA: 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400',
-  SOLICITUD_EXPORTADA: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400'
+  SOLICITUD_EXPORTADA: 'bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400',
+  DOCUMENTO_ELIMINADO: 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400'
 };
 
 const getAccionEstilo = (accion) => ACCION_ESTILOS[accion] || 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
@@ -234,6 +236,18 @@ const DetalleLog = ({ log, coleccionImputadas = 'implantes_imputadas' }) => {
           {d.cantidadItems !== undefined && <p><strong>Ítems exportados:</strong> {d.cantidadItems}</p>}
           {d.codigo && <p><strong>Código:</strong> {d.codigo}</p>}
           {d.cantidad !== undefined && <p><strong>Cantidad:</strong> {d.cantidad}</p>}
+        </div>
+      );
+
+    // Pestaña Documentos (shared/documentosAdmision/DocumentosTab.jsx).
+    case 'DOCUMENTO_ELIMINADO':
+      return (
+        <div className="space-y-0.5">
+          <p className="text-red-500 font-medium break-all">Documento eliminado: {d.nombre || '-'}</p>
+          <p><strong>Admisión:</strong> {d.idAdmision || '-'}</p>
+          {d.archivoInexistente && (
+            <p className="text-amber-600 dark:text-amber-400">El archivo ya no existía en el almacenamiento; solo se quitó del listado.</p>
+          )}
         </div>
       );
 

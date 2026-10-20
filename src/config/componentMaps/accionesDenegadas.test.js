@@ -11,13 +11,16 @@ import { completarPermisosGranulares, generarAccesoDesdeConfig } from '../../com
 const separar = (clave) => clave.split('|').slice(1); // [ruta, seccion, accion]
 const LISTADO = '/administracion/listadoUsuario';
 const DESBLOQUEAR = claveElemento(LISTADO, 'tabla_usuarios', 'btn_desbloquear');
+// Vista del menú o pestaña (`procesos`) de una vista.
+const configDe = (ruta) => COMPONENT_MAPS[ruta]
+  || Object.values(COMPONENT_MAPS).map((c) => c.procesos?.[ruta]).find(Boolean);
 
 describe('ACCIONES_DENEGADAS_POR_DEFECTO', () => {
-  it('cada una existe en COMPONENT_MAPS (vista, sección y acción)', () => {
+  it('cada una existe en COMPONENT_MAPS (vista o pestaña, sección y acción)', () => {
     expect(ACCIONES_DENEGADAS_POR_DEFECTO).toContain(DESBLOQUEAR);
     ACCIONES_DENEGADAS_POR_DEFECTO.forEach((clave) => {
       const [ruta, seccion, accion] = separar(clave);
-      expect(COMPONENT_MAPS[ruta]?.sections?.[seccion]?.elements?.[accion], clave).toBeTruthy();
+      expect(configDe(ruta)?.sections?.[seccion]?.elements?.[accion], clave).toBeTruthy();
     });
   });
 

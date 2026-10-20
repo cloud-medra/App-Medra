@@ -37,6 +37,7 @@ export const MODULOS_GESTION = Object.freeze({
     // Rutas (menú y permisos granulares)
     rutas: {
       gestion: '/implantes/gestionImplantes',
+      documentos: '/implantes/gestionImplantes/documentos',
       solicitud: '/implantes/solicitudImplantes',
       cargaMasivaDocumentos: '/implantes/cargaMasivaDocumentos',
       respaldo: '/implantes/respaldoDocumentos',
@@ -65,6 +66,7 @@ export const MODULOS_GESTION = Object.freeze({
     carpetaRespaldo: 'hemodinamia_respaldo',
     rutas: {
       gestion: '/hemodinamia/gestionHemodinamia',
+      documentos: '/hemodinamia/gestionHemodinamia/documentos',
       solicitud: '/hemodinamia/solicitudHemodinamia',
       cargaMasivaDocumentos: '/hemodinamia/cargaMasivaDocumentos',
       respaldo: '/hemodinamia/respaldoDocumentos',

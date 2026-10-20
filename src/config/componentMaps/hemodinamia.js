@@ -180,7 +180,10 @@ export const hemodinamiaComponentMaps = {
         sections: {
           contenido: {
             label: 'Sección: Subida múltiple y listado de PDF (DP, RP, INF, COT)',
-            elements: {},
+            elements: {
+              // Denegada por defecto; la valida la Cloud Function eliminarDocumentoAdmision.
+              btn_eliminar_documento: { label: 'Acción: Eliminar documento (lo envía a la papelera de Storage)' },
+            },
           },
         },
       },

@@ -85,6 +85,10 @@ export const ACCIONES_DENEGADAS_POR_DEFECTO = Object.freeze([
   // Bodega: cerrar el inventario físico con ajuste de stock, y anularlo.
   claveElemento('/bodega/inventarioBodega', 'inventario', 'btn_cerrar'),
   claveElemento('/bodega/inventarioBodega', 'inventario', 'btn_anular'),
+  // Pestaña Documentos de Gestión (functions/documentosAdmision): enviar un
+  // PDF de la admisión a la papelera.
+  claveElemento('/implantes/gestionImplantes/documentos', 'contenido', 'btn_eliminar_documento'),
+  claveElemento('/hemodinamia/gestionHemodinamia/documentos', 'contenido', 'btn_eliminar_documento'),
 ]);
 const DENEGADAS = new Set(ACCIONES_DENEGADAS_POR_DEFECTO);
 export const deniegaSinConfigurar = (ruta, seccion, accion) => DENEGADAS.has(claveElemento(ruta, seccion, accion));
@@ -227,6 +231,18 @@ export const puedeAccion = (u, modulo, ruta, seccion, accion) => {
   const vista = u.permisosGranulares?.[ruta];
   if (!vista) return false;
   return accionDeVista(vista, ruta, seccion, accion);
+};
+
+// Igual que puedeAccion, para una acción de una pestaña (`procesos` del
+// mapa): el ítem del menú es la vista contenedora (rutaVista) y la acción
+// se lee de permisosGranulares[rutaPestana], como hasPermission(rutaPestana, …).
+export const puedeAccionEnPestana = (u, modulo, rutaVista, rutaPestana, seccion, accion) => {
+  if (!u || u.activo === false) return false;
+  if (esRolAccesoTotal(u.rol)) return true;
+  if (!(u.permisos?.[modulo] || []).includes(rutaVista)) return false;
+  const vista = u.permisosGranulares?.[rutaPestana];
+  if (!vista) return false;
+  return accionDeVista(vista, rutaPestana, seccion, accion);
 };
 
 // Una acción dentro de la vista ya otorgada (permisosGranulares[ruta]).

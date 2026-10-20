@@ -3,9 +3,11 @@
 // carpeta ({carpetaDocumentos}/{admisión}/documentos, ver modulosGestion.js). Sin Firestore: el listado sale
 // de un listAll de la carpeta de la admisión (ver documentosHelpers.js).
 // storage.rules solo permite "create" en esta ruta, así que el servidor
-// rechaza cualquier intento de sobrescribir un PDF existente.
+// rechaza cualquier intento de sobrescribir o borrar un PDF existente;
+// eliminar va por la Cloud Function eliminarDocumentoAdmision.
 import { ref, listAll, uploadBytesResumable, getBlob } from 'firebase/storage';
-import { storage, auth } from '../../../../../firebaseConfig';
+import { httpsCallable } from 'firebase/functions';
+import { storage, auth, functions } from '../../../../../firebaseConfig';
 import { nombreDisponible, nombreParaStorage, tipoDesdeNombre, mensajeErrorStorage } from './documentosHelpers';
 import { moduloGestion } from '../modulosGestion';
 
@@ -101,3 +103,10 @@ export const subirTandaAdmision = async ({ modulo, idAdmision, archivos, listaIn
 };
 
 export const obtenerBlobDocumento = (ruta) => getBlob(ref(storage, ruta));
+
+// Envía el PDF a la papelera de Storage ({carpeta}/{admisión}/eliminados)
+// y deja auditoría en {modulo}_documentos_eliminados (functions/
+// documentosAdmision). La función valida el permiso btn_eliminar_documento.
+// Devuelve { resultado: 'eliminado' | 'inexistente', rutaPapelera? }.
+export const eliminarDocumentoAdmision = async ({ modulo, idAdmision, ruta }) =>
+  (await httpsCallable(functions, 'eliminarDocumentoAdmision')({ modulo, idAdmision, ruta })).data;

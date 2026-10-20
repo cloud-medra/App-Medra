@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react';
-import { FileText, UploadCloud, Eye, Download, Loader2, AlertCircle, RefreshCw, FolderOpen, CheckCircle2, XCircle, HelpCircle, Copy, ChevronUp, Archive } from 'lucide-react';
+import { FileText, UploadCloud, Eye, Download, Loader2, AlertCircle, RefreshCw, FolderOpen, CheckCircle2, XCircle, HelpCircle, Copy, ChevronUp, Archive, Trash2 } from 'lucide-react';
+import { doc } from 'firebase/firestore';
+import { db } from '../../../../../firebaseConfig';
 import { useToast } from '../../../../../context/ToastContext';
+import { useUser } from '../../../../../context/UserContext';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
 import FormularioRespaldo from '../respaldoDocumentos/FormularioRespaldo';
 import {
@@ -9,16 +12,23 @@ import {
   clasificarArchivos,
   superaTamanoMaximo,
   mensajeErrorStorage,
+  mensajeErrorEliminar,
   ordenarDocumentos
 } from './documentosHelpers';
-import { subirTandaAdmision, obtenerBlobDocumento } from './documentosStorage';
+import { subirTandaAdmision, obtenerBlobDocumento, eliminarDocumentoAdmision } from './documentosStorage';
 import { ZonaSubidaPdf } from './ZonaSubidaPdf';
 import { construirTextoAdmisionNombre } from '../../implantes/gestionImplantes/utils/gestionesImportExport';
 import { VisorDocumentoModal } from './VisorDocumentoModal';
 import { IconoArchivo } from './IconoArchivo';
+import { ConfirmarEliminarDocumento } from './ConfirmarEliminarDocumento';
 import { moduloGestion } from '../modulosGestion';
+import { registrarLogImplantes } from '../../implantes/gestionImplantes/utils/registrarLogImplantes';
+import { registrarLogHemodinamia } from '../../hemodinamia/gestionHemodinamia/utils/registrarLogHemodinamia';
 
 const SIN_TIPO = 'SIN_TIPO';
+
+// Log "Documento eliminado" en la pestaña Logs del bloque activo.
+const REGISTRAR_LOG = { implantes: registrarLogImplantes, hemodinamia: registrarLogHemodinamia };
 
 
 // Pestaña Documentos: PDF de la admisión en Storage. Los archivos se suben
@@ -30,6 +40,9 @@ const SIN_TIPO = 'SIN_TIPO';
 // useDocumentosAdmision) para que
 // cambiar de pestaña no lo vuelva a pedir; acá solo se muestra y, al terminar
 // una tanda de subida, se le entrega el listado actualizado en memoria.
+// Eliminar (acción btn_eliminar_documento) va por la Cloud Function
+// eliminarDocumentoAdmision, que también valida el permiso; `refPathBloque`
+// es el bloque activo, donde queda el log.
 export const DocumentosTab = ({
   modulo = 'implantes',
   idAdmision,
@@ -38,9 +51,12 @@ export const DocumentosTab = ({
   handleCopiarTexto,
   documentos,
   onRecargar,
-  onDocumentosSubidos
+  onDocumentosSubidos,
+  onDocumentoEliminado,
+  refPathBloque
 }) => {
   const { showToast } = useToast();
+  const { userData } = useUser();
   const [progreso, setProgreso] = useState(null); // { actual, total, porcentaje }
   const [resumen, setResumen] = useState(null);   // { subidos: [], rechazados: [] }
   const [abriendoRuta, setAbriendoRuta] = useState(null);
@@ -53,6 +69,9 @@ export const DocumentosTab = ({
   const config = moduloGestion(modulo);
   // Solo si el módulo tiene Respaldo de documentos.
   const puedeRespaldar = Boolean(config.rutas.respaldo) && hasPermission(config.rutas.respaldo, 'acciones', 'btn_subir');
+  const puedeEliminar = Boolean(onDocumentoEliminado) && hasPermission(config.rutas.documentos, 'contenido', 'btn_eliminar_documento');
+  const [porEliminar, setPorEliminar] = useState(null); // documento a confirmar
+  const [eliminando, setEliminando] = useState(false);
   const [respaldoAbierto, setRespaldoAbierto] = useState(false);
   const respaldables = (resumen?.rechazados || []).filter((r) => r.respaldable && r.file);
   const alEnviarARespaldo = (files) => setResumen((prev) => prev && ({
@@ -142,6 +161,37 @@ export const DocumentosTab = ({
     a.download = docObj.nombre;
     a.click();
   });
+
+  // La función mueve el PDF a la papelera y deja auditoría; si ya no
+  // existía, igual se quita del listado (con aviso). Ante un error no cambia
+  // nada: la función revierte lo que alcanzó a hacer.
+  const handleEliminar = async () => {
+    const docObj = porEliminar;
+    setEliminando(true);
+    try {
+      const { resultado, rutaPapelera } = await eliminarDocumentoAdmision({ modulo, idAdmision, ruta: docObj.ruta });
+      onDocumentoEliminado(docObj.ruta);
+      if (refPathBloque) {
+        REGISTRAR_LOG[modulo]?.(doc(db, refPathBloque), 'DOCUMENTO_ELIMINADO', {
+          nombre: docObj.nombre,
+          idAdmision,
+          rutaPapelera: rutaPapelera || null,
+          archivoInexistente: resultado === 'inexistente',
+        }, userData);
+      }
+      if (resultado === 'inexistente') {
+        showToast(`"${docObj.nombre}" ya no existía en el almacenamiento; se quitó del listado.`, 'warning');
+      } else {
+        showToast('Documento eliminado.', 'success');
+      }
+    } catch (err) {
+      console.error(`Error al eliminar documento de ${modulo}:`, err);
+      showToast(mensajeErrorEliminar(err), 'error');
+    } finally {
+      setEliminando(false);
+      setPorEliminar(null);
+    }
+  };
 
   const sinTipoSubidos = resumen?.subidos.filter(d => !d.tipo) || [];
   const listadoListo = !sinAdmision && !cargando && !errorListado;
@@ -343,6 +393,7 @@ export const DocumentosTab = ({
                       abriendoRuta={abriendoRuta}
                       onVer={(d) => setVisorIndice(ordenados.indexOf(d))}
                       onDescargar={handleDescargar}
+                      onEliminar={puedeEliminar ? setPorEliminar : null}
                     />
                   );
                 })}
@@ -358,6 +409,14 @@ export const DocumentosTab = ({
           iniciales={respaldables.map((r) => ({ file: r.file }))}
           onCerrar={() => setRespaldoAbierto(false)}
           onSubidos={alEnviarARespaldo}
+        />
+      )}
+      {porEliminar && (
+        <ConfirmarEliminarDocumento
+          documento={porEliminar}
+          eliminando={eliminando}
+          onConfirmar={handleEliminar}
+          onCancelar={() => setPorEliminar(null)}
         />
       )}
       {visorIndice !== null && ordenados[visorIndice] && (
@@ -377,7 +436,7 @@ const BOTON_ACCION = 'h-6 w-6 inline-flex items-center justify-center rounded te
 // la primera fila y abarca todas las del grupo (rowSpan).
 const CELDA = 'py-1.5 border-b border-slate-100 dark:border-gray-700/60';
 
-const GrupoDocumentos = ({ titulo, docs, abriendoRuta, onVer, onDescargar }) => (
+const GrupoDocumentos = ({ titulo, docs, abriendoRuta, onVer, onDescargar, onEliminar }) => (
   <>
     {docs.map((d, i) => {
       const abriendo = abriendoRuta === d.ruta;
@@ -413,6 +472,11 @@ const GrupoDocumentos = ({ titulo, docs, abriendoRuta, onVer, onDescargar }) => 
               <button type="button" onClick={() => onDescargar(d)} disabled={abriendo} title="Descargar" className={BOTON_ACCION}>
                 {abriendo ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
               </button>
+              {onEliminar && (
+                <button type="button" onClick={() => onEliminar(d)} title="Eliminar" aria-label={`Eliminar ${d.nombre}`} className={`${BOTON_ACCION} hover:!text-red-600`}>
+                  <Trash2 size={13} />
+                </button>
+              )}
             </div>
           </td>
         </tr>
