@@ -61,6 +61,13 @@ const LoginForm = () => {
     setTimeout(() => setShakeError(false), 600);
   };
 
+  // Título de la pestaña solo en el login; al salir se restaura el de index.html.
+  useEffect(() => {
+    const tituloAnterior = document.title;
+    document.title = 'Prueba Claude';
+    return () => { document.title = tituloAnterior; };
+  }, []);
+
   // La sesión y el perfil los resuelve UserContext (prepara la caché de
   // Firestore y recién después lee usuarios/{uid}). Este formulario no lee
   // Firestore por su cuenta: antes lo hacía en paralelo a esa preparación y,
