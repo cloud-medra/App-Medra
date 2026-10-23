@@ -54,6 +54,13 @@ describe('Solicitud: misma pantalla en Implantes y Hemodinamia', () => {
     const fila = screen.getByText('TORNILLO').closest('tr');
     expect(within(fila).queryByText('REF-1')).not.toBeInTheDocument();
   });
+
+  it.each(['implantes', 'hemodinamia'])('%s: el texto de la tabla se puede seleccionar (sin select-none)', (modulo) => {
+    datosHook = { bloques: [bloque([item])] };
+    render(<SolicitudGestiones modulo={modulo} />);
+    let el = screen.getByText('TORNILLO');
+    for (; el; el = el.parentElement) expect(el.className || '').not.toMatch(/\bselect-none\b/);
+  });
 });
 
 describe('Solicitud: Excel', () => {

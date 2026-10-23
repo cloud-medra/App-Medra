@@ -269,8 +269,10 @@ const SolicitudGestiones = ({ modulo }) => {
         </span>
       </div>
 
-      {/* TABLA PRINCIPAL — plana, sin subfilas */}
-      <div className="flex-grow overflow-auto select-none relative">
+      {/* TABLA PRINCIPAL — plana, sin subfilas. Sin select-none: el texto se
+          puede seleccionar y copiar (ManijaRedimension desactiva la selección
+          solo mientras se arrastra una columna). */}
+      <div className="flex-grow overflow-auto relative">
         <div className="sticky top-0 z-20 flex justify-end px-1 py-0.5 bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
           <button
             type="button"
