@@ -1,5 +1,5 @@
 import { mapaRespaldoDocumentos, mapaSincronizacionImputadas, reubicarMapa } from './operacionesCompartidas.js';
-import { mapaReportesInfo } from './documentos.js';
+import { mapaReportesInfo, mapaImportarDetallesOC, mapaSeguimientoFacturasGuias, mapaIngresoOrdenes } from './documentos.js';
 import { maestrosComponentMaps } from './maestros.js';
 
 // Implantes → Códigos: la misma pantalla que Maestros → Códigos con su propio
@@ -324,5 +324,10 @@ export const implantesComponentMaps = {
   // ninguna gestión (RespaldoDocumentos.jsx). Las acciones también se validan
   // en firestore.rules y storage.rules.
   '/implantes/respaldoDocumentos': mapaRespaldoDocumentos('Implantes'),
+
+  // Mismas pantallas y datos que en Documentos, con permisos propios.
+  '/implantes/importarDetallesOC': mapaImportarDetallesOC,
+  '/implantes/seguimientoFacturasGuias': mapaSeguimientoFacturasGuias,
+  '/implantes/ingresoOrdenes': mapaIngresoOrdenes,
 
 };

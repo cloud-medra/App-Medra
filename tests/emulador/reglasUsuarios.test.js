@@ -176,6 +176,23 @@ describe('maestros_codigos: Maestros → Códigos o Implantes → Códigos', () 
   });
 });
 
+describe('documentos_sistema: Documentos o Implantes → Importar Detalles OC', () => {
+  it('escribe quien tiene Documentos o el ítem en Implantes; otro ítem de Implantes no', async () => {
+    const conImplantesOC = await sesion('implimp', { rol: 'operador', permisos: { implantes: ['/implantes/importarDetallesOC'] }, permisosGranulares: {} });
+    const conImplantesSeg = await sesion('implseg', { rol: 'operador', permisos: { implantes: ['/implantes/seguimientoFacturasGuias'] }, permisosGranulares: {} });
+    const conDocumentos = await sesion('docimp', { rol: 'operador', permisos: { documentos: ['/documentos/importarDetallesOC'] }, permisosGranulares: {} });
+    const conOtroDeImplantes = await sesion('implges2', { rol: 'operador', permisos: { implantes: ['/implantes/gestionImplantes'] }, permisosGranulares: {} });
+    const fila = (s, id) => doc(s.db, 'documentos_sistema', '2026', 'meses', '10', 'admisiones', '100', 'empresas', 'acme', 'detalles', id);
+    await expect(setDoc(fila(conImplantesOC, 'f1'), { ADMISION: 100 })).resolves.toBeUndefined();
+    await expect(setDoc(fila(conDocumentos, 'f2'), { ADMISION: 100 })).resolves.toBeUndefined();
+    await expect(setDoc(fila(conOtroDeImplantes, 'f3'), { ADMISION: 100 })).rejects.toMatchObject({ code: 'permission-denied' });
+    await expect(setDoc(fila(conImplantesSeg, 'f4'), { ADMISION: 100 })).rejects.toMatchObject({ code: 'permission-denied' });
+    // Resumen Mensual: también "Recalcular" desde Implantes → Seguimiento.
+    await expect(setDoc(doc(conImplantesSeg.db, 'resumen_facturacion_mensual', '2026'), { anio: 2026 })).resolves.toBeUndefined();
+    await expect(setDoc(doc(conOtroDeImplantes.db, 'resumen_facturacion_mensual', '2026'), { anio: 2026 })).rejects.toMatchObject({ code: 'permission-denied' });
+  });
+});
+
 describe('admisiones_gestionadas_implantes: solo la escribe el backend', () => {
   it('cualquiera autenticado la lee; nadie la escribe desde el navegador (ni admin)', async () => {
     await sembrar('admisiones_gestionadas_implantes/123', { admision: 123, estado: 'gestionada' });

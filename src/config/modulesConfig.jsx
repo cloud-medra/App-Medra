@@ -216,6 +216,10 @@ export const MODULES = {
       { label: 'Respaldo de documentos', path: '/implantes/respaldoDocumentos', icon: <Archive size={14} /> },
       // Misma pantalla y datos que Maestros → Codigos, con permisos propios.
       { label: 'Códigos', path: '/implantes/codigosImplantes', icon: <ScanBarcode size={14} /> },
+      // Mismas pantallas y datos que en Documentos, con permisos propios.
+      { label: 'Importar Detalles OC', path: '/implantes/importarDetallesOC', icon: <FileSpreadsheet size={14} /> },
+      { label: 'Seguimiento de Facturas y Guías', path: '/implantes/seguimientoFacturasGuias', icon: <Receipt size={14} /> },
+      { label: 'Ingreso de Órdenes', path: '/implantes/ingresoOrdenes', icon: <FileUp size={14} /> },
     ]
   },
   hemodinamia: {

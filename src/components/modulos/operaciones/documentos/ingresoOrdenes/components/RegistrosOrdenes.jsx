@@ -11,8 +11,6 @@ import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from
 import { BotonRestablecerAnchos } from '../../../../../ui/BotonRestablecerAnchos';
 import { nombreDeMes } from '../../../../../../utils/ordenarMeses';
 
-const PATH_VISTA = '/documentos/ingresoOrdenes';
-
 const formatearFechaCelda = (valor) => {
   if (!valor) return '-';
   const fecha = valor.toDate ? valor.toDate() : new Date(valor);
@@ -38,7 +36,7 @@ const COLUMNAS = [
 
 // Pestaña "Registros" de Ingreso de Órdenes: las filas importadas de
 // documentos_sistema por año/mes. Solo se monta (y lee) al abrir la pestaña.
-const RegistrosOrdenes = () => {
+const RegistrosOrdenes = ({ pathVista }) => {
   const { hasPermission } = useGranularPermission();
   const [grupoSeleccionado, setGrupoSeleccionado] = useState(null);
 
@@ -75,7 +73,7 @@ const RegistrosOrdenes = () => {
         </>
       ) : (
         <>
-          {hasPermission(PATH_VISTA, 'barra_filtros') && (
+          {hasPermission(pathVista, 'barra_filtros') && (
             <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-700">
               <select
                 value={anio}

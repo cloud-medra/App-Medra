@@ -38,6 +38,9 @@ const RUTAS_DINAMICAS = {
   'modulos/gestiones/laboratorio/vizualizador/XmlDetallesDoc.jsx': ['/laboratorio/xmlDocLaboratorio', '/laboratorio/archivosControlLaboratorio/documentosRecibidos'],
   'modulos/gestiones/vacunatorio/vizualizador/XmlDetallesDoc.jsx': ['/vacunatorio/xmlDocVacunatorio', '/vacunatorio/archivosControlVacunatorio/documentosRecibidos'],
   'modulos/operaciones/documentos/reportesInfo/ReportesInfo.jsx': ['/documentos/reportesInfo', '/implantes/reportesInfo'],
+  'modulos/operaciones/documentos/importarDetallesOC/ImportarDetallesOC.jsx': ['/documentos/importarDetallesOC', '/implantes/importarDetallesOC'],
+  'modulos/operaciones/documentos/seguimientoFacturasGuias/SeguimientoFacturasGuias.jsx': ['/documentos/seguimientoFacturasGuias', '/implantes/seguimientoFacturasGuias'],
+  'modulos/operaciones/documentos/ingresoOrdenes/components/RegistrosOrdenes.jsx': ['/documentos/ingresoOrdenes', '/implantes/ingresoOrdenes'],
   // Pantallas compartidas por Implantes y Hemodinamia (shared/modulosGestion.js).
   'modulos/operaciones/shared/respaldoDocumentos/RespaldoDocumentos.jsx': ['/implantes/respaldoDocumentos', '/hemodinamia/respaldoDocumentos'],
   'modulos/operaciones/shared/sincronizacionImputadas/SincronizacionImputadas.jsx': ['/implantes/sincronizacionImputadas', '/hemodinamia/sincronizacionImputadas'],

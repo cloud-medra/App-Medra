@@ -49,9 +49,11 @@ service firebase.storage {
     // usado para minimizar lecturas de Firestore en cada importación.
     // Es un artefacto interno de la importación, no un documento de negocio,
     // así que a diferencia del patrón de lectura abierta de firestore.rules
-    // se restringe también la lectura al mismo permiso que la escritura.
+    // se restringe también la lectura al mismo permiso que la escritura
+    // (Documentos, o el ítem Implantes → Importar Detalles OC).
     match /snapshots/documentos_sistema/{archivo} {
-      allow read, write: if estaActivo() && (esDev() || tienePermiso('documentos'));
+      allow read, write: if estaActivo() && (esDev() || tienePermiso('documentos')
+        || tieneItem('implantes', '/implantes/importarDetallesOC'));
     }
 
     // Índice de OC (Importar Detalles OC -> "Sincronizar OC" de Gestión de

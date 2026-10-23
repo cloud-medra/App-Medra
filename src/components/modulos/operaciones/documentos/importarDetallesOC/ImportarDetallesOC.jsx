@@ -23,8 +23,6 @@ import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from
 import { BotonRestablecerAnchos } from '../../../../ui/BotonRestablecerAnchos';
 import { nombreDeMes } from '../../../../../utils/ordenarMeses';
 
-const PATH_VISTA = '/documentos/importarDetallesOC';
-
 const TH = 'px-2 py-1.5 border-b border-r border-slate-200 dark:border-gray-700';
 const TD = 'px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 truncate';
 
@@ -56,7 +54,9 @@ function formatearFechaCelda(valor) {
   return `${dd}-${mm}-${fecha.getFullYear()}`;
 }
 
-const ImportarDetallesOC = () => {
+// Misma pantalla en Documentos y en Implantes: `pathVista` es la ruta del
+// menú que la monta (cada una con sus permisos granulares).
+const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) => {
   const { showToast } = useToast();
   const { hasPermission } = useGranularPermission();
 
@@ -72,7 +72,7 @@ const ImportarDetallesOC = () => {
   const userData = useUser()?.userData;
   // Seleccionar/eliminar filas: rol Administrador/Desarrollador y la acción
   // (denegada por defecto).
-  const esAdminODev = esRolAdministrador(userData?.rol) && hasPermission(PATH_VISTA, 'tabla_registros', 'btn_eliminar_filas');
+  const esAdminODev = esRolAdministrador(userData?.rol) && hasPermission(pathVista, 'tabla_registros', 'btn_eliminar_filas');
 
   const {
     anio, setAnio, anios, cargandoAnios,
@@ -263,7 +263,7 @@ const ImportarDetallesOC = () => {
             {reconstruyendo ? <Loader2 size={11} className="animate-spin" /> : <Database size={11} />} Reconstruir snapshot
           </button>
         )}
-        {hasPermission(PATH_VISTA, 'cabecera_acciones', 'btn_importar') && (
+        {hasPermission(pathVista, 'cabecera_acciones', 'btn_importar') && (
           <button
             onClick={() => setShowModal(true)}
             className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-[10px] font-normal flex items-center gap-1.5 transition shadow-sm"
@@ -336,7 +336,7 @@ const ImportarDetallesOC = () => {
         />
       )}
 
-      {hasPermission(PATH_VISTA, 'barra_filtros') && (
+      {hasPermission(pathVista, 'barra_filtros') && (
         <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-700">
           {!cargandoAnios && anios.length === 0 ? (
             <span className="flex items-center gap-1.5 h-7 text-[11px] text-slate-500 dark:text-gray-400">

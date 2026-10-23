@@ -392,6 +392,9 @@ const Dashboard = () => {
     '/implantes/reportesInfo': <ReportesInfo pathVista="/implantes/reportesInfo" onAbrirGestionImplante={abrirGestionImplante} />,
     '/implantes/respaldoDocumentos': <RespaldoDocumentos />,
     '/implantes/codigosImplantes': <CodigosMaestros key="implantes" rutaBase="/implantes/codigosImplantes" />,
+    '/implantes/importarDetallesOC': <ImportarDetallesOC key="implantes" pathVista="/implantes/importarDetallesOC" />,
+    '/implantes/seguimientoFacturasGuias': <SeguimientoFacturasGuias key="implantes" pathVista="/implantes/seguimientoFacturasGuias" />,
+    '/implantes/ingresoOrdenes': <IngresoOrdenes key="implantes" pathVista="/implantes/ingresoOrdenes" />,
 
     // ── Hemodinamia ──
     '/hemodinamia/gestionHemodinamia': <GestionHemodinamia />,

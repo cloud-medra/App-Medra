@@ -12,7 +12,9 @@ const PESTANAS = [
 // en caché + el registro de PDF: 2 lecturas. "Registros" lee
 // documentos_sistema y solo se monta al abrir esa pestaña. Una pestaña ya
 // abierta queda montada (oculta) para no volver a leer al regresar.
-const IngresoOrdenes = () => {
+// Misma pantalla en Documentos y en Implantes: `pathVista` es la ruta del
+// menú que la monta (cada una con sus permisos granulares).
+const IngresoOrdenes = ({ pathVista = '/documentos/ingresoOrdenes' }) => {
   const [pestana, setPestana] = useState('sinPdf');
   const [abiertas, setAbiertas] = useState(() => new Set(['sinPdf']));
   const abrir = (id) => { setPestana(id); setAbiertas(prev => (prev.has(id) ? prev : new Set([...prev, id]))); };
@@ -44,7 +46,7 @@ const IngresoOrdenes = () => {
 
       {PESTANAS.filter(p => abiertas.has(p.id)).map(p => (
         <div key={p.id} className={pestana === p.id ? 'flex-grow flex flex-col min-h-0 overflow-hidden' : 'hidden'}>
-          {p.id === 'sinPdf' ? <OCSinPdf /> : <RegistrosOrdenes />}
+          {p.id === 'sinPdf' ? <OCSinPdf /> : <RegistrosOrdenes pathVista={pathVista} />}
         </div>
       ))}
     </div>

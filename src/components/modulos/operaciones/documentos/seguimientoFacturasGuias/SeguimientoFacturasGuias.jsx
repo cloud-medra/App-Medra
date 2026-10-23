@@ -16,8 +16,6 @@ import { exportarSeguimientoExcel } from './utils/exportarSeguimientoExcel';
 import { filtroPendienteFactura } from '../resumenFacturacion/resumenFacturacionService';
 import ResumenMensual from './ResumenMensual';
 
-const PATH_VISTA = '/documentos/seguimientoFacturasGuias';
-
 // Objetos estables a nivel de módulo (no se recrean en cada render) — se
 // pasan tal cual a useDocumentosSistemaPeriodo(filtroServidor). NUMERO_GUIA
 // se guarda siempre como texto recortado (nunca number) — ver CAMPOS_TEXTO
@@ -109,7 +107,9 @@ const SelectorTipoSeguimiento = ({ onElegir }) => (
   </div>
 );
 
-const SeguimientoFacturasGuias = () => {
+// Misma pantalla en Documentos y en Implantes: `pathVista` es la ruta del
+// menú que la monta (cada una con sus permisos granulares).
+const SeguimientoFacturasGuias = ({ pathVista = '/documentos/seguimientoFacturasGuias' }) => {
   const { hasPermission } = useGranularPermission();
   const { showToast } = useToast();
   const [exportando, setExportando] = useState(false);
@@ -188,7 +188,7 @@ const SeguimientoFacturasGuias = () => {
         <ResumenMensual />
       ) : (
         <>
-          {hasPermission(PATH_VISTA, 'barra_filtros') && (
+          {hasPermission(pathVista, 'barra_filtros') && (
             <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-700">
               <select
                 value={anio}

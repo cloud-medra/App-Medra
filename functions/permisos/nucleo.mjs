@@ -74,6 +74,7 @@ export const ACCIONES_DENEGADAS_POR_DEFECTO = Object.freeze([
   // Antes solo por rol (admin/dev); siguen exigiendo además rol Administrador.
   claveElemento('/administracion/estadisticas', 'acciones', 'btn_recalcular'),
   claveElemento('/documentos/importarDetallesOC', 'tabla_registros', 'btn_eliminar_filas'),
+  claveElemento('/implantes/importarDetallesOC', 'tabla_registros', 'btn_eliminar_filas'),
   claveElemento('/implantes/gestionImplantes', 'drawer_configuracion', 'btn_marcar_oc_pendiente'),
   claveElemento('/hemodinamia/gestionHemodinamia', 'drawer_configuracion', 'btn_marcar_oc_pendiente'),
   // Bodega (functions/bodega): inactivar productos y quitar/reasignar códigos de barra.

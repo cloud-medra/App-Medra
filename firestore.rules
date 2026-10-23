@@ -744,26 +744,32 @@ service cloud.firestore {
     // "marcadores" (merge:true, {active:"true"}) en cada nivel intermedio.
     // Excluida explícitamente de la regla genérica de "detalles" de más
     // arriba (esa es solo para implantes/consignación/hemodinamia) para que
-    // el permiso 'implantes' no habilite escritura acá.
+    // el permiso 'implantes' no habilite escritura acá: en Implantes escribe
+    // solo quien tenga el ítem Implantes → Importar Detalles OC (misma
+    // pantalla y datos que en Documentos).
+    function escribeDetallesOC() {
+      return esDev() || tienePermiso('documentos')
+        || tieneItem('implantes', '/implantes/importarDetallesOC');
+    }
     match /documentos_sistema/{anio} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('documentos'));
+      allow write: if estaActivo() && escribeDetallesOC();
 
       match /meses/{mes} {
         allow read: if estaActivo();
-        allow write: if estaActivo() && (esDev() || tienePermiso('documentos'));
+        allow write: if estaActivo() && escribeDetallesOC();
 
         match /admisiones/{admision} {
           allow read: if estaActivo();
-          allow write: if estaActivo() && (esDev() || tienePermiso('documentos'));
+          allow write: if estaActivo() && escribeDetallesOC();
 
           match /empresas/{proveedor} {
             allow read: if estaActivo();
-            allow write: if estaActivo() && (esDev() || tienePermiso('documentos'));
+            allow write: if estaActivo() && escribeDetallesOC();
 
             match /detalles/{idFila} {
               allow read: if estaActivo();
-              allow write: if estaActivo() && (esDev() || tienePermiso('documentos'));
+              allow write: if estaActivo() && escribeDetallesOC();
             }
           }
         }
@@ -773,10 +779,12 @@ service cloud.firestore {
     // Resumen Mensual de facturación de Detalles OC: un documento por año
     // ({anio, meses: {MM: totales}, actualizadoEn}). Lo escriben Importar
     // Detalles OC / Eliminar filas al terminar y "Recalcular" (Seguimiento →
-    // Resumen Mensual), con el mismo permiso que escribe las filas.
+    // Resumen Mensual), con el mismo permiso que escribe las filas, también
+    // desde Implantes → Seguimiento de Facturas y Guías.
     match /resumen_facturacion_mensual/{anio} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('documentos'));
+      allow write: if estaActivo() && (escribeDetallesOC()
+        || tieneItem('implantes', '/implantes/seguimientoFacturasGuias'));
     }
 
     // =================================================================
@@ -793,7 +801,7 @@ service cloud.firestore {
     // lee), y nadie la modifica ni la borra.
     match /detallesOCEliminados/{docId} {
       allow read: if estaActivo() && esDev();
-      allow create: if estaActivo() && (esDev() || tienePermiso('documentos'));
+      allow create: if estaActivo() && escribeDetallesOC();
       allow update, delete: if false;
     }
 
