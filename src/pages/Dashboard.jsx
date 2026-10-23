@@ -189,6 +189,14 @@ const Dashboard = () => {
   // primeras lecturas se anotaban en la pantalla anterior.
   if (import.meta.env.DEV) window.__FS_METER__?.setScreen(activeView);
 
+  // Título de la pestaña dentro de la plataforma; al salir se restaura el de
+  // index.html. Al cerrar sesión se recarga en "/" y LoginForm pone el suyo.
+  useEffect(() => {
+    const tituloAnterior = document.title;
+    document.title = 'Inicio | Medra';
+    return () => { document.title = tituloAnterior; };
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {

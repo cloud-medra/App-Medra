@@ -64,7 +64,7 @@ const LoginForm = () => {
   // Título de la pestaña solo en el login; al salir se restaura el de index.html.
   useEffect(() => {
     const tituloAnterior = document.title;
-    document.title = 'Prueba Claude';
+    document.title = 'Iniciar sesión | Medra';
     return () => { document.title = tituloAnterior; };
   }, []);
 

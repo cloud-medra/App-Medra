@@ -44,6 +44,14 @@ describe('LoginForm: usuario o correo', () => {
     expect(campo).toHaveAttribute('placeholder', 'Usuario o correo');
   });
 
+  it('título de la pestaña "Iniciar sesión | Medra" y lo restaura al salir', () => {
+    document.title = 'Medra Sistema Integral';
+    const { unmount } = render(<MemoryRouter><LoginForm /></MemoryRouter>);
+    expect(document.title).toBe('Iniciar sesión | Medra');
+    unmount();
+    expect(document.title).toBe('Medra Sistema Integral');
+  });
+
   it.each(['jperez', 'ana@medra.cl'])('envía "%s" como identificador y entra con el token', async (identificador) => {
     respuesta = { token: 'tkn' };
     await ingresar(identificador, 'secreto123');
