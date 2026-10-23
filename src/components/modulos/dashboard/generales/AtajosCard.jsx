@@ -43,16 +43,16 @@ const AtajosCard = ({ permisos, onAbrir }) => {
               type="button"
               onClick={() => onAbrir?.(a.modulo, a.path)}
               title={`${a.moduloLabel} → ${a.label}`}
-              className="group flex items-center gap-2 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30 hover:border-[#2383C2] hover:bg-blue-50/60 dark:hover:bg-blue-950/20 transition-colors text-left min-w-0"
+              className="group flex items-center gap-2 p-2 rounded-lg border border-[#2383C2]/30 dark:border-[#2383C2]/40 bg-[#2383C2]/[0.06] dark:bg-[#2383C2]/10 shadow-sm hover:border-[#2383C2] hover:bg-[#2383C2]/[0.12] dark:hover:bg-[#2383C2]/20 hover:shadow-md transition text-left min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2] focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
             >
-              <span className="flex-shrink-0 w-7 h-7 rounded-md bg-blue-50 dark:bg-blue-900/30 text-[#2383C2] flex items-center justify-center">
+              <span className="flex-shrink-0 w-7 h-7 rounded-md bg-[#2383C2]/15 dark:bg-[#2383C2]/25 text-[#1b6a9e] dark:text-sky-300 group-hover:bg-[#2383C2] group-hover:text-white dark:group-hover:text-white transition-colors flex items-center justify-center">
                 {React.isValidElement(a.icon) ? React.cloneElement(a.icon, { size: 15 }) : a.icon}
               </span>
               <span className="flex flex-col min-w-0">
-                <span className="text-[11px] font-semibold text-gray-700 dark:text-gray-200 truncate group-hover:text-[#2383C2]">
+                <span className="text-[11px] font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-[#1b6a9e] dark:group-hover:text-sky-300">
                   {a.label}
                 </span>
-                <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wide truncate">
+                <span className="text-[9px] text-gray-600 dark:text-gray-400 uppercase tracking-wide truncate">
                   {a.moduloLabel}
                 </span>
               </span>
