@@ -44,13 +44,15 @@ export const RecordatoriosCampanaVista = ({ pendientes, onRealizado, marcando = 
         aria-haspopup="true"
         title={`${textoPendientes}${atrasadas ? ` (${plural(atrasadas, 'atrasada', 'atrasadas')})` : ''}`}
         data-atrasadas={atrasadas > 0 || undefined}
-        className={`relative w-9 h-9 rounded-full text-white shadow-md flex items-center justify-center ${atrasadas ? 'bg-red-600' : 'bg-[#2383C2]'}`}
+        className={`relative w-9 h-9 rounded-md flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/50 ${atrasadas
+          ? 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
+          : 'text-[#2383C2] hover:text-[#1b6a9e] dark:text-sky-400 dark:hover:text-sky-300'}`}
       >
-        <BellRing size={17} />
+        <BellRing size={20} />
         {total > 0 && (
           <span
             data-testid="badge-recordatorios"
-            className={`absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full border-2 border-white dark:border-gray-800 text-[10px] font-bold flex items-center justify-center ${atrasadas ? 'bg-red-700' : 'bg-amber-500'}`}
+            className={`absolute top-0 right-0 min-w-[18px] h-[18px] px-1 rounded-full border-2 border-white dark:border-gray-800 text-white text-[10px] font-bold flex items-center justify-center ${atrasadas ? 'bg-red-700' : 'bg-amber-500'}`}
           >
             {total}
           </span>
