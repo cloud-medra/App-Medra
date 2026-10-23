@@ -2,7 +2,7 @@
 
 ## Reglas
 
-- **No usar los emuladores de Firebase.** No iniciar `npm run emuladores`, `npm run dev:emuladores` ni `firebase emulators:*`, y no ejecutar `npm run test:emulador` ni los tests de `tests/emulador/`. Para verificar, usar `npm run build` y la revisión del código.
+- **No usar los emuladores de Firebase.** No iniciar `npm run emuladores`, `npm run dev:emuladores` ni `firebase emulators:*`, y no ejecutar `npm run test:emulador` ni los tests de `tests/emulador/`. Para verificar, usar `npm run build`, la revisión del código y los tests unitarios con vitest (`npm test` o `npx vitest run <ruta>`), que no usan emuladores y sí se pueden correr. Con la suite completa algunos tests pueden fallar por timeout de 5 s en este equipo: si fallan, correr esos archivos aparte (por ejemplo con `--testTimeout=30000`) antes de darlos por rotos.
 - **Desplegar las Cloud Functions de a 2 o 3 por vez.** La cuota de CPU de Cloud Run en `us-central1` ("Total CPU allocation, per project per region") está al límite y no se pudo aumentar: un `firebase deploy --only functions` completo falla con `Quota exceeded for total allowable CPU per project per region`. Desplegar por tandas, esperando a que termine cada una antes de lanzar la siguiente:
 
   ```bash
