@@ -16,6 +16,7 @@ import {
   totalLinea, totalValorLineas, precioInicialLinea, referenciaProducto, campoInicial, siguienteCampo,
 } from './lineasDocumento';
 import { useColumnasCarga } from './columnasCarga';
+import { useColumnasIngreso } from './columnasIngreso';
 import { BotonRestablecerAnchos } from '../../../../ui/BotonRestablecerAnchos';
 import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../TablaBodega';
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../anchosTablaBodega';
@@ -56,6 +57,8 @@ const INPUT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text
 // clínico, editable), total por línea y total general; al tomar un producto
 // el foco va a Cantidad con el valor seleccionado, y Enter pasa al siguiente
 // campo (Precio, Lote, Vencimiento) hasta el último, que agrega la línea.
+// `conPrecioUnitario` (Ingreso): solo agrega precio unitario (precargado
+// con el precio neto; es el costo de entrada del costo promedio) y totales.
 // Lotes que ya existen del producto en curso (al escanear solo el GTIN):
 // clic para usar ese lote y vencimiento. Si lo escrito no calza con
 // ninguno, se avisa que se creará un lote nuevo al confirmar.
@@ -83,12 +86,15 @@ const LotesExistentes = ({ opciones, lote, vencimiento, onElegir }) => {
   );
 };
 
-const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false, conPrecio = false }) => {
+const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false, conPrecio = false, conPrecioUnitario = false }) => {
   const { datos: productos } = useCatalogo('bodegaProductos');
   const porId = useMemo(() => Object.fromEntries(productos.map((p) => [p.id, p])), [productos]);
   const columnasGenerales = useColumnasPermitidas(rutaVista, 'lineas', COLUMNAS);
   const columnasCarga = useColumnasCarga();
-  const { columnasVisibles } = conPrecio ? columnasCarga : columnasGenerales;
+  const columnasIngreso = useColumnasIngreso();
+  // Precio unitario por línea: Carga inicial (conPrecio) e Ingreso (conPrecioUnitario).
+  const precioEnLinea = conPrecio || conPrecioUnitario;
+  const { columnasVisibles } = conPrecio ? columnasCarga : conPrecioUnitario ? columnasIngreso : columnasGenerales;
   const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(columnasVisibles, `bodega.lineas.${conPrecio ? 'cargaInicialBodega' : rutaVista.split('/').pop()}`);
   const [pendiente, setPendiente] = useState(null); // { producto, cantidad, lote, vencimiento, codigoLeido }
   const [senal, setSenal] = useState({ tipo: null, mensaje: '' });
@@ -150,7 +156,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
     cargarLotes(producto);
     const nuevo = {
       producto, cantidad: 1, ...datosLote, codigoLeido: lectura?.codigo || '',
-      ...(conPrecio ? { precioUnitario: precioInicialLinea(producto, precioNeto) } : {}),
+      ...(precioEnLinea ? { precioUnitario: precioInicialLinea(producto, precioNeto) } : {}),
     };
     if (pendiente && pendiente.producto.id !== producto.id) {
       setSenal({ tipo: 'aviso', mensaje: `Se descartó ${pendiente.producto.nombre} (no se agregó).` });
@@ -159,7 +165,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
     const sugerido = campoSugerido(nuevo);
     if (!falta && !sugerido && auto) { agregar(nuevo); return; }
     setPendiente(nuevo);
-    const primero = campoInicial(nuevo, conPrecio);
+    const primero = campoInicial(nuevo, precioEnLinea);
     const indicacion = primero === 'lote' ? 'escanea el código de lote (o escribe el lote) y luego la cantidad'
       : falta ? `ingresa ${falta}` : sugerido ? `ingresa ${sugerido} (opcional) y presiona Enter` : 'presiona Enter para agregar';
     const conLote = usoEspera ? ` (lote ${datosLote.lote || '—'} del código anterior)` : '';
@@ -190,7 +196,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
         if (!falta && !sugerido && auto) { agregar(completado); return; }
         setPendiente(completado);
         setSenal({ tipo: 'ok', mensaje: `Lote/vencimiento completados para ${pendiente.producto.nombre}.` });
-        enfocar(campoInicial(completado, conPrecio), true);
+        enfocar(campoInicial(completado, precioEnLinea), true);
         return;
       }
       if (r.tipo === 'sinVincular') { setLecturaSinVincular(r.lectura); return; }
@@ -203,7 +209,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
   const confirmarPendiente = () => {
     const falta = campoFaltante(pendiente);
     if (falta) { setSenal({ tipo: 'error', mensaje: `Falta ${falta}.` }); enfocar(falta); return; }
-    if (conPrecio && normalizarPrecioUnitario(pendiente.precioUnitario).error) {
+    if (precioEnLinea && normalizarPrecioUnitario(pendiente.precioUnitario).error) {
       setSenal({ tipo: 'error', mensaje: 'El precio unitario debe ser un número mayor o igual a cero.' });
       enfocar('precio', true);
       return;
@@ -217,7 +223,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
   const alPresionarEnter = (e) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    const siguiente = siguienteCampo(pendiente, e.currentTarget.dataset.campo, conPrecio);
+    const siguiente = siguienteCampo(pendiente, e.currentTarget.dataset.campo, precioEnLinea);
     if (siguiente) { enfocar(siguiente, true); return; }
     confirmarPendiente();
   };
@@ -238,7 +244,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
     setSenal({ tipo: 'ok', mensaje: `Código de lote leído: lote ${datos.lote || '—'} · vence ${datos.vencimiento || '—'}. Ingresa la cantidad.` });
     if (!campoFaltante(completado) && !campoSugerido(completado) && auto) { agregar(completado); return; }
     setPendiente(completado);
-    enfocar(campoInicial(completado, conPrecio), true);
+    enfocar(campoInicial(completado, precioEnLinea), true);
   };
   const cambiar = (campo) => (e) => setPendiente((p) => ({ ...p, [campo]: e.target.value }));
 
@@ -281,7 +287,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
             <span className="text-[10px] font-bold uppercase text-gray-500">Cantidad</span>
             <input ref={cantidadRef} type="number" min="1" step="1" inputMode="numeric" value={pendiente.cantidad} onChange={cambiar('cantidad')} data-campo="cantidad" onKeyDown={alPresionarEnter} className={`${INPUT} w-24 font-num`} />
           </label>
-          {conPrecio && (
+          {precioEnLinea && (
             <label className="flex flex-col">
               <span className="text-[10px] font-bold uppercase text-gray-500">Precio unitario <span className="normal-case font-normal">(opcional)</span></span>
               <input ref={precioRef} type="number" min="0" step="1" inputMode="numeric" value={pendiente.precioUnitario ?? ''} onChange={cambiar('precioUnitario')} data-campo="precio" onKeyDown={alPresionarEnter} className={`${INPUT} w-32 font-num`} aria-label="Precio unitario" />
@@ -343,7 +349,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
           {lineas.length > 0 && (
             <FilaAnchoCompleto columnas={columnasVisibles} className="bg-gray-50 dark:bg-gray-900 font-bold" celdaClassName="px-2 py-1 text-right">
               <PackageCheck size={13} className="inline mr-1 text-emerald-600" />{lineas.length} línea(s) · {formatoCantidad(total)} unidad(es)
-              {conPrecio && <> · Total carga <span className="font-num">{formatoPesos(totalValorLineas(lineas))}</span></>}
+              {precioEnLinea && <> · Total {conPrecio ? 'carga' : 'ingreso'} <span className="font-num">{formatoPesos(totalValorLineas(lineas))}</span></>}
             </FilaAnchoCompleto>
           )}
         </TablaBodega>

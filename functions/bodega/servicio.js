@@ -34,6 +34,7 @@ const {
   validarCaja, totalesCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja,
   saldoDe, fotoSaldo, datosPropietario, movimientoDeAccion, DESDE, ACCIONES_SOBRE_TRANSITO, lotesPropios,
   validarConsignacion,
+  costoDe, valorizarMovimiento, camposCosto, costoEnCentro, periodoVigente, MODULO_PERIODO, ESTADOS_PERIODO_ABIERTO,
 } = require('./nucleo.mjs');
 const { interpretarLectura, idVinculo, MAX_CODIGO_LEIDO } = require('./gs1.mjs');
 
@@ -63,6 +64,32 @@ const exigirSinErrores = (errores) => {
 const registrarLog = (t, refDoc, accion, por, detalle = {}) => t.set(refDoc.collection('logs').doc(), {
   accion, detalle, usuario: por.nombre, usuarioUid: por.uid, fecha: ahora(),
 });
+
+// --- Periodo y costo de los movimientos (Control Mensual) -------------------
+//
+// Cada movimiento guarda el periodo de Bodega abierto en el momento
+// (`periodoId`, null si no hay uno abierto: se asigna al próximo que se
+// abra, ver periodos.js) y su valorización a costo promedio ponderado
+// (`linea`, `costoUnitario`, `valor`; nucleo.mjs). El periodo se lee dentro
+// de la misma transacción que el movimiento.
+
+const consultaPeriodosAbiertos = (db) => db.collection('cierres_periodos')
+  .where('modulo', '==', MODULO_PERIODO).where('estado', 'in', ESTADOS_PERIODO_ABIERTO);
+const leerPeriodo = async (t, db) => periodoVigente((await t.get(consultaPeriodosAbiertos(db))).docs.map((d) => d.data()));
+
+// Costos en memoria de los productos de una transacción ({ [id]: costo }),
+// desde el documento leído (con el precio neto como respaldo si aún no
+// tiene costoPromedio).
+const costosDe = (productos) => new Map([...productos.values()].filter(Boolean).map((p) => [p.id, costoDe(p)]));
+
+// Valoriza un movimiento sobre `costos` (los actualiza) y devuelve los
+// campos que se guardan en el movimiento. `saldoAntes`: saldo del producto
+// antes del movimiento.
+const valorizar = (costos, producto, saldoAntes, mov, periodoId, datos = {}) => {
+  const { costo, valorizado } = valorizarMovimiento(costos.get(producto.id), saldoAntes, producto, mov, datos);
+  costos.set(producto.id, costo);
+  return { periodoId, ...valorizado };
+};
 
 // --- Catálogos (categorías y unidades) --------------------------------------
 
@@ -472,13 +499,14 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
   return db.runTransaction(async (t) => {
     const ref = id ? db.collection(COL.documentos).doc(id) : db.collection(COL.documentos).doc();
     const productoIds = [...new Set(lineasEntrada.map((l) => String(l?.productoId || '')).filter(Boolean))];
-    const [snapDoc, snapUnico, snapProveedor, snapEstado, snapConfig, snapPropietario, ...snapsProductos] = await Promise.all([
+    const [snapDoc, snapUnico, snapProveedor, snapEstado, snapConfig, snapPropietario, periodoId, ...snapsProductos] = await Promise.all([
       id ? t.get(ref) : null,
       tipo === 'INGRESO' ? t.get(refUnico(db, idUnicoDocumento(cabecera))) : null,
       tipo === 'INGRESO' ? t.get(db.collection('maestros_empresas').doc(cabecera.proveedorId)) : null,
       t.get(refEstado(db)),
       tipo === 'CARGA_INICIAL' ? t.get(refConfig(db)) : null,
       tipo === 'CARGA_INICIAL' && cabecera.propietarioId ? t.get(db.collection('maestros_empresas').doc(cabecera.propietarioId)) : null,
+      leerPeriodo(t, db),
       ...productoIds.map((pid) => t.get(db.collection(COL.productos).doc(pid))),
     ]);
     if (id && !snapDoc.exists) throw new HttpsError('not-found', 'El borrador ya no existe.');
@@ -531,16 +559,20 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
 
     // Saldos: se aplican en orden, sobre copias en memoria.
     const saldosProducto = new Map([...productos.values()].map((p) => [p.id, saldoDe(p)]));
+    const costos = costosDe(productos);
     const saldosLote = new Map();
     const movimientos = [];
     try {
       lineas.forEach((l, orden) => {
+        const mov = { tipo: tipoMovimiento, cantidad: l.cantidad };
         const loteAntes = saldosLote.get(l.loteId) || saldoDe(lotesPrevios.get(l.loteId));
-        const loteDespues = aplicarMovimiento(loteAntes, { tipo: tipoMovimiento, cantidad: l.cantidad });
-        const productoDespues = aplicarMovimiento(saldosProducto.get(l.productoId), { tipo: tipoMovimiento, cantidad: l.cantidad });
+        const loteDespues = aplicarMovimiento(loteAntes, mov);
+        const productoDespues = aplicarMovimiento(saldosProducto.get(l.productoId), mov);
+        // Entra al precio unitario de la línea (o al precio neto si no tiene).
+        const valorizado = valorizar(costos, productos.get(l.productoId), saldosProducto.get(l.productoId), mov, periodoId, { precioLinea: l.precioUnitario });
         saldosLote.set(l.loteId, loteDespues);
         saldosProducto.set(l.productoId, productoDespues);
-        movimientos.push({ l, orden, loteDespues, productoDespues });
+        movimientos.push({ l, orden, loteDespues, productoDespues, valorizado });
       });
     } catch (error) {
       if (error instanceof ErrorStock) throw new HttpsError('failed-precondition', error.message);
@@ -561,14 +593,15 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
     });
     const productosActualizados = [...new Set(lineas.map((l) => l.productoId))].map((pid) => {
       const saldo = saldosProducto.get(pid);
-      t.update(db.collection(COL.productos).doc(pid), { ...saldo, conMovimientos: true, actualizadoEn: ahora() });
-      return { id: pid, ...saldo, conMovimientos: true };
+      const costo = camposCosto(costos.get(pid));
+      t.update(db.collection(COL.productos).doc(pid), { ...saldo, ...costo, conMovimientos: true, actualizadoEn: ahora() });
+      return { id: pid, ...saldo, ...costo, conMovimientos: true };
     });
     const documentoRef = {
       id: ref.id, tipo,
       ...(tipo === 'INGRESO' ? { tipoDocumento: cabecera.tipoDocumento, numero: cabecera.numero, proveedorNombre } : {}),
     };
-    movimientos.forEach(({ l, orden, loteDespues, productoDespues }) => {
+    movimientos.forEach(({ l, orden, loteDespues, productoDespues, valorizado }) => {
       const p = productos.get(l.productoId);
       t.set(db.collection(COL.movimientos).doc(), {
         tipo: tipoMovimiento, fecha: ahora(), orden, usuario: por,
@@ -576,9 +609,11 @@ const confirmarDocumentoComo = (db, por, datos = {}) => {
         loteId: l.loteId, lote: l.lote, vencimiento: l.vencimiento, ...propietario, cantidad: l.cantidad,
         saldoLote: fotoSaldo(loteDespues), saldoProducto: fotoSaldo(productoDespues),
         centroId: null, documentoRef, observacion: cabecera.observacion, codigoLeido: l.codigoLeido, codigoLote: l.codigoLote || '',
+        ...valorizado,
       });
     });
-    // El precio unitario queda solo en el documento (no en movimientos ni saldos).
+    // El precio unitario de la línea es el costo de entrada del movimiento
+    // (costoUnitario); el documento lo conserva tal como se escribió.
     const lineasDocumento = lineas.map((l) => ({
       ...l, productoNombre: productos.get(l.productoId).nombre, codigoMaestro: productos.get(l.productoId).codigoMaestro,
       referencia: productos.get(l.productoId).referencia || productos.get(l.productoId).maestroCodigo?.referencia || '',
@@ -665,9 +700,10 @@ const egresarComo = (db, por, datos = {}) => {
     const productoIds = [...new Set(lineas.map((l) => l.productoId))];
     const loteIds = [...new Set(lineas.map((l) => l.loteId))];
     const centroIds = [...new Set(lineas.map((l) => l.centroId))];
-    const [snapEstado, snapContadores, ...resto] = await Promise.all([
+    const [snapEstado, snapContadores, periodoId, ...resto] = await Promise.all([
       t.get(refEstado(db)),
       t.get(refControl(db)),
+      leerPeriodo(t, db),
       ...productoIds.map((id) => t.get(db.collection(COL.productos).doc(id))),
       ...loteIds.map((id) => t.get(db.collection(COL.lotes).doc(id))),
       ...centroIds.map((id) => t.get(db.collection('maestros_centros').doc(id))),
@@ -697,6 +733,7 @@ const egresarComo = (db, por, datos = {}) => {
     // Saldos en memoria.
     const saldoLote = new Map(loteIds.map((id) => [id, saldoDe(lotes.get(id))]));
     const saldoProducto = new Map(productoIds.map((id) => [id, saldoDe(productos.get(id))]));
+    const costos = costosDe(productos);
     const totalesCentro = new Map(centroIds.map((id, i) => [id, snapsTotales[i].exists ? snapsTotales[i].data() : {}]));
     const nuevosAbiertos = new Map(centroIds.map((id) => [id, 0]));
     const pasos = conErrorStock(() => lineas.map((l, orden) => {
@@ -708,10 +745,12 @@ const egresarComo = (db, por, datos = {}) => {
         const lote = lotes.get(l.loteId);
         throw new ErrorStock(`${p.nombre} lote ${lote.lote || 'S/L'}: ${error.message}`);
       }
+      // Movimiento interno: no cambia el valor (queda con su costo unitario).
+      const valorizado = valorizar(costos, p, saldoProducto.get(l.productoId), mov, periodoId);
       saldoProducto.set(l.productoId, aplicarMovimiento(saldoProducto.get(l.productoId), mov));
       totalesCentro.set(l.centroId, aplicarMovimientoCentro(totalesCentro.get(l.centroId), mov));
       nuevosAbiertos.set(l.centroId, nuevosAbiertos.get(l.centroId) + 1);
-      return { l, orden, saldoLote: saldoLote.get(l.loteId), saldoProducto: saldoProducto.get(l.productoId) };
+      return { l, orden, saldoLote: saldoLote.get(l.loteId), saldoProducto: saldoProducto.get(l.productoId), valorizado };
     }));
 
     // Escrituras.
@@ -727,8 +766,9 @@ const egresarComo = (db, por, datos = {}) => {
     });
     const productosActualizados = productoIds.map((id) => {
       const s = saldoProducto.get(id);
-      t.update(db.collection(COL.productos).doc(id), { ...s, conMovimientos: true, actualizadoEn: ahora() });
-      return { id, ...s, conMovimientos: true };
+      const costo = camposCosto(costos.get(id));
+      t.update(db.collection(COL.productos).doc(id), { ...s, ...costo, conMovimientos: true, actualizadoEn: ahora() });
+      return { id, ...s, ...costo, conMovimientos: true };
     });
     centroIds.forEach((id, i) => {
       const previo = snapsTotales[i].exists ? snapsTotales[i].data() : {};
@@ -740,7 +780,7 @@ const egresarComo = (db, por, datos = {}) => {
       });
     });
     const resumenPorCentro = {};
-    pasos.forEach(({ l, orden, saldoLote: sl, saldoProducto: sp }) => {
+    pasos.forEach(({ l, orden, saldoLote: sl, saldoProducto: sp, valorizado }) => {
       const p = productos.get(l.productoId);
       const lote = lotes.get(l.loteId);
       const centroNombre = centros.get(l.centroId).nombre || '';
@@ -759,6 +799,7 @@ const egresarComo = (db, por, datos = {}) => {
         saldoLote: fotoSaldo(sl), saldoProducto: fotoSaldo(sp),
         transitoId: refTransito.id, documentoRef: { id: refSalida.id, tipo: 'SALIDA', numero: String(numero) },
         observacion, solicitante, codigoLote: l.codigoLote || '',
+        ...valorizado,
       });
       const r = resumenPorCentro[l.centroId] || { nombre: centroNombre, lineas: 0, unidades: 0 };
       resumenPorCentro[l.centroId] = { ...r, lineas: r.lineas + 1, unidades: r.unidades + l.cantidad };
@@ -816,8 +857,9 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
     const loteIds = [...new Set(mueven.map((a) => transitos.get(a.transitoId).loteId))];
     const productoIds = [...new Set(mueven.map((a) => transitos.get(a.transitoId).productoId))];
     const centroIds = [...new Set(mueven.map((a) => transitos.get(a.transitoId).centroId))];
-    const [snapEstado, ...resto] = await Promise.all([
+    const [snapEstado, periodoId, ...resto] = await Promise.all([
       t.get(refEstado(db)),
+      leerPeriodo(t, db),
       ...loteIds.map((id) => t.get(db.collection(COL.lotes).doc(id))),
       ...productoIds.map((id) => t.get(db.collection(COL.productos).doc(id))),
       ...centroIds.map((id) => t.get(refTransitoCentro(db, id))),
@@ -833,6 +875,7 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
     const estadoTransito = new Map([...transitos.entries()].map(([id, tr]) => [id, { ...tr }]));
     const saldoLote = new Map(loteIds.map((id) => [id, saldoDe(lotes.get(id))]));
     const saldoProducto = new Map(productoIds.map((id) => [id, saldoDe(productos.get(id))]));
+    const costos = costosDe(productos);
     const totalesCentro = new Map(centroIds.map((id) => [id, totales.get(id)]));
     const cerrados = new Map(centroIds.map((id) => [id, 0]));
     const pasos = conErrorStock(() => normalizadas.map((a, orden) => {
@@ -845,13 +888,17 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
       } catch (error) {
         throw new ErrorStock(`${tr.productoNombre} (${tr.centroNombre}): ${error.message}`);
       }
+      const mov = { tipo: movimientoDeAccion(a.accion, a.desde), cantidad: a.cantidad, centroId: tr.centroId, productoId: tr.productoId };
+      // Dejar en el centro sale de la bodega al costo promedio, y ese costo
+      // queda en el tránsito para que el retorno vuelva al mismo costo.
+      const valorizado = valorizar(costos, productos.get(tr.productoId), saldoProducto.get(tr.productoId), mov, periodoId, { costoCentro: tr.costoUnitarioCentro });
+      if (mov.tipo === 'DEJADO_EN_CENTRO') nuevo.costoUnitarioCentro = costoEnCentro(tr, a.cantidad, valorizado.costoUnitario);
       estadoTransito.set(a.transitoId, nuevo);
       if (nuevo.estado === ESTADOS_TRANSITO.CERRADO) cerrados.set(tr.centroId, cerrados.get(tr.centroId) + 1);
-      const mov = { tipo: movimientoDeAccion(a.accion, a.desde), cantidad: a.cantidad, centroId: tr.centroId, productoId: tr.productoId };
       saldoLote.set(tr.loteId, aplicarMovimiento(saldoLote.get(tr.loteId), mov));
       saldoProducto.set(tr.productoId, aplicarMovimiento(saldoProducto.get(tr.productoId), mov));
       totalesCentro.set(tr.centroId, aplicarMovimientoCentro(totalesCentro.get(tr.centroId), mov));
-      return { a, orden, tr, mov, sl: saldoLote.get(tr.loteId), sp: saldoProducto.get(tr.productoId) };
+      return { a, orden, tr, mov, sl: saldoLote.get(tr.loteId), sp: saldoProducto.get(tr.productoId), valorizado };
     }));
 
     // Escrituras.
@@ -859,6 +906,7 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
       const tr = estadoTransito.get(id);
       t.update(db.collection(COL.transitos).doc(id), {
         pendiente: tr.pendiente, enCentro: tr.enCentro || 0, entregado: tr.entregado || 0, devuelto: tr.devuelto || 0, estado: tr.estado,
+        ...(tr.costoUnitarioCentro !== undefined ? { costoUnitarioCentro: tr.costoUnitarioCentro } : {}),
         ultimaAccionEn: ahora(), ...(tr.estado === ESTADOS_TRANSITO.CERRADO && transitos.get(id).estado !== ESTADOS_TRANSITO.CERRADO ? { cerradoEn: ahora() } : {}),
       });
     });
@@ -871,8 +919,9 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
     });
     const productosActualizados = productoIds.map((id) => {
       const s = saldoProducto.get(id);
-      t.update(db.collection(COL.productos).doc(id), { ...s, actualizadoEn: ahora() });
-      return { id, ...s };
+      const costo = camposCosto(costos.get(id));
+      t.update(db.collection(COL.productos).doc(id), { ...s, ...costo, actualizadoEn: ahora() });
+      return { id, ...s, ...costo };
     });
     centroIds.forEach((id) => {
       const tot = totalesCentro.get(id);
@@ -881,7 +930,7 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
         transitosAbiertos: Math.max(0, (totales.get(id).transitosAbiertos || 0) - cerrados.get(id)), actualizadoEn: ahora(),
       });
     });
-    pasos.forEach(({ a, orden, tr, mov, sl, sp }) => {
+    pasos.forEach(({ a, orden, tr, mov, sl, sp, valorizado }) => {
       const refT = db.collection(COL.transitos).doc(a.transitoId);
       t.set(refT.collection('historial').doc(), {
         accion: a.accion, desde: a.desde, cantidad: a.accion === 'NOTA' ? null : a.cantidad, idEntrega: a.idEntrega || '',
@@ -896,6 +945,7 @@ const gestionarTransitoComo = (db, por, datos = {}) => {
         centroId: tr.centroId, centroNombre: tr.centroNombre, transitoId: a.transitoId,
         documentoRef: { id: tr.salidaId, tipo: 'SALIDA', numero: String(tr.salidaNumero) },
         idEntrega: a.idEntrega || '', observacion: a.observacion,
+        ...valorizado,
       });
     });
     return {
@@ -1100,12 +1150,15 @@ const cerrarInventarioComo = async (db, por, { id, motivo, noContados }) => {
     const tanda = pendientes.slice(i, i + LINEAS_POR_AJUSTE);
     await db.runTransaction(async (t) => {
       const productoIds = [...new Set(tanda.map((l) => l.productoId))];
-      const [snapsLineas, snapsLotes, snapsProductos] = await Promise.all([
+      const [snapsLineas, snapsLotes, snapsProductos, periodoId] = await Promise.all([
         Promise.all(tanda.map((l) => t.get(ref.collection('lineas').doc(l.id)))),
         Promise.all(tanda.map((l) => t.get(db.collection(COL.lotes).doc(l.loteId)))),
         Promise.all(productoIds.map((pid) => t.get(db.collection(COL.productos).doc(pid)))),
+        leerPeriodo(t, db),
       ]);
       const saldoProducto = new Map(snapsProductos.map((x) => [x.id, saldoDe(x.data())]));
+      const productosTanda = new Map(snapsProductos.map((x) => [x.id, { id: x.id, ...x.data() }]));
+      const costos = costosDe(productosTanda);
       let orden = 0;
       tanda.forEach((l, k) => {
         const linea = snapsLineas[k].data();
@@ -1119,6 +1172,8 @@ const cerrarInventarioComo = async (db, por, { id, motivo, noContados }) => {
           const mov = { tipo, cantidad: Math.abs(ajuste) };
           const sl = conErrorStock(() => aplicarMovimiento(saldoDe(loteActual), mov));
           const sp = conErrorStock(() => aplicarMovimiento(saldoProducto.get(linea.productoId), mov));
+          // Sobrante: entra al precio neto vigente; faltante: sale al costo promedio.
+          const valorizado = valorizar(costos, productosTanda.get(linea.productoId), saldoProducto.get(linea.productoId), mov, periodoId);
           saldoProducto.set(linea.productoId, sp);
           t.set(db.collection(COL.lotes).doc(linea.loteId), {
             ...(loteActual || { productoId: linea.productoId, lote: linea.lote, vencimiento: linea.vencimiento, ...datosPropietario(linea), creadoEn: ahora() }),
@@ -1131,13 +1186,14 @@ const cerrarInventarioComo = async (db, por, { id, motivo, noContados }) => {
             loteId: linea.loteId, lote: linea.lote, vencimiento: linea.vencimiento, ...datosPropietario(linea), cantidad: Math.abs(ajuste),
             saldoLote: fotoSaldo(sl), saldoProducto: fotoSaldo(sp),
             centroId: null, documentoRef: { id, tipo: 'INVENTARIO', nombre: inv.nombre }, observacion: inv.motivoAjuste,
+            ...valorizado,
           });
         }
         t.update(ref.collection('lineas').doc(linea.loteId), { ajustado: true, ajuste, contadoFinal });
       });
       productoIds.forEach((pid) => {
         const s = saldoProducto.get(pid);
-        t.update(db.collection(COL.productos).doc(pid), { ...s, conMovimientos: true, actualizadoEn: ahora() });
+        t.update(db.collection(COL.productos).doc(pid), { ...s, ...camposCosto(costos.get(pid)), conMovimientos: true, actualizadoEn: ahora() });
       });
     });
   }
@@ -1293,9 +1349,10 @@ const reponerCajaComo = (db, por, datos = {}) => {
 
   return db.runTransaction(async (t) => {
     const ref = refCaja(db, cajaId);
-    const [snapCaja, snapEstado, ...resto] = await Promise.all([
+    const [snapCaja, snapEstado, periodoId, ...resto] = await Promise.all([
       t.get(ref),
       t.get(refEstado(db)),
+      leerPeriodo(t, db),
       ...productoIds.map((id) => t.get(db.collection(COL.productos).doc(id))),
       ...productoIds.map((id) => t.get(db.collection(COL.lotes).where('productoId', '==', id).limit(300))),
     ]);
@@ -1321,6 +1378,7 @@ const reponerCajaComo = (db, por, datos = {}) => {
     lotesPorProducto.forEach((lista) => lista.forEach((l) => lotesPorId.set(l.id, l)));
     const saldoLote = new Map();
     const saldoProducto = new Map(productoIds.map((id) => [id, saldoDe(productos.get(id))]));
+    const costos = costosDe(productos);
     let orden = 0;
     const pasos = [];
     conErrorStock(() => lineas.filter((l) => l.cantidad > 0).forEach((linea) => {
@@ -1336,9 +1394,11 @@ const reponerCajaComo = (db, por, datos = {}) => {
         const mov = { tipo: 'REPOSICION_CAJA', cantidad: parte.cantidad };
         const sl = aplicarMovimiento(saldoLote.get(parte.loteId) || saldoDe(lotesPorId.get(parte.loteId)), mov);
         const sp = aplicarMovimiento(saldoProducto.get(linea.productoId), mov);
+        // Sale de la bodega hacia la caja al costo promedio.
+        const valorizado = valorizar(costos, p, saldoProducto.get(linea.productoId), mov, periodoId);
         saldoLote.set(parte.loteId, sl);
         saldoProducto.set(linea.productoId, sp);
-        pasos.push({ parte, linea, orden: orden++, sl, sp });
+        pasos.push({ parte, linea, orden: orden++, sl, sp, valorizado });
       });
     }));
 
@@ -1353,10 +1413,11 @@ const reponerCajaComo = (db, por, datos = {}) => {
       });
     });
     const productosActualizados = [...new Set(pasos.map((x) => x.linea.productoId))].map((id) => {
-      t.update(db.collection(COL.productos).doc(id), { ...saldoProducto.get(id), conMovimientos: true, actualizadoEn: ahora() });
-      return { id, ...saldoProducto.get(id), conMovimientos: true };
+      const costo = camposCosto(costos.get(id));
+      t.update(db.collection(COL.productos).doc(id), { ...saldoProducto.get(id), ...costo, conMovimientos: true, actualizadoEn: ahora() });
+      return { id, ...saldoProducto.get(id), ...costo, conMovimientos: true };
     });
-    pasos.forEach(({ parte, linea, orden: o, sl, sp }) => {
+    pasos.forEach(({ parte, linea, orden: o, sl, sp, valorizado }) => {
       const p = productos.get(linea.productoId);
       t.set(db.collection(COL.movimientos).doc(), {
         tipo: 'REPOSICION_CAJA', fecha: ahora(), orden: o, usuario: por,
@@ -1364,6 +1425,7 @@ const reponerCajaComo = (db, por, datos = {}) => {
         loteId: parte.loteId, lote: parte.lote, vencimiento: parte.vencimiento, ...datosPropietario(null), cantidad: parte.cantidad,
         saldoLote: fotoSaldo(sl), saldoProducto: fotoSaldo(sp),
         centroId: null, cajaId, documentoRef: { id: refRepo.id, tipo: 'REPOSICION_CAJA', numero: caja.nombre, cajaId }, observacion,
+        ...valorizado,
       });
     });
     const productosCaja = { ...caja.productos };

@@ -782,3 +782,166 @@ export const validarConsignacion = (datos = {}, productos = {}) => {
   });
   return { errores: [...new Set(errores)], consignacion: { empresaId, observacion }, lineas };
 };
+
+// ---------------- Valorización y periodos (Control Mensual) ----------------
+//
+// Plata en la bodega = stock (propio y consignado) de la Bodega General +
+// lo que está en tránsito. Lo dejado en centros queda fuera: sale al
+// dejarlo (salida a centros) y vuelve al devolverlo (retorno desde centros).
+// Se valoriza a COSTO PROMEDIO PONDERADO por producto: el producto guarda
+// `costoPromedio` y `valorStock` (valor de disponible + tránsito) y cada
+// movimiento guarda `costoUnitario`, `valor`, `linea` y `periodoId`.
+// Cuadratura del periodo:
+//   saldo inicial + carga inicial + ingresos + retornos − consumo
+//   − salida a centros − salida a cajas ± ajustes = saldo final
+
+export const LINEAS_PERIODO = Object.freeze({
+  cargaInicial: { etiqueta: 'Carga inicial', signo: 1 },
+  ingresos: { etiqueta: 'Ingresos por compra', signo: 1 },
+  retornosCentros: { etiqueta: 'Retorno desde centros', signo: 1 },
+  consumo: { etiqueta: 'Consumo', signo: -1 },
+  salidaCentros: { etiqueta: 'Salida a centros', signo: -1 },
+  salidaCajas: { etiqueta: 'Salida a cajas', signo: -1 },
+  ajustePositivo: { etiqueta: 'Ajustes positivos', signo: 1 },
+  ajusteNegativo: { etiqueta: 'Ajustes negativos', signo: -1 },
+});
+
+// Línea de la cuadratura de cada tipo de movimiento. Los que no están
+// (salida a tránsito, devolución a la Bodega General, entrega desde el
+// centro) no cambian el valor de la bodega.
+export const LINEA_DE_MOVIMIENTO = Object.freeze({
+  CARGA_INICIAL: 'cargaInicial',
+  INGRESO: 'ingresos',
+  DEVOLUCION_DESDE_CENTRO: 'retornosCentros',
+  ENTREGA: 'consumo',
+  DEJADO_EN_CENTRO: 'salidaCentros',
+  REPOSICION_CAJA: 'salidaCajas',
+  AJUSTE_POSITIVO: 'ajustePositivo',
+  AJUSTE_NEGATIVO: 'ajusteNegativo',
+});
+export const lineaDeMovimiento = (tipo) => LINEA_DE_MOVIMIENTO[tipo] || null;
+
+// Unidades que se valorizan de un saldo (producto o lote).
+export const unidadesValorizadas = (s) => (Number(s?.disponible) || 0) + (Number(s?.transito) || 0);
+
+const pesos = (n) => Math.round(Number(n) || 0);
+export const precioNetoDe = (p) => {
+  const n = Number(p?.maestroCodigo?.precioNeto);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+// Costo de un producto { costoPromedio, valorStock }. Un producto que aún
+// no tiene costoPromedio (antes de la migración) usa el precio neto del
+// maestro clínico como respaldo y valoriza su stock actual a ese precio.
+export const tieneCosto = (p) => typeof p?.costoPromedio === 'number' && Number.isFinite(p.costoPromedio)
+  && typeof p?.valorStock === 'number' && Number.isFinite(p.valorStock);
+export const costoDe = (p) => {
+  if (tieneCosto(p)) return { costoPromedio: p.costoPromedio, valorStock: unidadesValorizadas(p) > 0 ? p.valorStock : 0 };
+  const base = precioNetoDe(p);
+  return { costoPromedio: base, valorStock: pesos(base * unidadesValorizadas(p)) };
+};
+
+// Costo unitario con que ENTRA un movimiento de entrada:
+//   - carga inicial e ingreso: el precio unitario de la línea del documento
+//     o, si no tiene, el precio neto vigente;
+//   - ajuste positivo: el precio neto vigente;
+//   - retorno desde centros: el costo con que salió al dejarlo (guardado en
+//     el tránsito) o, si no se conoce, el costo promedio.
+// Sin ninguno de esos datos: el costo promedio actual (puede ser 0).
+const numeroNoNegativo = (v) => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)) && Number(v) >= 0;
+export const costoEntrada = (tipo, { producto, costo, precioLinea = null, costoCentro = null } = {}) => {
+  const promedio = Number(costo?.costoPromedio) || 0;
+  if (tipo === 'DEVOLUCION_DESDE_CENTRO') return numeroNoNegativo(costoCentro) ? Number(costoCentro) : promedio;
+  if ((tipo === 'CARGA_INICIAL' || tipo === 'INGRESO') && numeroNoNegativo(precioLinea)) return Number(precioLinea);
+  return precioNetoDe(producto) || promedio;
+};
+
+// Aplica un movimiento al costo del producto. `saldoAntes`: saldo del
+// producto antes del movimiento (para las unidades valorizadas). Devuelve
+// { costo, valorizado: { linea, costoUnitario, valor } }. Las entradas
+// recalculan el promedio; las salidas salen al promedio (la última unidad
+// se lleva el valor que quede, así no quedan restos por redondeo). Los
+// movimientos internos no cambian el costo (valor 0).
+export const aplicarCosto = (costo, saldoAntes, { tipo, cantidad, costoUnitario = null }) => {
+  const linea = lineaDeMovimiento(tipo);
+  const promedio = Number(costo?.costoPromedio) || 0;
+  const unidadesAntes = unidadesValorizadas(saldoAntes);
+  const valorAntes = unidadesAntes > 0 ? Number(costo?.valorStock) || 0 : 0;
+  if (!linea) return { costo: { costoPromedio: promedio, valorStock: valorAntes }, valorizado: { linea: null, costoUnitario: promedio, valor: 0 } };
+  if (LINEAS_PERIODO[linea].signo > 0) {
+    const cu = numeroNoNegativo(costoUnitario) ? Number(costoUnitario) : promedio;
+    const valor = pesos(cu * cantidad);
+    const valorStock = valorAntes + valor;
+    const unidades = unidadesAntes + cantidad;
+    return { costo: { costoPromedio: unidades > 0 ? valorStock / unidades : cu, valorStock }, valorizado: { linea, costoUnitario: cu, valor } };
+  }
+  const unidades = unidadesAntes - cantidad;
+  const valor = unidades <= 0 ? valorAntes : Math.min(valorAntes, pesos(promedio * cantidad));
+  return { costo: { costoPromedio: promedio, valorStock: unidades <= 0 ? 0 : valorAntes - valor }, valorizado: { linea, costoUnitario: promedio, valor } };
+};
+
+// Valoriza un movimiento { tipo, cantidad } del producto: decide el costo
+// de entrada (si es una entrada) y lo aplica. `datos`: { precioLinea,
+// costoCentro } (ver costoEntrada). Devuelve { costo, valorizado }.
+export const valorizarMovimiento = (costo, saldoAntes, producto, { tipo, cantidad }, datos = {}) => {
+  const linea = lineaDeMovimiento(tipo);
+  const costoUnitario = linea && LINEAS_PERIODO[linea].signo > 0 ? costoEntrada(tipo, { producto, costo, ...datos }) : null;
+  return aplicarCosto(costo, saldoAntes, { tipo, cantidad, costoUnitario });
+};
+
+// Campos de costo que se guardan en el producto.
+export const camposCosto = (costo) => ({ costoPromedio: Number(costo.costoPromedio) || 0, valorStock: Number(costo.valorStock) || 0 });
+
+// Costo promedio de lo dejado en un centro desde un tránsito (para que el
+// retorno vuelva al mismo costo con que salió).
+export const costoEnCentro = (transito, cantidad, costoUnitario) => {
+  const previo = Number(transito?.enCentro) || 0;
+  const costoPrevio = transito?.costoUnitarioCentro;
+  if (!previo || !numeroNoNegativo(costoPrevio)) return costoUnitario;
+  return (previo * Number(costoPrevio) + cantidad * costoUnitario) / (previo + cantidad);
+};
+
+// --- Periodos ---
+
+// Mismo orden e ids que MESES de Control Mensual (src/components/modulos/
+// administracion/controlMensual/constants.js).
+export const MESES_PERIODO = Object.freeze(['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']);
+export const MODULO_PERIODO = 'bodega';
+export const COL_PERIODOS = 'bodega_periodos';
+export const ESTADOS_PERIODO_ABIERTO = Object.freeze(['ABIERTO', 'REABIERTO']);
+export const idPeriodo = (anio, mes) => `${anio}_${mes}`;
+export const ordenPeriodo = (anio, mes) => Number(anio) * 12 + MESES_PERIODO.indexOf(mes);
+export const periodoSiguiente = (anio, mes) => {
+  const i = MESES_PERIODO.indexOf(mes);
+  return i === 11 ? { anio: String(Number(anio) + 1), mes: MESES_PERIODO[0] } : { anio: String(anio), mes: MESES_PERIODO[i + 1] };
+};
+
+// Periodo de Bodega al que va un movimiento nuevo: el abierto más reciente
+// (cierres_periodos de Bodega en ABIERTO/REABIERTO). Sin periodo abierto:
+// null (se asigna al próximo que se abra).
+export const periodoVigente = (abiertos = []) => {
+  const validos = abiertos.filter((p) => p?.anio && MESES_PERIODO.includes(p.mes));
+  if (!validos.length) return null;
+  const p = validos.reduce((a, b) => (ordenPeriodo(b.anio, b.mes) > ordenPeriodo(a.anio, a.mes) ? b : a));
+  return idPeriodo(p.anio, p.mes);
+};
+
+// Totales de las líneas de un conjunto de movimientos:
+// { [linea]: { unidades, valor } } (todas las líneas, en 0 si no hubo).
+export const lineasVacias = () => Object.fromEntries(Object.keys(LINEAS_PERIODO).map((l) => [l, { unidades: 0, valor: 0 }]));
+export const sumarLineas = (movimientos = []) => movimientos.reduce((acc, m) => {
+  const linea = m?.linea || lineaDeMovimiento(m?.tipo);
+  if (!linea || !acc[linea]) return acc;
+  acc[linea] = { unidades: acc[linea].unidades + (Number(m.cantidad) || 0), valor: acc[linea].valor + (Number(m.valor) || 0) };
+  return acc;
+}, lineasVacias());
+
+// Saldo final = saldo inicial + Σ (signo × valor de cada línea).
+export const saldoFinalPeriodo = (saldoInicial, lineas) => Object.entries(lineas || {})
+  .reduce((n, [l, t]) => n + (LINEAS_PERIODO[l]?.signo || 0) * (Number(t?.valor) || 0), Number(saldoInicial) || 0);
+
+// Valor con signo que un movimiento suma (+) o resta (−) a la bodega.
+export const valorConSigno = (m) => {
+  const linea = m?.linea || lineaDeMovimiento(m?.tipo);
+  return linea ? LINEAS_PERIODO[linea].signo * (Number(m?.valor) || 0) : 0;
+};

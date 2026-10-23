@@ -16,9 +16,10 @@ import {
 import { useUser } from '../../../../context/UserContext';
 import { useToast } from '../../../../context/ToastContext';
 import { useModal } from '../../../../context/ModalContext';
-import { MODULOS, MESES, GRUPOS } from '../controlMensual/constants';
+import { MODULOS, MESES, GRUPOS_IMPUTACION, MODULO_BODEGA } from '../controlMensual/constants';
 import { useControlMensualData } from '../controlMensual/useControlMensualData';
 import { useComparativoMesAnterior } from './useComparativoMesAnterior';
+import BodegaPeriodoCard from './BodegaPeriodoCard';
 
 const MODULO_COLORES = [
   { bg: 'bg-[#2383C2]', text: 'text-[#2383C2]', border: 'border-blue-200 dark:border-blue-800/60', lightBg: 'bg-blue-50/50 dark:bg-blue-950/30' },
@@ -42,7 +43,8 @@ const ResumenPeriodoAbierto = () => {
   const {
     estadosModulos,
     resumenImputaciones,
-    cargando
+    cargando,
+    cargandoResumen
   } = useControlMensualData(anioActualStr, userData, showToast, confirmAction, { soloPeriodoAbierto: true });
 
   // Detectar automáticamente el primer mes que se encuentre ABIERTO o REABIERTO
@@ -71,11 +73,12 @@ const ResumenPeriodoAbierto = () => {
     return null;
   }, [estadosModulos, anioActualStr]);
 
-  // Consolidar totales del período activo, separados por grupo (Consumos / Facturación)
+  // Consolidar totales del período activo, separados por grupo (Consumos / Facturación).
+  // Bodega (Inventario) va aparte: su saldo no es un monto imputado.
   const resumenPorGrupo = useMemo(() => {
     if (!periodoAbiertoInfo) return null;
 
-    return GRUPOS.map(grupo => {
+    return GRUPOS_IMPUTACION.map(grupo => {
       let montoTotal = 0;
       const desgloseModulos = [];
 
@@ -301,6 +304,17 @@ const ResumenPeriodoAbierto = () => {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Bodega: cuadratura del período (saldo inicial, ingresos, egresos, saldo) */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
+        <BodegaPeriodoCard
+          resumen={resumenImputaciones[MODULO_BODEGA]?.[periodoAbiertoInfo.mesId]?.bodega}
+          estado={estadosModulos[MODULO_BODEGA]?.[periodoAbiertoInfo.mesId]?.estado || 'SIN_INICIAR'}
+          mesNombre={periodoAbiertoInfo.mesNombre}
+          anio={periodoAbiertoInfo.anio}
+          cargando={cargandoResumen}
+        />
       </div>
 
       {/* Comparación vs. Mes Anterior */}

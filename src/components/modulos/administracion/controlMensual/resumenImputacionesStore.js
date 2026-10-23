@@ -1,7 +1,8 @@
 import { collection, count, getAggregateFromServer, getDocs, query, sum, where } from 'firebase/firestore';
 import { db } from '../../../../firebaseConfig';
-import { COLECCIONES } from './constants';
+import { COLECCIONES, MODULO_BODEGA } from './constants';
 import { obtenerSnapshotMensual } from './snapshotMensual';
+import { celdaBodega } from './bodegaPeriodoStore';
 
 // Cantidad y monto imputado por (año, módulo, mes), compartido por Control
 // Mensual y Resumen Periodo Abierto. Antes cada montaje hacía 60 getDocs
@@ -56,8 +57,11 @@ export const obtenerCelda = (anio, modulo, mes, estado) => {
   if (previo && previo.estado === estado && (!abierto || Date.now() - previo.ts < TTL_ABIERTO_MS)) {
     return previo.promesa;
   }
-  const promesa = (abierto ? agregarMesAbierto(anio, modulo, mes) : desdeSnapshot(anio, modulo, mes))
-    .catch((error) => { celdas.delete(clave); throw error; });
+  // Bodega no imputa: movimientos y saldo valorizado del periodo (bodegaPeriodoStore).
+  const calcular = modulo === MODULO_BODEGA
+    ? celdaBodega(anio, mes, abierto)
+    : (abierto ? agregarMesAbierto(anio, modulo, mes) : desdeSnapshot(anio, modulo, mes));
+  const promesa = calcular.catch((error) => { celdas.delete(clave); throw error; });
   celdas.set(clave, { estado, ts: Date.now(), promesa });
   return promesa;
 };

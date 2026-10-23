@@ -16,8 +16,8 @@ describe('disponibilidad de apertura por módulo', () => {
   };
 
   it('oculta el mes solo para los módulos donde ya tiene estado', () => {
-    expect(modulosDisponiblesParaMes(estados, 'septiembre')).toEqual(['laboratorio', 'consignacion', 'vacunatorio']);
-    expect(modulosDisponiblesParaMes(estados, 'agosto')).toEqual(['laboratorio', 'consignacion', 'vacunatorio', 'hemodinamia']);
+    expect(modulosDisponiblesParaMes(estados, 'septiembre')).toEqual(['laboratorio', 'consignacion', 'vacunatorio', 'bodega']);
+    expect(modulosDisponiblesParaMes(estados, 'agosto')).toEqual(['laboratorio', 'consignacion', 'vacunatorio', 'hemodinamia', 'bodega']);
   });
 
   it('SIN_INICIAR cuenta como sin estado', () => {

@@ -384,6 +384,20 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "periodoId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "linea",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "bodega_movimientos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "productoId",
           "order": "ASCENDING"
         },

@@ -10,17 +10,25 @@ export const MODULOS = [
   { id: 'consignacion', nombre: 'Consignación' },
   { id: 'vacunatorio', nombre: 'Vacunatorio' },
   { id: 'hemodinamia', nombre: 'Hemodinamia' },
+  // Bodega no imputa: su "monto" es el saldo valorizado de la bodega
+  // (bodega_periodos y bodegaPeriodoStore.js).
+  { id: 'bodega', nombre: 'Bodega' },
 ];
+export const MODULO_BODEGA = 'bodega';
 
 // Agrupación del consolidado según el origen de los datos:
 // Consumos = módulos alimentados por cargas manuales.
 // Facturación = módulos alimentados por ingreso de factura electrónica.
+// Inventario = Bodega (saldo valorizado, no se suma a los montos imputados).
 // El orden del arreglo es el orden en pantalla (Control Mensual y Período
 // Actual): Consumos primero.
 export const GRUPOS = [
   { id: 'consumos', nombre: 'Consumos', moduloIds: ['implantes', 'consignacion', 'hemodinamia'] },
   { id: 'facturacion', nombre: 'Facturación', moduloIds: ['laboratorio', 'vacunatorio'] },
+  { id: 'inventario', nombre: 'Inventario', moduloIds: ['bodega'] },
 ];
+// Grupos de montos imputados (Período Actual los suma y compara con el mes anterior).
+export const GRUPOS_IMPUTACION = GRUPOS.filter((g) => g.id !== 'inventario');
 
 export const MESES = [
   { id: 'enero', nombre: 'Enero', num: 1 },

@@ -299,6 +299,24 @@ service cloud.firestore {
         abierto.data.get('fechaApertura', null) == request.time;
     }
 
+    // Bodega: un mes no se reabre si el siguiente ya está cerrado (tomó su
+    // saldo final como saldo inicial). Id: {anio}_{mes}_bodega.
+    function siguienteBodegaCerrado(cierreId) {
+      let partes = cierreId.split('_');
+      let siguiente = {'enero': 'febrero', 'febrero': 'marzo', 'marzo': 'abril', 'abril': 'mayo', 'mayo': 'junio',
+        'junio': 'julio', 'julio': 'agosto', 'agosto': 'septiembre', 'septiembre': 'octubre', 'octubre': 'noviembre',
+        'noviembre': 'diciembre', 'diciembre': 'enero'};
+      let anio = partes[1] == 'diciembre' ? string(int(partes[0]) + 1) : partes[0];
+      let ruta = /databases/$(database)/documents/cierres_periodos/$(anio + '_' + siguiente[partes[1]] + '_bodega');
+      return exists(ruta) && get(ruta).data.get('estado', '') == 'CERRADO';
+    }
+    function reaperturaPermitida(cierreId) {
+      return resource.data.modulo != 'bodega' ||
+        request.resource.data.get('estado', '') != 'REABIERTO' ||
+        resource.data.get('estado', '') != 'CERRADO' ||
+        !siguienteBodegaCerrado(cierreId);
+    }
+
     match /cierres_periodos/{cierreId} {
       allow read: if estaActivo();
       allow create: if estaActivo() &&
@@ -307,6 +325,7 @@ service cloud.firestore {
       allow update: if estaActivo() &&
         (esDev() || tienePermiso(resource.data.modulo)) &&
         request.resource.data.modulo == resource.data.modulo &&
+        reaperturaPermitida(cierreId) &&
         (request.resource.data.get('estado', '') != 'CERRADO' || esCierreAutomaticoPorApertura(cierreId));
       allow delete: if estaActivo() &&
         (esDev() || tienePermiso(resource.data.modulo));
@@ -653,8 +672,18 @@ service cloud.firestore {
     match /bodega_lotes/{document=**} {
       allow read: if leeBodega();
     }
+    // Control Mensual y Período Actual suman los movimientos del periodo
+    // abierto (sum() de su valor) para el saldo de Bodega.
+    function leePeriodosBodega() {
+      return estaActivo() && (tieneItem('administracion', '/administracion/controlMensual')
+        || tieneItem('administracion', '/administracion/ResumenPeriodoAbierto'));
+    }
     match /bodega_movimientos/{document=**} {
-      allow read: if leeBodega();
+      allow read: if leeBodega() || leePeriodosBodega();
+    }
+    // Foto fija de cada periodo cerrado (la escribe el trigger bodegaPeriodo).
+    match /bodega_periodos/{document=**} {
+      allow read: if leeBodega() || leePeriodosBodega();
     }
     match /bodega_documentos/{document=**} {
       allow read: if leeBodega();

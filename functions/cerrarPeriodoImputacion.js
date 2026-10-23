@@ -5,7 +5,8 @@ const { validarCierreMes } = require('./validarCierreMes');
 
 if (!getApps().length) initializeApp();
 
-const MODULOS = ['laboratorio', 'implantes', 'consignacion', 'vacunatorio', 'hemodinamia'];
+// Bodega: al cerrarse, el trigger bodegaPeriodo guarda la foto del periodo.
+const MODULOS = ['laboratorio', 'implantes', 'consignacion', 'vacunatorio', 'hemodinamia', 'bodega'];
 const ESTADOS_ABIERTOS = ['ABIERTO', 'REABIERTO'];
 const ITEM_CONTROL_MENSUAL = '/administracion/controlMensual';
 

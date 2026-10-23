@@ -282,7 +282,7 @@ const PantallaDocumento = ({ tipo, ruta, seccion, titulo, icono: Icono, aviso })
             </div>
           )}
 
-          <EditorLineasStock key={reinicio} rutaVista={ruta} lineas={lineas} onCambiar={setLineas} deshabilitado={bloqueado} conPrecio={esCarga} />
+          <EditorLineasStock key={reinicio} rutaVista={ruta} lineas={lineas} onCambiar={setLineas} deshabilitado={bloqueado} conPrecio={esCarga} conPrecioUnitario={!esCarga} />
 
           {errores.length > 0 && (
             <ul className="text-[11px] text-red-600 dark:text-red-400 list-disc pl-5">{errores.map((e) => <li key={e}>{e}</li>)}</ul>

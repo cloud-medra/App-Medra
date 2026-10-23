@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { MODULOS, MESES } from '../controlMensual/constants';
+import { MODULOS as TODOS_LOS_MODULOS, MESES, MODULO_BODEGA } from '../controlMensual/constants';
 import { useCierresAnio } from '../controlMensual/cierresAnioStore';
 import { obtenerCelda } from '../controlMensual/resumenImputacionesStore';
+
+// Bodega no se compara con el mes anterior (su saldo no es un monto imputado).
+const MODULOS = TODOS_LOS_MODULOS.filter((m) => m.id !== MODULO_BODEGA);
 
 const mesAnteriorDe = (mesId, anioStr) => {
   const idx = MESES.findIndex(m => m.id === mesId);

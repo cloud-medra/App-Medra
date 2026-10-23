@@ -78,7 +78,7 @@ describe('PanelAperturaPeriodo', () => {
     fireEvent.click(screen.getByText('Confirmar Apertura'));
     expect(onConfirm).toHaveBeenCalledWith({
       mesId: 'agosto',
-      modulos: ['laboratorio', 'implantes', 'consignacion', 'vacunatorio']
+      modulos: ['laboratorio', 'implantes', 'consignacion', 'vacunatorio', 'bodega']
     });
   });
 
@@ -116,7 +116,7 @@ describe('PanelAperturaPeriodo', () => {
     expect(botonConfirmar().disabled).toBe(false);
 
     fireEvent.click(botonConfirmar());
-    expect(onConfirm).toHaveBeenCalledWith({ mesId: 'octubre', modulos: ['laboratorio', 'consignacion', 'vacunatorio'] });
+    expect(onConfirm).toHaveBeenCalledWith({ mesId: 'octubre', modulos: ['laboratorio', 'consignacion', 'vacunatorio', 'bodega'] });
   });
 
   it('un mes cerrado en un módulo marcado no bloquea', () => {

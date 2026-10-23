@@ -4,7 +4,7 @@ import { useToast } from '../../../../context/ToastContext';
 import { useModal } from '../../../../context/ModalContext';
 import { useUser } from '../../../../context/UserContext';
 
-import { MODULOS, MESES, GRUPOS } from './constants';
+import { MODULOS, MESES, GRUPOS, MODULO_BODEGA } from './constants';
 import PanelAperturaPeriodo from './PanelAperturaPeriodo';
 import { useControlMensualData } from './useControlMensualData';
 import { ModalReapertura, ModalHistorial } from './ModalesControlMensual';
@@ -258,8 +258,17 @@ const ControlMensual = () => {
                   {modulosVisibles.map((mod) => (
                     <React.Fragment key={`sub_${mod.id}`}>
                       <th className="py-1.5 px-1.5 text-center border-r border-slate-100 dark:border-gray-800 w-24">Estado / Acción</th>
-                      <th className="py-1.5 px-1.5 text-right border-r border-slate-100 dark:border-gray-800 w-12">Docs</th>
-                      <th className="py-1.5 px-1.5 text-right border-r border-slate-200 dark:border-gray-700 w-20">Monto Total</th>
+                      {mod.id === MODULO_BODEGA ? (
+                        <>
+                          <th className="py-1.5 px-1.5 text-right border-r border-slate-100 dark:border-gray-800 w-12" title="Movimientos del período">Movs</th>
+                          <th className="py-1.5 px-1.5 text-right border-r border-slate-200 dark:border-gray-700 w-20" title="Saldo valorizado de la bodega: final si el mes está cerrado, actual si está abierto">Saldo</th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="py-1.5 px-1.5 text-right border-r border-slate-100 dark:border-gray-800 w-12">Docs</th>
+                          <th className="py-1.5 px-1.5 text-right border-r border-slate-200 dark:border-gray-700 w-20">Monto Total</th>
+                        </>
+                      )}
                     </React.Fragment>
                   ))}
                 </tr>
@@ -307,6 +316,10 @@ const ControlMensual = () => {
                         const estado = cierreData.estado || 'SIN_INICIAR';
                         const infoImputacion = resumenImputaciones[mod.id]?.[mes.id] || { cantidad: 0, montoTotal: 0 };
                         const tieneHistorial = cierreData.historialReaperturas?.length > 0;
+                        // Bodega: no se reabre si el mes siguiente ya cerró (encadenamiento de saldos).
+                        const siguienteMes = MESES[indexMesReal + 1];
+                        const reaperturaBloqueada = mod.id === MODULO_BODEGA && siguienteMes
+                          && estadosModulos[mod.id]?.[siguienteMes.id]?.estado === 'CERRADO';
 
                         return (
                           <React.Fragment key={`${mes.id}_${mod.id}`}>
@@ -340,8 +353,10 @@ const ControlMensual = () => {
                                   {estado === 'CERRADO' && (
                                     <button
                                       onClick={() => setModalReapertura({ mesId: mes.id, modId: mod.id })}
-                                      disabled={procesandoAccion}
-                                      title={`Reabrir ${numeroMesReal}/${anioSeleccionado} para ${mod.nombre}`}
+                                      disabled={procesandoAccion || reaperturaBloqueada}
+                                      title={reaperturaBloqueada
+                                        ? 'No se puede reabrir: el mes siguiente de Bodega ya está cerrado'
+                                        : `Reabrir ${numeroMesReal}/${anioSeleccionado} para ${mod.nombre}`}
                                       className={`p-1 ${colorConfig.text} ${colorConfig.hoverBg} rounded transition cursor-pointer disabled:opacity-50`}
                                     >
                                       <AlertTriangle size={12} />

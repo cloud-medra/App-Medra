@@ -81,7 +81,7 @@ export const bodegaComponentMaps = {
       lineas: {
         label: 'Sección: Líneas escaneadas',
         elements: {
-          ...columnas([['referencia', 'Referencia'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad']]),
+          ...columnas([['referencia', 'Referencia'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad'], ['precio', 'Precio unitario'], ['total', 'Total línea']]),
         },
       },
     },

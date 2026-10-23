@@ -11,12 +11,16 @@
 //   - bodegaGestionarTransito: entregar, devolver, dejar en centro o anotar (Fase 3).
 //   - bodegaIniciarInventario / bodegaReanudarInventario / bodegaRegistrarConteo /
 //     bodegaCerrarInventario / bodegaAnularInventario: inventario físico (Fase 5).
+//   - bodegaPeriodo (trigger): periodo de Bodega abierto / cerrado en Control
+//     Mensual (periodos.js).
 
 const { onCall } = require('firebase-functions/v2/https');
+const { onDocumentWritten } = require('firebase-functions/v2/firestore');
 const logger = require('firebase-functions/logger');
 const { initializeApp, getApps } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const servicio = require('./servicio');
+const periodos = require('./periodos');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
@@ -51,3 +55,17 @@ exports.bodegaInventariarCaja = callable('inventariarCaja');
 exports.bodegaReponerCaja = callable('reponerCaja');
 // Stock consignado: lo que cada empresa consignante dejó (no mueve stock).
 exports.bodegaGuardarConsignacion = callable('guardarConsignacion');
+
+// Periodo de Bodega (Control Mensual): al abrirlo recibe los movimientos
+// hechos sin periodo abierto; al cerrarlo (manual o automático) se guarda
+// la foto fija del periodo en bodega_periodos. Los demás módulos no hacen nada.
+exports.bodegaPeriodo = onDocumentWritten(
+  // Memoria por defecto (menos CPU reservada: la cuota de Cloud Run está al límite).
+  { document: 'cierres_periodos/{cierreId}', region: REGION, retry: false, timeoutSeconds: 300 },
+  async (event) => {
+    const antes = event.data?.before?.exists ? event.data.before.data() : null;
+    const despues = event.data?.after?.exists ? event.data.after.data() : null;
+    const resultado = await periodos.alCambiarPeriodo(db, antes, despues);
+    if (resultado) logger.info('bodega.periodo', { cierre: event.params.cierreId, ...resultado });
+  }
+);

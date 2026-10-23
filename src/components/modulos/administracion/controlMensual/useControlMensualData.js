@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  collection, doc, getDocs, query, where, arrayUnion, serverTimestamp, writeBatch 
+import {
+  collection, doc, getDoc, getDocs, query, where, arrayUnion, serverTimestamp, writeBatch
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../../../firebaseConfig';
-import { MODULOS, MESES, COLECCIONES } from './constants';
+import { MODULOS, MESES, COLECCIONES, MODULO_BODEGA } from './constants';
+import { periodoSiguiente } from '../../../../../functions/bodega/nucleo.mjs';
 import { calcularTotalMesDesdeDocumentos, guardarSnapshotMensual, invalidarSnapshotMensual } from './snapshotMensual';
 import { useCierresAnio } from './cierresAnioStore';
 import { obtenerCelda, invalidarResumenAnio, ESTADOS_ABIERTOS } from './resumenImputacionesStore';
@@ -13,6 +14,7 @@ import { obtenerCelda, invalidarResumenAnio, ESTADOS_ABIERTOS } from './resumenI
 // revisar la conexión. Cualquier otro error muestra el mensaje real.
 const CODIGOS_ERROR_RED = ['functions/unavailable', 'functions/deadline-exceeded'];
 export const MENSAJE_ERROR_CIERRE_RED = 'No se pudo cerrar el mes. Revisa tu conexión e intenta nuevamente.';
+export const MENSAJE_REAPERTURA_BODEGA = 'No se puede reabrir este mes de Bodega: el mes siguiente ya está cerrado y tomó su saldo final como saldo inicial.';
 
 // Un error no lanzado como HttpsError llega con el código como mensaje
 // ("internal"): en ese caso se agrega contexto para que se entienda.
@@ -79,7 +81,8 @@ export const useControlMensualData = (anioSeleccionado, userData, showToast, con
       if (cancelado) return;
       const datos = {};
       MODULOS.forEach(mod => { datos[mod.id] = {}; });
-      resultados.forEach(r => { datos[r.modId][r.mesId] = { cantidad: r.cantidad, montoTotal: r.montoTotal }; });
+      // Bodega trae además el detalle del periodo (saldo inicial, líneas…).
+      resultados.forEach(r => { datos[r.modId][r.mesId] = { cantidad: r.cantidad, montoTotal: r.montoTotal, ...(r.bodega ? { bodega: r.bodega } : {}) }; });
       setResumen({ clave: claveResumen, datos });
     });
     return () => { cancelado = true; };
@@ -255,7 +258,8 @@ export const useControlMensualData = (anioSeleccionado, userData, showToast, con
     // El período ya quedó cerrado: si esto falla, no se informa el cierre
     // como fallido — el snapshot se calcula de forma lazy al consultarlo.
     try {
-      await Promise.all(modulos.map(async (modId) => {
+      // Bodega no tiene imputadas: su foto la guarda el trigger bodegaPeriodo.
+      await Promise.all(modulos.filter((modId) => modId !== MODULO_BODEGA).map(async (modId) => {
         const totalMes = await calcularTotalMesDesdeDocumentos(modId, anioSeleccionado, mesId);
         await guardarSnapshotMensual(modId, anioSeleccionado, mesId, totalMes, 'cierre');
       }));
@@ -281,6 +285,16 @@ export const useControlMensualData = (anioSeleccionado, userData, showToast, con
     setProcesandoAccion(true);
 
     try {
+      // Bodega: con el mes siguiente cerrado, reabrir descuadraría el saldo
+      // inicial que ese mes ya tomó (también lo impide firestore.rules).
+      if (modId === MODULO_BODEGA) {
+        const siguiente = periodoSiguiente(anioSeleccionado, mesId);
+        const snapSiguiente = await getDoc(doc(db, COLECCIONES.CIERRES, `${siguiente.anio}_${siguiente.mes}_${modId}`));
+        if (snapSiguiente.exists() && snapSiguiente.data().estado === 'CERRADO') {
+          showToast(MENSAJE_REAPERTURA_BODEGA, 'warning');
+          return;
+        }
+      }
       const docId = `${anioSeleccionado}_${mesId}_${modId}`;
       const docRef = doc(db, COLECCIONES.CIERRES, docId);
       const registroReapertura = {
