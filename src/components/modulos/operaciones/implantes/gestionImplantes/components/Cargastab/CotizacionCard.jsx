@@ -47,6 +47,8 @@ import { CLASE_SIN_FLECHAS, SIN_CAMBIO_ACCIDENTAL } from '../../../../../../ui/n
 // `px` (opcional): relleno horizontal de la columna en encabezado y celdas
 // (por defecto px-2.5); permite columnas más angostas sin cortar el contenido.
 const COLUMNAS_ITEMS = [
+  // N° de fila: solo visual (posición en la tabla, no se guarda).
+  { key: 'numero', label: 'N°', ancho: 34, min: 28, align: 'center', px: 'px-1' },
   { key: 'id', label: 'ID', ancho: 60, min: 40 },
   { key: 'fecha', label: 'Fecha', ancho: 80, min: 40 },
   { key: 'codigo', label: 'Código', ancho: 70, min: 40 },
@@ -207,6 +209,13 @@ export const CotizacionCard = ({
     });
     return resultado;
   }, [items]);
+
+  // Modo lectura: el contenido de un PAD solo se ve con su PAD desplegado.
+  const filaVisible = (it) => !(modoLectura && it.padPadreId && !padsAbiertos.has(it.padPadreId));
+  // N° de cada fila según la posición en que se ve (1, 2, 3… sin saltos).
+  const numeroFila = new Map(itemsOrdenados.filter(filaVisible).map((it, i) => [it.id, i + 1]));
+  // Columnas antes de "Total Ítem" (la fila de la suma se alinea con ella).
+  const columnasAntesDelTotal = COLUMNAS.findIndex(col => col.key === 'totalItem');
 
   const totalItems = items.reduce((acc, it) => acc + (Number(it.totalItem) || 0), 0);
   const tieneTotalIngresado = Number(cotizacion.totalCotizacion || 0) > 0;
@@ -546,8 +555,12 @@ export const CotizacionCard = ({
                     const esSateliteSinCosto = esContenidoPad || esLoteAdicional;
                     const sinContenidoAun = esPrincipalPad && !tieneContenidoPad(items, it.id);
                     const mostrandoFormularioContenido = agregandoContenidoDePadId === it.id;
-                    // Modo lectura: el contenido de un PAD solo con su PAD desplegado.
-                    if (modoLectura && esContenidoPad && !padsAbiertos.has(it.padPadreId)) return null;
+                    if (!filaVisible(it)) return null;
+                    const celdaNumero = (
+                      <td className="px-1 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-slate-400 dark:text-gray-500 font-num">
+                        {numeroFila.get(it.id)}
+                      </td>
+                    );
                     const cantidadContenidoPad = esPrincipalPad ? items.filter(x => x.padPadreId === it.id).length : 0;
 
                     // Preview en vivo de recargo/venta/total mientras se edita el precio
@@ -559,6 +572,7 @@ export const CotizacionCard = ({
                     if (enEdicion) {
                       return (
                         <tr key={it.id} className={`bg-blue-50/60 dark:bg-blue-950/20 ${esContenidoPad ? 'border-l-2 border-fuchsia-400 dark:border-fuchsia-700' : esLoteAdicional ? 'border-l-2 border-sky-400 dark:border-sky-700' : ''}`}>
+                          {celdaNumero}
                           <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] text-slate-500 dark:text-gray-400">
                             {idMostrado}
                           </td>
@@ -755,6 +769,7 @@ export const CotizacionCard = ({
                               : getEstadoCargaRowStyle(it.estadoCarga)
                             }`}
                         >
+                          {celdaNumero}
                           <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-500 dark:text-gray-400">
                             {idMostrado}
                           </td>
@@ -915,7 +930,7 @@ export const CotizacionCard = ({
 
                         {mostrandoFormularioContenido && !modoLectura && (
                           <tr className="bg-fuchsia-50/40 dark:bg-fuchsia-950/10">
-                            <td colSpan={16} className="p-2.5 border-b border-fuchsia-200 dark:border-fuchsia-900">
+                            <td colSpan={COLUMNAS.length} className="p-2.5 border-b border-fuchsia-200 dark:border-fuchsia-900">
                               {!periodoAbierto ? (
                                 <div className="flex items-center gap-2 px-2.5 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded text-[10px] text-red-700 dark:text-red-400">
                                   <Lock size={12} className="shrink-0" />
@@ -975,7 +990,7 @@ export const CotizacionCard = ({
               {items.length > 0 && (
                 <tfoot>
                   <tr className="bg-slate-50 dark:bg-gray-900/60 font-bold">
-                    <td colSpan={11} className="px-2.5 py-1.5 border-t border-r border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 text-right">
+                    <td colSpan={columnasAntesDelTotal} className="px-2.5 py-1.5 border-t border-r border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 text-right">
                       Suma de ítems:
                     </td>
                     {/* Sin recorte: la suma puede ser más ancha que la columna Total Ítem
@@ -983,7 +998,7 @@ export const CotizacionCard = ({
                     <td className={`px-1.5 py-1.5 border-t border-r border-slate-200 dark:border-gray-700 !overflow-visible ${totalCoincide ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-600 dark:text-orange-400'}`}>
                       ${formatearPesos(totalItems)}
                     </td>
-                    <td colSpan={COLUMNAS.length - 12} className="border-t border-slate-200 dark:border-gray-700"></td>
+                    <td colSpan={COLUMNAS.length - columnasAntesDelTotal - 1} className="border-t border-slate-200 dark:border-gray-700"></td>
                   </tr>
                 </tfoot>
               )}

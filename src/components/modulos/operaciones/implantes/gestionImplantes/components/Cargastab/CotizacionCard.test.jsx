@@ -113,3 +113,38 @@ describe('CotizacionCard - carga masiva "Marcar todos como Cargado"', () => {
     expect(idsActualizados.sort()).toEqual(['item_2', 'item_3']);
   });
 });
+
+// Primera celda de cada fila de ítems (columna N°).
+const numerosDeFila = () => screen.getAllByRole('row')
+  .filter(fila => fila.closest('tbody'))
+  .map(fila => fila.querySelector('td')?.textContent);
+
+describe('CotizacionCard - columna N°', () => {
+  it('numera las filas en el orden en que se ven, sin saltos, y se renumera al quitar una', () => {
+    const props = {
+      bloqueEmpresa: 'EMPRESA X', gestionId: '123', bloqueFecha: '2026-01-01', recargosActivos: [],
+      periodoAbierto: { anio: 2026, mes: 'enero' }, onAgregarItem: () => {}, onEliminarItem: () => {},
+      onEliminarCotizacion: () => {}, onActualizarEstadoItem: () => {}, onEditarItem: () => {}, defaultOpen: true,
+    };
+    const { rerender } = render(<CotizacionCard cotizacion={construirCotizacion()} {...props} />);
+
+    expect(screen.getByRole('columnheader', { name: 'N°' })).toBeTruthy();
+    expect(numerosDeFila()).toEqual(['1', '2', '3', '4', '5']);
+
+    const cotizacion = construirCotizacion();
+    cotizacion.items = cotizacion.items.filter(it => it.id !== 'item_2');
+    rerender(<CotizacionCard cotizacion={cotizacion} {...props} />);
+    expect(numerosDeFila()).toEqual(['1', '2', '3', '4']);
+  });
+
+  it('modo lectura: el contenido de un PAD plegado no cuenta hasta que se despliega', () => {
+    render(
+      <CotizacionCard cotizacion={construirCotizacion()} bloqueEmpresa="EMPRESA X" gestionId="123"
+        bloqueFecha="2026-01-01" recargosActivos={[]} defaultOpen={true} modoLectura={true} />
+    );
+    expect(numerosDeFila()).toEqual(['1', '2', '3', '4']);
+
+    fireEvent.click(screen.getByRole('button', { name: /ver contenido del pad/i }));
+    expect(numerosDeFila()).toEqual(['1', '2', '3', '4', '5']);
+  });
+});
