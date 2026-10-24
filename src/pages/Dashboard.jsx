@@ -5,8 +5,8 @@ import { omitirSincronizacionEnProximaCarga } from '../services/sessionSync';
 import { signOut } from 'firebase/auth';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
-import logoMedraMenu from '../assets/logo/medra-logo-blanco.svg';
-import simboloMedraMenu from '../assets/logo/medra-simbolo-blanco.svg';
+import logoMedraClaro from '../assets/logo/medra-logo-claro.svg';
+import logoMedraOscuro from '../assets/logo/medra-logo-oscuro.svg';
 import { obtenerNombreMostrar } from '../utils/nombreMostrar';
 import {
   LogOut, Calendar, UserCircle, ChevronRight, ArrowLeft, FileText,
@@ -21,6 +21,7 @@ import RecordatoriosCampana from '../components/modulos/administracion/recordato
 import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
 import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROLLADOR } from '../config/accesoMenu';
 import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
+import SelectorInstitucion from '../components/layout/SelectorInstitucion';
 import { vistaInicialDesdeURL } from '../components/modulos/operaciones/documentos/reportesInfo/urlDetalle';
 import { puedeConfigurarAtajos } from '../config/atajosDashboard';
 import { vistaActiva, itemDeRuta, RUTA_GESTION_MODULOS } from '../config/modulosActivos';
@@ -151,6 +152,10 @@ const Contador = ({ n }) => (n > 0 ? (
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  // Sidebar como drawer en pantallas < md (se abre con el ☰ del header).
+  // Abierto se ve siempre expandido, aunque en escritorio esté colapsado.
+  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
+  const colapsado = isSidebarCollapsed && !menuMovilAbierto;
   // userData viene de UserContext (única copia en la app): así los cambios
   // hechos desde Ajustes (datos personales, tema, nombre a mostrar) se ven al
   // instante en el header y los saludos. ProtectedRoute garantiza que exista.
@@ -206,6 +211,33 @@ const Dashboard = () => {
     if (isMenuOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isMenuOpen]);
+
+  // El drawer móvil se cierra al abrir una vista, con Esc o al pasar a
+  // escritorio (ahí el sidebar vuelve a su lugar).
+  const [vistaDelMenuMovil, setVistaDelMenuMovil] = useState(activeView);
+  if (vistaDelMenuMovil !== activeView) {
+    setVistaDelMenuMovil(activeView);
+    setMenuMovilAbierto(false);
+  }
+  useEffect(() => {
+    if (!menuMovilAbierto) return undefined;
+    const escritorio = window.matchMedia('(min-width: 768px)');
+    const alCambiar = (e) => { if (e.matches) setMenuMovilAbierto(false); };
+    const alTeclear = (e) => { if (e.key === 'Escape') setMenuMovilAbierto(false); };
+    escritorio.addEventListener('change', alCambiar);
+    document.addEventListener('keydown', alTeclear);
+    return () => {
+      escritorio.removeEventListener('change', alCambiar);
+      document.removeEventListener('keydown', alTeclear);
+    };
+  }, [menuMovilAbierto]);
+
+  // ☰ del header: en escritorio colapsa/expande el sidebar; en móvil abre o
+  // cierra el drawer.
+  const alternarMenu = () => {
+    if (window.matchMedia('(min-width: 768px)').matches) setIsSidebarCollapsed((c) => !c);
+    else setMenuMovilAbierto((a) => !a);
+  };
 
   const abrirAjustesGenerales = () => {
     setIsAjustesMode(true);
@@ -478,42 +510,164 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900">
+    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
 
-      {/* SIDEBAR LATERAL */}
-      <aside className={`${isSidebarCollapsed ? 'w-16 min-w-[64px] max-w-[64px]' : 'w-56 min-w-[190px] max-w-[190px]'
-        } bg-[#2383C2] dark:bg-gray-800 text-white transition-all duration-300 ease-in-out hidden md:flex flex-col shadow-xl h-screen sticky top-0 flex-shrink-0 z-30 select-none overflow-x-hidden`}>
+      {/* HEADER (todo el ancho): ☰, logo, institución, saludo, fecha,
+          breadcrumbs, campana y avatar. El saludo se oculta < lg y la fecha
+          < xl para que no empujen los breadcrumbs. */}
+      <header className="relative z-50 h-16 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 flex-shrink-0">
 
-        {/* HEADER DE LA BARRA LATERAL */}
-        <div className="p-4 h-16 flex items-center justify-between border-b border-white/10 overflow-hidden flex-shrink-0">
-          <span className={`text-sm font-bold tracking-tight whitespace-nowrap transition-all duration-300 flex items-center gap-2 ${isSidebarCollapsed ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
-            {isAjustesMode ? (
-              <>
-                <Settings size={18} className="flex-shrink-0" />
-                <span>Ajustes Sistema</span>
-              </>
-            ) : (
-              <img src={logoMedraMenu} alt="Medra" className="h-8 w-auto" />
-            )}
-          </span>
-          {/* Contraído: el símbolo del logo es el botón para expandir (al pasar
-              el mouse se ve el ícono de menú). */}
-          <button
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className={`group p-1.5 rounded-lg hover:bg-white/10 dark:hover:bg-gray-800 transition flex-shrink-0 ${isSidebarCollapsed ? 'mx-auto' : ''}`}
-            title={isSidebarCollapsed ? "Expandir menú" : "Colapsar menú"}
-            aria-label={isSidebarCollapsed ? "Expandir menú" : "Colapsar menú"}
-          >
-            {isSidebarCollapsed && !isAjustesMode ? (
-              <>
-                <img src={simboloMedraMenu} alt="" className="w-5 h-5 group-hover:hidden" />
-                <Menu size={18} className="hidden group-hover:block m-px" />
-              </>
-            ) : (
-              <Menu size={18} />
-            )}
-          </button>
+        <button
+          type="button"
+          onClick={alternarMenu}
+          className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#2383C2] dark:hover:text-white transition-colors flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60"
+          title="Mostrar u ocultar menú"
+          aria-label="Mostrar u ocultar menú"
+        >
+          <Menu size={20} />
+        </button>
+
+        <div className="flex items-center gap-1.5 flex-shrink-0 select-none">
+          <img src={oscuro ? logoMedraOscuro : logoMedraClaro} alt="Medra" className="h-7 w-auto" />
+          <span className="hidden sm:inline text-[15px] font-normal text-gray-500 dark:text-gray-400">ERP</span>
         </div>
+
+        <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0"></div>
+        <SelectorInstitucion />
+        <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0"></div>
+
+        <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
+
+          <h2 className="hidden lg:flex text-sm font-bold text-gray-700 dark:text-gray-100 items-center gap-2 flex-shrink-0">
+            <span className="w-2 h-2 rounded-full bg-green-500"></span>
+            ¡Bienvenido {nombreSaludo}!
+          </h2>
+
+          <div className="hidden lg:block h-4 w-[1px] bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
+
+          <p className="hidden xl:flex text-xs text-gray-500 dark:text-gray-400 items-center gap-2 flex-shrink-0">
+            <Calendar size={14} /> {fechaActual}
+          </p>
+          <div className="hidden xl:block h-4 w-[1px] bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
+
+          <nav className="flex items-center gap-1.5 min-w-0 text-[12px] font-medium text-gray-700 dark:text-gray-200 truncate">
+            <button
+              onClick={salirDeAjustes}
+              className="flex items-center gap-1 text-[#2383C2] hover:text-[#1a6aa0] dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-semibold flex-shrink-0"
+            >
+              <Home size={13} />
+              <span>Inicio</span>
+            </button>
+
+            {breadcrumb.moduloLabel && (
+              <>
+                <ChevronRight size={13} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1 flex-shrink-0">
+                  {breadcrumb.moduloIcon && <span className="opacity-70">{breadcrumb.moduloIcon}</span>}
+                  {breadcrumb.moduloLabel}
+                </span>
+              </>
+            )}
+
+            {activeView !== 'dashboard' && (
+              <>
+                <ChevronRight size={13} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                <span className="text-gray-800 dark:text-gray-100 font-semibold flex items-center gap-1 truncate">
+                  {breadcrumb.vistaIcon && <span className="opacity-80">{breadcrumb.vistaIcon}</span>}
+                  {breadcrumb.vistaLabel}
+                </span>
+              </>
+            )}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-3 flex-shrink-0">
+        {/* Recordatorios del usuario: campana en todas las vistas (solo si
+            tiene permiso de recibirlos). */}
+        <RecordatoriosCampana />
+
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="w-9 h-9 rounded-full bg-[#2383C2] text-white flex items-center justify-center font-bold text-sm shadow-md"
+          >
+            {userData.nombreCompleto
+              ? userData.nombreCompleto
+                .trim()
+                .split(' ')
+                .filter(Boolean)
+                .map(palabra => palabra.charAt(0).toUpperCase())
+                .slice(0, 2)
+                .join('')
+              : 'U'}
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-2 z-50 text-gray-700 dark:text-gray-200">
+              {/* En móvil no hay sidebar: el período abierto va acá. */}
+              <div className="md:hidden px-3 pb-2 mb-1 border-b border-gray-100 dark:border-gray-700">
+                <PeriodoAbiertoBloque variante="menu" onAbrir={abrirControlMensual && (() => { abrirControlMensual(); setIsMenuOpen(false); })} />
+              </div>
+
+              <button
+                onClick={() => { setIsAjustesMode(false); setActiveView('perfil'); setIsMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <UserCircle size={16} className="text-blue-500 dark:text-blue-400" /> Mi Perfil
+              </button>
+
+              <button
+                onClick={() => { setIsAjustesMode(false); setActiveView('/ajustes/cambiarPassword'); setIsMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Shield size={16} className="text-emerald-500 dark:text-emerald-400" /> Cambiar Contraseña
+              </button>
+
+              <button
+                onClick={alternarOscuro}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                {oscuro ? (
+                  <Sun size={16} className="text-amber-400" />
+                ) : (
+                  <Moon size={16} className="text-indigo-500 dark:text-indigo-400" />
+                )}
+                {oscuro ? 'Modo Claro' : 'Modo Oscuro'}
+              </button>
+
+              <button
+                onClick={abrirAjustesGenerales}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold transition-colors"
+              >
+                <Settings size={16} className="text-[#2383C2]" /> Ajustes Generales
+              </button>
+
+              <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+              >
+                <LogOut size={16} className="text-red-500" /> Cerrar Sesión
+              </button>
+            </div>
+          )}
+        </div>
+        </div>
+      </header>
+
+      <div className="relative flex flex-1 min-h-0">
+
+      {/* Fondo del drawer móvil */}
+      <div
+        className={`md:hidden fixed inset-x-0 top-16 bottom-0 z-30 bg-gray-900/50 transition-opacity ${menuMovilAbierto ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setMenuMovilAbierto(false)}
+        aria-hidden="true"
+      />
+
+      {/* SIDEBAR LATERAL (bajo el header; en móvil, drawer) */}
+      <aside className={`fixed top-16 bottom-0 left-0 z-40 w-64 max-w-[85vw] md:static md:z-auto md:translate-x-0 md:visible ${menuMovilAbierto ? 'translate-x-0' : '-translate-x-full invisible'} ${colapsado ? 'md:w-16 md:min-w-[64px] md:max-w-[64px]' : 'md:w-56 md:min-w-[190px] md:max-w-[190px]'
+        } bg-[#2383C2] dark:bg-gray-800 dark:border-r dark:border-gray-700 text-white transition-all duration-300 ease-in-out flex flex-col shadow-xl flex-shrink-0 select-none overflow-x-hidden`}>
 
         {/* NAV PRINCIPAL DE LA BARRA LATERAL */}
         <nav className="flex-1 p-2 text-xs overflow-y-auto overflow-x-hidden relative">
@@ -522,15 +676,22 @@ const Dashboard = () => {
           {isAjustesMode ? (
             <div key="ajustes-menu">
 
+              {!colapsado && (
+                <div className="px-2 pt-1 pb-2 text-sm font-bold tracking-tight flex items-center gap-2">
+                  <Settings size={16} className="flex-shrink-0" />
+                  <span className="truncate">Ajustes Sistema</span>
+                </div>
+              )}
+
               {/* VOLVER AL SISTEMA */}
               <div className="mb-2">
                 <button
                   onClick={salirDeAjustes}
-                  className={`w-full flex items-center gap-2 p-2 bg-white/15 hover:bg-white/25 active:scale-95 rounded-lg font-bold transition-all text-white shadow-xs ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  className={`w-full flex items-center gap-2 p-2 bg-white/15 hover:bg-white/25 active:scale-95 rounded-lg font-bold transition-all text-white shadow-xs ${colapsado ? 'justify-center' : ''}`}
                   title="Volver al Sistema"
                 >
                   <ArrowLeft size={16} className="flex-shrink-0" />
-                  <span className={`transition-all duration-300 truncate ${isSidebarCollapsed ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
+                  <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                     Volver al Sistema
                   </span>
                 </button>
@@ -539,7 +700,7 @@ const Dashboard = () => {
               </div>
 
               {/* SECCIÓN CONFIGURACIÓN E ÍTEMS */}
-              <div className={`px-2 mb-2 font-bold uppercase text-[9px] tracking-wider text-white/50 transition-all duration-300 truncate ${isSidebarCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+              <div className={`px-2 mb-2 font-bold uppercase text-[9px] tracking-wider text-white/50 transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
                 Configuración
               </div>
 
@@ -551,11 +712,11 @@ const Dashboard = () => {
                     className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-150 ${activeView === item.path
                         ? 'bg-white/25 font-bold shadow-xs'
                         : 'hover:bg-white/10'
-                      } ${isSidebarCollapsed ? 'justify-center' : ''}`}
-                    title={isSidebarCollapsed ? item.label : ""}
+                      } ${colapsado ? 'justify-center' : ''}`}
+                    title={colapsado ? item.label : ""}
                   >
                     <div className="flex-shrink-0">{item.icon}</div>
-                    <span className={`transition-all duration-300 truncate ${isSidebarCollapsed ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
+                    <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                       {item.label}
                     </span>
                   </button>
@@ -570,10 +731,10 @@ const Dashboard = () => {
               <div className="mb-2">
                 <button
                   onClick={() => { setActiveView('dashboard'); setActiveModule(null); }}
-                  className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 transition-colors ${activeView === 'dashboard' ? 'bg-white/20 font-semibold' : ''} ${isSidebarCollapsed ? 'justify-center' : ''}`}
+                  className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 transition-colors ${activeView === 'dashboard' ? 'bg-white/20 font-semibold' : ''} ${colapsado ? 'justify-center' : ''}`}
                 >
                   <Home size={16} className="flex-shrink-0" />
-                  <span className={`transition-all duration-300 truncate ${isSidebarCollapsed ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
+                  <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                     Inicio
                   </span>
                 </button>
@@ -588,17 +749,17 @@ const Dashboard = () => {
                     <button
                       key={key}
                       onClick={() => setActiveModule(key)}
-                      className={`w-full flex items-center rounded-lg hover:bg-white/10 transition-all p-2 ${isSidebarCollapsed ? 'justify-center' : 'justify-between'}`}
-                      title={isSidebarCollapsed ? MODULES[key].label : ""}
+                      className={`w-full flex items-center rounded-lg hover:bg-white/10 transition-all p-2 ${colapsado ? 'justify-center' : 'justify-between'}`}
+                      title={colapsado ? MODULES[key].label : ""}
                     >
                       <div className="flex items-center gap-3 overflow-hidden min-w-0">
                         <div className="flex-shrink-0">{MODULES[key].icon}</div>
-                        <span className={`transition-all duration-300 truncate ${isSidebarCollapsed ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
+                        <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                           {MODULES[key].label}
                         </span>
                       </div>
-                      {key === 'administracion' && !isSidebarCollapsed && <Contador n={alertasNoLeidas} />}
-                      {!isSidebarCollapsed && <ChevronRight size={14} className="flex-shrink-0 opacity-60 ml-1" />}
+                      {key === 'administracion' && !colapsado && <Contador n={alertasNoLeidas} />}
+                      {!colapsado && <ChevronRight size={14} className="flex-shrink-0 opacity-60 ml-1" />}
                     </button>
                   ))}
                 </div>
@@ -606,16 +767,16 @@ const Dashboard = () => {
                 <div className="space-y-1">
                   <button
                     onClick={() => setActiveModule(null)}
-                    className={`flex items-center mb-4 text-[10px] text-white/60 hover:text-white transition-colors p-1 w-full ${isSidebarCollapsed ? 'justify-center' : 'gap-1'}`}
+                    className={`flex items-center mb-4 text-[10px] text-white/60 hover:text-white transition-colors p-1 w-full ${colapsado ? 'justify-center' : 'gap-1'}`}
                     title="Volver a módulos"
                   >
                     <ArrowLeft size={12} className="flex-shrink-0" />
-                    <span className={`transition-all duration-300 truncate ${isSidebarCollapsed ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
+                    <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                       Volver a módulos
                     </span>
                   </button>
 
-                  <div className={`px-2 mb-2 font-bold uppercase text-[9px] tracking-wider text-white/50 transition-all duration-300 truncate ${isSidebarCollapsed ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                  <div className={`px-2 mb-2 font-bold uppercase text-[9px] tracking-wider text-white/50 transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
                     {MODULES[activeModule].label}
                   </div>
 
@@ -623,14 +784,14 @@ const Dashboard = () => {
                     <button
                       key={sub.path ?? idx}
                       onClick={() => setActiveView(sub.path)}
-                      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === sub.path ? 'bg-white/20 font-semibold' : 'hover:bg-white/10'} ${isSidebarCollapsed ? 'justify-center' : ''}`}
-                      title={isSidebarCollapsed ? sub.label : ""}
+                      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === sub.path ? 'bg-white/20 font-semibold' : 'hover:bg-white/10'} ${colapsado ? 'justify-center' : ''}`}
+                      title={colapsado ? sub.label : ""}
                     >
                       <div className="flex-shrink-0">{sub.icon}</div>
-                      <span className={`transition-all duration-300 truncate ${isSidebarCollapsed ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
+                      <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                         {sub.label}
                       </span>
-                      {sub.path === RUTA_ALERTAS && !isSidebarCollapsed && <Contador n={alertasNoLeidas} />}
+                      {sub.path === RUTA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
                     </button>
                   ))}
                 </div>
@@ -642,12 +803,12 @@ const Dashboard = () => {
 
         {/* PERÍODO ABIERTO (arriba del pie, separado de él) */}
         <div className="mx-2 mt-2 flex-shrink-0">
-          <PeriodoAbiertoBloque colapsado={isSidebarCollapsed} onAbrir={abrirControlMensual} />
+          <PeriodoAbiertoBloque colapsado={colapsado} onAbrir={abrirControlMensual} />
         </div>
 
         {/* PIE DE PÁGINA LATERAL */}
         <div className="p-2 m-2 bg-white/5 dark:bg-black/20 rounded-xl border border-white/10 dark:border-gray-800 text-[10px] text-white/70 flex flex-col gap-2 backdrop-blur-sm overflow-hidden flex-shrink-0 transition-all duration-300">
-          {!isSidebarCollapsed ? (
+          {!colapsado ? (
             <div className="transition-all duration-300 opacity-100 flex flex-col gap-2">
               <div className="flex flex-col gap-1.5 border-b border-white/5 pb-1.5">
                 <button
@@ -681,132 +842,7 @@ const Dashboard = () => {
         </div>
       </aside>
 
-      {/* ÁREA PRINCIPAL */}
-      <div className="flex-grow flex flex-col h-screen overflow-hidden gap-2">
-
-        <header className="h-16 bg-white dark:bg-gray-800 shadow-sm flex items-center justify-between px-6 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
-
-          <div className="flex items-center gap-3 min-w-0">
-
-            <h2 className="text-sm font-bold text-gray-700 dark:text-gray-100 flex items-center gap-2 flex-shrink-0">
-              <span className="w-2 h-2 rounded-full bg-green-500"></span>
-              ¡Bienvenido {nombreSaludo}!
-            </h2>
-
-            <div className="h-4 w-[1px] bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
-
-            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 flex-shrink-0">
-              <Calendar size={14} /> {fechaActual}
-            </p>
-            <div className="h-4 w-[1px] bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
-
-            <nav className="flex items-center gap-1.5 text-[12px] font-medium text-gray-700 dark:text-gray-200 truncate">
-              <button
-                onClick={salirDeAjustes}
-                className="flex items-center gap-1 text-[#2383C2] hover:text-[#1a6aa0] dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-semibold flex-shrink-0"
-              >
-                <Home size={13} />
-                <span>Inicio</span>
-              </button>
-
-              {breadcrumb.moduloLabel && (
-                <>
-                  <ChevronRight size={13} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                  <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1 flex-shrink-0">
-                    {breadcrumb.moduloIcon && <span className="opacity-70">{breadcrumb.moduloIcon}</span>}
-                    {breadcrumb.moduloLabel}
-                  </span>
-                </>
-              )}
-
-              {activeView !== 'dashboard' && (
-                <>
-                  <ChevronRight size={13} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                  <span className="text-gray-800 dark:text-gray-100 font-semibold flex items-center gap-1 truncate">
-                    {breadcrumb.vistaIcon && <span className="opacity-80">{breadcrumb.vistaIcon}</span>}
-                    {breadcrumb.vistaLabel}
-                  </span>
-                </>
-              )}
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-3 flex-shrink-0">
-          {/* Recordatorios del usuario: campana en todas las vistas (solo si
-              tiene permiso de recibirlos). */}
-          <RecordatoriosCampana />
-
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="w-9 h-9 rounded-full bg-[#2383C2] text-white flex items-center justify-center font-bold text-sm shadow-md"
-            >
-              {userData.nombreCompleto
-                ? userData.nombreCompleto
-                  .trim()
-                  .split(' ')
-                  .filter(Boolean)
-                  .map(palabra => palabra.charAt(0).toUpperCase())
-                  .slice(0, 2)
-                  .join('')
-                : 'U'}
-            </button>
-
-            {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-2 z-50 text-gray-700 dark:text-gray-200">
-                {/* En móvil no hay sidebar: el período abierto va acá. */}
-                <div className="md:hidden px-3 pb-2 mb-1 border-b border-gray-100 dark:border-gray-700">
-                  <PeriodoAbiertoBloque variante="menu" onAbrir={abrirControlMensual && (() => { abrirControlMensual(); setIsMenuOpen(false); })} />
-                </div>
-
-                <button
-                  onClick={() => { setIsAjustesMode(false); setActiveView('perfil'); setIsMenuOpen(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <UserCircle size={16} className="text-blue-500 dark:text-blue-400" /> Mi Perfil
-                </button>
-
-                <button
-                  onClick={() => { setIsAjustesMode(false); setActiveView('/ajustes/cambiarPassword'); setIsMenuOpen(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Shield size={16} className="text-emerald-500 dark:text-emerald-400" /> Cambiar Contraseña
-                </button>
-
-                <button
-                  onClick={alternarOscuro}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  {oscuro ? (
-                    <Sun size={16} className="text-amber-400" />
-                  ) : (
-                    <Moon size={16} className="text-indigo-500 dark:text-indigo-400" />
-                  )}
-                  {oscuro ? 'Modo Claro' : 'Modo Oscuro'}
-                </button>
-
-                <button
-                  onClick={abrirAjustesGenerales}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold transition-colors"
-                >
-                  <Settings size={16} className="text-[#2383C2]" /> Ajustes Generales
-                </button>
-
-                <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
-                >
-                  <LogOut size={16} className="text-red-500" /> Cerrar Sesión
-                </button>
-              </div>
-            )}
-          </div>
-          </div>
-        </header>
-
-        <main className="flex-grow p-3 overflow-y-auto">
+        <main className="flex-grow min-w-0 px-3 pb-3 pt-5 overflow-y-auto">
           <div className="h-full">
             {/* Guard: las vistas de solo administradores no se abren con otro
                 rol, ni las de módulos/ítems inactivos (aunque se lleguen por
