@@ -149,6 +149,41 @@ const Contador = ({ n }) => (n > 0 ? (
   </span>
 ) : null);
 
+// Estilos del sidebar (blanco; gris 800 en oscuro). Activo: tinte azul,
+// texto e ícono de marca y barra vertical a la izquierda.
+const ITEM_SIDEBAR = 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60';
+const ITEM_SIDEBAR_ACTIVO = 'bg-[#2383C2]/10 dark:bg-[#2383C2]/20 text-[#1b6a9e] dark:text-sky-300 font-semibold shadow-[inset_3px_0_0_#2383C2] dark:shadow-[inset_3px_0_0_#38bdf8]';
+const ICONO_SIDEBAR = 'text-gray-500 dark:text-gray-400';
+const ICONO_SIDEBAR_ACTIVO = 'text-[#2383C2] dark:text-sky-300';
+const TITULO_SECCION_SIDEBAR = 'font-bold uppercase text-[9px] tracking-wider text-gray-500 dark:text-gray-400';
+
+// Color de acento de cada módulo: el ícono va en un cuadrito con un tinte
+// suave de ese color (en oscuro, tinte más fuerte e ícono aclarado).
+const COLOR_MODULO = {
+  administracion: '#5b738b',
+  laboratorio: '#a21caf',
+  vacunatorio: '#0f828f',
+  maestros: '#6c5c3f',
+  consignacion: '#d0306a',
+  inventario: '#188918',
+  bodega: '#a45d00',
+  documentos: '#7858ff',
+  implantes: '#0a6ed1',
+  hemodinamia: '#c8102e',
+};
+
+const IconoModulo = ({ moduleKey }) => {
+  const { icon } = MODULES[moduleKey];
+  return (
+    <span
+      className="w-7 h-7 rounded-md inline-flex items-center justify-center flex-shrink-0 bg-[color:color-mix(in_srgb,var(--c)_12%,transparent)] text-[color:var(--c)] dark:bg-[color:color-mix(in_srgb,var(--c)_28%,transparent)] dark:text-[color:color-mix(in_srgb,var(--c)_45%,white)]"
+      style={{ '--c': COLOR_MODULO[moduleKey] ?? '#5b738b' }}
+    >
+      {React.isValidElement(icon) ? React.cloneElement(icon, { size: 16 }) : icon}
+    </span>
+  );
+};
+
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -667,7 +702,7 @@ const Dashboard = () => {
 
       {/* SIDEBAR LATERAL (bajo el header; en móvil, drawer) */}
       <aside className={`fixed top-16 bottom-0 left-0 z-40 w-64 max-w-[85vw] md:static md:z-auto md:translate-x-0 md:visible ${menuMovilAbierto ? 'translate-x-0' : '-translate-x-full invisible'} ${colapsado ? 'md:w-16 md:min-w-[64px] md:max-w-[64px]' : 'md:w-56 md:min-w-[190px] md:max-w-[190px]'
-        } bg-[#2383C2] dark:bg-gray-800 dark:border-r dark:border-gray-700 text-white transition-all duration-300 ease-in-out flex flex-col shadow-xl flex-shrink-0 select-none overflow-x-hidden`}>
+        } bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-300 ease-in-out flex flex-col shadow-xl md:shadow-none flex-shrink-0 select-none overflow-x-hidden`}>
 
         {/* NAV PRINCIPAL DE LA BARRA LATERAL */}
         <nav className="flex-1 p-2 text-xs overflow-y-auto overflow-x-hidden relative">
@@ -677,8 +712,8 @@ const Dashboard = () => {
             <div key="ajustes-menu">
 
               {!colapsado && (
-                <div className="px-2 pt-1 pb-2 text-sm font-bold tracking-tight flex items-center gap-2">
-                  <Settings size={16} className="flex-shrink-0" />
+                <div className="px-2 pt-1 pb-2 text-sm font-bold tracking-tight flex items-center gap-2 text-gray-800 dark:text-gray-100">
+                  <Settings size={16} className="flex-shrink-0 text-[#2383C2] dark:text-sky-300" />
                   <span className="truncate">Ajustes Sistema</span>
                 </div>
               )}
@@ -687,7 +722,7 @@ const Dashboard = () => {
               <div className="mb-2">
                 <button
                   onClick={salirDeAjustes}
-                  className={`w-full flex items-center gap-2 p-2 bg-white/15 hover:bg-white/25 active:scale-95 rounded-lg font-bold transition-all text-white shadow-xs ${colapsado ? 'justify-center' : ''}`}
+                  className={`w-full flex items-center gap-2 p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 active:scale-95 rounded-lg font-bold transition-all text-gray-800 dark:text-gray-100 ${colapsado ? 'justify-center' : ''}`}
                   title="Volver al Sistema"
                 >
                   <ArrowLeft size={16} className="flex-shrink-0" />
@@ -696,11 +731,11 @@ const Dashboard = () => {
                   </span>
                 </button>
 
-                <div className="border-t border-white/10 my-2"></div>
+                <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
               </div>
 
               {/* SECCIÓN CONFIGURACIÓN E ÍTEMS */}
-              <div className={`px-2 mb-2 font-bold uppercase text-[9px] tracking-wider text-white/50 transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+              <div className={`px-2 mb-2 ${TITULO_SECCION_SIDEBAR} transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
                 Configuración
               </div>
 
@@ -709,13 +744,10 @@ const Dashboard = () => {
                   <button
                     key={item.path}
                     onClick={() => setActiveView(item.path)}
-                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-150 ${activeView === item.path
-                        ? 'bg-white/25 font-bold shadow-xs'
-                        : 'hover:bg-white/10'
-                      } ${colapsado ? 'justify-center' : ''}`}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-150 ${activeView === item.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
                     title={colapsado ? item.label : ""}
                   >
-                    <div className="flex-shrink-0">{item.icon}</div>
+                    <div className={`flex-shrink-0 ${activeView === item.path ? ICONO_SIDEBAR_ACTIVO : ICONO_SIDEBAR}`}>{item.icon}</div>
                     <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                       {item.label}
                     </span>
@@ -731,15 +763,15 @@ const Dashboard = () => {
               <div className="mb-2">
                 <button
                   onClick={() => { setActiveView('dashboard'); setActiveModule(null); }}
-                  className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 transition-colors ${activeView === 'dashboard' ? 'bg-white/20 font-semibold' : ''} ${colapsado ? 'justify-center' : ''}`}
+                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === 'dashboard' ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
                 >
-                  <Home size={16} className="flex-shrink-0" />
+                  <Home size={16} className={`flex-shrink-0 ${activeView === 'dashboard' ? ICONO_SIDEBAR_ACTIVO : ICONO_SIDEBAR}`} />
                   <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                     Inicio
                   </span>
                 </button>
 
-                <div className="border-t border-white/10 my-2"></div>
+                <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
               </div>
 
               {/* SECCIÓN MÓDULOS */}
@@ -749,17 +781,17 @@ const Dashboard = () => {
                     <button
                       key={key}
                       onClick={() => setActiveModule(key)}
-                      className={`w-full flex items-center rounded-lg hover:bg-white/10 transition-all p-2 ${colapsado ? 'justify-center' : 'justify-between'}`}
+                      className={`w-full flex items-center rounded-lg ${ITEM_SIDEBAR} font-medium transition-all px-2 py-1.5 ${colapsado ? 'justify-center' : 'justify-between'}`}
                       title={colapsado ? MODULES[key].label : ""}
                     >
                       <div className="flex items-center gap-3 overflow-hidden min-w-0">
-                        <div className="flex-shrink-0">{MODULES[key].icon}</div>
+                        <IconoModulo moduleKey={key} />
                         <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                           {MODULES[key].label}
                         </span>
                       </div>
                       {key === 'administracion' && !colapsado && <Contador n={alertasNoLeidas} />}
-                      {!colapsado && <ChevronRight size={14} className="flex-shrink-0 opacity-60 ml-1" />}
+                      {!colapsado && <ChevronRight size={14} className="flex-shrink-0 text-gray-400 dark:text-gray-500 ml-1" />}
                     </button>
                   ))}
                 </div>
@@ -767,7 +799,7 @@ const Dashboard = () => {
                 <div className="space-y-1">
                   <button
                     onClick={() => setActiveModule(null)}
-                    className={`flex items-center mb-4 text-[10px] text-white/60 hover:text-white transition-colors p-1 w-full ${colapsado ? 'justify-center' : 'gap-1'}`}
+                    className={`flex items-center mb-4 text-[10px] text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-sky-300 transition-colors p-1 w-full ${colapsado ? 'justify-center' : 'gap-1'}`}
                     title="Volver a módulos"
                   >
                     <ArrowLeft size={12} className="flex-shrink-0" />
@@ -776,7 +808,7 @@ const Dashboard = () => {
                     </span>
                   </button>
 
-                  <div className={`px-2 mb-2 font-bold uppercase text-[9px] tracking-wider text-white/50 transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
+                  <div className={`px-2 mb-2 ${TITULO_SECCION_SIDEBAR} transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
                     {MODULES[activeModule].label}
                   </div>
 
@@ -784,10 +816,10 @@ const Dashboard = () => {
                     <button
                       key={sub.path ?? idx}
                       onClick={() => setActiveView(sub.path)}
-                      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === sub.path ? 'bg-white/20 font-semibold' : 'hover:bg-white/10'} ${colapsado ? 'justify-center' : ''}`}
+                      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === sub.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
                       title={colapsado ? sub.label : ""}
                     >
-                      <div className="flex-shrink-0">{sub.icon}</div>
+                      <div className={`flex-shrink-0 ${activeView === sub.path ? ICONO_SIDEBAR_ACTIVO : ICONO_SIDEBAR}`}>{sub.icon}</div>
                       <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                         {sub.label}
                       </span>
@@ -807,33 +839,33 @@ const Dashboard = () => {
         </div>
 
         {/* PIE DE PÁGINA LATERAL */}
-        <div className="p-2 m-2 bg-white/5 dark:bg-black/20 rounded-xl border border-white/10 dark:border-gray-800 text-[10px] text-white/70 flex flex-col gap-2 backdrop-blur-sm overflow-hidden flex-shrink-0 transition-all duration-300">
+        <div className="p-2 m-2 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-200 dark:border-gray-700 text-[10px] text-gray-500 dark:text-gray-400 flex flex-col gap-2 overflow-hidden flex-shrink-0 transition-all duration-300">
           {!colapsado ? (
             <div className="transition-all duration-300 opacity-100 flex flex-col gap-2">
-              <div className="flex flex-col gap-1.5 border-b border-white/5 pb-1.5">
+              <div className="flex flex-col gap-1.5 border-b border-gray-200 dark:border-gray-700 pb-1.5">
                 <button
                   onClick={() => { setIsAjustesMode(false); setActiveView('privacidad'); setActiveModule(null); }}
-                  className="hover:text-white transition-colors text-left flex items-center gap-1.5 truncate"
+                  className="hover:text-[#2383C2] dark:hover:text-sky-300 transition-colors text-left flex items-center gap-1.5 truncate"
                 >
                   <ShieldCheck size={12} className="opacity-70 flex-shrink-0" />
                   <span className="truncate">Política de Privacidad</span>
                 </button>
                 <button
                   onClick={() => { setIsAjustesMode(false); setActiveView('terminos'); setActiveModule(null); }}
-                  className="hover:text-white transition-colors text-left flex items-center gap-1.5 truncate"
+                  className="hover:text-[#2383C2] dark:hover:text-sky-300 transition-colors text-left flex items-center gap-1.5 truncate"
                 >
                   <FileText size={12} className="opacity-70 flex-shrink-0" />
                   <span className="truncate">Términos de Servicio</span>
                 </button>
               </div>
-              <div className="flex justify-between items-center text-[9px] text-white/40 font-num px-0.5">
+              <div className="flex justify-between items-center text-[9px] text-gray-500 dark:text-gray-400 font-num px-0.5">
                 <span>Versión</span>
                 <span>v1.0.0</span>
               </div>
             </div>
           ) : (
             <div
-              className="flex justify-center items-center text-[9px] text-white/40 font-num py-1 cursor-help opacity-100 transition-all duration-300"
+              className="flex justify-center items-center text-[9px] text-gray-500 dark:text-gray-400 font-num py-1 cursor-help opacity-100 transition-all duration-300"
               title="Versión 1.0.0 — Políticas disponibles en menú expandido"
             >
               <span>v1.0</span>

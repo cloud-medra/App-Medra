@@ -12,13 +12,13 @@ import { resumirPeriodosAbiertos } from './periodoAbierto';
 
 const ESTILOS = {
   sidebar: {
-    caja: 'rounded-lg border border-white/10 dark:border-gray-700 bg-white/5 dark:bg-black/20 text-white',
-    etiqueta: 'text-white/60',
-    valor: 'text-white',
-    aviso: 'text-amber-200 dark:text-amber-300',
-    suave: 'text-white/50',
-    placeholder: 'bg-white/15',
-    hover: 'hover:bg-white/10',
+    caja: 'rounded-lg border border-[#2383C2]/20 dark:border-[#2383C2]/35 bg-[#2383C2]/[0.07] dark:bg-[#2383C2]/15 text-[#1b6a9e] dark:text-sky-300',
+    etiqueta: 'text-[#1b6a9e] dark:text-sky-300',
+    valor: 'text-[#1b6a9e] dark:text-sky-200',
+    aviso: 'text-amber-700 dark:text-amber-300',
+    suave: 'text-gray-500 dark:text-gray-400',
+    placeholder: 'bg-[#2383C2]/15',
+    hover: 'hover:bg-[#2383C2]/[0.12] dark:hover:bg-[#2383C2]/25',
   },
   menu: {
     caja: 'rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200',
