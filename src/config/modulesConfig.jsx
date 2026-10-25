@@ -139,6 +139,9 @@ export const MODULES = {
       { label: 'Empresas', path: '/maestros/empresasMaestros', icon: <Factory size={14} /> },
       { label: 'Prestadores', path: '/maestros/prestadoresMaestros', icon: <UserRound size={14} /> },
       { label: 'Centros', path: '/maestros/centrosMaestros', icon: <Hospital size={14} /> },
+      // Instituciones / sucursales: las ofrece el selector del header
+      // (context/InstitucionContext.jsx).
+      { label: 'Instituciones', path: '/maestros/institucionesMaestros', icon: <Building2 size={14} /> },
       { label: 'Zonas por diagnóstico', path: '/maestros/zonasDiagnostico', icon: <PersonStanding size={14} /> },
       { label: 'Descripciones ocultas', path: '/maestros/descripcionesOcultas', icon: <EyeOff size={14} /> },
       { label: 'Previsiones', path: '/maestros/previsionesMaestros', icon: <ShieldCheck size={14} /> },

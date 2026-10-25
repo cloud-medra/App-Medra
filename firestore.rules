@@ -485,6 +485,38 @@ service cloud.firestore {
       }
     }
 
+    // Maestros → Instituciones: instituciones / sucursales del selector del
+    // header. La lee cualquier usuario activo; la escribe solo quien tiene el
+    // ítem de Maestros (o el Desarrollador). Largos máximos: los mismos de
+    // LARGO_MAXIMO en institucionesMaestros/instituciones.js. Que haya una
+    // sola predeterminada lo asegura la pantalla (writeBatch); una inactiva
+    // no puede ser la predeterminada.
+    function textoOpcional(d, campo, maximo) {
+      return !(campo in d) || (d[campo] is string && d[campo].size() <= maximo);
+    }
+    function institucionValida(d) {
+      return d.keys().hasOnly(['nombre', 'rut', 'direccion', 'ciudad', 'telefono', 'email', 'activa', 'predeterminada',
+          'creadoEl', 'creadoPor', 'creadoPorUid', 'actualizadoEl', 'actualizadoPor', 'actualizadoPorUid'])
+        && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 120
+        && textoOpcional(d, 'rut', 20)
+        && textoOpcional(d, 'direccion', 200)
+        && textoOpcional(d, 'ciudad', 80)
+        && textoOpcional(d, 'telefono', 30)
+        && textoOpcional(d, 'email', 120)
+        && textoOpcional(d, 'creadoPor', 120)
+        && textoOpcional(d, 'actualizadoPor', 120)
+        && d.activa is bool && d.predeterminada is bool
+        && (d.activa || !d.predeterminada);
+    }
+    match /maestros_instituciones/{institucionId} {
+      allow read: if estaActivo();
+      allow create, update: if estaActivo()
+        && escribeVista('maestros', '/maestros/institucionesMaestros')
+        && institucionValida(request.resource.data);
+      allow delete: if estaActivo()
+        && escribeVista('maestros', '/maestros/institucionesMaestros');
+    }
+
     // Bodymap: Maestro "Zonas por diagnóstico". Lo lee quien ve gestiones;
     // las entradas y el contador de gestiones los crean/mantienen la Cloud
     // Function y el script (functions/bodymap). Desde la pantalla solo se

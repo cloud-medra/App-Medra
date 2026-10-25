@@ -150,6 +150,41 @@ export const maestrosComponentMaps = {
     },
   },
 
+  '/maestros/institucionesMaestros': {
+    label: 'Instituciones (InstitucionesMaestros.jsx)',
+    sections: {
+      formulario_registro: {
+        label: 'Sección: Formulario de Registro',
+        elements: {
+          btn_registrar: { label: 'Acción: Botón Registrar' },
+          btn_actualizar: { label: 'Acción: Botón Actualizar' },
+          check_predeterminada: { label: 'Campo: Marcar como Predeterminada' },
+        },
+      },
+      barra_busqueda: {
+        label: 'Sección: Filtro y Búsqueda',
+        elements: {
+          input_buscar: { label: 'Barra de Búsqueda de Texto' },
+        },
+      },
+      tabla_datos: {
+        label: 'Sección: Tabla de Resultados',
+        elements: {
+          col_nombre: { label: 'Columna: Nombre' },
+          col_rut: { label: 'Columna: RUT' },
+          col_ciudad: { label: 'Columna: Ciudad' },
+          col_direccion: { label: 'Columna: Dirección' },
+          col_contacto: { label: 'Columna: Contacto (teléfono y email)' },
+          col_estado: { label: 'Columna: Estado' },
+          action_editar: { label: 'Operación: Editar' },
+          action_estado: { label: 'Operación: Activar / Desactivar' },
+          action_predeterminada: { label: 'Operación: Marcar como Predeterminada' },
+          action_eliminar: { label: 'Operación: Eliminar' },
+        },
+      },
+    },
+  },
+
   '/maestros/centrosMaestros': {
     label: 'Registro de Centros (CentrosMaestros.jsx)',
     sections: {
