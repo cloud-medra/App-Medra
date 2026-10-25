@@ -20,9 +20,8 @@ import { MODULES, AJUSTES_ITEMS, SPECIAL_VIEWS } from '../config/modulesConfig.j
 import RecordatoriosCampana from '../components/modulos/administracion/recordatorios/RecordatoriosCampana';
 import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
 import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROLLADOR } from '../config/accesoMenu';
-import {
-  entradaDeItem, entradaDeRuta, moduloDeEntrada, entradasMenu, itemsDeEntrada, etiquetaEntrada, iconoEntrada, MODULO_AGRUPADO,
-} from '../config/gruposMenu.jsx';
+import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
+import { entradasDelSidebar, itemsDelSidebar } from '../config/menuSidebar';
 import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
 import SelectorInstitucion from '../components/layout/SelectorInstitucion';
 import { vistaInicialDesdeURL } from '../components/modulos/operaciones/documentos/reportesInfo/urlDetalle';
@@ -506,43 +505,10 @@ const Dashboard = () => {
   // Alertas sin leer (Administración → Alertas): contador en el menú.
   const alertasNoLeidas = useAlertasNoLeidas(userData?.uid, esAdministrador(userData));
 
-  // --- ORDEN DE MÓDULOS APLICADO (usa userData.ordenModulos si existe) ---
-  const modulosPermitidos = (() => {
-    // El Desarrollador ve todos los ítems y Administrador/Desarrollador los
-    // automáticos (Alertas) aunque no estén en sus permisos (ver
-    // src/config/accesoMenu.js).
-    // Un módulo inactivo, o con todos sus ítems visibles inactivos, no sale.
-    const base = Object.keys(MODULES).filter((mKey) => {
-      const visibles = subItemsVisibles(userData, mKey, modulosActivos).length;
-      if (visibles === 0 && subItemsVisibles(userData, mKey).length > 0) return false;
-      return (userData.permisos[mKey] || []).length > 0 || visibles > 0;
-    });
-    const orden = userData.ordenModulos;
-    if (!orden || !orden.length) return base;
-    const ordenados = orden.filter((k) => base.includes(k));
-    const faltantes = base.filter((k) => !ordenados.includes(k));
-    return [...ordenados, ...faltantes];
-  })();
-
-  // --- ORDEN DE SUBITEMS APLICADO (usa userData.ordenSubItems[modulo] si existe) ---
-  // `entrada`: módulo o grupo del sidebar; el orden guardado es el del módulo.
-  const getSubItemsOrdenados = (entrada) => {
-    const moduleKey = moduloDeEntrada(entrada);
-    const visibles = subItemsVisibles(userData, moduleKey, modulosActivos);
-    const ordenGuardado = userData.ordenSubItems?.[moduleKey];
-    if (!ordenGuardado || !ordenGuardado.length) return itemsDeEntrada(entrada, visibles);
-    const ordenados = ordenGuardado
-      .map((path) => visibles.find((s) => s.path === path))
-      .filter(Boolean);
-    const faltantes = visibles.filter((s) => !ordenGuardado.includes(s.path));
-    return itemsDeEntrada(entrada, [...ordenados, ...faltantes]);
-  };
-
-  // Entradas del sidebar: Administración se reparte en sus grupos (en su
-  // lugar del orden); un grupo sin ítems visibles no se muestra.
-  const entradasPermitidas = entradasMenu(modulosPermitidos).filter(
-    (e) => moduloDeEntrada(e) !== MODULO_AGRUPADO || getSubItemsOrdenados(e).length > 0
-  );
+  // Módulos/grupos e ítems del sidebar, en el orden guardado del usuario
+  // (config/menuSidebar.js).
+  const entradasPermitidas = entradasDelSidebar(userData, modulosActivos);
+  const getSubItemsOrdenados = (entrada) => itemsDelSidebar(userData, entrada, modulosActivos);
 
   // Logo del header: al panel principal (lo que hacía "Inicio" en el
   // sidebar), también desde Ajustes.
