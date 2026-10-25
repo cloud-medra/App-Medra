@@ -12,7 +12,8 @@ describe('etiquetaMes', () => {
 
 describe('GRUPOS', () => {
   it('Consumos va antes que Facturación, e Inventario (Bodega) al final', () => {
-    expect(GRUPOS.map(g => g.nombre)).toEqual(['Consumos', 'Facturación', 'Inventario']);
+    expect(GRUPOS.map(g => g.id)).toEqual(['consumos', 'facturacion', 'inventario']);
+    expect(GRUPOS.map(g => g.nombre)).toEqual(['Consumos (ingresos)', 'Facturación (costos)', 'Inventario']);
   });
 
   it('cada módulo pertenece a exactamente un grupo', () => {

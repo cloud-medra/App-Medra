@@ -95,7 +95,7 @@ describe('Permisos por centro: configurar un centro por rol', () => {
     // Administrador, que no usa plantilla).
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Módulos' })).getByText('Administración'));
     expect(screen.getByLabelText('Habilitar Permisos por centro')).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText('Habilitar Lista Usuario'));
+    fireEvent.click(screen.getByLabelText('Habilitar Listado de usuarios'));
     fireEvent.click(screen.getByRole('button', { name: /^Guardar$/ }));
     expect(confirmAction).toHaveBeenCalledWith('Guardar permisos del centro',
       expect.stringContaining('Afectará a 1 usuario(s) de LABORATORIO con rol Encargado de centro.'), expect.any(Function), expect.any(Object));
@@ -115,7 +115,7 @@ describe('Permisos por centro: configurar un centro por rol', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Copiar rol' }));
     expect(screen.getByLabelText('Habilitar Maestro Códigos')).toBeChecked();
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Módulos' })).getByText('Administración'));
-    fireEvent.click(screen.getByLabelText('Habilitar Notas Admin'));
+    fireEvent.click(screen.getByLabelText('Habilitar Notas del panel'));
     fireEvent.click(screen.getByRole('button', { name: /^Guardar$/ }));
     await confirmar();
     expect(llamadas[0].datos.rol).toBe('encargado');

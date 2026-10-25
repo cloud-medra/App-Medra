@@ -35,6 +35,18 @@ describe('resolverAtajos', () => {
     const permisos = { maestros: ['/maestros/noExiste', '/maestros/codigosMaestros'] };
     expect(resolverAtajos(atajos, MODULES, permisos).map((a) => a.label)).toEqual(['Códigos']);
   });
+
+  it('los ítems de Administración muestran su grupo del sidebar, con el mismo permiso', () => {
+    const atajos = [
+      { modulo: 'administracion', path: '/administracion/controlMensual' },
+      { modulo: 'administracion', path: '/administracion/listadoUsuario' },
+      { modulo: 'administracion', path: '/administracion/notasAdmin' },
+    ];
+    const permisos = { administracion: atajos.map((a) => a.path) };
+    expect(resolverAtajos(atajos, MODULES, permisos).map((a) => a.moduloLabel))
+      .toEqual(['Finanzas', 'Usuarios y accesos', 'Administración']);
+    expect(resolverAtajos(atajos, MODULES, { finanzas: ['/administracion/controlMensual'] })).toEqual([]);
+  });
 });
 
 describe('normalizarAtajosGuardados', () => {

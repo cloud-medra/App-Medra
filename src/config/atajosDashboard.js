@@ -1,3 +1,5 @@
+import { GRUPOS_MENU } from './gruposMenu.jsx';
+
 // Atajos del widget "Accesos rápidos" del Dashboard (AtajosCard.jsx).
 //
 // Cada atajo apunta a un ítem que ya existe en el sidebar (MODULES de
@@ -20,7 +22,9 @@ export const ATAJOS_POR_DEFECTO = [
 
 // Atajos que el usuario puede ver, con los datos del sidebar resueltos.
 // Mismo criterio de permisos que el sidebar (Dashboard.jsx →
-// getSubItemsOrdenados): el ítem tiene que estar en permisos[modulo].
+// getSubItemsOrdenados): el ítem tiene que estar en permisos[modulo]. El
+// nombre del módulo es el del grupo del sidebar si el ítem tiene uno
+// (Finanzas, Usuarios y accesos; ver config/gruposMenu.jsx).
 export const resolverAtajos = (atajos, modulos, permisos) =>
   atajos.flatMap((atajo) => {
     const modulo = modulos[atajo.modulo];
@@ -30,7 +34,7 @@ export const resolverAtajos = (atajos, modulos, permisos) =>
       modulo: atajo.modulo,
       path: atajo.path,
       label: atajo.label || item.label,
-      moduloLabel: modulo.label,
+      moduloLabel: GRUPOS_MENU[item.grupo]?.label || modulo.label,
       icon: atajo.icon || item.icon || modulo.icon
     }];
   });
