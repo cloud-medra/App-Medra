@@ -97,7 +97,7 @@ const diferenciaListas = (antes = [], despues = []) => {
 const cambiosParaLog = (antes, despues) => {
   const cambios = {};
   ['nombreCompleto', 'nombreUsuario', 'email', 'activo', 'rol', 'centroCostoId',
-    'centrosAdministrados', 'administradoresAsignados', 'todosLosAdministradoresDelCentro'].forEach((campo) => {
+    'centrosAdministrados', 'administradoresAsignados', 'todosLosAdministradoresDelCentro', 'instituciones'].forEach((campo) => {
     if (despues[campo] !== undefined && JSON.stringify(despues[campo]) !== JSON.stringify(antes[campo] ?? null)) {
       cambios[campo] = { antes: antes[campo] ?? null, despues: despues[campo] };
     }
@@ -137,6 +137,16 @@ const listaIds = (v, campo) => {
   return [...new Set(v)];
 };
 
+const mismoConjunto = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+
+// Instituciones del usuario (Maestros → Instituciones): tienen que existir.
+// Por ahora solo definen qué ofrece el selector del header; no filtran datos.
+const validarInstituciones = async (db, t, ids) => {
+  if (!ids.length) return;
+  const snaps = await t.getAll(...ids.map((id) => db.collection('maestros_instituciones').doc(id)));
+  if (snaps.some((s) => !s.exists)) throw new HttpsError('invalid-argument', 'Alguna institución no existe.');
+};
+
 // Administradores asignados: solo administradores activos del centro.
 const validarAsignados = async (db, t, centroId, asignados) => {
   if (!asignados.length) return;
@@ -167,6 +177,7 @@ const cambiarCorreoEnAuth = async (db, auth, uid, nuevo, anterior) => {
 const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
   const {
     uid, datos = {}, rol, centroCostoId, excepciones, centrosAdministrados, administradoresAsignados, todosLosAdministradoresDelCentro,
+    instituciones,
   } = data || {};
   if (typeof uid !== 'string' || !uid) throw new HttpsError('invalid-argument', 'Usuario inválido.');
   if (rol !== undefined && !VALORES_ROL.includes(rol)) throw new HttpsError('invalid-argument', 'Rol inválido.');
@@ -188,6 +199,7 @@ const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
   }
   const centros = listaIds(centrosAdministrados, 'Centros administrados');
   const asignados = listaIds(administradoresAsignados, 'Administradores asignados');
+  const listaInstituciones = listaIds(instituciones, 'Instituciones');
   if (todosLosAdministradoresDelCentro !== undefined) actualizacion.todosLosAdministradoresDelCentro = todosLosAdministradoresDelCentro === true;
 
   let nuevasExcepciones;
@@ -211,9 +223,16 @@ const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
     if (actualizacion.nombreUsuario === antes.nombreUsuario) delete actualizacion.nombreUsuario;
     else if (actualizacion.nombreUsuario !== undefined) escribirNombre = await prepararNombreUsuario(db, t, uid, actualizacion.nombreUsuario, antes.nombreUsuario);
     if (centroCostoId !== undefined) await validarCentro(db, centroCostoId, t);
+    // Solo cuenta (y se valida) si la lista cambia: la misma lista enviada de
+    // nuevo no es un cambio de acceso.
+    const institucionesAntes = Array.isArray(antes.instituciones) ? antes.instituciones : [];
+    if (listaInstituciones !== undefined && !mismoConjunto(listaInstituciones, institucionesAntes)) {
+      await validarInstituciones(db, t, listaInstituciones);
+      actualizacion.instituciones = listaInstituciones;
+    }
     exigirPuedeModificar(por, uid, antes, {
       rolNuevo: actualizacion.rol,
-      cambiaAcceso: [rol, datos.activo, centroCostoId, excepciones, centrosAdministrados].some((v) => v !== undefined),
+      cambiaAcceso: [rol, datos.activo, centroCostoId, excepciones, centrosAdministrados, actualizacion.instituciones].some((v) => v !== undefined),
     });
     const desarrolladores = await leerDesarrolladores(db, t);
     if (dejaSinDesarrollador(desarrolladores, uid, { rol: actualizacion.rol, activo: actualizacion.activo })) {

@@ -22,6 +22,7 @@ import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administ
 import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROLLADOR } from '../config/accesoMenu';
 import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
 import { entradasDelSidebar, itemsDelSidebar } from '../config/menuSidebar';
+import { tituloPestana } from '../config/tituloPestana';
 import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
 import SelectorInstitucion from '../components/layout/SelectorInstitucion';
 import { vistaInicialDesdeURL } from '../components/modulos/operaciones/documentos/reportesInfo/urlDetalle';
@@ -242,13 +243,16 @@ const Dashboard = () => {
   // primeras lecturas se anotaban en la pantalla anterior.
   if (import.meta.env.DEV) window.__FS_METER__?.setScreen(activeView);
 
-  // Título de la pestaña dentro de la plataforma; al salir se restaura el de
-  // index.html. Al cerrar sesión se recarga en "/" y LoginForm pone el suyo.
+  // Título de la pestaña dentro de la plataforma ("Módulo | Medra", ver
+  // config/tituloPestana.js); al salir se restaura el de index.html. Al
+  // cerrar sesión se recarga en "/" y LoginForm pone el suyo.
   useEffect(() => {
     const tituloAnterior = document.title;
-    document.title = 'Inicio | Medra';
     return () => { document.title = tituloAnterior; };
   }, []);
+  useEffect(() => {
+    document.title = tituloPestana({ isAjustesMode, activeModule, activeView });
+  }, [isAjustesMode, activeModule, activeView]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {

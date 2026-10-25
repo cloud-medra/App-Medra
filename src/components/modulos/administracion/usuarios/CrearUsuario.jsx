@@ -11,6 +11,7 @@ import MarcoEdicionUsuario, { Chip, ConfirmarSalida } from './MarcoEdicionUsuari
 import EditorPermisos from './EditorPermisos';
 import { Tarjeta, Campo, CampoTexto, CampoSelect } from './CamposFormulario';
 import CentroSelect from '../../../ui/CentroSelect';
+import SelectorInstitucionesUsuario from './SelectorInstitucionesUsuario';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import {
   usePlantillasPermisos, calcularExcepciones, completar, efectivo, crearOrigen, contarExcepciones,
@@ -46,6 +47,7 @@ const ESTADO_INICIAL = {
   confirmPassword: '',
   rol: 'operador',
   centroCostoId: null,
+  instituciones: [],
 };
 
 const ESTADO_CREACION_INICIAL = {
@@ -86,7 +88,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
   const configurables = vistasConfigurables(permisos, permisosGranulares, COMPONENT_MAPS);
   const itemsFinalizadosCount = configurables.filter((p) => estadoCreacion.itemsFinalizados[p]).length;
 
-  const datosSinGuardar = !usuarioId && Object.entries(formData).some(([k, v]) => v !== ESTADO_INICIAL[k]);
+  const datosSinGuardar = !usuarioId && Object.entries(formData).some(([k, v]) => (Array.isArray(v) ? v.length > 0 : v !== ESTADO_INICIAL[k]));
   const permisosSinGuardar = useMemo(
     () => Boolean(usuarioId) && JSON.stringify({ permisos, permisosGranulares }) !== JSON.stringify(guardado),
     [usuarioId, permisos, permisosGranulares, guardado]
@@ -140,6 +142,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
           confirmPassword: '',
           rol: data.rol || 'operador',
           centroCostoId: data.centroCostoId ?? null,
+          instituciones: Array.isArray(data.instituciones) ? data.instituciones : [],
         });
         setPermisos(data.permisos || {});
         const granulares = completarPermisosGranulares(data.permisosGranulares || {}, COMPONENT_MAPS);
@@ -234,9 +237,16 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
       const estadoInicial = { ...ESTADO_CREACION_INICIAL, paso1: true };
 
       // Con centro de costo: hereda su plantilla (la función calcula y
-      // guarda el permiso efectivo).
+      // guarda el permiso efectivo). Las instituciones van en la misma llamada.
+      const conInstituciones = formData.instituciones.length > 0;
+      if (formData.centroCostoId || conInstituciones) {
+        await guardarPermisosUsuario({
+          uid,
+          ...(formData.centroCostoId ? { centroCostoId: formData.centroCostoId, excepciones: { agregados: [], quitados: [] } } : {}),
+          ...(conInstituciones ? { instituciones: formData.instituciones } : {}),
+        });
+      }
       if (formData.centroCostoId) {
-        await guardarPermisosUsuario({ uid, centroCostoId: formData.centroCostoId, excepciones: { agregados: [], quitados: [] } });
         const heredados = efectivo(plantillaElegida, null);
         setPermisos(heredados.permisos);
         setPermisosGranulares(heredados.permisosGranulares);
@@ -382,6 +392,14 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
                     </>
                   )}
                 </fieldset>
+                <div className="mt-4">
+                  <SelectorInstitucionesUsuario
+                    seleccionadas={formData.instituciones}
+                    onCambiar={(lista) => setFormData((prev) => ({ ...prev, instituciones: lista }))}
+                    disabled={!!usuarioId}
+                  />
+                  {usuarioId && <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Para cambiarlas, edita el usuario desde Listado Usuario.</p>}
+                </div>
                 {centroSinConfigurar && (
                   <div className="mt-4">
                     <AvisoCentroSinConfigurar nombre={combinacion} onConfigurar={configurarCentro} />

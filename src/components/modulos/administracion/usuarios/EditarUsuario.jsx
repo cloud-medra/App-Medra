@@ -22,6 +22,7 @@ import {
 import BarraCentroCosto from './BarraCentroCosto';
 import AvisoCentroSinConfigurar from './AvisoCentroSinConfigurar';
 import { CentrosAdministrados, AdministradoresAsignados } from './AsignacionAdministradores';
+import SelectorInstitucionesUsuario from './SelectorInstitucionesUsuario';
 import { TIPOS_SOLICITUD } from '../../../../../functions/solicitudes/tipos.mjs';
 
 // Edición de un usuario existente desde Listado Usuario, a pantalla completa
@@ -67,6 +68,7 @@ const estadoInicial = (usuario) => {
       todosLosAdministradoresDelCentro: usuario.todosLosAdministradoresDelCentro === true,
       activo: usuario.activo !== false,
       centroCostoId: usuario.centroCostoId ?? null,
+      instituciones: Array.isArray(usuario.instituciones) ? usuario.instituciones : [],
     },
     excepciones: usuario.excepciones !== undefined || usuario.centroCostoId
       ? excepcionesDe(usuario)
@@ -204,6 +206,8 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
         rol: datosLimpios.rol,
         centroCostoId: datosLimpios.centroCostoId,
         excepciones,
+        // La función solo lo aplica (y audita) si la lista cambió.
+        instituciones: datosLimpios.instituciones,
         ...(datosLimpios.rol === 'admin' ? { centrosAdministrados: datosLimpios.centrosAdministrados } : {}),
         ...(conAdministradores ? {
           administradoresAsignados: datosLimpios.todosLosAdministradoresDelCentro ? [] : datosLimpios.administradoresAsignados,
@@ -362,6 +366,10 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
                         onCambiar={(cambio) => setDatos((d) => ({ ...d, ...cambio }))} />
                     </div>
                   )}
+                  <div className="md:col-span-2">
+                    <SelectorInstitucionesUsuario seleccionadas={datos.instituciones}
+                      onCambiar={(lista) => setDatos((d) => ({ ...d, instituciones: lista }))} />
+                  </div>
                 </div>
               </Tarjeta>
 

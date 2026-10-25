@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from 'react
 import { useUser } from './UserContext';
 import { useCatalogo } from '../hooks/useCatalogo';
 import {
-  claveSeleccion, elegirInstitucion, institucionesActivas,
+  claveSeleccion, elegirInstitucion, institucionesActivas, institucionesDelUsuario,
 } from '../components/modulos/maestros/institucionesMaestros/instituciones';
 
 // Institución / sucursal elegida en el selector del header (Maestros →
@@ -11,9 +11,12 @@ import {
 //
 // - Lista: catálogo `instituciones` (catalogosStore, lectura única por
 //   sesión; el maestro refleja sus cambios con upsertLocal).
+// - Se ofrecen las activas asignadas al usuario (usuarios/{uid}.instituciones);
+//   sin asignadas, o para el Desarrollador, todas (institucionesDelUsuario).
 // - Elección: localStorage por usuario (medra.institucion.<uid>), así se
 //   recuerda al recargar sin escribir en Firestore. Si no hay elección
-//   válida, vale la predeterminada o la primera activa (elegirInstitucion).
+//   válida, vale la predeterminada o la primera de las ofrecidas
+//   (elegirInstitucion).
 
 const leerSeleccion = (uid) => {
   if (!uid) return null;
@@ -53,13 +56,16 @@ export const InstitucionProvider = ({ children }) => {
     setSeleccion({ uid, id });
   }, [uid]);
 
-  const valor = useMemo(() => ({
-    instituciones: institucionesActivas(datos),
-    institucion: elegirInstitucion(datos, seleccion.id),
-    seleccionar,
-    cargando: Boolean(uid) && !cargado && !error,
-    error,
-  }), [datos, seleccion.id, seleccionar, uid, cargado, error]);
+  const valor = useMemo(() => {
+    const ofrecidas = institucionesDelUsuario(userData, institucionesActivas(datos));
+    return {
+      instituciones: ofrecidas,
+      institucion: elegirInstitucion(ofrecidas, seleccion.id),
+      seleccionar,
+      cargando: Boolean(uid) && !cargado && !error,
+      error,
+    };
+  }, [datos, userData, seleccion.id, seleccionar, uid, cargado, error]);
 
   return <InstitucionContext.Provider value={valor}>{children}</InstitucionContext.Provider>;
 };

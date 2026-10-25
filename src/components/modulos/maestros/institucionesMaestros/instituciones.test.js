@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   FORM_VACIO, LARGO_MAXIMO, normalizarInstitucion, validarInstitucion, idsADesmarcar,
-  institucionesActivas, elegirInstitucion, claveSeleccion,
+  institucionesActivas, elegirInstitucion, claveSeleccion, nombreVisible, institucionesDelUsuario,
 } from './instituciones';
 
 const inst = (id, nombre, extra = {}) => ({ id, nombre, activa: true, predeterminada: false, ...extra });
@@ -90,5 +90,43 @@ describe('selección del header', () => {
 
   it('la elección se guarda por usuario', () => {
     expect(claveSeleccion('u1')).toBe('medra.institucion.u1');
+  });
+});
+
+describe('nombre corto', () => {
+  it('se muestra el corto o, si no hay, el completo', () => {
+    expect(nombreVisible(inst('a', 'Sociedad Clínica del Norte S.A.', { nombreCorto: 'Clínica Norte' }))).toBe('Clínica Norte');
+    expect(nombreVisible(inst('a', 'Clínica Sur', { nombreCorto: '   ' }))).toBe('Clínica Sur');
+    expect(nombreVisible(inst('a', 'Clínica Sur'))).toBe('Clínica Sur');
+    expect(nombreVisible(null)).toBe('');
+  });
+
+  it('admite hasta 30 caracteres', () => {
+    expect(LARGO_MAXIMO.nombreCorto).toBe(30);
+    expect(validarInstitucion(normalizarInstitucion({ nombre: 'X', nombreCorto: 'a'.repeat(30) }))).toBeNull();
+    expect(validarInstitucion(normalizarInstitucion({ nombre: 'X', nombreCorto: 'a'.repeat(31) })))
+      .toBe('El campo nombre corto admite hasta 30 caracteres');
+  });
+});
+
+describe('institucionesDelUsuario', () => {
+  const activas = [inst('a', 'Alfa'), inst('b', 'Beta'), inst('c', 'Gama')];
+  const ids = (lista) => lista.map((i) => i.id);
+
+  it('sin asignadas (usuarios actuales): todas', () => {
+    expect(ids(institucionesDelUsuario({ rol: 'operador' }, activas))).toEqual(['a', 'b', 'c']);
+    expect(ids(institucionesDelUsuario({ rol: 'operador', instituciones: [] }, activas))).toEqual(['a', 'b', 'c']);
+  });
+
+  it('con asignadas: solo esas', () => {
+    expect(ids(institucionesDelUsuario({ rol: 'operador', instituciones: ['c', 'a'] }, activas))).toEqual(['a', 'c']);
+  });
+
+  it('el Desarrollador siempre ve todas', () => {
+    expect(ids(institucionesDelUsuario({ rol: 'dev', instituciones: ['a'] }, activas))).toEqual(['a', 'b', 'c']);
+  });
+
+  it('si ninguna asignada sigue activa: todas, para no quedar sin institución', () => {
+    expect(ids(institucionesDelUsuario({ rol: 'admin', instituciones: ['inactiva', 'borrada'] }, activas))).toEqual(['a', 'b', 'c']);
   });
 });

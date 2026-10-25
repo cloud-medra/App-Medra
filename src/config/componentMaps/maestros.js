@@ -171,6 +171,7 @@ export const maestrosComponentMaps = {
         label: 'Sección: Tabla de Resultados',
         elements: {
           col_nombre: { label: 'Columna: Nombre' },
+          col_nombre_corto: { label: 'Columna: Nombre corto' },
           col_rut: { label: 'Columna: RUT' },
           col_ciudad: { label: 'Columna: Ciudad' },
           col_direccion: { label: 'Columna: Dirección' },
