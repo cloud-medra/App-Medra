@@ -20,6 +20,8 @@ import { MODULES, AJUSTES_ITEMS, SPECIAL_VIEWS } from '../config/modulesConfig.j
 import RecordatoriosCampana from '../components/modulos/administracion/recordatorios/RecordatoriosCampana';
 import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
 import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROLLADOR } from '../config/accesoMenu';
+import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
+import { entradasDelSidebar, itemsDelSidebar } from '../config/menuSidebar';
 import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
 import SelectorInstitucion from '../components/layout/SelectorInstitucion';
 import { vistaInicialDesdeURL } from '../components/modulos/operaciones/documentos/reportesInfo/urlDetalle';
@@ -160,6 +162,8 @@ const TITULO_SECCION_SIDEBAR = 'font-bold uppercase text-[9px] tracking-wider te
 // Color de acento de cada módulo: el ícono va en un cuadrito con un tinte
 // suave de ese color (en oscuro, tinte más fuerte e ícono aclarado).
 const COLOR_MODULO = {
+  finanzas: '#047857',
+  usuarios: '#4338ca',
   administracion: '#5b738b',
   laboratorio: '#a21caf',
   vacunatorio: '#0f828f',
@@ -172,8 +176,9 @@ const COLOR_MODULO = {
   hemodinamia: '#c8102e',
 };
 
+// `moduleKey`: entrada del sidebar (módulo o grupo de config/gruposMenu.jsx).
 const IconoModulo = ({ moduleKey }) => {
-  const { icon } = MODULES[moduleKey];
+  const icon = iconoEntrada(moduleKey);
   return (
     <span
       className="w-7 h-7 rounded-md inline-flex items-center justify-center flex-shrink-0 bg-[color:color-mix(in_srgb,var(--c)_12%,transparent)] text-[color:var(--c)] dark:bg-[color:color-mix(in_srgb,var(--c)_28%,transparent)] dark:text-[color:color-mix(in_srgb,var(--c)_45%,white)]"
@@ -183,6 +188,9 @@ const IconoModulo = ({ moduleKey }) => {
     </span>
   );
 };
+
+// Entrada del sidebar que lleva el contador de alertas sin leer.
+const ENTRADA_ALERTAS = entradaDeRuta(MODULO_AGRUPADO, RUTA_ALERTAS);
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -201,7 +209,9 @@ const Dashboard = () => {
   // Al recargar con el detalle de Reporte Info en la URL (?vista=…&detalle=…)
   // se vuelve a abrir esa vista (ver reportesInfo/urlDetalle.js).
   const [vistaURL] = useState(() => vistaInicialDesdeURL(userData));
-  const [activeModule, setActiveModule] = useState(vistaURL?.modulo ?? null);
+  // activeModule: entrada del sidebar abierta (módulo o grupo, ver
+  // config/gruposMenu.jsx).
+  const [activeModule, setActiveModule] = useState(vistaURL?.modulo ? entradaDeRuta(vistaURL.modulo, vistaURL.vista) : null);
   const [activeView, setActiveView] = useState(vistaURL?.vista ?? 'dashboard');
   const [isAjustesMode, setIsAjustesMode] = useState(false);
   // Id del usuario cuya creación (wizard de 3 pasos) se quiere retomar desde
@@ -285,7 +295,7 @@ const Dashboard = () => {
   // expandido en el sidebar y el ítem activo. Lo usan los Accesos rápidos.
   const abrirVistaDeModulo = (moduleKey, path) => {
     setIsAjustesMode(false);
-    setActiveModule(moduleKey);
+    setActiveModule(entradaDeRuta(moduleKey, path));
     setActiveView(path);
   };
 
@@ -309,8 +319,8 @@ const Dashboard = () => {
       const subItem = modulo.subItems?.find(s => s.path === activeView);
       if (subItem) {
         return {
-          moduloLabel: modulo.label,
-          moduloIcon: modulo.icon,
+          moduloLabel: etiquetaEntrada(entradaDeItem(mKey, subItem)),
+          moduloIcon: iconoEntrada(entradaDeItem(mKey, subItem)),
           vistaLabel: subItem.label,
           vistaIcon: subItem.icon ?? null,
         };
@@ -495,34 +505,18 @@ const Dashboard = () => {
   // Alertas sin leer (Administración → Alertas): contador en el menú.
   const alertasNoLeidas = useAlertasNoLeidas(userData?.uid, esAdministrador(userData));
 
-  // --- ORDEN DE MÓDULOS APLICADO (usa userData.ordenModulos si existe) ---
-  const modulosPermitidos = (() => {
-    // El Desarrollador ve todos los ítems y Administrador/Desarrollador los
-    // automáticos (Alertas) aunque no estén en sus permisos (ver
-    // src/config/accesoMenu.js).
-    // Un módulo inactivo, o con todos sus ítems visibles inactivos, no sale.
-    const base = Object.keys(MODULES).filter((mKey) => {
-      const visibles = subItemsVisibles(userData, mKey, modulosActivos).length;
-      if (visibles === 0 && subItemsVisibles(userData, mKey).length > 0) return false;
-      return (userData.permisos[mKey] || []).length > 0 || visibles > 0;
-    });
-    const orden = userData.ordenModulos;
-    if (!orden || !orden.length) return base;
-    const ordenados = orden.filter((k) => base.includes(k));
-    const faltantes = base.filter((k) => !ordenados.includes(k));
-    return [...ordenados, ...faltantes];
-  })();
+  // Módulos/grupos e ítems del sidebar, en el orden guardado del usuario
+  // (config/menuSidebar.js).
+  const entradasPermitidas = entradasDelSidebar(userData, modulosActivos);
+  const getSubItemsOrdenados = (entrada) => itemsDelSidebar(userData, entrada, modulosActivos);
 
-  // --- ORDEN DE SUBITEMS APLICADO (usa userData.ordenSubItems[modulo] si existe) ---
-  const getSubItemsOrdenados = (moduleKey) => {
-    const visibles = subItemsVisibles(userData, moduleKey, modulosActivos);
-    const ordenGuardado = userData.ordenSubItems?.[moduleKey];
-    if (!ordenGuardado || !ordenGuardado.length) return visibles;
-    const ordenados = ordenGuardado
-      .map((path) => visibles.find((s) => s.path === path))
-      .filter(Boolean);
-    const faltantes = visibles.filter((s) => !ordenGuardado.includes(s.path));
-    return [...ordenados, ...faltantes];
+  // Logo del header: al panel principal (lo que hacía "Inicio" en el
+  // sidebar), también desde Ajustes.
+  const irAlInicio = () => {
+    setIsAjustesMode(false);
+    setActiveModule(null);
+    setActiveView('dashboard');
+    setMenuMovilAbierto(false);
   };
 
   const handleLogout = async () => {
@@ -562,10 +556,16 @@ const Dashboard = () => {
           <Menu size={20} />
         </button>
 
-        <div className="flex items-center gap-1.5 flex-shrink-0 select-none">
-          <img src={oscuro ? logoMedraOscuro : logoMedraClaro} alt="Medra" className="h-7 w-auto" />
-          <span className="hidden sm:inline text-[15px] font-normal text-gray-500 dark:text-gray-400">ERP</span>
-        </div>
+        <button
+          type="button"
+          onClick={irAlInicio}
+          title="Ir al inicio"
+          aria-label="Ir al inicio"
+          className="flex items-center gap-1.5 flex-shrink-0 select-none cursor-pointer rounded-lg px-1 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60"
+        >
+          <img src={oscuro ? logoMedraOscuro : logoMedraClaro} alt="" className="h-7 w-auto" />
+          <span aria-hidden="true" className="hidden sm:inline text-[15px] font-normal text-gray-500 dark:text-gray-400">ERP</span>
+        </button>
 
         <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0"></div>
         <SelectorInstitucion />
@@ -760,37 +760,23 @@ const Dashboard = () => {
             /* MODO SISTEMA NORMAL */
             <div key="normal-menu">
 
-              <div className="mb-2">
-                <button
-                  onClick={() => { setActiveView('dashboard'); setActiveModule(null); }}
-                  className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === 'dashboard' ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
-                >
-                  <Home size={16} className={`flex-shrink-0 ${activeView === 'dashboard' ? ICONO_SIDEBAR_ACTIVO : ICONO_SIDEBAR}`} />
-                  <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
-                    Inicio
-                  </span>
-                </button>
-
-                <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-              </div>
-
-              {/* SECCIÓN MÓDULOS */}
+              {/* SECCIÓN MÓDULOS (el inicio es el logo del header) */}
               {!activeModule ? (
                 <div className="space-y-1">
-                  {modulosPermitidos.map((key) => (
+                  {entradasPermitidas.map((key) => (
                     <button
                       key={key}
                       onClick={() => setActiveModule(key)}
                       className={`w-full flex items-center rounded-lg ${ITEM_SIDEBAR} font-medium transition-all px-2 py-1.5 ${colapsado ? 'justify-center' : 'justify-between'}`}
-                      title={colapsado ? MODULES[key].label : ""}
+                      title={colapsado ? etiquetaEntrada(key) : ""}
                     >
                       <div className="flex items-center gap-3 overflow-hidden min-w-0">
                         <IconoModulo moduleKey={key} />
                         <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
-                          {MODULES[key].label}
+                          {etiquetaEntrada(key)}
                         </span>
                       </div>
-                      {key === 'administracion' && !colapsado && <Contador n={alertasNoLeidas} />}
+                      {key === ENTRADA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
                       {!colapsado && <ChevronRight size={14} className="flex-shrink-0 text-gray-400 dark:text-gray-500 ml-1" />}
                     </button>
                   ))}
@@ -809,7 +795,7 @@ const Dashboard = () => {
                   </button>
 
                   <div className={`px-2 mb-2 ${TITULO_SECCION_SIDEBAR} transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                    {MODULES[activeModule].label}
+                    {etiquetaEntrada(activeModule)}
                   </div>
 
                   {getSubItemsOrdenados(activeModule).map((sub, idx) => (

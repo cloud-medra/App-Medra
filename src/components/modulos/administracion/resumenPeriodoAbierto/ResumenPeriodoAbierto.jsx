@@ -11,7 +11,8 @@ import {
   History,
   ArrowUpRight,
   ArrowDownRight,
-  Minus
+  Minus,
+  Scale
 } from 'lucide-react';
 import { useUser } from '../../../../context/UserContext';
 import { useToast } from '../../../../context/ToastContext';
@@ -20,6 +21,7 @@ import { MODULOS, MESES, GRUPOS_IMPUTACION, MODULO_BODEGA } from '../controlMens
 import { useControlMensualData } from '../controlMensual/useControlMensualData';
 import { useComparativoMesAnterior } from './useComparativoMesAnterior';
 import BodegaPeriodoCard from './BodegaPeriodoCard';
+import { resumenIngresosCostos } from './ingresosCostos';
 
 const MODULO_COLORES = [
   { bg: 'bg-[#2383C2]', text: 'text-[#2383C2]', border: 'border-blue-200 dark:border-blue-800/60', lightBg: 'bg-blue-50/50 dark:bg-blue-950/30' },
@@ -111,6 +113,8 @@ const ResumenPeriodoAbierto = () => {
     });
   }, [periodoAbiertoInfo, estadosModulos, resumenImputaciones]);
 
+  const ingresosCostos = useMemo(() => resumenIngresosCostos(resumenPorGrupo), [resumenPorGrupo]);
+
   // Mes actual (en vivo) vs. mes anterior (snapshot cacheado en `imputaciones_periodos`,
   // ver useComparativoMesAnterior). Se separa en los mismos dos grupos que arriba.
   const { datosMesAnterior, cargandoMesAnterior, mesAnteriorInfo } = useComparativoMesAnterior(periodoAbiertoInfo);
@@ -197,6 +201,45 @@ const ResumenPeriodoAbierto = () => {
           <span>{periodoAbiertoInfo.totalModulosAbiertos} de {MODULOS.length} Módulos Activos</span>
         </div>
       </div>
+
+      {/* Ingresos (Consumos) − costos (Facturación): resta de los dos totales de abajo */}
+      {ingresosCostos && (
+        <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg p-3.5 shadow-xs flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="flex items-center gap-3 min-w-[220px]">
+            <div className="p-2.5 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-200 rounded">
+              <Scale size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
+                Ingresos − costos del período
+              </p>
+              <p className={`text-xl font-extrabold mt-0.5 tracking-tight ${ingresosCostos.diferencia > 0
+                ? 'text-emerald-700 dark:text-emerald-400'
+                : ingresosCostos.diferencia < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-800 dark:text-white'}`}
+              >
+                {ingresosCostos.diferencia < 0 ? '−' : ''}${Math.abs(ingresosCostos.diferencia).toLocaleString('es-CL')}
+              </p>
+            </div>
+          </div>
+
+          <dl className="flex-1 min-w-[240px] grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+            <div>
+              <dt className="text-[9px] text-slate-500 dark:text-gray-400 uppercase font-bold">Ingresos · Consumos</dt>
+              <dd className="font-extrabold text-slate-900 dark:text-white">${ingresosCostos.ingresos.toLocaleString('es-CL')}</dd>
+              <dd className="text-[10px] text-slate-500 dark:text-gray-400">{ingresosCostos.modulosIngresos.join(' + ')}</dd>
+            </div>
+            <div>
+              <dt className="text-[9px] text-slate-500 dark:text-gray-400 uppercase font-bold">Costos · Facturación</dt>
+              <dd className="font-extrabold text-slate-900 dark:text-white">${ingresosCostos.costos.toLocaleString('es-CL')}</dd>
+              <dd className="text-[10px] text-slate-500 dark:text-gray-400">{ingresosCostos.modulosCostos.join(' + ')}</dd>
+            </div>
+          </dl>
+
+          <p className="w-full text-[10px] text-slate-500 dark:text-gray-400">
+            Montos imputados del período abierto. No incluye Bodega (inventario).
+          </p>
+        </div>
+      )}
 
       {/* Dos bloques consolidados independientes: Consumos y Facturación */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">

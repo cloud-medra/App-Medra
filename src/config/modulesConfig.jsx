@@ -86,21 +86,25 @@ export const MODULES = {
   administracion: {
     label: 'Administración',
     icon: <Settings2 size={16} />,
+    // `grupo`: en el sidebar estos ítems se reparten en Finanzas, Usuarios y
+    // accesos y Administración (config/gruposMenu.jsx). Es solo el menú: el
+    // permiso sigue siendo permisos.administracion con estas mismas rutas,
+    // que validan firestore.rules y las Cloud Functions.
     subItems: [
       // Buzón de alertas (solicitudes de cambio de datos): automático para
       // Administrador y Desarrollador, no se asigna (src/config/accesoMenu.js).
-      { label: 'Alertas', path: '/administracion/alertas', icon: <Bell size={14} />, automaticoAdministradores: true },
-      { label: 'Control Mensual', path: '/administracion/controlMensual', icon: <CalendarCheck size={14} /> },
-      { label: 'Periodo Actual', path: '/administracion/ResumenPeriodoAbierto', icon: <CalendarDays size={14} /> },
-      { label: 'Notas Admin', path: '/administracion/notasAdmin', icon: <StickyNote size={14} /> },
+      { label: 'Alertas', path: '/administracion/alertas', icon: <Bell size={14} />, automaticoAdministradores: true, grupo: 'usuarios' },
+      { label: 'Apertura y cierre de períodos', path: '/administracion/controlMensual', icon: <CalendarCheck size={14} />, grupo: 'finanzas' },
+      { label: 'Período actual', path: '/administracion/ResumenPeriodoAbierto', icon: <CalendarDays size={14} />, grupo: 'finanzas' },
+      { label: 'Notas del panel', path: '/administracion/notasAdmin', icon: <StickyNote size={14} /> },
       { label: 'Recordatorios', path: '/administracion/recordatorios', icon: <BellRing size={14} /> },
-      { label: 'Crear Usuario', path: '/administracion/crearUsuario', icon: <UserPlus size={14} /> },
-      { label: 'Lista Usuario', path: '/administracion/listadoUsuario', icon: <Users size={14} /> },
+      { label: 'Crear usuario', path: '/administracion/crearUsuario', icon: <UserPlus size={14} />, grupo: 'usuarios' },
+      { label: 'Listado de usuarios', path: '/administracion/listadoUsuario', icon: <Users size={14} />, grupo: 'usuarios' },
       // Se asigna como cualquier ítem, pero solo sirve con rol Administrador
       // (o Desarrollador): ver src/config/accesoMenu.js y functions/permisos.
-      { label: 'Permisos por centro', path: '/administracion/permisosCentro', icon: <KeyRound size={14} /> },
-      { label: 'Cargas Consolidado', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} /> },
-      { label: 'Estadísticas', path: '/administracion/estadisticas', icon: <BarChart3 size={14} /> },
+      { label: 'Permisos por centro', path: '/administracion/permisosCentro', icon: <KeyRound size={14} />, grupo: 'usuarios' },
+      { label: 'Cargas consolidadas', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} /> },
+      { label: 'Estadísticas del período', path: '/administracion/estadisticas', icon: <BarChart3 size={14} />, grupo: 'finanzas' },
       // Activar/inactivar módulos e ítems (config/modulosActivos.js): solo rol
       // Desarrollador, no se asigna (src/config/accesoMenu.js). No se puede inactivar.
       { label: 'Gestión de módulos', path: '/administracion/gestionModulos', icon: <ToggleRight size={14} />, soloDesarrollador: true }

@@ -22,9 +22,11 @@ export const MODULO_BODEGA = 'bodega';
 // Inventario = Bodega (saldo valorizado, no se suma a los montos imputados).
 // El orden del arreglo es el orden en pantalla (Control Mensual y Período
 // Actual): Consumos primero.
+// `nombre` es solo lo que se muestra: Consumos es lo que consumió el cliente
+// (nuestro ingreso) y Facturación lo que pagamos nosotros (nuestro costo).
 export const GRUPOS = [
-  { id: 'consumos', nombre: 'Consumos', moduloIds: ['implantes', 'consignacion', 'hemodinamia'] },
-  { id: 'facturacion', nombre: 'Facturación', moduloIds: ['laboratorio', 'vacunatorio'] },
+  { id: 'consumos', nombre: 'Consumos (ingresos)', moduloIds: ['implantes', 'consignacion', 'hemodinamia'] },
+  { id: 'facturacion', nombre: 'Facturación (costos)', moduloIds: ['laboratorio', 'vacunatorio'] },
   { id: 'inventario', nombre: 'Inventario', moduloIds: ['bodega'] },
 ];
 // Grupos de montos imputados (Período Actual los suma y compara con el mes anterior).
