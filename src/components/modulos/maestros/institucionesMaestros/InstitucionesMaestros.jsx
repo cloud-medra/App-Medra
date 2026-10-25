@@ -21,7 +21,8 @@ const CELDA = 'py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/
 const TH = 'py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700';
 
 const CAMPOS_FORM = [
-  { campo: 'nombre', etiqueta: 'Nombre *', ancho: 'w-[220px]', placeholder: 'Ej: Clínica Norte' },
+  { campo: 'nombre', etiqueta: 'Nombre *', ancho: 'w-[220px]', placeholder: 'Ej: Sociedad Clínica del Norte S.A.' },
+  { campo: 'nombreCorto', etiqueta: 'Nombre corto', ancho: 'w-[150px]', placeholder: 'Ej: Clínica Norte' },
   { campo: 'rut', etiqueta: 'RUT', ancho: 'w-[110px]', placeholder: 'Ej: 76.123.456-7' },
   { campo: 'direccion', etiqueta: 'Dirección', ancho: 'w-[220px]', placeholder: 'Ej: Av. Principal 123' },
   { campo: 'ciudad', etiqueta: 'Ciudad', ancho: 'w-[130px]', placeholder: 'Ej: Santiago' },
@@ -53,7 +54,7 @@ const InstitucionesMaestros = () => {
   const filtradas = useMemo(() => {
     const q = busqueda.trim().toLocaleLowerCase('es');
     if (!q) return instituciones;
-    return instituciones.filter((i) => ['nombre', 'rut', 'ciudad', 'direccion', 'email', 'telefono']
+    return instituciones.filter((i) => ['nombre', 'nombreCorto', 'rut', 'ciudad', 'direccion', 'email', 'telefono']
       .some((c) => String(i[c] ?? '').toLocaleLowerCase('es').includes(q)));
   }, [instituciones, busqueda]);
 
@@ -162,6 +163,7 @@ const InstitucionesMaestros = () => {
   };
 
   const verNombre = hasPermission(PATH_VISTA, 'tabla_datos', 'col_nombre');
+  const verNombreCorto = hasPermission(PATH_VISTA, 'tabla_datos', 'col_nombre_corto');
   const verRut = hasPermission(PATH_VISTA, 'tabla_datos', 'col_rut');
   const verCiudad = hasPermission(PATH_VISTA, 'tabla_datos', 'col_ciudad');
   const verDireccion = hasPermission(PATH_VISTA, 'tabla_datos', 'col_direccion');
@@ -280,6 +282,7 @@ const InstitucionesMaestros = () => {
               <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
                 <th className={`${TH} w-8 text-center`}>#</th>
                 {verNombre && <th className={TH}>Nombre</th>}
+                {verNombreCorto && <th className={TH}>Nombre corto</th>}
                 {verRut && <th className={TH}>RUT</th>}
                 {verCiudad && <th className={TH}>Ciudad</th>}
                 {verDireccion && <th className={TH}>Dirección</th>}
@@ -291,7 +294,7 @@ const InstitucionesMaestros = () => {
             <tbody>
               {filtradas.length === 0 && (
                 <tr>
-                  <td colSpan={2 + [verNombre, verRut, verCiudad, verDireccion, verContacto, verEstado].filter(Boolean).length} className="py-6 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={2 + [verNombre, verNombreCorto, verRut, verCiudad, verDireccion, verContacto, verEstado].filter(Boolean).length} className="py-6 text-center text-gray-500 dark:text-gray-400">
                     {instituciones.length === 0 ? 'Aún no hay instituciones registradas.' : 'Sin coincidencias.'}
                   </td>
                 </tr>
@@ -309,6 +312,7 @@ const InstitucionesMaestros = () => {
                         )}
                       </td>
                     )}
+                    {verNombreCorto && <td className={`${CELDA} text-gray-600 dark:text-gray-300`}>{i.nombreCorto || '-'}</td>}
                     {verRut && <td className={`${CELDA} text-gray-500 dark:text-gray-400`}>{i.rut || '-'}</td>}
                     {verCiudad && <td className={`${CELDA} text-gray-500 dark:text-gray-400`}>{i.ciudad || '-'}</td>}
                     {verDireccion && <td className={`${CELDA} text-gray-500 dark:text-gray-400`}>{i.direccion || '-'}</td>}

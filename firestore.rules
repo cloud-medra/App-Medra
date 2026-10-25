@@ -103,8 +103,9 @@ service cloud.firestore {
     function camposProtegidosUsuario() {
       // nombreCompleto, nombreUsuario y email: el usuario los cambia por
       // solicitud (functions/solicitudes); el administrador, en Editar usuario.
+      // instituciones (las del selector del header): solo guardarPermisosUsuario.
       return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones', 'nombreUsuario', 'bloqueoLoginHasta', 'email', 'activo',
-        'nombreCompleto', 'centrosAdministrados', 'administradoresAsignados', 'todosLosAdministradoresDelCentro'];
+        'nombreCompleto', 'centrosAdministrados', 'administradoresAsignados', 'todosLosAdministradoresDelCentro', 'instituciones'];
     }
     function rutasAdministrarUsuarios() {
       return ['/administracion/crearUsuario', '/administracion/listadoUsuario'];
@@ -495,9 +496,10 @@ service cloud.firestore {
       return !(campo in d) || (d[campo] is string && d[campo].size() <= maximo);
     }
     function institucionValida(d) {
-      return d.keys().hasOnly(['nombre', 'rut', 'direccion', 'ciudad', 'telefono', 'email', 'activa', 'predeterminada',
+      return d.keys().hasOnly(['nombre', 'nombreCorto', 'rut', 'direccion', 'ciudad', 'telefono', 'email', 'activa', 'predeterminada',
           'creadoEl', 'creadoPor', 'creadoPorUid', 'actualizadoEl', 'actualizadoPor', 'actualizadoPorUid'])
         && d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 120
+        && textoOpcional(d, 'nombreCorto', 30)
         && textoOpcional(d, 'rut', 20)
         && textoOpcional(d, 'direccion', 200)
         && textoOpcional(d, 'ciudad', 80)

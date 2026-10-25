@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Building2, Check, ChevronDown } from 'lucide-react';
 import { useInstitucion } from '../../context/InstitucionContext';
+import { nombreVisible } from '../modulos/maestros/institucionesMaestros/instituciones';
 
 // Selector de institución/sucursal del header (Dashboard.jsx): muestra la
-// vigente (context/InstitucionContext.jsx) y despliega las activas para
-// cambiarla. Solo la expone en el contexto; no filtra datos. Bajo md se ve
+// vigente (context/InstitucionContext.jsx) y despliega las del usuario para
+// cambiarla. Muestra el nombre corto (o el completo si no tiene); el
+// completo va en el tooltip y en la lista. No filtra datos. Bajo md se ve
 // solo el ícono. `onAbrirMaestro`: abre Maestros → Instituciones (solo
 // llega si el usuario tiene el ítem); se ofrece cuando no hay ninguna.
 const SelectorInstitucion = ({ onAbrirMaestro }) => {
@@ -24,7 +26,7 @@ const SelectorInstitucion = ({ onAbrirMaestro }) => {
     };
   }, [abierto]);
 
-  const nombre = cargando ? 'Cargando…' : institucion?.nombre || 'Sin institución';
+  const nombre = cargando ? 'Cargando…' : nombreVisible(institucion) || 'Sin institución';
 
   const elegir = (id) => {
     seleccionar(id);
@@ -38,8 +40,8 @@ const SelectorInstitucion = ({ onAbrirMaestro }) => {
         onClick={() => setAbierto((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={abierto}
-        aria-label={`Institución: ${nombre}. Cambiar institución`}
-        title="Cambiar institución"
+        aria-label={`Institución: ${institucion?.nombre || nombre}. Cambiar institución`}
+        title={institucion?.nombre || 'Cambiar institución'}
         className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60"
       >
         <Building2 size={18} className="shrink-0 text-[#2383C2] dark:text-sky-400" aria-hidden="true" />
@@ -62,16 +64,19 @@ const SelectorInstitucion = ({ onAbrirMaestro }) => {
             <ul role="listbox" aria-label="Instituciones activas">
               {instituciones.map((i) => {
                 const activa = i.id === institucion?.id;
+                const corto = nombreVisible(i);
+                const detalle = [corto !== i.nombre ? i.nombre : null, i.ciudad].filter(Boolean).join(' · ');
                 return (
                   <li key={i.id} role="option" aria-selected={activa}>
                     <button
                       type="button"
                       onClick={() => elegir(i.id)}
-                      className={`w-full flex items-center gap-2 px-4 py-1.5 text-left text-[13px] hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus-visible:bg-gray-50 dark:focus-visible:bg-gray-700 ${activa ? 'font-semibold text-[#1b6a9e] dark:text-sky-300' : ''}`}
+                      title={i.nombre}
+                      className={`w-full flex items-center gap-2 px-4 py-1.5 text-left text-[13px] hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus-visible:bg-gray-50 dark:focus-visible:bg-gray-700 ${activa ? 'text-[#1b6a9e] dark:text-sky-300' : ''}`}
                     >
                       <span className="min-w-0 flex-1 leading-tight">
-                        <span className="block truncate">{i.nombre}</span>
-                        {i.ciudad && <span className="block truncate text-[11px] font-normal text-gray-500 dark:text-gray-400">{i.ciudad}</span>}
+                        <span className="block truncate font-bold">{corto}</span>
+                        {detalle && <span className="block truncate text-[11px] font-normal text-gray-500 dark:text-gray-400">{detalle}</span>}
                       </span>
                       {activa && <Check size={15} className="shrink-0" aria-hidden="true" />}
                     </button>

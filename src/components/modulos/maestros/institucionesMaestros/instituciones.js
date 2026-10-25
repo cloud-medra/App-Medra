@@ -2,8 +2,8 @@
 // puras que comparten la pantalla del maestro, el contexto global
 // (context/InstitucionContext.jsx) y el selector del header.
 //
-// Documento: { nombre, rut, direccion, ciudad, telefono, email, activa,
-// predeterminada, creadoEl/Por/PorUid, actualizadoEl/Por/PorUid }. Los
+// Documento: { nombre, nombreCorto, rut, direccion, ciudad, telefono, email,
+// activa, predeterminada, creadoEl/Por/PorUid, actualizadoEl/Por/PorUid }. Los
 // largos máximos son los mismos que valida firestore.rules
 // (institucionValida): si cambian aquí, cambiarlos también allá.
 
@@ -11,13 +11,19 @@ export const RUTA_INSTITUCIONES = '/maestros/institucionesMaestros';
 export const COLECCION_INSTITUCIONES = 'maestros_instituciones';
 
 export const LARGO_MAXIMO = Object.freeze({
-  nombre: 120, rut: 20, direccion: 200, ciudad: 80, telefono: 30, email: 120,
+  nombre: 120, nombreCorto: 30, rut: 20, direccion: 200, ciudad: 80, telefono: 30, email: 120,
 });
 const CAMPOS_TEXTO = Object.keys(LARGO_MAXIMO);
+const NOMBRE_CAMPO = { nombreCorto: 'nombre corto', direccion: 'dirección', telefono: 'teléfono' };
 
 export const FORM_VACIO = Object.freeze({
-  nombre: '', rut: '', direccion: '', ciudad: '', telefono: '', email: '', activa: true, predeterminada: false,
+  nombre: '', nombreCorto: '', rut: '', direccion: '', ciudad: '', telefono: '', email: '', activa: true, predeterminada: false,
 });
+
+// Lo que se muestra en el header y en negrita en la lista: el nombre corto
+// (razones sociales largas) o, si no tiene, el nombre completo.
+export const nombreVisible = (institucion) =>
+  String(institucion?.nombreCorto ?? '').trim() || institucion?.nombre || '';
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const comparable = (texto) => String(texto ?? '').trim().toLocaleLowerCase('es');
@@ -35,7 +41,7 @@ export const normalizarInstitucion = (form) => {
 export const validarInstitucion = (datos, existentes = [], idEditando = null) => {
   if (!datos.nombre) return 'El nombre es obligatorio';
   const largo = CAMPOS_TEXTO.find((c) => datos[c].length > LARGO_MAXIMO[c]);
-  if (largo) return `El campo ${largo} admite hasta ${LARGO_MAXIMO[largo]} caracteres`;
+  if (largo) return `El campo ${NOMBRE_CAMPO[largo] ?? largo} admite hasta ${LARGO_MAXIMO[largo]} caracteres`;
   if (datos.email && !EMAIL.test(datos.email)) return 'El email no es válido';
   const repetida = existentes.some((i) => i.id !== idEditando && comparable(i.nombre) === comparable(datos.nombre));
   if (repetida) return 'Ya existe una institución con ese nombre';
@@ -61,6 +67,19 @@ export const elegirInstitucion = (instituciones, idGuardado) => {
     ?? activas.find((i) => i.predeterminada === true)
     ?? activas[0]
     ?? null;
+};
+
+// Instituciones que puede elegir un usuario en el header (aún no filtra
+// datos): el Desarrollador, todas; con instituciones asignadas
+// (usuarios/{uid}.instituciones, las asigna guardarPermisosUsuario), solo
+// esas; sin asignadas, o si ninguna de las asignadas sigue en la lista
+// (inactivas o eliminadas), todas: nadie queda sin institución.
+export const institucionesDelUsuario = (userData, instituciones) => {
+  if (userData?.rol === 'dev') return instituciones;
+  const asignadas = Array.isArray(userData?.instituciones) ? userData.instituciones : [];
+  if (asignadas.length === 0) return instituciones;
+  const propias = instituciones.filter((i) => asignadas.includes(i.id));
+  return propias.length > 0 ? propias : instituciones;
 };
 
 // Clave de localStorage de la elección (por usuario).
