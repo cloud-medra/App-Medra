@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BellRing, Check, Clock, Loader2, AlertTriangle } from 'lucide-react';
+import { AlarmClock, Check, Clock, Loader2, AlertTriangle } from 'lucide-react';
 import { db } from '../../../../firebaseConfig';
 import { useUser } from '../../../../context/UserContext';
 import { useToast } from '../../../../context/ToastContext';
@@ -10,11 +10,12 @@ import { textoAtrasada, idRealizado } from './recordatoriosConfig';
 
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
-// Campana del header (presentación). `pendientes`: [{ tarea, fecha, hora,
-// atrasada }], atrasadas primero. Badge con la cantidad (sin pendientes, sin
+// Ícono de recordatorios del header: reloj despertador (la campana es de
+// notificaciones, layout/NotificacionesCampana.jsx). Presentación.
+// `pendientes`: [{ tarea, fecha, hora, atrasada }], atrasadas primero. Badge con la cantidad (sin pendientes, sin
 // badge); rojo si hay alguna atrasada. Al presionarla se despliega la lista;
 // se cierra con clic fuera o Esc. Nunca se abre sola.
-export const RecordatoriosCampanaVista = ({ pendientes, onRealizado, marcando = null }) => {
+export const RecordatoriosAlarmaVista = ({ pendientes, onRealizado, marcando = null }) => {
   const [abierto, setAbierto] = useState(false);
   const contenedorRef = useRef(null);
 
@@ -42,13 +43,13 @@ export const RecordatoriosCampanaVista = ({ pendientes, onRealizado, marcando = 
         aria-label={`Recordatorios: ${total} pendiente(s)${atrasadas ? `, ${atrasadas} atrasada(s)` : ''}`}
         aria-expanded={abierto}
         aria-haspopup="true"
-        title={`${textoPendientes}${atrasadas ? ` (${plural(atrasadas, 'atrasada', 'atrasadas')})` : ''}`}
+        title="Recordatorios"
         data-atrasadas={atrasadas > 0 || undefined}
         className={`relative w-9 h-9 rounded-md flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/50 ${atrasadas
           ? 'text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300'
           : 'text-[#2383C2] hover:text-[#1b6a9e] dark:text-sky-400 dark:hover:text-sky-300'}`}
       >
-        <BellRing size={20} />
+        <AlarmClock size={20} />
         {total > 0 && (
           <span
             data-testid="badge-recordatorios"
@@ -62,7 +63,7 @@ export const RecordatoriosCampanaVista = ({ pendientes, onRealizado, marcando = 
       {abierto && (
         <section
           aria-label="Recordatorios pendientes"
-          className="absolute right-0 top-full mt-2 z-50 w-80 max-h-[60vh] flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl text-[11px] text-slate-800 dark:text-gray-100"
+          className="fixed inset-x-2 top-16 mt-1 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 z-50 sm:w-80 max-h-[60vh] flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl text-[11px] text-slate-800 dark:text-gray-100"
         >
           <div className={`px-3 py-2 text-white ${atrasadas ? 'bg-red-600' : 'bg-[#2383C2]'}`}>
             <h2 className="font-bold text-[11.5px] uppercase tracking-wide leading-tight">{textoPendientes}</h2>
@@ -126,7 +127,7 @@ export const RecordatoriosCampanaVista = ({ pendientes, onRealizado, marcando = 
 // quien recibe recordatorios. Usa el mismo hook (2 listeners) y el mismo
 // marcarRealizado de siempre: al marcar, el listener de Realizados
 // actualiza badge y lista sin recargar.
-const RecordatoriosCampana = () => {
+const RecordatoriosAlarma = () => {
   const { userData } = useUser();
   const { showToast } = useToast();
   const { pendientes, habilitado } = useRecordatoriosPendientes();
@@ -146,7 +147,7 @@ const RecordatoriosCampana = () => {
     }
   };
 
-  return <RecordatoriosCampanaVista pendientes={pendientes} onRealizado={handleRealizado} marcando={marcando} />;
+  return <RecordatoriosAlarmaVista pendientes={pendientes} onRealizado={handleRealizado} marcando={marcando} />;
 };
 
-export default RecordatoriosCampana;
+export default RecordatoriosAlarma;

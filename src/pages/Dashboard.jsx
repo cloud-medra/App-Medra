@@ -17,7 +17,8 @@ import {
 import { MODULES, AJUSTES_ITEMS, SPECIAL_VIEWS } from '../config/modulesConfig.jsx';
 
 // --- UTILIDADES DEL MENÚ Y DEL PANEL (no son vistas) ---
-import RecordatoriosCampana from '../components/modulos/administracion/recordatorios/RecordatoriosCampana';
+import RecordatoriosAlarma from '../components/modulos/administracion/recordatorios/RecordatoriosAlarma';
+import NotificacionesCampana from '../components/layout/NotificacionesCampana';
 import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
 import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROLLADOR } from '../config/accesoMenu';
 import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
@@ -631,10 +632,11 @@ const Dashboard = () => {
           </nav>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0">
-        {/* Recordatorios del usuario: campana en todas las vistas (solo si
-            tiene permiso de recibirlos). */}
-        <RecordatoriosCampana />
+        <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+        {/* Recordatorios del usuario: reloj en todas las vistas (solo si
+            tiene permiso de recibirlos). La campana es de notificaciones. */}
+        <RecordatoriosAlarma />
+        <NotificacionesCampana />
 
         <div className="relative" ref={menuRef}>
           <button

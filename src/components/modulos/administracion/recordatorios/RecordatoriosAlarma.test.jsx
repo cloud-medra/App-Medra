@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Campana de Recordatorios en el header: badge con la cantidad (rojo si hay
+// Ícono de Recordatorios en el header: badge con la cantidad (rojo si hay
 // atrasadas, sin badge si no hay), lista desplegable (atrasadas primero, en
 // rojo y con su fecha), Realizado, cierre con clic fuera o Esc, nunca se
 // abre sola, y sin permiso no lee nada.
@@ -20,7 +20,7 @@ let usuario = null;
 vi.mock('../../../../context/UserContext', () => ({ useUser: () => ({ userData: usuario }) }));
 vi.mock('../../../../context/ToastContext', () => ({ useToast: () => ({ showToast: vi.fn() }) }));
 
-import RecordatoriosCampana, { RecordatoriosCampanaVista } from './RecordatoriosCampana';
+import RecordatoriosAlarma, { RecordatoriosAlarmaVista } from './RecordatoriosAlarma';
 import { INTERVALO_RELOJ_MS } from './useRecordatoriosPendientes';
 
 beforeEach(() => { onSnapshot.mockClear(); });
@@ -38,33 +38,33 @@ const PENDIENTES = [
 const SIN_ATRASO = [PENDIENTES[1]];
 const CON_HORA = { tarea: { ...tarea('nueve', 'Cuadrar caja'), hora: '09:00' }, fecha: '2026-10-13', hora: '09:00', atrasada: false };
 
-const campana = () => screen.getByRole('button', { name: /^Recordatorios:/ });
-const abrir = () => { fireEvent.click(campana()); return screen.getByRole('region', { name: 'Recordatorios pendientes' }); };
+const alarma = () => screen.getByRole('button', { name: /^Recordatorios:/ });
+const abrir = () => { fireEvent.click(alarma()); return screen.getByRole('region', { name: 'Recordatorios pendientes' }); };
 
-describe('RecordatoriosCampanaVista', () => {
+describe('RecordatoriosAlarmaVista', () => {
   it('badge con la cantidad, en rojo si hay atrasadas; la lista no se abre sola', () => {
-    render(<RecordatoriosCampanaVista pendientes={PENDIENTES} onRealizado={vi.fn()} />);
+    render(<RecordatoriosAlarmaVista pendientes={PENDIENTES} onRealizado={vi.fn()} />);
     expect(screen.queryByRole('region')).not.toBeInTheDocument();
-    expect(campana()).toHaveAccessibleName('Recordatorios: 2 pendiente(s), 1 atrasada(s)');
-    expect(campana()).toHaveAttribute('data-atrasadas');
+    expect(alarma()).toHaveAccessibleName('Recordatorios: 2 pendiente(s), 1 atrasada(s)');
+    expect(alarma()).toHaveAttribute('data-atrasadas');
     expect(screen.getByTestId('badge-recordatorios')).toHaveTextContent('2');
     expect(screen.getByTestId('badge-recordatorios').className).toMatch(/bg-red-700/);
   });
 
   it('solo tareas del día: badge en color normal', () => {
-    render(<RecordatoriosCampanaVista pendientes={SIN_ATRASO} onRealizado={vi.fn()} />);
-    expect(campana()).not.toHaveAttribute('data-atrasadas');
+    render(<RecordatoriosAlarmaVista pendientes={SIN_ATRASO} onRealizado={vi.fn()} />);
+    expect(alarma()).not.toHaveAttribute('data-atrasadas');
     expect(screen.getByTestId('badge-recordatorios').className).toMatch(/bg-amber-500/);
   });
 
-  it('sin pendientes: campana sin badge y "Sin tareas pendientes" al abrirla', () => {
-    render(<RecordatoriosCampanaVista pendientes={[]} onRealizado={vi.fn()} />);
+  it('sin pendientes: ícono sin badge y "Sin tareas pendientes" al abrirla', () => {
+    render(<RecordatoriosAlarmaVista pendientes={[]} onRealizado={vi.fn()} />);
     expect(screen.queryByTestId('badge-recordatorios')).not.toBeInTheDocument();
     expect(abrir()).toHaveTextContent('Sin tareas pendientes');
   });
 
   it('la lista muestra las atrasadas primero, en rojo y con su fecha', () => {
-    render(<RecordatoriosCampanaVista pendientes={PENDIENTES} onRealizado={vi.fn()} />);
+    render(<RecordatoriosAlarmaVista pendientes={PENDIENTES} onRealizado={vi.fn()} />);
     const lista = abrir();
     expect(within(lista).getByRole('heading')).toHaveTextContent('2 tareas pendientes');
     expect(lista).toHaveTextContent('1 atrasada: márcalas como realizadas');
@@ -78,20 +78,20 @@ describe('RecordatoriosCampanaVista', () => {
   });
 
   it('muestra la hora junto a la tarea', () => {
-    render(<RecordatoriosCampanaVista pendientes={[CON_HORA]} onRealizado={vi.fn()} />);
+    render(<RecordatoriosAlarmaVista pendientes={[CON_HORA]} onRealizado={vi.fn()} />);
     expect(within(abrir()).getByRole('listitem')).toHaveTextContent('09:00Cuadrar caja');
   });
 
   it('el botón Realizado informa la tarea y su repetición', () => {
     const onRealizado = vi.fn();
-    render(<RecordatoriosCampanaVista pendientes={PENDIENTES} onRealizado={onRealizado} />);
+    render(<RecordatoriosAlarmaVista pendientes={PENDIENTES} onRealizado={onRealizado} />);
     abrir();
     fireEvent.click(screen.getByRole('button', { name: 'Marcar "Ver laboratorio" como realizado' }));
     expect(onRealizado).toHaveBeenCalledWith({ tarea: PENDIENTES[1].tarea, fecha: '2026-10-13' });
   });
 
   it('se cierra con clic fuera y con Esc (no al hacer clic dentro)', () => {
-    render(<div><span>afuera</span><RecordatoriosCampanaVista pendientes={PENDIENTES} onRealizado={vi.fn()} /></div>);
+    render(<div><span>afuera</span><RecordatoriosAlarmaVista pendientes={PENDIENTES} onRealizado={vi.fn()} /></div>);
     const lista = abrir();
     fireEvent.mouseDown(lista);
     expect(screen.getByRole('region')).toBeInTheDocument();
@@ -103,19 +103,19 @@ describe('RecordatoriosCampanaVista', () => {
   });
 
   it('al marcar una tarea, badge y lista se actualizan con los nuevos pendientes', () => {
-    const { rerender } = render(<RecordatoriosCampanaVista pendientes={PENDIENTES} onRealizado={vi.fn()} />);
+    const { rerender } = render(<RecordatoriosAlarmaVista pendientes={PENDIENTES} onRealizado={vi.fn()} />);
     abrir();
-    rerender(<RecordatoriosCampanaVista pendientes={SIN_ATRASO} onRealizado={vi.fn()} />);
+    rerender(<RecordatoriosAlarmaVista pendientes={SIN_ATRASO} onRealizado={vi.fn()} />);
     expect(screen.getByTestId('badge-recordatorios')).toHaveTextContent('1');
     expect(screen.getAllByRole('listitem')).toHaveLength(1);
-    expect(campana()).not.toHaveAttribute('data-atrasadas');
+    expect(alarma()).not.toHaveAttribute('data-atrasadas');
   });
 });
 
-describe('RecordatoriosCampana (con permisos)', () => {
-  it('un usuario sin permiso no lee nada ni ve la campana', () => {
+describe('RecordatoriosAlarma (con permisos)', () => {
+  it('un usuario sin permiso no lee nada ni ve el ícono', () => {
     usuario = { uid: 'u9', rol: 'operador', permisos: { administracion: ['/administracion/notasAdmin'] }, permisosGranulares: {} };
-    const { container } = render(<RecordatoriosCampana />);
+    const { container } = render(<RecordatoriosAlarma />);
     expect(container).toBeEmptyDOMElement();
     expect(onSnapshot).not.toHaveBeenCalled();
   });
@@ -126,13 +126,13 @@ describe('RecordatoriosCampana (con permisos)', () => {
       permisos: { administracion: ['/administracion/recordatorios'] },
       permisosGranulares: { '/administracion/recordatorios': {}, '/administracion/recordatorios/mis': {} },
     };
-    render(<RecordatoriosCampana />);
+    render(<RecordatoriosAlarma />);
     expect(onSnapshot).toHaveBeenCalledTimes(2);
-    expect(campana()).toBeInTheDocument();
+    expect(alarma()).toBeInTheDocument();
   });
 });
 
-describe('RecordatoriosCampana: horario (America/Santiago)', () => {
+describe('RecordatoriosAlarma: horario (America/Santiago)', () => {
   const RECIBE = {
     uid: 'u1', rol: 'operador',
     permisos: { administracion: ['/administracion/recordatorios'] },
@@ -154,7 +154,7 @@ describe('RecordatoriosCampana: horario (America/Santiago)', () => {
     vi.setSystemTime(new Date('2026-10-12T11:59:50Z')); // 08:59:50 en Santiago
     usuario = RECIBE;
     conTareas(TAREAS);
-    render(<RecordatoriosCampana />);
+    render(<RecordatoriosAlarma />);
     expect(screen.getByTestId('badge-recordatorios')).toHaveTextContent('1');
 
     act(() => { vi.advanceTimersByTime(INTERVALO_RELOJ_MS); });
@@ -167,8 +167,8 @@ describe('RecordatoriosCampana: horario (America/Santiago)', () => {
     vi.setSystemTime(new Date('2026-10-13T13:00:00Z')); // martes 10:00
     usuario = RECIBE;
     conTareas([...TAREAS, { id: 'lab', titulo: 'Ver laboratorio', dias: [2], asignados: ['u1'], activa: true, desde: '2026-10-12' }]);
-    render(<RecordatoriosCampana />);
-    expect(campana()).toHaveAttribute('data-atrasadas');
+    render(<RecordatoriosAlarma />);
+    expect(alarma()).toHaveAttribute('data-atrasadas');
     const items = within(abrir()).getAllByRole('listitem');
     expect(items).toHaveLength(3);
     expect(items[0]).toHaveTextContent('Atrasada desde lunes 12-10');
