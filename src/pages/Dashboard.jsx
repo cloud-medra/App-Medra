@@ -63,6 +63,9 @@ import ArchivosControlVacunatorio from '../components/modulos/gestiones/vacunato
 import EmpresasMaestros from '../components/modulos/maestros/empresasMaestros/EmpresasMaestros';
 import PrestadoresMaestros from '../components/modulos/maestros/prestadoresMaestro/PrestadoresMaestros';
 import CentrosMaestros from '../components/modulos/maestros/centrosMaestros/CentrosMaestros';
+import InstitucionesMaestros from '../components/modulos/maestros/institucionesMaestros/InstitucionesMaestros';
+import { RUTA_INSTITUCIONES } from '../components/modulos/maestros/institucionesMaestros/instituciones';
+import { InstitucionProvider } from '../context/InstitucionContext';
 import ZonasDiagnostico from '../components/modulos/maestros/zonasDiagnostico/ZonasDiagnostico';
 import DescripcionesOcultas from '../components/modulos/maestros/descripcionesOcultas/DescripcionesOcultas';
 import PrevisionesMaestros from '../components/modulos/maestros/previsionesMaestros/PrevisionesMaestros';
@@ -341,6 +344,10 @@ const Dashboard = () => {
   const abrirControlMensual = subItemsVisibles(userData, 'administracion', modulosActivos).some((s) => s.path === '/administracion/controlMensual')
     ? () => abrirVistaDeModulo('administracion', '/administracion/controlMensual')
     : undefined;
+  // Selector de institución sin instituciones: enlaza al maestro solo si tiene el ítem.
+  const abrirMaestroInstituciones = subItemsVisibles(userData, 'maestros', modulosActivos).some((s) => s.path === RUTA_INSTITUCIONES)
+    ? () => { setIsAjustesMode(false); abrirVistaDeModulo('maestros', RUTA_INSTITUCIONES); }
+    : undefined;
 
   const VIEW_MAP = {
     // ── Dashboard ──
@@ -400,6 +407,7 @@ const Dashboard = () => {
     '/maestros/empresasMaestros': <EmpresasMaestros />,
     '/maestros/prestadoresMaestros': <PrestadoresMaestros />,
     '/maestros/centrosMaestros': <CentrosMaestros />,
+    [RUTA_INSTITUCIONES]: <InstitucionesMaestros />,
     '/maestros/zonasDiagnostico': <ZonasDiagnostico key={busquedaZonas} busquedaInicial={busquedaZonas} />,
     '/maestros/descripcionesOcultas': <DescripcionesOcultas />,
     '/maestros/previsionesMaestros': <PrevisionesMaestros />,
@@ -539,6 +547,9 @@ const Dashboard = () => {
   };
 
   return (
+    // Institución del selector del header, disponible para todas las vistas
+    // (context/InstitucionContext.jsx). Por ahora no filtra datos.
+    <InstitucionProvider>
     <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
 
       {/* HEADER (todo el ancho): ☰, logo, institución, saludo, fecha,
@@ -568,7 +579,7 @@ const Dashboard = () => {
         </button>
 
         <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0"></div>
-        <SelectorInstitucion />
+        <SelectorInstitucion onAbrirMaestro={abrirMaestroInstituciones} />
         <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0"></div>
 
         <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
@@ -887,6 +898,7 @@ const Dashboard = () => {
         </main>
       </div>
     </div>
+    </InstitucionProvider>
   );
 };
 

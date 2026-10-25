@@ -15,7 +15,7 @@ import { db } from '../firebaseConfig';
 //     colección entera). Así un código creado por otro usuario aparece al
 //     instante en los autocompletados y solo se cobran los cambios. Se
 //     cierra únicamente al cerrar sesión (reiniciarCatalogos).
-//   - `empresas`, `recargos`, `centros`, `prestadores`: lectura única por
+//   - `empresas`, `recargos`, `centros`, `instituciones`, `prestadores`: lectura única por
 //     sesión. Las escrituras de la propia app se reflejan con
 //     upsertLocal/removeLocal; los cambios de otros usuarios, con
 //     refrescarCatalogo (botón "Actualizar") o al recargar la página.
@@ -34,6 +34,8 @@ export const CATALOGOS = {
   empresas: { coleccion: 'maestros_empresas', enVivo: false },
   recargos: { coleccion: 'maestros_recargos', enVivo: false },
   centros: { coleccion: 'maestros_centros', enVivo: false },
+  // Instituciones / sucursales (Maestros → Instituciones y selector del header).
+  instituciones: { coleccion: 'maestros_instituciones', enVivo: false },
   prestadores: { coleccion: 'maestros_prestadores', enVivo: false },
   // No es un maestro, pero se usa igual: notas del panel (Dashboard + Notas Admin).
   notas: { coleccion: 'administracion_notas', enVivo: false },
