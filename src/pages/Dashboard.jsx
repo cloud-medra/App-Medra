@@ -182,17 +182,44 @@ const COLOR_MODULO = {
 };
 
 // `moduleKey`: entrada del sidebar (módulo o grupo de config/gruposMenu.jsx).
-const IconoModulo = ({ moduleKey }) => {
-  const icon = iconoEntrada(moduleKey);
-  return (
-    <span
-      className="w-7 h-7 rounded-md inline-flex items-center justify-center flex-shrink-0 bg-[color:color-mix(in_srgb,var(--c)_12%,transparent)] text-[color:var(--c)] dark:bg-[color:color-mix(in_srgb,var(--c)_28%,transparent)] dark:text-[color:color-mix(in_srgb,var(--c)_45%,white)]"
-      style={{ '--c': COLOR_MODULO[moduleKey] ?? '#5b738b' }}
-    >
-      {React.isValidElement(icon) ? React.cloneElement(icon, { size: 16 }) : icon}
-    </span>
-  );
-};
+const CuadritoIcono = ({ icon, color }) => (
+  <span
+    className="w-7 h-7 rounded-md inline-flex items-center justify-center flex-shrink-0 bg-[color:color-mix(in_srgb,var(--c)_12%,transparent)] text-[color:var(--c)] dark:bg-[color:color-mix(in_srgb,var(--c)_28%,transparent)] dark:text-[color:color-mix(in_srgb,var(--c)_45%,white)]"
+    style={{ '--c': color }}
+  >
+    {React.isValidElement(icon) ? React.cloneElement(icon, { size: 16 }) : icon}
+  </span>
+);
+
+const IconoModulo = ({ moduleKey }) => (
+  <CuadritoIcono icon={iconoEntrada(moduleKey)} color={COLOR_MODULO[moduleKey] ?? '#5b738b'} />
+);
+
+// Encabezado de un módulo (o de Ajustes) abierto en el sidebar: botón
+// "Volver" a todo el ancho y título con su cuadrito, separado de los ítems.
+// Colapsado: solo la flecha y el cuadrito, con tooltip.
+const VolverSidebar = ({ texto, onClick, colapsado }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    title={texto}
+    aria-label={texto}
+    className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${colapsado ? 'justify-center' : ''}`}
+  >
+    <ArrowLeft size={16} className="flex-shrink-0 text-gray-500 dark:text-gray-400" />
+    {!colapsado && <span className="truncate">{texto}</span>}
+  </button>
+);
+
+const TituloSidebar = ({ cuadrito, texto, colapsado }) => (
+  <div
+    title={colapsado ? texto : undefined}
+    className={`flex items-center gap-2.5 px-2 pt-2 pb-2.5 mb-2 border-b border-gray-200 dark:border-gray-700 ${colapsado ? 'justify-center' : ''}`}
+  >
+    {cuadrito}
+    <h2 className={colapsado ? 'sr-only' : 'text-sm font-bold text-gray-800 dark:text-gray-100 truncate'}>{texto}</h2>
+  </div>
+);
 
 // Entrada del sidebar que lleva el contador de alertas sin leer.
 const ENTRADA_ALERTAS = entradaDeRuta(MODULO_AGRUPADO, RUTA_ALERTAS);
@@ -728,28 +755,9 @@ const Dashboard = () => {
           {isAjustesMode ? (
             <div key="ajustes-menu">
 
-              {!colapsado && (
-                <div className="px-2 pt-1 pb-2 text-sm font-bold tracking-tight flex items-center gap-2 text-gray-800 dark:text-gray-100">
-                  <Settings size={16} className="flex-shrink-0 text-[#2383C2] dark:text-sky-300" />
-                  <span className="truncate">Ajustes Sistema</span>
-                </div>
-              )}
-
-              {/* VOLVER AL SISTEMA */}
-              <div className="mb-2">
-                <button
-                  onClick={salirDeAjustes}
-                  className={`w-full flex items-center gap-2 p-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 active:scale-95 rounded-lg font-bold transition-all text-gray-800 dark:text-gray-100 ${colapsado ? 'justify-center' : ''}`}
-                  title="Volver al Sistema"
-                >
-                  <ArrowLeft size={16} className="flex-shrink-0" />
-                  <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
-                    Volver al Sistema
-                  </span>
-                </button>
-
-                <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
-              </div>
+              {/* VOLVER AL SISTEMA + TÍTULO (mismo formato que un módulo) */}
+              <VolverSidebar texto="Volver al Sistema" onClick={salirDeAjustes} colapsado={colapsado} />
+              <TituloSidebar cuadrito={<CuadritoIcono icon={<Settings />} color="#2383C2" />} texto="Ajustes Sistema" colapsado={colapsado} />
 
               {/* SECCIÓN CONFIGURACIÓN E ÍTEMS */}
               <div className={`px-2 mb-2 ${TITULO_SECCION_SIDEBAR} transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
@@ -800,20 +808,8 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  <button
-                    onClick={() => setActiveModule(null)}
-                    className={`flex items-center mb-4 text-[10px] text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-sky-300 transition-colors p-1 w-full ${colapsado ? 'justify-center' : 'gap-1'}`}
-                    title="Volver a módulos"
-                  >
-                    <ArrowLeft size={12} className="flex-shrink-0" />
-                    <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
-                      Volver a módulos
-                    </span>
-                  </button>
-
-                  <div className={`px-2 mb-2 ${TITULO_SECCION_SIDEBAR} transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
-                    {etiquetaEntrada(activeModule)}
-                  </div>
+                  <VolverSidebar texto="Volver a módulos" onClick={() => setActiveModule(null)} colapsado={colapsado} />
+                  <TituloSidebar cuadrito={<IconoModulo moduleKey={activeModule} />} texto={etiquetaEntrada(activeModule)} colapsado={colapsado} />
 
                   {getSubItemsOrdenados(activeModule).map((sub, idx) => (
                     <button
