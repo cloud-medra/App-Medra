@@ -13,7 +13,7 @@ import {
 import { db } from '../../../../../../firebaseConfig';
 import { useCatalogo } from '../../../../../../hooks/useCatalogo';
 import { ordenarPor } from '../../../../../../stores/catalogosStore';
-import { Clock, Plus, Trash2, Search, Save, X, ChevronDown, History, Settings, Tag, RotateCcw } from 'lucide-react';
+import { Clock, Plus, Trash2, Search, Save, X, ChevronDown, History, Settings, Tag, RotateCcw, Copy, Check } from 'lucide-react';
 import { useToast } from '../../../../../../context/ToastContext';
 import { useModal } from '../../../../../../context/ModalContext';
 import { useUser } from '../../../../../../context/UserContext';
@@ -43,6 +43,7 @@ const COLUMNAS = [
   { key: 'clase', label: 'Clase', ancho: 90, min: 60 },
   { key: 'descAuto', label: 'Desc. Auto', ancho: 250, min: 80 },
   { key: 'precioNeto', label: 'Precio Neto', ancho: 100, min: 70 },
+  { key: 'copiar', label: 'Copiar', ancho: 50, min: 40, align: 'center' },
   { key: 'estado', label: 'Estado', ancho: 100, min: 70 },
   { key: 'registradoPor', label: 'Registrado por', ancho: 100, min: 70 },
   { key: 'fecha', label: 'Fecha', ancho: 130, min: 90 },
@@ -98,6 +99,9 @@ const TabPendientes = ({ rutaVista = '/maestros/codigosMaestros/pendientes' } = 
   // Estados para el drawer de asignar código definitivo
   const [showAsignarCodigoDrawer, setShowAsignarCodigoDrawer] = useState(false);
   const [selectedItemParaCodigo, setSelectedItemParaCodigo] = useState(null);
+
+  // Fila cuyo ícono de copiar muestra el check (feedback temporal)
+  const [copiadoId, setCopiadoId] = useState(null);
 
   const { showToast } = useToast();
   const { confirmAction } = useModal();
@@ -286,6 +290,20 @@ const TabPendientes = ({ rutaVista = '/maestros/codigosMaestros/pendientes' } = 
         }
       }
     );
+  };
+
+  // Copia "Desc. Auto<TAB>Precio Neto" para pegar en dos celdas de Excel.
+  // El precio va como número limpio (sin $ ni separador de miles).
+  const handleCopiarFila = async (item) => {
+    const descAuto = String(item.descriptorAuto || '').replace(/[\t\r\n]+/g, ' ').trim();
+    const precio = Number(item.precioNeto) || 0;
+    try {
+      await navigator.clipboard.writeText(`${descAuto}\t${precio}`);
+      setCopiadoId(item.id);
+      setTimeout(() => setCopiadoId(actual => (actual === item.id ? null : actual)), 1500);
+    } catch (error) {
+      showToast("No se pudo copiar al portapapeles", "error");
+    }
   };
 
   const abrirHistorialLogs = async (item) => {
@@ -559,6 +577,18 @@ const TabPendientes = ({ rutaVista = '/maestros/codigosMaestros/pendientes' } = 
                   {ver('precioNeto') && (
                     <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 overflow-hidden text-ellipsis whitespace-nowrap">
                       ${new Intl.NumberFormat('es-ES').format(item.precioNeto || 0)}
+                    </td>
+                  )}
+                  {ver('copiar') && (
+                    <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-center overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => handleCopiarFila(item)}
+                        title={copiadoId === item.id ? "Copiado" : "Copiar Desc. Auto y Precio Neto"}
+                        className={copiadoId === item.id ? "text-emerald-600 dark:text-emerald-400 transition" : "text-gray-500 hover:text-[#2383C2] dark:hover:text-[#2383C2] transition"}
+                      >
+                        {copiadoId === item.id ? <Check size={13} /> : <Copy size={13} />}
+                      </button>
                     </td>
                   )}
                   {ver('estado') && (

@@ -509,7 +509,7 @@ export const maestrosComponentMaps = {
               action_asignar_codigo: { label: 'Operación: Asignar Código Definitivo' },
               action_eliminar: { label: 'Operación: Eliminar' },
               ...columnas([
-                ['numero', '#'], ['referencia', 'Referencia'], ['descEmpresa', 'Desc. Empresa'], ['empresa', 'Empresa'], ['tipo', 'Tipo'], ['segmento', 'Segmento'], ['clase', 'Clase'], ['descAuto', 'Desc. Auto'], ['precioNeto', 'Precio Neto'], ['estado', 'Estado'], ['registradoPor', 'Registrado por'], ['fecha', 'Fecha'], ['acciones', 'Acciones'],
+                ['numero', '#'], ['referencia', 'Referencia'], ['descEmpresa', 'Desc. Empresa'], ['empresa', 'Empresa'], ['tipo', 'Tipo'], ['segmento', 'Segmento'], ['clase', 'Clase'], ['descAuto', 'Desc. Auto'], ['precioNeto', 'Precio Neto'], ['copiar', 'Copiar'], ['estado', 'Estado'], ['registradoPor', 'Registrado por'], ['fecha', 'Fecha'], ['acciones', 'Acciones'],
               ]),
             },
           },
