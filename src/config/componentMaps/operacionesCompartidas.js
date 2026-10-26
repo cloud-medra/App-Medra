@@ -67,7 +67,7 @@ export const mapaSincronizacionImputadas = (nombre) => ({
 });
 
 // Implantes → Códigos y Hemodinamia → Códigos: la misma pantalla que Maestros → Códigos
-// (CodigosMaestros.jsx, colección maestros_codigos) con su propio ítem de
+// (CodigosMaestrosV2.jsx, colección maestros_codigos) con su propio ítem de
 // menú y sus propios permisos granulares. Se deriva del mapa de Maestros
 // (mismas secciones, acciones, columnas y pestañas) cambiando las rutas,
 // así ambos quedan siempre iguales pero se asignan por separado.

@@ -10,11 +10,11 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../../../../firebaseConfig';
-import { construirCambiosRegistro } from '../codigosMaestros/components/tabVistaGeneral/camposAuditablesRegistro';
+import { construirCambiosRegistro } from '../shared/codigos/camposAuditablesRegistro';
 import { COL_CODIGOS, MODOS_PANEL, camposModificados, valoresParaCrear } from './camposCodigo';
 
-// Escrituras de la vista nueva de Códigos. Mismas colecciones, mismos logs
-// (subcolección `logs`, mismas acciones) que la vista clásica. Las ediciones
+// Escrituras de Códigos: colección maestros_codigos y su subcolección `logs`
+// (acciones CREACION, EDICION, ASIGNACION_CODIGO, ...). Las ediciones
 // escriben SOLO los campos que cambiaron. No hay lecturas: la tabla se
 // actualiza sola por el listener compartido de catalogosStore.
 
@@ -38,8 +38,7 @@ export const registrarLogCodigo = async (id, accion, detalles, userData) => {
   }
 };
 
-// Única lectura de la vista: el historial, solo cuando el usuario lo abre
-// (igual que la vista clásica).
+// Única lectura de la vista: el historial, solo cuando el usuario lo abre.
 export const cargarLogsCodigo = async (id) => {
   const snap = await getDocs(query(collection(db, COL_CODIGOS, id, 'logs'), orderBy('fecha', 'desc')));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));

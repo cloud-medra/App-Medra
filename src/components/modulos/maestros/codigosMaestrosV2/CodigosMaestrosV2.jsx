@@ -4,14 +4,15 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../../firebaseConfig';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
-import { RUTA_CODIGOS_MAESTROS, RUTA_CODIGOS_IMPLANTES, RUTA_CODIGOS_HEMODINAMIA } from '../codigosMaestros/rutasCodigos';
+import { RUTA_CODIGOS_MAESTROS, RUTA_CODIGOS_IMPLANTES, RUTA_CODIGOS_HEMODINAMIA } from '../shared/codigos/rutasCodigos';
 import TabPendientesV2 from './tabs/TabPendientesV2';
 import TabConCodigoV2 from './tabs/TabConCodigoV2';
 import TabVistaGeneralV2 from './tabs/TabVistaGeneralV2';
 import { tieneCodigo } from './camposCodigo';
 
-// Vista nueva de Códigos: mismas pestañas, rutas y permisos que
-// CodigosMaestros.jsx (cada pestaña es un `proceso` de rutaBase).
+// Códigos (Maestros, Implantes y Hemodinamia): cada pestaña es un `proceso`
+// de rutaBase en el mapa de permisos (componentMaps/maestros.js); `rutaBase`
+// decide de qué ítem del menú salen los permisos.
 const PESTANAS = [
   { id: 'pendientes', label: 'Sin código', Icon: Clock, sub: 'pendientes' },
   { id: 'con_codigo', label: 'Con código', Icon: CheckCircle2, sub: 'conCodigo' },
@@ -24,7 +25,7 @@ const MODULO_POR_RUTA = {
   [RUTA_CODIGOS_HEMODINAMIA]: 'Hemodinamia'
 };
 
-const CodigosMaestrosV2 = ({ rutaBase = RUTA_CODIGOS_MAESTROS, selectorVista = null } = {}) => {
+const CodigosMaestrosV2 = ({ rutaBase = RUTA_CODIGOS_MAESTROS } = {}) => {
   const { hasAccesoProceso } = useGranularPermission();
   const tabs = useMemo(
     () => PESTANAS.map((t) => ({ ...t, path: `${rutaBase}/${t.sub}` })).filter((t) => hasAccesoProceso(t.path)),
@@ -41,7 +42,7 @@ const CodigosMaestrosV2 = ({ rutaBase = RUTA_CODIGOS_MAESTROS, selectorVista = n
     return { pendientes: codigos.filter((c) => !tieneCodigo(c)).length, con_codigo: con, todos: codigos.length };
   }, [codigos]);
 
-  // Período activo: el mismo listener de un documento que tiene la vista clásica.
+  // Período activo: listener de un solo documento.
   const [periodo, setPeriodo] = useState(null);
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -58,7 +59,6 @@ const CodigosMaestrosV2 = ({ rutaBase = RUTA_CODIGOS_MAESTROS, selectorVista = n
         <ShieldAlert size={28} className="text-slate-400" />
         <h3 className="text-[14px] font-semibold text-slate-800 dark:text-gray-100">Acceso insuficiente</h3>
         <p className="text-[13px] text-slate-500 dark:text-gray-400 max-w-sm">Tu perfil no tiene habilitada ninguna pestaña de Códigos.</p>
-        {selectorVista && <div className="mt-2">{selectorVista}</div>}
       </div>
     );
   }
@@ -81,7 +81,6 @@ const CodigosMaestrosV2 = ({ rutaBase = RUTA_CODIGOS_MAESTROS, selectorVista = n
             </div>
             <p className="mt-0.5 text-[12px] text-slate-500 dark:text-gray-400">Registro de productos, asignación de códigos definitivos y precios.</p>
           </div>
-          {selectorVista}
         </div>
 
         <nav className="mt-3 -mb-px flex items-center gap-5 overflow-x-auto" role="tablist">

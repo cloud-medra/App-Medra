@@ -14,7 +14,7 @@ import PanelEdicionCodigo from '../PanelEdicionCodigo';
 import PanelHistorial from '../PanelHistorial';
 import { formatearFecha, formatearPrecio } from '../camposCodigo';
 
-// Mismas claves que la vista clásica (permisos `col_<key>`).
+// Permisos por columna: `col_<key>` en 'tabla_datos' del mapa de la pestaña.
 const COLUMNAS = [
   { key: 'numero', label: '#', ancho: 40, min: 28, align: 'right' },
   { key: 'codigo', label: 'Código', ancho: 90, min: 60 },
@@ -39,7 +39,7 @@ const CAMPOS_BUSQUEDA = [
 ];
 
 const TabVistaGeneralV2 = ({ rutaVista = '/maestros/codigosMaestros/vistaGeneral' } = {}) => {
-  // Mismo origen que la vista clásica (useCollectionCache = catalogosStore).
+  // Listener compartido de catalogosStore (sin consultas propias).
   const { datos: codigos, cargando } = useCatalogo('codigos');
   const registros = useMemo(() => [...codigos].sort(ordenarPor('fechaRegistro', 'desc')), [codigos]);
 
@@ -55,7 +55,7 @@ const TabVistaGeneralV2 = ({ rutaVista = '/maestros/codigosMaestros/vistaGeneral
   const f = useFiltrosCodigos(registros, CAMPOS_BUSQUEDA);
   const pag = usePaginacion(f.filtrados, f.clave);
 
-  // Como la vista clásica, las empresas salen de los propios códigos (no
+  // Las empresas salen de los propios códigos (no
   // se lee el maestro de empresas solo para esta pestaña).
   const empresas = useMemo(() => f.empresas.map((nombre) => ({ id: nombre, nombre })), [f.empresas]);
 

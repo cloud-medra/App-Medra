@@ -1,7 +1,7 @@
 import React from 'react';
 import { FilterX } from 'lucide-react';
 import { Buscador, FiltroSelect } from './TablaCodigos';
-import { CLASES_CODIGO } from '../../codigosMaestros/clasesCodigo';
+import { CLASES_CODIGO } from '../../shared/codigos/clasesCodigo';
 import { TIPOS_CODIGO, SEGMENTOS_CODIGO } from '../camposCodigo';
 
 // Barra de búsqueda + filtros de la vista nueva (todo en memoria).

@@ -1,14 +1,11 @@
-// Lista única de campos auditables del registro de Código Maestro (Vista
-// General). La usan tanto ModificarRegistroDrawer.jsx (para construir el
-// diff que se guarda en el log) como TabConCodigoDrawers.jsx (para
-// renderizarlo en el historial), así evitamos tener la lista de campos
-// hardcodeada en dos lugares distintos.
+// Lista única de campos auditables del registro de Código Maestro. La usan
+// accionesCodigos.js (para construir el diff "Anterior/Nuevo" que se guarda en
+// el log de una modificación) y PanelHistorial.jsx (para las etiquetas al
+// mostrarlo).
 //
-// "observacion" queda afuera a propósito: en ModificarRegistroDrawer ese
-// campo siempre arranca vacío (es un "motivo de esta modificación", no el
-// valor persistido), así que compararlo contra el valor anterior generaría
-// un "cambio" falso en cada edición. Se loguea aparte como nota libre
-// (ver `logAuditoria.detalles.observacionModificacion` en ModificarRegistroDrawer.jsx).
+// "observacion" queda afuera a propósito: el "motivo del cambio" de una
+// modificación se loguea aparte como nota libre
+// (`detalles.observacionModificacion`).
 export const CAMPOS_AUDITABLES_REGISTRO = [
   { key: 'codigo', label: 'Código' },
   { key: 'referencia', label: 'Referencia' },

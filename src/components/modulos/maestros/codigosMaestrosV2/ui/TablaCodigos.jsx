@@ -3,12 +3,10 @@ import { ChevronLeft, ChevronRight, RotateCcw, Search, X } from 'lucide-react';
 import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../ui/ThRedimensionable';
 import Spinner from '../../../../ui/Spinner';
 
-// Tabla de la vista nueva de Códigos. Misma tabla que las pestañas de la
-// vista clásica (CodigosMaestros): mismas piezas compartidas de
-// redimensionado (ThRedimensionable + columna de relleno, sobre
-// useColumnResize sin `clave`, así que los anchos no se guardan) y mismas
-// clases: letra 11px, celdas py-1 px-2, bordes verticales y hover con borde
-// izquierdo de acento. Las columnas (y sus permisos) las define cada pestaña.
+// Tabla de Códigos. Usa las piezas compartidas de redimensionado
+// (ThRedimensionable + columna de relleno, sobre useColumnResize sin
+// `clave`, así que los anchos no se guardan). Compacta: letra 11px, celdas
+// py-1 px-2, bordes verticales y hover con borde izquierdo de acento. Las columnas (y sus permisos) las define cada pestaña.
 
 const ALINEACION = { right: 'text-right', center: 'text-center' };
 
@@ -140,8 +138,7 @@ export const Boton = ({ variante = 'secundario', icono: Icono, children, classNa
   );
 };
 
-// Botones de ícono de las filas, con los mismos tamaños y colores que los de
-// la tabla clásica.
+// Botones de ícono de las filas, (13px, color según la acción).
 const TONOS_ICONO = {
   neutro: 'text-gray-500 hover:text-[#2383C2] dark:hover:text-[#2383C2]',
   acento: 'text-gray-500 hover:text-[#2383C2] dark:hover:text-[#2383C2]',

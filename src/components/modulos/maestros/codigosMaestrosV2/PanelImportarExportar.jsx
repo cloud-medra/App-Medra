@@ -12,8 +12,8 @@ const Bloque = ({ titulo, descripcion, children }) => (
   </section>
 );
 
-// Exportar / plantilla / importación masiva. La lógica es la de los hooks de
-// la vista clásica (useImportExportPendientes / useImportExportConCodigo);
+// Exportar / plantilla / importación masiva. La lógica está en los hooks de
+// shared/codigos (useImportExportPendientes / useImportExportConCodigo);
 // cada acción llega solo si el usuario tiene el permiso.
 const PanelImportarExportar = ({
   abierto,

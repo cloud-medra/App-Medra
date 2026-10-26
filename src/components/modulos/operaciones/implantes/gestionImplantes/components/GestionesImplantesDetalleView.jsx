@@ -132,7 +132,7 @@ const GestionesImplantesDetalleView = forwardRef(({
   // quedó en un id que el usuario no tiene permitido (permisos que
   // cambiaron, o el valor por defecto de más arriba), cae al primer tab
   // permitido — mismo patrón que ArchivosControlVacunatorio/Laboratorio y
-  // CodigosMaestros. Todo el render de abajo usa `tabActual`, nunca el
+  // CodigosMaestrosV2. Todo el render de abajo usa `tabActual`, nunca el
   // `activeTab` crudo, para que no haya forma de quedar mostrando una
   // pestaña sin permiso.
   const tabActual = useMemo(

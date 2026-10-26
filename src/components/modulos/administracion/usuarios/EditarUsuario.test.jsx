@@ -110,8 +110,8 @@ describe('Listado Usuario → Editar usuario (pantalla completa)', () => {
     // 2) Maestros → Códigos → Con Código: acciones y columnas nuevas MARCADAS por defecto.
     fireEvent.click(within(nav).getByText('Maestros'));
     expandir('Habilitar Codigos');
-    expandir('Habilitar Pestaña: Con Código (TabConCodigo.jsx)');
-    const conCodigo = bloque('Habilitar Pestaña: Con Código (TabConCodigo.jsx)');
+    expandir('Habilitar Pestaña: Con Código (TabConCodigoV2.jsx)');
+    const conCodigo = bloque('Habilitar Pestaña: Con Código (TabConCodigoV2.jsx)');
     expect(within(conCodigo).getByText('Marcar todo')).toBeInTheDocument();
     const eliminar = casilla(conCodigo, 'Eliminar');
     expect(eliminar).toBeChecked();
@@ -174,8 +174,8 @@ describe('Listado Usuario → Editar usuario (pantalla completa)', () => {
     expect(within(bloque('Habilitar Maestro Códigos')).queryByText('Pendiente de revisión')).not.toBeInTheDocument();
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Módulos' })).getByText('Maestros'));
     expandir('Habilitar Codigos');
-    expandir('Habilitar Pestaña: Con Código (TabConCodigo.jsx)');
-    const conCodigo2 = bloque('Habilitar Pestaña: Con Código (TabConCodigo.jsx)');
+    expandir('Habilitar Pestaña: Con Código (TabConCodigoV2.jsx)');
+    const conCodigo2 = bloque('Habilitar Pestaña: Con Código (TabConCodigoV2.jsx)');
     expect(casilla(conCodigo2, 'Eliminar')).not.toBeChecked();
     fireEvent.click(within(conCodigo2).getByText('Columnas de la tabla'));
     expect(casilla(conCodigo2, 'Precio Neto')).not.toBeChecked();

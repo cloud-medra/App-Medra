@@ -8,7 +8,7 @@ import { useUser } from '../../../../../context/UserContext';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitidas';
 import { useColumnResize } from '../../../../../hooks/useColumnResize';
-import { useImportExportPendientes } from '../../codigosMaestros/components/tabPendientes/useImportExportPendientes';
+import { useImportExportPendientes } from '../../shared/codigos/useImportExportPendientes';
 import { TablaCodigos, PieTabla, Boton, BotonIcono } from '../ui/TablaCodigos';
 import BarraFiltros from '../ui/BarraFiltros';
 import { useFiltrosCodigos } from '../ui/useFiltrosCodigos';
@@ -19,7 +19,7 @@ import PanelImportarExportar from '../PanelImportarExportar';
 import { eliminarRegistroCodigo } from '../accionesCodigos';
 import { COL_CODIGOS, formatearFecha, formatearPrecio, tieneCodigo } from '../camposCodigo';
 
-// Mismas claves que la vista clásica: `col_<key>` en 'tabla_datos' del mapa
+// Permisos por columna: `col_<key>` en 'tabla_datos' del mapa
 // de permisos de la pestaña (ver useColumnasPermitidas).
 const COLUMNAS = [
   { key: 'numero', label: '#', ancho: 40, min: 28, align: 'right' },
@@ -46,8 +46,7 @@ const CAMPOS_BUSQUEDA = [
 ];
 
 const TabPendientesV2 = ({ rutaVista = '/maestros/codigosMaestros/pendientes' } = {}) => {
-  // Mismo origen que la vista clásica: listener compartido de catalogosStore
-  // (no abre consultas propias) y empresas de lectura única por sesión.
+  // Listener compartido de catalogosStore (no abre consultas propias) y empresas de lectura única por sesión.
   const { datos: codigos, cargando } = useCatalogo('codigos');
   const { datos: empresasCatalogo } = useCatalogo('empresas');
   const registros = useMemo(
@@ -91,7 +90,7 @@ const TabPendientesV2 = ({ rutaVista = '/maestros/codigosMaestros/pendientes' } 
   const abrirPanel = (modo, registro = null) => setPanel({ abierto: true, modo, registro });
   const cerrarPanel = () => setPanel((p) => ({ ...p, abierto: false }));
 
-  // Igual que la vista clásica: "Desc. Auto<TAB>Precio Neto" para pegar en
+  // "Desc. Auto<TAB>Precio Neto" para pegar en
   // dos celdas de Excel, con el precio como número limpio.
   const copiarFila = async (item) => {
     const descAuto = String(item.descriptorAuto || '').replace(/[\t\r\n]+/g, ' ').trim();

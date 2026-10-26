@@ -472,7 +472,7 @@ export const maestrosComponentMaps = {
   // "/maestros/codigosMaestros/<proceso>") y se declara en `procesos` en
   // vez de como entrada plana de COMPONENT_MAPS, para no aparecer como
   // ítems de menú independientes (no son rutas, son pestañas internas
-  // controladas por estado de React en CodigosMaestros.jsx). El editor de
+  // controladas por estado de React en CodigosMaestrosV2.jsx). El editor de
   // permisos (EditorPermisos.jsx, en Crear y Editar usuario) expande
   // `procesos` automáticamente como sub-ítems configurables cuando se
   // selecciona esta pantalla.
@@ -482,11 +482,11 @@ export const maestrosComponentMaps = {
   // por hasAccesoProceso(path) sobre cada `proceso` (ver nota en
   // useGranularPermission.js).
   '/maestros/codigosMaestros': {
-    label: 'Gestión de Códigos Maestros (CodigosMaestros.jsx) — orquestador de pestañas',
+    label: 'Gestión de Códigos Maestros (CodigosMaestrosV2.jsx) — orquestador de pestañas',
     sections: {},
     procesos: {
       '/maestros/codigosMaestros/pendientes': {
-        label: 'Pestaña: Sin Código / Pendientes (TabPendientes.jsx)',
+        label: 'Pestaña: Sin Código / Pendientes (TabPendientesV2.jsx)',
         sections: {
           btn_configuracion: {
             label: 'Sección: Configuración (Importar/Exportar)',
@@ -517,7 +517,7 @@ export const maestrosComponentMaps = {
         },
       },
       '/maestros/codigosMaestros/conCodigo': {
-        label: 'Pestaña: Con Código (TabConCodigo.jsx)',
+        label: 'Pestaña: Con Código (TabConCodigoV2.jsx)',
         sections: {
           btn_configuracion: {
             label: 'Sección: Configuración (Importar/Exportar)',
@@ -549,7 +549,7 @@ export const maestrosComponentMaps = {
         },
       },
       '/maestros/codigosMaestros/vistaGeneral': {
-        label: 'Pestaña: Vista General (TabVistaGeneral.jsx)',
+        label: 'Pestaña: Vista General (TabVistaGeneralV2.jsx)',
         sections: {
           tabla_datos: {
             label: 'Sección: Tabla',

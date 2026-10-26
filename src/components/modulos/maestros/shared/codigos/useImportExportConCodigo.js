@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { collection, doc, writeBatch, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../../../../../firebaseConfig';
+import { db } from '../../../../../firebaseConfig';
 
 const DELIM = ';';
 const FILAS_POR_LOTE = 200;

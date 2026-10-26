@@ -1,5 +1,5 @@
 // Valores posibles del campo "clase" de maestros_codigos. Fuente única para los
-// select de Clase (Sin código, Con código, Vista general y sus drawers).
+// select de Clase (panel de edición y filtros de Códigos).
 export const CLASES_CODIGO = ['IMPLANTE', 'INSUMOS', 'PAD', 'KIT'];
 
 // Colores del badge de clase (PadMaestros). IMPLANTE/IMPLANTES en morado,

@@ -7,8 +7,8 @@ import {
 } from 'firebase/firestore';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { db } from '../../../../../../firebaseConfig';
-import { filtrarFilasExport } from '../../../../../../hooks/useColumnasPermitidas';
+import { db } from '../../../../../firebaseConfig';
+import { filtrarFilasExport } from '../../../../../hooks/useColumnasPermitidas';
 
 // Encabezado del Excel → columna de la tabla de Pendientes (CX y OBSERVACION
 // no tienen columna en pantalla: se exportan siempre).

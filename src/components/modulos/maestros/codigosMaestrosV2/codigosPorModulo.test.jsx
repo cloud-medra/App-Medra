@@ -9,14 +9,16 @@ let usuario = null;
 vi.mock('../../../../context/UserContext', () => ({ useUser: () => ({ userData: usuario }) }));
 vi.mock('firebase/firestore', () => ({ doc: vi.fn(), onSnapshot: () => () => {} }));
 vi.mock('../../../../firebaseConfig', () => ({ db: {} }));
+// Los contadores de las pestañas leen el catálogo en memoria.
+vi.mock('../../../../hooks/useCatalogo', () => ({ useCatalogo: () => ({ datos: [], cargado: true, cargando: false }) }));
 // Las pestañas leen Firestore: acá solo importa qué ruta reciben.
 const tab = (nombre) => ({ default: ({ rutaVista }) => <div data-testid={nombre}>{rutaVista}</div> });
-vi.mock('./components/tabPendientes/TabPendientes', () => tab('pendientes'));
-vi.mock('./components/tabConCodigo/TabConCodigo', () => tab('conCodigo'));
-vi.mock('./components/tabVistaGeneral/TabVistaGeneral', () => tab('vistaGeneral'));
+vi.mock('./tabs/TabPendientesV2', () => tab('pendientes'));
+vi.mock('./tabs/TabConCodigoV2', () => tab('conCodigo'));
+vi.mock('./tabs/TabVistaGeneralV2', () => tab('vistaGeneral'));
 
-const { default: CodigosMaestros } = await import('./CodigosMaestros');
-const { RUTA_CODIGOS_IMPLANTES, RUTA_CODIGOS_MAESTROS, RUTA_CODIGOS_HEMODINAMIA } = await import('./rutasCodigos');
+const { default: CodigosMaestros } = await import('./CodigosMaestrosV2');
+const { RUTA_CODIGOS_IMPLANTES, RUTA_CODIGOS_MAESTROS, RUTA_CODIGOS_HEMODINAMIA } = await import('../shared/codigos/rutasCodigos');
 const { subItemsVisibles, subItemsAsignables } = await import('../../../../config/accesoMenu');
 const { MODULES } = await import('../../../../config/modulesConfig.jsx');
 const { COMPONENT_MAPS } = await import('../../../../config/componentMaps/index.js');
@@ -77,10 +79,10 @@ describe('Códigos en Maestros y en Implantes', () => {
     usuario = soloImplantes();
     render(<CodigosMaestros rutaBase={RUTA_CODIGOS_IMPLANTES} />);
     expect(screen.getByTestId('conCodigo')).toHaveTextContent(`${RUTA_CODIGOS_IMPLANTES}/conCodigo`);
-    expect(screen.queryByText('Sin Código / Pendientes')).not.toBeInTheDocument(); // pestaña no otorgada
+    expect(screen.queryByText('Sin código')).not.toBeInTheDocument(); // pestaña no otorgada
     cleanup();
     render(<CodigosMaestros />); // Maestros, mismo usuario: sin acceso
-    expect(screen.getByText('Acceso Insuficiente')).toBeInTheDocument();
+    expect(screen.getByText('Acceso insuficiente')).toBeInTheDocument();
     cleanup();
     usuario = soloMaestros();
     render(<CodigosMaestros />);

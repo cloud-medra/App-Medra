@@ -6,8 +6,8 @@ import { Boton, Insignia } from './ui/TablaCodigos';
 import Spinner from '../../../ui/Spinner';
 import { useModal } from '../../../../context/ModalContext';
 import { useToast } from '../../../../context/ToastContext';
-import { CLASES_CODIGO } from '../codigosMaestros/clasesCodigo';
-import { normalizarDescriptorEmpresa } from '../codigosMaestros/components/tabPendientes/normalizarDescriptorEmpresa';
+import { CLASES_CODIGO } from '../shared/codigos/clasesCodigo';
+import { normalizarDescriptorEmpresa } from '../shared/codigos/normalizarDescriptorEmpresa';
 import {
   MODOS_PANEL, TIPOS_CODIGO, SEGMENTOS_CODIGO, ESTADOS_CODIGO,
   formDesdeRegistro, camposModificados, validarFormulario, avisosFormulario,

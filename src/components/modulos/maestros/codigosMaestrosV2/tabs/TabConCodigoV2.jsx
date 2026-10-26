@@ -8,7 +8,7 @@ import { useUser } from '../../../../../context/UserContext';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitidas';
 import { useColumnResize } from '../../../../../hooks/useColumnResize';
-import { useImportExportConCodigo } from '../../codigosMaestros/components/tabConCodigo/UsoImportExportConCodigo';
+import { useImportExportConCodigo } from '../../shared/codigos/useImportExportConCodigo';
 import { TablaCodigos, PieTabla, Boton, BotonIcono } from '../ui/TablaCodigos';
 import BarraFiltros from '../ui/BarraFiltros';
 import { useFiltrosCodigos } from '../ui/useFiltrosCodigos';
@@ -19,7 +19,7 @@ import PanelImportarExportar from '../PanelImportarExportar';
 import { eliminarRegistroCodigo } from '../accionesCodigos';
 import { COL_CODIGOS, formatearFecha, formatearPrecio, tieneCodigo } from '../camposCodigo';
 
-// Mismas claves que la vista clásica (permisos `col_<key>`).
+// Permisos por columna: `col_<key>` en 'tabla_datos' del mapa de la pestaña.
 const COLUMNAS = [
   { key: 'numero', label: '#', ancho: 40, min: 28, align: 'right' },
   { key: 'codigo', label: 'Código', ancho: 90, min: 60 },
@@ -45,9 +45,8 @@ const CAMPOS_BUSQUEDA = [
 ];
 
 const TabConCodigoV2 = ({ rutaVista = '/maestros/codigosMaestros/conCodigo' } = {}) => {
-  // La vista clásica pagina con consultas a Firestore (y consulta en cada
-  // búsqueda); acá se filtra en memoria el listener compartido de
-  // catalogosStore, que ya tiene todos los códigos: cero lecturas extra.
+  // Se filtra en memoria el listener compartido de catalogosStore, que ya
+  // tiene todos los códigos: sin consultas propias ni por búsqueda.
   const { datos: codigos, cargando } = useCatalogo('codigos');
   const { datos: empresasCatalogo } = useCatalogo('empresas');
   const registros = useMemo(
@@ -76,7 +75,7 @@ const TabConCodigoV2 = ({ rutaVista = '/maestros/codigosMaestros/conCodigo' } = 
     tabla: hasPermission(PATH_VISTA, 'tabla_datos'),
     log: hasPermission(PATH_VISTA, 'btn_log')
   };
-  // Como en la vista clásica: editar abre el formulario y actualizar lo guarda.
+  // Editar abre el formulario y actualizar lo guarda.
   const puedeEditar = puede.editar && puede.formulario && puede.actualizar;
 
   const { columnasVisibles, ver } = useColumnasPermitidas(PATH_VISTA, 'tabla_datos', COLUMNAS);

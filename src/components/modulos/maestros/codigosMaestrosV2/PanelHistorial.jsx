@@ -3,7 +3,7 @@ import { History, User } from 'lucide-react';
 import PanelLateral from './ui/PanelLateral';
 import { Insignia } from './ui/TablaCodigos';
 import Spinner from '../../../ui/Spinner';
-import { CAMPOS_AUDITABLES_REGISTRO } from '../codigosMaestros/components/tabVistaGeneral/camposAuditablesRegistro';
+import { CAMPOS_AUDITABLES_REGISTRO } from '../shared/codigos/camposAuditablesRegistro';
 import { cargarLogsCodigo } from './accionesCodigos';
 import { formatearFecha, formatearPrecio } from './camposCodigo';
 
@@ -68,8 +68,7 @@ const DetalleLog = ({ detalles = {} }) => {
   );
 };
 
-// Historial (subcolección logs): se lee solo al abrir el panel, como en la
-// vista clásica.
+// Historial (subcolección logs): se lee solo al abrir el panel.
 const PanelHistorial = ({ abierto, registro, onCerrar }) => {
   const [logs, setLogs] = useState([]);
   const [cargando, setCargando] = useState(false);

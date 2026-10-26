@@ -74,7 +74,7 @@ import PrevisionesMaestros from '../components/modulos/maestros/previsionesMaest
 import ConveniosMaestros from '../components/modulos/maestros/conveniosMaestros/ConveniosMaestros';
 import RecargosMaestros from '../components/modulos/maestros/recargosMaestros/RecargosMaestros';
 import CalculadorMaestros from '../components/modulos/maestros/calculadorMaestros/CalculadorMaestros';
-import CodigosConSelectorVista from '../components/modulos/maestros/codigosMaestrosV2/CodigosConSelectorVista';
+import CodigosMaestrosV2 from '../components/modulos/maestros/codigosMaestrosV2/CodigosMaestrosV2';
 import PadMaestros from '../components/modulos/maestros/padMaestros/PadMaestros';
 import ActualizacionPreciosMaestros from '../components/modulos/maestros/actualizacionPreciosMaestros/ActualizacionPreciosMaestros';
 
@@ -447,7 +447,7 @@ const Dashboard = () => {
     '/maestros/recargosMaestros': <RecargosMaestros />,
     '/maestros/calculadorMaestros': <CalculadorMaestros />,
     // Misma pantalla en Maestros, Implantes y Hemodinamia; la key separa su estado.
-    '/maestros/codigosMaestros': <CodigosConSelectorVista key="maestros" />,
+    '/maestros/codigosMaestros': <CodigosMaestrosV2 key="maestros" />,
     '/maestros/padMaestros': <PadMaestros />,
     '/maestros/actualizacionPreciosMaestros': <ActualizacionPreciosMaestros />,
 
@@ -508,7 +508,7 @@ const Dashboard = () => {
     '/implantes/sincronizacionImputadas': <SincronizacionImputadas />,
     '/implantes/reportesInfo': <ReportesInfo pathVista="/implantes/reportesInfo" onAbrirGestionImplante={abrirGestionImplante} />,
     '/implantes/respaldoDocumentos': <RespaldoDocumentos />,
-    '/implantes/codigosImplantes': <CodigosConSelectorVista key="implantes" rutaBase="/implantes/codigosImplantes" />,
+    '/implantes/codigosImplantes': <CodigosMaestrosV2 key="implantes" rutaBase="/implantes/codigosImplantes" />,
     '/implantes/importarDetallesOC': <ImportarDetallesOC key="implantes" pathVista="/implantes/importarDetallesOC" />,
     '/implantes/seguimientoFacturasGuias': <SeguimientoFacturasGuias key="implantes" pathVista="/implantes/seguimientoFacturasGuias" />,
     '/implantes/ingresoOrdenes': <IngresoOrdenes key="implantes" pathVista="/implantes/ingresoOrdenes" />,
@@ -520,7 +520,7 @@ const Dashboard = () => {
     '/hemodinamia/resumenHemodinamia': <ResumenHemodinamia />,
     '/hemodinamia/sincronizacionImputadas': <SincronizacionImputadasHemodinamia />,
     '/hemodinamia/respaldoDocumentos': <RespaldoDocumentosHemodinamia />,
-    '/hemodinamia/codigosHemodinamia': <CodigosConSelectorVista key="hemodinamia" rutaBase="/hemodinamia/codigosHemodinamia" />,
+    '/hemodinamia/codigosHemodinamia': <CodigosMaestrosV2 key="hemodinamia" rutaBase="/hemodinamia/codigosHemodinamia" />,
 
     // ── Ajustes ──
     '/settings/datosUsuarios': <DatosUsuarios userData={userData} />,

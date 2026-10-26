@@ -30,7 +30,7 @@ import {
   PlusCircle,
   XCircle
 } from 'lucide-react';
-import { claseBadgeCodigo } from '../codigosMaestros/clasesCodigo';
+import { claseBadgeCodigo } from '../shared/codigos/clasesCodigo';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 
 const COL_PADS = "maestros_pad";

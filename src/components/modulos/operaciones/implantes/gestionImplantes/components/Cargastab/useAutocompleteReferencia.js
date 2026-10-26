@@ -15,7 +15,7 @@ import { cargarCatalogo, leerCatalogo, suscribirCatalogo } from '../../../../../
 const obtenerCodigos = () => leerCatalogo('codigos') ?? [];
 
 // Códigos Maestros marca los códigos dados de baja con estado 'INACTIVO'
-// (sin campo = activo, ver ModificarRegistroDrawer). No se ofrecen como
+// (sin campo = activo, ver PanelEdicionCodigo). No se ofrecen como
 // sugerencia al cargar ni al cambiar la referencia de un ítem. El filtro va
 // acá y no en la consulta: el catálogo es un único listener compartido por
 // toda la app (otros módulos sí necesitan los inactivos) y un

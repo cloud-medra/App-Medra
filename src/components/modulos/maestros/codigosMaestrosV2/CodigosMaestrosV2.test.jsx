@@ -20,32 +20,22 @@ vi.mock('../../../../context/ToastContext', () => ({ useToast: () => ({ showToas
 vi.mock('../../../../context/ModalContext', () => ({ useModal: () => ({ confirmAction }) }));
 vi.mock('firebase/firestore', () => ({ doc: vi.fn(), onSnapshot: () => () => {}, collection: vi.fn(), writeBatch: vi.fn(), serverTimestamp: vi.fn() }));
 vi.mock('../../../../firebaseConfig', () => ({ db: {} }));
-// La vista clásica no se prueba acá.
-vi.mock('../codigosMaestros/CodigosMaestros', () => ({ default: () => <div data-testid="vista-clasica" /> }));
-
-const { default: CodigosConSelectorVista } = await import('./CodigosConSelectorVista');
+const { default: CodigosMaestrosV2 } = await import('./CodigosMaestrosV2');
 
 beforeEach(() => {
-  localStorage.clear();
   vi.stubGlobal('requestAnimationFrame', (cb) => setTimeout(cb, 0));
 });
 afterEach(() => { cleanup(); confirmAction.mockClear(); vi.unstubAllGlobals(); });
 
-describe('Códigos: selector de vista', () => {
-  it('por defecto muestra la vista clásica y recuerda la elección', () => {
-    render(<CodigosConSelectorVista />);
-    expect(screen.getByTestId('vista-clasica')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('radio', { name: /vista nueva/i }));
-    expect(localStorage.getItem('workcraft:codigos:vista')).toBe('nueva');
+describe('Códigos', () => {
+  it('monta directamente la vista (sin selector de vista)', () => {
+    render(<CodigosMaestrosV2 />);
     expect(screen.getByRole('heading', { name: 'Códigos maestros' })).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /vista clásica/i })).not.toBeInTheDocument();
   });
-});
-
-describe('Códigos: vista nueva', () => {
-  beforeEach(() => localStorage.setItem('workcraft:codigos:vista', 'nueva'));
 
   it('Sin código muestra solo pendientes y la columna Copiar', () => {
-    render(<CodigosConSelectorVista />);
+    render(<CodigosMaestrosV2 />);
     expect(screen.getByText('REF-P1')).toBeInTheDocument();
     expect(screen.queryByText('REF-C1')).not.toBeInTheDocument();
     expect(screen.getByTitle('Copiar Desc. Auto y Precio Neto')).toBeInTheDocument();
@@ -55,7 +45,7 @@ describe('Códigos: vista nueva', () => {
     const writeText = vi.fn(async () => {});
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     vi.useFakeTimers();
-    render(<CodigosConSelectorVista />);
+    render(<CodigosMaestrosV2 />);
 
     fireEvent.click(screen.getByText('REF-P1'));
     const copiar = screen.getByTitle('Copiar Desc. Auto y Precio Neto');
@@ -73,7 +63,7 @@ describe('Códigos: vista nueva', () => {
 
   it('el panel marca cambios sin guardar y pide confirmación al cerrar con Esc', async () => {
     vi.useFakeTimers();
-    render(<CodigosConSelectorVista />);
+    render(<CodigosMaestrosV2 />);
     fireEvent.click(screen.getByRole('tab', { name: /con código/i }));
     fireEvent.doubleClick(screen.getByText('REF-C1'));
     await act(async () => { vi.runAllTimers(); });
@@ -90,7 +80,7 @@ describe('Códigos: vista nueva', () => {
 
   it('valida en línea los obligatorios al intentar guardar', async () => {
     vi.useFakeTimers();
-    render(<CodigosConSelectorVista />);
+    render(<CodigosMaestrosV2 />);
     fireEvent.click(screen.getByRole('button', { name: /nuevo registro/i }));
     await act(async () => { vi.runAllTimers(); });
     fireEvent.keyDown(window, { key: 's', ctrlKey: true });
