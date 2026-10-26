@@ -12,6 +12,11 @@ import Spinner from '../../../../ui/Spinner';
 
 const ALINEACION = { right: 'text-right', center: 'text-center' };
 
+// El doble clic abre el panel: se evita que el segundo clic seleccione la
+// palabra de la celda (detail > 1). El arrastre (detail 1) sigue
+// seleccionando texto normalmente.
+const evitarSeleccionDobleClic = (e) => { if (e.detail > 1) e.preventDefault(); };
+
 export const TablaCodigos = ({
   columnas,
   anchos,
@@ -19,7 +24,7 @@ export const TablaCodigos = ({
   anchoTotal,
   filas,
   renderCelda,
-  onFilaClick,
+  onFilaDobleClic,
   filaActiva,
   cargando,
   mensajeVacio = 'No hay registros para mostrar.'
@@ -58,8 +63,9 @@ export const TablaCodigos = ({
           return (
             <tr
               key={item.id}
-              onClick={onFilaClick ? () => onFilaClick(item) : undefined}
-              className={`border-l-2 transition-colors ${onFilaClick ? 'cursor-pointer' : ''} ${activa
+              onDoubleClick={onFilaDobleClic ? () => onFilaDobleClic(item) : undefined}
+              onMouseDown={onFilaDobleClic ? evitarSeleccionDobleClic : undefined}
+              className={`border-l-2 transition-colors ${activa
                 ? 'border-[#2383C2] bg-gray-50/80 dark:bg-gray-700/40'
                 : 'border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40'}`}
             >
@@ -152,6 +158,7 @@ export const BotonIcono = ({ icono: Icono, title, onClick, tono = 'neutro', acti
     title={title}
     aria-label={title}
     onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
+    onDoubleClick={(e) => e.stopPropagation()}
     className={`transition ${TONOS_ICONO[activo ? 'exito' : tono]}`}
   >
     <Icono size={13} />

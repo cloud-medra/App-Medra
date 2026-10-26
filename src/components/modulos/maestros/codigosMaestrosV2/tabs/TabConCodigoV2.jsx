@@ -163,7 +163,7 @@ const TabConCodigoV2 = ({ rutaVista = '/maestros/codigosMaestros/conCodigo' } = 
             anchoTotal={anchoTotalTabla}
             filas={pag.filas}
             renderCelda={renderCelda}
-            onFilaClick={puedeEditar ? (item) => abrirPanel('editarConCodigo', item) : undefined}
+            onFilaDobleClic={puedeEditar ? (item) => abrirPanel('editarConCodigo', item) : undefined}
             filaActiva={panel.abierto ? panel.registro?.id : null}
             cargando={cargando}
             mensajeVacio={f.hayFiltros ? 'Ningún registro coincide con la búsqueda.' : 'No hay registros con código.'}

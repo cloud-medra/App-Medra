@@ -182,7 +182,7 @@ const TabPendientesV2 = ({ rutaVista = '/maestros/codigosMaestros/pendientes' } 
             anchoTotal={anchoTotalTabla}
             filas={pag.filas}
             renderCelda={renderCelda}
-            onFilaClick={puede.asignarCodigo ? (item) => abrirPanel('asignarCodigo', item) : undefined}
+            onFilaDobleClic={puede.asignarCodigo ? (item) => abrirPanel('asignarCodigo', item) : undefined}
             filaActiva={panel.abierto ? panel.registro?.id : null}
             cargando={cargando}
             mensajeVacio={f.hayFiltros ? 'Ningún registro coincide con la búsqueda.' : 'No hay registros pendientes de código.'}

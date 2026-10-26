@@ -51,11 +51,31 @@ describe('Códigos: vista nueva', () => {
     expect(screen.getByTitle('Copiar Desc. Auto y Precio Neto')).toBeInTheDocument();
   });
 
+  it('el panel se abre solo con doble clic en la fila, no con clic ni desde los íconos', async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    vi.useFakeTimers();
+    render(<CodigosConSelectorVista />);
+
+    fireEvent.click(screen.getByText('REF-P1'));
+    const copiar = screen.getByTitle('Copiar Desc. Auto y Precio Neto');
+    fireEvent.click(copiar);
+    fireEvent.doubleClick(copiar);
+    await act(async () => { vi.advanceTimersByTime(300); });
+    expect(document.getElementById('cod-codigo')).toBeNull();
+    expect(writeText).toHaveBeenCalledWith('REF-P1 PLACA\t12500');
+
+    fireEvent.doubleClick(screen.getByText('REF-P1'));
+    await act(async () => { vi.advanceTimersByTime(300); });
+    expect(document.getElementById('cod-codigo')).not.toBeNull();
+    vi.useRealTimers();
+  });
+
   it('el panel marca cambios sin guardar y pide confirmación al cerrar con Esc', async () => {
     vi.useFakeTimers();
     render(<CodigosConSelectorVista />);
     fireEvent.click(screen.getByRole('tab', { name: /con código/i }));
-    fireEvent.click(screen.getByText('REF-C1'));
+    fireEvent.doubleClick(screen.getByText('REF-C1'));
     await act(async () => { vi.runAllTimers(); });
 
     const precio = document.getElementById('cod-precioNeto');

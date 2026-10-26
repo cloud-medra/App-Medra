@@ -102,7 +102,7 @@ const TabVistaGeneralV2 = ({ rutaVista = '/maestros/codigosMaestros/vistaGeneral
         anchoTotal={anchoTotalTabla}
         filas={pag.filas}
         renderCelda={renderCelda}
-        onFilaClick={puedeModificar ? abrirPanel : undefined}
+        onFilaDobleClic={puedeModificar ? abrirPanel : undefined}
         filaActiva={panel.abierto ? panel.registro?.id : null}
         cargando={cargando}
         mensajeVacio="No se encontraron registros con los filtros seleccionados."
