@@ -16,6 +16,17 @@ describe('sidebar: permisos de Administración repartidos en grupos', () => {
     expect(itemsDelSidebar(usuario, 'administracion', null)).toEqual([]);
   });
 
+  it('Cargas consolidadas va en Finanzas con el permiso que ya tenía (sin reasignar ni migrar)', () => {
+    const usuario = {
+      rol: 'operador',
+      activo: true,
+      permisos: { administracion: ['/administracion/cargasConsolidado'] },
+    };
+    expect(entradasDelSidebar(usuario, null)).toEqual(['finanzas']);
+    expect(rutas(itemsDelSidebar(usuario, 'finanzas', null))).toEqual(['/administracion/cargasConsolidado']);
+    expect(itemsDelSidebar(usuario, 'administracion', null)).toEqual([]);
+  });
+
   it('un Administrador con el mismo permiso además recibe Alertas en Usuarios y accesos', () => {
     const admin = {
       rol: 'admin',

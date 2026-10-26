@@ -128,7 +128,8 @@ export const MODULES = {
       // Se asigna como cualquier ítem, pero solo sirve con rol Administrador
       // (o Desarrollador): ver src/config/accesoMenu.js y functions/permisos.
       { label: 'Permisos por centro', path: '/administracion/permisosCentro', icon: <KeyRound size={14} />, color: PALETA_MENU.pasto, grupo: 'usuarios' },
-      { label: 'Cargas consolidadas', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} />, color: PALETA_MENU.indigo },
+      // En el grupo Finanzas; la ruta y el permiso siguen siendo de administracion.
+      { label: 'Cargas consolidadas', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} />, color: PALETA_MENU.indigo, grupo: 'finanzas' },
       { label: 'Estadísticas del período', path: '/administracion/estadisticas', icon: <BarChart3 size={14} />, color: PALETA_MENU.rojo, grupo: 'finanzas' },
       // Bandeja completa de tickets de soporte (Ayuda y soporte). Es el
       // permiso "Gestionar tickets": siempre activo para el Desarrollador (ve

@@ -20,11 +20,11 @@ describe('gruposMenu: Administración repartida en el sidebar', () => {
     expect(entradaDeRuta('administracion', '/administracion/controlMensual')).toBe('finanzas');
     expect(entradaDeRuta('administracion', '/administracion/ResumenPeriodoAbierto')).toBe('finanzas');
     expect(entradaDeRuta('administracion', '/administracion/estadisticas')).toBe('finanzas');
+    expect(entradaDeRuta('administracion', '/administracion/cargasConsolidado')).toBe('finanzas');
     expect(entradaDeRuta('administracion', '/administracion/crearUsuario')).toBe('usuarios');
     expect(entradaDeRuta('administracion', '/administracion/listadoUsuario')).toBe('usuarios');
     expect(entradaDeRuta('administracion', '/administracion/permisosCentro')).toBe('usuarios');
     expect(entradaDeRuta('administracion', '/administracion/alertas')).toBe('usuarios');
-    expect(entradaDeRuta('administracion', '/administracion/cargasConsolidado')).toBe('administracion');
     expect(entradaDeRuta('administracion', '/administracion/gestionModulos')).toBe('administracion');
     expect(entradaDeRuta('bodega', '/bodega/ingresoBodega')).toBe('bodega');
   });
@@ -39,12 +39,12 @@ describe('gruposMenu: Administración repartida en el sidebar', () => {
     const repartidos = ['finanzas', 'usuarios', 'administracion'].flatMap((e) => rutas(itemsDeEntrada(e, admin)));
     expect([...repartidos].sort()).toEqual(rutas(admin).sort());
     expect(rutas(itemsDeEntrada('finanzas', admin))).toEqual([
-      '/administracion/controlMensual', '/administracion/ResumenPeriodoAbierto', '/administracion/estadisticas',
+      '/administracion/controlMensual', '/administracion/ResumenPeriodoAbierto', '/administracion/cargasConsolidado', '/administracion/estadisticas',
     ]);
     // Respeta el orden recibido (ordenSubItems del usuario).
     const invertidos = [...admin].reverse();
     expect(rutas(itemsDeEntrada('finanzas', invertidos))).toEqual([
-      '/administracion/estadisticas', '/administracion/ResumenPeriodoAbierto', '/administracion/controlMensual',
+      '/administracion/estadisticas', '/administracion/cargasConsolidado', '/administracion/ResumenPeriodoAbierto', '/administracion/controlMensual',
     ]);
   });
 
