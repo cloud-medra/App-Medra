@@ -189,11 +189,20 @@ service firebase.storage {
     // Capturas de un ticket de soporte (Ayuda y soporte), hasta 3 por ticket:
     // tickets_capturas/{uid del creador}/{ticketId}/captura_N. Solo las sube
     // (o las borra, si el ticket no llegó a crearse) su autor; imágenes de
-    // hasta 2 MB (la app las reduce y comprime antes). Se muestran con la URL
-    // de descarga guardada en el ticket, que solo leen su autor y quienes
-    // gestionan tickets (firestore.rules). Sin firestore.get().
+    // hasta 2 MB (la app las reduce y comprime antes). Las ve su autor y
+    // quien tiene "Gestionar tickets" (mismo criterio que gestionaTickets() de
+    // firestore.rules). La app las muestra con la URL de descarga guardada en
+    // el ticket (que solo leen esas mismas personas), así que mostrarlas no
+    // evalúa esta regla ni cuesta lecturas; el firestore.get() del permiso
+    // solo corre si quien gestiona las pide por el SDK y no es el autor.
+    function gestionaTickets() {
+      return esDev()
+        || getUsuario().get('rol', '') == 'admin'
+        || '/administracion/tickets' in getUsuario().get('permisos', {}).get('administracion', []);
+    }
     match /tickets_capturas/{uid}/{ticketId}/{archivo} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null
+        && (request.auth.uid == uid || (estaActivo() && gestionaTickets()));
       allow create: if request.auth != null
         && request.auth.uid == uid
         && resource == null
