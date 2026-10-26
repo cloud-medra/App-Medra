@@ -32,6 +32,10 @@ const RUTAS_DINAMICAS = {
   'modulos/maestros/codigosMaestros/components/tabPendientes/TabPendientes.jsx': ['/maestros/codigosMaestros/pendientes', '/implantes/codigosImplantes/pendientes', '/hemodinamia/codigosHemodinamia/pendientes'],
   'modulos/maestros/codigosMaestros/components/tabConCodigo/TabConCodigo.jsx': ['/maestros/codigosMaestros/conCodigo', '/implantes/codigosImplantes/conCodigo', '/hemodinamia/codigosHemodinamia/conCodigo'],
   'modulos/maestros/codigosMaestros/components/tabVistaGeneral/TabVistaGeneral.jsx': ['/maestros/codigosMaestros/vistaGeneral', '/implantes/codigosImplantes/vistaGeneral', '/hemodinamia/codigosHemodinamia/vistaGeneral'],
+  // Vista nueva de Códigos (codigosMaestrosV2): mismas rutas que la clásica.
+  'modulos/maestros/codigosMaestrosV2/tabs/TabPendientesV2.jsx': ['/maestros/codigosMaestros/pendientes', '/implantes/codigosImplantes/pendientes', '/hemodinamia/codigosHemodinamia/pendientes'],
+  'modulos/maestros/codigosMaestrosV2/tabs/TabConCodigoV2.jsx': ['/maestros/codigosMaestros/conCodigo', '/implantes/codigosImplantes/conCodigo', '/hemodinamia/codigosHemodinamia/conCodigo'],
+  'modulos/maestros/codigosMaestrosV2/tabs/TabVistaGeneralV2.jsx': ['/maestros/codigosMaestros/vistaGeneral', '/implantes/codigosImplantes/vistaGeneral', '/hemodinamia/codigosHemodinamia/vistaGeneral'],
   'modulos/gestiones/shared/TablaOrdenes.jsx': ['/laboratorio/ordenLaboratorio', '/vacunatorio/ordenVacunatorio'],
   'modulos/gestiones/shared/DetalleOrdenTabla.jsx': ['/laboratorio/ordenLaboratorio', '/vacunatorio/ordenVacunatorio'],
   'modulos/gestiones/shared/TablaXmlDocumentos.jsx': ['/laboratorio/xmlDocLaboratorio', '/vacunatorio/xmlDocVacunatorio'],
@@ -132,6 +136,9 @@ const TABLAS_PENDIENTES = new Set([
   // Tabla genérica de Bodega: las columnas (y sus permisos) las define cada
   // pantalla que la usa (Maestro, Tránsito, Tránsito por centro).
   'modulos/bodega/shared/TablaBodega.jsx',
+  // Tabla de la vista nueva de Códigos: las columnas (y sus permisos) las
+  // define cada pestaña (codigosMaestrosV2/tabs).
+  'modulos/maestros/codigosMaestrosV2/ui/TablaCodigos.jsx',
   // Cajas de Bodega: formularios y detalles en ventanas (no listados).
   'modulos/bodega/cajasBodega/FormCajaModal.jsx',
   'modulos/bodega/cajasBodega/InventarioCajaModal.jsx',
