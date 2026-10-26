@@ -5,16 +5,19 @@ import '@testing-library/jest-dom/vitest';
 
 const actualizarTicket = vi.fn(async () => {});
 const listarMisTickets = vi.fn();
+const listarEquipo = vi.fn();
 vi.mock('./ticketsServicio', () => ({
   actualizarTicket: (...a) => actualizarTicket(...a),
   listarMisTickets: (...a) => listarMisTickets(...a),
+  listarEquipo: (...a) => listarEquipo(...a),
   crearTicket: vi.fn(),
   validarCaptura: () => null,
   TIPOS_CAPTURA: ['image/png'],
 }));
 const showToast = vi.fn();
 vi.mock('../../../../context/ToastContext', () => ({ useToast: () => ({ showToast }) }));
-vi.mock('../../../../context/UserContext', () => ({ useUser: () => ({ userData: { uid: 'u1', nombreCompleto: 'Ana' } }) }));
+let usuarioActual = { uid: 'u1', nombreCompleto: 'Ana' };
+vi.mock('../../../../context/UserContext', () => ({ useUser: () => ({ userData: usuarioActual }) }));
 
 const { default: TicketPanel } = await import('./TicketPanel');
 const { default: AyudaSoporte } = await import('./AyudaSoporte');
@@ -71,5 +74,32 @@ describe('AyudaSoporte (Mis tickets)', () => {
     expect(listarMisTickets).toHaveBeenCalledWith('u1', null);
     expect(screen.getByTitle('Tiene una respuesta o un cambio de estado sin ver')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Cargar más/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('Solo lectura (administrador del autor)', () => {
+  it('ve el detalle y la conversación pero no puede responder, cambiar el estado ni marcar visto', async () => {
+    render(<TicketPanel abierto ticket={TICKET} modo="lectura" userData={{ uid: 'a1', rol: 'admin' }} onCerrar={vi.fn()} />);
+    expect(screen.getByText('No guarda la gestión')).toBeInTheDocument();
+    expect(screen.getByText(/Solo lectura/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Responder/ })).not.toBeInTheDocument();
+    expect(screen.queryByText('Cambiar estado')).not.toBeInTheDocument();
+    expect(screen.queryByText('Contexto técnico')).not.toBeInTheDocument();
+    await new Promise((r) => setTimeout(r, 10));
+    expect(actualizarTicket).not.toHaveBeenCalled();
+  });
+
+  it('un Administrador ve la pestaña Tickets de mi equipo (con sus centros); otros usuarios no', async () => {
+    listarMisTickets.mockResolvedValue({ tickets: [], cursor: null, hayMas: false });
+    listarEquipo.mockResolvedValue({ tickets: [{ ...TICKET, id: 't2', titulo: 'Ticket de mi usuario' }], cursores: {}, hayMas: false });
+    usuarioActual = { uid: 'a1', rol: 'admin', centrosAdministrados: ['c1'] };
+    render(<AyudaSoporte />);
+    fireEvent.click(screen.getByRole('tab', { name: /Tickets de mi equipo/ }));
+    await waitFor(() => expect(screen.getByText('Ticket de mi usuario')).toBeInTheDocument());
+    expect(listarEquipo).toHaveBeenCalledWith({ uid: 'a1', centros: ['c1'] }, { estado: '', tipo: '' }, {});
+    cleanup();
+    usuarioActual = { uid: 'u1', rol: 'operador' };
+    render(<AyudaSoporte />);
+    expect(screen.queryByRole('tab', { name: /Tickets de mi equipo/ })).not.toBeInTheDocument();
   });
 });

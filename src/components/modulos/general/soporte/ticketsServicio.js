@@ -5,11 +5,14 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../../../firebaseConfig';
 import { suscribirConVisibilidad } from '../../../../hooks/useVisibleSnapshot';
-import { COLECCION_TICKETS, DOC_CONTADOR_TICKETS, TAMANO_PAGINA_TICKETS, MAX_CAPTURAS, contextoTecnico } from './ticketsConfig';
+import { COLECCION_TICKETS, DOC_CONTADOR_TICKETS, TAMANO_PAGINA_TICKETS, MAX_CAPTURAS, contextoTecnico, visibilidadTicket } from './ticketsConfig';
 
 // Acceso a Firestore/Storage de los tickets. Lecturas:
 //   - Mis tickets: consulta por creadoPor, paginada (TAMANO_PAGINA_TICKETS).
 //   - Bandeja: consulta paginada con los filtros en la consulta.
+//   - Tickets de mi equipo (administradores): consultas paginadas por los
+//     campos de visibilidad guardados en el ticket (administradores /
+//     centroAdministradores), nunca todos los tickets.
 //   - Abrir un ticket: 1 lectura (la conversación va en el mismo documento).
 //   - Indicadores: consultas con limit sobre noLeidoUsuario / pendienteGestor.
 //   - Crear: 1 lectura del contador (transacción para el número correlativo).
@@ -87,6 +90,8 @@ export const crearTicket = async ({ form, capturas = [], userData, vista }) => {
         creadoPor: userData.uid,
         creadoPorNombre: userData.nombreCompleto || userData.email || 'Usuario',
         creadoPorEmail: userData.email || '',
+        // Quién más lo ve (administradores del autor al crearlo), ver visibilidadTicket.
+        ...visibilidadTicket(userData),
         estado: 'NUEVO',
         mensajes: [],
         noLeidoUsuario: false,
@@ -128,6 +133,37 @@ export const listarBandeja = (filtros = {}, cursor = null) => {
     .map((campo) => where(campo, '==', filtros[campo]));
   r.push(orderBy('creadoEl', filtros.orden === 'asc' ? 'asc' : 'desc'));
   return pagina(r, cursor);
+};
+
+// Tickets de mi equipo (Administrador): los de sus usuarios asignados
+// (administradores array-contains uid) y los de usuarios que eligieron a
+// "todos los administradores" de un centro que administra
+// (centroAdministradores in sus centros). Dos consultas paginadas cuyos
+// resultados se mezclan por fecha. `cursores`: { asignados, centro } con el
+// último documento de cada una, o false si ya no tiene más.
+export const listarEquipo = async ({ uid, centros = [] }, filtros = {}, cursores = {}) => {
+  const r = ['estado', 'tipo']
+    .filter((campo) => filtros[campo])
+    .map((campo) => where(campo, '==', filtros[campo]));
+  r.push(orderBy('creadoEl', 'desc'));
+  const centrosValidos = [...new Set(centros.filter(Boolean))].slice(0, 30);
+  const fuentes = [];
+  if (cursores.asignados !== false) fuentes.push(['asignados', [where('administradores', 'array-contains', uid), ...r]]);
+  if (centrosValidos.length && cursores.centro !== false) fuentes.push(['centro', [where('centroAdministradores', 'in', centrosValidos), ...r]]);
+  const paginas = await Promise.all(fuentes.map(([clave, restricciones]) =>
+    pagina(restricciones, cursores[clave] || null).then((p) => [clave, p])));
+  const siguientes = { asignados: false, centro: false };
+  const porId = new Map();
+  paginas.forEach(([clave, p]) => {
+    siguientes[clave] = p.hayMas ? p.cursor : false;
+    p.tickets.forEach((t) => porId.set(t.id, t));
+  });
+  const fecha = (t) => (t.creadoEl?.toMillis ? t.creadoEl.toMillis() : new Date(t.creadoEl || 0).getTime());
+  return {
+    tickets: [...porId.values()].sort((a, b) => fecha(b) - fecha(a)),
+    cursores: siguientes,
+    hayMas: Boolean(siguientes.asignados || siguientes.centro),
+  };
 };
 
 // --- Un ticket -----------------------------------------------------------------

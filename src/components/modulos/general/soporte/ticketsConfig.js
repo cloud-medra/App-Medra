@@ -78,6 +78,30 @@ export const contextoTecnico = ({ vista, ahora = new Date() } = {}) => ({
   fechaCliente: ahora.toISOString(),
 });
 
+// Quién ve el ticket además del autor y los desarrolladores: el o los
+// administradores asignados al autor AL CREARLO (se guarda en el ticket y no
+// cambia después). Sale de los datos del usuario ya cargados, con el mismo
+// criterio de Usuarios y accesos (functions/solicitudes/destinatarios.mjs):
+//   - Operador o Encargado con centro:
+//       · "todos los administradores del centro" -> centroAdministradores
+//         = su centro (lo ve cualquier administrador de ese centro);
+//       · si no, administradores = sus administradoresAsignados.
+//   - Sin centro o sin administradores asignados, o si el autor es
+//     Administrador o Desarrollador: nadie más (listas vacías).
+// firestore.rules (ticketNuevoValido) exige estos mismos valores contra el
+// perfil del autor, así que no se pueden falsear.
+const ROLES_CON_ADMINISTRADOR = ['operador', 'encargado'];
+export const visibilidadTicket = (userData) => {
+  const rol = userData?.rol || 'operador';
+  const centro = userData?.centroCostoId;
+  const usaAdministradores = ROLES_CON_ADMINISTRADOR.includes(rol) && centro !== undefined && centro !== null && centro !== '';
+  const todos = userData?.todosLosAdministradoresDelCentro === true;
+  return {
+    administradores: usaAdministradores && !todos ? [...(userData?.administradoresAsignados || [])] : [],
+    centroAdministradores: usaAdministradores && todos ? centro : null,
+  };
+};
+
 // Validación del formulario de un ticket nuevo: { campo: mensaje }.
 export const validarTicketNuevo = (t) => {
   const errores = {};

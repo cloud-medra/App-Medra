@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  codigoTicket, numeroDesdeBusqueda, validarTicketNuevo, cambioDeEstado, respuesta, contextoTecnico, ESTADOS_TICKET
+  codigoTicket, numeroDesdeBusqueda, validarTicketNuevo, cambioDeEstado, respuesta, contextoTecnico, ESTADOS_TICKET, visibilidadTicket
 } from './ticketsConfig';
 import { moduloDesdeContexto, opcionesModuloTicket, etiquetaModuloTicket, MODULO_AJUSTES, MODULO_GENERAL } from './modulosTicket';
 
@@ -72,5 +72,25 @@ describe('tickets: módulo relacionado', () => {
     const opciones = opcionesModuloTicket();
     expect(opciones.find((o) => o.id === 'administracion').label).toBe('Herramientas');
     expect(etiquetaModuloTicket('finanzas')).toBe('Finanzas');
+  });
+});
+
+describe('tickets: visibilidad (administradores del autor al crearlo)', () => {
+  it('operador o encargado con centro y administradores asignados: esos administradores', () => {
+    expect(visibilidadTicket({ rol: 'operador', centroCostoId: 'c1', administradoresAsignados: ['a1', 'a2'] }))
+      .toEqual({ administradores: ['a1', 'a2'], centroAdministradores: null });
+    expect(visibilidadTicket({ rol: 'encargado', centroCostoId: 'c1', administradoresAsignados: ['a1'] }))
+      .toEqual({ administradores: ['a1'], centroAdministradores: null });
+  });
+  it('"todos los administradores del centro": el centro', () => {
+    expect(visibilidadTicket({ rol: 'operador', centroCostoId: 'c1', todosLosAdministradoresDelCentro: true, administradoresAsignados: ['a1'] }))
+      .toEqual({ administradores: [], centroAdministradores: 'c1' });
+  });
+  it('sin administrador asignado, sin centro, o si lo crea un administrador o desarrollador: nadie más', () => {
+    const nadie = { administradores: [], centroAdministradores: null };
+    expect(visibilidadTicket({ rol: 'operador', centroCostoId: 'c1' })).toEqual(nadie);
+    expect(visibilidadTicket({ rol: 'operador', administradoresAsignados: ['a1'] })).toEqual(nadie);
+    expect(visibilidadTicket({ rol: 'admin', centroCostoId: 'c1', administradoresAsignados: ['a1'] })).toEqual(nadie);
+    expect(visibilidadTicket({ rol: 'dev' })).toEqual(nadie);
   });
 });

@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Eye, LifeBuoy, Loader2, Plus, RefreshCw } from 'lucide-react';
+import { Eye, LifeBuoy, Loader2, Plus, RefreshCw, User, Users } from 'lucide-react';
 import { useUser } from '../../../../context/UserContext';
 import { useToast } from '../../../../context/ToastContext';
 import { useColumnResize } from '../../../../hooks/useColumnResize';
 import { TablaCodigos, BotonIcono } from '../../maestros/codigosMaestrosV2/ui/TablaCodigos';
 import NuevoTicketPanel from './NuevoTicketPanel';
 import TicketPanel from './TicketPanel';
+import TicketsEquipo from './TicketsEquipo';
 import { BadgeEstadoTicket, TipoTicket, PuntoNovedad } from './BadgesTicket';
 import { codigoTicket, formatearFechaTicket } from './ticketsConfig';
 import { listarMisTickets } from './ticketsServicio';
@@ -39,6 +40,9 @@ const AyudaSoporte = ({ contexto = {}, abrirNuevo = false }) => {
   const abrir = (id) => { setSeleccion(id); setPanelAbierto(true); };
 
   const modulos = useMemo(() => opcionesModuloTicket(), []);
+  // Administrador: además ve los tickets de sus usuarios asignados (solo lectura).
+  const esAdministrador = userData?.rol === 'admin' && userData?.activo !== false;
+  const [seccion, setSeccion] = useState('mios');
   const moduloInicial = useMemo(() => moduloDesdeContexto(contexto), [contexto]);
   const { anchos, handleResize, anchoTotalTabla } = useColumnResize(COLUMNAS);
 
@@ -86,14 +90,16 @@ const AyudaSoporte = ({ contexto = {}, abrirNuevo = false }) => {
       <header className="shrink-0 px-5 py-4 border-b border-slate-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1"><LifeBuoy size={12} /> Ayuda y soporte</p>
-          <h1 className="text-[18px] font-semibold text-slate-900 dark:text-gray-50">Mis tickets</h1>
+          <h1 className="text-[18px] font-semibold text-slate-900 dark:text-gray-50">{seccion === 'equipo' ? 'Tickets de mi equipo' : 'Mis tickets'}</h1>
           <p className="text-[12px] text-slate-500 dark:text-gray-400">Reporta errores, pide mejoras o integraciones y haz consultas. Doble clic en un ticket para ver la conversación.</p>
         </div>
         <div className="flex items-center gap-2">
+          {seccion === 'mios' && (
           <button type="button" onClick={() => cargar()} disabled={cargando} title="Actualizar"
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-[12px] text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50">
             <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} /> Actualizar
           </button>
+          )}
           <button type="button" onClick={() => setNuevoAbierto(true)}
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa6] text-white text-[12px] font-medium">
             <Plus size={14} /> Nuevo ticket
@@ -101,6 +107,18 @@ const AyudaSoporte = ({ contexto = {}, abrirNuevo = false }) => {
         </div>
       </header>
 
+      {esAdministrador && (
+        <nav className="shrink-0 px-5 flex items-center gap-5 border-b border-slate-200 dark:border-gray-700" role="tablist">
+          {[['mios', 'Mis tickets', User], ['equipo', 'Tickets de mi equipo', Users]].map(([id, etiqueta, Icono]) => (
+            <button key={id} type="button" role="tab" aria-selected={seccion === id} onClick={() => setSeccion(id)}
+              className={`inline-flex items-center gap-1.5 py-2.5 -mb-px border-b-2 text-[13px] ${seccion === id ? 'border-[#2383C2] text-slate-900 dark:text-gray-50 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-gray-200'}`}>
+              <Icono size={14} /> {etiqueta}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      {seccion === 'equipo' ? <TicketsEquipo userData={userData} /> : (<>
       <TablaCodigos
         columnas={COLUMNAS}
         anchos={anchos}
@@ -121,6 +139,7 @@ const AyudaSoporte = ({ contexto = {}, abrirNuevo = false }) => {
           </button>
         </div>
       )}
+      </>)}
 
       <NuevoTicketPanel
         abierto={nuevoAbierto}

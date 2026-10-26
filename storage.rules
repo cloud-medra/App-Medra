@@ -189,20 +189,30 @@ service firebase.storage {
     // Capturas de un ticket de soporte (Ayuda y soporte), hasta 3 por ticket:
     // tickets_capturas/{uid del creador}/{ticketId}/captura_N. Solo las sube
     // (o las borra, si el ticket no llegó a crearse) su autor; imágenes de
-    // hasta 2 MB (la app las reduce y comprime antes). Las ve su autor y
-    // quien tiene "Gestionar tickets" (mismo criterio que gestionaTickets() de
-    // firestore.rules). La app las muestra con la URL de descarga guardada en
-    // el ticket (que solo leen esas mismas personas), así que mostrarlas no
-    // evalúa esta regla ni cuesta lecturas; el firestore.get() del permiso
-    // solo corre si quien gestiona las pide por el SDK y no es el autor.
+    // hasta 2 MB (la app las reduce y comprime antes). Las ven las mismas
+    // personas que el ticket (firestore.rules): su autor, quien tiene
+    // "Gestionar tickets" (Desarrollador o el ítem asignado) y el o los
+    // administradores asignados al autor, según los campos guardados en el
+    // ticket. La app las muestra con la URL de descarga guardada en el ticket
+    // (que solo leen esas personas), así que mostrarlas no evalúa esta regla
+    // ni cuesta lecturas. Si se piden por el SDK y no es el autor, la regla
+    // lee el perfil (1 lectura) y, si no gestiona, el ticket (1 más).
     function gestionaTickets() {
       return esDev()
-        || getUsuario().get('rol', '') == 'admin'
         || '/administracion/tickets' in getUsuario().get('permisos', {}).get('administracion', []);
+    }
+    function veTicketComoAdministrador(ticketId) {
+      let t = firestore.get(/databases/(default)/documents/tickets/$(ticketId)).data;
+      let u = getUsuario();
+      return u.get('rol', '') == 'admin'
+        && (request.auth.uid in t.get('administradores', [])
+          || (t.get('centroAdministradores', null) != null
+            && t.get('centroAdministradores', null) in u.get('centrosAdministrados', [])));
     }
     match /tickets_capturas/{uid}/{ticketId}/{archivo} {
       allow read: if request.auth != null
-        && (request.auth.uid == uid || (estaActivo() && gestionaTickets()));
+        && (request.auth.uid == uid
+          || (estaActivo() && (gestionaTickets() || veTicketComoAdministrador(ticketId))));
       allow create: if request.auth != null
         && request.auth.uid == uid
         && resource == null

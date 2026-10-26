@@ -251,10 +251,11 @@ export const administracionComponentMaps = {
     },
   },
   // Permiso "Gestionar tickets" (Ayuda y soporte): el ítem habilita la
-  // bandeja y, en firestore.rules (gestionaTickets), leer y actualizar todos
-  // los tickets. Por defecto lo tienen Administrador y Desarrollador.
+  // bandeja completa y, en firestore.rules (gestionaTickets), leer y
+  // actualizar todos los tickets. Siempre activo para el Desarrollador;
+  // desactivado por defecto para los demás, también los administradores.
   '/administracion/tickets': {
-    label: 'Gestionar tickets (GestionTickets.jsx) — por defecto, administradores',
+    label: 'Gestionar tickets (GestionTickets.jsx) — bandeja completa; siempre para Desarrollador',
     sections: {
       tabla_tickets: {
         label: 'Sección: Bandeja de tickets',

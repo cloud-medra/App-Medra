@@ -180,14 +180,38 @@ service cloud.firestore {
     // =================================================================
     // AYUDA Y SOPORTE: TICKETS
     // =================================================================
-    // Permiso "Gestionar tickets": el ítem Herramientas → Gestionar tickets
-    // (/administracion/tickets) o, por defecto, rol Administrador o
-    // Desarrollador (mismo criterio que porDefectoAdministradores de
-    // src/config/accesoMenu.js).
+    // Quién ve cada ticket: su autor, el o los administradores asignados al
+    // autor al crearlo (guardados en el propio ticket) y quien gestiona.
+    // Todo se valida con campos del ticket y el perfil de quien consulta
+    // (getUsuario, que ya se lee para estaActivo): sin leer otros documentos.
+    //
+    // Permiso "Gestionar tickets" (bandeja completa, responder, cambiar el
+    // estado): siempre el Desarrollador; los demás, también un Administrador,
+    // solo con el ítem Herramientas → Gestionar tickets asignado.
     function gestionaTickets() {
-      return esDev()
-        || getUsuario().get('rol', '') == 'admin'
-        || tieneItem('administracion', '/administracion/tickets');
+      return esDev() || tieneItem('administracion', '/administracion/tickets');
+    }
+    // Administrador asignado al autor del ticket (solo lectura): figura en
+    // `administradores` o el autor eligió "todos los administradores" de un
+    // centro que él administra (`centroAdministradores`). Tiene que seguir
+    // siendo Administrador (activo, por estaActivo) al consultar.
+    function veTicketComoAdministrador(t) {
+      let u = getUsuario();
+      return u.get('rol', '') == 'admin'
+        && (request.auth.uid in t.get('administradores', [])
+          || (t.get('centroAdministradores', null) != null
+            && t.get('centroAdministradores', null) in u.get('centrosAdministrados', [])));
+    }
+    // Visibilidad de un ticket nuevo: la que corresponde al perfil del autor
+    // (mismo cálculo que visibilidadTicket de src/.../soporte/ticketsConfig.js),
+    // para que no se pueda mostrar el ticket a otros administradores.
+    function visibilidadTicketValida(t) {
+      let u = getUsuario();
+      let usaAdministradores = u.get('rol', 'operador') in ['operador', 'encargado']
+        && !(u.get('centroCostoId', null) in [null, '']);
+      let todos = u.get('todosLosAdministradoresDelCentro', false) == true;
+      return t.administradores == (usaAdministradores && !todos ? u.get('administradoresAsignados', []) : [])
+        && t.centroAdministradores == (usaAdministradores && todos ? u.get('centroCostoId', null) : null);
     }
     // Número correlativo (TK-0001…): solo sube de a uno, en la misma
     // transacción que crea el ticket.
@@ -208,7 +232,8 @@ service cloud.firestore {
         && t.descripcion is string && t.descripcion.size() > 0 && t.descripcion.size() <= 4000
         && t.capturas is list && t.capturas.size() <= 3
         && t.mensajes is list && t.mensajes.size() == 0
-        && t.noLeidoUsuario == false && t.pendienteGestor == true;
+        && t.noLeidoUsuario == false && t.pendienteGestor == true
+        && visibilidadTicketValida(t);
     }
     // El creador solo agrega UN mensaje suyo al final de la conversación (sin
     // tocar los anteriores) y marca sus novedades como vistas; el estado y los
@@ -230,9 +255,13 @@ service cloud.firestore {
             && despues.pendienteGestor == true));
     }
     // Un ticket = un documento con su conversación (abrirlo cuesta 1 lectura).
-    // Cada usuario crea y lee solo los suyos; quien gestiona, todos.
+    // Leen: su autor, sus administradores asignados (solo lectura) y quien
+    // gestiona. Escriben: el autor (su mensaje / marcar visto) y quien gestiona.
     match /tickets/{ticketId} {
-      allow read: if estaActivo() && (resource.data.creadoPor == request.auth.uid || gestionaTickets());
+      allow read: if estaActivo()
+        && (resource.data.creadoPor == request.auth.uid
+          || gestionaTickets()
+          || veTicketComoAdministrador(resource.data));
       allow create: if estaActivo() && ticketNuevoValido(request.resource.data);
       allow update: if estaActivo() && (gestionaTickets() || actualizacionDelCreador());
       allow delete: if false;

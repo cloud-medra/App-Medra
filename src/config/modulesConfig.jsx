@@ -129,11 +129,12 @@ export const MODULES = {
       { label: 'Permisos por centro', path: '/administracion/permisosCentro', icon: <KeyRound size={14} />, color: PALETA_MENU.pasto, grupo: 'usuarios' },
       { label: 'Cargas consolidadas', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} />, color: PALETA_MENU.indigo },
       { label: 'Estadísticas del período', path: '/administracion/estadisticas', icon: <BarChart3 size={14} />, color: PALETA_MENU.rojo, grupo: 'finanzas' },
-      // Bandeja de tickets de soporte (Ayuda y soporte). Es el permiso
-      // "Gestionar tickets": se asigna en el editor de permisos y, por defecto,
-      // lo tienen los administradores (porDefectoAdministradores, ver
-      // config/accesoMenu.js y gestionaTickets() en firestore.rules).
-      { label: 'Gestionar tickets', path: '/administracion/tickets', icon: <Inbox size={14} />, color: PALETA_MENU.turquesa, porDefectoAdministradores: true },
+      // Bandeja completa de tickets de soporte (Ayuda y soporte). Es el
+      // permiso "Gestionar tickets": siempre activo para el Desarrollador (ve
+      // todos los ítems) y, para los demás, solo si se asigna en el editor de
+      // permisos (también a un Administrador, y se le puede quitar). Ver
+      // gestionaTickets() en firestore.rules.
+      { label: 'Gestionar tickets', path: '/administracion/tickets', icon: <Inbox size={14} />, color: PALETA_MENU.turquesa },
       // Activar/inactivar módulos e ítems (config/modulosActivos.js): solo rol
       // Desarrollador, no se asigna (src/config/accesoMenu.js). No se puede inactivar.
       { label: 'Gestión de módulos', path: '/administracion/gestionModulos', icon: <ToggleRight size={14} />, color: PALETA_MENU.cafe, soloDesarrollador: true }

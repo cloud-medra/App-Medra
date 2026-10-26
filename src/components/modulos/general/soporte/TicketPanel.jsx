@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Image as ImageIcon, Info, Loader2, MessageSquare, Send, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Eye, Image as ImageIcon, Info, Loader2, MessageSquare, Send, ShieldCheck } from 'lucide-react';
 import PanelLateral from '../../maestros/codigosMaestrosV2/ui/PanelLateral';
 import { useToast } from '../../../../context/ToastContext';
 import { BadgeEstadoTicket, BadgePrioridadTicket, TipoTicket } from './BadgesTicket';
@@ -19,9 +19,12 @@ const Dato = ({ etiqueta, children }) => (
 // listado (la conversación viene en el mismo documento: 0 lecturas extra).
 // modo 'usuario': responde y marca como visto. modo 'gestor': además ve el
 // contexto técnico, cambia el estado o rechaza (motivo obligatorio).
+// modo 'lectura' (administrador del autor, Tickets de mi equipo): solo ve el
+// detalle, la conversación y las capturas; no escribe nada.
 const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModulo = (m) => m, onCerrar, onActualizado }) => {
   const { showToast } = useToast();
   const esGestor = modo === 'gestor';
+  const soloLectura = modo === 'lectura';
   const [texto, setTexto] = useState('');
   const [estadoNuevo, setEstadoNuevo] = useState('');
   const [motivo, setMotivo] = useState('');
@@ -31,7 +34,7 @@ const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModu
   // Al abrirlo: quita la marca de novedad del lado que lo abre (sin tocar
   // la fecha de actualización del ticket).
   useEffect(() => {
-    if (!abierto || !ticket?.id) return;
+    if (!abierto || !ticket?.id || soloLectura) return;
     setTexto('');
     setEstadoNuevo('');
     setMotivo('');
@@ -93,7 +96,11 @@ const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModu
 
   return (
     <PanelLateral abierto={abierto} onSolicitarCierre={() => !guardando && onCerrar()} encabezado={encabezado} ancho="max-w-[560px]"
-      pie={(
+      pie={soloLectura ? (
+        <p className="flex items-center gap-1.5 text-[12px] text-slate-500 dark:text-gray-400">
+          <Eye size={14} /> Solo lectura: ticket de un usuario de tu equipo. Las respuestas y los cambios de estado los hace soporte.
+        </p>
+      ) : (
         <div className="space-y-2">
           <textarea value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={MAX_MENSAJE} rows={2}
             placeholder={esGestor ? 'Responder al usuario…' : 'Escribe una respuesta…'}
@@ -116,7 +123,7 @@ const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModu
           <Dato etiqueta="Módulo">{etiquetaModulo(ticket.modulo)}</Dato>
           <Dato etiqueta="Creado">{formatearFechaTicket(ticket.creadoEl)}</Dato>
           <Dato etiqueta="Actualizado">{formatearFechaTicket(ticket.actualizadoEl)}</Dato>
-          {esGestor && <Dato etiqueta="Usuario">{ticket.creadoPorNombre}</Dato>}
+          {(esGestor || soloLectura) && <Dato etiqueta="Usuario">{ticket.creadoPorNombre}</Dato>}
         </dl>
 
         <section className="rounded-lg border border-slate-200 dark:border-gray-700 p-3">

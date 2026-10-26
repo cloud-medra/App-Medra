@@ -10,14 +10,14 @@ const GESTION_MODULOS = '/administracion/gestionModulos';
 const rutas = (u) => subItemsVisibles(u, 'administracion').map((s) => s.path);
 
 describe('Menú: el Administrador ve solo lo asignado; el Desarrollador, todo', () => {
-  it('Administrador sin Administración asignada: solo ve Alertas (automático) y Gestionar tickets (por defecto), no Permisos por centro', () => {
-    expect(rutas({ rol: 'admin', permisos: {} })).toEqual([ALERTAS, TICKETS]);
+  it('Administrador sin Administración asignada: solo ve Alertas (automático), no Permisos por centro ni Gestionar tickets', () => {
+    expect(rutas({ rol: 'admin', permisos: {} })).toEqual([ALERTAS]);
     expect(subItemsVisibles({ rol: 'admin', permisos: { laboratorio: ['/laboratorio/ordenLaboratorio'] } }, 'laboratorio').map((s) => s.path))
       .toEqual(['/laboratorio/ordenLaboratorio']);
   });
 
   it('Permisos por centro se asigna como cualquier ítem', () => {
-    expect(rutas({ rol: 'admin', permisos: { administracion: [RUTA] } })).toEqual([ALERTAS, RUTA, TICKETS]);
+    expect(rutas({ rol: 'admin', permisos: { administracion: [RUTA] } })).toEqual([ALERTAS, RUTA]);
     expect(subItemsAsignables(MODULES.administracion).map((s) => s.path)).toContain(RUTA);
   });
 
@@ -57,15 +57,16 @@ describe('Menú: el Administrador ve solo lo asignado; el Desarrollador, todo', 
   });
 });
 
-describe('Gestionar tickets (porDefectoAdministradores)', () => {
+describe('Gestionar tickets', () => {
   const rutasDe = (u) => subItemsVisibles(u, 'administracion').map((s) => s.path);
   it('se asigna en el editor de permisos como cualquier ítem', () => {
     expect(subItemsAsignables(MODULES.administracion).map((s) => s.path)).toContain(TICKETS);
   });
-  it('por defecto lo tiene el Administrador; los demás solo si se les asigna', () => {
-    expect(rutasDe({ rol: 'admin', permisos: {} })).toContain(TICKETS);
+  it('siempre lo tiene el Desarrollador; los demás (también el Administrador) solo si se les asigna', () => {
+    expect(rutasDe({ rol: 'dev', permisos: {} })).toContain(TICKETS);
+    expect(rutasDe({ rol: 'admin', permisos: {} })).not.toContain(TICKETS);
+    expect(rutasDe({ rol: 'admin', permisos: { administracion: [TICKETS] } })).toContain(TICKETS);
     expect(rutasDe({ rol: 'operador', permisos: {} })).not.toContain(TICKETS);
     expect(rutasDe({ rol: 'operador', permisos: { administracion: [TICKETS] } })).toContain(TICKETS);
-    expect(rutasDe({ rol: 'admin', permisos: {}, activo: false })).not.toContain(TICKETS);
   });
 });
