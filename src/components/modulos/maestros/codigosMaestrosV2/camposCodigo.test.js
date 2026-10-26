@@ -96,6 +96,19 @@ describe('guardarRegistroCodigo', () => {
     expect(addDoc.mock.calls[0][1]).toMatchObject({ accion: 'ASIGNACION_CODIGO', detalles: { codigo: '2002', codigoAsignado: '2002' } });
   });
 
+  it('modificar la observación queda en el historial con valor anterior y nuevo', async () => {
+    const registro = { ...REGISTRO, observacion: 'NOTA VIEJA' };
+    const inicial = formDesdeRegistro(registro);
+    await guardarRegistroCodigo({ modo: 'modificarRegistro', registro, inicial, form: { ...inicial, observacion: 'nota nueva' }, userData: { nombreCompleto: 'Ana' } });
+    expect(updateDoc.mock.calls[0][1]).toEqual({ observacion: 'NOTA NUEVA', modificadoPor: 'Ana' });
+    expect(addDoc.mock.calls[0][1]).toMatchObject({
+      accion: 'ACTUALIZACION_REGISTRO',
+      usuario: 'Ana',
+      detalles: { observacionAnterior: 'NOTA VIEJA', observacionNuevo: 'NOTA NUEVA' }
+    });
+    expect(Object.keys(addDoc.mock.calls[0][1].detalles)).toEqual(['observacionAnterior', 'observacionNuevo']);
+  });
+
   it('modificar registro solo con motivo escribe el log y no el documento', async () => {
     const inicial = formDesdeRegistro(REGISTRO);
     await guardarRegistroCodigo({ modo: 'modificarRegistro', registro: REGISTRO, inicial, form: { ...inicial, motivo: 'revisión' }, userData: {} });

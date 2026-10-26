@@ -3,9 +3,9 @@
 // el log de una modificación) y PanelHistorial.jsx (para las etiquetas al
 // mostrarlo).
 //
-// "observacion" queda afuera a propósito: el "motivo del cambio" de una
-// modificación se loguea aparte como nota libre
-// (`detalles.observacionModificacion`).
+// "observacion" es el campo persistido del documento. El "motivo del cambio"
+// de una modificación es otra cosa: no se guarda en el documento y va al log
+// como nota libre (`detalles.observacionModificacion`).
 export const CAMPOS_AUDITABLES_REGISTRO = [
   { key: 'codigo', label: 'Código' },
   { key: 'referencia', label: 'Referencia' },
@@ -16,6 +16,7 @@ export const CAMPOS_AUDITABLES_REGISTRO = [
   { key: 'clase', label: 'Clase' },
   { key: 'descriptorAuto', label: 'Descriptor Maestro' },
   { key: 'cx', label: 'CX' },
+  { key: 'observacion', label: 'Observación' },
   { key: 'precioNeto', label: 'Precio Neto', tipoValor: 'moneda' },
   { key: 'estado', label: 'Estado', tipoValor: 'estado' }
 ];
