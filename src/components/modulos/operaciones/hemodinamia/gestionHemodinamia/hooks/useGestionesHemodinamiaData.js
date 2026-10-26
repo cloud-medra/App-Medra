@@ -875,12 +875,12 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
           ? ` (${itemsNoSincronizados.length} ítem${itemsNoSincronizados.length === 1 ? '' : 's'} no se pudo sincronizar: período cerrado)`
           : '';
         showToast(
-          `Gestión actualizada correctamente. ${totalImputadasActualizadas} ítem${totalImputadasActualizadas === 1 ? '' : 's'} actualizado${totalImputadasActualizadas === 1 ? '' : 's'} también en Resumen${sufijoNoSincronizados}`,
+          `Gestión actualizada correctamente. ${totalImputadasActualizadas} ítem${totalImputadasActualizadas === 1 ? '' : 's'} actualizado${totalImputadasActualizadas === 1 ? '' : 's'} también en Imputados${sufijoNoSincronizados}`,
           "success"
         );
       } else if (itemsNoSincronizados.length > 0) {
         showToast(
-          `Gestión actualizada, pero ${itemsNoSincronizados.length} ítem${itemsNoSincronizados.length === 1 ? '' : 's'} no se pudo sincronizar con Resumen: período cerrado`,
+          `Gestión actualizada, pero ${itemsNoSincronizados.length} ítem${itemsNoSincronizados.length === 1 ? '' : 's'} no se pudo sincronizar con Imputados: período cerrado`,
           "info"
         );
       } else if (toastExito) {

@@ -25,12 +25,12 @@ const encabezados = () => screen.queryAllByRole('columnheader').map((th) => th.t
 describe('Resumen compartido', () => {
   it('mismas columnas en ambos módulos; título y colección de cada uno', () => {
     render(<ResumenGestiones modulo="implantes" />);
-    expect(screen.getByText('RESUMEN DE IMPLANTES IMPUTADOS')).toBeInTheDocument();
+    expect(screen.getByText('IMPUTADOS DE IMPLANTES')).toBeInTheDocument();
     const implantes = encabezados();
     expect(implantes.length).toBeGreaterThan(5);
     cleanup();
     render(<ResumenGestiones modulo="hemodinamia" />);
-    expect(screen.getByText('RESUMEN DE HEMODINAMIA IMPUTADA')).toBeInTheDocument();
+    expect(screen.getByText('IMPUTADOS DE HEMODINAMIA')).toBeInTheDocument();
     expect(encabezados()).toEqual(implantes);
     expect([...new Set(colecciones)]).toEqual(['implantes_imputadas', 'hemodinamia_imputadas']);
   });

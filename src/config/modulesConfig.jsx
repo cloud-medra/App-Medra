@@ -198,7 +198,7 @@ export const MODULES = {
       { label: 'Carga Masiva', path: '/consignacion/cargaMasivaConsignacion', icon: <FileSpreadsheet size={14} />, color: PALETA_MENU.fucsia },
       { label: 'Cargas', path: '/consignacion/cargasConsignacion', icon: <CheckCheck size={14} />, color: PALETA_MENU.pasto },
       { label: 'Solicitud', path: '/consignacion/solicitudConsignacion', icon: <FilePlus size={14} />, color: PALETA_MENU.indigo },
-      { label: 'Resumen', path: '/consignacion/resumenConsignacion', icon: <BarChart2 size={14} />, color: PALETA_MENU.rojo },
+      { label: 'Imputados', path: '/consignacion/resumenConsignacion', icon: <BarChart2 size={14} />, color: PALETA_MENU.rojo },
     ]
   },
   inventario: {
@@ -258,7 +258,7 @@ export const MODULES = {
       { label: 'Solicitud', path: '/implantes/solicitudImplantes', icon: <FilePlus size={14} />, color: PALETA_MENU.violeta },
       // Por defecto lo ve quien tiene Solicitud (heredaDe); ver config/accesoMenu.js.
       { label: 'Solicitudes de modificaciones', path: '/implantes/solicitudModificacionesImplantes', icon: <FilePen size={14} />, color: PALETA_MENU.rojo, heredaDe: '/implantes/solicitudImplantes' },
-      { label: 'Resumen', path: '/implantes/resumenImplantes', icon: <BarChart2 size={14} />, color: PALETA_MENU.ambar },
+      { label: 'Imputados', path: '/implantes/resumenImplantes', icon: <BarChart2 size={14} />, color: PALETA_MENU.ambar },
       { label: 'Sincronizar', path: '/implantes/sincronizacionImputadas', icon: <GitCompareArrows size={14} />, color: PALETA_MENU.turquesa },
       { label: 'Reportes Info', path: '/implantes/reportesInfo', icon: <BarChart2 size={14} />, color: PALETA_MENU.fucsia },
       { label: 'Respaldo de documentos', path: '/implantes/respaldoDocumentos', icon: <Archive size={14} />, color: PALETA_MENU.pasto },
@@ -279,7 +279,7 @@ export const MODULES = {
       { label: 'Carga masiva de documentos', path: '/hemodinamia/cargaMasivaDocumentos', icon: <FolderUp size={14} />, color: PALETA_MENU.pizarra },
       { label: 'Solicitud', path: '/hemodinamia/solicitudHemodinamia', icon: <FilePlus size={14} />, color: PALETA_MENU.azul },
       { label: 'Solicitudes de modificaciones', path: '/hemodinamia/solicitudModificacionesHemodinamia', icon: <FilePen size={14} />, color: PALETA_MENU.turquesa, heredaDe: '/hemodinamia/solicitudHemodinamia' },
-      { label: 'Resumen', path: '/hemodinamia/resumenHemodinamia', icon: <BarChart2 size={14} />, color: PALETA_MENU.verde },
+      { label: 'Imputados', path: '/hemodinamia/resumenHemodinamia', icon: <BarChart2 size={14} />, color: PALETA_MENU.verde },
       { label: 'Sincronizar', path: '/hemodinamia/sincronizacionImputadas', icon: <GitCompareArrows size={14} />, color: PALETA_MENU.frambuesa },
       { label: 'Respaldo de documentos', path: '/hemodinamia/respaldoDocumentos', icon: <Archive size={14} />, color: PALETA_MENU.violeta },
       // Misma pantalla y datos que Maestros → Codigos, con permisos propios.

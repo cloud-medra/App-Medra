@@ -294,7 +294,7 @@ export const implantesComponentMaps = {
     },
   },
   '/implantes/resumenImplantes': {
-    label: 'Resumen de Implantes Imputados (shared/resumen/ResumenGestiones.jsx) — solo lectura, sin granularidad cableada aún',
+    label: 'Imputados de Implantes (shared/resumen/ResumenGestiones.jsx) — solo lectura, sin granularidad cableada aún',
     sections: {
       header: {
         label: 'Sección: Encabezado',

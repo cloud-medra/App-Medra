@@ -279,7 +279,7 @@ export const hemodinamiaComponentMaps = {
     },
   },
   '/hemodinamia/resumenHemodinamia': {
-    label: 'Resumen de Hemodinamia Imputada (shared/resumen/ResumenGestiones.jsx) — solo lectura, sin granularidad cableada aún',
+    label: 'Imputados de Hemodinamia (shared/resumen/ResumenGestiones.jsx) — solo lectura, sin granularidad cableada aún',
     sections: {
       header: {
         label: 'Sección: Encabezado',

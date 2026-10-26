@@ -102,7 +102,7 @@ const ResumenConsignacion = () => {
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
         <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
           <FileBarChart size={15} className="text-[#2383C2]" />
-          RESUMEN DE CONSIGNACIÓN IMPUTADA
+          IMPUTADOS DE CONSIGNACIÓN
         </h2>
       </div>
 

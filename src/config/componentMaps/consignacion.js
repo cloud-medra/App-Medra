@@ -414,7 +414,7 @@ export const consignacionComponentMaps = {
   },
 
   '/consignacion/resumenConsignacion': {
-    label: 'Resumen de Consignación Imputada (ResumenConsignacion.jsx) — solo lectura, sin granularidad cableada aún',
+    label: 'Imputados de Consignación (ResumenConsignacion.jsx) — solo lectura, sin granularidad cableada aún',
     sections: {
       header: {
         label: 'Sección: Encabezado',
