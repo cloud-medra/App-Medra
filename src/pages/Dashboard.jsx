@@ -24,6 +24,9 @@ import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROL
 import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, colorEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
 import CuadritoIcono from '../components/ui/CuadritoIcono';
 import { entradasDelSidebar, itemsDelSidebar } from '../config/menuSidebar';
+import { vistaDeModulo, leerModuloDeURL } from '../config/vistaModulo';
+import { useHistorialVistaModulo } from '../hooks/useHistorialVistaModulo';
+import AccesoRapidoModulo from '../components/modulos/general/accesoModulo/AccesoRapidoModulo';
 import { tituloPestana } from '../config/tituloPestana';
 import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
 import SelectorInstitucion from '../components/layout/SelectorInstitucion';
@@ -188,15 +191,32 @@ const VolverSidebar = ({ texto, onClick, colapsado }) => (
   </button>
 );
 
-const TituloSidebar = ({ cuadrito, texto, colapsado }) => (
-  <div
-    title={colapsado ? texto : undefined}
-    className={`flex items-center gap-2.5 px-2 pt-2 pb-2.5 mb-2 border-b border-gray-200 dark:border-gray-700 ${colapsado ? 'justify-center' : ''}`}
-  >
-    {cuadrito}
-    <h2 className={colapsado ? 'sr-only' : 'text-sm font-bold text-gray-800 dark:text-gray-100 truncate'}>{texto}</h2>
-  </div>
-);
+// Con `onClick` (módulos) el título es un botón que abre la vista de acceso
+// rápido del módulo; `activo` lo resalta mientras se ve esa vista.
+const TituloSidebar = ({ cuadrito, texto, colapsado, onClick, activo = false }) => {
+  const clases = `flex items-center gap-2.5 px-2 pt-2 pb-2.5 mb-2 border-b border-gray-200 dark:border-gray-700 ${colapsado ? 'justify-center' : ''}`;
+  const titulo = <h2 className={colapsado ? 'sr-only' : `text-sm font-bold truncate ${activo ? 'text-[#1b6a9e] dark:text-sky-300' : 'text-gray-800 dark:text-gray-100'}`}>{texto}</h2>;
+  if (!onClick) {
+    return (
+      <div title={colapsado ? texto : undefined} className={clases}>
+        {cuadrito}
+        {titulo}
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`Ver todas las pantallas de ${texto}`}
+      aria-current={activo ? 'page' : undefined}
+      className={`w-full text-left rounded-t-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${activo ? 'bg-[#2383C2]/10 dark:bg-[#2383C2]/20' : ''} ${clases}`}
+    >
+      {cuadrito}
+      {titulo}
+    </button>
+  );
+};
 
 // Entrada del sidebar que lleva el contador de alertas sin leer.
 const ENTRADA_ALERTAS = entradaDeRuta(MODULO_AGRUPADO, RUTA_ALERTAS);
@@ -217,10 +237,21 @@ const Dashboard = () => {
   const modulosActivos = useModulosActivos();
   // Al recargar con el detalle de Reporte Info en la URL (?vista=…&detalle=…)
   // se vuelve a abrir esa vista (ver reportesInfo/urlDetalle.js).
-  const [vistaURL] = useState(() => vistaInicialDesdeURL(userData));
+  // Con ?modulo=<entrada> en la URL (recarga de la vista de acceso rápido de
+  // un módulo, config/vistaModulo.js) se vuelve a abrir esa vista, si el
+  // usuario tiene ítems en ese módulo (mismo criterio que el sidebar).
+  const [vistaURL] = useState(() => {
+    const entrada = leerModuloDeURL();
+    if (entrada && itemsDelSidebar(userData, entrada, null).length > 0) {
+      return { entrada, vista: vistaDeModulo(entrada) };
+    }
+    return vistaInicialDesdeURL(userData);
+  });
   // activeModule: entrada del sidebar abierta (módulo o grupo, ver
   // config/gruposMenu.jsx).
-  const [activeModule, setActiveModule] = useState(vistaURL?.modulo ? entradaDeRuta(vistaURL.modulo, vistaURL.vista) : null);
+  const [activeModule, setActiveModule] = useState(
+    vistaURL?.entrada ?? (vistaURL?.modulo ? entradaDeRuta(vistaURL.modulo, vistaURL.vista) : null)
+  );
   const [activeView, setActiveView] = useState(vistaURL?.vista ?? 'dashboard');
   const [isAjustesMode, setIsAjustesMode] = useState(false);
   // Id del usuario cuya creación (wizard de 3 pasos) se quiere retomar desde
@@ -311,12 +342,43 @@ const Dashboard = () => {
     setActiveView(path);
   };
 
+  // Vista de acceso rápido de un módulo (o grupo): al presionar su nombre en
+  // el sidebar o en el header. El sidebar sigue mostrando sus ítems.
+  const abrirAccesoModulo = (entrada) => {
+    setIsAjustesMode(false);
+    setActiveModule(entrada);
+    setActiveView(vistaDeModulo(entrada));
+  };
+  // Botón atrás/adelante y recarga de la vista de acceso rápido (?modulo=…).
+  const entradaAccesoRapido = useHistorialVistaModulo({
+    vista: activeView,
+    modulo: activeModule,
+    ajustes: isAjustesMode,
+    restaurar: (s) => {
+      setIsAjustesMode(Boolean(s.ajustes));
+      setActiveModule(s.modulo ?? null);
+      setActiveView(s.vista ?? 'dashboard');
+    },
+    abrirModulo: abrirAccesoModulo,
+  });
+
   const salirDeAjustes = () => {
     setIsAjustesMode(false);
     setActiveView('dashboard');
   };
 
   const getBreadcrumb = () => {
+    // Vista de acceso rápido: Inicio → Módulo, sin ítem.
+    if (entradaAccesoRapido) {
+      return {
+        moduloLabel: etiquetaEntrada(entradaAccesoRapido),
+        moduloIcon: iconoEntrada(entradaAccesoRapido),
+        entrada: entradaAccesoRapido,
+        vistaLabel: null,
+        vistaIcon: null,
+      };
+    }
+
     if (SPECIAL_VIEWS[activeView]) {
       return {
         moduloLabel: isAjustesMode ? 'Ajustes Generales' : null,
@@ -333,6 +395,7 @@ const Dashboard = () => {
         return {
           moduloLabel: etiquetaEntrada(entradaDeItem(mKey, subItem)),
           moduloIcon: iconoEntrada(entradaDeItem(mKey, subItem)),
+          entrada: entradaDeItem(mKey, subItem),
           vistaLabel: subItem.label,
           vistaIcon: subItem.icon ?? null,
         };
@@ -617,14 +680,28 @@ const Dashboard = () => {
             {breadcrumb.moduloLabel && (
               <>
                 <ChevronRight size={13} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1 flex-shrink-0">
-                  {breadcrumb.moduloIcon && <span className="opacity-70">{breadcrumb.moduloIcon}</span>}
-                  {breadcrumb.moduloLabel}
-                </span>
+                {breadcrumb.entrada ? (
+                  // Nombre del módulo: abre su vista de acceso rápido.
+                  <button
+                    type="button"
+                    onClick={() => abrirAccesoModulo(breadcrumb.entrada)}
+                    title={`Ver todas las pantallas de ${breadcrumb.moduloLabel}`}
+                    aria-current={entradaAccesoRapido ? 'page' : undefined}
+                    className={`flex items-center gap-1 flex-shrink-0 rounded px-0.5 transition-colors hover:text-[#2383C2] dark:hover:text-sky-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${entradaAccesoRapido ? 'text-gray-800 dark:text-gray-100 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}
+                  >
+                    {breadcrumb.moduloIcon && <span className="opacity-70">{breadcrumb.moduloIcon}</span>}
+                    {breadcrumb.moduloLabel}
+                  </button>
+                ) : (
+                  <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1 flex-shrink-0">
+                    {breadcrumb.moduloIcon && <span className="opacity-70">{breadcrumb.moduloIcon}</span>}
+                    {breadcrumb.moduloLabel}
+                  </span>
+                )}
               </>
             )}
 
-            {activeView !== 'dashboard' && (
+            {activeView !== 'dashboard' && breadcrumb.vistaLabel && (
               <>
                 <ChevronRight size={13} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
                 <span className="text-gray-800 dark:text-gray-100 font-semibold flex items-center gap-1 truncate">
@@ -786,7 +863,13 @@ const Dashboard = () => {
               ) : (
                 <div className="space-y-1">
                   <VolverSidebar texto="Volver a módulos" onClick={() => setActiveModule(null)} colapsado={colapsado} />
-                  <TituloSidebar cuadrito={<IconoModulo moduleKey={activeModule} />} texto={etiquetaEntrada(activeModule)} colapsado={colapsado} />
+                  <TituloSidebar
+                    cuadrito={<IconoModulo moduleKey={activeModule} />}
+                    texto={etiquetaEntrada(activeModule)}
+                    colapsado={colapsado}
+                    onClick={() => abrirAccesoModulo(activeModule)}
+                    activo={entradaAccesoRapido === activeModule}
+                  />
 
                   {getSubItemsOrdenados(activeModule).map((sub, idx) => (
                     <button
@@ -862,7 +945,18 @@ const Dashboard = () => {
                 rol, ni las de módulos/ítems inactivos (aunque se lleguen por
                 URL o atajo). Mientras carga la configuración, las vistas de
                 módulos esperan. */}
-            {!puedeAbrirVista(userData, activeView) ? (
+            {entradaAccesoRapido ? (
+              // Vista de acceso rápido del módulo: los mismos ítems que el
+              // sidebar (permisos, activos, orden), sin lecturas nuevas.
+              <AccesoRapidoModulo
+                etiqueta={etiquetaEntrada(entradaAccesoRapido)}
+                icono={iconoEntrada(entradaAccesoRapido)}
+                color={colorEntrada(entradaAccesoRapido)}
+                items={getSubItemsOrdenados(entradaAccesoRapido)}
+                cargando={!modulosActivos}
+                onAbrir={(path) => setActiveView(path)}
+              />
+            ) : !puedeAbrirVista(userData, activeView) ? (
               <div className="text-center text-gray-500 dark:text-gray-400">
                 {RUTAS_SOLO_DESARROLLADOR.has(activeView)
                   ? 'Solo el rol Desarrollador puede abrir esta vista.'
