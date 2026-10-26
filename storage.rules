@@ -170,6 +170,22 @@ service firebase.storage {
             && !firestore.exists(/databases/(default)/documents/documentos_archivo/$(nodoId))));
     }
 
+    // Foto de perfil opcional (menú del usuario → Foto de perfil). Cada
+    // usuario solo sube, reemplaza o borra la suya: fotos_perfil/{su uid}/.
+    // Solo imágenes JPG, PNG o WebP de hasta 1 MB (la app la recorta y la
+    // reduce a 256 × 256 px antes de subirla). Sin firestore.get(): no cuesta
+    // lecturas de Firestore. La app la muestra con la URL de descarga
+    // guardada en usuarios/{uid}.fotoPerfilUrl.
+    match /fotos_perfil/{uid}/{archivo} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && archivo.matches('foto_[0-9]+[.](webp|jpg)')
+        && request.resource.contentType in ['image/jpeg', 'image/png', 'image/webp']
+        && request.resource.size <= 1024 * 1024;
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

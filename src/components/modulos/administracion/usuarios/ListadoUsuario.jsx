@@ -19,6 +19,7 @@ import { useModal } from '../../../../context/ModalContext';
 import Spinner from '../../../../components/ui/Spinner';
 import EditarUsuario from './EditarUsuario';
 import CentroSelect from '../../../ui/CentroSelect';
+import AvatarUsuario from '../../../ui/AvatarUsuario';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { useUser } from '../../../../context/UserContext';
 import { motivoReasignar } from '../../../../../functions/solicitudes/destinatarios.mjs';
@@ -312,13 +313,6 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
     return { cantidad: claves.length, labels };
   };
 
-  const iniciales = (nombre = '') =>
-    nombre
-      .trim()
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase())
-      .join('');
 
 
   // Edición a pantalla completa: reemplaza al listado (mismo patrón que las
@@ -486,9 +480,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
 
                       <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-700 dark:text-gray-200 font-medium">
                         <div className="flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-[#2383C2]/10 text-[#2383C2] text-[9px] font-bold flex items-center justify-center shrink-0">
-                            {iniciales(usuario.nombreCompleto) || '?'}
-                          </div>
+                          <AvatarUsuario nombre={usuario.nombreCompleto} fotoUrl={usuario.fotoPerfilUrl} className="w-5 h-5 bg-[#2383C2]/10 text-[#2383C2] text-[9px] font-bold" />
                           <span className="truncate">{usuario.nombreCompleto || 'Sin nombre'}</span>
                         </div>
                       </td>

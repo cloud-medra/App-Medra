@@ -274,6 +274,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
       <MarcoEdicionUsuario
         migas={<><span className="uppercase tracking-wider font-semibold">Usuarios</span><span>/</span><span>Editar acceso</span></>}
         nombre={datos.nombreCompleto || usuario.nombreCompleto}
+        fotoUrl={usuario.fotoPerfilUrl}
         detalle={usuario.email}
         chips={(
           <>

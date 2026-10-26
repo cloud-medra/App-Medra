@@ -1,4 +1,5 @@
 import { ArrowLeft, AlertTriangle, Loader2, Save, X } from 'lucide-react';
+import AvatarUsuario from '../../../ui/AvatarUsuario';
 
 // Marco de pantalla completa para Crear Usuario y Editar usuario (mismo
 // patrón que las vistas de detalle del sistema: reemplaza al listado dentro
@@ -22,12 +23,11 @@ export const Chip = ({ tono = 'gris', icon: Icon, children }) => {
   );
 };
 
-const iniciales = (nombre = '') =>
-  nombre.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('');
-
 const MarcoEdicionUsuario = ({
   migas,
   nombre,
+  // Foto de perfil del usuario (si tiene), del documento ya cargado.
+  fotoUrl,
   detalle,
   chips,
   hayCambios,
@@ -62,9 +62,7 @@ const MarcoEdicionUsuario = ({
       </div>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-11 h-11 rounded-full bg-[#2383C2]/10 text-[#2383C2] text-[14px] font-bold flex items-center justify-center shrink-0">
-            {iniciales(nombre) || '?'}
-          </div>
+          <AvatarUsuario nombre={nombre} fotoUrl={fotoUrl} className="w-11 h-11 bg-[#2383C2]/10 text-[#2383C2] text-[14px] font-bold" />
           <div className="min-w-0">
             <h2 className="text-[16px] font-semibold text-gray-900 dark:text-gray-50 truncate">{nombre || 'Nuevo usuario'}</h2>
             <div className="flex flex-wrap items-center gap-2 mt-0.5">

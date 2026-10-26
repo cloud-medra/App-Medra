@@ -10,8 +10,10 @@ import logoMedraOscuro from '../assets/logo/medra-logo-oscuro.svg';
 import { obtenerNombreMostrar } from '../utils/nombreMostrar';
 import {
   LogOut, Calendar, UserCircle, ChevronRight, ArrowLeft, FileText,
-  Settings, Home, ShieldCheck, Menu, Shield, Moon, Sun
+  Settings, Home, ShieldCheck, Menu, Shield, Moon, Sun, Camera
 } from 'lucide-react';
+import AvatarUsuario from '../components/ui/AvatarUsuario';
+import FotoPerfilModal from '../components/modulos/general/fotoPerfil/FotoPerfilModal';
 
 // Importación unificada de configuración de módulos y vistas
 import { MODULES, AJUSTES_ITEMS, SPECIAL_VIEWS } from '../config/modulesConfig.jsx';
@@ -223,6 +225,8 @@ const ENTRADA_ALERTAS = entradaDeRuta(MODULO_AGRUPADO, RUTA_ALERTAS);
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  // Foto de perfil (menú del usuario): ventana para subir, cambiar o quitar.
+  const [fotoPerfilAbierta, setFotoPerfilAbierta] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   // Sidebar como drawer en pantallas < md (se abre con el ☰ del header).
   // Abierto se ve siempre expandido, aunque en escritorio esté colapsado.
@@ -722,17 +726,17 @@ const Dashboard = () => {
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="w-9 h-9 rounded-full bg-[#2383C2] text-white flex items-center justify-center font-bold text-sm shadow-md"
+            title="Menú del usuario"
+            aria-label="Menú del usuario"
+            className="relative w-9 h-9 rounded-full shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60"
           >
-            {userData.nombreCompleto
-              ? userData.nombreCompleto
-                .trim()
-                .split(' ')
-                .filter(Boolean)
-                .map(palabra => palabra.charAt(0).toUpperCase())
-                .slice(0, 2)
-                .join('')
-              : 'U'}
+            {/* Foto de perfil (si la subió) o iniciales: viene en userData, sin lecturas. */}
+            <AvatarUsuario
+              nombre={userData.nombreCompleto}
+              fotoUrl={userData.fotoPerfilUrl}
+              porDefecto="U"
+              className="w-9 h-9 bg-[#2383C2] text-white font-bold text-sm"
+            />
           </button>
 
           {isMenuOpen && (
@@ -747,6 +751,13 @@ const Dashboard = () => {
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <UserCircle size={16} className="text-blue-500 dark:text-blue-400" /> Mi Perfil
+              </button>
+
+              <button
+                onClick={() => { setFotoPerfilAbierta(true); setIsMenuOpen(false); }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Camera size={16} className="text-violet-500 dark:text-violet-400" /> Foto de perfil
               </button>
 
               <button
@@ -976,6 +987,7 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
+      <FotoPerfilModal abierto={fotoPerfilAbierta} onCerrar={() => setFotoPerfilAbierta(false)} userData={userData} />
     </div>
     </InstitucionProvider>
   );

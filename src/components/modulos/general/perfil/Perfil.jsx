@@ -1,5 +1,6 @@
 import React from 'react';
 import { User, Mail, Shield, AtSign, Briefcase, CalendarDays, Activity } from 'lucide-react';
+import AvatarUsuario from '../../../ui/AvatarUsuario';
 
 const Perfil = ({ userData }) => {
   const fechaUnion = userData.fechaCreacion || "15 de Mayo, 2023";
@@ -30,11 +31,13 @@ const Perfil = ({ userData }) => {
           
           <div className="w-full md:w-1/3 flex flex-col items-center p-6 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-gray-700/60 text-center">
             <div className="relative mb-4">
-              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-[#2383C2] to-[#1a618f] flex items-center justify-center shadow-inner border-4 border-white dark:border-gray-800 ring-2 ring-gray-100 dark:ring-gray-700">
-                <span className="text-5xl font-black text-white uppercase">
-                  {userData.nombreCompleto ? userData.nombreCompleto.substring(0, 2) : 'U'}
-                </span>
-              </div>
+              {/* Foto de perfil (si tiene) o iniciales: del documento del usuario ya cargado. */}
+              <AvatarUsuario
+                nombre={userData.nombreCompleto}
+                fotoUrl={userData.fotoPerfilUrl}
+                porDefecto="U"
+                className="w-28 h-28 bg-gradient-to-br from-[#2383C2] to-[#1a618f] shadow-inner border-4 border-white dark:border-gray-800 ring-2 ring-gray-100 dark:ring-gray-700 text-5xl font-black text-white"
+              />
               <div className="absolute bottom-1 right-1 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md border border-gray-200 dark:border-gray-700 text-[#2383C2]">
                  <Briefcase size={14} />
               </div>
