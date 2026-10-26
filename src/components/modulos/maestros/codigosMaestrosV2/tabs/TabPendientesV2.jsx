@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Check, Copy, History, Plus, Settings, Tag, Trash2 } from 'lucide-react';
+import { Check, Clock, Copy, History, Plus, Settings, Tag, Trash2 } from 'lucide-react';
 import { useCatalogo } from '../../../../../hooks/useCatalogo';
 import { ordenarPor } from '../../../../../stores/catalogosStore';
 import { useToast } from '../../../../../context/ToastContext';
@@ -22,20 +22,20 @@ import { COL_CODIGOS, formatearFecha, formatearPrecio, tieneCodigo } from '../ca
 // Mismas claves que la vista clásica: `col_<key>` en 'tabla_datos' del mapa
 // de permisos de la pestaña (ver useColumnasPermitidas).
 const COLUMNAS = [
-  { key: 'numero', label: '#', ancho: 52, min: 36, align: 'right' },
-  { key: 'referencia', label: 'Referencia', ancho: 150, min: 80 },
-  { key: 'descEmpresa', label: 'Desc. Empresa', ancho: 220, min: 80 },
+  { key: 'numero', label: '#', ancho: 40, min: 28, align: 'right' },
+  { key: 'referencia', label: 'Referencia', ancho: 130, min: 80 },
+  { key: 'descEmpresa', label: 'Desc. Empresa', ancho: 200, min: 80 },
   { key: 'empresa', label: 'Empresa', ancho: 200, min: 80 },
-  { key: 'tipo', label: 'Tipo', ancho: 110, min: 60 },
-  { key: 'segmento', label: 'Segmento', ancho: 120, min: 60 },
-  { key: 'clase', label: 'Clase', ancho: 100, min: 60 },
-  { key: 'descAuto', label: 'Desc. Auto', ancho: 280, min: 80 },
-  { key: 'precioNeto', label: 'Precio Neto', ancho: 120, min: 80, align: 'right' },
-  { key: 'copiar', label: 'Copiar', ancho: 64, min: 48, align: 'center' },
-  { key: 'estado', label: 'Estado', ancho: 110, min: 70 },
-  { key: 'registradoPor', label: 'Registrado por', ancho: 150, min: 70 },
-  { key: 'fecha', label: 'Fecha', ancho: 140, min: 90 },
-  { key: 'acciones', label: 'Acciones', ancho: 100, min: 80, align: 'center' }
+  { key: 'tipo', label: 'Tipo', ancho: 100, min: 60 },
+  { key: 'segmento', label: 'Segmento', ancho: 110, min: 60 },
+  { key: 'clase', label: 'Clase', ancho: 90, min: 60 },
+  { key: 'descAuto', label: 'Desc. Auto', ancho: 250, min: 80 },
+  { key: 'precioNeto', label: 'Precio Neto', ancho: 100, min: 70, align: 'right' },
+  { key: 'copiar', label: 'Copiar', ancho: 50, min: 40, align: 'center' },
+  { key: 'estado', label: 'Estado', ancho: 100, min: 70 },
+  { key: 'registradoPor', label: 'Registrado por', ancho: 100, min: 70 },
+  { key: 'fecha', label: 'Fecha', ancho: 130, min: 90 },
+  { key: 'acciones', label: 'Acciones', ancho: 90, min: 70, align: 'center' }
 ];
 
 const CAMPOS_BUSQUEDA = [
@@ -124,35 +124,34 @@ const TabPendientesV2 = ({ rutaVista = '/maestros/codigosMaestros/pendientes' } 
 
   const renderCelda = (col, item, index) => {
     switch (col.key) {
-      case 'numero': return <span className="tabular-nums text-slate-400">{pag.pagina * pag.tamano + index + 1}</span>;
-      case 'referencia': return <span className="font-medium text-slate-900 dark:text-gray-50" title={item.referencia}>{item.referencia}</span>;
+      case 'numero': return <span className="text-gray-500 dark:text-gray-400 font-bold">{pag.pagina * pag.tamano + index + 1}</span>;
+      case 'referencia': return <span className="text-gray-700 dark:text-gray-200 font-medium" title={item.referencia}>{item.referencia}</span>;
       case 'descEmpresa': return <span title={item.descriptorEmpresa}>{item.descriptorEmpresa}</span>;
       case 'empresa': return <span title={item.empresa}>{item.empresa}</span>;
       case 'tipo': return item.tipo;
       case 'segmento': return item.segmento;
       case 'clase': return item.clase;
-      case 'descAuto': return <span className="text-slate-500 dark:text-gray-400" title={item.descriptorAuto}>{item.descriptorAuto}</span>;
-      case 'precioNeto': return <span className="tabular-nums font-medium">{formatearPrecio(item.precioNeto)}</span>;
+      case 'descAuto': return <span className="text-gray-500 dark:text-gray-400" title={item.descriptorAuto}>{item.descriptorAuto}</span>;
+      case 'precioNeto': return formatearPrecio(item.precioNeto);
       case 'copiar': return (
         <BotonIcono
           icono={copiadoId === item.id ? Check : Copy}
           activo={copiadoId === item.id}
-          tono="acento"
           title={copiadoId === item.id ? 'Copiado' : 'Copiar Desc. Auto y Precio Neto'}
           onClick={() => copiarFila(item)}
         />
       );
       case 'estado': return (
-        <span className="inline-flex items-center gap-1.5 text-[12px] text-amber-700 dark:text-amber-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />Sin código
+        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 flex items-center gap-1 w-max">
+          <Clock size={10} /> Sin Código
         </span>
       );
-      case 'registradoPor': return <span className="text-slate-500 dark:text-gray-400" title={item.registradoPor}>{item.registradoPor || '—'}</span>;
-      case 'fecha': return <span className="tabular-nums text-slate-500 dark:text-gray-400">{formatearFecha(item.fechaRegistro)}</span>;
+      case 'registradoPor': return <span className="text-gray-500 dark:text-gray-400" title={item.registradoPor}>{item.registradoPor || 'N/A'}</span>;
+      case 'fecha': return <span className="text-gray-500 dark:text-gray-400">{formatearFecha(item.fechaRegistro)}</span>;
       case 'acciones': return (
-        <div className="flex items-center justify-center gap-0.5">
+        <div className="flex justify-center gap-2">
           {puede.log && <BotonIcono icono={History} title="Ver historial" onClick={() => setHistorial({ abierto: true, registro: item })} />}
-          {puede.asignarCodigo && <BotonIcono icono={Tag} tono="acento" title="Asignar código definitivo" onClick={() => abrirPanel('asignarCodigo', item)} />}
+          {puede.asignarCodigo && <BotonIcono icono={Tag} tono="asignar" title="Asignar código definitivo" onClick={() => abrirPanel('asignarCodigo', item)} />}
           {puede.eliminar && <BotonIcono icono={Trash2} tono="peligro" title="Eliminar" onClick={() => eliminar(item)} />}
         </div>
       );

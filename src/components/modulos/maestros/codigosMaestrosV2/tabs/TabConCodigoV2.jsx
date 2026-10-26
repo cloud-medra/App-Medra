@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { History, Pencil, Plus, Settings, Trash2 } from 'lucide-react';
+import { CheckCircle2, History, Pencil, Plus, Settings, Trash2 } from 'lucide-react';
 import { useCatalogo } from '../../../../../hooks/useCatalogo';
 import { ordenarPor } from '../../../../../stores/catalogosStore';
 import { useToast } from '../../../../../context/ToastContext';
@@ -21,20 +21,20 @@ import { COL_CODIGOS, formatearFecha, formatearPrecio, tieneCodigo } from '../ca
 
 // Mismas claves que la vista clásica (permisos `col_<key>`).
 const COLUMNAS = [
-  { key: 'numero', label: '#', ancho: 52, min: 36, align: 'right' },
-  { key: 'codigo', label: 'Código', ancho: 110, min: 60 },
+  { key: 'numero', label: '#', ancho: 40, min: 28, align: 'right' },
+  { key: 'codigo', label: 'Código', ancho: 90, min: 60 },
   { key: 'referencia', label: 'Referencia', ancho: 150, min: 80 },
-  { key: 'descEmpresa', label: 'Desc. Empresa', ancho: 280, min: 80 },
+  { key: 'descEmpresa', label: 'Desc. Empresa', ancho: 300, min: 80 },
   { key: 'empresa', label: 'Empresa', ancho: 200, min: 80 },
-  { key: 'tipo', label: 'Tipo', ancho: 110, min: 60 },
-  { key: 'segmento', label: 'Segmento', ancho: 120, min: 60 },
-  { key: 'clase', label: 'Clase', ancho: 100, min: 60 },
-  { key: 'descriptorMaestro', label: 'Descriptor Maestro', ancho: 240, min: 80 },
-  { key: 'precioNeto', label: 'Precio Neto', ancho: 120, min: 80, align: 'right' },
-  { key: 'estado', label: 'Estado', ancho: 110, min: 70 },
-  { key: 'registradoPor', label: 'Registrado por', ancho: 150, min: 70 },
-  { key: 'fecha', label: 'Fecha', ancho: 140, min: 90 },
-  { key: 'acciones', label: 'Acciones', ancho: 100, min: 80, align: 'center' }
+  { key: 'tipo', label: 'Tipo', ancho: 100, min: 60 },
+  { key: 'segmento', label: 'Segmento', ancho: 110, min: 60 },
+  { key: 'clase', label: 'Clase', ancho: 90, min: 60 },
+  { key: 'descriptorMaestro', label: 'Descriptor Maestro', ancho: 200, min: 80 },
+  { key: 'precioNeto', label: 'Precio Neto', ancho: 100, min: 70, align: 'right' },
+  { key: 'estado', label: 'Estado', ancho: 100, min: 70 },
+  { key: 'registradoPor', label: 'Registrado por', ancho: 120, min: 70 },
+  { key: 'fecha', label: 'Fecha', ancho: 130, min: 90 },
+  { key: 'acciones', label: 'Acciones', ancho: 90, min: 70, align: 'center' }
 ];
 
 const CAMPOS_BUSQUEDA = [
@@ -112,27 +112,27 @@ const TabConCodigoV2 = ({ rutaVista = '/maestros/codigosMaestros/conCodigo' } = 
 
   const renderCelda = (col, item, index) => {
     switch (col.key) {
-      case 'numero': return <span className="tabular-nums text-slate-400">{pag.pagina * pag.tamano + index + 1}</span>;
-      case 'codigo': return <span className="font-mono font-semibold text-slate-900 dark:text-gray-50">{item.codigo}</span>;
-      case 'referencia': return <span className="font-medium" title={item.referencia}>{item.referencia}</span>;
+      case 'numero': return <span className="text-gray-500 dark:text-gray-400 font-bold">{pag.pagina * pag.tamano + index + 1}</span>;
+      case 'codigo': return <span className="font-bold text-emerald-600 dark:text-emerald-400">{item.codigo}</span>;
+      case 'referencia': return <span className="text-gray-700 dark:text-gray-200 font-medium" title={item.referencia}>{item.referencia}</span>;
       case 'descEmpresa': return <span title={item.descriptorEmpresa}>{item.descriptorEmpresa}</span>;
       case 'empresa': return <span title={item.empresa}>{item.empresa}</span>;
       case 'tipo': return item.tipo;
       case 'segmento': return item.segmento;
       case 'clase': return item.clase;
-      case 'descriptorMaestro': return <span className="text-slate-500 dark:text-gray-400" title={item.descriptorAuto}>{item.descriptorAuto}</span>;
-      case 'precioNeto': return <span className="tabular-nums font-medium">{formatearPrecio(item.precioNeto)}</span>;
+      case 'descriptorMaestro': return <span className="text-gray-500 dark:text-gray-400" title={item.descriptorAuto}>{item.descriptorAuto}</span>;
+      case 'precioNeto': return formatearPrecio(item.precioNeto);
       case 'estado': return (
-        <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-700 dark:text-emerald-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Con código
+        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center gap-1 w-max">
+          <CheckCircle2 size={10} /> Con Código
         </span>
       );
-      case 'registradoPor': return <span className="text-slate-500 dark:text-gray-400" title={item.registradoPor}>{item.registradoPor || '—'}</span>;
-      case 'fecha': return <span className="tabular-nums text-slate-500 dark:text-gray-400">{formatearFecha(item.fechaRegistro)}</span>;
+      case 'registradoPor': return <span className="text-gray-500 dark:text-gray-400" title={item.registradoPor}>{item.registradoPor || 'N/A'}</span>;
+      case 'fecha': return <span className="text-gray-500 dark:text-gray-400">{formatearFecha(item.fechaRegistro)}</span>;
       case 'acciones': return (
-        <div className="flex items-center justify-center gap-0.5">
+        <div className="flex justify-center gap-2">
           {puede.log && <BotonIcono icono={History} title="Ver historial" onClick={() => setHistorial({ abierto: true, registro: item })} />}
-          {puedeEditar && <BotonIcono icono={Pencil} tono="acento" title="Editar" onClick={() => abrirPanel('editarConCodigo', item)} />}
+          {puedeEditar && <BotonIcono icono={Pencil} tono="editar" title="Editar" onClick={() => abrirPanel('editarConCodigo', item)} />}
           {puede.eliminar && <BotonIcono icono={Trash2} tono="peligro" title="Eliminar" onClick={() => eliminar(item)} />}
         </div>
       );

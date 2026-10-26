@@ -1,14 +1,16 @@
 import React from 'react';
-import { ChevronLeft, ChevronRight, Inbox, RotateCcw, Search, X } from 'lucide-react';
-import { ManijaRedimension } from '../../../../ui/ManijaRedimension';
+import { ChevronLeft, ChevronRight, RotateCcw, Search, X } from 'lucide-react';
+import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../ui/ThRedimensionable';
 import Spinner from '../../../../ui/Spinner';
 
-// Tabla de la vista nueva de Códigos: encabezado fijo, columnas
-// redimensionables, alineación por columna (`align`: left | right | center)
-// y fila clicable opcional. Las columnas (y sus permisos) las define cada
-// pestaña; esta tabla solo pinta las que recibe.
+// Tabla de la vista nueva de Códigos. Misma tabla que las pestañas de la
+// vista clásica (CodigosMaestros): mismas piezas compartidas de
+// redimensionado (ThRedimensionable + columna de relleno, sobre
+// useColumnResize sin `clave`, así que los anchos no se guardan) y mismas
+// clases: letra 11px, celdas py-1 px-2, bordes verticales y hover con borde
+// izquierdo de acento. Las columnas (y sus permisos) las define cada pestaña.
 
-const ALINEACION = { right: 'text-right', center: 'text-center', left: 'text-left' };
+const ALINEACION = { right: 'text-right', center: 'text-center' };
 
 export const TablaCodigos = ({
   columnas,
@@ -22,30 +24,32 @@ export const TablaCodigos = ({
   cargando,
   mensajeVacio = 'No hay registros para mostrar.'
 }) => (
-  <div className="relative flex-1 min-h-0 overflow-auto">
+  <div className="flex-grow min-h-0 overflow-auto relative">
     {cargando && (
-      <div className="absolute inset-0 z-30 flex items-center justify-center bg-white/70 dark:bg-gray-900/70">
+      <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 dark:bg-gray-900/60">
         <Spinner size="md" color="#2383C2" />
       </div>
     )}
-    <table className="text-[12px] border-separate border-spacing-0" style={{ tableLayout: 'fixed', width: anchoTotal, minWidth: '100%' }}>
-      <colgroup>
-        {columnas.map((col) => <col key={col.key} style={{ width: anchos[col.key] }} />)}
-        <col />
-      </colgroup>
-      <thead>
-        <tr>
+    <table
+      className="text-left text-[11px] border-collapse"
+      style={{ tableLayout: 'fixed', width: anchoTotal, minWidth: '100%' }}
+    >
+      <ColgroupRedimensionable columnas={columnas} anchos={anchos} relleno />
+      <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10">
+        <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
           {columnas.map((col) => (
-            <th
+            <ThRedimensionable
               key={col.key}
+              col={col}
+              anchos={anchos}
+              onResize={onResize}
               title={col.label}
-              className={`sticky top-0 z-20 h-9 px-3 bg-slate-50 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-gray-400 whitespace-nowrap overflow-hidden ${ALINEACION[col.align] || 'text-left'}`}
+              className={`py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 ${ALINEACION[col.align] || ''}`}
             >
-              <span className="block truncate">{col.label}</span>
-              <ManijaRedimension colKey={col.key} anchoActual={anchos[col.key]} anchoMin={col.min} onResize={onResize} />
-            </th>
+              {col.label}
+            </ThRedimensionable>
           ))}
-          <th className="sticky top-0 z-20 bg-slate-50 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700" />
+          <ThRelleno className="border-b border-gray-200 dark:border-gray-700" />
         </tr>
       </thead>
       <tbody>
@@ -55,27 +59,26 @@ export const TablaCodigos = ({
             <tr
               key={item.id}
               onClick={onFilaClick ? () => onFilaClick(item) : undefined}
-              className={`group transition-colors ${onFilaClick ? 'cursor-pointer' : ''} ${activa ? 'bg-[#2383C2]/[0.06] dark:bg-[#2383C2]/10' : 'hover:bg-slate-50 dark:hover:bg-gray-800/60'}`}
+              className={`border-l-2 transition-colors ${onFilaClick ? 'cursor-pointer' : ''} ${activa
+                ? 'border-[#2383C2] bg-gray-50/80 dark:bg-gray-700/40'
+                : 'border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40'}`}
             >
-              {columnas.map((col, i) => (
+              {columnas.map((col) => (
                 <td
                   key={col.key}
-                  className={`h-9 px-3 border-b border-slate-100 dark:border-gray-800 text-slate-700 dark:text-gray-200 whitespace-nowrap overflow-hidden text-ellipsis ${ALINEACION[col.align] || 'text-left'} ${i === 0 ? `border-l-2 ${activa ? 'border-l-[#2383C2]' : 'border-l-transparent group-hover:border-l-slate-300 dark:group-hover:border-l-gray-600'}` : ''}`}
+                  className={`py-1 px-2 border-b text-gray-600 dark:text-gray-300 overflow-hidden text-ellipsis whitespace-nowrap ${col.key === 'acciones' ? 'border-gray-200 dark:border-gray-700' : 'border-r border-gray-200 dark:border-gray-700/70'} ${ALINEACION[col.align] || ''}`}
                 >
                   {renderCelda(col, item, index)}
                 </td>
               ))}
-              <td className="border-b border-slate-100 dark:border-gray-800" />
+              <TdRelleno className="border-b border-gray-200 dark:border-gray-700/70" />
             </tr>
           );
         })}
         {!cargando && filas.length === 0 && (
           <tr>
-            <td colSpan={columnas.length + 1} className="py-16">
-              <div className="flex flex-col items-center gap-2 text-slate-400 dark:text-gray-500">
-                <Inbox size={28} strokeWidth={1.5} />
-                <span className="text-[13px]">{mensajeVacio}</span>
-              </div>
+            <td colSpan={columnas.length + 1} className="py-8 text-center text-gray-400 dark:text-gray-500 text-[11px]">
+              {mensajeVacio}
             </td>
           </tr>
         )}
@@ -131,25 +134,29 @@ export const Boton = ({ variante = 'secundario', icono: Icono, children, classNa
   );
 };
 
-export const BotonIcono = ({ icono: Icono, title, onClick, tono = 'neutro', activo }) => {
-  const tonos = {
-    neutro: 'text-slate-400 hover:text-slate-700 dark:hover:text-gray-200',
-    acento: 'text-slate-400 hover:text-[#2383C2]',
-    peligro: 'text-slate-400 hover:text-red-600 dark:hover:text-red-400',
-    exito: 'text-emerald-600 dark:text-emerald-400'
-  };
-  return (
-    <button
-      type="button"
-      title={title}
-      aria-label={title}
-      onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
-      className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-gray-800 transition-colors ${tonos[activo ? 'exito' : tono]}`}
-    >
-      <Icono size={14} />
-    </button>
-  );
+// Botones de ícono de las filas, con los mismos tamaños y colores que los de
+// la tabla clásica.
+const TONOS_ICONO = {
+  neutro: 'text-gray-500 hover:text-[#2383C2] dark:hover:text-[#2383C2]',
+  acento: 'text-gray-500 hover:text-[#2383C2] dark:hover:text-[#2383C2]',
+  asignar: 'text-emerald-600 dark:text-emerald-400 hover:text-emerald-800',
+  editar: 'text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300',
+  modificar: 'text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400',
+  peligro: 'text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300',
+  exito: 'text-emerald-600 dark:text-emerald-400'
 };
+
+export const BotonIcono = ({ icono: Icono, title, onClick, tono = 'neutro', activo }) => (
+  <button
+    type="button"
+    title={title}
+    aria-label={title}
+    onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
+    className={`transition ${TONOS_ICONO[activo ? 'exito' : tono]}`}
+  >
+    <Icono size={13} />
+  </button>
+);
 
 export const PieTabla = ({ pagina, totalPaginas, total, tamano, onPagina, onTamano, onRestablecerColumnas, extra }) => {
   const desde = total === 0 ? 0 : pagina * tamano + 1;
