@@ -151,7 +151,12 @@ export const construirDatosDoc = (payload) => ({
   prevision: payload.prevision || '',
   descripcion: payload.descripcion || '',
   descripcionPabellon: payload.descripcionPabellon || '',
-  tipo: payload.tipo || 'CONSIGNACION'
+  tipo: payload.tipo || 'CONSIGNACION',
+  // Precio especial (Carga masiva, ver utils/precioEspecial.js): se guarda el
+  // precio del maestro y la marca. Sin precio especial no se agregan campos.
+  ...(payload.precioEspecial === true
+    ? { precioEspecial: true, costoMaestro: Number(payload.costoMaestro) || 0 }
+    : {})
 });
 
 // Documento completo de un registro NUEVO (campos de seguimiento en su
@@ -263,6 +268,18 @@ export const guardarRegistrosConsignacionEnLote = async (db, payloads, userData)
   return resultados;
 };
 
+// Edición desde el formulario de Registro de una carga con precio especial
+// (el formulario no conoce la marca): si el precio no cambió se conserva la
+// marca y el precio del maestro (también al moverse de carpeta); si cambió
+// (otra referencia, precio del maestro) deja de ser especial.
+export const conservarPrecioEspecial = (actual, datosDoc) => {
+  if (actual?.precioEspecial !== true || datosDoc.precioEspecial === true) return datosDoc;
+  if (Number(datosDoc.costo) === Number(actual.costo)) {
+    return { ...datosDoc, precioEspecial: true, costoMaestro: Number(actual.costoMaestro) || 0 };
+  }
+  return { ...datosDoc, precioEspecial: false };
+};
+
 // Guarda la edición de un registro existente dentro de una transacción que
 // relee el documento en Firestore y la rechaza (RegistroNoEditableError) si
 // ya no está INGRESADO: cubre una pantalla desactualizada (otro usuario lo
@@ -271,7 +288,7 @@ export const guardarRegistrosConsignacionEnLote = async (db, payloads, userData)
 // carpeta año/mes/día nueva (los campos de seguimiento se toman del doc
 // releído, no de la copia de pantalla).
 // Devuelve { ref, datos, movido }.
-export const guardarEdicionRegistroConsignacion = (db, registro, datosDoc, clavesNuevas, userData) =>
+export const guardarEdicionRegistroConsignacion = (db, registro, datosFormulario, clavesNuevas, userData) =>
   runTransaction(db, async (tx) => {
     const snap = await tx.get(registro.ref);
     if (!snap.exists()) {
@@ -281,6 +298,7 @@ export const guardarEdicionRegistroConsignacion = (db, registro, datosDoc, clave
     if (!esRegistroEditable(actual)) {
       throw new RegistroNoEditableError(mensajeRegistroNoEditable(actual));
     }
+    const datosDoc = conservarPrecioEspecial(actual, datosFormulario);
 
     const clavesAnteriores = descomponerFecha(actual.fecha);
     const seMovioDeCarpeta =

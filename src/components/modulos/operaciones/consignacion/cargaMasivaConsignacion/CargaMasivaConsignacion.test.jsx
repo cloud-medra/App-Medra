@@ -12,6 +12,10 @@ vi.mock('../../../../../context/ToastContext', () => ({ useToast: () => ({ showT
 // Confirmaciones aceptadas al instante.
 vi.mock('../../../../../context/ModalContext', () => ({ useModal: () => ({ confirmAction: (_t, _m, fn) => fn() }) }));
 vi.mock('../../../../../context/UserContext', () => ({ useUser: () => ({ userData: { uid: 'u1', nombreCompleto: 'Ana' } }) }));
+// Reglas de recargo (catálogo en memoria) para la venta en vivo.
+vi.mock('../../../../../hooks/useCatalogo', () => ({
+  useCatalogo: () => ({ datos: [{ id: 'r1', desde: 0, hasta: 100000, vecesCosto: 1.5 }], cargado: true })
+}));
 vi.mock('../registroConsignacion/utils/cacheMaestros', () => ({
   obtenerCodigosCacheados: (...a) => mockCodigos(...a),
   buscarReporteInfoReintentandoNoEncontradas: (...a) => mockReporte(...a)
@@ -24,7 +28,7 @@ vi.mock('../utils/registroConsignacionService', async (importOriginal) => ({
 import CargaMasivaConsignacion from './CargaMasivaConsignacion';
 import { claveBorrador } from './utils/borradorCargaMasiva';
 
-const item = (codigo) => ({ codigo, referencia: `REF-${codigo}`, empresa: 'ACME', tipo: 'CONSIGNACION' });
+const item = (codigo) => ({ codigo, referencia: `REF-${codigo}`, empresa: 'ACME', tipo: 'CONSIGNACION', precioNeto: 1000 });
 // Admisión, paciente, médico, fecha, proveedor, código, cantidad, delivery.
 const PEGADO = ['100\tJUAN\tDR X\t08-10-2026\t\tA1\t1\t', '100\tJUAN\tDR X\t08-10-2026\t\tMAL\t2\t'].join('\n');
 
@@ -107,5 +111,54 @@ describe('CargaMasivaConsignacion: borrador', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Descartar borrador' }));
     expect(borrador()).toBeNull();
     expect(celdas()[0]).toHaveValue('');
+  });
+});
+
+describe('CargaMasivaConsignacion: precio especial en la vista previa', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    mockCodigos.mockReset();
+    mockReporte.mockReset();
+    mockGuardarLote.mockReset();
+    mockCodigos.mockResolvedValue([item('A1')]);
+    mockReporte.mockResolvedValue({ Paciente: 'JUAN' });
+    mockGuardarLote.mockImplementation(async (_db, payloads) => payloads.map(() => ({ ok: true })));
+  });
+  afterEach(cleanup);
+
+  it('edita el precio de una fila OK: venta en vivo y se guarda como precio especial (el maestro no cambia)', async () => {
+    render(<CargaMasivaConsignacion />);
+    pegar();
+    await cargar();
+    const precio = screen.getByLabelText('Precio fila 1');
+    expect(precio).toHaveAttribute('placeholder', '$1.000'); // precio del maestro
+    fireEvent.change(precio, { target: { value: '800' } });
+    expect(screen.getByText(/Venta \$1\.200 · 1\.5 x/)).toBeInTheDocument(); // 800 × 1,5 × 1
+    expect(borrador().filas[0].precioEditado).toBe('800');
+
+    fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+    await waitFor(() => expect(mockGuardarLote).toHaveBeenCalled());
+    const [payload] = mockGuardarLote.mock.calls[0][1];
+    expect(payload).toMatchObject({ costo: 800, costoMaestro: 1000, precioEspecial: true });
+  });
+
+  it('sin editar, el precio es el del maestro y no se marca como especial', async () => {
+    render(<CargaMasivaConsignacion />);
+    pegar();
+    await cargar();
+    fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+    await waitFor(() => expect(mockGuardarLote).toHaveBeenCalled());
+    const [payload] = mockGuardarLote.mock.calls[0][1];
+    expect(payload.costo).toBe(1000);
+    expect(payload).not.toHaveProperty('precioEspecial');
+  });
+
+  it('un precio cero no deja guardar', async () => {
+    render(<CargaMasivaConsignacion />);
+    pegar();
+    await cargar();
+    fireEvent.change(screen.getByLabelText('Precio fila 1'), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
+    expect(mockGuardarLote).not.toHaveBeenCalled();
   });
 });

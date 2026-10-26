@@ -13,7 +13,7 @@ vi.mock('firebase/firestore', () => ({
 import {
   descripcionDesdeMaestro, mapearItemMaestro, buscarItemMaestro,
   esRegistroEditable, mensajeRegistroNoEditable, guardarEdicionRegistroConsignacion, RegistroNoEditableError,
-  guardarRegistrosConsignacionEnLote
+  guardarRegistrosConsignacionEnLote, construirDatosDoc, conservarPrecioEspecial
 } from './registroConsignacionService';
 
 const ITEM = {
@@ -137,5 +137,29 @@ describe('guardarRegistrosConsignacionEnLote', () => {
     const registros = sets.filter((d) => 'posicionCarga' in d && 'despachado' in d);
     expect(registros.map((d) => [d.codigo, d.posicionCarga])).toEqual([['A', 0], ['B', 1], ['C', 2]]);
     expect(new Set(registros.map((d) => d.fechaRegistro)).size).toBe(1);
+  });
+});
+
+describe('construirDatosDoc: precio especial', () => {
+  it('con precio especial guarda el precio del maestro y la marca; sin él no agrega campos', () => {
+    const especial = construirDatosDoc({ referencia: 'R', fecha: '2026-10-01', cantidad: '1', costo: 800, costoMaestro: 1000, precioEspecial: true });
+    expect(especial).toMatchObject({ costo: 800, costoMaestro: 1000, precioEspecial: true });
+    const normal = construirDatosDoc({ referencia: 'R', fecha: '2026-10-01', cantidad: '1', costo: 1000 });
+    expect(normal).not.toHaveProperty('precioEspecial');
+    expect(normal).not.toHaveProperty('costoMaestro');
+  });
+});
+
+describe('conservarPrecioEspecial (edición desde Registro)', () => {
+  const actual = { costo: 800, costoMaestro: 1000, precioEspecial: true };
+  it('mismo precio: conserva la marca y el precio del maestro', () => {
+    expect(conservarPrecioEspecial(actual, { costo: 800, cantidad: 2 })).toEqual({ costo: 800, cantidad: 2, precioEspecial: true, costoMaestro: 1000 });
+  });
+  it('otro precio (del maestro): deja de ser especial', () => {
+    expect(conservarPrecioEspecial(actual, { costo: 1000 })).toEqual({ costo: 1000, precioEspecial: false });
+  });
+  it('sin precio especial no cambia nada', () => {
+    const datos = { costo: 1000 };
+    expect(conservarPrecioEspecial({ costo: 1000 }, datos)).toBe(datos);
   });
 });

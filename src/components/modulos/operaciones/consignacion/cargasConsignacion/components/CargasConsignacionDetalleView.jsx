@@ -6,6 +6,7 @@ import { useToast } from '../../../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../../../hooks/useGranularPermission';
 import { useUser } from '../../../../../../context/UserContext';
 import { registrarLogConsignacion } from '../../utils/registrarLogConsignacion';
+import { camposPrecio, costoMaestroDe } from '../../utils/precioEspecial';
 import { periodoEstaAbierto } from './verificacionPeriodoConsignacion';
 
 import DetalleTab from './DetalleTab';
@@ -209,9 +210,16 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
     }
     setGuardando(true);
     try {
+      const costoNum = formData.costo !== '' ? Number(formData.costo) : 0;
+      // Si se cambió el precio a mano, queda como precio especial (con el
+      // precio del maestro), igual que al editarlo en la pestaña Cargas.
+      const precio = costoNum !== Number(registro.costo) && costoNum > 0
+        ? camposPrecio(costoNum, costoMaestroDe(registro))
+        : {};
       const datosGuardados = {
         ...formData,
-        costo: formData.costo !== '' ? Number(formData.costo) : 0
+        costo: costoNum,
+        ...precio
       };
       await updateDoc(registro.ref, datosGuardados);
       cambiosGuardadosRef.current = { ...cambiosGuardadosRef.current, ...datosGuardados };

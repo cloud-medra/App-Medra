@@ -24,6 +24,9 @@ import {
   mensajeConfirmacionGuardado
 } from './utils/validacionesCargaMasiva';
 import { leerBorrador, guardarBorrador, borrarBorrador, filasDesdeBorrador } from './utils/borradorCargaMasiva';
+import { useCatalogo } from '../../../../../hooks/useCatalogo';
+import { errorPrecio, precioANumero, buscarReglaRecargo, calcularVentaItem, aplicarPrecioEditado } from '../utils/precioEspecial';
+import BadgePrecioEspecial from '../utils/BadgePrecioEspecial';
 
 const FILAS_INICIALES = 20;
 
@@ -73,7 +76,7 @@ const CargaMasivaConsignacion = () => {
     setUidRevisado(uid);
     const borrador = leerBorrador(uid);
     if (borrador) {
-      setFilas(filasDesdeBorrador(borrador.valores, FILAS_INICIALES));
+      setFilas(filasDesdeBorrador(borrador.valores, FILAS_INICIALES, borrador.precios));
       if (TIPOS_CONSIGNACION.includes(borrador.tipo)) setTipo(borrador.tipo);
       setCargado(false);
       setBorradorActivo(true);
@@ -118,10 +121,28 @@ const CargaMasivaConsignacion = () => {
   };
 
   const handleCambio = (indiceFila, key, valor) => {
-    setFilas((prev) => prev.map((f, i) => (
-      i === indiceFila ? { ...f, valores: { ...f.valores, [key]: valor }, resultado: null } : f
-    )));
+    setFilas((prev) => prev.map((f, i) => {
+      if (i !== indiceFila) return f;
+      const fila = { ...f, valores: { ...f.valores, [key]: valor }, resultado: null };
+      // Otro código = otro producto: el precio especial editado ya no aplica.
+      if (key === 'codigo') delete fila.precioEditado;
+      return fila;
+    }));
   };
+
+  // Precio especial de una fila, editado en la vista previa (después de
+  // "Cargar"). Se guarda solo en la carga creada, nunca en maestros_codigos.
+  // No invalida el resultado de "Cargar" (no cambia lo validado).
+  const handleCambioPrecio = (indiceFila, valor) => {
+    setFilas((prev) => prev.map((f, i) => (i === indiceFila ? { ...f, precioEditado: valor } : f)));
+  };
+
+  // Reglas de recargo para la venta en vivo: el mismo catálogo en memoria
+  // que usa Cargas (lectura única por sesión). Solo se pide si se edita
+  // algún precio; si ya se leyó en la sesión, no cuesta nada.
+  const hayPrecioEditado = filas.some((f) => f.precioEditado);
+  const { datos: recargos, cargado: recargosCargados } = useCatalogo('recargos', { habilitado: hayPrecioEditado });
+  const ventaFila = (costo, cantidad) => calcularVentaItem(costo, cantidad, (c) => buscarReglaRecargo(recargos, c));
 
   const handleKeyDown = (e, fila, col) => {
     const input = e.currentTarget;
@@ -257,7 +278,13 @@ const CargaMasivaConsignacion = () => {
 
     setGuardando(true);
     try {
-      const resultados = await guardarRegistrosConsignacionEnLote(db, aGuardar.map((f) => f.resultado.payload), userData);
+      // Con precio especial editado, el payload lleva el precio, el del
+      // maestro y la marca (aplicarPrecioEditado).
+      const resultados = await guardarRegistrosConsignacionEnLote(
+        db,
+        aGuardar.map((f) => aplicarPrecioEditado(f.resultado.payload, f.precioEditado)),
+        userData
+      );
       const guardadas = new Set();
       const fallidas = new Map();
       resultados.forEach((r, i) => {
@@ -300,7 +327,17 @@ const CargaMasivaConsignacion = () => {
       showToast('No hay filas OK para guardar', 'info');
       return;
     }
-    confirmAction('Guardar registros', mensajeConfirmacionGuardado(resumen), guardar, { confirmText: 'Guardar' });
+    // Precio especial inválido (vacío se ignora: queda el del maestro).
+    const conPrecioInvalido = filas.findIndex((f) => f.resultado?.payload && f.precioEditado && errorPrecio(f.precioEditado));
+    if (conPrecioInvalido >= 0) {
+      showToast(`Fila ${conPrecioInvalido + 1}: ${errorPrecio(filas[conPrecioInvalido].precioEditado)}`, 'error');
+      return;
+    }
+    const especiales = filas.filter((f) => f.resultado?.payload && esEstadoGuardable(f.resultado.estado)
+      && aplicarPrecioEditado(f.resultado.payload, f.precioEditado)?.precioEspecial).length;
+    const mensaje = mensajeConfirmacionGuardado(resumen)
+      + (especiales > 0 ? ` ${especiales} con precio especial (solo en la carga; el maestro no cambia).` : '');
+    confirmAction('Guardar registros', mensaje, guardar, { confirmText: 'Guardar' });
   };
 
   const claseCelda = (fila, key) => {
@@ -519,6 +556,37 @@ const CargaMasivaConsignacion = () => {
                   </td>
                   {COLUMNAS_LECTURA.map((c) => {
                     const valor = r?.vinculados?.[c.key];
+                    // Precio editable en la vista previa (filas que se pueden guardar).
+                    if (c.key === 'costo' && r?.payload && esEstadoGuardable(r.estado)) {
+                      const maestro = Number(r.payload.costo) || 0;
+                      const editado = fila.precioEditado ?? '';
+                      const error = editado !== '' ? errorPrecio(editado) : null;
+                      const precio = editado !== '' && !error ? precioANumero(editado) : maestro;
+                      const especial = precio !== maestro;
+                      const v = especial ? ventaFila(precio, r.payload.cantidad) : null;
+                      return (
+                        <td key={c.key} className={`p-0 border border-gray-200 dark:border-gray-700 align-top ${especial ? 'bg-violet-50/60 dark:bg-violet-950/20' : 'bg-gray-50/60 dark:bg-gray-800/60'}`}>
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={editado}
+                            onChange={(e) => handleCambioPrecio(i, e.target.value)}
+                            placeholder={`$${maestro.toLocaleString('es-CL')}`}
+                            disabled={ocupado}
+                            aria-label={`Precio fila ${i + 1}`}
+                            title={error || 'Precio especial solo para esta carga (vacío = precio del maestro)'}
+                            className={`w-full h-6 px-1.5 outline-none text-right bg-transparent text-gray-800 dark:text-gray-100 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-[#2383C2] ${error ? 'ring-1 ring-inset ring-red-400 bg-red-50 dark:bg-red-900/30' : ''}`}
+                          />
+                          {especial && (
+                            <div className="px-1.5 pb-0.5 text-[9px] text-gray-600 dark:text-gray-300 whitespace-nowrap" title="Venta = precio × veces costo × cantidad">
+                              <BadgePrecioEspecial costoMaestro={maestro} />
+                              {!recargosCargados ? ' Calculando venta…' : v?.venta != null ? ` Venta $${v.venta.toLocaleString('es-CL')} · ${v.vecesCosto} x` : ' Sin regla de recargo'}
+                            </div>
+                          )}
+                        </td>
+                      );
+                    }
                     return (
                       <td key={c.key} className="px-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200 max-w-[260px] truncate" title={valor ? String(valor) : ''}>
                         {c.formato ? c.formato(valor) : (valor ?? '')}

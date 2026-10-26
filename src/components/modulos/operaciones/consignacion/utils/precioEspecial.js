@@ -39,6 +39,27 @@ export const camposPrecio = (costo, costoMaestro) => {
   return { costo: precio, costoMaestro: maestro, precioEspecial: especial };
 };
 
+// Regla de recargo activa cuyo rango [desde, hasta] contiene el precio, o
+// null. `recargos`: maestro de recargos (catalogosStore, lectura única).
+export const buscarReglaRecargo = (recargos, costo) => {
+  if (!Number.isFinite(costo) || costo <= 0) return null;
+  return (recargos || []).find((r) =>
+    (r.estado || 'ACTIVO').toUpperCase() !== 'INACTIVO' &&
+    costo >= Number(r.desde) &&
+    costo <= Number(r.hasta)
+  ) || null;
+};
+
+// Payload de una fila de Carga masiva con el precio especial aplicado (si
+// se editó y difiere del maestro). Sin precio editado, el payload no cambia.
+export const aplicarPrecioEditado = (payload, precioEditado) => {
+  if (!payload || precioEditado === undefined || precioEditado === null || String(precioEditado).trim() === '') return payload;
+  const precio = precioANumero(precioEditado);
+  if (!Number.isFinite(precio) || precio <= 0) return payload;
+  const campos = camposPrecio(precio, payload.costo);
+  return campos.precioEspecial ? { ...payload, ...campos } : payload;
+};
+
 // Venta del ítem con la regla de recargo (misma fórmula que Implantes →
 // Gestiones → Cargas: precio × veces costo × cantidad). `buscarRegla(costo)`
 // devuelve la regla del rango del precio o null.

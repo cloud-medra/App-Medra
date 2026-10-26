@@ -69,3 +69,19 @@ describe('borradorCargaMasiva', () => {
     expect(new Set(filas.map((f) => f.id)).size).toBe(3);
   });
 });
+
+describe('borrador: precio especial de la vista previa', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('guarda y restaura el precio editado de cada fila', () => {
+    const conPrecio = { ...crearFilaVacia(), valores: { ...crearFilaVacia().valores, codigo: 'A1', cantidad: '1' }, precioEditado: '800' };
+    const sinPrecio = { ...crearFilaVacia(), valores: { ...crearFilaVacia().valores, codigo: 'B2', cantidad: '1' } };
+    guardarBorrador('u1', { tipo: 'CONSIGNACION', filas: [conPrecio, sinPrecio] });
+    const b = leerBorrador('u1');
+    expect(b.precios).toEqual(['800', '']);
+    const filas = filasDesdeBorrador(b.valores, 2, b.precios);
+    expect(filas[0].precioEditado).toBe('800');
+    expect(filas[1]).not.toHaveProperty('precioEditado');
+    expect(filas[0].valores).not.toHaveProperty('precioEditado');
+  });
+});

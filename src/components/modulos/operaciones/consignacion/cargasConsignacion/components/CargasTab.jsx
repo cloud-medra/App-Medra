@@ -11,7 +11,7 @@ import { useAutocompleteReferenciaConsignacion } from './useAutocompleteReferenc
 import { periodoEstaAbierto } from './verificacionPeriodoConsignacion';
 import { registrarLogConsignacion } from '../../utils/registrarLogConsignacion';
 import { mapearItemMaestro, buscarItemMaestro } from '../../utils/registroConsignacionService';
-import { costoMaestroDe, esPrecioEspecial, errorPrecio, precioANumero, camposPrecio, calcularVentaItem, diferencias } from '../../utils/precioEspecial';
+import { costoMaestroDe, esPrecioEspecial, errorPrecio, precioANumero, camposPrecio, calcularVentaItem, diferencias, buscarReglaRecargo } from '../../utils/precioEspecial';
 import BadgePrecioEspecial from '../../utils/BadgePrecioEspecial';
 import { obtenerCodigosCacheados } from '../../registroConsignacion/utils/cacheMaestros';
 import { useCatalogo } from '../../../../../../hooks/useCatalogo';
@@ -391,14 +391,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
   const { datos: recargosCatalogo } = useCatalogo('recargos');
   const recargos = useMemo(() => [...recargosCatalogo].sort(ordenarPor('desde')), [recargosCatalogo]);
 
-  const buscarRecargo = (costo) => {
-    if (!Number.isFinite(costo) || costo <= 0) return null;
-    return recargos.find(r =>
-      (r.estado || 'ACTIVO').toUpperCase() !== 'INACTIVO' &&
-      costo >= Number(r.desde) &&
-      costo <= Number(r.hasta)
-    ) || null;
-  };
+  const buscarRecargo = (costo) => buscarReglaRecargo(recargos, costo);
 
   // Venta = precio × veces costo (regla de recargo del rango del precio) ×
   // cantidad, misma fórmula que Implantes → Gestiones → Cargas. También

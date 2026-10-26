@@ -6,8 +6,9 @@
 // - Vence a los 2 días: trae nombres de pacientes y médicos.
 // - Se borra al guardar todo, al descartarlo, con "Limpiar todo" y al
 //   cerrar sesión (borrarTodosLosBorradoresCargaMasiva, en handleLogout).
-// - Solo se guardan los valores ingresados, no el resultado de "Cargar":
-//   al volver siempre se revalida.
+// - Solo se guardan los valores ingresados (y el precio especial editado en
+//   la vista previa, `precioEditado`), no el resultado de "Cargar": al
+//   volver siempre se revalida.
 // =====================================================================
 import { CLAVES_INGRESO, crearFilaVacia, filaEstaVacia } from './grillaPortapapeles';
 
@@ -22,7 +23,9 @@ const borrarClave = (clave) => { try { localStorage.removeItem(clave); } catch {
 // Guarda tipo + filas con datos (en su orden). Sin uid no guarda nada.
 export const guardarBorrador = (uid, { tipo, filas }, ahora = Date.now()) => {
   if (!uid) return false;
-  const conDatos = filas.filter((f) => !filaEstaVacia(f)).map((f) => f.valores);
+  const conDatos = filas.filter((f) => !filaEstaVacia(f)).map((f) => (
+    f.precioEditado ? { ...f.valores, precioEditado: f.precioEditado } : f.valores
+  ));
   if (conDatos.length === 0) {
     borrarClave(claveBorrador(uid));
     return false;
@@ -35,7 +38,7 @@ export const guardarBorrador = (uid, { tipo, filas }, ahora = Date.now()) => {
   }
 };
 
-// { tipo, valores: [{ admision, ... }], guardadoEn } o null (no hay,
+// { tipo, valores: [{ admision, ... }], precios: ['' | precio editado], guardadoEn } o null (no hay,
 // vencido —se borra— o con otro formato).
 export const leerBorrador = (uid, ahora = Date.now()) => {
   if (!uid) return null;
@@ -48,13 +51,14 @@ export const leerBorrador = (uid, ahora = Date.now()) => {
     return null;
   }
   const valores = datos.filas.map((v) => Object.fromEntries(CLAVES_INGRESO.map((k) => [k, String(v?.[k] ?? '')])));
-  return { tipo: datos.tipo, valores, guardadoEn: datos.guardadoEn };
+  const precios = datos.filas.map((v) => String(v?.precioEditado ?? ''));
+  return { tipo: datos.tipo, valores, precios, guardadoEn: datos.guardadoEn };
 };
 
 // Filas de la grilla a partir del borrador (sin cargar), completadas con
-// filas vacías hasta `minimo`.
-export const filasDesdeBorrador = (valores, minimo) => {
-  const filas = valores.map((v) => ({ ...crearFilaVacia(), valores: v }));
+// filas vacías hasta `minimo`. `precios`: precio especial editado por fila.
+export const filasDesdeBorrador = (valores, minimo, precios = []) => {
+  const filas = valores.map((v, i) => ({ ...crearFilaVacia(), valores: v, ...(precios[i] ? { precioEditado: precios[i] } : {}) }));
   while (filas.length < minimo) filas.push(crearFilaVacia());
   return filas;
 };
