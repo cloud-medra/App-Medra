@@ -22,7 +22,8 @@ describe('sidebar: permisos de Administración repartidos en grupos', () => {
       activo: true,
       permisos: { administracion: ['/administracion/controlMensual'] },
     };
-    expect(entradasDelSidebar(admin, null)).toEqual(['finanzas', 'usuarios']);
+    // Más Herramientas, por Gestionar tickets (por defecto para administradores).
+    expect(entradasDelSidebar(admin, null)).toEqual(['finanzas', 'usuarios', 'administracion']);
     expect(rutas(itemsDelSidebar(admin, 'usuarios', null))).toEqual(['/administracion/alertas']);
   });
 

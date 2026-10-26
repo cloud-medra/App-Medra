@@ -177,6 +177,67 @@ service cloud.firestore {
         && request.resource.data.noLeidas == resource.data.noLeidas.removeAll([request.auth.uid]);
       allow create, delete: if false;
     }
+    // =================================================================
+    // AYUDA Y SOPORTE: TICKETS
+    // =================================================================
+    // Permiso "Gestionar tickets": el ítem Herramientas → Gestionar tickets
+    // (/administracion/tickets) o, por defecto, rol Administrador o
+    // Desarrollador (mismo criterio que porDefectoAdministradores de
+    // src/config/accesoMenu.js).
+    function gestionaTickets() {
+      return esDev()
+        || getUsuario().get('rol', '') == 'admin'
+        || tieneItem('administracion', '/administracion/tickets');
+    }
+    // Número correlativo (TK-0001…): solo sube de a uno, en la misma
+    // transacción que crea el ticket.
+    match /tickets_meta/contador {
+      allow read: if estaActivo();
+      allow create: if estaActivo() && request.resource.data.keys().hasOnly(['ultimo'])
+        && request.resource.data.ultimo == 1;
+      allow update: if estaActivo() && request.resource.data.keys().hasOnly(['ultimo'])
+        && request.resource.data.ultimo == resource.data.ultimo + 1;
+    }
+    function ticketNuevoValido(t) {
+      return t.creadoPor == request.auth.uid
+        && t.numero == getAfter(/databases/$(database)/documents/tickets_meta/contador).data.ultimo
+        && t.estado == 'NUEVO'
+        && t.tipo in ['ERROR', 'MEJORA', 'CONSULTA']
+        && t.prioridad in ['BAJA', 'MEDIA', 'ALTA']
+        && t.titulo is string && t.titulo.size() > 0 && t.titulo.size() <= 120
+        && t.descripcion is string && t.descripcion.size() > 0 && t.descripcion.size() <= 4000
+        && t.capturas is list && t.capturas.size() <= 3
+        && t.mensajes is list && t.mensajes.size() == 0
+        && t.noLeidoUsuario == false && t.pendienteGestor == true;
+    }
+    // El creador solo agrega UN mensaje suyo al final de la conversación (sin
+    // tocar los anteriores) y marca sus novedades como vistas; el estado y los
+    // demás datos los cambia quien gestiona.
+    function actualizacionDelCreador() {
+      let antes = resource.data;
+      let despues = request.resource.data;
+      let cambios = despues.diff(antes).affectedKeys();
+      let n = antes.mensajes.size();
+      return antes.creadoPor == request.auth.uid
+        && cambios.hasOnly(['mensajes', 'actualizadoEl', 'noLeidoUsuario', 'pendienteGestor'])
+        && despues.noLeidoUsuario == false
+        && (!cambios.hasAny(['mensajes'])
+          || (despues.mensajes.size() == n + 1
+            && despues.mensajes[0:n] == antes.mensajes
+            && despues.mensajes[n].autorUid == request.auth.uid
+            && despues.mensajes[n].tipo == 'mensaje'
+            && despues.mensajes[n].deGestor == false
+            && despues.pendienteGestor == true));
+    }
+    // Un ticket = un documento con su conversación (abrirlo cuesta 1 lectura).
+    // Cada usuario crea y lee solo los suyos; quien gestiona, todos.
+    match /tickets/{ticketId} {
+      allow read: if estaActivo() && (resource.data.creadoPor == request.auth.uid || gestionaTickets());
+      allow create: if estaActivo() && ticketNuevoValido(request.resource.data);
+      allow update: if estaActivo() && (gestionaTickets() || actualizacionDelCreador());
+      allow delete: if false;
+    }
+
     // Correos de la extensión Trigger Email (functions/alertas/correo.js):
     // solo los escribe la función; nadie los lee desde el navegador.
     match /mail/{id} {

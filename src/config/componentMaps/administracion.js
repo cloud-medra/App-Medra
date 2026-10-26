@@ -250,6 +250,23 @@ export const administracionComponentMaps = {
       },
     },
   },
+  // Permiso "Gestionar tickets" (Ayuda y soporte): el ítem habilita la
+  // bandeja y, en firestore.rules (gestionaTickets), leer y actualizar todos
+  // los tickets. Por defecto lo tienen Administrador y Desarrollador.
+  '/administracion/tickets': {
+    label: 'Gestionar tickets (GestionTickets.jsx) — por defecto, administradores',
+    sections: {
+      tabla_tickets: {
+        label: 'Sección: Bandeja de tickets',
+        elements: {
+          ...columnas([
+            ['numero', 'N°'], ['titulo', 'Título'], ['tipo', 'Tipo'], ['prioridad', 'Prioridad'], ['modulo', 'Módulo'],
+            ['estado', 'Estado'], ['usuario', 'Usuario'], ['creado', 'Creado'], ['actualizado', 'Actualizado'], ['acciones', 'Acciones'],
+          ]),
+        },
+      },
+    },
+  },
   '/administracion/gestionModulos': {
     label: 'Gestión de módulos (GestionModulos.jsx) — solo rol Desarrollador, no se asigna',
     sections: {},

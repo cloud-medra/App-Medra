@@ -11,6 +11,9 @@ import { itemActivo } from './modulosActivos';
 //     en sus permisos (no se asignan desde el editor de permisos).
 //   - Ítems `soloDesarrollador` (Administración → Gestión de módulos): solo
 //     el Desarrollador; tampoco se asignan.
+//   - Ítems `porDefectoAdministradores` (Herramientas → Gestionar tickets):
+//     se asignan como cualquier ítem y, además, los ven siempre el
+//     Administrador y el Desarrollador (sin migrar sus permisos guardados).
 // `activos` (config/modulosActivos.js): los módulos/ítems inactivos no los
 // ve nadie, tampoco el Desarrollador. Sin `activos`, todo activo.
 
@@ -25,7 +28,8 @@ export const subItemsVisibles = (userData, moduloKey, activos) => {
   const admin = esAdministrador(userData);
   return subItems.filter((s) => {
     if (s.soloDesarrollador) return false;
-    return s.automaticoAdministradores ? admin : permitidos.includes(s.path);
+    if (s.automaticoAdministradores) return admin;
+    return permitidos.includes(s.path) || (s.porDefectoAdministradores && admin);
   });
 };
 

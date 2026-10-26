@@ -10,8 +10,14 @@ import logoMedraOscuro from '../assets/logo/medra-logo-oscuro.svg';
 import { obtenerNombreMostrar } from '../utils/nombreMostrar';
 import {
   LogOut, Calendar, UserCircle, ChevronRight, ArrowLeft, FileText,
-  Settings, Home, ShieldCheck, Menu, Shield, Moon, Sun, Camera
+  Settings, Home, ShieldCheck, Menu, Shield, Moon, Sun, Camera, LifeBuoy
 } from 'lucide-react';
+import AyudaSoporte from '../components/modulos/general/soporte/AyudaSoporte';
+import GestionTickets from '../components/modulos/general/soporte/GestionTickets';
+import { useNovedadesTicketsUsuario, useTicketsPendientesGestor } from '../components/modulos/general/soporte/useIndicadoresTickets';
+import { RUTA_GESTION_TICKETS, RUTA_AYUDA_SOPORTE } from '../components/modulos/general/soporte/ticketsConfig';
+import { LIMITE_PENDIENTES_GESTOR } from '../components/modulos/general/soporte/ticketsServicio';
+import { VERSION_APP } from '../config/versionApp';
 import AvatarUsuario from '../components/ui/AvatarUsuario';
 import FotoPerfilModal from '../components/modulos/general/fotoPerfil/FotoPerfilModal';
 
@@ -155,12 +161,16 @@ import Perfil from '../components/modulos/general/perfil/Perfil';
 import PoliticasPrivacidad from '../components/modulos/general/legales/PoliticasPrivacidad';
 import TerminosServicio from '../components/modulos/general/legales/TerminosServicio';
 
-// Contador de alertas sin leer (menú lateral).
-const Contador = ({ n }) => (n > 0 ? (
-  <span className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold inline-flex items-center justify-center" aria-label={`${n} alertas sin leer`}>
-    {n > 98 ? '99+' : n}
+// Contador del menú lateral (alertas sin leer, tickets sin revisar).
+// `tope`: con n >= tope se muestra "(tope-1)+" (consultas con limit).
+const Contador = ({ n, etiqueta = 'alertas sin leer', tope = 99 }) => (n > 0 ? (
+  <span className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold inline-flex items-center justify-center" aria-label={`${n} ${etiqueta}`}>
+    {n >= tope ? `${tope - 1}+` : n}
   </span>
 ) : null);
+
+// Punto rojo de novedad (menú del usuario).
+const PuntoAviso = ({ className = '' }) => <span aria-hidden="true" className={`w-2 h-2 rounded-full bg-red-500 ${className}`} />;
 
 // Estilos del sidebar (blanco; gris 800 en oscuro). Activo: tinte azul,
 // texto e ícono de marca y barra vertical a la izquierda.
@@ -222,11 +232,16 @@ const TituloSidebar = ({ cuadrito, texto, colapsado, onClick, activo = false }) 
 
 // Entrada del sidebar que lleva el contador de alertas sin leer.
 const ENTRADA_ALERTAS = entradaDeRuta(MODULO_AGRUPADO, RUTA_ALERTAS);
+// Entrada del sidebar que lleva el contador de tickets sin revisar.
+const ENTRADA_TICKETS = entradaDeRuta(MODULO_AGRUPADO, RUTA_GESTION_TICKETS);
 
 const Dashboard = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Foto de perfil (menú del usuario): ventana para subir, cambiar o quitar.
   const [fotoPerfilAbierta, setFotoPerfilAbierta] = useState(false);
+  // Ayuda y soporte: pantalla desde donde se abrió (para preseleccionar el
+  // módulo del ticket nuevo). `n` remonta la vista en cada apertura.
+  const [contextoSoporte, setContextoSoporte] = useState({ n: 0 });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   // Sidebar como drawer en pantallas < md (se abre con el ☰ del header).
   // Abierto se ve siempre expandido, aunque en escritorio esté colapsado.
@@ -435,6 +450,8 @@ const Dashboard = () => {
     '/administracion/ResumenPeriodoAbierto': <ResumenPeriodoAbierto />,
     '/administracion/notasAdmin': <NotasAdmin />,
     '/administracion/recordatorios': <Recordatorios />,
+    [RUTA_GESTION_TICKETS]: <GestionTickets />,
+    [RUTA_AYUDA_SOPORTE]: <AyudaSoporte key={contextoSoporte.n} contexto={contextoSoporte} />,
     [RUTA_GESTION_MODULOS]: <GestionModulos />,
     '/administracion/crearUsuario': (
       <CrearUsuario
@@ -589,6 +606,19 @@ const Dashboard = () => {
   // Alertas sin leer (Administración → Alertas): contador en el menú.
   const alertasNoLeidas = useAlertasNoLeidas(userData?.uid, esAdministrador(userData));
 
+  // Tickets de soporte: novedades del usuario (limit 1) y, para quien tiene
+  // "Gestionar tickets", los sin revisar (limit 10). Ver useIndicadoresTickets.
+  const novedadesTickets = useNovedadesTicketsUsuario(userData?.uid);
+  const gestionaTickets = subItemsVisibles(userData, 'administracion', modulosActivos).some((s) => s.path === RUTA_GESTION_TICKETS);
+  const pendientesTickets = useTicketsPendientesGestor(gestionaTickets);
+  const abrirAyudaSoporte = () => {
+    setContextoSoporte((prev) => ({ vista: activeView, entrada: activeModule, n: prev.n + 1 }));
+    setIsAjustesMode(true);
+    setActiveModule(null);
+    setActiveView(RUTA_AYUDA_SOPORTE);
+    setIsMenuOpen(false);
+  };
+
   // Módulos/grupos e ítems del sidebar, en el orden guardado del usuario
   // (config/menuSidebar.js).
   const entradasPermitidas = entradasDelSidebar(userData, modulosActivos);
@@ -737,6 +767,12 @@ const Dashboard = () => {
               porDefecto="U"
               className="w-9 h-9 bg-[#2383C2] text-white font-bold text-sm"
             />
+            {(novedadesTickets || pendientesTickets > 0) && (
+              <span
+                className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 border-2 border-white dark:border-gray-800"
+                title={novedadesTickets ? 'Tienes novedades en tus tickets' : 'Hay tickets sin revisar'}
+              />
+            )}
           </button>
 
           {isMenuOpen && (
@@ -778,6 +814,24 @@ const Dashboard = () => {
                 )}
                 {oscuro ? 'Modo Claro' : 'Modo Oscuro'}
               </button>
+
+              <button
+                onClick={abrirAyudaSoporte}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <LifeBuoy size={16} className="text-teal-600 dark:text-teal-400" /> Ayuda y soporte
+                {novedadesTickets && <PuntoAviso className="ml-auto" />}
+              </button>
+
+              {gestionaTickets && (
+                <button
+                  onClick={() => { abrirVistaDeModulo('administracion', RUTA_GESTION_TICKETS); setIsMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <LifeBuoy size={16} className="text-slate-500 dark:text-slate-400" /> Gestionar tickets
+                  <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />
+                </button>
+              )}
 
               <button
                 onClick={abrirAjustesGenerales}
@@ -841,6 +895,7 @@ const Dashboard = () => {
                     <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                       {item.label}
                     </span>
+                    {item.path === RUTA_AYUDA_SOPORTE && novedadesTickets && !colapsado && <PuntoAviso className="ml-auto shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -867,6 +922,7 @@ const Dashboard = () => {
                         </span>
                       </div>
                       {key === ENTRADA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
+                      {key === ENTRADA_TICKETS && !colapsado && <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />}
                       {!colapsado && <ChevronRight size={14} className="flex-shrink-0 text-gray-400 dark:text-gray-500 ml-1" />}
                     </button>
                   ))}
@@ -900,6 +956,7 @@ const Dashboard = () => {
                         {sub.label}
                       </span>
                       {sub.path === RUTA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
+                      {sub.path === RUTA_GESTION_TICKETS && !colapsado && <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />}
                     </button>
                   ))}
                 </div>
@@ -936,7 +993,7 @@ const Dashboard = () => {
               </div>
               <div className="flex justify-between items-center text-[9px] text-gray-500 dark:text-gray-400 font-num px-0.5">
                 <span>Versión</span>
-                <span>v1.0.0</span>
+                <span>v{VERSION_APP}</span>
               </div>
             </div>
           ) : (
