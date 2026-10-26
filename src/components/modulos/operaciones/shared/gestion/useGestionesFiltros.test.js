@@ -2,6 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useGestionesFiltros, opcionesPeriodoGestiones } from './useGestionesFiltros';
+import { fechaISOEnChile } from './rangoFechaGestiones';
 
 const implante = (id, fecha, estado) => ({
   id, gestionId: id, agendaId: id, nombre: `Paciente ${id}`, empresa: 'EmpresaX', fecha, estado
@@ -17,12 +18,12 @@ const DATASET = [
 
 // Deja los filtros en un estado neutro y predecible (sin depender de la
 // fecha real del día en que corre el test): año/mes vacíos ("Todos") y
-// "Hasta hoy" apagado, salvo que el propio test lo pruebe explícitamente.
+// rango de fecha en "Todos los días", salvo que el test lo pruebe explícitamente.
 const enBlanco = (result) => {
   act(() => {
     result.current.setFiltroAnio('');
     result.current.setFiltroMes('');
-    result.current.setFiltroSoloHastaHoy(false);
+    result.current.setFiltroRangoFecha('todos');
   });
 };
 
@@ -109,28 +110,54 @@ describe('useGestionesFiltros — cascada del filtro de Día', () => {
     expect(result.current.filtrosDias).toEqual([]);
   });
 
-  it('"Hasta hoy" también forma parte de la cascada: un día futuro no aparece como opción', () => {
-    const hoy = new Date();
-    const formatoISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    const ayer = new Date(hoy);
-    ayer.setDate(hoy.getDate() - 1);
-    const mañana = new Date(hoy);
-    mañana.setDate(hoy.getDate() + 1);
+  it('el rango de fecha también forma parte de la cascada: un día futuro no aparece como opción', () => {
+    // Días relativos a "hoy" en hora de Chile (la misma referencia que el filtro).
+    const hoyISO = fechaISOEnChile();
+    const desplazar = (dias) => new Date(Date.parse(`${hoyISO}T12:00:00Z`) + dias * 86400000).toISOString().slice(0, 10);
+    const ayer = desplazar(-1);
+    const mañana = desplazar(1);
 
     const dataset = [
-      implante('a', formatoISO(ayer), 'PENDIENTE'),
-      implante('b', formatoISO(mañana), 'PENDIENTE')
+      implante('a', ayer, 'PENDIENTE'),
+      implante('b', mañana, 'PENDIENTE')
     ];
 
     const { result } = renderHook(() => useGestionesFiltros(dataset));
-    // filtroSoloHastaHoy arranca en true por defecto — se deja así a propósito.
+    // El rango arranca en "Hasta ayer" por defecto — se deja así a propósito.
     act(() => { result.current.setFiltroAnio(''); result.current.setFiltroMes(''); });
 
-    const diaAyer = String(ayer.getDate()).padStart(2, '0');
-    const diaMañana = String(mañana.getDate()).padStart(2, '0');
+    expect(result.current.opcionesDias).toContain(ayer.slice(8));
+    expect(result.current.opcionesDias).not.toContain(mañana.slice(8));
+  });
 
-    expect(result.current.opcionesDias).toContain(diaAyer);
-    expect(result.current.opcionesDias).not.toContain(diaMañana);
+  it('cada rango de fecha filtra contra "hoy" en Chile; sin fecha solo en "Todos los días"', () => {
+    const hoyISO = fechaISOEnChile();
+    const desplazar = (dias) => new Date(Date.parse(`${hoyISO}T12:00:00Z`) + dias * 86400000).toISOString().slice(0, 10);
+    const dataset = [
+      implante('ayer', desplazar(-1)),
+      implante('hoy', hoyISO),
+      implante('manana', desplazar(1)),
+      implante('sinFecha', '')
+    ];
+    const { result } = renderHook(() => useGestionesFiltros(dataset));
+    act(() => { result.current.setFiltroAnio(''); result.current.setFiltroMes(''); });
+    const ids = () => result.current.implantesFiltrados.map((i) => i.id).sort();
+
+    expect(result.current.filtroRangoFecha).toBe('hastaAyer');
+    expect(ids()).toEqual(['ayer']);
+    act(() => result.current.setFiltroRangoFecha('hastaHoy'));
+    expect(ids()).toEqual(['ayer', 'hoy']);
+    act(() => result.current.setFiltroRangoFecha('soloHoy'));
+    expect(ids()).toEqual(['hoy']);
+    act(() => result.current.setFiltroRangoFecha('desdeManana'));
+    expect(ids()).toEqual(['manana']);
+    act(() => result.current.setFiltroRangoFecha('todos'));
+    expect(ids()).toEqual(['ayer', 'hoy', 'manana', 'sinFecha']);
+  });
+
+  it('con filtro de admisión (sinPeriodo) arranca en "Todos los días"', () => {
+    const { result } = renderHook(() => useGestionesFiltros(DATASET, { sinPeriodo: true }));
+    expect(result.current.filtroRangoFecha).toBe('todos');
   });
 
   it('limpiarFiltroDias vacía la selección', () => {

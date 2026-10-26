@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { obtenerFechaHoyISO } from '../../implantes/gestionImplantes/utils/gestionesImportExport';
+import { fechaISOEnChile, coincideRangoFecha, RANGO_FECHA_PREDETERMINADO } from './rangoFechaGestiones';
 import { ordenarMeses } from '../../../../../utils/ordenarMeses';
 import { ocsDeGestion } from '../ocIndex/indiceOC';
 
@@ -25,7 +25,7 @@ export const opcionesPeriodoGestiones = (implantes, { filtroAnio = '', filtroMes
   };
 };
 
-// `sinPeriodo`: arranca sin año/mes ni "hasta hoy" (solo valor inicial).
+// `sinPeriodo`: arranca sin año/mes y con "Todos los días" (solo valor inicial).
 // Filtros, búsqueda y paginación de Gestión (Implantes y Hemodinamia).
 export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
   const [busqueda, setBusqueda] = useState('');
@@ -37,11 +37,11 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
   const [filtrosEstados, setFiltrosEstados] = useState([]);
   const [pagina, setPagina] = useState(1);
 
-  // Filtro de rango de fecha, independiente y combinable con año/mes/día y
-  // estados: por defecto solo muestra hoy y días anteriores (el caso de uso
-  // más frecuente al revisar/cargar), con opción de ver todos los días
-  // (incluye fechas futuras).
-  const [filtroSoloHastaHoy, setFiltroSoloHastaHoy] = useState(!sinPeriodo);
+  // Filtro de rango de fecha (rangoFechaGestiones.js), independiente y
+  // combinable con año/mes/día y estados: Hasta ayer (predeterminado), Hasta
+  // hoy, Solo hoy, Desde mañana o Todos los días. "Hoy" es en hora de Chile.
+  // No se recuerda entre visitas: cada entrada arranca en el predeterminado.
+  const [filtroRangoFecha, setFiltroRangoFecha] = useState(sinPeriodo ? 'todos' : RANGO_FECHA_PREDETERMINADO);
 
   // Años/meses disponibles, desde las gestiones ya cargadas (0 lecturas):
   // solo períodos con datos, años del más reciente al más antiguo y meses
@@ -52,14 +52,14 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
   );
 
   // Filtrado en cascada: primero se aplican todos los filtros EXCEPTO
-  // "Día" (búsqueda, año, mes, hasta-hoy, estados). Las opciones del
+  // "Día" (búsqueda, año, mes, rango de fecha, estados). Las opciones del
   // filtro de Día se calculan sobre este resultado intermedio — así
   // siempre reflejan los días que efectivamente existen dado el resto de
   // filtros ya activos, nunca el universo completo sin filtrar (que era
   // el bug: opcionesFechas.dias se calculaba antes sobre `implantes`
-  // crudo, ignorando año/mes/estado/hasta-hoy).
+  // crudo, ignorando año/mes/estado/rango de fecha).
   const implantesFiltradosSinDia = useMemo(() => {
-    const hoyISO = obtenerFechaHoyISO();
+    const hoyISO = fechaISOEnChile();
 
     return implantes.filter(i => {
       const idParaBuscar = i.gestionId || i.agendaId || '';
@@ -81,12 +81,7 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
         return false;
       }
 
-      // "YYYY-MM-DD" es comparable lexicográficamente igual que numéricamente,
-      // así que no hace falta parsear a Date (ni lidiar con timezone).
-      let coincideFechaHastaHoy = true;
-      if (filtroSoloHastaHoy) {
-        coincideFechaHastaHoy = !!(i.fecha && i.fecha.includes('-') && i.fecha <= hoyISO);
-      }
+      const coincideFechaRango = coincideRangoFecha(i.fecha, filtroRangoFecha, hoyISO);
 
       let coincideEstado = true;
       if (filtrosEstados.length > 0) {
@@ -94,9 +89,9 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
         coincideEstado = filtrosEstados.includes(estadoClean);
       }
 
-      return coincideBusqueda && coincideAnio && coincideMes && coincideFechaHastaHoy && coincideEstado;
+      return coincideBusqueda && coincideAnio && coincideMes && coincideFechaRango && coincideEstado;
     });
-  }, [implantes, busqueda, filtroAnio, filtroMes, filtroSoloHastaHoy, filtrosEstados]);
+  }, [implantes, busqueda, filtroAnio, filtroMes, filtroRangoFecha, filtrosEstados]);
 
   const opcionesDias = useMemo(() => {
     const diasSet = new Set();
@@ -110,7 +105,7 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
   }, [implantesFiltradosSinDia]);
 
   // Si un día que estaba seleccionado deja de existir en `opcionesDias`
-  // (porque el usuario cambió año/mes/estado/hasta-hoy y ese día ya no
+  // (porque el usuario cambió año/mes/estado/rango de fecha y ese día ya no
   // tiene registros), se deselecciona automáticamente en vez de quedar
   // "elegido" pero sin resultados — evita la confusión de un filtro que
   // parece activo pero no filtra nada visible.
@@ -140,7 +135,7 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
   // Se reinicia a la página 1 cada vez que cambia cualquier filtro.
   useEffect(() => {
     setPagina(1);
-  }, [busqueda, filtroAnio, filtroMes, filtrosDias, filtroSoloHastaHoy, filtrosEstados]);
+  }, [busqueda, filtroAnio, filtroMes, filtrosDias, filtroRangoFecha, filtrosEstados]);
 
   const totalPaginas = Math.max(1, Math.ceil(implantesFiltrados.length / TAMANO_PAGINA_TABLA));
   const paginaSegura = Math.min(pagina, totalPaginas);
@@ -202,8 +197,8 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
     toggleFiltroDia,
     limpiarFiltroDias,
     opcionesDias,
-    filtroSoloHastaHoy,
-    setFiltroSoloHastaHoy,
+    filtroRangoFecha,
+    setFiltroRangoFecha,
     opcionesFechas,
     limpiarFiltrosFecha,
     opcionesEstados,

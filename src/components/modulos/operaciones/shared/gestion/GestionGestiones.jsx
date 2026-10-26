@@ -9,6 +9,7 @@ import GestionesForm from './GestionesForm';
 import { GestionesTable } from './GestionesTable';
 import { EstadoFilterDropdown } from './EstadoFilterDropdown';
 import { DiaFilterDropdown } from './DiaFilterDropdown';
+import { RANGOS_FECHA, RANGO_FECHA_PREDETERMINADO } from './rangoFechaGestiones';
 import { SincronizarOCResumenModal } from '../ocIndex/SincronizarOCResumenModal';
 import { useSincronizarOC } from '../ocIndex/useSincronizarOC';
 import { useMarcarOcPendiente } from '../ocIndex/useMarcarOcPendiente';
@@ -65,8 +66,8 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
     toggleFiltroDia,
     limpiarFiltroDias,
     opcionesDias,
-    filtroSoloHastaHoy,
-    setFiltroSoloHastaHoy,
+    filtroRangoFecha,
+    setFiltroRangoFecha,
     opcionesFechas,
     limpiarFiltrosFecha,
     opcionesEstados,
@@ -140,7 +141,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
     setAdmisionFiltrada(null);
     setFiltroAnio(hoy.getFullYear().toString());
     setFiltroMes(String(hoy.getMonth() + 1).padStart(2, '0'));
-    setFiltroSoloHastaHoy(true);
+    setFiltroRangoFecha(RANGO_FECHA_PREDETERMINADO);
   };
 
   if (refPathAbierto) {
@@ -382,29 +383,22 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                   limpiarFiltroEstados={limpiarFiltroEstados}
                 />
 
-                <div className="flex items-center h-7 border border-gray-300 dark:border-gray-600 rounded overflow-hidden text-[11px] shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setFiltroSoloHastaHoy(true)}
-                    title="Solo muestra filas con fecha de hoy o anterior (oculta fechas futuras)"
-                    className={`h-full px-2 font-medium transition ${filtroSoloHastaHoy
-                      ? 'bg-[#2383C2] text-white'
-                      : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                      }`}
-                  >
-                    Hasta hoy
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFiltroSoloHastaHoy(false)}
-                    title="Muestra todas las fechas, incluidas las futuras"
-                    className={`h-full px-2 font-medium border-l border-gray-300 dark:border-gray-600 transition ${!filtroSoloHastaHoy
-                      ? 'bg-[#2383C2] text-white'
-                      : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                      }`}
-                  >
-                    Todos los días
-                  </button>
+                <div className="flex items-center h-7 border border-gray-300 dark:border-gray-600 rounded overflow-hidden text-[11px] shrink-0" role="group" aria-label="Rango de fecha">
+                  {RANGOS_FECHA.map((rango, i) => (
+                    <button
+                      key={rango.id}
+                      type="button"
+                      onClick={() => setFiltroRangoFecha(rango.id)}
+                      title={rango.title}
+                      aria-pressed={filtroRangoFecha === rango.id}
+                      className={`h-full px-2 font-medium transition ${i > 0 ? 'border-l border-gray-300 dark:border-gray-600' : ''} ${filtroRangoFecha === rango.id
+                        ? 'bg-[#2383C2] text-white'
+                        : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                    >
+                      {rango.label}
+                    </button>
+                  ))}
                 </div>
 
                 {(filtroAnio || filtroMes || filtrosDias.length > 0) && (

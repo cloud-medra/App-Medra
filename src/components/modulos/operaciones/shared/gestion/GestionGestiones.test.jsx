@@ -24,7 +24,7 @@ const datos = {
   implantes: [], hayMasGestiones: false, cargarMasGestiones: vi.fn(), implantesFiltrados: Array(60).fill({}), implantesPagina: Array(50).fill({}),
   pagina: 1, setPagina: vi.fn(), totalPaginas: 2, formData: {}, setFormData: vi.fn(), busqueda: '', setBusqueda: vi.fn(),
   filtroAnio: '2026', setFiltroAnio: vi.fn(), filtroMes: '10', setFiltroMes: vi.fn(), filtrosDias: [], toggleFiltroDia: vi.fn(),
-  limpiarFiltroDias: vi.fn(), opcionesDias: [], filtroSoloHastaHoy: true, setFiltroSoloHastaHoy: vi.fn(),
+  limpiarFiltroDias: vi.fn(), opcionesDias: [], filtroRangoFecha: 'hastaAyer', setFiltroRangoFecha: vi.fn(),
   opcionesFechas: { anios: ['2026'], meses: ['10'] }, limpiarFiltrosFecha: vi.fn(), opcionesEstados: [], filtrosEstados: [],
   toggleFiltroEstado: vi.fn(), limpiarFiltroEstados: vi.fn(), editingId: null, cargando: false, showLogDrawer: false,
   setShowLogDrawer: vi.fn(), logsList: [], loadingLogs: false, showConfigDrawer: false, setShowConfigDrawer: vi.fn(),
@@ -48,7 +48,8 @@ describe('Gestión compartida', () => {
     expect(screen.getByText(titulo)).toBeInTheDocument();
     expect(screen.getByTestId('formulario')).toHaveTextContent(`form ${modulo}`);
     expect(screen.getByTestId('tabla')).toHaveTextContent(`tabla ${modulo} 50`);
-    expect(screen.getByText('Hasta hoy')).toBeInTheDocument();
+    ['Hasta ayer', 'Hasta hoy', 'Solo hoy', 'Desde mañana', 'Todos los días'].forEach((t) => expect(screen.getByText(t)).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Hasta ayer' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Sincronizar OC' })).toBeInTheDocument();
     expect(sincronizarPedidos.at(-1)).toBe(modulo);
     const colapsar = screen.getByRole('button', { name: 'Ocultar formulario' });
