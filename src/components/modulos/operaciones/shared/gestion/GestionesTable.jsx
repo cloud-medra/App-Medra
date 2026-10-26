@@ -5,6 +5,41 @@ import EstadoBadge from '../estadoGestion/EstadoBadge';
 import { coloresEstadoGestion, normalizarEstadoGestion } from '../estadoGestion/estadosGestion';
 import { ocsDeGestion, textoOCs } from '../ocIndex/indiceOC';
 import { moduloGestion } from '../modulosGestion';
+import { estadoOrdenGestion } from '../ordenesOC/estadoOrdenGestion';
+
+// Color de la fila según la Orden y su PDF (estadoOrdenGestion): fondo suave
+// en la fila, el mismo tono (opaco) en las columnas fijas para que tapen al
+// hacer scroll horizontal, un tono más al pasar el mouse, y el badge de la
+// columna Orden más marcado.
+const TONOS_ORDEN = {
+  conPdf: {
+    fila: 'bg-emerald-50 hover:bg-emerald-100 dark:bg-[#11291f] dark:hover:bg-[#173a2b]',
+    fija: 'bg-emerald-50 group-hover:bg-emerald-100 dark:bg-[#11291f] dark:group-hover:bg-[#173a2b]',
+    badge: 'bg-emerald-100 text-emerald-800 ring-emerald-300 dark:bg-emerald-900/70 dark:text-emerald-200 dark:ring-emerald-700',
+    punto: 'bg-emerald-500',
+    leyenda: 'Con orden y PDF'
+  },
+  sinPdf: {
+    fila: 'bg-orange-50 hover:bg-orange-100 dark:bg-[#33220f] dark:hover:bg-[#45301a]',
+    fija: 'bg-orange-50 group-hover:bg-orange-100 dark:bg-[#33220f] dark:group-hover:bg-[#45301a]',
+    badge: 'bg-orange-100 text-orange-800 ring-orange-300 dark:bg-orange-900/70 dark:text-orange-200 dark:ring-orange-700',
+    punto: 'bg-orange-500',
+    leyenda: 'Con orden, sin PDF'
+  },
+  sinOrden: {
+    fila: 'bg-gray-100/70 hover:bg-gray-200/70 dark:bg-[#252c37] dark:hover:bg-[#2f3845]',
+    fija: 'bg-gray-100 group-hover:bg-gray-200 dark:bg-[#252c37] dark:group-hover:bg-[#2f3845]',
+    badge: '',
+    punto: 'bg-gray-400',
+    leyenda: 'Sin orden'
+  },
+  // Con OC, mientras se lee el registro de PDF (o si no se pudo leer).
+  cargando: {
+    fila: 'hover:bg-gray-50/80 dark:hover:bg-gray-700/40',
+    fija: 'bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-700',
+    badge: 'bg-gray-100 text-gray-700 ring-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:ring-gray-600'
+  }
+};
 
 const COLUMNAS = [
   { key: 'estado', label: '•', ancho: 32, min: 24, align: 'center' },
@@ -89,7 +124,11 @@ export const GestionesTable = ({
   abrirHistorialLogs,
   iniciarEdicion,
   handleDelete,
-  onRowDoubleClick
+  onRowDoubleClick,
+  // Registro de PDF de OC ({ [claveOC]: ... }, null mientras carga) y error
+  // de lectura: ver useRegistroPdfGestiones en GestionGestiones.
+  pdfsOC = null,
+  errorPdfOC = null
 }) => {
   const config = moduloGestion(modulo);
   const [anchos, setAnchos] = useState(anchosPorDefecto);
@@ -118,9 +157,9 @@ export const GestionesTable = ({
     return { position: 'sticky', left: stickyOffsets[colKey] };
   };
 
-  const getStickyClass = (colKey, forHeader = false) => {
+  const getStickyClass = (colKey, forHeader = false, tono = TONOS_ORDEN.cargando) => {
     if (!STICKY_KEYS.has(colKey)) return '';
-    const clases = [forHeader ? 'z-20 bg-gray-100 dark:bg-gray-900' : 'z-[5] bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-700/40'];
+    const clases = [forHeader ? 'z-20 bg-gray-100 dark:bg-gray-900' : `z-[5] ${tono.fija}`];
     if (colKey === 'empresa') clases.push('shadow-[4px_0_6px_-4px_rgba(0,0,0,0.35)]');
     return clases.join(' ');
   };
@@ -191,7 +230,19 @@ export const GestionesTable = ({
     // seleccionar y copiar. El encabezado sí lo mantiene (redimensionar
     // columnas no debe seleccionar los títulos).
     <div className="flex-grow overflow-auto relative">
-      <div className="sticky top-0 z-20 flex justify-end px-1 py-0.5 bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className="sticky top-0 z-20 flex items-center justify-between gap-2 px-1 py-0.5 bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        {/* Leyenda de colores de fila (Orden y PDF). */}
+        <div className="flex items-center gap-3 pl-1 text-[9px] font-medium text-gray-500 dark:text-gray-400" aria-label="Leyenda de colores por Orden">
+          <span className="uppercase tracking-wide text-gray-400 dark:text-gray-500">Orden:</span>
+          {['conPdf', 'sinPdf', 'sinOrden'].map(clave => (
+            <span key={clave} className="inline-flex items-center gap-1">
+              <span className={`h-2 w-2 rounded-sm ${TONOS_ORDEN[clave].punto}`} />
+              {TONOS_ORDEN[clave].leyenda}
+            </span>
+          ))}
+          {errorPdfOC && <span className="text-amber-600 dark:text-amber-400" title={errorPdfOC}>· {errorPdfOC}</span>}
+          {!errorPdfOC && pdfsOC === null && <span className="text-gray-400">· Cargando PDF…</span>}
+        </div>
         <button
           type="button"
           onClick={restablecerAnchos}
@@ -241,26 +292,30 @@ export const GestionesTable = ({
             const informeInfo = getInformeEstilo(i.informe);
             const textoAdmisionNombre = construirTextoAdmisionNombre(idMostrado, i.nombre);
             const ordenTexto = textoOCs(ocsDeGestion(i));
+            const estadoOrden = estadoOrdenGestion(i, pdfsOC);
+            const tono = TONOS_ORDEN[estadoOrden];
+            const fija = (colKey) => getStickyClass(colKey, false, tono);
 
             return (
               <tr
                 key={i.id}
+                data-estado-orden={estadoOrden}
                 onDoubleClick={() => {
                   // Doble clic sobre una palabra la selecciona: en ese caso
                   // no se abre el detalle (se está copiando texto).
                   if (window.getSelection()?.toString().trim()) return;
                   if (onRowDoubleClick) onRowDoubleClick(i);
                 }}
-                className="group border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
+                className={`group border-l-2 border-transparent hover:border-[#2383C2] ${tono.fila} transition-colors cursor-pointer`}
                 title="Doble clic en un espacio sin texto (o botón Ver Detalle) para abrir la vista detallada"
               >
-                <td style={getStickyStyle('estado')} className={`${celdaBase} text-center ${getStickyClass('estado')}`}>
+                <td style={getStickyStyle('estado')} className={`${celdaBase} text-center ${fija('estado')}`}>
                   <div className="flex items-center justify-center">
                     <span className={`h-2.5 w-2.5 rounded-full inline-block shrink-0 ${status.colorClass}`} title={status.label} />
                   </div>
                 </td>
-                <td style={getStickyStyle('numero')} className={`${celdaBase} text-gray-500 dark:text-gray-400 font-bold text-center ${getStickyClass('numero')}`}>{numeroInicial + index + 1}</td>
-                <td style={getStickyStyle('id')} className={`${celdaBase} font-semibold text-[#2383C2] ${getStickyClass('id')}`} title={idMostrado}>
+                <td style={getStickyStyle('numero')} className={`${celdaBase} text-gray-500 dark:text-gray-400 font-bold text-center ${fija('numero')}`}>{numeroInicial + index + 1}</td>
+                <td style={getStickyStyle('id')} className={`${celdaBase} font-semibold text-[#2383C2] ${fija('id')}`} title={idMostrado}>
                   <div className="flex items-center gap-1">
                     <span className="truncate">{idMostrado}</span>
                     <button onClick={(e) => { e.stopPropagation(); handleCopiarTexto(idMostrado); }} title="Copiar ID" className="p-0.5 rounded text-gray-400 hover:text-emerald-600 transition shrink-0">
@@ -268,10 +323,17 @@ export const GestionesTable = ({
                     </button>
                   </div>
                 </td>
-                <td style={getStickyStyle('nombre')} className={`${celdaBase} text-gray-700 dark:text-gray-200 font-medium ${getStickyClass('nombre')}`} title={i.nombre}>{i.nombre}</td>
-                <td style={getStickyStyle('fecha')} className={`${celdaBase} text-gray-600 dark:text-gray-300 ${getStickyClass('fecha')}`}>{formatearFechaTabla(i.fecha)}</td>
-                <td style={getStickyStyle('empresa')} className={`${celdaBase} text-gray-600 dark:text-gray-300 ${getStickyClass('empresa')}`} title={i.empresa}>{i.empresa || '-'}</td>
-                <td className={`${celdaBase} text-gray-700 dark:text-gray-200 font-num`} title={ordenTexto}>{ordenTexto || '—'}</td>
+                <td style={getStickyStyle('nombre')} className={`${celdaBase} text-gray-700 dark:text-gray-200 font-medium ${fija('nombre')}`} title={i.nombre}>{i.nombre}</td>
+                <td style={getStickyStyle('fecha')} className={`${celdaBase} text-gray-600 dark:text-gray-300 ${fija('fecha')}`}>{formatearFechaTabla(i.fecha)}</td>
+                <td style={getStickyStyle('empresa')} className={`${celdaBase} text-gray-600 dark:text-gray-300 ${fija('empresa')}`} title={i.empresa}>{i.empresa || '-'}</td>
+                <td
+                  className={`${celdaBase} text-gray-700 dark:text-gray-200 font-num`}
+                  title={ordenTexto ? `${ordenTexto} · ${tono.leyenda || 'Verificando PDF…'}` : 'Sin orden'}
+                >
+                  {ordenTexto
+                    ? <span className={`inline-block max-w-full truncate align-middle px-1.5 py-px rounded font-semibold ring-1 ring-inset ${tono.badge}`}>{ordenTexto}</span>
+                    : <span className="text-gray-400 dark:text-gray-500">—</span>}
+                </td>
                 <td className={`${celdaBase} text-gray-600 dark:text-gray-300`} title={textoAdmisionNombre}>
                   <div className="flex items-center gap-1">
                     <span className="truncate">{textoAdmisionNombre}</span>

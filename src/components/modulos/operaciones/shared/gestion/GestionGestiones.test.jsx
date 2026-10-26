@@ -13,12 +13,19 @@ vi.mock('../ocIndex/useSincronizarOC', () => ({
   useSincronizarOC: ({ modulo }) => { sincronizarPedidos.push(modulo); return { sincronizandoOC: false, handleSincronizarOC: vi.fn(), resumenOC: null, cerrarResumenOC: vi.fn() }; },
 }));
 vi.mock('../ocIndex/useMarcarOcPendiente', () => ({ useMarcarOcPendiente: () => ({}) }));
+// Listener del registro de PDF de OC: se cuenta cuántos se abren y se cierran.
+const listenerPdf = { abiertos: 0, cerrados: 0 };
+vi.mock('../ordenesOC/registroPdfOC', () => ({
+  escucharRegistroPdfOC: (onDatos) => { listenerPdf.abiertos += 1; onDatos({}); return () => { listenerPdf.cerrados += 1; }; },
+}));
 vi.mock('../ocIndex/SincronizarOCResumenModal', () => ({ SincronizarOCResumenModal: () => null }));
 vi.mock('./GestionesForm', () => ({ default: ({ modulo }) => <div data-testid="formulario">form {modulo}</div> }));
-vi.mock('./GestionesTable', () => ({ GestionesTable: ({ modulo, implantesFiltrados }) => <div data-testid="tabla">tabla {modulo} {implantesFiltrados.length}</div> }));
+vi.mock('./GestionesTable', () => ({ GestionesTable: ({ modulo, implantesFiltrados, onRowDoubleClick }) => (
+  <div data-testid="tabla">tabla {modulo} {implantesFiltrados.length}<button onClick={() => onRowDoubleClick({ id: 'g1' })}>abrir detalle</button></div>
+) }));
 
 const { default: GestionGestiones } = await import('./GestionGestiones');
-afterEach(() => { cleanup(); sincronizarPedidos.length = 0; });
+afterEach(() => { cleanup(); sincronizarPedidos.length = 0; listenerPdf.abiertos = 0; listenerPdf.cerrados = 0; });
 
 const datos = {
   implantes: [], hayMasGestiones: false, cargarMasGestiones: vi.fn(), implantesFiltrados: Array(60).fill({}), implantesPagina: Array(50).fill({}),
@@ -32,7 +39,7 @@ const datos = {
 };
 const componentes = {
   useGestiones: () => datos,
-  DetalleView: () => null,
+  DetalleView: () => <div data-testid="detalle" />,
   DrawersOverlay: () => null,
   LogDrawer: () => null,
   ConfigDrawer: () => null,
@@ -56,5 +63,24 @@ describe('Gestión compartida', () => {
     expect(colapsar).toHaveAttribute('aria-controls', `gestion-${modulo}-formulario`);
     fireEvent.click(colapsar);
     expect(screen.getByRole('button', { name: 'Mostrar formulario' })).toBeInTheDocument();
+  });
+});
+
+describe('Colores por Orden: listener del registro de PDF', () => {
+  it('abre un único listener, no lo duplica al entrar y salir del detalle y lo cierra al salir de Gestiones', () => {
+    const { unmount } = render(<GestionGestiones modulo="implantes" componentes={componentes} />);
+    expect(listenerPdf.abiertos).toBe(1);
+
+    fireEvent.click(screen.getByText('abrir detalle'));
+    expect(screen.getByTestId('detalle')).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle('Volver'));
+    expect(screen.getByTestId('tabla')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('abrir detalle'));
+    fireEvent.click(screen.getByTitle('Volver'));
+
+    expect(listenerPdf.abiertos).toBe(1);
+    expect(listenerPdf.cerrados).toBe(0);
+    unmount();
+    expect(listenerPdf.cerrados).toBe(1);
   });
 });

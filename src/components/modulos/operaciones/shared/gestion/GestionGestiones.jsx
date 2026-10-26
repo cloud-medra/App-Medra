@@ -12,6 +12,7 @@ import { DiaFilterDropdown } from './DiaFilterDropdown';
 import { RANGOS_FECHA, RANGO_FECHA_PREDETERMINADO } from './rangoFechaGestiones';
 import { SincronizarOCResumenModal } from '../ocIndex/SincronizarOCResumenModal';
 import { useSincronizarOC } from '../ocIndex/useSincronizarOC';
+import { useRegistroPdfGestiones } from '../ordenesOC/estadoOrdenGestion';
 import { useMarcarOcPendiente } from '../ocIndex/useMarcarOcPendiente';
 import { useUser } from '../../../../../context/UserContext';
 import { esRolAdministrador } from '../../../../../../functions/permisos/nucleo.mjs';
@@ -103,6 +104,9 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
     handleEjecutarImportacion
   } = useGestiones(admisionFiltrada ? { admision: admisionFiltrada } : undefined);
   const { sincronizandoOC, handleSincronizarOC, resumenOC, cerrarResumenOC } = useSincronizarOC({ modulo });
+  // Colores de fila por Orden/PDF: un listener sobre ordenesOC/registroPdf
+  // (no una lectura por fila). Ver estadoOrdenGestion.js.
+  const { pdfs: pdfsOC, error: errorPdfOC } = useRegistroPdfGestiones(hasPermission(PATH_VISTA, 'tabla_datos') && !refPathAbierto);
   const { userData } = useUser();
   // Rol Administrador/Desarrollador y la acción (denegada por defecto).
   const esAdminODev = esRolAdministrador(userData?.rol) && hasPermission(PATH_VISTA, 'drawer_configuracion', 'btn_marcar_oc_pendiente');
@@ -429,6 +433,8 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                 }}
                 handleDelete={handleDelete}
                 onRowDoubleClick={(item) => setRegistroSeleccionado(item)}
+                pdfsOC={pdfsOC}
+                errorPdfOC={errorPdfOC}
               />
               <PaginacionSimple
                 pagina={pagina}
