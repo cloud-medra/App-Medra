@@ -6,6 +6,7 @@ import { subItemsAsignables } from '../../../../config/accesoMenu';
 import PanelPermisosVista from './PanelPermisosVista';
 import MarcaOrigen from './MarcaOrigen';
 import { claveMenu, claveVista, claveSeccion, claveElemento } from './permisosCentroCosto';
+import CuadritoIcono from '../../../ui/CuadritoIcono';
 import {
   alternarModuloCompleto,
   alternarVistaDelMenu,
@@ -154,7 +155,7 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
                     : 'hover:bg-gray-50 dark:hover:bg-gray-700/40'
                 }`}
               >
-                <span className={`shrink-0 ${activo ? 'text-[#2383C2]' : 'text-gray-400'}`}>{modulo.icon}</span>
+                <CuadritoIcono icon={modulo.icon} color={modulo.color} />
                 <span className="flex-1 min-w-0">
                   <span className={`block text-[12px] truncate ${activo ? 'font-semibold text-[#2383C2] dark:text-blue-400' : 'font-medium text-gray-700 dark:text-gray-200'}`}>
                     {modulo.label}
@@ -190,7 +191,7 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
           return (
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
-                <span className="text-[#2383C2]">{modulo.icon}</span>
+                <CuadritoIcono icon={modulo.icon} color={modulo.color} />
                 <div className="flex-1 min-w-0">
                   <h3 className="text-[14px] font-semibold text-gray-800 dark:text-gray-100">{modulo.label}</h3>
                   <p className="text-[11px] text-gray-500 dark:text-gray-400">
@@ -232,7 +233,7 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
                         aria-expanded={abierta}
                         className="flex-1 min-w-0 flex items-center gap-2 text-left disabled:cursor-default group"
                       >
-                        <span className={`shrink-0 ${incluida ? 'text-gray-500' : 'text-gray-300 dark:text-gray-600'}`}>{sub.icon}</span>
+                        <CuadritoIcono icon={sub.icon} color={sub.color} tamano="sm" className={incluida ? '' : 'grayscale opacity-50'} />
                         <span className={`text-[12.5px] truncate ${incluida ? 'font-semibold text-gray-800 dark:text-gray-100 group-enabled:group-hover:text-[#2383C2]' : 'text-gray-400 dark:text-gray-500'}`}>
                           {sub.label}
                         </span>

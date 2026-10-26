@@ -1,6 +1,7 @@
 import React from 'react';
 import { MODULES } from '../../../../../config/modulesConfig.jsx';
 import { LayoutGrid, CheckCircle2 } from 'lucide-react';
+import CuadritoIcono from '../../../../ui/CuadritoIcono';
 
 // Vista de solo lectura: muestra, para el usuario logueado, qué módulos y
 // qué ítems dentro de cada uno tiene habilitados (según userData.permisos).
@@ -49,7 +50,7 @@ const ModulosVisibles = ({ userData }) => {
                   className="border border-gray-100 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-900/40 rounded-lg overflow-hidden"
                 >
                   <div className="flex items-center gap-2 p-2.5 border-b border-gray-100 dark:border-gray-700/60">
-                    <span className="text-[#2383C2]">{modulo.icon}</span>
+                    <CuadritoIcono icon={modulo.icon} color={modulo.color} tamano="sm" />
                     <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{modulo.label}</span>
                     <span className="text-[10px] font-normal text-gray-400 ml-auto">
                       {itemsHabilitados.length}/{modulo.subItems.length}
@@ -63,7 +64,7 @@ const ModulosVisibles = ({ userData }) => {
                         className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-300"
                       >
                         <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
-                        <span className="opacity-70">{sub.icon}</span>
+                        <CuadritoIcono icon={sub.icon} color={sub.color} tamano="sm" />
                         {sub.label}
                       </div>
                     ))}

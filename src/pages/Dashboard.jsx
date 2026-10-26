@@ -21,7 +21,8 @@ import RecordatoriosAlarma from '../components/modulos/administracion/recordator
 import NotificacionesCampana from '../components/layout/NotificacionesCampana';
 import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
 import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROLLADOR } from '../config/accesoMenu';
-import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
+import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, colorEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
+import CuadritoIcono from '../components/ui/CuadritoIcono';
 import { entradasDelSidebar, itemsDelSidebar } from '../config/menuSidebar';
 import { tituloPestana } from '../config/tituloPestana';
 import PeriodoAbiertoBloque from '../components/layout/PeriodoAbiertoBloque';
@@ -164,35 +165,11 @@ const ICONO_SIDEBAR = 'text-gray-500 dark:text-gray-400';
 const ICONO_SIDEBAR_ACTIVO = 'text-[#2383C2] dark:text-sky-300';
 const TITULO_SECCION_SIDEBAR = 'font-bold uppercase text-[9px] tracking-wider text-gray-500 dark:text-gray-400';
 
-// Color de acento de cada módulo: el ícono va en un cuadrito con un tinte
-// suave de ese color (en oscuro, tinte más fuerte e ícono aclarado).
-const COLOR_MODULO = {
-  finanzas: '#047857',
-  usuarios: '#4338ca',
-  administracion: '#5b738b',
-  laboratorio: '#a21caf',
-  vacunatorio: '#0f828f',
-  maestros: '#6c5c3f',
-  consignacion: '#d0306a',
-  inventario: '#188918',
-  bodega: '#a45d00',
-  documentos: '#7858ff',
-  implantes: '#0a6ed1',
-  hemodinamia: '#c8102e',
-};
-
+// Íconos de módulos e ítems: cuadrito con el color de la configuración
+// (PALETA_MENU en config/modulesConfig.jsx, ui/CuadritoIcono.jsx).
 // `moduleKey`: entrada del sidebar (módulo o grupo de config/gruposMenu.jsx).
-const CuadritoIcono = ({ icon, color }) => (
-  <span
-    className="w-7 h-7 rounded-md inline-flex items-center justify-center flex-shrink-0 bg-[color:color-mix(in_srgb,var(--c)_12%,transparent)] text-[color:var(--c)] dark:bg-[color:color-mix(in_srgb,var(--c)_28%,transparent)] dark:text-[color:color-mix(in_srgb,var(--c)_45%,white)]"
-    style={{ '--c': color }}
-  >
-    {React.isValidElement(icon) ? React.cloneElement(icon, { size: 16 }) : icon}
-  </span>
-);
-
 const IconoModulo = ({ moduleKey }) => (
-  <CuadritoIcono icon={iconoEntrada(moduleKey)} color={COLOR_MODULO[moduleKey] ?? '#5b738b'} />
+  <CuadritoIcono icon={iconoEntrada(moduleKey)} color={colorEntrada(moduleKey)} />
 );
 
 // Encabezado de un módulo (o de Ajustes) abierto en el sidebar: botón
@@ -818,7 +795,13 @@ const Dashboard = () => {
                       className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === sub.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
                       title={colapsado ? sub.label : ""}
                     >
-                      <div className={`flex-shrink-0 ${activeView === sub.path ? ICONO_SIDEBAR_ACTIVO : ICONO_SIDEBAR}`}>{sub.icon}</div>
+                      {/* Activo: además del fondo y la barra, el cuadrito lleva un anillo de su color. */}
+                      <CuadritoIcono
+                        icon={sub.icon}
+                        color={sub.color}
+                        tamano="sm"
+                        className={activeView === sub.path ? 'ring-2 ring-[color:var(--c)]/60 ring-offset-1 ring-offset-white dark:ring-offset-gray-800' : ''}
+                      />
                       <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                         {sub.label}
                       </span>

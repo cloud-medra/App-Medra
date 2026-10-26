@@ -6,6 +6,7 @@ import {
   RotateCcw, Save, Check, Sliders, LayoutList
 } from 'lucide-react';
 import { MODULES } from '../../../../../config/modulesConfig.jsx';
+import CuadritoIcono from '../../../../ui/CuadritoIcono';
 
 const OrdenModulos = ({ userData, onOrderSaved }) => {
   const [moduleOrder, setModuleOrder] = useState([]);
@@ -194,7 +195,7 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
                 className="flex items-center gap-2 p-3 cursor-move"
               >
                 <GripVertical size={16} className="text-gray-300 dark:text-gray-600 flex-shrink-0" />
-                <div className="flex-shrink-0 text-[#2383C2]">{modulo.icon}</div>
+                <CuadritoIcono icon={modulo.icon} color={modulo.color} />
                 <span className="flex-grow text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
                   {modulo.label}
                 </span>
@@ -242,7 +243,7 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
                       className="flex items-center gap-2 py-1.5 pl-4 cursor-move"
                     >
                       <GripVertical size={13} className="text-gray-300 dark:text-gray-600 flex-shrink-0" />
-                      <div className="flex-shrink-0 text-gray-400 dark:text-gray-500">{sub.icon}</div>
+                      <CuadritoIcono icon={sub.icon} color={sub.color} tamano="sm" />
                       <span className="flex-grow text-xs text-gray-600 dark:text-gray-300 truncate">
                         {sub.label}
                       </span>

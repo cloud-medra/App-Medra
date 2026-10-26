@@ -1,5 +1,5 @@
 import { Wallet, UserCog } from 'lucide-react';
-import { MODULES } from './modulesConfig.jsx';
+import { MODULES, PALETA_MENU, COLOR_MENU_POR_DEFECTO } from './modulesConfig.jsx';
 
 // Grupos del sidebar en que se reparte Administración: Finanzas, Usuarios y
 // accesos y Administración (el resto). Es SOLO el menú: cada ítem sigue
@@ -14,8 +14,8 @@ import { MODULES } from './modulesConfig.jsx';
 export const MODULO_AGRUPADO = 'administracion';
 
 export const GRUPOS_MENU = {
-  finanzas: { label: 'Finanzas', icon: <Wallet size={18} /> },
-  usuarios: { label: 'Usuarios y accesos', icon: <UserCog size={18} /> },
+  finanzas: { label: 'Finanzas', icon: <Wallet size={18} />, color: PALETA_MENU.verde },
+  usuarios: { label: 'Usuarios y accesos', icon: <UserCog size={18} />, color: PALETA_MENU.indigo },
 };
 
 // En el sidebar los grupos van juntos, en el lugar de Administración.
@@ -41,3 +41,5 @@ export const itemsDeEntrada = (entrada, items) => (moduloDeEntrada(entrada) === 
 
 export const etiquetaEntrada = (entrada) => GRUPOS_MENU[entrada]?.label ?? MODULES[entrada]?.label;
 export const iconoEntrada = (entrada) => GRUPOS_MENU[entrada]?.icon ?? MODULES[entrada]?.icon;
+// Color de acento de una entrada (módulo o grupo), ver PALETA_MENU.
+export const colorEntrada = (entrada) => GRUPOS_MENU[entrada]?.color ?? MODULES[entrada]?.color ?? COLOR_MENU_POR_DEFECTO;

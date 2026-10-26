@@ -8,6 +8,7 @@ import {
 } from '../../../../../config/atajosDashboard';
 import { obtenerAtajosConfigurados, guardarAtajosConfigurados } from '../../../../../stores/atajosDashboardStore';
 import { useToast } from '../../../../../context/ToastContext';
+import CuadritoIcono from '../../../../ui/CuadritoIcono';
 
 // Todos los módulos con ítems del sidebar (sin filtrar por los permisos de
 // quien configura: la lista es global y a cada usuario se le filtra por los
@@ -134,7 +135,7 @@ const AtajosDashboard = ({ userData }) => {
                     >
                       <GripVertical size={15} className="text-gray-300 dark:text-gray-600 flex-shrink-0" />
                       <span className="text-[10px] font-bold text-gray-400 w-4 text-right flex-shrink-0">{index + 1}</span>
-                      <div className="flex-shrink-0 text-[#2383C2]">{a.icon}</div>
+                      <CuadritoIcono icon={a.icon} color={a.color} />
                       <div className="flex-grow min-w-0">
                         <span className="block text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{a.label}</span>
                         <span className="block text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500 truncate">{a.moduloLabel}</span>
@@ -182,7 +183,7 @@ const AtajosDashboard = ({ userData }) => {
                 {MODULOS_CON_ITEMS.map(([mKey, modulo]) => (
                   <div key={mKey} className="rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900/40">
-                      <div className="flex-shrink-0 text-[#2383C2]">{modulo.icon}</div>
+                      <CuadritoIcono icon={modulo.icon} color={modulo.color} />
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{modulo.label}</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 px-3 py-1.5">
@@ -197,7 +198,7 @@ const AtajosDashboard = ({ userData }) => {
                               onChange={() => setSeleccion((prev) => alternarAtajo(prev, atajo))}
                               className="cursor-pointer accent-[#2383C2] flex-shrink-0"
                             />
-                            <span className="flex-shrink-0 text-gray-400 dark:text-gray-500">{sub.icon}</span>
+                            <CuadritoIcono icon={sub.icon} color={sub.color} tamano="sm" />
                             <span className={`text-xs truncate ${marcado ? 'font-semibold text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-gray-300'}`}>
                               {sub.label}
                             </span>

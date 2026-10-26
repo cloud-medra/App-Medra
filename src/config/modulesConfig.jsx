@@ -77,6 +77,28 @@ import {
   ToggleRight
 } from "lucide-react";
 
+// Paleta de colores del menú. Cada módulo y cada ítem tiene su `color` acá
+// (y los grupos del sidebar en config/gruposMenu.jsx): el ícono va en un
+// cuadrito con un tinte suave de ese color (ui/CuadritoIcono.jsx), igual en
+// el sidebar, la vista de acceso rápido de un módulo y los Accesos rápidos.
+// Dentro de un módulo los ítems varían de color para distinguirse.
+export const PALETA_MENU = {
+  verde: '#047857',
+  indigo: '#4338ca',
+  pizarra: '#5b738b',
+  fucsia: '#a21caf',
+  turquesa: '#0f828f',
+  cafe: '#6c5c3f',
+  frambuesa: '#d0306a',
+  pasto: '#188918',
+  ambar: '#a45d00',
+  violeta: '#7858ff',
+  azul: '#0a6ed1',
+  rojo: '#c8102e',
+};
+
+export const COLOR_MENU_POR_DEFECTO = PALETA_MENU.pizarra;
+
 export const MODULES = {
   dashboard: {
     label: 'Dashboard',
@@ -86,6 +108,7 @@ export const MODULES = {
   administracion: {
     label: 'Administración',
     icon: <Settings2 size={16} />,
+    color: PALETA_MENU.pizarra,
     // `grupo`: en el sidebar estos ítems se reparten en Finanzas, Usuarios y
     // accesos y Administración (config/gruposMenu.jsx). Es solo el menú: el
     // permiso sigue siendo permisos.administracion con estas mismas rutas,
@@ -93,154 +116,163 @@ export const MODULES = {
     subItems: [
       // Buzón de alertas (solicitudes de cambio de datos): automático para
       // Administrador y Desarrollador, no se asigna (src/config/accesoMenu.js).
-      { label: 'Alertas', path: '/administracion/alertas', icon: <Bell size={14} />, automaticoAdministradores: true, grupo: 'usuarios' },
-      { label: 'Apertura y cierre de períodos', path: '/administracion/controlMensual', icon: <CalendarCheck size={14} />, grupo: 'finanzas' },
-      { label: 'Período actual', path: '/administracion/ResumenPeriodoAbierto', icon: <CalendarDays size={14} />, grupo: 'finanzas' },
-      { label: 'Notas del panel', path: '/administracion/notasAdmin', icon: <StickyNote size={14} /> },
-      { label: 'Recordatorios', path: '/administracion/recordatorios', icon: <BellRing size={14} /> },
-      { label: 'Crear usuario', path: '/administracion/crearUsuario', icon: <UserPlus size={14} />, grupo: 'usuarios' },
-      { label: 'Listado de usuarios', path: '/administracion/listadoUsuario', icon: <Users size={14} />, grupo: 'usuarios' },
+      { label: 'Alertas', path: '/administracion/alertas', icon: <Bell size={14} />, color: PALETA_MENU.azul, automaticoAdministradores: true, grupo: 'usuarios' },
+      { label: 'Apertura y cierre de períodos', path: '/administracion/controlMensual', icon: <CalendarCheck size={14} />, color: PALETA_MENU.verde, grupo: 'finanzas' },
+      { label: 'Período actual', path: '/administracion/ResumenPeriodoAbierto', icon: <CalendarDays size={14} />, color: PALETA_MENU.frambuesa, grupo: 'finanzas' },
+      { label: 'Notas del panel', path: '/administracion/notasAdmin', icon: <StickyNote size={14} />, color: PALETA_MENU.violeta },
+      { label: 'Recordatorios', path: '/administracion/recordatorios', icon: <BellRing size={14} />, color: PALETA_MENU.ambar },
+      { label: 'Crear usuario', path: '/administracion/crearUsuario', icon: <UserPlus size={14} />, color: PALETA_MENU.turquesa, grupo: 'usuarios' },
+      { label: 'Listado de usuarios', path: '/administracion/listadoUsuario', icon: <Users size={14} />, color: PALETA_MENU.fucsia, grupo: 'usuarios' },
       // Se asigna como cualquier ítem, pero solo sirve con rol Administrador
       // (o Desarrollador): ver src/config/accesoMenu.js y functions/permisos.
-      { label: 'Permisos por centro', path: '/administracion/permisosCentro', icon: <KeyRound size={14} />, grupo: 'usuarios' },
-      { label: 'Cargas consolidadas', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} /> },
-      { label: 'Estadísticas del período', path: '/administracion/estadisticas', icon: <BarChart3 size={14} />, grupo: 'finanzas' },
+      { label: 'Permisos por centro', path: '/administracion/permisosCentro', icon: <KeyRound size={14} />, color: PALETA_MENU.pasto, grupo: 'usuarios' },
+      { label: 'Cargas consolidadas', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} />, color: PALETA_MENU.indigo },
+      { label: 'Estadísticas del período', path: '/administracion/estadisticas', icon: <BarChart3 size={14} />, color: PALETA_MENU.rojo, grupo: 'finanzas' },
       // Activar/inactivar módulos e ítems (config/modulosActivos.js): solo rol
       // Desarrollador, no se asigna (src/config/accesoMenu.js). No se puede inactivar.
-      { label: 'Gestión de módulos', path: '/administracion/gestionModulos', icon: <ToggleRight size={14} />, soloDesarrollador: true }
+      { label: 'Gestión de módulos', path: '/administracion/gestionModulos', icon: <ToggleRight size={14} />, color: PALETA_MENU.cafe, soloDesarrollador: true }
     ]
   },
   laboratorio: {
     label: 'Laboratorio',
     icon: <Microscope size={18} />,
+    color: PALETA_MENU.fucsia,
     subItems: [
-      { label: 'Registro Empresas', path: '/laboratorio/empresasLaboratorio', icon: <Building2 size={14} /> },
-      { label: 'Maestro Códigos', path: '/laboratorio/codigoLaboratorio', icon: <BadgeInfo size={14} /> },
-      { label: 'Ordenes', path: '/laboratorio/ordenLaboratorio', icon: <ClipboardList size={14} /> },
-      { label: 'Xml Documentos', path: '/laboratorio/xmlDocLaboratorio', icon: <FileCode size={14} /> },
-      { label: 'Control Procesos', path: '/laboratorio/archivosControlLaboratorio', icon: <FileSpreadsheet size={14} /> },
+      { label: 'Registro Empresas', path: '/laboratorio/empresasLaboratorio', icon: <Building2 size={14} />, color: PALETA_MENU.pasto },
+      { label: 'Maestro Códigos', path: '/laboratorio/codigoLaboratorio', icon: <BadgeInfo size={14} />, color: PALETA_MENU.indigo },
+      { label: 'Ordenes', path: '/laboratorio/ordenLaboratorio', icon: <ClipboardList size={14} />, color: PALETA_MENU.rojo },
+      { label: 'Xml Documentos', path: '/laboratorio/xmlDocLaboratorio', icon: <FileCode size={14} />, color: PALETA_MENU.cafe },
+      { label: 'Control Procesos', path: '/laboratorio/archivosControlLaboratorio', icon: <FileSpreadsheet size={14} />, color: PALETA_MENU.pizarra },
     ]
   },
   vacunatorio: {
     label: 'Vacunatorio',
     icon: <Syringe size={18} />,
+    color: PALETA_MENU.turquesa,
     subItems: [
-      { label: 'Registro Empresas', path: '/vacunatorio/empresasVacunatorio', icon: <Building2 size={14} /> },
-      { label: 'Maestro Códigos', path: '/vacunatorio/codigoVacunatorio', icon: <BadgeInfo size={14} /> },
-      { label: 'Ordenes', path: '/vacunatorio/ordenVacunatorio', icon: <ClipboardList size={14} /> },
-      { label: 'Xml Documentos', path: '/vacunatorio/xmlDocVacunatorio', icon: <FileCode size={14} /> },
-      { label: 'Control Procesos', path: '/vacunatorio/archivosControlVacunatorio', icon: <FileSpreadsheet size={14} /> },
+      { label: 'Registro Empresas', path: '/vacunatorio/empresasVacunatorio', icon: <Building2 size={14} />, color: PALETA_MENU.fucsia },
+      { label: 'Maestro Códigos', path: '/vacunatorio/codigoVacunatorio', icon: <BadgeInfo size={14} />, color: PALETA_MENU.pasto },
+      { label: 'Ordenes', path: '/vacunatorio/ordenVacunatorio', icon: <ClipboardList size={14} />, color: PALETA_MENU.indigo },
+      { label: 'Xml Documentos', path: '/vacunatorio/xmlDocVacunatorio', icon: <FileCode size={14} />, color: PALETA_MENU.rojo },
+      { label: 'Control Procesos', path: '/vacunatorio/archivosControlVacunatorio', icon: <FileSpreadsheet size={14} />, color: PALETA_MENU.cafe },
     ]
   },
   maestros: {
     label: 'Maestros',
     icon: <Database size={18} />,
+    color: PALETA_MENU.cafe,
     subItems: [
-      { label: 'Empresas', path: '/maestros/empresasMaestros', icon: <Factory size={14} /> },
-      { label: 'Prestadores', path: '/maestros/prestadoresMaestros', icon: <UserRound size={14} /> },
-      { label: 'Centros', path: '/maestros/centrosMaestros', icon: <Hospital size={14} /> },
+      { label: 'Empresas', path: '/maestros/empresasMaestros', icon: <Factory size={14} />, color: PALETA_MENU.pizarra },
+      { label: 'Prestadores', path: '/maestros/prestadoresMaestros', icon: <UserRound size={14} />, color: PALETA_MENU.azul },
+      { label: 'Centros', path: '/maestros/centrosMaestros', icon: <Hospital size={14} />, color: PALETA_MENU.verde },
       // Instituciones / sucursales: las ofrece el selector del header
       // (context/InstitucionContext.jsx).
-      { label: 'Instituciones', path: '/maestros/institucionesMaestros', icon: <Building2 size={14} /> },
-      { label: 'Zonas por diagnóstico', path: '/maestros/zonasDiagnostico', icon: <PersonStanding size={14} /> },
-      { label: 'Descripciones ocultas', path: '/maestros/descripcionesOcultas', icon: <EyeOff size={14} /> },
-      { label: 'Previsiones', path: '/maestros/previsionesMaestros', icon: <ShieldCheck size={14} /> },
-      { label: 'Convenios', path: '/maestros/conveniosMaestros', icon: <Handshake size={14} /> },
-      { label: 'Recargos', path: '/maestros/recargosMaestros', icon: <Percent size={14} /> },
-      { label: 'Calculador', path: '/maestros/calculadorMaestros', icon: <Calculator size={14} /> },
-      { label: 'Codigos', path: '/maestros/codigosMaestros', icon: <ScanBarcode size={14} /> },
-      { label: 'Pad', path: '/maestros/padMaestros', icon: <SlidersHorizontal size={14} /> },
-      { label: 'Actualización Precios', path: '/maestros/actualizacionPreciosMaestros', icon: <BadgeDollarSign size={14} /> },
+      { label: 'Instituciones', path: '/maestros/institucionesMaestros', icon: <Building2 size={14} />, color: PALETA_MENU.frambuesa },
+      { label: 'Zonas por diagnóstico', path: '/maestros/zonasDiagnostico', icon: <PersonStanding size={14} />, color: PALETA_MENU.violeta },
+      { label: 'Descripciones ocultas', path: '/maestros/descripcionesOcultas', icon: <EyeOff size={14} />, color: PALETA_MENU.ambar },
+      { label: 'Previsiones', path: '/maestros/previsionesMaestros', icon: <ShieldCheck size={14} />, color: PALETA_MENU.turquesa },
+      { label: 'Convenios', path: '/maestros/conveniosMaestros', icon: <Handshake size={14} />, color: PALETA_MENU.fucsia },
+      { label: 'Recargos', path: '/maestros/recargosMaestros', icon: <Percent size={14} />, color: PALETA_MENU.pasto },
+      { label: 'Calculador', path: '/maestros/calculadorMaestros', icon: <Calculator size={14} />, color: PALETA_MENU.indigo },
+      { label: 'Codigos', path: '/maestros/codigosMaestros', icon: <ScanBarcode size={14} />, color: PALETA_MENU.rojo },
+      { label: 'Pad', path: '/maestros/padMaestros', icon: <SlidersHorizontal size={14} />, color: PALETA_MENU.cafe },
+      { label: 'Actualización Precios', path: '/maestros/actualizacionPreciosMaestros', icon: <BadgeDollarSign size={14} />, color: PALETA_MENU.pizarra },
     ]
   },
   consignacion: {
     label: 'Consignación',
     icon: <PackageCheck size={18} />,
+    color: PALETA_MENU.frambuesa,
     subItems: [
-      { label: 'Ingresar Guía', path: '/consignacion/ingresarGuiaDespacho', icon: <FileScan size={14} /> },
-      { label: 'Listado Guía', path: '/consignacion/listadoguiasconsignacion', icon: <FileText size={14} /> },
-      { label: 'Registros', path: '/consignacion/registroConsignacion', icon: <ArrowRightToLine size={14} /> },
-      { label: 'Carga Masiva', path: '/consignacion/cargaMasivaConsignacion', icon: <FileSpreadsheet size={14} /> },
-      { label: 'Cargas', path: '/consignacion/cargasConsignacion', icon: <CheckCheck size={14} /> },
-      { label: 'Solicitud', path: '/consignacion/solicitudConsignacion', icon: <FilePlus size={14} /> },
-      { label: 'Resumen', path: '/consignacion/resumenConsignacion', icon: <BarChart2 size={14} /> },
+      { label: 'Ingresar Guía', path: '/consignacion/ingresarGuiaDespacho', icon: <FileScan size={14} />, color: PALETA_MENU.violeta },
+      { label: 'Listado Guía', path: '/consignacion/listadoguiasconsignacion', icon: <FileText size={14} />, color: PALETA_MENU.ambar },
+      { label: 'Registros', path: '/consignacion/registroConsignacion', icon: <ArrowRightToLine size={14} />, color: PALETA_MENU.turquesa },
+      { label: 'Carga Masiva', path: '/consignacion/cargaMasivaConsignacion', icon: <FileSpreadsheet size={14} />, color: PALETA_MENU.fucsia },
+      { label: 'Cargas', path: '/consignacion/cargasConsignacion', icon: <CheckCheck size={14} />, color: PALETA_MENU.pasto },
+      { label: 'Solicitud', path: '/consignacion/solicitudConsignacion', icon: <FilePlus size={14} />, color: PALETA_MENU.indigo },
+      { label: 'Resumen', path: '/consignacion/resumenConsignacion', icon: <BarChart2 size={14} />, color: PALETA_MENU.rojo },
     ]
   },
   inventario: {
     label: 'Inventario',
     icon: <Warehouse size={18} />,
+    color: PALETA_MENU.pasto,
     subItems: [
-      { label: 'Stock General', path: '/inventario/generalInventario', icon: <Boxes size={14} /> },
-      { label: 'Existencias', path: '/inventario/existenciasInventario', icon: <PackageSearch size={14} /> },
-      { label: 'Ingresos', path: '/inventario/ingresosInventario', icon: <ArrowDownToLine size={14} /> },
-      { label: 'Egresos', path: '/inventario/egresosInventario', icon: <ArrowUpFromLine size={14} /> },
-      { label: 'En Tránsito', path: '/inventario/transitoInventario', icon: <Truck size={14} /> },
-      { label: 'Historial', path: '/inventario/historialInventario', icon: <History size={14} /> },
-      { label: 'Stock Unidad', path: '/inventario/unidadInventario', icon: <Building2 size={14} /> },
-      { label: 'Escaneo', path: '/inventario/escaneoInventario', icon: <ScanBarcode size={14} /> },
-      { label: 'Inventario por cajas', path: '/inventario/inventarioCajas', icon: <ClipboardCheck size={14} /> },
+      { label: 'Stock General', path: '/inventario/generalInventario', icon: <Boxes size={14} />, color: PALETA_MENU.indigo },
+      { label: 'Existencias', path: '/inventario/existenciasInventario', icon: <PackageSearch size={14} />, color: PALETA_MENU.rojo },
+      { label: 'Ingresos', path: '/inventario/ingresosInventario', icon: <ArrowDownToLine size={14} />, color: PALETA_MENU.cafe },
+      { label: 'Egresos', path: '/inventario/egresosInventario', icon: <ArrowUpFromLine size={14} />, color: PALETA_MENU.pizarra },
+      { label: 'En Tránsito', path: '/inventario/transitoInventario', icon: <Truck size={14} />, color: PALETA_MENU.azul },
+      { label: 'Historial', path: '/inventario/historialInventario', icon: <History size={14} />, color: PALETA_MENU.verde },
+      { label: 'Stock Unidad', path: '/inventario/unidadInventario', icon: <Building2 size={14} />, color: PALETA_MENU.frambuesa },
+      { label: 'Escaneo', path: '/inventario/escaneoInventario', icon: <ScanBarcode size={14} />, color: PALETA_MENU.violeta },
+      { label: 'Inventario por cajas', path: '/inventario/inventarioCajas', icon: <ClipboardCheck size={14} />, color: PALETA_MENU.ambar },
     ]
   },
   bodega: {
     label: 'Bodega',
     icon: <PackageOpen size={18} />,
+    color: PALETA_MENU.ambar,
     subItems: [
-      { label: 'Maestro / Kardex', path: '/bodega/maestroBodega', icon: <Boxes size={14} /> },
-      { label: 'Ingreso', path: '/bodega/ingresoBodega', icon: <ArrowDownToLine size={14} /> },
-      { label: 'Carga inicial', path: '/bodega/cargaInicialBodega', icon: <PackagePlus size={14} /> },
-      { label: 'Egreso', path: '/bodega/egresoBodega', icon: <ArrowUpFromLine size={14} /> },
-      { label: 'Tránsito', path: '/bodega/transitoBodega', icon: <Truck size={14} /> },
-      { label: 'Tránsito por centro', path: '/bodega/centrosBodega', icon: <Building2 size={14} /> },
-      { label: 'Consumo por centro', path: '/bodega/consumoBodega', icon: <BarChart3 size={14} /> },
-      { label: 'Inventario físico', path: '/bodega/inventarioBodega', icon: <ClipboardCheck size={14} /> },
-      { label: 'Cajas', path: '/bodega/cajasBodega', icon: <Package size={14} /> },
-      { label: 'Stock consignado', path: '/bodega/consignacionesBodega', icon: <Handshake size={14} /> },
-      { label: 'Categorías y unidades', path: '/bodega/catalogosBodega', icon: <Tags size={14} /> },
+      { label: 'Maestro / Kardex', path: '/bodega/maestroBodega', icon: <Boxes size={14} />, color: PALETA_MENU.turquesa },
+      { label: 'Ingreso', path: '/bodega/ingresoBodega', icon: <ArrowDownToLine size={14} />, color: PALETA_MENU.fucsia },
+      { label: 'Carga inicial', path: '/bodega/cargaInicialBodega', icon: <PackagePlus size={14} />, color: PALETA_MENU.pasto },
+      { label: 'Egreso', path: '/bodega/egresoBodega', icon: <ArrowUpFromLine size={14} />, color: PALETA_MENU.indigo },
+      { label: 'Tránsito', path: '/bodega/transitoBodega', icon: <Truck size={14} />, color: PALETA_MENU.rojo },
+      { label: 'Tránsito por centro', path: '/bodega/centrosBodega', icon: <Building2 size={14} />, color: PALETA_MENU.cafe },
+      { label: 'Consumo por centro', path: '/bodega/consumoBodega', icon: <BarChart3 size={14} />, color: PALETA_MENU.pizarra },
+      { label: 'Inventario físico', path: '/bodega/inventarioBodega', icon: <ClipboardCheck size={14} />, color: PALETA_MENU.azul },
+      { label: 'Cajas', path: '/bodega/cajasBodega', icon: <Package size={14} />, color: PALETA_MENU.verde },
+      { label: 'Stock consignado', path: '/bodega/consignacionesBodega', icon: <Handshake size={14} />, color: PALETA_MENU.frambuesa },
+      { label: 'Categorías y unidades', path: '/bodega/catalogosBodega', icon: <Tags size={14} />, color: PALETA_MENU.violeta },
     ]
   },
   documentos: {
     label: 'Documentos',
     icon: <Folder size={18} />,
+    color: PALETA_MENU.violeta,
     subItems: [
-      { label: 'Reportes Info', path: '/documentos/reportesInfo', icon: <BarChart2 size={14} /> },
-      { label: 'Importar Detalles OC', path: '/documentos/importarDetallesOC', icon: <FileSpreadsheet size={14} /> },
-      { label: 'Seguimiento de Facturas y Guías', path: '/documentos/seguimientoFacturasGuias', icon: <Receipt size={14} /> },
-      { label: 'Ingreso de Órdenes', path: '/documentos/ingresoOrdenes', icon: <FileUp size={14} /> },
-      { label: 'Archivo digital', path: '/documentos/archivoDigital', icon: <FolderOpen size={14} /> },
+      { label: 'Reportes Info', path: '/documentos/reportesInfo', icon: <BarChart2 size={14} />, color: PALETA_MENU.ambar },
+      { label: 'Importar Detalles OC', path: '/documentos/importarDetallesOC', icon: <FileSpreadsheet size={14} />, color: PALETA_MENU.turquesa },
+      { label: 'Seguimiento de Facturas y Guías', path: '/documentos/seguimientoFacturasGuias', icon: <Receipt size={14} />, color: PALETA_MENU.fucsia },
+      { label: 'Ingreso de Órdenes', path: '/documentos/ingresoOrdenes', icon: <FileUp size={14} />, color: PALETA_MENU.pasto },
+      { label: 'Archivo digital', path: '/documentos/archivoDigital', icon: <FolderOpen size={14} />, color: PALETA_MENU.indigo },
     ]
   },
 
   implantes: {
     label: 'Implantes',
     icon: <Activity size={18} />,
+    color: PALETA_MENU.azul,
     subItems: [
-      { label: 'Gestion', path: '/implantes/gestionImplantes', icon: <FolderKanban size={14} /> },
-      { label: 'Carga masiva de documentos', path: '/implantes/cargaMasivaDocumentos', icon: <FolderUp size={14} /> },
-      { label: 'Solicitud', path: '/implantes/solicitudImplantes', icon: <FilePlus size={14} /> },
-      { label: 'Resumen', path: '/implantes/resumenImplantes', icon: <BarChart2 size={14} /> },
-      { label: 'Sincronizar', path: '/implantes/sincronizacionImputadas', icon: <GitCompareArrows size={14} /> },
-      { label: 'Reportes Info', path: '/implantes/reportesInfo', icon: <BarChart2 size={14} /> },
-      { label: 'Respaldo de documentos', path: '/implantes/respaldoDocumentos', icon: <Archive size={14} /> },
+      { label: 'Gestion', path: '/implantes/gestionImplantes', icon: <FolderKanban size={14} />, color: PALETA_MENU.verde },
+      { label: 'Carga masiva de documentos', path: '/implantes/cargaMasivaDocumentos', icon: <FolderUp size={14} />, color: PALETA_MENU.frambuesa },
+      { label: 'Solicitud', path: '/implantes/solicitudImplantes', icon: <FilePlus size={14} />, color: PALETA_MENU.violeta },
+      { label: 'Resumen', path: '/implantes/resumenImplantes', icon: <BarChart2 size={14} />, color: PALETA_MENU.ambar },
+      { label: 'Sincronizar', path: '/implantes/sincronizacionImputadas', icon: <GitCompareArrows size={14} />, color: PALETA_MENU.turquesa },
+      { label: 'Reportes Info', path: '/implantes/reportesInfo', icon: <BarChart2 size={14} />, color: PALETA_MENU.fucsia },
+      { label: 'Respaldo de documentos', path: '/implantes/respaldoDocumentos', icon: <Archive size={14} />, color: PALETA_MENU.pasto },
       // Misma pantalla y datos que Maestros → Codigos, con permisos propios.
-      { label: 'Códigos', path: '/implantes/codigosImplantes', icon: <ScanBarcode size={14} /> },
+      { label: 'Códigos', path: '/implantes/codigosImplantes', icon: <ScanBarcode size={14} />, color: PALETA_MENU.indigo },
       // Mismas pantallas y datos que en Documentos, con permisos propios.
-      { label: 'Importar Detalles OC', path: '/implantes/importarDetallesOC', icon: <FileSpreadsheet size={14} /> },
-      { label: 'Seguimiento de Facturas y Guías', path: '/implantes/seguimientoFacturasGuias', icon: <Receipt size={14} /> },
-      { label: 'Ingreso de Órdenes', path: '/implantes/ingresoOrdenes', icon: <FileUp size={14} /> },
+      { label: 'Importar Detalles OC', path: '/implantes/importarDetallesOC', icon: <FileSpreadsheet size={14} />, color: PALETA_MENU.rojo },
+      { label: 'Seguimiento de Facturas y Guías', path: '/implantes/seguimientoFacturasGuias', icon: <Receipt size={14} />, color: PALETA_MENU.cafe },
+      { label: 'Ingreso de Órdenes', path: '/implantes/ingresoOrdenes', icon: <FileUp size={14} />, color: PALETA_MENU.pizarra },
     ]
   },
   hemodinamia: {
     label: 'Hemodinamia',
     icon: <HeartPulse size={18} />,
+    color: PALETA_MENU.rojo,
     subItems: [
-      { label: 'Gestion', path: '/hemodinamia/gestionHemodinamia', icon: <FolderKanban size={14} /> },
-      { label: 'Carga masiva de documentos', path: '/hemodinamia/cargaMasivaDocumentos', icon: <FolderUp size={14} /> },
-      { label: 'Solicitud', path: '/hemodinamia/solicitudHemodinamia', icon: <FilePlus size={14} /> },
-      { label: 'Resumen', path: '/hemodinamia/resumenHemodinamia', icon: <BarChart2 size={14} /> },
-      { label: 'Sincronizar', path: '/hemodinamia/sincronizacionImputadas', icon: <GitCompareArrows size={14} /> },
-      { label: 'Respaldo de documentos', path: '/hemodinamia/respaldoDocumentos', icon: <Archive size={14} /> },
+      { label: 'Gestion', path: '/hemodinamia/gestionHemodinamia', icon: <FolderKanban size={14} />, color: PALETA_MENU.cafe },
+      { label: 'Carga masiva de documentos', path: '/hemodinamia/cargaMasivaDocumentos', icon: <FolderUp size={14} />, color: PALETA_MENU.pizarra },
+      { label: 'Solicitud', path: '/hemodinamia/solicitudHemodinamia', icon: <FilePlus size={14} />, color: PALETA_MENU.azul },
+      { label: 'Resumen', path: '/hemodinamia/resumenHemodinamia', icon: <BarChart2 size={14} />, color: PALETA_MENU.verde },
+      { label: 'Sincronizar', path: '/hemodinamia/sincronizacionImputadas', icon: <GitCompareArrows size={14} />, color: PALETA_MENU.frambuesa },
+      { label: 'Respaldo de documentos', path: '/hemodinamia/respaldoDocumentos', icon: <Archive size={14} />, color: PALETA_MENU.violeta },
       // Misma pantalla y datos que Maestros → Codigos, con permisos propios.
-      { label: 'Códigos', path: '/hemodinamia/codigosHemodinamia', icon: <ScanBarcode size={14} /> },
+      { label: 'Códigos', path: '/hemodinamia/codigosHemodinamia', icon: <ScanBarcode size={14} />, color: PALETA_MENU.ambar },
     ]
   }
 };

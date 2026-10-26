@@ -8,6 +8,7 @@ import {
 import { useModulosActivos, guardarModulosActivos } from '../../../../stores/modulosActivosStore';
 import { useUser } from '../../../../context/UserContext';
 import { useToast } from '../../../../context/ToastContext';
+import CuadritoIcono from '../../../ui/CuadritoIcono';
 
 // Módulos con ítems del sidebar (el Dashboard no es un módulo con ítems).
 const MODULOS_CON_ITEMS = Object.entries(MODULES).filter(([, m]) => m.subItems?.length);
@@ -100,7 +101,7 @@ const GestionModulos = () => {
               return (
                 <div key={mKey} className="rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                   <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900/40">
-                    <div className={`flex-shrink-0 ${mActivo ? 'text-[#2383C2]' : 'text-gray-400 dark:text-gray-500'}`}>{modulo.icon}</div>
+                    <CuadritoIcono icon={modulo.icon} color={modulo.color} className={mActivo ? '' : 'grayscale opacity-60'} />
                     <span className={`flex-grow text-sm font-medium truncate ${mActivo ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500 line-through'}`}>
                       {modulo.label}
                     </span>
@@ -118,7 +119,7 @@ const GestionModulos = () => {
                       const protegido = itemProtegido(sub.path);
                       return (
                         <div key={sub.path} className={`flex items-center gap-2 py-1.5 min-w-0 ${mActivo ? '' : 'opacity-50'}`}>
-                          <span className="flex-shrink-0 text-gray-400 dark:text-gray-500">{sub.icon}</span>
+                          <CuadritoIcono icon={sub.icon} color={sub.color} tamano="sm" className={iActivo ? '' : 'grayscale opacity-60'} />
                           <span className={`flex-grow text-xs truncate ${iActivo ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500 line-through'}`}>
                             {sub.label}
                           </span>

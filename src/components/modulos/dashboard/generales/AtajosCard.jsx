@@ -5,6 +5,7 @@ import { resolverAtajos } from '../../../../config/atajosDashboard';
 import { useAtajosConfigurados } from '../../../../stores/atajosDashboardStore';
 import { useModulosActivos } from '../../../../stores/modulosActivosStore';
 import { itemActivo } from '../../../../config/modulosActivos';
+import CuadritoIcono from '../../../ui/CuadritoIcono';
 
 // Widget "Accesos rápidos": botones a pantallas del sidebar. La lista la
 // configura un admin/dev en Ajustes → Atajos (por defecto, la de
@@ -45,9 +46,9 @@ const AtajosCard = ({ permisos, onAbrir }) => {
               title={`${a.moduloLabel} → ${a.label}`}
               className="group flex items-center gap-2 p-2 rounded-lg border border-[#2383C2]/30 dark:border-[#2383C2]/40 bg-[#2383C2]/[0.06] dark:bg-[#2383C2]/10 shadow-sm hover:border-[#2383C2] hover:bg-[#2383C2]/[0.12] dark:hover:bg-[#2383C2]/20 hover:shadow-md transition text-left min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2] focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
             >
-              <span className="flex-shrink-0 w-7 h-7 rounded-md bg-[#2383C2]/15 dark:bg-[#2383C2]/25 text-[#1b6a9e] dark:text-sky-300 group-hover:bg-[#2383C2] group-hover:text-white dark:group-hover:text-white transition-colors flex items-center justify-center">
-                {React.isValidElement(a.icon) ? React.cloneElement(a.icon, { size: 15 }) : a.icon}
-              </span>
+              {/* Mismo ícono y color que el ítem en el sidebar (config/modulesConfig.jsx). */}
+              <CuadritoIcono icon={a.icon} color={a.color} />
+
               <span className="flex flex-col min-w-0">
                 <span className="text-[11px] font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-[#1b6a9e] dark:group-hover:text-sky-300">
                   {a.label}

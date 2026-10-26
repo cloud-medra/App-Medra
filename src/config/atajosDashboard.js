@@ -35,7 +35,8 @@ export const resolverAtajos = (atajos, modulos, permisos) =>
       path: atajo.path,
       label: atajo.label || item.label,
       moduloLabel: GRUPOS_MENU[item.grupo]?.label || modulo.label,
-      icon: atajo.icon || item.icon || modulo.icon
+      icon: atajo.icon || item.icon || modulo.icon,
+      color: item.color || modulo.color
     }];
   });
 
