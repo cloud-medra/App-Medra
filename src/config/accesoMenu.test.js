@@ -70,3 +70,21 @@ describe('Gestionar tickets', () => {
     expect(rutasDe({ rol: 'operador', permisos: { administracion: [TICKETS] } })).toContain(TICKETS);
   });
 });
+
+describe('Solicitudes de modificaciones: hereda el acceso de Solicitud', () => {
+  const SOL = '/implantes/solicitudImplantes';
+  const MOD = '/implantes/solicitudModificacionesImplantes';
+  const imp = (u) => subItemsVisibles(u, 'implantes').map((s) => s.path);
+
+  it('quien tiene Solicitud ve el ítem nuevo sin asignarlo; quien no, no', () => {
+    expect(imp({ rol: 'operador', permisos: { implantes: [SOL] } })).toEqual([SOL, MOD]);
+    expect(imp({ rol: 'operador', permisos: { implantes: ['/implantes/gestionImplantes'] } })).not.toContain(MOD);
+    expect(imp({ rol: 'operador', permisos: { implantes: [MOD] } })).toEqual([MOD]);
+  });
+
+  it('Hemodinamia igual, con su propio ítem; y se puede asignar en el editor', () => {
+    expect(subItemsVisibles({ rol: 'encargado', permisos: { hemodinamia: ['/hemodinamia/solicitudHemodinamia'] } }, 'hemodinamia').map((s) => s.path))
+      .toContain('/hemodinamia/solicitudModificacionesHemodinamia');
+    expect(subItemsAsignables(MODULES.implantes).map((s) => s.path)).toContain(MOD);
+  });
+});

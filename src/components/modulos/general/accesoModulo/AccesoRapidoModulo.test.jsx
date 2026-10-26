@@ -22,7 +22,8 @@ describe('AccesoRapidoModulo', () => {
     render(<AccesoRapidoModulo etiqueta="Implantes" icono={MODULES.implantes.icon} color={MODULES.implantes.color} items={items} onAbrir={onAbrir} />);
     const botones = within(screen.getByRole('list', { name: 'Pantallas de Implantes' })).getAllByRole('button');
     expect(botones.map((b) => b.title)).toEqual(items.map((i) => i.label));
-    expect(botones.map((b) => b.title)).toEqual(['Resumen', 'Gestion', 'Solicitud']);
+    // Solicitudes de modificaciones: heredado de Solicitud (heredaDe).
+    expect(botones.map((b) => b.title)).toEqual(['Resumen', 'Gestion', 'Solicitud', 'Solicitudes de modificaciones']);
     fireEvent.click(screen.getByTitle('Gestion'));
     expect(onAbrir).toHaveBeenCalledWith('/implantes/gestionImplantes');
   });

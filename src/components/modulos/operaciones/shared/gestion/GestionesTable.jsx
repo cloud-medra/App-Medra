@@ -357,6 +357,15 @@ export const GestionesTable = ({
                   <span className={`text-[9px] px-1.5 py-0.5 rounded-full uppercase ${solicitudInfo.className}`}>
                     {solicitudInfo.label}
                   </span>
+                  {/* Editado después de solicitar: se descarga en "Solicitudes de modificaciones". */}
+                  {i.modificacionPendiente && (
+                    <span
+                      title="Modificación pendiente: cambios después de solicitar, aún no descargados en Solicitudes de modificaciones"
+                      className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full uppercase bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                    >
+                      Modif. pendiente
+                    </span>
+                  )}
                 </td>
                 <td className={`${celdaBase} text-gray-600 dark:text-gray-300 font-medium`} title={i.periodo}>
                   {i.periodo || '-'}

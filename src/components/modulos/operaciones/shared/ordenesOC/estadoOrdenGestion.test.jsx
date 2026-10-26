@@ -82,3 +82,12 @@ describe('GestionesTable: colores por Orden', () => {
     ['Con orden y PDF', 'Con orden, sin PDF', 'Sin orden'].forEach(t => expect(screen.getByText(t)).toBeInTheDocument());
   });
 });
+
+describe('GestionesTable: modificación pendiente', () => {
+  const props = { handleCopiarTexto: vi.fn(), abrirHistorialLogs: vi.fn(), iniciarEdicion: vi.fn(), handleDelete: vi.fn() };
+  it('indicador solo en los bloques editados después de solicitar y aún no descargados', () => {
+    const filas = [{ ...gestion('1'), solicitud: 'SOLICITADO', modificacionPendiente: true }, { ...gestion('2'), solicitud: 'SOLICITADO', modificacionPendiente: false }];
+    render(<GestionesTable implantesFiltrados={filas} pdfsOC={{}} {...props} />);
+    expect(screen.getAllByText('Modif. pendiente')).toHaveLength(1);
+  });
+});

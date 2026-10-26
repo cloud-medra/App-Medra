@@ -137,6 +137,7 @@ import SolicitudImplantes from '../components/modulos/operaciones/implantes/soli
 import ResumenImplantes from '../components/modulos/operaciones/implantes/resumenImplantes/ResumenImplantes.jsx';
 import SincronizacionImputadas from '../components/modulos/operaciones/implantes/sincronizacionImputadas/SincronizacionImputadas.jsx';
 import RespaldoDocumentos from '../components/modulos/operaciones/implantes/respaldoDocumentos/RespaldoDocumentos.jsx';
+import SolicitudModificaciones from '../components/modulos/operaciones/shared/solicitudModificaciones/SolicitudModificaciones.jsx';
 
 // --- HEMODINAMIA ---
 import GestionHemodinamia from '../components/modulos/operaciones/hemodinamia/gestionHemodinamia/GestionHemodinamia';
@@ -565,6 +566,7 @@ const Dashboard = () => {
     ),
     '/implantes/cargaMasivaDocumentos': <CargaMasivaDocumentos />,
     '/implantes/solicitudImplantes': <SolicitudImplantes />,
+    '/implantes/solicitudModificacionesImplantes': <SolicitudModificaciones modulo="implantes" />,
     '/implantes/resumenImplantes': <ResumenImplantes />,
     '/implantes/sincronizacionImputadas': <SincronizacionImputadas />,
     '/implantes/reportesInfo': <ReportesInfo pathVista="/implantes/reportesInfo" onAbrirGestionImplante={abrirGestionImplante} />,
@@ -578,6 +580,7 @@ const Dashboard = () => {
     '/hemodinamia/gestionHemodinamia': <GestionHemodinamia />,
     '/hemodinamia/cargaMasivaDocumentos': <CargaMasivaDocumentosHemodinamia />,
     '/hemodinamia/solicitudHemodinamia': <SolicitudHemodinamia />,
+    '/hemodinamia/solicitudModificacionesHemodinamia': <SolicitudModificaciones modulo="hemodinamia" />,
     '/hemodinamia/resumenHemodinamia': <ResumenHemodinamia />,
     '/hemodinamia/sincronizacionImputadas': <SincronizacionImputadasHemodinamia />,
     '/hemodinamia/respaldoDocumentos': <RespaldoDocumentosHemodinamia />,

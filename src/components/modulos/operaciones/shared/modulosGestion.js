@@ -39,6 +39,8 @@ export const MODULOS_GESTION = Object.freeze({
       gestion: '/implantes/gestionImplantes',
       documentos: '/implantes/gestionImplantes/documentos',
       solicitud: '/implantes/solicitudImplantes',
+      // Solicitudes de modificaciones (cambios sobre lo ya solicitado).
+      solicitudModificaciones: '/implantes/solicitudModificacionesImplantes',
       cargaMasivaDocumentos: '/implantes/cargaMasivaDocumentos',
       respaldo: '/implantes/respaldoDocumentos',
       sincronizacion: '/implantes/sincronizacionImputadas',
@@ -68,6 +70,7 @@ export const MODULOS_GESTION = Object.freeze({
       gestion: '/hemodinamia/gestionHemodinamia',
       documentos: '/hemodinamia/gestionHemodinamia/documentos',
       solicitud: '/hemodinamia/solicitudHemodinamia',
+      solicitudModificaciones: '/hemodinamia/solicitudModificacionesHemodinamia',
       cargaMasivaDocumentos: '/hemodinamia/cargaMasivaDocumentos',
       respaldo: '/hemodinamia/respaldoDocumentos',
       sincronizacion: '/hemodinamia/sincronizacionImputadas',

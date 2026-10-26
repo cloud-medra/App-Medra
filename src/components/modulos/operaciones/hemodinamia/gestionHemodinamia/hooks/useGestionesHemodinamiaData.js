@@ -24,6 +24,7 @@ import { useUser } from '../../../../../../context/UserContext';
 import { exportarGestionesAExcel, descargarPlantillaCSV, parsearArchivoImportacion } from '../utils/gestionesImportExport';
 import { periodoEstaAbierto } from '../components/Cargastab/verificacionPeriodoBloque';
 import { periodoImputacion, bloqueParaImputacion, camposSolicitudDe } from '../../../shared/periodoImputacion';
+import { camposModificacionAlGuardar } from '../../../shared/solicitudModificaciones/modificacionesSolicitud';
 import { refImputada, construirPayloadImputada } from '../utils/imputadaSync';
 import { registrarLogHemodinamia } from '../utils/registrarLogHemodinamia';
 import { calcularOcPendiente, itemsDeGestion } from '../../../shared/ocIndex/indiceOC';
@@ -660,6 +661,19 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
 
         const original = registro.id ? buscarOriginal(registro.id) : null;
 
+        // Bloque ya SOLICITADO: se compara con la foto de lo solicitado
+        // (itemsSolicitados) y se marca modificacionPendiente para
+        // "Solicitudes de modificaciones". Va en esta misma escritura (0
+        // lecturas y 0 escrituras extra). Sin foto (solicitado antes de este
+        // cambio), la base es el documento tal como estaba antes de editar.
+        const camposModificacion = original && (registro.solicitud || '').toUpperCase() === 'SOLICITADO'
+          ? camposModificacionAlGuardar({
+            fotoGuardada: original.itemsSolicitados,
+            itemsAntes: original.cotizaciones?.[0]?.items || [],
+            itemsDespues: registro.cotizaciones?.[0]?.items || []
+          })
+          : {};
+
         // Viaja también cuando el doc se mueve de ruta (cambio de ID/fecha/empresa).
         dataNormalizada.fechaRegistroAdmision = calcularFechaRegistroAdmision({
           idAnterior: original?.gestionId || original?.agendaId,
@@ -691,7 +705,8 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
           datosGuardados = {
             ...dataNormalizada,
             fechaRegistro: original.fechaRegistro || new Date(),
-            registradoPor: original.registradoPor || userData?.nombreCompleto || 'Usuario'
+            registradoPor: original.registradoPor || userData?.nombreCompleto || 'Usuario',
+            ...camposModificacion
           };
           batch.update(docRef, datosGuardados);
           logsAAgregar.push({ docRef, accion: 'EDICION', detalles: dataNormalizada });
@@ -710,7 +725,7 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
           const ocPorItemVigente = Object.fromEntries(Object.entries(ocPorItemActual).filter(([id]) => idsItems.has(id)));
           if (Object.keys(ocPorItemVigente).length > 0) datosGuardados.ocPorItem = ocPorItemVigente;
           // Si estaba solicitado, conserva la solicitud (período incluido).
-          if (original) Object.assign(datosGuardados, camposSolicitudDe(original));
+          if (original) Object.assign(datosGuardados, camposSolicitudDe(original), camposModificacion);
           batch.set(nuevoDocRef, datosGuardados);
           logsAAgregar.push({ docRef: nuevoDocRef, accion: original ? 'EDICION' : 'CREACION', detalles: dataNormalizada });
 

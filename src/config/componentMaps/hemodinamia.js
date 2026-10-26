@@ -261,6 +261,23 @@ export const hemodinamiaComponentMaps = {
     },
   },
 
+  '/hemodinamia/solicitudModificacionesHemodinamia': {
+    label: 'Solicitudes de modificaciones de Hemodinamia (shared/solicitudModificaciones/SolicitudModificaciones.jsx) — sin configuración propia hereda el acceso de Solicitud',
+    sections: {
+      acciones: {
+        label: 'Sección: Pendientes',
+        elements: {
+          btn_exportar: { label: 'Acción: Descargar modificaciones' },
+        },
+      },
+      historial: {
+        label: 'Sección: Historial',
+        elements: {
+          btn_descargar_copia: { label: 'Acción: Descargar copia' },
+        },
+      },
+    },
+  },
   '/hemodinamia/resumenHemodinamia': {
     label: 'Resumen de Hemodinamia Imputada (shared/resumen/ResumenGestiones.jsx) — solo lectura, sin granularidad cableada aún',
     sections: {

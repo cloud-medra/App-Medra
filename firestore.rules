@@ -213,6 +213,18 @@ service cloud.firestore {
       return t.administradores == (usaAdministradores && !todos ? u.get('administradoresAsignados', []) : [])
         && t.centroAdministradores == (usaAdministradores && todos ? u.get('centroCostoId', null) : null);
     }
+    // Historial de "Solicitudes de modificaciones" (Implantes, Hemodinamia):
+    // un documento por descarga, con las filas exactas del archivo. Solo se
+    // crea (lo crea quien descarga); no se modifica ni se borra.
+    match /modificaciones_exportadas/{id} {
+      allow read: if estaActivo() && (esDev() || tienePermiso(resource.data.modulo));
+      allow create: if estaActivo()
+        && request.resource.data.modulo in ['implantes', 'hemodinamia']
+        && request.resource.data.usuarioUid == request.auth.uid
+        && (esDev() || tienePermiso(request.resource.data.modulo));
+      allow update, delete: if false;
+    }
+
     // Número correlativo (TK-0001…): solo sube de a uno, en la misma
     // transacción que crea el ticket.
     match /tickets_meta/contador {

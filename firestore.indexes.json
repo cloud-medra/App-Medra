@@ -806,6 +806,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "modificaciones_exportadas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "modulo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fecha",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -958,6 +972,29 @@
     {
       "collectionGroup": "detalles",
       "fieldPath": "solicitud",
+      "ttl": false,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "detalles",
+      "fieldPath": "modificacionPendiente",
       "ttl": false,
       "indexes": [
         {

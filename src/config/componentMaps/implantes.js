@@ -276,6 +276,23 @@ export const implantesComponentMaps = {
     },
   },
 
+  '/implantes/solicitudModificacionesImplantes': {
+    label: 'Solicitudes de modificaciones de Implantes (shared/solicitudModificaciones/SolicitudModificaciones.jsx) — sin configuración propia hereda el acceso de Solicitud',
+    sections: {
+      acciones: {
+        label: 'Sección: Pendientes',
+        elements: {
+          btn_exportar: { label: 'Acción: Descargar modificaciones' },
+        },
+      },
+      historial: {
+        label: 'Sección: Historial',
+        elements: {
+          btn_descargar_copia: { label: 'Acción: Descargar copia' },
+        },
+      },
+    },
+  },
   '/implantes/resumenImplantes': {
     label: 'Resumen de Implantes Imputados (shared/resumen/ResumenGestiones.jsx) — solo lectura, sin granularidad cableada aún',
     sections: {

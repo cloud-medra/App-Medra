@@ -19,6 +19,7 @@ import { useModal } from '../../../../../context/ModalContext';
 import { useUser } from '../../../../../context/UserContext';
 import { camposPeriodoSolicitud } from '../periodoImputacion';
 import { moduloGestion, rangoGestiones } from '../modulosGestion';
+import { fotoItems } from '../solicitudModificaciones/modificacionesSolicitud';
 
 export const formatearFechaExcel = (fechaString) => {
   if (!fechaString || !fechaString.includes('-')) return fechaString || '';
@@ -309,7 +310,10 @@ export const useSolicitudGestionesData = (modulo) => {
               fechaSolicitud: new Date(),
               solicitadoPor: userData?.nombreCompleto || 'Usuario',
               periodo: periodoTexto,
-              ...camposPeriodoSolicitud(periodoActivo)
+              ...camposPeriodoSolicitud(periodoActivo),
+              // Foto de lo solicitado: base de "Solicitudes de modificaciones".
+              itemsSolicitados: fotoItems(bloque.items),
+              modificacionPendiente: false
             }));
 
             const { anio, mes, dia } = descomponerFecha(bloque.fecha);
