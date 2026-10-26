@@ -4,6 +4,8 @@ import { useColumnResize } from '../../../../../../hooks/useColumnResize';
 import { useUser } from '../../../../../../context/UserContext';
 import { TablaRedimensionable } from '../../../../../ui/TablaRedimensionable';
 import { BotonRestablecerAnchos } from '../../../../../ui/BotonRestablecerAnchos';
+import { esPrecioEspecial } from '../../utils/precioEspecial';
+import BadgePrecioEspecial from '../../utils/BadgePrecioEspecial';
 
 const formatearFechaTabla = (fechaString) => {
   if (!fechaString || !fechaString.includes('-')) return fechaString || '-';
@@ -40,8 +42,15 @@ const COLUMNAS = [
     clase: 'text-slate-600 dark:text-gray-300', celda: it => renderP(it.empresa) },
   { key: 'cantidad', label: 'Cant.', ancho: 55, min: 40, align: 'center',
     clase: 'text-slate-700 dark:text-gray-200 font-semibold', celda: it => it.cantidad ?? 0 },
-  { key: 'costo', label: 'Costo', ancho: 90, min: 55,
-    clase: 'text-emerald-700 dark:text-emerald-400', celda: it => (it.costo ? `$${Number(it.costo).toLocaleString('es-CL')}` : '-') },
+  { key: 'costo', label: 'Costo', ancho: 130, min: 55,
+    clase: 'text-emerald-700 dark:text-emerald-400',
+    celda: it => (
+      <>
+        {it.costo ? `$${Number(it.costo).toLocaleString('es-CL')}` : '-'}
+        {esPrecioEspecial(it) && <BadgePrecioEspecial costoMaestro={it.costoMaestro} />}
+      </>
+    ),
+    titulo: it => (esPrecioEspecial(it) ? `Precio especial (maestro: $${Number(it.costoMaestro || 0).toLocaleString('es-CL')})` : undefined) },
   { key: 'total', label: 'Total', ancho: 95, min: 60,
     clase: 'text-emerald-700 dark:text-emerald-400 font-semibold',
     celda: it => { const t = totalItem(it); return t ? `$${Math.round(t).toLocaleString('es-CL')}` : '-'; } },

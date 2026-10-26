@@ -11,6 +11,8 @@ import { useAutocompleteReferenciaConsignacion } from './useAutocompleteReferenc
 import { periodoEstaAbierto } from './verificacionPeriodoConsignacion';
 import { registrarLogConsignacion } from '../../utils/registrarLogConsignacion';
 import { mapearItemMaestro, buscarItemMaestro } from '../../utils/registroConsignacionService';
+import { costoMaestroDe, esPrecioEspecial, errorPrecio, precioANumero, camposPrecio, calcularVentaItem, diferencias } from '../../utils/precioEspecial';
+import BadgePrecioEspecial from '../../utils/BadgePrecioEspecial';
 import { obtenerCodigosCacheados } from '../../registroConsignacion/utils/cacheMaestros';
 import { useCatalogo } from '../../../../../../hooks/useCatalogo';
 import { ordenarPor } from '../../../../../../stores/catalogosStore';
@@ -35,10 +37,10 @@ const COLUMNAS_ITEMS = [
   { key: 'descripcion', label: 'Descripción', ancho: 200, min: 90 },
   { key: 'empresa', label: 'Empresa', ancho: 180, min: 80 },
   { key: 'cantidad', label: 'Cant.', ancho: 60, min: 50, extra: 'text-center' },
-  { key: 'costo', label: 'Costo', ancho: 85, min: 60 },
+  { key: 'costo', label: 'Costo', ancho: 130, min: 60 },
   { key: 'lote', label: 'Lote', ancho: 95, min: 60 },
   { key: 'vencimiento', label: 'Vencimiento', ancho: 115, min: 105 },
-  { key: 'total', label: 'Total', ancho: 95, min: 60 },
+  { key: 'total', label: 'Total', ancho: 130, min: 60 },
   { key: 'delivery', label: 'Delivery', ancho: 105, min: 65 },
   { key: 'numGuia', label: 'N° Guía', ancho: 95, min: 60 },
   { key: 'atributo', label: 'Atributo', ancho: 110, min: 65 },
@@ -366,14 +368,15 @@ const DropdownReferenciaPortal = ({ anchorRef, portalRef, children }) => {
   );
 };
 
+// `costoMaestro`: precio del maestro del ítem (para saber si el precio
+// editado es especial, ver utils/precioEspecial.js).
 const BORRADOR_ITEM_VACIO = {
-  referencia: '', codigo: '', empresa: '', descripcion: '', costo: '',
+  referencia: '', codigo: '', empresa: '', descripcion: '', costo: '', costoMaestro: '',
   cantidad: '', lote: '', vencimiento: ''
 };
 
 const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) => {
   const totalItems = items.length;
-  const sumaCostos = items.reduce((acc, it) => acc + (Number(it.costo) || 0) * (Number(it.cantidad) || 1), 0);
 
   const { showToast } = useToast();
   const { userData } = useUser();
@@ -397,15 +400,10 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
     ) || null;
   };
 
-  const calcularVenta = (it) => {
-    const costo = Number(it.costo) || 0;
-    const cantidad = Number(it.cantidad) || 0;
-    const regla = buscarRecargo(costo);
-    if (!regla) return { vecesCosto: null, venta: null };
-    const vecesCosto = Number(regla.vecesCosto);
-    const venta = Math.round(costo * vecesCosto * cantidad);
-    return { vecesCosto, venta };
-  };
+  // Venta = precio × veces costo (regla de recargo del rango del precio) ×
+  // cantidad, misma fórmula que Implantes → Gestiones → Cargas. También
+  // devuelve el total (precio × cantidad) y el margen (venta − total).
+  const calcularVenta = (it) => calcularVentaItem(it.costo, it.cantidad, buscarRecargo);
 
   useEffect(() => {
     if (!recargos.length) return;
@@ -587,6 +585,23 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
   const [borradorItem, setBorradorItem] = useState(BORRADOR_ITEM_VACIO);
   const [guardandoEdicionId, setGuardandoEdicionId] = useState(null);
 
+  // Vista previa en vivo mientras se edita un ítem: la tabla "Cargas" (venta,
+  // recargo) y el total de la admisión usan el precio y la cantidad del
+  // borrador. Se calcula en el cliente, sin lecturas.
+  const itemsVista = useMemo(() => items.map((it) => {
+    if (it.id !== editandoId) return it;
+    const costo = precioANumero(borradorItem.costo);
+    return {
+      ...it,
+      costo: Number.isFinite(costo) ? costo : 0,
+      cantidad: Number(borradorItem.cantidad) || 0,
+      // Sin los guardados: se recalculan con el precio del borrador.
+      recargoVecesCosto: undefined,
+      venta: undefined
+    };
+  }), [items, editandoId, borradorItem.costo, borradorItem.cantidad]);
+  const sumaCostos = itemsVista.reduce((acc, it) => acc + (Number(it.costo) || 0) * (Number(it.cantidad) || 1), 0);
+
   // Candado por ítem (equivalente al candado por bloque de implantes, pero
   // acá cada carga es su propio documento): un ítem con estado SOLICITADO
   // ya fue exportado a consignacion_imputadas y queda de solo lectura hasta
@@ -633,6 +648,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
       empresa: it.empresa || '',
       descripcion: it.descripcion || '',
       costo: it.costo ?? '',
+      costoMaestro: costoMaestroDe(it),
       cantidad: String(it.cantidad ?? ''),
       lote: it.lote || '',
       vencimiento: it.vencimiento || ''
@@ -652,20 +668,24 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
       codigo: '',
       empresa: '',
       descripcion: '',
-      costo: ''
+      costo: '',
+      costoMaestro: ''
     }));
   };
 
   // Campos del borrador que vienen del maestro: mismo mapeo que Registro y
-  // Carga Masiva (descripción = descriptorAuto).
+  // Carga Masiva (descripción = descriptorAuto). El precio vuelve al del
+  // maestro (deja de ser especial hasta que se edite de nuevo).
   const camposMaestroBorrador = (item, prev) => {
     const m = mapearItemMaestro(item);
+    const costo = m.costo === '' ? 0 : m.costo;
     return {
       referencia: m.referencia || prev.referencia,
       codigo: m.codigo,
       empresa: m.empresa,
       descripcion: m.descripcion,
-      costo: m.costo === '' ? 0 : m.costo
+      costo,
+      costoMaestro: costo
     };
   };
 
@@ -711,6 +731,11 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
     const cantidadNum = Number(borradorItem.cantidad);
     if (!borradorItem.referencia.trim() || !borradorItem.cantidad || isNaN(cantidadNum) || cantidadNum <= 0) return;
     if (!it.ref) return;
+    const errorDelPrecio = errorPrecio(borradorItem.costo);
+    if (errorDelPrecio) {
+      showToast(errorDelPrecio, 'error');
+      return;
+    }
 
     setGuardandoEdicionId(it.id);
     try {
@@ -728,17 +753,45 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
       }
 
       const estaSolicitado = (it.estado || '').toUpperCase() === 'SOLICITADO';
-      const costoNum = borrador.costo !== '' ? Number(borrador.costo) : 0;
-      const camposEditados = {
+      // Precio editado: solo en esta carga (nunca en maestros_codigos). Se
+      // guarda con el precio del maestro y la marca de precio especial.
+      const costoNum = precioANumero(borrador.costo);
+      const precio = camposPrecio(costoNum, borrador.costoMaestro === '' ? costoMaestroDe(it) : borrador.costoMaestro);
+      const { vecesCosto, venta } = calcularVenta({ costo: costoNum, cantidad: cantidadNum });
+      const camposFinancieros = vecesCosto != null ? { recargoVecesCosto: vecesCosto, venta } : {};
+      const { cambios, anteriores } = diferencias(it, {
         referencia: borrador.referencia.trim(),
         codigo: borrador.codigo || '',
         empresa: borrador.empresa || '',
         descripcion: borrador.descripcion || '',
-        costo: costoNum,
+        ...precio,
         cantidad: cantidadNum,
         lote: borrador.lote.trim(),
-        vencimiento: borrador.vencimiento || ''
-      };
+        vencimiento: borrador.vencimiento || '',
+        ...camposFinancieros
+      });
+      // Un ítem que nunca tuvo precio especial no necesita guardar la marca
+      // en false ni el precio del maestro (no cambió nada).
+      if (!precio.precioEspecial && !esPrecioEspecial(it) && it.costoMaestro === undefined) {
+        delete cambios.precioEspecial;
+        delete cambios.costoMaestro;
+        delete anteriores.precioEspecialAnterior;
+        delete anteriores.costoMaestroAnterior;
+      }
+      // Historial: los campos editados (sin los derivados de recargo/venta)
+      // con su valor anterior, como ITEM_EDITADO de Implantes.
+      const camposEditados = { ...cambios };
+      delete camposEditados.recargoVecesCosto;
+      delete camposEditados.venta;
+      const detallesLog = { ...camposEditados, ...anteriores };
+      delete detallesLog.recargoVecesCostoAnterior;
+      delete detallesLog.ventaAnterior;
+
+      if (Object.keys(cambios).length === 0) {
+        showToast('No hay cambios para guardar', 'info');
+        cancelarEdicionItem();
+        return;
+      }
 
       if (estaSolicitado) {
         // Solo se llega acá con el candado ya desbloqueado (el lápiz está
@@ -755,19 +808,16 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
           return;
         }
 
-        const { vecesCosto, venta } = calcularVenta({ costo: costoNum, cantidad: cantidadNum });
-        const camposFinancieros = vecesCosto != null ? { recargoVecesCosto: vecesCosto, venta } : {};
-
         const batch = writeBatch(db);
-        batch.update(it.ref, { ...camposEditados, ...camposFinancieros });
+        batch.update(it.ref, cambios);
         batch.set(
           doc(db, 'consignacion_imputadas', String(it.periodoAnio), 'meses', it.periodoMes, 'documentos', it.id),
-          { ...camposEditados, ...camposFinancieros, total: costoNum * cantidadNum, actualizadoEn: new Date() },
+          { ...cambios, ...camposFinancieros, total: costoNum * cantidadNum, actualizadoEn: new Date() },
           { merge: true }
         );
         await batch.commit();
 
-        await registrarLog(it.ref, 'ITEM_EDITADO', camposEditados);
+        await registrarLog(it.ref, 'ITEM_EDITADO', detallesLog);
         await registrarLog(it.ref, 'IMPUTACION_RESINCRONIZADA', { periodoAnio: it.periodoAnio, periodoMes: it.periodoMes });
 
         setDesbloqueados(prev => {
@@ -776,8 +826,8 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
           return next;
         });
       } else {
-        await updateDoc(it.ref, camposEditados);
-        await registrarLog(it.ref, 'ITEM_EDITADO', camposEditados);
+        await updateDoc(it.ref, cambios);
+        await registrarLog(it.ref, 'ITEM_EDITADO', detallesLog);
       }
 
       cancelarEdicionItem();
@@ -893,7 +943,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                   </td>
                 </tr>
               ) : (
-                items.map((it) => {
+                itemsVista.map((it) => {
                   const estadoKey = (it.estado || 'INGRESADO').toUpperCase();
                   const costo = Number(it.costo) || 0;
                   const { vecesCosto: vecesCostoCalculado, venta: ventaCalculada } = calcularVenta(it);
@@ -931,7 +981,10 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                       </td>
                       <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 font-semibold">
                         {venta != null ? (
-                          `$${Number(venta).toLocaleString('es-CL')}`
+                          <>
+                            ${Number(venta).toLocaleString('es-CL')}
+                            {editandoId === it.id && <span className="ml-1 text-[8px] font-normal text-blue-600 dark:text-blue-400 italic">(en edición)</span>}
+                          </>
                         ) : costo === 0 ? (
                           <span className="text-slate-400 dark:text-gray-500 italic font-normal">Sin costo</span>
                         ) : (
@@ -1075,8 +1128,24 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                               className="w-14 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-center"
                             />
                           </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] text-emerald-700 dark:text-emerald-400 truncate">
-                            {borradorItem.costo !== '' ? `$${Number(borradorItem.costo).toLocaleString('es-CL')}` : '-'}
+                          {/* Precio editable (solo esta carga; el maestro no se toca). */}
+                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60">
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={borradorItem.costo}
+                              onChange={e => setBorradorItem(prev => ({ ...prev, costo: e.target.value }))}
+                              aria-label="Precio"
+                              aria-invalid={Boolean(errorPrecio(borradorItem.costo))}
+                              title={errorPrecio(borradorItem.costo) || 'Precio de esta carga (no modifica el maestro)'}
+                              className={`w-20 h-6.5 px-1 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-right ${errorPrecio(borradorItem.costo) ? 'border-red-400 dark:border-red-600' : 'border-blue-300 dark:border-blue-700'}`}
+                            />
+                            {borradorItem.costoMaestro !== '' && precioANumero(borradorItem.costo) !== Number(borradorItem.costoMaestro) && (
+                              <div className="text-[8px] text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">
+                                Maestro: ${Number(borradorItem.costoMaestro).toLocaleString('es-CL')}
+                              </div>
+                            )}
                           </td>
                           <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 truncate">
                             <input
@@ -1095,8 +1164,23 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                               className="h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                             />
                           </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] text-slate-400 dark:text-gray-500 truncate">
-                            —
+                          {/* Total y venta en vivo con el precio y la cantidad del borrador. */}
+                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] whitespace-nowrap">
+                            {(() => {
+                              const costoBorrador = precioANumero(borradorItem.costo);
+                              if (!Number.isFinite(costoBorrador) || costoBorrador <= 0) return <span className="text-slate-400 dark:text-gray-500">—</span>;
+                              const v = calcularVenta({ costo: costoBorrador, cantidad: borradorItem.cantidad });
+                              return (
+                                <>
+                                  <div className="text-emerald-700 dark:text-emerald-400 font-semibold">${Math.round(v.total).toLocaleString('es-CL')}</div>
+                                  <div className="text-slate-500 dark:text-gray-400" title="Venta = precio × veces costo × cantidad">
+                                    {v.venta != null
+                                      ? <>Venta ${v.venta.toLocaleString('es-CL')} · {v.vecesCosto} x</>
+                                      : <span className="text-amber-600 dark:text-amber-400 italic">Sin regla de recargo</span>}
+                                  </div>
+                                </>
+                              );
+                            })()}
                           </td>
                           <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] text-slate-600 dark:text-gray-300 truncate" title={it.delivery || '-'}>
                             {it.delivery || '-'}
@@ -1175,6 +1259,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                           </td>
                           <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 truncate" title={it.costo ? `$${Number(it.costo).toLocaleString('es-CL')}` : '-'}>
                             {it.costo ? `$${Number(it.costo).toLocaleString('es-CL')}` : '-'}
+                            {esPrecioEspecial(it) && <BadgePrecioEspecial costoMaestro={it.costoMaestro} />}
                           </td>
                           <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate" title={it.lote || (deliveryValor ? 'PAD' : 'Sin lote')}>
                             {it.lote || (deliveryValor ? 'PAD' : 'Sin lote')}
