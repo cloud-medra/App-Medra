@@ -93,7 +93,7 @@ describe('Permisos por centro: configurar un centro por rol', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Encargado de centro/ }));
     // Permisos por centro se ofrece como cualquier ítem (solo sirve con rol
     // Administrador, que no usa plantilla).
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'Módulos' })).getByText('Administración'));
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Módulos' })).getByText('Herramientas'));
     expect(screen.getByLabelText('Habilitar Permisos por centro')).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Habilitar Listado de usuarios'));
     fireEvent.click(screen.getByRole('button', { name: /^Guardar$/ }));
@@ -114,7 +114,7 @@ describe('Permisos por centro: configurar un centro por rol', () => {
     fireEvent.change(desdeRol, { target: { value: 'operador' } });
     fireEvent.click(screen.getByRole('button', { name: 'Copiar rol' }));
     expect(screen.getByLabelText('Habilitar Maestro Códigos')).toBeChecked();
-    fireEvent.click(within(screen.getByRole('navigation', { name: 'Módulos' })).getByText('Administración'));
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Módulos' })).getByText('Herramientas'));
     fireEvent.click(screen.getByLabelText('Habilitar Notas del panel'));
     fireEvent.click(screen.getByRole('button', { name: /^Guardar$/ }));
     await confirmar();

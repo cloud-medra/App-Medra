@@ -85,7 +85,7 @@ const GestionModulos = () => {
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               Lo inactivo deja de aparecer en el sidebar y no se puede abrir, para todos los
               usuarios. Inactivar un módulo oculta todos sus ítems; al reactivarlo, cada ítem
-              vuelve con el estado que tenía. Administración y este ítem no se pueden inactivar.
+              vuelve con el estado que tenía. Herramientas y este ítem no se pueden inactivar.
             </p>
           </div>
         </div>

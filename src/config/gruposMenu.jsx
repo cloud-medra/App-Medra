@@ -1,12 +1,13 @@
 import { Wallet, UserCog } from 'lucide-react';
 import { MODULES, PALETA_MENU, COLOR_MENU_POR_DEFECTO } from './modulesConfig.jsx';
 
-// Grupos del sidebar en que se reparte Administración: Finanzas, Usuarios y
-// accesos y Administración (el resto). Es SOLO el menú: cada ítem sigue
+// Grupos del sidebar en que se reparte el módulo `administracion` (visible
+// como "Herramientas"; la clave interna no cambia): Finanzas, Usuarios y
+// accesos y Herramientas (el resto). Es SOLO el menú: cada ítem sigue
 // siendo de permisos.administracion con su ruta /administracion/..., que es
 // lo que guardan los usuarios en Firestore y validan firestore.rules y las
 // Cloud Functions. El grupo de cada ítem es su campo `grupo` en
-// modulesConfig.jsx (sin `grupo`, queda en Administración).
+// modulesConfig.jsx (sin `grupo`, queda en Herramientas).
 //
 // "Entrada" = lo que se ve como módulo en el sidebar: la clave de un módulo
 // o la de un grupo.
@@ -18,7 +19,7 @@ export const GRUPOS_MENU = {
   usuarios: { label: 'Usuarios y accesos', icon: <UserCog size={18} />, color: PALETA_MENU.indigo },
 };
 
-// En el sidebar los grupos van juntos, en el lugar de Administración.
+// En el sidebar los grupos van juntos, en el lugar de Herramientas.
 const ENTRADAS_AGRUPADAS = ['finanzas', 'usuarios', MODULO_AGRUPADO];
 
 export const entradaDeItem = (moduloKey, item) =>

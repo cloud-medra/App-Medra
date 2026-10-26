@@ -51,7 +51,7 @@ describe('gruposMenu: Administración repartida en el sidebar', () => {
   it('etiquetas de las entradas', () => {
     expect(etiquetaEntrada('finanzas')).toBe('Finanzas');
     expect(etiquetaEntrada('usuarios')).toBe('Usuarios y accesos');
-    expect(etiquetaEntrada('administracion')).toBe('Administración');
+    expect(etiquetaEntrada('administracion')).toBe('Herramientas');
     expect(etiquetaEntrada('bodega')).toBe('Bodega');
   });
 });

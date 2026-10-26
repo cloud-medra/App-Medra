@@ -44,7 +44,7 @@ describe('resolverAtajos', () => {
     ];
     const permisos = { administracion: atajos.map((a) => a.path) };
     expect(resolverAtajos(atajos, MODULES, permisos).map((a) => a.moduloLabel))
-      .toEqual(['Finanzas', 'Usuarios y accesos', 'Administración']);
+      .toEqual(['Finanzas', 'Usuarios y accesos', 'Herramientas']);
     expect(resolverAtajos(atajos, MODULES, { finanzas: ['/administracion/controlMensual'] })).toEqual([]);
   });
 });

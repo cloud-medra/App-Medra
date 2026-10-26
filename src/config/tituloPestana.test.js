@@ -16,7 +16,7 @@ describe('tituloPestana', () => {
   it('grupos de Administración: el nombre del sidebar', () => {
     expect(titulo({ activeModule: 'finanzas', activeView: '/administracion/controlMensual' })).toBe('Finanzas | Medra');
     expect(titulo({ activeModule: 'usuarios' })).toBe('Usuarios y accesos | Medra');
-    expect(titulo({ activeModule: 'administracion', activeView: '/administracion/notasAdmin' })).toBe('Administración | Medra');
+    expect(titulo({ activeModule: 'administracion', activeView: '/administracion/notasAdmin' })).toBe('Herramientas | Medra');
   });
 
   it('sin módulo abierto, una vista de módulo usa el módulo de la vista', () => {

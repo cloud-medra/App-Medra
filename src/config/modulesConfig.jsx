@@ -106,11 +106,11 @@ export const MODULES = {
     path: '/plataforma'
   },
   administracion: {
-    label: 'Administración',
+    label: 'Herramientas',
     icon: <Settings2 size={16} />,
     color: PALETA_MENU.pizarra,
     // `grupo`: en el sidebar estos ítems se reparten en Finanzas, Usuarios y
-    // accesos y Administración (config/gruposMenu.jsx). Es solo el menú: el
+    // accesos y Herramientas (config/gruposMenu.jsx). Es solo el menú: el
     // permiso sigue siendo permisos.administracion con estas mismas rutas,
     // que validan firestore.rules y las Cloud Functions.
     subItems: [
