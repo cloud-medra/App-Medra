@@ -1,7 +1,9 @@
 import * as XLSX from 'xlsx';
 
 // =====================================================================
-// Solicitudes de modificaciones (Implantes y Hemodinamia). Lógica pura.
+// Solicitudes de modificaciones (Implantes, Hemodinamia y Consignación;
+// esta última traduce sus registros en consignacion/utils/
+// modificacionesConsignacion.js). Lógica pura.
 //
 // Al descargar la Solicitud normal se guarda en el bloque una FOTO de lo
 // solicitado (`itemsSolicitados`). Si después se edita un bloque SOLICITADO,
@@ -89,8 +91,10 @@ export const textoPeriodoSolicitud = (bloque) => {
 };
 
 // Filas del Excel de modificaciones (solo lo que cambió). `bloques`: con
-// sus datos de cabecera, su foto y sus ítems actuales.
-export const construirFilasModificaciones = (bloques, fechaIngreso) => {
+// sus datos de cabecera, su foto y sus ítems actuales. `columnaNumero`:
+// encabezado de la última columna de datos (Consignación no tiene
+// cotización: lleva el N° de guía).
+export const construirFilasModificaciones = (bloques, fechaIngreso, { columnaNumero = 'N° COTIZACION' } = {}) => {
   const filas = [];
   bloques.forEach((b) => {
     diferenciasContraFoto(b.itemsSolicitados, b.items).forEach(({ movimiento, anterior, nuevo }) => {
@@ -126,7 +130,7 @@ export const construirFilasModificaciones = (bloques, fechaIngreso) => {
         'VENCIMIENTO ANTERIOR': anterior ? formatearFecha(a.vencimiento) : '',
         'VENCIMIENTO': nuevo ? formatearFecha(n.vencimiento) : '',
         'ATRIBUTO': vigente.tipoVinculado || '',
-        'N° COTIZACION': vigente.numCotizacion || b.numCotizacion || '',
+        [columnaNumero]: vigente.numCotizacion || b.numCotizacion || '',
         'FECHA INGRESO': fechaIngreso,
       });
     });

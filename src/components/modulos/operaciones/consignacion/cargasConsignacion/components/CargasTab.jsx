@@ -10,6 +10,7 @@ import { resolverGuiaCacheada, resolverMaestroCacheado, resolverMaestrosCacheado
 import { useAutocompleteReferenciaConsignacion } from './useAutocompleteReferenciaConsignacion';
 import { periodoEstaAbierto } from './verificacionPeriodoConsignacion';
 import { registrarLogConsignacion } from '../../utils/registrarLogConsignacion';
+import { camposModificacionConsignacion } from '../../utils/modificacionesConsignacion';
 import { mapearItemMaestro, buscarItemMaestro } from '../../utils/registroConsignacionService';
 import { costoMaestroDe, esPrecioEspecial, errorPrecio, precioANumero, camposPrecio, calcularVentaItem, diferencias, buscarReglaRecargo } from '../../utils/precioEspecial';
 import BadgePrecioEspecial from '../../utils/BadgePrecioEspecial';
@@ -801,8 +802,14 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
           return;
         }
 
+        // Igual que el guardado de un bloque SOLICITADO de Implantes: se
+        // compara con la foto de lo solicitado (itemsSolicitados) y se marca
+        // modificacionPendiente para "Solicitudes de modificaciones", en
+        // esta misma escritura (0 lecturas extra).
+        const camposModificacion = camposModificacionConsignacion(it.id, it, { ...cambios, ...camposFinancieros });
+
         const batch = writeBatch(db);
-        batch.update(it.ref, cambios);
+        batch.update(it.ref, { ...cambios, ...camposModificacion });
         batch.set(
           doc(db, 'consignacion_imputadas', String(it.periodoAnio), 'meses', it.periodoMes, 'documentos', it.id),
           { ...cambios, ...camposFinancieros, total: costoNum * cantidadNum, actualizadoEn: new Date() },
@@ -1293,6 +1300,15 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                                   <option key={op} value={op}>{op}</option>
                                 ))}
                               </select>
+                            )}
+                            {/* Editado después de solicitar: se descarga en "Solicitudes de modificaciones". */}
+                            {it.modificacionPendiente && (
+                              <span
+                                title="Modificación pendiente: cambios después de solicitar, aún no descargados en Solicitudes de modificaciones"
+                                className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full uppercase bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                              >
+                                Modif. pendiente
+                              </span>
                             )}
                           </td>
                           <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60 text-center whitespace-nowrap">

@@ -537,6 +537,7 @@ const Dashboard = () => {
     '/consignacion/cargaMasivaConsignacion': <CargaMasivaConsignacion />,
     '/consignacion/cargasConsignacion': <CargasConsignacion />,
     '/consignacion/solicitudConsignacion': <SolicitudConsignacion />,
+    '/consignacion/solicitudModificacionesConsignacion': <SolicitudModificaciones modulo="consignacion" />,
     '/consignacion/resumenConsignacion': <ResumenConsignacion />,
 
     // ── Inventario ──

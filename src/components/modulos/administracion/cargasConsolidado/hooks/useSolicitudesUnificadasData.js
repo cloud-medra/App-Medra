@@ -26,6 +26,7 @@ import { construirHojasSolicitudUnificada, formatearFechaExcel } from '../utils/
 import { limpiarParaFirestore, camposUndefined } from '../utils/limpiarParaFirestore';
 import { camposPeriodoSolicitud } from '../../../operaciones/shared/periodoImputacion';
 import { fotoItems } from '../../../operaciones/shared/solicitudModificaciones/modificacionesSolicitud';
+import { fotoRegistroConsignacion } from '../../../operaciones/consignacion/utils/modificacionesConsignacion';
 
 const RANGO_MIN_IMPLANTES = 'implantes_gestiones/0000';
 const RANGO_MAX_IMPLANTES = 'implantes_gestiones/9999';
@@ -459,7 +460,10 @@ export const useSolicitudesUnificadasData = () => {
               fechaSolicitud: new Date(),
               solicitadoPor: userData?.nombreCompleto || 'Usuario',
               periodoAnio: periodoConsignacion.anio,
-              periodoMes: periodoConsignacion.mes
+              periodoMes: periodoConsignacion.mes,
+              // Foto de lo solicitado (base de Solicitudes de modificaciones).
+              itemsSolicitados: fotoRegistroConsignacion(it.id, it.datosOriginales),
+              modificacionPendiente: false
             } });
 
             const imputadaRef = doc(

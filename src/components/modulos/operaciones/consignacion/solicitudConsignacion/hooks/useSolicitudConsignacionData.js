@@ -8,6 +8,7 @@ import { useUser } from '../../../../../../context/UserContext';
 import { registrarLogConsignacion } from '../../utils/registrarLogConsignacion';
 import { cargarCandidatosSolicitudConsignacion } from '../utils/cargarCandidatosSolicitudConsignacion';
 import { construirFilasResumenSolicitudConsignacion } from '../utils/filasResumenSolicitudConsignacion';
+import { fotoRegistroConsignacion } from '../../utils/modificacionesConsignacion';
 
 const ESTADO_DESTINO = 'SOLICITADO';
 
@@ -163,7 +164,10 @@ export const useSolicitudConsignacionData = () => {
               fechaSolicitud: new Date(),
               solicitadoPor: userData?.nombreCompleto || 'Usuario',
               periodoAnio: periodoActivo.anio,
-              periodoMes: periodoActivo.mes
+              periodoMes: periodoActivo.mes,
+              // Foto de lo solicitado: base de "Solicitudes de modificaciones".
+              itemsSolicitados: fotoRegistroConsignacion(it.id, it.datosOriginales),
+              modificacionPendiente: false
             }));
 
             const imputadaRef = doc(

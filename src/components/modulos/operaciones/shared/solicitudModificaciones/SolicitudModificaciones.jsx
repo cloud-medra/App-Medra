@@ -119,8 +119,9 @@ const HistorialModificaciones = ({ modulo, config, puedeCopiar }) => {
   );
 };
 
-// Implantes / Hemodinamia → Solicitudes de modificaciones. Solo cambios sobre
-// solicitudes ya enviadas (nunca el bloque completo, sin volver a imputar).
+// Implantes / Hemodinamia / Consignación → Solicitudes de modificaciones.
+// Solo cambios sobre solicitudes ya enviadas (nunca el bloque completo, sin
+// volver a imputar). En Consignación cada "bloque" es una carga (un ítem).
 // Permisos: los de esta vista si el usuario tiene configuración propia; si
 // no, hereda el acceso de Solicitud (ver `heredaDe` en modulesConfig.jsx).
 const SolicitudModificaciones = ({ modulo }) => {

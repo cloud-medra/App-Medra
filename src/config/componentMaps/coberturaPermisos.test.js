@@ -28,8 +28,8 @@ const recorrer = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((
 // Componentes compartidos que reciben la ruta por prop: se verifican
 // contra cada vista que los monta.
 const RUTAS_DINAMICAS = {
-  // Solicitudes de modificaciones: misma pantalla en Implantes y Hemodinamia (prop modulo).
-  'modulos/operaciones/shared/solicitudModificaciones/SolicitudModificaciones.jsx': ['/implantes/solicitudModificacionesImplantes', '/hemodinamia/solicitudModificacionesHemodinamia'],
+  // Solicitudes de modificaciones: misma pantalla en Implantes, Hemodinamia y Consignación (prop modulo).
+  'modulos/operaciones/shared/solicitudModificaciones/SolicitudModificaciones.jsx': ['/implantes/solicitudModificacionesImplantes', '/hemodinamia/solicitudModificacionesHemodinamia', '/consignacion/solicitudModificacionesConsignacion'],
   // Códigos: misma pantalla en Maestros, Implantes y Hemodinamia (prop rutaVista).
   'modulos/maestros/codigosMaestrosV2/tabs/TabPendientesV2.jsx': ['/maestros/codigosMaestros/pendientes', '/implantes/codigosImplantes/pendientes', '/hemodinamia/codigosHemodinamia/pendientes'],
   'modulos/maestros/codigosMaestrosV2/tabs/TabConCodigoV2.jsx': ['/maestros/codigosMaestros/conCodigo', '/implantes/codigosImplantes/conCodigo', '/hemodinamia/codigosHemodinamia/conCodigo'],

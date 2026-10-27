@@ -213,13 +213,13 @@ service cloud.firestore {
       return t.administradores == (usaAdministradores && !todos ? u.get('administradoresAsignados', []) : [])
         && t.centroAdministradores == (usaAdministradores && todos ? u.get('centroCostoId', null) : null);
     }
-    // Historial de "Solicitudes de modificaciones" (Implantes, Hemodinamia):
-    // un documento por descarga, con las filas exactas del archivo. Solo se
-    // crea (lo crea quien descarga); no se modifica ni se borra.
+    // Historial de "Solicitudes de modificaciones" (Implantes, Hemodinamia,
+    // Consignación): un documento por descarga, con las filas exactas del
+    // archivo. Solo se crea (lo crea quien descarga); no se modifica ni se borra.
     match /modificaciones_exportadas/{id} {
       allow read: if estaActivo() && (esDev() || tienePermiso(resource.data.modulo));
       allow create: if estaActivo()
-        && request.resource.data.modulo in ['implantes', 'hemodinamia']
+        && request.resource.data.modulo in ['implantes', 'hemodinamia', 'consignacion']
         && request.resource.data.usuarioUid == request.auth.uid
         && (esDev() || tienePermiso(request.resource.data.modulo));
       allow update, delete: if false;

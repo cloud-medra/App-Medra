@@ -244,6 +244,7 @@ export const MODULES = {
       { label: 'Carga Masiva', path: '/consignacion/cargaMasivaConsignacion', icon: <FileSpreadsheet size={14} />, color: PALETA_MENU.fucsia },
       { label: 'Cargas', path: '/consignacion/cargasConsignacion', icon: <CheckCheck size={14} />, color: PALETA_MENU.pasto },
       { label: 'Solicitud', path: '/consignacion/solicitudConsignacion', icon: <FilePlus size={14} />, color: PALETA_MENU.indigo },
+      { label: 'Solicitudes de modificaciones', path: '/consignacion/solicitudModificacionesConsignacion', icon: <FilePen size={14} />, color: PALETA_MENU.azul, heredaDe: '/consignacion/solicitudConsignacion' },
       { label: 'Imputados', path: '/consignacion/resumenConsignacion', icon: <BarChart2 size={14} />, color: PALETA_MENU.rojo },
     ]
   },

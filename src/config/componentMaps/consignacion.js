@@ -377,6 +377,24 @@ export const consignacionComponentMaps = {
     },
   },
 
+  '/consignacion/solicitudModificacionesConsignacion': {
+    label: 'Solicitudes de modificaciones de Consignación (shared/solicitudModificaciones/SolicitudModificaciones.jsx) — sin configuración propia hereda el acceso de Solicitud',
+    sections: {
+      acciones: {
+        label: 'Sección: Pendientes',
+        elements: {
+          btn_exportar: { label: 'Acción: Descargar modificaciones' },
+        },
+      },
+      historial: {
+        label: 'Sección: Historial',
+        elements: {
+          btn_descargar_copia: { label: 'Acción: Descargar copia' },
+        },
+      },
+    },
+  },
+
   '/consignacion/solicitudConsignacion': {
     label: 'Solicitud de Consignación (SolicitudConsignacion.jsx) — sin granularidad cableada aún',
     sections: {

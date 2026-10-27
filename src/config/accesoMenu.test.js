@@ -87,4 +87,12 @@ describe('Solicitudes de modificaciones: hereda el acceso de Solicitud', () => {
       .toContain('/hemodinamia/solicitudModificacionesHemodinamia');
     expect(subItemsAsignables(MODULES.implantes).map((s) => s.path)).toContain(MOD);
   });
+
+  it('Consignación igual, con su propio ítem asignable', () => {
+    const MOD_CONS = '/consignacion/solicitudModificacionesConsignacion';
+    const cons = (u) => subItemsVisibles(u, 'consignacion').map((s) => s.path);
+    expect(cons({ rol: 'operador', permisos: { consignacion: ['/consignacion/solicitudConsignacion'] } })).toContain(MOD_CONS);
+    expect(cons({ rol: 'operador', permisos: { consignacion: ['/consignacion/cargasConsignacion'] } })).not.toContain(MOD_CONS);
+    expect(subItemsAsignables(MODULES.consignacion).map((s) => s.path)).toContain(MOD_CONS);
+  });
 });

@@ -11,11 +11,21 @@ import {
   fotoItems, diferenciasContraFoto, construirFilasModificaciones, libroModificaciones,
   nombreArchivoModificaciones, tituloModificaciones, textoPeriodoSolicitud
 } from './modificacionesSolicitud';
+import { CONFIG_MODIFICACIONES_CONSIGNACION } from '../../consignacion/utils/modificacionesConsignacion';
+
+// Consignación no es un módulo de Gestión (no está en MODULOS_GESTION):
+// trae su propia configuración con los mismos campos que usa esta pantalla.
+export const configModificaciones = (modulo) => (
+  modulo === CONFIG_MODIFICACIONES_CONSIGNACION.clave ? CONFIG_MODIFICACIONES_CONSIGNACION : moduloGestion(modulo)
+);
 
 // Historial de descargas de modificaciones (un documento por descarga, con
 // las filas exactas del archivo para poder volver a descargarlo igual).
 export const COLECCION_MODIFICACIONES_EXPORTADAS = 'modificaciones_exportadas';
 export const TAMANO_PAGINA_HISTORIAL = 10;
+
+// Opciones del Excel propias del módulo (por defecto, las de Implantes).
+export const opcionesFilas = (config) => (config.columnaNumeroExcel ? { columnaNumero: config.columnaNumeroExcel } : {});
 
 const fechaHoyISO = () => new Date().toISOString().slice(0, 10);
 const fechaHoyTexto = () => {
@@ -23,10 +33,11 @@ const fechaHoyTexto = () => {
   return `${d}-${m}-${y}`;
 };
 
-// Bloque de la pantalla a partir del documento de la gestión.
+// Bloque de la pantalla a partir del documento de la gestión (en
+// Consignación, del registro: un bloque de un solo ítem, ver config.itemsDe).
 const bloqueDesdeDoc = (config, document) => {
   const data = document.data();
-  const items = data.cotizaciones?.[0]?.items || [];
+  const items = config.itemsDe ? config.itemsDe(document.id, data) : (data.cotizaciones?.[0]?.items || []);
   const bloque = {
     id: document.id,
     refPath: document.ref.path,
@@ -38,8 +49,9 @@ const bloqueDesdeDoc = (config, document) => {
     fechaSolicitud: data.fechaSolicitud || null,
     solicitadoPor: data.solicitadoPor || '',
     periodo: data.periodo || '',
-    periodoSolicitudAnio: data.periodoSolicitudAnio || '',
-    periodoSolicitudMes: data.periodoSolicitudMes || '',
+    // Consignación guarda el período de la solicitud en periodoAnio/periodoMes.
+    periodoSolicitudAnio: data.periodoSolicitudAnio || (config.itemsDe ? data.periodoAnio : '') || '',
+    periodoSolicitudMes: data.periodoSolicitudMes || (config.itemsDe ? data.periodoMes : '') || '',
     numCotizacion: data.cotizaciones?.[0]?.numCotizacion || '',
     itemsSolicitados: data.itemsSolicitados || [],
     items,
@@ -59,12 +71,12 @@ const bloqueDesdeDoc = (config, document) => {
 
 /**
  * Solicitudes de modificaciones de un módulo de Gestión (Implantes,
- * Hemodinamia). Lecturas: UN listener solo sobre los bloques con
- * modificacionPendiente == true del módulo (rango de __name__, como la
- * Solicitud). El historial se lee recién al abrir su pestaña, paginado.
+ * Hemodinamia) o de Consignación. Lecturas: UN listener solo sobre los
+ * bloques con modificacionPendiente == true del módulo (rango de __name__,
+ * como la Solicitud). El historial se lee recién al abrir su pestaña, paginado.
  */
 export const useSolicitudModificacionesData = (modulo, { userData, showToast }) => {
-  const config = moduloGestion(modulo);
+  const config = configModificaciones(modulo);
   const { min, max } = rangoGestiones(config);
   const [bloques, setBloques] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -100,7 +112,7 @@ export const useSolicitudModificacionesData = (modulo, { userData, showToast }) 
     const elegidos = bloques.filter((b) => seleccion.has(b.refPath));
     if (!elegidos.length) return { ok: false };
     const fechaIngreso = fechaHoyTexto();
-    const filas = construirFilasModificaciones(elegidos, fechaIngreso);
+    const filas = construirFilasModificaciones(elegidos, fechaIngreso, opcionesFilas(config));
     if (!filas.length) return { ok: false };
 
     setExportando(true);
