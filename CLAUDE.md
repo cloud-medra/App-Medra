@@ -8,10 +8,12 @@
 - **Desplegar las Cloud Functions de a 2 o 3 por vez.** La cuota de CPU de Cloud Run en `us-central1` ("Total CPU allocation, per project per region") está al límite y no se pudo aumentar: un `firebase deploy --only functions` completo falla con `Quota exceeded for total allowable CPU per project per region`. Desplegar por tandas, esperando a que termine cada una antes de lanzar la siguiente:
 
   ```bash
-  npx firebase-tools deploy --only functions:funcionA,functions:funcionB,functions:funcionC --project workcraft-491b7
+  FUNCTIONS_DISCOVERY_TIMEOUT=90 npx firebase-tools deploy --only functions:funcionA,functions:funcionB,functions:funcionC --project workcraft-491b7
   ```
 
   Si una tanda falla por cuota, esperar unos minutos y reintentarla una vez; si vuelve a fallar, detenerse. Hacerlo de preferencia en horario de poco uso de la app.
+
+  `FUNCTIONS_DISCOVERY_TIMEOUT=90` (segundos) va siempre. Antes de desplegar, firebase-tools carga `functions/index.js` para ver qué Functions hay, y por defecto espera solo 10 s. En este equipo la carga tarda unos 25 s, así que sin la variable falla con `User code failed to load. Cannot determine backend specification. Timeout after 10000`. Ese error es por el tiempo de carga del código, **no por la cuota de CPU**: no hay que esperar ni contarlo como reintento por cuota; basta con correr el comando con la variable.
 
   No usar `npm run deploy`, porque despliega todas las Functions juntas y falla por la cuota de CPU. Desplegar siempre por tandas.
 
