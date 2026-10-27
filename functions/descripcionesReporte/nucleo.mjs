@@ -52,7 +52,9 @@ export const esFilaReporte = (ruta) => String(ruta).startsWith(`${RAIZ_REPORTE}/
 //   'oculta'    revisada y oculta en Implantes o en Documentos.
 //   'visible'   revisada y visible en los dos.
 // Las entradas anteriores a este campo (sin `pendienteDesde`) cuentan como
-// revisadas con su estado de siempre: no hubo migración.
+// revisadas con su estado de siempre: no hubo migración. A las revisadas,
+// notificacionesPendientes les quita `pendienteDesde` (para que su consulta
+// no crezca): quedan igual que las anteriores al campo.
 export const ESTADOS_DESCRIPCION = ['pendiente', 'visible', 'oculta'];
 export const esPendiente = (e) => Boolean(e?.pendienteDesde) && !e?.actualizadoEl;
 export const estadoDescripcion = (e) => {

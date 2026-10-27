@@ -4,8 +4,9 @@
 //
 // Lecturas por corrida de notificacionesPendientes: la configuración de
 // módulos activos, las 5 alertas agregadas y un count() por fuente (1
-// lectura por cada 1.000 documentos), más las descripciones creadas desde
-// que existe `pendienteDesde` (pocas). Los usuarios (destinatarios) solo se
+// lectura por cada 1.000 documentos), más las descripciones pendientes (las
+// revisadas pierden `pendienteDesde` en la corrida siguiente, así que no se
+// acumulan). Los usuarios (destinatarios) solo se
 // leen si la cantidad cambió o pasaron más de REFRESCAR_DESTINATARIOS_MS.
 
 const { FieldValue, FieldPath } = require('firebase-admin/firestore');
@@ -37,13 +38,28 @@ const CONTADORES = {
   // Ítems cargados (candidatos de Solicitud Consignación).
   solicitudConsignacion: (db) => contar(detallesDe(db, 'consignacion_registros').where('estado', '==', 'CARGADO')),
   // Pendiente = pendienteDesde sin actualizadoEl (esPendiente). Firestore no
-  // filtra por campo ausente: se leen las que tienen pendienteDesde (solo
-  // las creadas desde que existe el campo) y se filtra aquí.
+  // filtra por campo ausente: se leen las que tienen pendienteDesde y se
+  // filtra aquí. A las ya revisadas (con actualizadoEl) se les quita
+  // pendienteDesde, así la consulta solo trae las pendientes y no crece con
+  // el tiempo; quedan igual que las anteriores al campo (revisadas).
   descripciones: async (db) => {
     const snap = await db.collection(COLECCION_DESCRIPCIONES)
       .where('pendienteDesde', '!=', null).select('pendienteDesde', 'actualizadoEl').get();
-    return snap.docs.filter((d) => esPendiente(d.data())).length;
+    const revisadas = snap.docs.filter((d) => !esPendiente(d.data()));
+    await limpiarRevisadas(db, revisadas);
+    return snap.size - revisadas.length;
   },
+};
+
+// Quita pendienteDesde de descripciones ya revisadas (lotes de 400). El
+// trigger descripcionesReporteMaestro se dispara pero no hace nada: solo
+// recalcula filas si cambian los switches de ocultar.
+const limpiarRevisadas = async (db, docs) => {
+  for (let i = 0; i < docs.length; i += 400) {
+    const lote = db.batch();
+    docs.slice(i, i + 400).forEach((d) => lote.update(d.ref, { pendienteDesde: FieldValue.delete() }));
+    await lote.commit();
+  }
 };
 
 const datosDe = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));

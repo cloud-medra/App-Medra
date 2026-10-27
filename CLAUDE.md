@@ -16,6 +16,9 @@
   `FUNCTIONS_DISCOVERY_TIMEOUT=90` (segundos) va siempre. Antes de desplegar, firebase-tools carga `functions/index.js` para ver qué Functions hay, y por defecto espera solo 10 s. En este equipo la carga tarda unos 25 s, así que sin la variable falla con `User code failed to load. Cannot determine backend specification. Timeout after 10000`. Ese error es por el tiempo de carga del código, **no por la cuota de CPU**: no hay que esperar ni contarlo como reintento por cuota; basta con correr el comando con la variable.
 
   No usar `npm run deploy`, porque despliega todas las Functions juntas y falla por la cuota de CPU. Desplegar siempre por tandas.
+- **Verificar una Function desplegada leyendo Firestore, en modo solo lectura.** En este equipo `firebase functions:log` falla (`Failed to retrieve log entries from Google Cloud`) y `gcloud` no funciona porque falta Python.
+  - Lo que sí funciona es un script de Node temporal, con `firebase-admin` de `functions/node_modules` y las credenciales de aplicación de `%APPDATA%/gcloud/application_default_credentials.json`, que solo hace `get`/`getAll`/consultas sobre los documentos que la Function debió escribir (por ejemplo `alertas/pendientes_*`). Correrlo con `NODE_PATH=functions/node_modules` y `initializeApp({ projectId: 'workcraft-491b7' })`.
+  - Guardar el script fuera del repo (en `$TEMP`) y borrarlo al terminar. Sin escrituras: si hiciera falta corregir datos, avisar antes.
 
 ## Arquitectura
 
@@ -88,7 +91,7 @@ Medra: plataforma interna (SPA) para gestionar implantes, hemodinamia, consignac
   - Estado de cada descripción en `maestros_descripciones_reporte`: `estadoDescripcion` / `esPendiente` de `functions/descripcionesReporte/nucleo.mjs`.
   - **Pendiente:** tiene `pendienteDesde` y no tiene `actualizadoEl`. El trigger de fila pone `pendienteDesde` solo al crear una descripción nueva, y cualquier cambio desde la app (switch, "Marcar como revisada" u "Ocultar esta descripción" de Reporte Info) escribe `actualizadoEl` y la deja revisada.
   - Si no es pendiente, es **oculta** (`ocultaImplantes` u `ocultaDocumentos` en true) o **visible**. Las anteriores a `pendienteDesde` cuentan como revisadas; no hubo migración.
-  - Para notificaciones: una descripción pasó a pendiente cuando aparece `pendienteDesde` (creación del documento).
+  - Para notificaciones: una descripción pasó a pendiente cuando aparece `pendienteDesde` (creación del documento). En cada corrida, `notificacionesPendientes` quita `pendienteDesde` de las que ya tienen `actualizadoEl`, para que su consulta traiga solo las pendientes.
 - **Otras:**
   - `extraerGuiaDespacho`: OCR de una guía de despacho.
   - `eliminarDocumentoAdmision`: mueve el PDF a la papelera y registra la auditoría.

@@ -96,7 +96,7 @@ const crearDb = ({ conteos = {}, docs = {}, usuarios = USUARIOS, descripciones =
         lista = usuarios.filter((u) => filtros.every(([c, op, v]) => (op === '==' ? u[c] === v
           : c.startsWith('permisos.') ? (u.permisos?.[c.slice(9)] || []).includes(v) : (u[c] || []).includes(v))));
       } else if (nombre === 'maestros_descripciones_reporte') lista = descripciones;
-      return { docs: lista.map((u) => ({ id: u.id, data: () => u })) };
+      return { size: lista.length, docs: lista.map((u) => ({ id: u.id, data: () => u, ref: ref(`${nombre}/${u.id}`) })) };
     },
   });
   // Clave legible de un conteo: colección + filtro principal (sin documentId).
@@ -105,6 +105,13 @@ const crearDb = ({ conteos = {}, docs = {}, usuarios = USUARIOS, descripciones =
     collection: (nombre) => ({ ...consulta(nombre), doc: (id) => ref(`${nombre}/${id}`) }),
     collectionGroup: (nombre) => consulta(`grupo:${nombre}`),
     getAll: async (...refs) => Promise.all(refs.map((r) => r.get())),
+    batch: () => {
+      const ops = [];
+      return {
+        update: (r, d) => ops.push({ path: r.path, tipo: 'lote', datos: d }),
+        commit: async () => { escrituras.push(...ops); },
+      };
+    },
   };
   return { db, escrituras, consultasUsuarios, datos };
 };
@@ -125,6 +132,19 @@ describe('sincronizarPendientes', () => {
     expect(zonas.datos).toMatchObject({ estado: 'pendiente', destinatarios: ['dev1', 'op1'], noLeidas: ['dev1', 'op1'], titulo: '4 zonas por diagnóstico por revisar' });
     expect(escrituras.find((e) => e.path === `alertas/${idAlertaPendientes('solicitudImplantes')}`).datos.destinatarios).toEqual(['dev1', 'op1']);
     expect(escrituras.find((e) => e.path === `alertas/${idAlertaPendientes('descripciones')}`).datos.destinatarios).toEqual(['dev1', 'op2']);
+  });
+
+  it('a las descripciones ya revisadas les quita pendienteDesde (la consulta no crece)', async () => {
+    const { db, escrituras } = crearDb({
+      descripciones: [{ id: 'a', pendienteDesde: 't' }, { id: 'b', pendienteDesde: 't', actualizadoEl: 't2' }, { id: 'c', pendienteDesde: 't', actualizadoEl: 't3' }],
+    });
+    const r = await sincronizarPendientes(db);
+    expect(r.descripciones.cantidad).toBe(1);
+    const lote = escrituras.filter((e) => e.tipo === 'lote');
+    expect(lote.map((e) => e.path)).toEqual(['maestros_descripciones_reporte/b', 'maestros_descripciones_reporte/c']);
+    expect(Object.keys(lote[0].datos)).toEqual(['pendienteDesde']);
+    // FieldValue.delete(): borra el campo, no lo deja en null.
+    expect(lote[0].datos.pendienteDesde).not.toBeNull();
   });
 
   it('sin cambios en la cantidad (y destinatarios recientes) no lee usuarios ni escribe', async () => {
