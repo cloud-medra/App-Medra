@@ -5,6 +5,8 @@
 // varias gestiones, no encontrada, URL y permisos).
 // Descripciones ocultas: consulta por módulo, "Mostrar ocultas", contadores,
 // exportación, acción rápida y excepción de admisiones con gestión.
+// Columna "Gestión consignación": misma marca con la colección de
+// Consignación (oculta en los tests de Implantes para no mezclar badges).
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
@@ -14,6 +16,10 @@ const MARCAS = {
   200: { estado: 'gestionada', cantidad: 1, itemsPendientes: 2, gestiones: { [RUTA_200.replaceAll('/', '|')]: {} } },
   300: { estado: 'cargada', cantidad: 2, itemsPendientes: 0, gestiones: { 'a|1': {}, 'a|2': {} } },
   400: { estado: 'imputada', cantidad: 1, itemsPendientes: 0, gestiones: { 'b|1': {} } },
+};
+const MARCAS_CONSIGNACION = {
+  100: { estado: 'gestionada', cantidad: 2, itemsPendientes: 1 },
+  300: { estado: 'imputada', cantidad: 1, itemsPendientes: 0 },
 };
 // Gestiones (por ruta) del detalle: 200 tiene una; 300 dos; la de 400 ya no existe.
 const item = (id, extra = {}) => ({ id, codigo: `C-${id}`, cantidad: 1, recargoEncontrado: true, estadoCarga: 'PENDIENTE', totalItem: 0, ...extra });
@@ -50,6 +56,7 @@ const consultasRegistros = [];
 const lecturasDetalle = [];
 const escrituras = [];
 const lecturasMarcas = [];
+const lecturasMarcasConsignacion = [];
 const docs = (lista) => ({ docs: lista.map(({ id, ...d }) => ({ id, data: () => d })) });
 vi.mock('firebase/firestore', () => ({
   collection: (_db, ...ruta) => ruta.join('/'),
@@ -77,6 +84,11 @@ vi.mock('firebase/firestore', () => ({
       const ids = ref.filtros[0].valor;
       lecturasMarcas.push(ids);
       return docs(ids.filter((id) => MARCAS[id]).map((id) => ({ id, ...MARCAS[id] })));
+    }
+    if (ruta === 'admisiones_gestionadas_consignacion') {
+      const ids = ref.filtros[0].valor;
+      lecturasMarcasConsignacion.push(ids);
+      return docs(ids.filter((id) => MARCAS_CONSIGNACION[id]).map((id) => ({ id, ...MARCAS_CONSIGNACION[id] })));
     }
     throw new Error(`ruta inesperada ${ruta}`);
   },
@@ -106,8 +118,8 @@ vi.mock('../../../../../hooks/useColumnasPermitidas', () => ({
 const { default: ReportesInfo } = await import('./ReportesInfo');
 
 beforeEach(() => {
-  lecturasMarcas.length = 0; excel.filas = null; excel.archivo = null;
-  denegados = new Set(); columnasOcultas = new Set();
+  lecturasMarcas.length = 0; lecturasMarcasConsignacion.length = 0; excel.filas = null; excel.archivo = null;
+  denegados = new Set(); columnasOcultas = new Set(['gestionConsignacion']);
   consultasRegistros.length = 0; escrituras.length = 0; lecturasDetalle.length = 0;
   window.history.replaceState(null, '', '/');
   usuario = { uid: 'u1', rol: 'usuario', permisos: { implantes: ['/implantes/gestionImplantes', '/implantes/reportesInfo'] } };
@@ -187,6 +199,43 @@ describe('Reporte Info → Gestión implante', () => {
     usuario = { uid: 'u2', rol: 'usuario', permisos: { documentos: ['/documentos/reportesInfo'] } };
     await montar({ onAbrirGestionImplante: vi.fn() });
     expect(screen.queryByRole('button', { name: 'Ver el detalle de la gestión' })).toBeNull();
+  });
+});
+
+describe('Reporte Info → Gestión consignación', () => {
+  const estadosConsignacion = () => [...document.querySelectorAll('tbody tr')]
+    .map((tr) => tr.lastElementChild.querySelector('[data-estado]')?.dataset.estado);
+
+  it('columna aparte junto a la de implantes, leyendo solo las admisiones del mes', async () => {
+    columnasOcultas = new Set();
+    await montar();
+    const cabeceras = screen.getAllByRole('columnheader').map((h) => h.textContent);
+    expect(cabeceras.slice(-2)).toEqual(['Gestión implante', 'Gestión consignación']);
+    expect(estadosConsignacion()).toEqual(['gestionada', 'pendiente', 'imputada', 'imputada', 'pendiente']);
+    expect(lecturasMarcasConsignacion).toEqual([['100', '200', '300', '400']]);
+    const fila100 = screen.getAllByText('ANA')[0].closest('tr');
+    expect(fila100.lastElementChild.querySelector('[data-estado]').title).toMatch(/2 carga\(s\) en Consignación · faltan 1 carga/);
+    // Sin detalle en Consignación: el ícono sigue solo en la columna de implantes.
+    expect(screen.getAllByRole('button', { name: 'Ver el detalle de la gestión' })).toHaveLength(4);
+  });
+
+  it('filtra con su propio contador y exporta su estado al Excel', async () => {
+    columnasOcultas = new Set();
+    await montar();
+    const filtro = screen.getByLabelText('Filtrar por gestión consignación');
+    expect([...filtro.options].map((o) => o.textContent)).toEqual([
+      'Gestión consignación (Todas)', 'Pendiente (2 adm.)', 'Gestionada (1 adm.)', 'Cargada (0 adm.)', 'Imputada (1 adm.)',
+    ]);
+    fireEvent.change(filtro, { target: { value: 'imputada' } });
+    expect(estadosConsignacion()).toEqual(['imputada', 'imputada']);
+    fireEvent.click(screen.getByRole('button', { name: /Exportar Excel/ }));
+    expect(excel.filas[0]).toMatchObject({ 'Admisión': 300, 'Gestión implante': 'Cargada', 'Gestión consignación': 'Imputada', 'Cargas consignación': 1, 'Cargas pendientes': 0 });
+  });
+
+  it('sin la columna no lee las marcas de Consignación', async () => {
+    await montar();
+    expect(lecturasMarcasConsignacion).toEqual([]);
+    expect(screen.queryByLabelText('Filtrar por gestión consignación')).toBeNull();
   });
 });
 

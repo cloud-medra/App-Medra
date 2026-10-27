@@ -50,6 +50,7 @@ import DetalleGestionReporte from './DetalleGestionReporte';
 import { leerURL, urlCon } from './urlDetalle';
 import {
     cargarMarcas, claveAdmision, estadoDe, OPCIONES_GESTION, ETIQUETAS_ESTADO, CLASE_GESTION,
+    COLECCION_ADMISIONES_CONSIGNACION, tooltipMarcaConsignacion,
 } from './gestionImplante';
 import {
     CAMPO_OCULTA, NOMBRE_MODULO, moduloDeVista, normDeFila, cargarEntradas, conCampos, filasDeDescripcion, ocultarDescripcion,
@@ -101,6 +102,7 @@ const COLUMNAS = [
     { key: 'cantidad', label: 'Cant.', align: 'text-center', ancho: 60, min: 45 },
     { key: 'revisado', label: 'Revisado', align: 'text-center', ancho: 115, min: 95 },
     { key: 'gestionImplante', label: 'Gestión implante', align: 'text-center', ancho: 125, min: 100 },
+    { key: 'gestionConsignacion', label: 'Gestión consignación', align: 'text-center', ancho: 135, min: 100 },
 ];
 
 // `pathVista`: la misma pantalla se monta en Documentos y en Implantes; cada
@@ -143,6 +145,9 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
     // admisiones del mes en pantalla; '' = todas.
     const [marcas, setMarcas] = useState({});
     const [filtroGestion, setFiltroGestion] = useState('');
+    // "Gestión consignación": lo mismo con la marca de Consignación.
+    const [marcasConsignacion, setMarcasConsignacion] = useState({});
+    const [filtroGestionConsignacion, setFiltroGestionConsignacion] = useState('');
     const [pagina, setPagina] = useState(1);
     const [tamanoPagina, setTamanoPagina] = useState(25);
     // Filas con descripción oculta en este módulo: cantidad del mes, filas
@@ -289,6 +294,16 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
         return () => { activo = false; };
     }, [admisionesMes]);
     const marcaDe = useCallback((r) => marcas[claveAdmision(r["Admisión"])] || null, [marcas]);
+    // Consignación: solo si el usuario ve su columna (si no, 0 lecturas).
+    const verGestionConsignacion = ver('gestionConsignacion');
+    useEffect(() => {
+        let activo = true;
+        cargarMarcas(verGestionConsignacion && admisionesMes ? admisionesMes.split(',') : [], COLECCION_ADMISIONES_CONSIGNACION)
+            .then(m => { if (activo) setMarcasConsignacion(m); })
+            .catch(err => { console.error("Error al cargar la gestión de consignación:", err); if (activo) setMarcasConsignacion({}); });
+        return () => { activo = false; };
+    }, [admisionesMes, verGestionConsignacion]);
+    const marcaConsignacionDe = useCallback((r) => marcasConsignacion[claveAdmision(r["Admisión"])] || null, [marcasConsignacion]);
 
     const abrirDetalle = useCallback((item) => {
         const admision = claveAdmision(item["Admisión"]);
@@ -527,6 +542,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
             if (filtroRevisado && (r._oculta || getRevisado(r) !== filtroRevisado)) return false;
             if (aranceles.size > 0 && !aranceles.has(getArancel(r))) return false;
             if (filtroGestion && estadoDe(marcaDe(r)) !== filtroGestion) return false;
+            if (filtroGestionConsignacion && estadoDe(marcaConsignacionDe(r)) !== filtroGestionConsignacion) return false;
             return (
                 incluyeTexto(r["Admisión"], busquedaDebounced) ||
                 incluyeTexto(r["Paciente"], busquedaDebounced) ||
@@ -536,7 +552,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                 incluyeTexto(r["Arancel"], busquedaDebounced)
             );
         });
-    }, [filasPantalla, filtroDia, filtroRevisado, filtroAranceles, filtroGestion, marcaDe, busquedaDebounced]);
+    }, [filasPantalla, filtroDia, filtroRevisado, filtroAranceles, filtroGestion, marcaDe, filtroGestionConsignacion, marcaConsignacionDe, busquedaDebounced]);
 
     // Admisiones distintas del mes por estado de gestión (contador del
     // filtro). Solo filas visibles: las ocultas no cuentan.
@@ -548,6 +564,14 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
         });
         return [...porAdmision.values()].reduce((acc, e) => ({ ...acc, [e]: (acc[e] || 0) + 1 }), {});
     }, [reportes, marcas]);
+    const conteoGestionConsignacion = useMemo(() => {
+        const porAdmision = new Map();
+        reportes.forEach(r => {
+            const clave = claveAdmision(r["Admisión"]);
+            if (clave) porAdmision.set(clave, estadoDe(marcasConsignacion[clave]));
+        });
+        return [...porAdmision.values()].reduce((acc, e) => ({ ...acc, [e]: (acc[e] || 0) + 1 }), {});
+    }, [reportes, marcasConsignacion]);
 
     // Excel: lo filtrado (todas las páginas), con las columnas que el usuario ve.
     const exportarExcel = () => {
@@ -569,6 +593,12 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                 fila['Gestión implante'] = ETIQUETAS_ESTADO[estadoDe(marca)];
                 fila['Gestiones'] = marca?.cantidad ?? 0;
                 fila['Ítems pendientes'] = marca ? marca.itemsPendientes : '';
+            }
+            if (ver('gestionConsignacion')) {
+                const marcaCons = marcaConsignacionDe(r);
+                fila['Gestión consignación'] = ETIQUETAS_ESTADO[estadoDe(marcaCons)];
+                fila['Cargas consignación'] = marcaCons?.cantidad ?? 0;
+                fila['Cargas pendientes'] = marcaCons ? marcaCons.itemsPendientes : '';
             }
             // Las ocultas solo se exportan con "Mostrar ocultas" activo.
             if (mostrarOcultas) fila['Oculta'] = r._oculta ? 'Sí' : '';
@@ -758,6 +788,18 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                     </select>
                 )}
 
+                {ver('gestionConsignacion') && (
+                    <select
+                        value={filtroGestionConsignacion}
+                        onChange={(e) => conResetPagina(setFiltroGestionConsignacion)(e.target.value)}
+                        aria-label="Filtrar por gestión consignación"
+                        className={`h-6 border rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2] ${filtroGestionConsignacion ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 font-semibold' : 'border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100'}`}
+                    >
+                        <option value="">Gestión consignación (Todas)</option>
+                        {OPCIONES_GESTION.map(o => <option key={o} value={o}>{ETIQUETAS_ESTADO[o]} ({conteoGestionConsignacion[o] || 0} adm.)</option>)}
+                    </select>
+                )}
+
                 <MultiSelectFiltro
                     opciones={opcionesArancel}
                     seleccionados={filtroAranceles}
@@ -902,6 +944,11 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                                         {ver('gestionImplante') && (
                                           <td className="px-1.5 py-0.5 border-b border-slate-200/60 dark:border-gray-700/70 text-center">
                                               <BadgeGestionImplante marca={marcaDe(item)} onAbrir={puedeVerGestiones ? () => abrirDetalle(item) : undefined} />
+                                          </td>
+                                        )}
+                                        {ver('gestionConsignacion') && (
+                                          <td className="px-1.5 py-0.5 border-b border-slate-200/60 dark:border-gray-700/70 text-center">
+                                              <BadgeGestionImplante marca={marcaConsignacionDe(item)} tooltip={tooltipMarcaConsignacion} />
                                           </td>
                                         )}
                                     </tr>

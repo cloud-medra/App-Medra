@@ -1,13 +1,15 @@
 // Reporte Info → columna "Gestión implante": la marca de cada admisión
 // (admisiones_gestionadas_implantes, la mantiene functions/admisiones). Se
 // lee solo para las admisiones del mes en pantalla, en lotes de 30.
+// Columna "Gestión consignación": la misma marca para Consignación
+// (admisiones_gestionadas_consignacion), con los mismos estados.
 import { collection, doc, documentId, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../../../../../firebaseConfig';
 import {
-  COLECCION_ADMISIONES, ESTADOS_ADMISION, ETIQUETAS_ESTADO, rutaDeClave, resumenGestion, agregarAdmision,
+  COLECCION_ADMISIONES, COLECCION_ADMISIONES_CONSIGNACION, ESTADOS_ADMISION, ETIQUETAS_ESTADO, rutaDeClave, resumenGestion, agregarAdmision,
 } from '../../../../../../functions/admisiones/nucleo.mjs';
 
-export { ESTADOS_ADMISION, ETIQUETAS_ESTADO };
+export { ESTADOS_ADMISION, ETIQUETAS_ESTADO, COLECCION_ADMISIONES_CONSIGNACION };
 export const OPCIONES_GESTION = [ESTADOS_ADMISION.PENDIENTE, ESTADOS_ADMISION.GESTIONADA, ESTADOS_ADMISION.CARGADA, ESTADOS_ADMISION.IMPUTADA];
 
 export const claveAdmision = (valor) => {
@@ -16,12 +18,12 @@ export const claveAdmision = (valor) => {
 };
 
 // { [admisión]: marca } de las admisiones dadas (las que no tienen marca no
-// aparecen: están "Pendiente").
-export const cargarMarcas = async (admisiones) => {
+// aparecen: están "Pendiente"). `coleccion`: la de Implantes por defecto.
+export const cargarMarcas = async (admisiones, coleccion = COLECCION_ADMISIONES) => {
   const ids = [...new Set(admisiones.map(claveAdmision).filter(Boolean))];
   const marcas = {};
   for (let i = 0; i < ids.length; i += 30) {
-    const snap = await getDocs(query(collection(db, COLECCION_ADMISIONES), where(documentId(), 'in', ids.slice(i, i + 30))));
+    const snap = await getDocs(query(collection(db, coleccion), where(documentId(), 'in', ids.slice(i, i + 30))));
     snap.docs.forEach((d) => { marcas[d.id] = d.data(); });
   }
   return marcas;
@@ -41,6 +43,17 @@ export const tooltipMarca = (marca) => {
   if (marca.estado === ESTADOS_ADMISION.GESTIONADA) partes.push(`faltan ${marca.itemsPendientes} ítem(s) por cargar`);
   if (marca.estado === ESTADOS_ADMISION.CARGADA) partes.push('todos los ítems cargados');
   if (marca.estado === ESTADOS_ADMISION.IMPUTADA) partes.push(marca.itemsPendientes ? `imputada · ${marca.itemsPendientes} ítem(s) sin cargar` : 'imputada');
+  return partes.join(' · ');
+};
+
+// En Consignación cada registro es una carga (un ítem).
+export const tooltipMarcaConsignacion = (marca) => {
+  if (!marca) return 'Sin registros en Consignación';
+  const partes = [`${marca.cantidad} carga(s) en Consignación`];
+  if (marca.primeraFechaGestion) partes.push(`desde ${fecha(marca.primeraFechaGestion)}`);
+  if (marca.estado === ESTADOS_ADMISION.GESTIONADA) partes.push(`faltan ${marca.itemsPendientes} carga(s) por marcar CARGADO`);
+  if (marca.estado === ESTADOS_ADMISION.CARGADA) partes.push('todas las cargas en CARGADO');
+  if (marca.estado === ESTADOS_ADMISION.IMPUTADA) partes.push(marca.itemsPendientes ? `imputada · ${marca.itemsPendientes} carga(s) sin cargar` : 'imputada');
   return partes.join(' · ');
 };
 

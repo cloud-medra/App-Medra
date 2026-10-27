@@ -10,8 +10,14 @@
 //   gestionada                  → tiene gestión, faltan ítems por cargar
 //   cargada                     → todos los ítems en "CARGADO"
 //   imputada                    → algún bloque solicitado / imputado
+//
+// admisiones_gestionadas_consignacion/{admisión}: lo mismo para
+// Consignación, con un resumen por registro (consignacion_registros/…/
+// detalles, una carga = un ítem): cargada si todas están en "CARGADO",
+// imputada si alguna está "SOLICITADO".
 
 export const COLECCION_ADMISIONES = 'admisiones_gestionadas_implantes';
+export const COLECCION_ADMISIONES_CONSIGNACION = 'admisiones_gestionadas_consignacion';
 
 export const ESTADOS_ADMISION = Object.freeze({
   PENDIENTE: 'pendiente',
@@ -46,6 +52,26 @@ export const resumenGestion = (gestion) => {
     fecha: gestion?.fecha || null,
   };
 };
+
+// Resumen de UN registro de Consignación (mismos campos que resumenGestion,
+// así agregarAdmision calcula el estado igual). Un registro SOLICITADO ya
+// estuvo cargado: no cuenta como pendiente.
+export const resumenRegistroConsignacion = (registro) => {
+  const estado = String(registro?.estado || '').toUpperCase();
+  return {
+    items: 1,
+    pendientes: estado === 'CARGADO' || estado === 'SOLICITADO' ? 0 : 1,
+    imputada: estado === 'SOLICITADO',
+    fecha: registro?.fecha || null,
+  };
+};
+
+// Cada módulo con marca por admisión: colección de la marca, colección
+// origen (sus documentos `detalles`) y cómo se resume cada documento.
+export const MARCAS_ADMISION = Object.freeze({
+  implantes: { coleccion: COLECCION_ADMISIONES, origen: 'implantes_gestiones', resumen: resumenGestion },
+  consignacion: { coleccion: COLECCION_ADMISIONES_CONSIGNACION, origen: 'consignacion_registros', resumen: resumenRegistroConsignacion },
+});
 
 // Estado agregado de la admisión a partir de los resúmenes de sus gestiones
 // ({ clave: resumen }).

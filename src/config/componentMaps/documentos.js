@@ -9,7 +9,7 @@ export const mapaReportesInfo = {
       label: 'Sección: Encabezado',
       elements: {
         btn_importar: { label: 'Acción: Importar reporte' },
-        btn_exportar: { label: 'Acción: Exportar a Excel (lo filtrado, con "Gestión implante")' },
+        btn_exportar: { label: 'Acción: Exportar a Excel (lo filtrado, con "Gestión implante" y "Gestión consignación")' },
       },
     },
     tabla_registros: {
@@ -19,6 +19,7 @@ export const mapaReportesInfo = {
         ['codArt', 'Cod.Art.'], ['descripcion', 'Descripción'], ['arancel', 'Arancel'],
         ['prevision', 'Previsión / Isapre'], ['cirujano', 'Cirujano'], ['cantidad', 'Cant.'], ['revisado', 'Revisado'],
         ['gestionImplante', 'Gestión implante (Pendiente / Gestionada / Cargada / Imputada)'],
+        ['gestionConsignacion', 'Gestión consignación (Pendiente / Gestionada / Cargada / Imputada)'],
       ]),
     },
     filas_ocultas: {

@@ -870,6 +870,11 @@ service cloud.firestore {
       allow read: if estaActivo();
       allow write: if false;
     }
+    // "Gestión consignación": la misma marca para Consignación.
+    match /admisiones_gestionadas_consignacion/{admision} {
+      allow read: if estaActivo();
+      allow write: if false;
+    }
 
     // Reporte Info → Maestro "Descripciones ocultas": las entradas y el
     // contador de filas los mantienen la Cloud Function y el script
