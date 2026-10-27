@@ -32,7 +32,7 @@ import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROL
 import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, colorEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
 import CuadritoIcono from '../components/ui/CuadritoIcono';
 import { entradasDelSidebar, itemsDelSidebar } from '../config/menuSidebar';
-import { codigoEntrada, ENTRADA_AJUSTES } from '../config/codigosModulos';
+import { codigoEntrada, codigoItem, ENTRADA_AJUSTES } from '../config/codigosModulos';
 import { vistaDeModulo, leerModuloDeURL } from '../config/vistaModulo';
 import { useHistorialVistaModulo } from '../hooks/useHistorialVistaModulo';
 import AccesoRapidoModulo from '../components/modulos/general/accesoModulo/AccesoRapidoModulo';
@@ -243,7 +243,7 @@ const TituloSidebar = ({ cuadrito, texto, codigo, colapsado, onClick, activo = f
   );
 };
 
-// Código corto del módulo (config/codigosModulos.js), junto a su nombre.
+// Código corto del módulo o del ítem (config/codigosModulos.js), junto a su nombre.
 const CodigoModulo = ({ codigo }) => (
   <span className="shrink-0 text-[9.5px] font-semibold tracking-wide text-gray-400 dark:text-gray-500" aria-label={`código ${codigo}`}>{codigo}</span>
 );
@@ -945,6 +945,7 @@ const Dashboard = () => {
                     <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                       {item.label}
                     </span>
+                    {!colapsado && codigoItem(item.path) && <CodigoModulo codigo={codigoItem(item.path)} />}
                     {item.path === RUTA_AYUDA_SOPORTE && novedadesTickets && !colapsado && <PuntoAviso className="ml-auto shrink-0" />}
                   </button>
                 ))}
@@ -1007,6 +1008,7 @@ const Dashboard = () => {
                       <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                         {sub.label}
                       </span>
+                      {!colapsado && codigoItem(sub.path) && <CodigoModulo codigo={codigoItem(sub.path)} />}
                       {sub.path === RUTA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
                       {sub.path === RUTA_GESTION_TICKETS && !colapsado && <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />}
                       {!colapsado && <Contador n={pendientesLaboratorio[sub.path] ?? 0} etiqueta="documentos por procesar" tope={100} />}
