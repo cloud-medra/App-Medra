@@ -2,7 +2,7 @@ import React from 'react';
 import { MODULES } from '../../../../../config/modulesConfig.jsx';
 import { LayoutGrid, CheckCircle2 } from 'lucide-react';
 import CuadritoIcono from '../../../../ui/CuadritoIcono';
-import { esDesarrollador } from '../../../../../config/accesoMenu';
+import { esDesarrollador, tieneItemAsignado } from '../../../../../config/accesoMenu';
 
 // Vista de solo lectura: muestra, para el usuario logueado, qué módulos y
 // qué ítems dentro de cada uno tiene habilitados (según userData.permisos).
@@ -44,8 +44,10 @@ const ModulosVisibles = ({ userData }) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {modulosConAcceso.map(([moduloKey, modulo]) => {
+              // Mismo criterio de asignación que el sidebar (incluye los
+              // ítems heredados y las ex pestañas de Control Procesos).
               const itemsHabilitados = modulo.subItems.filter((sub) =>
-                permisos[moduloKey]?.includes(sub.path)
+                tieneItemAsignado(userData, moduloKey, sub)
               );
 
               return (

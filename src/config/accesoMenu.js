@@ -13,6 +13,10 @@ import { itemActivo } from './modulosActivos';
 //     el Desarrollador; tampoco se asignan.
 //   - Ítems `heredaDe: <ruta>` (Solicitudes de modificaciones): los ve
 //     también quien tiene esa otra ruta, aunque no los tenga asignados.
+//   - Ítems `pestanaDe: { path }` (ex pestañas de Control Procesos, ver
+//     config/pestanasControlProcesos.js): los ve quien tiene el contenedor
+//     (`pestanaDe.path`) en sus permisos y la ruta del ítem en
+//     permisosGranulares, igual que antes se veía la pestaña.
 // `activos` (config/modulosActivos.js): los módulos/ítems inactivos no los
 // ve nadie, tampoco el Desarrollador. Sin `activos`, todo activo.
 
@@ -20,15 +24,23 @@ export const esDesarrollador = (userData) => esDesarrolladorActivo(userData);
 // Rol Administrador o Desarrollador (activo).
 export const esAdministrador = (userData) => esAdministradorActivo(userData);
 
-export const subItemsVisibles = (userData, moduloKey, activos) => {
+// ¿El ítem está entre lo asignado al usuario (sin contar rol ni activos)?
+export const tieneItemAsignado = (userData, moduloKey, s) => {
   const permitidos = userData?.permisos?.[moduloKey] || [];
+  if (s.pestanaDe) {
+    return permitidos.includes(s.pestanaDe.path) && Boolean(userData?.permisosGranulares?.[s.path]);
+  }
+  return permitidos.includes(s.path) || Boolean(s.heredaDe && permitidos.includes(s.heredaDe));
+};
+
+export const subItemsVisibles = (userData, moduloKey, activos) => {
   const subItems = (MODULES[moduloKey]?.subItems || []).filter((s) => itemActivo(activos, moduloKey, s.path));
   if (esDesarrollador(userData)) return subItems;
   const admin = esAdministrador(userData);
   return subItems.filter((s) => {
     if (s.soloDesarrollador) return false;
     if (s.automaticoAdministradores) return admin;
-    return permitidos.includes(s.path) || Boolean(s.heredaDe && permitidos.includes(s.heredaDe));
+    return tieneItemAsignado(userData, moduloKey, s);
   });
 };
 
@@ -46,6 +58,14 @@ export const puedeAbrirVista = (userData, ruta) => {
 };
 
 // Ítems que se pueden asignar en el editor de permisos (sin los automáticos
-// ni los de solo Desarrollador).
+// ni los de solo Desarrollador). Los ítems `pestanaDe` se asignan juntos
+// como su contenedor ("Control Procesos", con sus pestañas en `procesos`
+// del componentMap), en el lugar del primero: así el editor y lo que guarda
+// en Firestore siguen exactamente como antes.
 export const subItemsAsignables = (modulo) => (modulo.subItems || [])
-  .filter((s) => !s.automaticoAdministradores && !s.soloDesarrollador);
+  .filter((s) => !s.automaticoAdministradores && !s.soloDesarrollador)
+  .flatMap((s, i, lista) => {
+    if (!s.pestanaDe) return [s];
+    const primero = lista.findIndex((o) => o.pestanaDe?.path === s.pestanaDe.path) === i;
+    return primero ? [s.pestanaDe] : [];
+  });

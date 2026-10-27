@@ -1,5 +1,6 @@
 import { MODULES } from './modulesConfig.jsx';
 import { subItemsVisibles } from './accesoMenu';
+import { expandirContenedores } from './pestanasControlProcesos.js';
 import { entradasMenu, itemsDeEntrada, moduloDeEntrada, MODULO_AGRUPADO } from './gruposMenu.jsx';
 
 // Qué muestra el sidebar del Dashboard a un usuario: módulos (y grupos de
@@ -25,12 +26,14 @@ export const modulosDelSidebar = (userData, activos) => {
 };
 
 // Ítems de una entrada (módulo o grupo) en el orden de
-// userData.ordenSubItems del módulo dueño.
+// userData.ordenSubItems del módulo dueño. Un "Control Procesos" guardado
+// en el orden se reemplaza, en su lugar, por sus ítems
+// (config/pestanasControlProcesos.js).
 export const itemsDelSidebar = (userData, entrada, activos) => {
   const moduleKey = moduloDeEntrada(entrada);
   const visibles = subItemsVisibles(userData, moduleKey, activos);
-  const ordenGuardado = userData?.ordenSubItems?.[moduleKey];
-  if (!ordenGuardado || !ordenGuardado.length) return itemsDeEntrada(entrada, visibles);
+  const ordenGuardado = expandirContenedores(userData?.ordenSubItems?.[moduleKey] || []);
+  if (!ordenGuardado.length) return itemsDeEntrada(entrada, visibles);
   const ordenados = ordenGuardado
     .map((path) => visibles.find((s) => s.path === path))
     .filter(Boolean);

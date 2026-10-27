@@ -42,7 +42,9 @@ export const vacunatorioComponentMaps = {
   '/vacunatorio/xmlDocVacunatorio': mapaXml('Vacunatorio'),
 
   // Orquestador "Control de Procesos": cada una de las 8 pestañas es un
-  // `proceso` con sus propias secciones (ver controlProcesos.js).
+  // `proceso` con sus propias secciones (ver controlProcesos.js). En el menú
+  // cada pestaña es un ítem propio, pero se siguen asignando acá
+  // (config/pestanasControlProcesos.js).
   '/vacunatorio/archivosControlVacunatorio': {
     label: 'Control de Procesos de Documentos (ArchivosControlVacunatorio.jsx) — permisos por pestaña',
     sections: {},

@@ -76,8 +76,14 @@ import {
   PersonStanding,
   EyeOff,
   ToggleRight,
-  Inbox
+  Inbox,
+  Link2,
+  AlertTriangle,
+  CheckSquare,
+  CheckCircle2,
+  Edit3
 } from "lucide-react";
+import { FASES_CONTROL_PROCESOS, CONTENEDORES_PESTANAS } from './pestanasControlProcesos.js';
 
 // Paleta de colores del menú. Cada módulo y cada ítem tiene su `color` acá
 // (y los grupos del sidebar en config/gruposMenu.jsx): el ícono va en un
@@ -100,6 +106,33 @@ export const PALETA_MENU = {
 };
 
 export const COLOR_MENU_POR_DEFECTO = PALETA_MENU.pizarra;
+
+// Ítems que antes eran las pestañas de "Control Procesos" (ver
+// config/pestanasControlProcesos.js): misma ruta que la pestaña y
+// `pestanaDe` = el contenedor, que es lo que se sigue asignando en el editor
+// de permisos (con el label, ícono y color que tenía el ítem).
+const ICONOS_FASES = {
+  documentosRecibidos: Inbox,
+  iniciarProcesos: FileText,
+  vinculacionCodigos: Tags,
+  vinculacionOrdenes: Link2,
+  solicitudDiferencias: AlertTriangle,
+  documentosListos: CheckSquare,
+  documentosImputados: CheckCircle2,
+  documentosEdicion: Edit3,
+};
+const itemsControlProcesos = (rutaContenedor, colorContenedor, colores) => {
+  const pestanaDe = {
+    path: rutaContenedor,
+    label: CONTENEDORES_PESTANAS[rutaContenedor].label,
+    icon: <FileSpreadsheet size={14} />,
+    color: colorContenedor,
+  };
+  return FASES_CONTROL_PROCESOS.map(({ clave, label }, i) => {
+    const Icono = ICONOS_FASES[clave];
+    return { label, path: `${rutaContenedor}/${clave}`, icon: <Icono size={14} />, color: colores[i], pestanaDe };
+  });
+};
 
 export const MODULES = {
   dashboard: {
@@ -151,7 +184,10 @@ export const MODULES = {
       { label: 'Maestro Códigos', path: '/laboratorio/codigoLaboratorio', icon: <BadgeInfo size={14} />, color: PALETA_MENU.indigo },
       { label: 'Ordenes', path: '/laboratorio/ordenLaboratorio', icon: <ClipboardList size={14} />, color: PALETA_MENU.rojo },
       { label: 'Xml Documentos', path: '/laboratorio/xmlDocLaboratorio', icon: <FileCode size={14} />, color: PALETA_MENU.cafe },
-      { label: 'Control Procesos', path: '/laboratorio/archivosControlLaboratorio', icon: <FileSpreadsheet size={14} />, color: PALETA_MENU.pizarra },
+      ...itemsControlProcesos('/laboratorio/archivosControlLaboratorio', PALETA_MENU.pizarra, [
+        PALETA_MENU.pizarra, PALETA_MENU.azul, PALETA_MENU.ambar, PALETA_MENU.violeta,
+        PALETA_MENU.frambuesa, PALETA_MENU.verde, PALETA_MENU.turquesa, PALETA_MENU.indigo,
+      ]),
     ]
   },
   vacunatorio: {
@@ -163,7 +199,10 @@ export const MODULES = {
       { label: 'Maestro Códigos', path: '/vacunatorio/codigoVacunatorio', icon: <BadgeInfo size={14} />, color: PALETA_MENU.pasto },
       { label: 'Ordenes', path: '/vacunatorio/ordenVacunatorio', icon: <ClipboardList size={14} />, color: PALETA_MENU.indigo },
       { label: 'Xml Documentos', path: '/vacunatorio/xmlDocVacunatorio', icon: <FileCode size={14} />, color: PALETA_MENU.rojo },
-      { label: 'Control Procesos', path: '/vacunatorio/archivosControlVacunatorio', icon: <FileSpreadsheet size={14} />, color: PALETA_MENU.cafe },
+      ...itemsControlProcesos('/vacunatorio/archivosControlVacunatorio', PALETA_MENU.cafe, [
+        PALETA_MENU.cafe, PALETA_MENU.azul, PALETA_MENU.ambar, PALETA_MENU.violeta,
+        PALETA_MENU.frambuesa, PALETA_MENU.verde, PALETA_MENU.pizarra, PALETA_MENU.pasto,
+      ]),
     ]
   },
   maestros: {

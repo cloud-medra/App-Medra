@@ -1,4 +1,5 @@
 import { GRUPOS_MENU } from './gruposMenu.jsx';
+import { redireccionContenedor } from './pestanasControlProcesos.js';
 
 // Atajos del widget "Accesos rápidos" del Dashboard (AtajosCard.jsx).
 //
@@ -24,15 +25,19 @@ export const ATAJOS_POR_DEFECTO = [
 // Mismo criterio de permisos que el sidebar (Dashboard.jsx →
 // getSubItemsOrdenados): el ítem tiene que estar en permisos[modulo]. El
 // nombre del módulo es el del grupo del sidebar si el ítem tiene uno
-// (Finanzas, Usuarios y accesos; ver config/gruposMenu.jsx).
+// (Finanzas, Usuarios y accesos; ver config/gruposMenu.jsx). Los ítems
+// `pestanaDe` se permiten con el contenedor en permisos
+// (config/pestanasControlProcesos.js; si falta la pestaña en
+// permisosGranulares, la vista muestra "Acceso insuficiente").
 export const resolverAtajos = (atajos, modulos, permisos) =>
-  atajos.flatMap((atajo) => {
+  atajos.flatMap(({ path, ...atajo }) => {
     const modulo = modulos[atajo.modulo];
-    const item = modulo?.subItems?.find((s) => s.path === atajo.path);
-    if (!item || !(permisos?.[atajo.modulo] || []).includes(atajo.path)) return [];
+    const item = modulo?.subItems?.find((s) => s.path === path);
+    const permitidos = permisos?.[atajo.modulo] || [];
+    if (!item || !(permitidos.includes(path) || permitidos.includes(item.pestanaDe?.path))) return [];
     return [{
       modulo: atajo.modulo,
-      path: atajo.path,
+      path,
       label: atajo.label || item.label,
       moduloLabel: GRUPOS_MENU[item.grupo]?.label || modulo.label,
       icon: atajo.icon || item.icon || modulo.icon,
@@ -48,12 +53,13 @@ const mismoAtajo = (a, b) => a.modulo === b.modulo && a.path === b.path;
 
 // Lista guardada en Firestore -> [{ modulo, path }] válida y sin repetidos.
 // Sin documento (o con un formato inesperado) se usan los atajos por defecto;
-// una lista vacía guardada a propósito se respeta.
+// una lista vacía guardada a propósito se respeta. Un atajo guardado a
+// "Control Procesos" pasa a su primer ítem (config/pestanasControlProcesos.js).
 export const normalizarAtajosGuardados = (data) => {
   if (!Array.isArray(data?.atajos)) return ATAJOS_POR_DEFECTO;
   return data.atajos.reduce((acc, a) => {
     if (typeof a?.modulo !== 'string' || typeof a?.path !== 'string') return acc;
-    const atajo = { modulo: a.modulo, path: a.path };
+    const atajo = { modulo: a.modulo, path: redireccionContenedor(a.path) || a.path };
     if (!acc.some((x) => mismoAtajo(x, atajo))) acc.push(atajo);
     return acc;
   }, []);

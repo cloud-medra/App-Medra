@@ -58,7 +58,9 @@ export const laboratorioComponentMaps = {
   '/laboratorio/xmlDocLaboratorio': mapaXml('Laboratorio'),
 
   // Orquestador "Control de Procesos": cada una de las 8 pestañas es un
-  // `proceso` con sus propias secciones (ver controlProcesos.js).
+  // `proceso` con sus propias secciones (ver controlProcesos.js). En el menú
+  // cada pestaña es un ítem propio, pero se siguen asignando acá
+  // (config/pestanasControlProcesos.js).
   '/laboratorio/archivosControlLaboratorio': {
     label: 'Control de Procesos de Documentos (ArchivosControlLaboratorio.jsx) — permisos por pestaña',
     sections: {},

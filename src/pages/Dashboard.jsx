@@ -42,6 +42,7 @@ import { vistaInicialDesdeURL } from '../components/modulos/operaciones/document
 import { puedeConfigurarAtajos } from '../config/atajosDashboard';
 import { vistaActiva, itemDeRuta, RUTA_GESTION_MODULOS } from '../config/modulosActivos';
 import { useModulosActivos } from '../stores/modulosActivosStore';
+import { CONTENEDORES_PESTANAS, esContenedor, redireccionContenedor } from '../config/pestanasControlProcesos';
 
 // --- DASHBOARD ---
 import ResumenGeneral from '../components/modulos/dashboard/ResumenGeneral';
@@ -64,14 +65,14 @@ import EmpresasLaboratorio from '../components/modulos/gestiones/laboratorio/reg
 import CodigoLaboratorio from '../components/modulos/gestiones/laboratorio/registros/CodigoLaboratorio';
 import OrdenLaboratorio from '../components/modulos/gestiones/laboratorio/importaciones/OrdenLaboratorio';
 import XmlDocLaboratorio from '../components/modulos/gestiones/laboratorio/importaciones/XmlDocLaboratorio';
-import ArchivosControlLaboratorio from '../components/modulos/gestiones/laboratorio/procesos/ArchivosControlLaboratorio';
+import { vistasControlLaboratorio } from '../components/modulos/gestiones/laboratorio/procesos/ArchivosControlLaboratorio';
 
 // --- VACUNATORIO ---
 import EmpresasVacunatorio from '../components/modulos/gestiones/vacunatorio/registros/EmpresasVacunatorio';
 import CodigoVacunatorio from '../components/modulos/gestiones/vacunatorio/registros/CodigoVacunatorio';
 import OrdenVacunatorio from '../components/modulos/gestiones/vacunatorio/importaciones/OrdenVacunatorio';
 import XmlDocVacunatorio from '../components/modulos/gestiones/vacunatorio/importaciones/XmlDocVacunatorio';
-import ArchivosControlVacunatorio from '../components/modulos/gestiones/vacunatorio/procesos/ArchivosControlVacunatorio';
+import { vistasControlVacunatorio } from '../components/modulos/gestiones/vacunatorio/procesos/ArchivosControlVacunatorio';
 
 // --- MAESTROS ---
 import EmpresasMaestros from '../components/modulos/maestros/empresasMaestros/EmpresasMaestros';
@@ -297,6 +298,15 @@ const Dashboard = () => {
   // Se avisa durante el render y no en un efecto: los efectos de la pantalla
   // hija corren ANTES que los del Dashboard, así que con un useEffect sus
   // primeras lecturas se anotaban en la pantalla anterior.
+  // "Control Procesos" de Laboratorio/Vacunatorio ya no es una pantalla
+  // (sus pestañas son ítems, ver config/pestanasControlProcesos.js): si se
+  // llega a su ruta (historial, enlaces, URL) se pasa al primer ítem que el
+  // usuario ve. Durante el render, como vistaDelMenuMovil más abajo.
+  if (esContenedor(activeView)) {
+    const { modulo } = CONTENEDORES_PESTANAS[activeView];
+    setActiveView(redireccionContenedor(activeView, subItemsVisibles(userData, modulo, modulosActivos).map((s) => s.path)));
+  }
+
   if (import.meta.env.DEV) window.__FS_METER__?.setScreen(activeView);
 
   // Título de la pestaña dentro de la plataforma ("Módulo | Medra", ver
@@ -488,14 +498,14 @@ const Dashboard = () => {
     '/laboratorio/codigoLaboratorio': <CodigoLaboratorio />,
     '/laboratorio/ordenLaboratorio': <OrdenLaboratorio />,
     '/laboratorio/xmlDocLaboratorio': <XmlDocLaboratorio />,
-    '/laboratorio/archivosControlLaboratorio': <ArchivosControlLaboratorio />,
+    ...vistasControlLaboratorio(),
 
     // ── Vacunatorio ──
     '/vacunatorio/empresasVacunatorio': <EmpresasVacunatorio />,
     '/vacunatorio/codigoVacunatorio': <CodigoVacunatorio />,
     '/vacunatorio/ordenVacunatorio': <OrdenVacunatorio />,
     '/vacunatorio/xmlDocVacunatorio': <XmlDocVacunatorio />,
-    '/vacunatorio/archivosControlVacunatorio': <ArchivosControlVacunatorio />,
+    ...vistasControlVacunatorio(),
 
     // ── Maestros ──
     '/maestros/empresasMaestros': <EmpresasMaestros />,

@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { MODULES } from '../../../../../config/modulesConfig.jsx';
 import CuadritoIcono from '../../../../ui/CuadritoIcono';
+import { tieneItemAsignado } from '../../../../../config/accesoMenu';
+import { expandirContenedores } from '../../../../../config/pestanasControlProcesos.js';
 
 const OrdenModulos = ({ userData, onOrderSaved }) => {
   const [moduleOrder, setModuleOrder] = useState([]);
@@ -28,7 +30,7 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
 
   const defaultSubOrder = (moduleKey) =>
     (MODULES[moduleKey]?.subItems || [])
-      .filter((s) => (permisos[moduleKey] || []).includes(s.path))
+      .filter((s) => tieneItemAsignado(userData, moduleKey, s))
       .map((s) => s.path);
 
   useEffect(() => {
@@ -46,9 +48,10 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
     const subs = {};
     permitidos.forEach((mKey) => {
       const visibles = defaultSubOrder(mKey);
-      const guardadoSub = userData?.ordenSubItems?.[mKey];
+      // Un "Control Procesos" guardado pasa a sus ítems, en su lugar.
+      const guardadoSub = expandirContenedores(userData?.ordenSubItems?.[mKey] || []);
       subs[mKey] =
-        guardadoSub && guardadoSub.length
+        guardadoSub.length
           ? [
               ...guardadoSub.filter((p) => visibles.includes(p)),
               ...visibles.filter((p) => !guardadoSub.includes(p)),

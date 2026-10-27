@@ -12,6 +12,8 @@
 // Funciones puras: `config` es el resultado de normalizarModulosActivos
 // (o null/undefined mientras carga = todo activo).
 
+import { expandirContenedores } from './pestanasControlProcesos.js';
+
 export const RUTA_GESTION_MODULOS = '/administracion/gestionModulos';
 
 // No se pueden inactivar (para no quedar fuera del sistema).
@@ -28,10 +30,12 @@ const listaDeTextos = (valor) => (Array.isArray(valor)
   : []);
 
 // Documento de Firestore -> { modulosInactivos, itemsInactivos } válido, sin
-// lo protegido (aunque alguien lo haya guardado a mano).
+// lo protegido (aunque alguien lo haya guardado a mano). Un "Control
+// Procesos" inactivado antes de separarse en ítems deja inactivos sus ítems
+// (config/pestanasControlProcesos.js); al guardar de nuevo queda así.
 export const normalizarModulosActivos = (data) => ({
   modulosInactivos: listaDeTextos(data?.modulosInactivos).filter((k) => !moduloProtegido(k)),
-  itemsInactivos: listaDeTextos(data?.itemsInactivos).filter((r) => !itemProtegido(r))
+  itemsInactivos: expandirContenedores(listaDeTextos(data?.itemsInactivos)).filter((r) => !itemProtegido(r))
 });
 
 export const moduloActivo = (config, moduloKey) =>
