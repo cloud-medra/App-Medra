@@ -31,9 +31,8 @@ import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administ
 import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROLLADOR } from '../config/accesoMenu';
 import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, colorEntrada, moduloDeEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
 import CuadritoIcono from '../components/ui/CuadritoIcono';
-import CodigoDiscreto from '../components/ui/CodigoDiscreto';
 import { entradasDelSidebar, itemsDelSidebar } from '../config/menuSidebar';
-import { codigoEntrada, codigoItem, ENTRADA_AJUSTES } from '../config/codigosModulos';
+import { ENTRADA_AJUSTES } from '../config/codigosModulos';
 import { indiceMenu, ENTRADA_INICIO } from '../config/buscadorMenu';
 import BuscadorMenu, { BuscadorMenuModal } from '../components/layout/BuscadorMenu';
 import { vistaDeModulo, leerModuloDeURL } from '../config/vistaModulo';
@@ -216,14 +215,9 @@ const VolverSidebar = ({ texto, onClick, colapsado }) => (
 
 // Con `onClick` (módulos) el título es un botón que abre la vista de acceso
 // rápido del módulo; `activo` lo resalta mientras se ve esa vista.
-const TituloSidebar = ({ cuadrito, texto, codigo, colapsado, onClick, activo = false }) => {
+const TituloSidebar = ({ cuadrito, texto, colapsado, onClick, activo = false }) => {
   const clases = `flex items-center gap-2.5 px-2 pt-2 pb-2.5 mb-2 border-b border-gray-200 dark:border-gray-700 ${colapsado ? 'justify-center' : ''}`;
-  const titulo = (
-    <h2 className={colapsado ? 'sr-only' : `min-w-0 flex items-baseline gap-1.5 text-sm font-bold ${activo ? 'text-[#1b6a9e] dark:text-sky-300' : 'text-gray-800 dark:text-gray-100'}`}>
-      <span className="truncate">{texto}</span>
-      {codigo && <CodigoDiscreto codigo={codigo} />}
-    </h2>
-  );
+  const titulo = <h2 className={colapsado ? 'sr-only' : `text-sm font-bold truncate ${activo ? 'text-[#1b6a9e] dark:text-sky-300' : 'text-gray-800 dark:text-gray-100'}`}>{texto}</h2>;
   if (!onClick) {
     return (
       <div title={colapsado ? texto : undefined} className={clases}>
@@ -238,7 +232,7 @@ const TituloSidebar = ({ cuadrito, texto, codigo, colapsado, onClick, activo = f
       onClick={onClick}
       title={`Ver todas las pantallas de ${texto}`}
       aria-current={activo ? 'page' : undefined}
-      className={`group w-full text-left rounded-t-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${activo ? 'bg-[#2383C2]/10 dark:bg-[#2383C2]/20' : ''} ${clases}`}
+      className={`w-full text-left rounded-t-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${activo ? 'bg-[#2383C2]/10 dark:bg-[#2383C2]/20' : ''} ${clases}`}
     >
       {cuadrito}
       {titulo}
@@ -967,7 +961,7 @@ const Dashboard = () => {
 
               {/* VOLVER AL SISTEMA + TÍTULO (mismo formato que un módulo) */}
               <VolverSidebar texto="Volver al Sistema" onClick={salirDeAjustes} colapsado={colapsado} />
-              <TituloSidebar cuadrito={<CuadritoIcono icon={<Settings />} color="#2383C2" />} texto="Ajustes Sistema" codigo={codigoEntrada(ENTRADA_AJUSTES)} colapsado={colapsado} />
+              <TituloSidebar cuadrito={<CuadritoIcono icon={<Settings />} color="#2383C2" />} texto="Ajustes Sistema" colapsado={colapsado} />
 
               {/* SECCIÓN CONFIGURACIÓN E ÍTEMS */}
               <div className={`px-2 mb-2 ${TITULO_SECCION_SIDEBAR} transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
@@ -979,14 +973,13 @@ const Dashboard = () => {
                   <button
                     key={item.path}
                     onClick={() => setActiveView(item.path)}
-                    className={`group w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-150 ${activeView === item.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
+                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-150 ${activeView === item.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
                     title={colapsado ? item.label : ""}
                   >
                     <div className={`flex-shrink-0 ${activeView === item.path ? ICONO_SIDEBAR_ACTIVO : ICONO_SIDEBAR}`}>{item.icon}</div>
                     <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                       {item.label}
                     </span>
-                    {!colapsado && codigoItem(item.path) && <CodigoDiscreto codigo={codigoItem(item.path)} />}
                     {item.path === RUTA_AYUDA_SOPORTE && novedadesTickets && !colapsado && <PuntoAviso className="ml-auto shrink-0" />}
                   </button>
                 ))}
@@ -1005,7 +998,7 @@ const Dashboard = () => {
                     <button
                       key={key}
                       onClick={() => setActiveModule(key)}
-                      className={`group w-full flex items-center rounded-lg ${ITEM_SIDEBAR} font-medium transition-all px-2 py-1.5 ${colapsado ? 'justify-center' : 'justify-between'}`}
+                      className={`w-full flex items-center rounded-lg ${ITEM_SIDEBAR} font-medium transition-all px-2 py-1.5 ${colapsado ? 'justify-center' : 'justify-between'}`}
                       title={colapsado ? etiquetaEntrada(key) : ""}
                     >
                       <div className="flex items-center gap-3 overflow-hidden min-w-0">
@@ -1013,7 +1006,6 @@ const Dashboard = () => {
                         <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                           {etiquetaEntrada(key)}
                         </span>
-                        {!colapsado && codigoEntrada(key) && <CodigoDiscreto codigo={codigoEntrada(key)} />}
                       </div>
                       {key === ENTRADA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
                       {key === ENTRADA_TICKETS && !colapsado && <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />}
@@ -1028,7 +1020,6 @@ const Dashboard = () => {
                   <TituloSidebar
                     cuadrito={<IconoModulo moduleKey={activeModule} />}
                     texto={etiquetaEntrada(activeModule)}
-                    codigo={codigoEntrada(activeModule)}
                     colapsado={colapsado}
                     onClick={() => abrirAccesoModulo(activeModule)}
                     activo={entradaAccesoRapido === activeModule}
@@ -1038,7 +1029,7 @@ const Dashboard = () => {
                     <button
                       key={sub.path ?? idx}
                       onClick={() => setActiveView(sub.path)}
-                      className={`group w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === sub.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
+                      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === sub.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
                       title={colapsado ? sub.label : ""}
                     >
                       {/* Activo: además del fondo y la barra, el cuadrito lleva un anillo de su color. */}
@@ -1051,7 +1042,6 @@ const Dashboard = () => {
                       <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                         {sub.label}
                       </span>
-                      {!colapsado && codigoItem(sub.path) && <CodigoDiscreto codigo={codigoItem(sub.path)} />}
                       {sub.path === RUTA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
                       {sub.path === RUTA_GESTION_TICKETS && !colapsado && <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />}
                       {!colapsado && <Contador n={pendientesLaboratorio[sub.path] ?? 0} etiqueta="documentos por procesar" tope={100} />}
