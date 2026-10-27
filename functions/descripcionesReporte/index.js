@@ -1,6 +1,6 @@
 // Reporte Info → "Descripciones ocultas": triggers que mantienen el Maestro
 // maestros_descripciones_reporte (contador de filas; las descripciones
-// nuevas aparecen visibles) y los campos calculados de cada fila
+// nuevas aparecen visibles y pendientes de revisión) y los campos calculados de cada fila
 // (ocultaImplantes / ocultaDocumentos…). Ver servicio.js y nucleo.mjs.
 
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');

@@ -42,3 +42,20 @@ export const camposFila = (fila, entrada, gestionada) => {
 };
 export const camposIguales = (fila, campos) => CAMPOS_FILA.every((k) => fila?.[k] === campos[k]);
 export const esFilaReporte = (ruta) => String(ruta).startsWith(`${RAIZ_REPORTE}/`);
+
+// Estado de revisión de una entrada del Maestro (pantalla Descripciones
+// ocultas y, más adelante, notificaciones):
+//   'pendiente' nueva sin revisar: el trigger la creó con `pendienteDesde`
+//               y nadie la tocó después (sin `actualizadoEl`, que escribe
+//               cualquier cambio desde la app: switch, "Marcar como
+//               revisada" u "Ocultar esta descripción" de Reporte Info).
+//   'oculta'    revisada y oculta en Implantes o en Documentos.
+//   'visible'   revisada y visible en los dos.
+// Las entradas anteriores a este campo (sin `pendienteDesde`) cuentan como
+// revisadas con su estado de siempre: no hubo migración.
+export const ESTADOS_DESCRIPCION = ['pendiente', 'visible', 'oculta'];
+export const esPendiente = (e) => Boolean(e?.pendienteDesde) && !e?.actualizadoEl;
+export const estadoDescripcion = (e) => {
+  if (esPendiente(e)) return 'pendiente';
+  return e?.ocultaImplantes === true || e?.ocultaDocumentos === true ? 'oculta' : 'visible';
+};

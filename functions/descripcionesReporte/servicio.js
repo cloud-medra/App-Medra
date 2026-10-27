@@ -16,9 +16,13 @@ const refMarca = (db, admision) => db.collection(COLECCION_ADMISIONES).doc(admis
 const LOTE = 400;
 
 // Suma `delta` filas a la descripción; si no existe la crea visible (sin
-// transacción: una importación crea cientos de filas a la vez).
-const sumarFilas = (db, norm, delta) => refDescripcion(db, norm).set({
+// transacción: una importación crea cientos de filas a la vez). `nueva`: no
+// existía, queda pendiente de revisión (`pendienteDesde`, ver
+// estadoDescripcion en nucleo.mjs). Si dos filas la crean a la vez, las dos
+// escriben lo mismo.
+const sumarFilas = (db, norm, delta, { nueva = false } = {}) => refDescripcion(db, norm).set({
   descripcion: norm, filas: FieldValue.increment(delta), filasActualizadoEl: FieldValue.serverTimestamp(),
+  ...(nueva ? { pendienteDesde: FieldValue.serverTimestamp() } : {}),
 }, { merge: true });
 
 const escribirEnLotes = async (db, ops) => {
@@ -38,20 +42,22 @@ const aplicarCambioFila = async (db, ref, antes, despues) => {
   const a = antes ? descripcionNormDe(antes['Descripción']) : null;
   const d = despues ? descripcionNormDe(despues['Descripción']) : null;
   const resultado = {};
+  // Ediciones que no tocan descripción ni admisión (ej. "Revisado"): nada que leer.
+  const mismaAdmision = antes && despues && admisionClaveDe(antes['Admisión']) === admisionClaveDe(despues['Admisión']);
+  const calcularCampos = Boolean(despues) && !(antes && a === d && mismaAdmision && tieneCampos(despues));
+  // La entrada se lee ANTES de sumar la fila: si no existe, la descripción
+  // es nueva (pendiente). Cuando cambia la descripción siempre se calculan
+  // los campos, así que no es una lectura extra.
+  const admision = calcularCampos ? admisionClaveDe(despues['Admisión']) : '';
+  const [entrada, marca] = calcularCampos
+    ? await Promise.all([refDescripcion(db, d).get(), admision ? refMarca(db, admision).get() : null])
+    : [null, null];
   if (a !== d) {
     if (a) await sumarFilas(db, a, -1);
-    if (d) await sumarFilas(db, d, 1);
+    if (d) await sumarFilas(db, d, 1, { nueva: !entrada.exists });
     resultado.contador = { resta: a, suma: d };
   }
-  if (!despues) return resultado;
-  // Ediciones que no tocan descripción ni admisión (ej. "Revisado"): nada que leer.
-  const mismaAdmision = antes && admisionClaveDe(antes['Admisión']) === admisionClaveDe(despues['Admisión']);
-  if (antes && a === d && mismaAdmision && tieneCampos(despues)) return resultado;
-  const admision = admisionClaveDe(despues['Admisión']);
-  const [entrada, marca] = await Promise.all([
-    refDescripcion(db, d).get(),
-    admision ? refMarca(db, admision).get() : null,
-  ]);
+  if (!calcularCampos) return resultado;
   const campos = camposFila(despues, entrada.exists ? entrada.data() : null, Boolean(marca?.exists));
   if (!camposIguales(despues, campos)) {
     await ref.update(campos);
@@ -99,7 +105,8 @@ const recalcularAdmision = async (db, admision, gestionada) => {
 };
 
 // Relleno inicial / reparación (script): campos de todas las filas y el
-// Maestro con el conteo de filas de cada descripción (las nuevas, visibles).
+// Maestro con el conteo de filas de cada descripción (las nuevas, visibles
+// y pendientes de revisión).
 const rellenar = async (db, { aplicar = false } = {}) => {
   const snap = await db.collectionGroup('registros')
     .orderBy(FieldPath.documentId())
@@ -142,7 +149,8 @@ const rellenar = async (db, { aplicar = false } = {}) => {
           descripcion: x.descripcion,
           filas: x.filas,
           filasActualizadoEl: FieldValue.serverTimestamp(),
-          ...(x.nueva ? { ejemplo: x.ejemplo, ocultaImplantes: false, ocultaDocumentos: false, creadoEl: FieldValue.serverTimestamp() } : {}),
+          // Las que no estaban en el Maestro quedan pendientes, como las del trigger.
+          ...(x.nueva ? { ejemplo: x.ejemplo, ocultaImplantes: false, ocultaDocumentos: false, creadoEl: FieldValue.serverTimestamp(), pendienteDesde: FieldValue.serverTimestamp() } : {}),
         }, { merge: true });
       });
       await lote.commit();

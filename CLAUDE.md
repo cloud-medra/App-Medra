@@ -77,6 +77,10 @@ Medra: plataforma interna (SPA) para gestionar implantes, hemodinamia, consignac
   - `zonasDiagnosticoGestionImplante`: mantiene el maestro de zonas por diagnóstico.
   - `admisionesGestionadasImplante`: marca las admisiones gestionadas.
 - **Reporte Info:** triggers `descripcionesReporteFila` y `descripcionesReporteMaestro` (descripciones ocultas).
+  - Estado de cada descripción en `maestros_descripciones_reporte`: `estadoDescripcion` / `esPendiente` de `functions/descripcionesReporte/nucleo.mjs`.
+  - **Pendiente:** tiene `pendienteDesde` y no tiene `actualizadoEl`. El trigger de fila pone `pendienteDesde` solo al crear una descripción nueva, y cualquier cambio desde la app (switch, "Marcar como revisada" u "Ocultar esta descripción" de Reporte Info) escribe `actualizadoEl` y la deja revisada.
+  - Si no es pendiente, es **oculta** (`ocultaImplantes` u `ocultaDocumentos` en true) o **visible**. Las anteriores a `pendienteDesde` cuentan como revisadas; no hubo migración.
+  - Para notificaciones: una descripción pasó a pendiente cuando aparece `pendienteDesde` (creación del documento).
 - **Otras:**
   - `extraerGuiaDespacho`: OCR de una guía de despacho.
   - `eliminarDocumentoAdmision`: mueve el PDF a la papelera y registra la auditoría.
