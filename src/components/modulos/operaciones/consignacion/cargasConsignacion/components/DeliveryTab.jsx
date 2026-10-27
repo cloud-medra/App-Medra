@@ -163,7 +163,7 @@ const DeliveryTab = ({ registro, vinculoData, onVincular, deliveryEsHeredado = f
   };
 
   return (
-    <div className="p-4 max-w-7xl mx-auto w-full space-y-4">
+    <div className="px-4 lg:px-6 py-4 w-full max-w-[2200px] mx-auto space-y-4">
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between gap-1.5">
           <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">

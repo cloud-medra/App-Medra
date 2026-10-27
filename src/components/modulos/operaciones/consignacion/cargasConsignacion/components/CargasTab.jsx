@@ -18,6 +18,7 @@ import { obtenerCodigosCacheados } from '../../registroConsignacion/utils/cacheM
 import { useCatalogo } from '../../../../../../hooks/useCatalogo';
 import { ordenarPor } from '../../../../../../stores/catalogosStore';
 import { useColumnResize } from '../../../../../../hooks/useColumnResize';
+import { useAnchosAjustados } from '../../../../../../hooks/useAnchosAjustados';
 import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../../ui/ThRedimensionable';
 import { BotonRestablecerAnchos } from '../../../../../ui/BotonRestablecerAnchos';
 
@@ -381,8 +382,12 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
 
   const { showToast } = useToast();
   const { userData } = useUser();
-  const { anchos, handleResize, restablecerAnchos, anchoTotalTabla, personalizados } =
+  const { anchos: anchosGuardados, handleResize, restablecerAnchos, personalizados } =
     useColumnResize(COLUMNAS_ITEMS, { clave: 'cargasConsignacion.itemsRegistrados', usuario: userData?.uid });
+  // "Ítems Registrados" se ajusta al ancho disponible (sin barra horizontal
+  // en un monitor normal); los anchos guardados no se modifican.
+  const [contenedorItems, setContenedorItems] = useState(null);
+  const { anchos, anchoTotal: anchoTotalTabla } = useAnchosAjustados(COLUMNAS_ITEMS, anchosGuardados, contenedorItems);
   const { hasPermission } = useGranularPermission();
 
   const registrarLog = (docRef, accion, detalles) => registrarLogConsignacion(docRef, accion, detalles, userData);
@@ -879,7 +884,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
   };
 
   return (
-    <div className="p-4 max-w-7xl mx-auto w-full space-y-4">
+    <div className="px-4 lg:px-6 py-4 w-full max-w-[2200px] mx-auto space-y-4">
 
       {/* Barra de guardado de vinculaciones pendientes de Delivery */}
       {cantidadPendientes > 0 && (
@@ -1089,7 +1094,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
           </div>
         )}
 
-        <div className="overflow-auto">
+        <div className="overflow-auto" ref={setContenedorItems}>
           <table
             className="text-left text-[10px] border-collapse"
             style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: '100%' }}

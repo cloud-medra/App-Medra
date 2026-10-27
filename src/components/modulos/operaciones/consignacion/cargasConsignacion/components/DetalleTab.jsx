@@ -80,7 +80,7 @@ const DetalleTab = ({ registro, items = [] }) => {
   const sumaCostos = items.reduce((acc, it) => acc + totalItem(it), 0);
 
   return (
-    <div className="p-4 max-w-7xl mx-auto w-full space-y-4">
+    <div className="px-4 lg:px-6 py-4 w-full max-w-[2200px] mx-auto space-y-4">
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
           <User size={13} className="text-[#2383C2]" />
