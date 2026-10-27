@@ -115,6 +115,11 @@ const ComparativoMes = () => {
         </div>
       </div>
 
+      <p className="text-[11px] text-slate-500 dark:text-gray-400 flex items-center gap-1.5 px-1">
+        <Info size={12} className="shrink-0" />
+        Los totales son por fecha del documento, por eso pueden diferir de los ítems Consumos y Facturas, que son por mes de imputación.
+      </p>
+
       {rangos.anterior.ajustado && (
         <p className="text-[11px] text-slate-500 dark:text-gray-400 flex items-center gap-1.5 px-1">
           <Info size={12} className="shrink-0" />
