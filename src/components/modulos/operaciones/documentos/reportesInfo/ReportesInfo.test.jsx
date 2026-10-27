@@ -202,6 +202,36 @@ describe('Reporte Info → Gestión implante', () => {
   });
 });
 
+describe('Reporte Info → selector de días', () => {
+  const dias = () => [...screen.getByLabelText('Filtrar por día').options].map((o) => o.value).filter(Boolean);
+
+  it('muestra solo los días con filas que cumplen los filtros; sin filtros, todos', async () => {
+    await montar();
+    expect(dias()).toEqual(['03', '04', '05']);
+    fireEvent.change(screen.getByLabelText('Filtrar por gestión implante'), { target: { value: 'cargada' } });
+    expect(dias()).toEqual(['04']);
+    fireEvent.change(screen.getByLabelText('Filtrar por revisado'), { target: { value: 'Revisado' } });
+    expect(dias()).toEqual([]);
+    fireEvent.change(screen.getByLabelText('Filtrar por revisado'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('Filtrar por gestión implante'), { target: { value: '' } });
+    expect(dias()).toEqual(['03', '04', '05']);
+  });
+
+  it('si el día elegido se queda sin filas (se revisó la última pendiente) vuelve a "Todos" con aviso', async () => {
+    await montar();
+    fireEvent.change(screen.getByLabelText('Filtrar por revisado'), { target: { value: 'Pendiente' } });
+    fireEvent.change(screen.getByLabelText('Filtrar por día'), { target: { value: '03' } });
+    expect(estados()).toEqual(['imputada']);
+    toast.showToast.mockClear();
+    const fila = document.querySelector('tbody [data-estado="imputada"]').closest('tr');
+    fireEvent.change(within(fila).getByRole('combobox'), { target: { value: 'Revisado' } });
+    await waitFor(() => expect(screen.getByLabelText('Filtrar por día')).toHaveValue(''));
+    expect(dias()).toEqual(['04', '05']);
+    expect(estados()).toEqual(['pendiente', 'gestionada', 'cargada', 'cargada']);
+    expect(toast.showToast).toHaveBeenCalledWith(expect.stringMatching(/día 03 ya no tiene filas/), 'info');
+  });
+});
+
 describe('Reporte Info → Gestión consignación', () => {
   const estadosConsignacion = () => [...document.querySelectorAll('tbody tr')]
     .map((tr) => tr.lastElementChild.querySelector('[data-estado]')?.dataset.estado);

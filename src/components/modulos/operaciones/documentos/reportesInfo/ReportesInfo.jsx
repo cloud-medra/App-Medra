@@ -527,18 +527,12 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
         [filasPantalla]
     );
 
-    // Solo los días con al menos un registro. Se calculan sobre el mes que ya
-    // está descargado completo en `reportes` (0 lecturas extra; Firestore no
-    // tiene DISTINCT, así que una consulta aparte leería el mes igual).
-    const diasDisponibles = useMemo(
-        () => [...new Set(filasPantalla.map(getDia).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
-        [filasPantalla]
-    );
-
-    const reportesFiltrados = useMemo(() => {
+    // Filas que cumplen todos los filtros salvo el día: de ellas salen los
+    // días del selector (solo los que tienen al menos una fila con los
+    // filtros activos) y, filtrando además por día, la tabla.
+    const filasSinFiltroDia = useMemo(() => {
         const aranceles = new Set(filtroAranceles);
         return filasPantalla.filter(r => {
-            if (filtroDia && getDia(r) !== filtroDia) return false;
             if (filtroRevisado && (r._oculta || getRevisado(r) !== filtroRevisado)) return false;
             if (aranceles.size > 0 && !aranceles.has(getArancel(r))) return false;
             if (filtroGestion && estadoDe(marcaDe(r)) !== filtroGestion) return false;
@@ -552,7 +546,34 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                 incluyeTexto(r["Arancel"], busquedaDebounced)
             );
         });
-    }, [filasPantalla, filtroDia, filtroRevisado, filtroAranceles, filtroGestion, marcaDe, filtroGestionConsignacion, marcaConsignacionDe, busquedaDebounced]);
+    }, [filasPantalla, filtroRevisado, filtroAranceles, filtroGestion, marcaDe, filtroGestionConsignacion, marcaConsignacionDe, busquedaDebounced]);
+
+    // Se calculan sobre el mes que ya está descargado completo (0 lecturas
+    // extra; Firestore no tiene DISTINCT, así que una consulta aparte leería
+    // el mes igual).
+    const diasDisponibles = useMemo(
+        () => [...new Set(filasSinFiltroDia.map(getDia).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+        [filasSinFiltroDia]
+    );
+
+    const reportesFiltrados = useMemo(
+        () => (filtroDia ? filasSinFiltroDia.filter(r => getDia(r) === filtroDia) : filasSinFiltroDia),
+        [filasSinFiltroDia, filtroDia]
+    );
+
+    // El día elegido se quedó sin filas (ej. se revisó la última pendiente o
+    // se cambió un filtro): vuelve a "Día (Todos)" con aviso, así la tabla
+    // muestra lo que queda por trabajar en vez de quedar vacía. No durante la
+    // carga del mes (las filas aún no están).
+    useEffect(() => {
+        if (!filtroDia || cargandoLista || diasDisponibles.includes(filtroDia)) return;
+        // Efecto a propósito: las filas cambian por varias vías (filtros,
+        // "Revisado", ocultar, recargas) y además se avisa con un toast.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setFiltroDia('');
+        setPagina(1);
+        showToast(`El día ${filtroDia} ya no tiene filas con estos filtros: se muestran todos los días.`, 'info');
+    }, [filtroDia, cargandoLista, diasDisponibles, showToast]);
 
     // Admisiones distintas del mes por estado de gestión (contador del
     // filtro). Solo filas visibles: las ocultas no cuentan.
@@ -749,6 +770,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
 
                 <select
                     value={filtroDia}
+                    aria-label="Filtrar por día"
                     onChange={(e) => conResetPagina(setFiltroDia)(e.target.value)}
                     disabled={!filtroAnio || !filtroMes || cargandoLista}
                     className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -769,6 +791,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
 
                 <select
                     value={filtroRevisado}
+                    aria-label="Filtrar por revisado"
                     onChange={(e) => conResetPagina(setFiltroRevisado)(e.target.value)}
                     className={`h-6 border rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2] ${filtroRevisado ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 font-semibold' : 'border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100'}`}
                 >
