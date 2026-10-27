@@ -1,12 +1,15 @@
 import React from 'react';
 import { ChevronRight, LayoutGrid } from 'lucide-react';
 import CuadritoIcono from '../../../ui/CuadritoIcono';
+import CodigoDiscreto from '../../../ui/CodigoDiscreto';
+import { codigoItem } from '../../../../config/codigosModulos';
 
 // Vista de acceso rápido de un módulo: todas sus pantallas como tarjetas, en
 // el mismo orden que el sidebar. Recibe los ítems ya filtrados con la misma
 // función que el sidebar (config/menuSidebar.js: permisos, módulos/ítems
 // activos y orden guardado del usuario), así que no lee nada de Firestore.
-// Mismo estilo de tarjeta que Accesos rápidos del panel (AtajosCard).
+// Mismo estilo de tarjeta que Accesos rápidos del panel (AtajosCard). Cada
+// tarjeta lleva el código del ítem, discreto como en el sidebar.
 //
 // `items`: [{ label, path, icon, color, descripcion? }]
 const AccesoRapidoModulo = ({ etiqueta, icono, color, items, onAbrir, cargando = false }) => (
@@ -40,8 +43,11 @@ const AccesoRapidoModulo = ({ etiqueta, icono, color, items, onAbrir, cargando =
               >
                 <CuadritoIcono icon={item.icon} color={item.color} tamano="lg" />
                 <span className="flex-1 flex flex-col min-w-0">
-                  <span className="text-[12px] font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-[#1b6a9e] dark:group-hover:text-sky-300">
-                    {item.label}
+                  <span className="flex items-baseline gap-1.5 min-w-0">
+                    <span className="text-[12px] font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-[#1b6a9e] dark:group-hover:text-sky-300">
+                      {item.label}
+                    </span>
+                    {codigoItem(item.path) && <CodigoDiscreto codigo={codigoItem(item.path)} />}
                   </span>
                   {item.descripcion && (
                     <span className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2">{item.descripcion}</span>

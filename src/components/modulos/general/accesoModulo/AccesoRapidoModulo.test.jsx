@@ -28,6 +28,14 @@ describe('AccesoRapidoModulo', () => {
     expect(onAbrir).toHaveBeenCalledWith('/implantes/gestionImplantes');
   });
 
+  it('cada tarjeta lleva el código de su ítem, solo de los ítems visibles', () => {
+    const items = itemsDelSidebar(usuario, 'implantes', null);
+    render(<AccesoRapidoModulo etiqueta="Implantes" items={items} onAbrir={() => {}} />);
+    const codigos = [...document.querySelectorAll('[aria-label^="código "]')].map((e) => e.textContent);
+    expect(codigos).toEqual(['IMPIPT', 'IMPGES', 'IMPSOL', 'IMPMOD']);
+    expect(screen.getByTitle('Gestion')).toHaveTextContent('IMPGES');
+  });
+
   it('muestra la descripción si el ítem la tiene', () => {
     render(<AccesoRapidoModulo etiqueta="X" items={[{ label: 'A', path: '/a', descripcion: 'Detalle de A' }]} onAbrir={() => {}} />);
     expect(screen.getByText('Detalle de A')).toBeInTheDocument();

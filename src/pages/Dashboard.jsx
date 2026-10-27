@@ -31,6 +31,7 @@ import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administ
 import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROLLADOR } from '../config/accesoMenu';
 import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, colorEntrada, moduloDeEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
 import CuadritoIcono from '../components/ui/CuadritoIcono';
+import CodigoDiscreto from '../components/ui/CodigoDiscreto';
 import { entradasDelSidebar, itemsDelSidebar } from '../config/menuSidebar';
 import { codigoEntrada, codigoItem, ENTRADA_AJUSTES } from '../config/codigosModulos';
 import { indiceMenu, ENTRADA_INICIO } from '../config/buscadorMenu';
@@ -220,7 +221,7 @@ const TituloSidebar = ({ cuadrito, texto, codigo, colapsado, onClick, activo = f
   const titulo = (
     <h2 className={colapsado ? 'sr-only' : `min-w-0 flex items-baseline gap-1.5 text-sm font-bold ${activo ? 'text-[#1b6a9e] dark:text-sky-300' : 'text-gray-800 dark:text-gray-100'}`}>
       <span className="truncate">{texto}</span>
-      {codigo && <CodigoModulo codigo={codigo} />}
+      {codigo && <CodigoDiscreto codigo={codigo} />}
     </h2>
   );
   if (!onClick) {
@@ -237,18 +238,13 @@ const TituloSidebar = ({ cuadrito, texto, codigo, colapsado, onClick, activo = f
       onClick={onClick}
       title={`Ver todas las pantallas de ${texto}`}
       aria-current={activo ? 'page' : undefined}
-      className={`w-full text-left rounded-t-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${activo ? 'bg-[#2383C2]/10 dark:bg-[#2383C2]/20' : ''} ${clases}`}
+      className={`group w-full text-left rounded-t-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${activo ? 'bg-[#2383C2]/10 dark:bg-[#2383C2]/20' : ''} ${clases}`}
     >
       {cuadrito}
       {titulo}
     </button>
   );
 };
-
-// Código corto del módulo o del ítem (config/codigosModulos.js), junto a su nombre.
-const CodigoModulo = ({ codigo }) => (
-  <span className="shrink-0 text-[9.5px] font-semibold tracking-wide text-gray-400 dark:text-gray-500" aria-label={`código ${codigo}`}>{codigo}</span>
-);
 
 // Entrada del sidebar que lleva el contador de alertas sin leer.
 const ENTRADA_ALERTAS = entradaDeRuta(MODULO_AGRUPADO, RUTA_ALERTAS);
@@ -983,14 +979,14 @@ const Dashboard = () => {
                   <button
                     key={item.path}
                     onClick={() => setActiveView(item.path)}
-                    className={`w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-150 ${activeView === item.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
+                    className={`group w-full flex items-center gap-3 p-2 rounded-lg transition-all duration-150 ${activeView === item.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
                     title={colapsado ? item.label : ""}
                   >
                     <div className={`flex-shrink-0 ${activeView === item.path ? ICONO_SIDEBAR_ACTIVO : ICONO_SIDEBAR}`}>{item.icon}</div>
                     <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                       {item.label}
                     </span>
-                    {!colapsado && codigoItem(item.path) && <CodigoModulo codigo={codigoItem(item.path)} />}
+                    {!colapsado && codigoItem(item.path) && <CodigoDiscreto codigo={codigoItem(item.path)} />}
                     {item.path === RUTA_AYUDA_SOPORTE && novedadesTickets && !colapsado && <PuntoAviso className="ml-auto shrink-0" />}
                   </button>
                 ))}
@@ -1009,7 +1005,7 @@ const Dashboard = () => {
                     <button
                       key={key}
                       onClick={() => setActiveModule(key)}
-                      className={`w-full flex items-center rounded-lg ${ITEM_SIDEBAR} font-medium transition-all px-2 py-1.5 ${colapsado ? 'justify-center' : 'justify-between'}`}
+                      className={`group w-full flex items-center rounded-lg ${ITEM_SIDEBAR} font-medium transition-all px-2 py-1.5 ${colapsado ? 'justify-center' : 'justify-between'}`}
                       title={colapsado ? etiquetaEntrada(key) : ""}
                     >
                       <div className="flex items-center gap-3 overflow-hidden min-w-0">
@@ -1017,7 +1013,7 @@ const Dashboard = () => {
                         <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                           {etiquetaEntrada(key)}
                         </span>
-                        {!colapsado && codigoEntrada(key) && <CodigoModulo codigo={codigoEntrada(key)} />}
+                        {!colapsado && codigoEntrada(key) && <CodigoDiscreto codigo={codigoEntrada(key)} />}
                       </div>
                       {key === ENTRADA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
                       {key === ENTRADA_TICKETS && !colapsado && <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />}
@@ -1042,7 +1038,7 @@ const Dashboard = () => {
                     <button
                       key={sub.path ?? idx}
                       onClick={() => setActiveView(sub.path)}
-                      className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === sub.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
+                      className={`group w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${activeView === sub.path ? ITEM_SIDEBAR_ACTIVO : ITEM_SIDEBAR} ${colapsado ? 'justify-center' : ''}`}
                       title={colapsado ? sub.label : ""}
                     >
                       {/* Activo: además del fondo y la barra, el cuadrito lleva un anillo de su color. */}
@@ -1055,7 +1051,7 @@ const Dashboard = () => {
                       <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                         {sub.label}
                       </span>
-                      {!colapsado && codigoItem(sub.path) && <CodigoModulo codigo={codigoItem(sub.path)} />}
+                      {!colapsado && codigoItem(sub.path) && <CodigoDiscreto codigo={codigoItem(sub.path)} />}
                       {sub.path === RUTA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
                       {sub.path === RUTA_GESTION_TICKETS && !colapsado && <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />}
                       {!colapsado && <Contador n={pendientesLaboratorio[sub.path] ?? 0} etiqueta="documentos por procesar" tope={100} />}
