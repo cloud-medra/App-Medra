@@ -16,6 +16,7 @@
 - **Verificar una Function desplegada leyendo Firestore, en modo solo lectura.** Aquí `firebase functions:log` falla (`Failed to retrieve log entries from Google Cloud`) y `gcloud` no funciona (falta Python).
   - Usar un script de Node temporal con `firebase-admin` de `functions/node_modules` y las credenciales de `%APPDATA%/gcloud/application_default_credentials.json`, que solo haga `get`/`getAll`/consultas sobre lo que la Function debió escribir (ej. `alertas/pendientes_*`). Correrlo con `NODE_PATH=functions/node_modules` e `initializeApp({ projectId: 'workcraft-491b7' })`.
   - Guardarlo fuera del repo (`$TEMP`) y borrarlo al terminar. Sin escrituras: si hay que corregir datos, avisar antes.
+- **No escribir datos en Firestore de producción** (cargas iniciales, migraciones, correcciones) sin mostrar antes una simulación y esperar aprobación explícita del usuario.
 
 ## Arquitectura
 
