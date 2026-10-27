@@ -136,6 +136,11 @@ Medra: plataforma interna (SPA) para gestionar implantes, hemodinamia, consignac
   3. **Edición posterior:** reimputa al guardar y marca `modificacionPendiente`.
   4. **Solicitudes de modificaciones:** exporta solo lo que cambió.
 - **Cargas consolidadas** (Finanzas): exporta las tres fuentes juntas (Implantes, Consignación y Hemodinamia).
+- **Totales de Finanzas** (`administracion/totalesFinanzas/`): Consumos, Facturas y Valorización de bodega, por mes (o el año completo, en los dos primeros). Usan las mismas celdas que Control Mensual (`obtenerCelda` de `resumenImputacionesStore`, con los grupos de `controlMensual/constants.js`):
+  - Consumos: imputado de Implantes, Consignación y Hemodinamia (`{mod}_imputadas`).
+  - Facturas: imputado de Laboratorio y Vacunatorio (desde la factura electrónica).
+  - Valorización de bodega: saldo valorizado de Bodega (foto de `bodega_periodos` al cierre, o `sum()` de `bodega_movimientos` si el mes está abierto).
+  - En las imputadas, un mes cerrado sale del snapshot de `imputaciones_periodos` y uno abierto de `count()`/`sum()`. Un mes sin cierre en `cierres_periodos` vale 0 y no se lee.
 - **Períodos cerrados:** no se pueden editar.
 - **Gestión de módulos** (solo dev): activa o desactiva módulos e ítems para todos. El módulo `administracion` no se puede desactivar.
 

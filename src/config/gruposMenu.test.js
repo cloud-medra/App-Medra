@@ -40,11 +40,12 @@ describe('gruposMenu: Administración repartida en el sidebar', () => {
     expect([...repartidos].sort()).toEqual(rutas(admin).sort());
     expect(rutas(itemsDeEntrada('finanzas', admin))).toEqual([
       '/administracion/controlMensual', '/administracion/ResumenPeriodoAbierto', '/administracion/cargasConsolidado', '/administracion/estadisticas',
+      '/administracion/consumos', '/administracion/facturas', '/administracion/valorizacionBodega',
     ]);
     // Respeta el orden recibido (ordenSubItems del usuario).
     const invertidos = [...admin].reverse();
     expect(rutas(itemsDeEntrada('finanzas', invertidos))).toEqual([
-      '/administracion/estadisticas', '/administracion/cargasConsolidado', '/administracion/ResumenPeriodoAbierto', '/administracion/controlMensual',
+      '/administracion/valorizacionBodega', '/administracion/facturas', '/administracion/consumos', '/administracion/estadisticas', '/administracion/cargasConsolidado', '/administracion/ResumenPeriodoAbierto', '/administracion/controlMensual',
     ]);
   });
 

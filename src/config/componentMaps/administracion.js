@@ -273,6 +273,21 @@ export const administracionComponentMaps = {
     sections: {},
   },
 
+  // Totales de Finanzas (totalesFinanzas/TotalFinanzas.jsx): el total se ve
+  // siempre; el desglose, según esta sección.
+  '/administracion/consumos': {
+    label: 'Consumos (TotalFinanzas.jsx) — total imputado de Implantes, Consignación y Hemodinamia',
+    sections: { desglose: { label: 'Sección: Desglose por módulo', elements: {} } },
+  },
+  '/administracion/facturas': {
+    label: 'Facturas (TotalFinanzas.jsx) — total imputado de Laboratorio y Vacunatorio',
+    sections: { desglose: { label: 'Sección: Desglose por módulo', elements: {} } },
+  },
+  '/administracion/valorizacionBodega': {
+    label: 'Valorización de bodega (TotalFinanzas.jsx) — saldo valorizado de Bodega',
+    sections: { desglose: { label: 'Sección: Cuadratura del período (saldo inicial, movimientos y saldo)', elements: {} } },
+  },
+
   '/administracion/estadisticas': {
     label: 'Estadísticas (Implantes, Consignación y Hemodinamia por período)',
     sections: {

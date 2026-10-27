@@ -51,6 +51,8 @@ import ResumenGeneral from '../components/modulos/dashboard/ResumenGeneral';
 import Alertas from '../components/modulos/administracion/alertas/Alertas';
 import ControlMensual from '../components/modulos/administracion/controlMensual/ControlMensual';
 import ResumenPeriodoAbierto from '../components/modulos/administracion/resumenPeriodoAbierto/ResumenPeriodoAbierto.jsx';
+import TotalFinanzas from '../components/modulos/administracion/totalesFinanzas/TotalFinanzas.jsx';
+import { TOTALES_FINANZAS } from '../components/modulos/administracion/totalesFinanzas/totalesFinanzas';
 import NotasAdmin from '../components/modulos/administracion/notasAdmin/NotasAdmin';
 import Recordatorios from '../components/modulos/administracion/recordatorios/Recordatorios';
 import CrearUsuario from '../components/modulos/administracion/usuarios/CrearUsuario';
@@ -492,6 +494,8 @@ const Dashboard = () => {
     ),
     '/administracion/cargasConsolidado': <CargasConsolidado />,
     '/administracion/estadisticas': <Estadisticas />,
+    // `key`: cada total con su propio estado (mes elegido) al pasar de uno a otro.
+    ...Object.fromEntries(Object.entries(TOTALES_FINANZAS).map(([tipo, t]) => [t.ruta, <TotalFinanzas key={tipo} tipo={tipo} />])),
 
     // ── Laboratorio ──
     '/laboratorio/empresasLaboratorio': <EmpresasLaboratorio />,

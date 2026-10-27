@@ -164,6 +164,11 @@ export const MODULES = {
       // En el grupo Finanzas; la ruta y el permiso siguen siendo de administracion.
       { label: 'Cargas consolidadas', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} />, color: PALETA_MENU.indigo, grupo: 'finanzas' },
       { label: 'Estadísticas del período', path: '/administracion/estadisticas', icon: <BarChart3 size={14} />, color: PALETA_MENU.rojo, grupo: 'finanzas' },
+      // Totales de Finanzas (administracion/totalesFinanzas): ítems normales,
+      // así que solo los ve el Desarrollador hasta que se asignen.
+      { label: 'Consumos', path: '/administracion/consumos', icon: <BadgeDollarSign size={14} />, color: PALETA_MENU.ambar, grupo: 'finanzas' },
+      { label: 'Facturas', path: '/administracion/facturas', icon: <Receipt size={14} />, color: PALETA_MENU.azul, grupo: 'finanzas' },
+      { label: 'Valorización de bodega', path: '/administracion/valorizacionBodega', icon: <Warehouse size={14} />, color: PALETA_MENU.violeta, grupo: 'finanzas' },
       // Bandeja completa de tickets de soporte (Ayuda y soporte). Es el
       // permiso "Gestionar tickets": siempre activo para el Desarrollador (ve
       // todos los ítems) y, para los demás, solo si se asigna en el editor de
