@@ -1,12 +1,20 @@
 // @vitest-environment jsdom
-// Campana de notificaciones del header: por ahora sin fuente (panel vacío,
-// sin contador); preparada para recibir la lista.
-import { describe, it, expect, afterEach } from 'vitest';
+// Campana de notificaciones del header: panel vacío sin contador, lista con
+// contador de no leídas y clic que marca leída y abre la pantalla.
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import NotificacionesCampana, { NotificacionesCampanaVista } from './NotificacionesCampana';
 
-afterEach(cleanup);
+const fuente = { lista: [] };
+vi.mock('./useNotificaciones', () => ({ useNotificaciones: () => fuente.lista }));
+const leidas = [];
+vi.mock('../modulos/administracion/alertas/solicitudesServicio', () => ({
+  marcarLeida: async (id, uid) => { leidas.push([id, uid]); },
+}));
+
+const { default: NotificacionesCampana, NotificacionesCampanaVista } = await import('./NotificacionesCampana');
+
+afterEach(() => { cleanup(); fuente.lista = []; leidas.length = 0; });
 
 const campana = () => screen.getByRole('button', { name: 'Notificaciones' });
 
@@ -36,5 +44,25 @@ describe('NotificacionesCampana', () => {
     fireEvent.click(campana());
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(screen.queryByText('No tienes notificaciones')).toBeNull();
+  });
+
+  it('clic en una notificación: la marca leída, cierra el panel y abre su pantalla', () => {
+    fuente.lista = [
+      { id: 'pendientes_zonas', titulo: '3 zonas por diagnóstico por revisar', leida: false, ruta: '/maestros/zonasDiagnostico' },
+      { id: 'ticket_t1', titulo: 'Ticket nuevo TK-0001: Error', leida: true, ruta: '/administracion/tickets' },
+    ];
+    const onAbrir = vi.fn();
+    render(<NotificacionesCampana uid="u1" onAbrir={onAbrir} />);
+    expect(screen.getByTestId('badge-notificaciones')).toHaveTextContent('1');
+    fireEvent.click(campana());
+    fireEvent.click(screen.getByRole('button', { name: /3 zonas por diagnóstico/ }));
+    expect(onAbrir).toHaveBeenCalledWith('/maestros/zonasDiagnostico');
+    expect(leidas).toEqual([['pendientes_zonas', 'u1']]);
+    expect(screen.queryByRole('region', { name: 'Notificaciones' })).toBeNull();
+    // Una ya leída solo navega.
+    fireEvent.click(campana());
+    fireEvent.click(screen.getByRole('button', { name: /Ticket nuevo/ }));
+    expect(onAbrir).toHaveBeenLastCalledWith('/administracion/tickets');
+    expect(leidas).toHaveLength(1);
   });
 });

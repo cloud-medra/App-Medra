@@ -68,6 +68,12 @@ Medra: plataforma interna (SPA) para gestionar implantes, hemodinamia, consignac
   - Su aviso por correo (`correo.js`) está desactivado, pendiente de activar.
   - Hacen falta la cuenta remitente y la extensión "Trigger Email from Firestore" (colección `mail`).
   - Se activa con `ALERTAS_CORREO_HABILITADO=true` en `functions/.env.<proyecto>`.
+- **Notificaciones** (`functions/notificaciones`): la campana del header (`layout/useNotificaciones.js`) muestra las alertas pendientes del usuario en `alertas`. El clic marca la alerta leída y abre su pantalla.
+  - `notificacionesPendientes` (cada 10 min) mantiene una alerta agregada por fuente con la cantidad pendiente (id `pendientes_<fuente>`). Las fuentes son zonas por diagnóstico sin confirmar, gestiones `SOLICITAR` de Implantes y Hemodinamia, ítems `CARGADO` de Consignación y descripciones pendientes.
+  - Esa alerta vuelve a "no leída" si la cantidad sube y se resuelve al llegar a 0.
+  - `notificacionesTicket` (trigger) crea una alerta por ticket nuevo y la resuelve cuando el ticket deja de estar NUEVO.
+  - Las solicitudes de cambio de datos ya creaban su alerta.
+  - Destinatarios: quien tiene la ruta de destino en sus permisos, más los desarrolladores. En los tickets, quien gestiona tickets y los administradores guardados en el ticket.
 - **Períodos:** `cerrarPeriodoImputacion` (callable) cierra el mes de un módulo.
 - **Estadísticas:**
   - `estadisticasImputada{Implantes,Consignacion,Hemodinamia}`: triggers sobre las imputadas.

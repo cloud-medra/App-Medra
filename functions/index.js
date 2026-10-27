@@ -63,6 +63,11 @@ Object.assign(exports, require("./usuarios"));
 // aprobación desde Administración → Alertas. Ver functions/solicitudes.
 Object.assign(exports, require("./solicitudes"));
 
+// Notificaciones de la campana del header sobre el buzón `alertas`:
+// pendientes agregados (programada) y tickets nuevos. Ver
+// functions/notificaciones/index.js.
+Object.assign(exports, require("./notificaciones"));
+
 // Bodega: maestro de productos, códigos de barra y (por fases) stock por
 // lote, tránsito por centro e inventario. Ver functions/bodega/index.js.
 Object.assign(exports, require("./bodega"));

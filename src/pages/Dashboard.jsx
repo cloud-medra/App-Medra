@@ -644,6 +644,18 @@ const Dashboard = () => {
   const entradasPermitidas = entradasDelSidebar(userData, modulosActivos);
   const getSubItemsOrdenados = (entrada) => itemsDelSidebar(userData, entrada, modulosActivos);
 
+  // Campana de notificaciones: el clic abre la pantalla como el menú (o
+  // Ayuda y soporte, para un ticket de alguien de mi equipo).
+  const puedeAbrirRuta = (ruta) => {
+    const it = itemDeRuta(MODULES, ruta);
+    return !it || subItemsVisibles(userData, it.moduloKey, modulosActivos).some((s) => s.path === ruta);
+  };
+  const abrirNotificacion = (ruta) => {
+    if (ruta === RUTA_AYUDA_SOPORTE) { abrirAyudaSoporte(); return; }
+    const it = itemDeRuta(MODULES, ruta);
+    if (it) abrirVistaDeModulo(it.moduloKey, ruta);
+  };
+
   // Logo del header: al panel principal (lo que hacía "Inicio" en el
   // sidebar), también desde Ajustes.
   const irAlInicio = () => {
@@ -771,7 +783,7 @@ const Dashboard = () => {
         {/* Recordatorios del usuario: reloj en todas las vistas (solo si
             tiene permiso de recibirlos). La campana es de notificaciones. */}
         <RecordatoriosAlarma />
-        <NotificacionesCampana />
+        <NotificacionesCampana uid={userData?.uid} puedeAbrirRuta={puedeAbrirRuta} onAbrir={abrirNotificacion} />
 
         <div className="relative" ref={menuRef}>
           <button
