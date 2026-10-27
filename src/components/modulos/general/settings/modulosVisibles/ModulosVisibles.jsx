@@ -2,6 +2,7 @@ import React from 'react';
 import { MODULES } from '../../../../../config/modulesConfig.jsx';
 import { LayoutGrid, CheckCircle2 } from 'lucide-react';
 import CuadritoIcono from '../../../../ui/CuadritoIcono';
+import { esDesarrollador } from '../../../../../config/accesoMenu';
 
 // Vista de solo lectura: muestra, para el usuario logueado, qué módulos y
 // qué ítems dentro de cada uno tiene habilitados (según userData.permisos).
@@ -10,6 +11,9 @@ import CuadritoIcono from '../../../../ui/CuadritoIcono';
 // acceso.
 const ModulosVisibles = ({ userData }) => {
   const permisos = userData?.permisos || {};
+  // El contador "habilitados/total" delata que hay ítems a los que el usuario
+  // no tiene acceso; solo dev lo ve, y para el resto ni se renderiza.
+  const mostrarContador = esDesarrollador(userData);
 
   const modulosConAcceso = Object.entries(MODULES).filter(
     ([moduloKey, modulo]) => modulo.subItems?.length && (permisos[moduloKey]?.length || 0) > 0
@@ -52,9 +56,11 @@ const ModulosVisibles = ({ userData }) => {
                   <div className="flex items-center gap-2 p-2.5 border-b border-gray-100 dark:border-gray-700/60">
                     <CuadritoIcono icon={modulo.icon} color={modulo.color} tamano="sm" />
                     <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{modulo.label}</span>
-                    <span className="text-[10px] font-normal text-gray-400 ml-auto">
-                      {itemsHabilitados.length}/{modulo.subItems.length}
-                    </span>
+                    {mostrarContador && (
+                      <span className="text-[10px] font-normal text-gray-400 ml-auto">
+                        {itemsHabilitados.length}/{modulo.subItems.length}
+                      </span>
+                    )}
                   </div>
 
                   <div className="p-2.5 pt-1.5 space-y-1">

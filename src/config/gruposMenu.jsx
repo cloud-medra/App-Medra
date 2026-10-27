@@ -1,4 +1,4 @@
-import { Wallet, UserCog } from 'lucide-react';
+import { Landmark, UserCog } from 'lucide-react';
 import { MODULES, PALETA_MENU, COLOR_MENU_POR_DEFECTO } from './modulesConfig.jsx';
 
 // Grupos del sidebar en que se reparte el módulo `administracion` (visible
@@ -15,7 +15,7 @@ import { MODULES, PALETA_MENU, COLOR_MENU_POR_DEFECTO } from './modulesConfig.js
 export const MODULO_AGRUPADO = 'administracion';
 
 export const GRUPOS_MENU = {
-  finanzas: { label: 'Finanzas', icon: <Wallet size={18} />, color: PALETA_MENU.verde },
+  finanzas: { label: 'Finanzas', icon: <Landmark size={18} />, color: PALETA_MENU.verde },
   usuarios: { label: 'Usuarios y accesos', icon: <UserCog size={18} />, color: PALETA_MENU.indigo },
 };
 
