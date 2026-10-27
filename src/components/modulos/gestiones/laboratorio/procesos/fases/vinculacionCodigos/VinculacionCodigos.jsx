@@ -12,6 +12,7 @@ import { useModal } from '../../../../../../../context/ModalContext';
 import { useGranularPermission } from '../../../../../../../hooks/useGranularPermission';
 import DetalleDocumento from './DetalleDocu';
 import { useLaboratorioData } from '../../../LaboratorioDataContext';
+import { ESTADOS_VINCULACION_CODIGOS } from '../../pendientesLaboratorio';
 import EstadoProcesoBadge from '../../../../shared/EstadoProcesoBadge';
 import { useColumnasPermitidas } from '../../../../../../../hooks/useColumnasPermitidas';
 
@@ -47,7 +48,7 @@ const VinculacionCodigos = () => {
   const PATH_VISTA = "/laboratorio/archivosControlLaboratorio/vinculacionCodigos"; // permisos propios de esta pestaña
   const { columnasVisibles: columnasTabla, ver: verColumna } = useColumnasPermitidas(PATH_VISTA, 'tabla_documentos', COLUMNAS_TABLA);
   const COL_BASE = "laboratorio_documentos";
-  const ESTADOS_PERMITIDOS = ["Proceso Iniciado", "Falta Vinculación", "Diferencia Precios"];
+  const ESTADOS_PERMITIDOS = ESTADOS_VINCULACION_CODIGOS; // los mismos del contador del menú
 
   const formatearFechaEmision = (fechaStr) => {
     if (!fechaStr) return '';

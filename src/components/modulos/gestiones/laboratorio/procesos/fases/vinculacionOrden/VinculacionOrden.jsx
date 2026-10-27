@@ -21,6 +21,7 @@ import { useModal } from '../../../../../../../context/ModalContext';
 import { useGranularPermission } from '../../../../../../../hooks/useGranularPermission';
 import DetalleVinculacionOC from './DetalleVinculacionOC';
 import { useLaboratorioData } from '../../../LaboratorioDataContext';
+import { ESTADOS_VINCULACION_ORDENES } from '../../pendientesLaboratorio';
 import EstadoProcesoBadge from '../../../../shared/EstadoProcesoBadge';
 import { useColumnasPermitidas } from '../../../../../../../hooks/useColumnasPermitidas';
 
@@ -109,7 +110,7 @@ const VinculacionOrden = () => {
 
         setLoading(true);
         try {
-            const estadosPermitidos = ["Procesar OC", "Solicitud Enviada"];
+            const estadosPermitidos = ESTADOS_VINCULACION_ORDENES; // los mismos del contador del menú
             const mesesIds = await getMeses(COL_BASE, filtroAnio);
 
             // Consulta por mes filtrando por estado en el servidor, en vez de un

@@ -15,6 +15,7 @@ import { useModal } from '../../../../../../../context/ModalContext';
 import { useGranularPermission } from '../../../../../../../hooks/useGranularPermission';
 import DetalleListasIngreso from './DetalleListasIngreso';
 import { useLaboratorioData } from '../../../LaboratorioDataContext';
+import { ESTADOS_DOCUMENTOS_LISTOS } from '../../pendientesLaboratorio';
 import EstadoProcesoBadge from '../../../../shared/EstadoProcesoBadge';
 import { useColumnasPermitidas } from '../../../../../../../hooks/useColumnasPermitidas';
 
@@ -49,11 +50,7 @@ const DocListasIngreso = () => {
     const { columnasVisibles: columnasTabla, ver: verColumna } = useColumnasPermitidas(PATH_VISTA, 'tabla_documentos', COLUMNAS_TABLA);
     const COL_BASE = "laboratorio_documentos";
 
-    const ESTADOS_PERMITIDOS = [
-        "Listo para Ingreso",
-        "Listos para Ingreso",
-        "Listo Para Ingreso"
-    ];
+    const ESTADOS_PERMITIDOS = ESTADOS_DOCUMENTOS_LISTOS; // los mismos del contador del menú
 
     const formatearFechaEmision = (fechaStr) => {
         if (!fechaStr) return '';

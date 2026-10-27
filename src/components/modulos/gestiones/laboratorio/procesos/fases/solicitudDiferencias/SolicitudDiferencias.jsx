@@ -17,6 +17,7 @@ import { useModal } from '../../../../../../../context/ModalContext';
 import { useGranularPermission } from '../../../../../../../hooks/useGranularPermission';
 import DetalleSolicitudDif from './DetalleSolicitudDif';
 import { useLaboratorioData } from '../../../LaboratorioDataContext';
+import { ESTADOS_SOLICITUD_DIFERENCIAS } from '../../pendientesLaboratorio';
 import EstadoProcesoBadge from '../../../../shared/EstadoProcesoBadge';
 import { useColumnasPermitidas, filtrarFilasExport } from '../../../../../../../hooks/useColumnasPermitidas';
 
@@ -53,13 +54,7 @@ const SolicitudDiferencias = () => {
   const { columnasVisibles: columnasTabla, ver: verColumna } = useColumnasPermitidas(PATH_VISTA, 'tabla_documentos', COLUMNAS_TABLA);
   const COL_BASE = "laboratorio_documentos";
   
-  const ESTADOS_PERMITIDOS = [
-    "Diferencia Reportada",
-    "DiferenciasReportadas",
-    "Aceptado con Diferencias",
-    "Vinculación Parcial",
-    "Vinculacion Parcial"
-  ];
+  const ESTADOS_PERMITIDOS = ESTADOS_SOLICITUD_DIFERENCIAS; // los mismos del contador del menú
 
   const formatearFechaEmision = (fechaStr) => {
     if (!fechaStr) return '';

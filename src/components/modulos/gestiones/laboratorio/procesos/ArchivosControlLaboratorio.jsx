@@ -8,6 +8,7 @@ import DocImputados from './fases/documentosImputados/DocumentosImputados';
 import DocumentosEditor from './fases/documentosEditor/DocumentosEditor';
 import FaseControlProcesos from '../../shared/FaseControlProcesos';
 import { FASES_CONTROL_PROCESOS } from '../../../../../config/pestanasControlProcesos';
+import { RUTA_CONTROL_LABORATORIO } from './pendientesLaboratorio';
 
 // "Control Procesos" de Laboratorio: cada fase es un ítem propio del menú
 // (antes, una pestaña de esta pantalla; ver config/pestanasControlProcesos.js).
@@ -15,7 +16,7 @@ import { FASES_CONTROL_PROCESOS } from '../../../../../config/pestanasControlPro
 // siguen valiendo. Sin LaboratorioDataProvider: las fases usan el store
 // global de useLaboratorioData, compartido entre ítems (con su TTL), en vez
 // de volver a leer códigos y órdenes al pasar de un ítem a otro.
-export const RUTA_CONTROL_LABORATORIO = '/laboratorio/archivosControlLaboratorio';
+// La ruta del contenedor vive en pendientesLaboratorio.js (contadores del menú).
 
 const COMPONENTES = {
   documentosRecibidos: DocumentosRecibidos,

@@ -70,6 +70,7 @@ import CodigoLaboratorio from '../components/modulos/gestiones/laboratorio/regis
 import OrdenLaboratorio from '../components/modulos/gestiones/laboratorio/importaciones/OrdenLaboratorio';
 import XmlDocLaboratorio from '../components/modulos/gestiones/laboratorio/importaciones/XmlDocLaboratorio';
 import { vistasControlLaboratorio } from '../components/modulos/gestiones/laboratorio/procesos/ArchivosControlLaboratorio';
+import { usePendientesLaboratorio } from '../components/modulos/gestiones/laboratorio/procesos/usePendientesLaboratorio';
 
 // --- VACUNATORIO ---
 import EmpresasVacunatorio from '../components/modulos/gestiones/vacunatorio/registros/EmpresasVacunatorio';
@@ -645,6 +646,11 @@ const Dashboard = () => {
   const entradasPermitidas = entradasDelSidebar(userData, modulosActivos);
   const getSubItemsOrdenados = (entrada) => itemsDelSidebar(userData, entrada, modulosActivos);
 
+  // Documentos por procesar en las fases de Laboratorio: solo cuenta los
+  // ítems que el menú lateral muestra ahora (con permiso), por conteo.
+  const rutasMenuLateral = activeModule && !isAjustesMode ? getSubItemsOrdenados(activeModule).map((s) => s.path) : [];
+  const pendientesLaboratorio = usePendientesLaboratorio(rutasMenuLateral, activeView);
+
   // Campana de notificaciones: el clic abre la pantalla como el menú (o
   // Ayuda y soporte, para un ticket de alguien de mi equipo).
   const puedeAbrirRuta = (ruta) => {
@@ -990,6 +996,7 @@ const Dashboard = () => {
                       </span>
                       {sub.path === RUTA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
                       {sub.path === RUTA_GESTION_TICKETS && !colapsado && <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />}
+                      {!colapsado && <Contador n={pendientesLaboratorio[sub.path] ?? 0} etiqueta="documentos por procesar" tope={100} />}
                     </button>
                   ))}
                 </div>
