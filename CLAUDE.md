@@ -141,6 +141,10 @@ Medra: plataforma interna (SPA) para gestionar implantes, hemodinamia, consignac
   - Facturas: imputado de Laboratorio y Vacunatorio (desde la factura electrónica).
   - Valorización de bodega: saldo valorizado de Bodega (foto de `bodega_periodos` al cierre, o `sum()` de `bodega_movimientos` si el mes está abierto).
   - En las imputadas, un mes cerrado sale del snapshot de `imputaciones_periodos` y uno abierto de `count()`/`sum()`. Un mes sin cierre en `cierres_periodos` vale 0 y no se lee.
+- **Comparativo mensual** (Finanzas, `totalesFinanzas/comparativoMes.js`): Consumos y Facturas de los mismos días (`desde`–`hasta`, sin pasar de hoy en Chile) del mes pasado y del actual, con la diferencia en monto y en %.
+  - El snapshot mensual no sirve para un rango de días: suma `count()`/`sum('total')` con rango sobre la fecha del documento. En Consumos es `fecha` (gestión o cirugía) y en Facturas `fchEmis` (emisión de la factura).
+  - Cada mes se busca en los períodos de imputación mes−1, mes y mes+1, sin pasar del actual.
+  - Un día que no existe en el mes pasado se toma como su último día.
 - **Períodos cerrados:** no se pueden editar.
 - **Gestión de módulos** (solo dev): activa o desactiva módulos e ítems para todos. El módulo `administracion` no se puede desactivar.
 

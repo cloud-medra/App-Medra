@@ -169,6 +169,7 @@ export const MODULES = {
       { label: 'Consumos', path: '/administracion/consumos', icon: <BadgeDollarSign size={14} />, color: PALETA_MENU.ambar, grupo: 'finanzas' },
       { label: 'Facturas', path: '/administracion/facturas', icon: <Receipt size={14} />, color: PALETA_MENU.azul, grupo: 'finanzas' },
       { label: 'Valorización de bodega', path: '/administracion/valorizacionBodega', icon: <Warehouse size={14} />, color: PALETA_MENU.violeta, grupo: 'finanzas' },
+      { label: 'Comparativo mensual', path: '/administracion/comparativoMes', icon: <GitCompareArrows size={14} />, color: PALETA_MENU.frambuesa, grupo: 'finanzas' },
       // Bandeja completa de tickets de soporte (Ayuda y soporte). Es el
       // permiso "Gestionar tickets": siempre activo para el Desarrollador (ve
       // todos los ítems) y, para los demás, solo si se asigna en el editor de

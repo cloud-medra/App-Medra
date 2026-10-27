@@ -287,6 +287,10 @@ export const administracionComponentMaps = {
     label: 'Valorización de bodega (TotalFinanzas.jsx) — saldo valorizado de Bodega',
     sections: { desglose: { label: 'Sección: Cuadratura del período (saldo inicial, movimientos y saldo)', elements: {} } },
   },
+  '/administracion/comparativoMes': {
+    label: 'Comparativo mensual (ComparativoMes.jsx) — Consumos y Facturas, mismos días del mes pasado y del actual',
+    sections: { desglose: { label: 'Sección: Desglose por módulo', elements: {} } },
+  },
 
   '/administracion/estadisticas': {
     label: 'Estadísticas (Implantes, Consignación y Hemodinamia por período)',

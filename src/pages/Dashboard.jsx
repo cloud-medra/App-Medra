@@ -53,6 +53,8 @@ import ControlMensual from '../components/modulos/administracion/controlMensual/
 import ResumenPeriodoAbierto from '../components/modulos/administracion/resumenPeriodoAbierto/ResumenPeriodoAbierto.jsx';
 import TotalFinanzas from '../components/modulos/administracion/totalesFinanzas/TotalFinanzas.jsx';
 import { TOTALES_FINANZAS } from '../components/modulos/administracion/totalesFinanzas/totalesFinanzas';
+import ComparativoMes from '../components/modulos/administracion/totalesFinanzas/ComparativoMes.jsx';
+import { RUTA_COMPARATIVO_MES } from '../components/modulos/administracion/totalesFinanzas/comparativoMes';
 import NotasAdmin from '../components/modulos/administracion/notasAdmin/NotasAdmin';
 import Recordatorios from '../components/modulos/administracion/recordatorios/Recordatorios';
 import CrearUsuario from '../components/modulos/administracion/usuarios/CrearUsuario';
@@ -496,6 +498,7 @@ const Dashboard = () => {
     '/administracion/estadisticas': <Estadisticas />,
     // `key`: cada total con su propio estado (mes elegido) al pasar de uno a otro.
     ...Object.fromEntries(Object.entries(TOTALES_FINANZAS).map(([tipo, t]) => [t.ruta, <TotalFinanzas key={tipo} tipo={tipo} />])),
+    [RUTA_COMPARATIVO_MES]: <ComparativoMes />,
 
     // ── Laboratorio ──
     '/laboratorio/empresasLaboratorio': <EmpresasLaboratorio />,
