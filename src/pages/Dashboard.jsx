@@ -32,6 +32,7 @@ import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROL
 import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, colorEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
 import CuadritoIcono from '../components/ui/CuadritoIcono';
 import { entradasDelSidebar, itemsDelSidebar } from '../config/menuSidebar';
+import { codigoEntrada, ENTRADA_AJUSTES } from '../config/codigosModulos';
 import { vistaDeModulo, leerModuloDeURL } from '../config/vistaModulo';
 import { useHistorialVistaModulo } from '../hooks/useHistorialVistaModulo';
 import AccesoRapidoModulo from '../components/modulos/general/accesoModulo/AccesoRapidoModulo';
@@ -212,9 +213,14 @@ const VolverSidebar = ({ texto, onClick, colapsado }) => (
 
 // Con `onClick` (módulos) el título es un botón que abre la vista de acceso
 // rápido del módulo; `activo` lo resalta mientras se ve esa vista.
-const TituloSidebar = ({ cuadrito, texto, colapsado, onClick, activo = false }) => {
+const TituloSidebar = ({ cuadrito, texto, codigo, colapsado, onClick, activo = false }) => {
   const clases = `flex items-center gap-2.5 px-2 pt-2 pb-2.5 mb-2 border-b border-gray-200 dark:border-gray-700 ${colapsado ? 'justify-center' : ''}`;
-  const titulo = <h2 className={colapsado ? 'sr-only' : `text-sm font-bold truncate ${activo ? 'text-[#1b6a9e] dark:text-sky-300' : 'text-gray-800 dark:text-gray-100'}`}>{texto}</h2>;
+  const titulo = (
+    <h2 className={colapsado ? 'sr-only' : `min-w-0 flex items-baseline gap-1.5 text-sm font-bold ${activo ? 'text-[#1b6a9e] dark:text-sky-300' : 'text-gray-800 dark:text-gray-100'}`}>
+      <span className="truncate">{texto}</span>
+      {codigo && <CodigoModulo codigo={codigo} />}
+    </h2>
+  );
   if (!onClick) {
     return (
       <div title={colapsado ? texto : undefined} className={clases}>
@@ -236,6 +242,11 @@ const TituloSidebar = ({ cuadrito, texto, colapsado, onClick, activo = false }) 
     </button>
   );
 };
+
+// Código corto del módulo (config/codigosModulos.js), junto a su nombre.
+const CodigoModulo = ({ codigo }) => (
+  <span className="shrink-0 text-[9.5px] font-semibold tracking-wide text-gray-400 dark:text-gray-500" aria-label={`código ${codigo}`}>{codigo}</span>
+);
 
 // Entrada del sidebar que lleva el contador de alertas sin leer.
 const ENTRADA_ALERTAS = entradaDeRuta(MODULO_AGRUPADO, RUTA_ALERTAS);
@@ -915,7 +926,7 @@ const Dashboard = () => {
 
               {/* VOLVER AL SISTEMA + TÍTULO (mismo formato que un módulo) */}
               <VolverSidebar texto="Volver al Sistema" onClick={salirDeAjustes} colapsado={colapsado} />
-              <TituloSidebar cuadrito={<CuadritoIcono icon={<Settings />} color="#2383C2" />} texto="Ajustes Sistema" colapsado={colapsado} />
+              <TituloSidebar cuadrito={<CuadritoIcono icon={<Settings />} color="#2383C2" />} texto="Ajustes Sistema" codigo={codigoEntrada(ENTRADA_AJUSTES)} colapsado={colapsado} />
 
               {/* SECCIÓN CONFIGURACIÓN E ÍTEMS */}
               <div className={`px-2 mb-2 ${TITULO_SECCION_SIDEBAR} transition-all duration-300 truncate ${colapsado ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100'}`}>
@@ -959,6 +970,7 @@ const Dashboard = () => {
                         <span className={`transition-all duration-300 truncate ${colapsado ? 'opacity-0 w-0 pointer-events-none' : 'opacity-100 w-auto'}`}>
                           {etiquetaEntrada(key)}
                         </span>
+                        {!colapsado && codigoEntrada(key) && <CodigoModulo codigo={codigoEntrada(key)} />}
                       </div>
                       {key === ENTRADA_ALERTAS && !colapsado && <Contador n={alertasNoLeidas} />}
                       {key === ENTRADA_TICKETS && !colapsado && <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />}
@@ -972,6 +984,7 @@ const Dashboard = () => {
                   <TituloSidebar
                     cuadrito={<IconoModulo moduleKey={activeModule} />}
                     texto={etiquetaEntrada(activeModule)}
+                    codigo={codigoEntrada(activeModule)}
                     colapsado={colapsado}
                     onClick={() => abrirAccesoModulo(activeModule)}
                     activo={entradaAccesoRapido === activeModule}
