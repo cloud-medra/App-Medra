@@ -30,6 +30,16 @@ export const ZONAS = Object.freeze([
 export const ID_ZONAS = ZONAS.map((z) => z.id);
 export const zonaPorId = (id) => ZONAS.find((z) => z.id === id) || null;
 
+// "Sin zona específica": diagnósticos sin zona fija (biopsia, reparación de
+// ligamento…). Se guarda como única zona de la lista, con estado
+// Confirmada (cuenta como revisada y no suma en la notificación). No está
+// en ZONAS: no se dibuja en el cuerpo ni la propone sugerirZonas.
+export const SIN_ZONA_ESPECIFICA = 'sin_zona_especifica';
+export const NOMBRE_SIN_ZONA_ESPECIFICA = 'Sin zona específica';
+export const esSinZonaEspecifica = (zonas) => Array.isArray(zonas) && zonas.includes(SIN_ZONA_ESPECIFICA);
+// Nombre para mostrar de cualquier valor de la lista de zonas.
+export const nombreZona = (id) => (id === SIN_ZONA_ESPECIFICA ? NOMBRE_SIN_ZONA_ESPECIFICA : zonaPorId(id)?.nombre || id);
+
 // Lado: de la gestión (campo "Lado", con prioridad) o del Maestro.
 export const LADOS = Object.freeze([
   { id: 'no_especificado', nombre: 'No especificado' },

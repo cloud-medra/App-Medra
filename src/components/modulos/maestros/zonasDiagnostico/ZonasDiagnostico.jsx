@@ -9,6 +9,7 @@ import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import CuerpoCompleto from '../../../ui/bodymap/CuerpoCompleto';
 import {
   ZONAS, LADOS, ESTADOS, zonaPorId, nombreLado, normalizarDescripcion,
+  SIN_ZONA_ESPECIFICA, NOMBRE_SIN_ZONA_ESPECIFICA, esSinZonaEspecifica, nombreZona,
 } from '../../../../../functions/bodymap/nucleo.mjs';
 
 // Maestros → Zonas por diagnóstico (Bodymap de Implantes): cada descripción
@@ -17,6 +18,8 @@ import {
 // contador los mantiene la Cloud Function (functions/bodymap): una
 // descripción nueva aparece sola como "Sugerida" o "Sin asignar". Aquí se
 // asignan o corrigen las zonas (queda "Confirmada") con la acción "Editar".
+// "Sin zona específica" (nucleo.mjs) se asigna como una zona más, excluye a
+// las demás y también queda "Confirmada"; tiene su opción en el filtro.
 
 const PATH_VISTA = '/maestros/zonasDiagnostico';
 const COLECCION = 'maestros_zonas_diagnostico';
@@ -61,10 +64,18 @@ const Modal = ({ titulo, onCerrar, children, ancho = 'max-w-3xl' }) => (
 
 // Editor de zonas y lado de una descripción, con el cuerpo como vista previa.
 const EditorZonas = ({ entrada, onGuardar, onCerrar, guardando }) => {
-  const [zonas, setZonas] = useState(entrada.zonas || []);
+  const [sinZona, setSinZona] = useState(esSinZonaEspecifica(entrada.zonas));
+  const [zonas, setZonas] = useState((entrada.zonas || []).filter((z) => z !== SIN_ZONA_ESPECIFICA));
   const [lado, setLado] = useState(entrada.lado || 'no_especificado');
-  const alternar = (z) => setZonas((prev) => (prev.includes(z) ? prev.filter((x) => x !== z) : [...prev, z]));
+  // Una zona real desmarca "Sin zona específica" y viceversa.
+  const alternar = (z) => { setSinZona(false); setZonas((prev) => (prev.includes(z) ? prev.filter((x) => x !== z) : [...prev, z])); };
+  const alternarSinZona = () => {
+    setSinZona((prev) => !prev);
+    setZonas([]);
+    setLado('no_especificado');
+  };
   const ordenadas = ZONAS.map((z) => z.id).filter((z) => zonas.includes(z));
+  const resultado = sinZona ? [SIN_ZONA_ESPECIFICA] : ordenadas;
   return (
     <Modal titulo="Asignar zonas" onCerrar={onCerrar}>
       <header className="shrink-0 px-5 py-3.5 border-b border-gray-200 dark:border-gray-700">
@@ -76,6 +87,13 @@ const EditorZonas = ({ entrada, onGuardar, onCerrar, guardando }) => {
       </header>
       <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_260px] gap-4 p-5">
         <div className="flex flex-col gap-4">
+          <label className={`flex items-start gap-2 text-[11.5px] px-2 py-1.5 rounded-md border cursor-pointer ${sinZona ? 'border-violet-400/50 bg-violet-50 dark:bg-violet-900/20 text-gray-800 dark:text-gray-100' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'}`}>
+            <input type="checkbox" checked={sinZona} onChange={alternarSinZona} className="accent-violet-600 mt-0.5" />
+            <span>
+              <b className="font-semibold">{NOMBRE_SIN_ZONA_ESPECIFICA}</b>
+              <span className="block text-[10.5px] text-gray-500 dark:text-gray-400">Para diagnósticos sin zona fija (ej. biopsia, reparación de ligamento): cuenta como revisada.</span>
+            </span>
+          </label>
           {GRUPOS.map((g) => (
             <fieldset key={g.titulo}>
               <legend className="text-[10.5px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">{g.titulo}</legend>
@@ -91,8 +109,8 @@ const EditorZonas = ({ entrada, onGuardar, onCerrar, guardando }) => {
           ))}
           <label className="flex items-center gap-2 text-[11.5px] font-semibold text-gray-700 dark:text-gray-200">
             Lateralidad
-            <select value={lado} onChange={(e) => setLado(e.target.value)} aria-label="Lateralidad"
-              className="h-8 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] font-normal text-gray-800 dark:text-gray-100">
+            <select value={lado} onChange={(e) => setLado(e.target.value)} aria-label="Lateralidad" disabled={sinZona}
+              className="disabled:opacity-50 h-8 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] font-normal text-gray-800 dark:text-gray-100">
               {LADOS.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
             </select>
             <span className="font-normal text-[10.5px] text-gray-400">El "Lado" de cada gestión tiene prioridad.</span>
@@ -104,10 +122,10 @@ const EditorZonas = ({ entrada, onGuardar, onCerrar, guardando }) => {
       </div>
       <footer className="shrink-0 px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-2">
         <span className="mr-auto text-[11px] text-gray-500 dark:text-gray-400">
-          {ordenadas.length ? `Quedará Confirmada: ${ordenadas.map((z) => zonaPorId(z).nombre).join(', ')}` : 'Sin zonas: quedará "Sin asignar".'}
+          {resultado.length ? `Quedará Confirmada: ${resultado.map(nombreZona).join(', ')}` : 'Sin zonas: quedará "Sin asignar".'}
         </span>
         <button type="button" onClick={onCerrar} className="h-8 px-3.5 rounded-md border border-gray-300 dark:border-gray-600 text-[12px] font-semibold text-gray-700 dark:text-gray-200">Cancelar</button>
-        <button type="button" onClick={() => onGuardar(ordenadas, lado)} disabled={guardando}
+        <button type="button" onClick={() => onGuardar(resultado, sinZona ? 'no_especificado' : lado)} disabled={guardando}
           className="h-8 px-3.5 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[12px] font-semibold inline-flex items-center gap-1.5 disabled:opacity-50">
           {guardando ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Guardar
         </button>
@@ -125,7 +143,7 @@ const Historial = ({ entrada, onCerrar }) => {
       .catch((err) => { console.error('Error al leer el historial:', err); if (activo) setLogs([]); });
     return () => { activo = false; };
   }, [entrada.id]);
-  const zonas = (ids) => (ids || []).map((z) => zonaPorId(z)?.nombre || z).join(', ') || '—';
+  const zonas = (ids) => (ids || []).map(nombreZona).join(', ') || '—';
   return (
     <Modal titulo="Historial" onCerrar={onCerrar} ancho="max-w-lg">
       <header className="shrink-0 px-5 py-3.5 border-b border-gray-200 dark:border-gray-700 flex items-start gap-2">
@@ -183,7 +201,7 @@ const ZonasDiagnostico = ({ busquedaInicial = '' }) => {
   const lista = useMemo(() => {
     const q = normalizarDescripcion(busqueda);
     return (entradas || [])
-      .filter((e) => filtroEstado === 'todos' || e.estado === filtroEstado)
+      .filter((e) => filtroEstado === 'todos' || (filtroEstado === SIN_ZONA_ESPECIFICA ? esSinZonaEspecifica(e.zonas) : e.estado === filtroEstado))
       .filter((e) => !q || e.descripcion?.includes(q))
       .sort((a, b) => (ORDEN_ESTADO[a.estado] ?? 0) - (ORDEN_ESTADO[b.estado] ?? 0) || (b.gestiones || 0) - (a.gestiones || 0) || a.descripcion.localeCompare(b.descripcion));
   }, [entradas, busqueda, filtroEstado]);
@@ -200,7 +218,7 @@ const ZonasDiagnostico = ({ busquedaInicial = '' }) => {
         accion, antes: { zonas: entrada.zonas || [], lado: entrada.lado || 'no_especificado', estado: entrada.estado || ESTADOS.SIN_ASIGNAR }, despues,
         usuario: userData?.nombreCompleto || 'Usuario', usuarioUid: userData?.uid || null, fecha: serverTimestamp(),
       });
-      showToast(zonas.length ? 'Zonas guardadas y confirmadas.' : 'La descripción quedó sin zonas asignadas.', 'success');
+      showToast(esSinZonaEspecifica(zonas) ? 'Guardada como "Sin zona específica".' : zonas.length ? 'Zonas guardadas y confirmadas.' : 'La descripción quedó sin zonas asignadas.', 'success');
       setEditando(null);
     } catch (err) {
       console.error('Error al guardar las zonas:', err);
@@ -227,6 +245,7 @@ const ZonasDiagnostico = ({ busquedaInicial = '' }) => {
             <EstadoZona estado={ESTADOS.SIN_ASIGNAR} /> {cuenta(ESTADOS.SIN_ASIGNAR)}
             <EstadoZona estado={ESTADOS.SUGERIDA} /> {cuenta(ESTADOS.SUGERIDA)}
             <EstadoZona estado={ESTADOS.CONFIRMADA} /> {cuenta(ESTADOS.CONFIRMADA)}
+            <span className="text-gray-500 dark:text-gray-400">(de ellas, {(entradas || []).filter((e) => esSinZonaEspecifica(e.zonas)).length} sin zona específica)</span>
           </span>
         )}
         {puede.filtrar && (
@@ -236,6 +255,7 @@ const ZonasDiagnostico = ({ busquedaInicial = '' }) => {
             <option value={ESTADOS.SIN_ASIGNAR}>Sin asignar</option>
             <option value={ESTADOS.SUGERIDA}>Sugerida</option>
             <option value={ESTADOS.CONFIRMADA}>Confirmada</option>
+            <option value={SIN_ZONA_ESPECIFICA}>{NOMBRE_SIN_ZONA_ESPECIFICA}</option>
           </select>
         )}
         {puede.buscar && (
@@ -274,7 +294,7 @@ const ZonasDiagnostico = ({ busquedaInicial = '' }) => {
                       <td className={celda}>
                         {sinZona ? <span className="text-amber-700 dark:text-amber-400">—</span> : (
                           <span className="flex flex-wrap gap-1">
-                            {e.zonas.map((z) => <span key={z} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-200">{zonaPorId(z)?.nombre || z}</span>)}
+                            {e.zonas.map((z) => <span key={z} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${z === SIN_ZONA_ESPECIFICA ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-200'}`}>{nombreZona(z)}</span>)}
                           </span>
                         )}
                       </td>

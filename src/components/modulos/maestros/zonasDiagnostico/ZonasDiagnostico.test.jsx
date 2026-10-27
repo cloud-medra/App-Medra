@@ -9,6 +9,7 @@ const ENTRADAS = [
   { id: 'a', descripcion: 'RUPTURA MANGUITO ROTADORES', zonas: ['hombro'], lado: 'no_especificado', estado: 'sugerida', gestiones: 33 },
   { id: 'b', descripcion: 'INESTABILIDAD CRONICA DE RODILLA', zonas: ['rodilla'], lado: 'no_especificado', estado: 'confirmada', gestiones: 25 },
   { id: 'c', descripcion: 'ARTROSCOPIA DIAGNOSTICA C/S BIOPSIA', zonas: [], lado: 'no_especificado', estado: 'sin_asignar', gestiones: 4 },
+  { id: 'd', descripcion: 'BIOPSIA', zonas: ['sin_zona_especifica'], lado: 'no_especificado', estado: 'confirmada', gestiones: 2 },
 ];
 const escrituras = [];
 vi.mock('firebase/firestore', () => ({
@@ -39,7 +40,7 @@ describe('Zonas por diagnóstico', () => {
   it('lista con columnas, sin asignar primero y resaltada; filtra por estado y busca', () => {
     render(<ZonasDiagnostico />);
     expect(screen.getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Descripción', 'Zona(s)', 'Lateralidad', 'Estado', 'Gestiones', 'Acciones']);
-    expect(filas()).toEqual(['ARTROSCOPIA DIAGNOSTICA C/S BIOPSIA', 'RUPTURA MANGUITO ROTADORES', 'INESTABILIDAD CRONICA DE RODILLA']);
+    expect(filas()).toEqual(['ARTROSCOPIA DIAGNOSTICA C/S BIOPSIA', 'RUPTURA MANGUITO ROTADORES', 'INESTABILIDAD CRONICA DE RODILLA', 'BIOPSIA']);
     const sinZona = screen.getByText('ARTROSCOPIA DIAGNOSTICA C/S BIOPSIA').closest('tr');
     expect(sinZona.className).toMatch(/amber/);
     expect(within(sinZona).getByText('Sin asignar')).toBeInTheDocument();
@@ -79,6 +80,43 @@ describe('Zonas por diagnóstico', () => {
     render(<ZonasDiagnostico />);
     expect(screen.queryByLabelText(/^Editar /)).not.toBeInTheDocument();
     expect(screen.queryByLabelText(/^Confirmar /)).not.toBeInTheDocument();
-    expect(screen.getAllByLabelText(/^Historial de /)).toHaveLength(3);
+    expect(screen.getAllByLabelText(/^Historial de /)).toHaveLength(4);
+  });
+
+  it('"Sin zona específica": su propia categoría en la tabla y en el filtro, sin resaltar como pendiente', () => {
+    render(<ZonasDiagnostico />);
+    const fila = screen.getByText('BIOPSIA').closest('tr');
+    expect(fila.className).not.toMatch(/amber/);
+    expect(within(fila).getByText('Sin zona específica')).toBeInTheDocument();
+    expect(within(fila).getByText('Confirmada')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Filtrar por estado'), { target: { value: 'sin_zona_especifica' } });
+    expect(filas()).toEqual(['BIOPSIA']);
+    fireEvent.change(screen.getByLabelText('Filtrar por estado'), { target: { value: 'confirmada' } });
+    expect(filas()).toEqual(['INESTABILIDAD CRONICA DE RODILLA', 'BIOPSIA']);
+  });
+
+  it('asignar "Sin zona específica": excluye las demás zonas, lado no especificado y queda Confirmada', async () => {
+    render(<ZonasDiagnostico />);
+    fireEvent.click(screen.getByLabelText('Editar ARTROSCOPIA DIAGNOSTICA C/S BIOPSIA'));
+    const editor = screen.getByRole('dialog', { name: 'Asignar zonas' });
+    fireEvent.click(within(editor).getByLabelText('Rodilla'));
+    fireEvent.change(within(editor).getByLabelText('Lateralidad'), { target: { value: 'bilateral' } });
+    fireEvent.click(within(editor).getByLabelText(/Sin zona específica/));
+    expect(within(editor).getByLabelText('Rodilla')).not.toBeChecked();
+    expect(within(editor).getByLabelText('Lateralidad')).toBeDisabled();
+    expect(editor).toHaveTextContent('Quedará Confirmada: Sin zona específica');
+    await act(async () => { fireEvent.click(within(editor).getByRole('button', { name: /Guardar/ })); });
+    expect(escrituras[0].datos).toMatchObject({ zonas: ['sin_zona_especifica'], lado: 'no_especificado', estado: 'confirmada' });
+  });
+
+  it('marcar una zona real desmarca "Sin zona específica"', async () => {
+    render(<ZonasDiagnostico />);
+    fireEvent.click(screen.getByLabelText('Editar BIOPSIA'));
+    const editor = screen.getByRole('dialog', { name: 'Asignar zonas' });
+    expect(within(editor).getByLabelText(/Sin zona específica/)).toBeChecked();
+    fireEvent.click(within(editor).getByLabelText('Rodilla'));
+    expect(within(editor).getByLabelText(/Sin zona específica/)).not.toBeChecked();
+    await act(async () => { fireEvent.click(within(editor).getByRole('button', { name: /Guardar/ })); });
+    expect(escrituras[0].datos).toMatchObject({ zonas: ['rodilla'], estado: 'confirmada' });
   });
 });

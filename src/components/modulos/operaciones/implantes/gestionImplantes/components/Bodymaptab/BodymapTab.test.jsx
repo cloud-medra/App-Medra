@@ -74,6 +74,16 @@ describe('Bodymap', () => {
     expect(screen.queryByRole('button', { name: /Asignar/ })).not.toBeInTheDocument();
   });
 
+  it('"Sin zona específica": la muestra como zona, sin lado, sin cuerpo y sin aviso de pendiente', () => {
+    maestro[idDescripcion('BIOPSIA')] = { zonas: ['sin_zona_especifica'], lado: 'no_especificado', estado: 'confirmada' };
+    render(<BodymapTab descripcion="Biopsia" onAbrirMaestro={vi.fn()} />);
+    expect(screen.getByText('Sin zona específica')).toBeInTheDocument();
+    expect(screen.getByText(/Diagnóstico sin zona específica: depende de cada caso/)).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText(/Lado/)).toBeNull();
+    expect(document.querySelector('svg[data-vista]')).toBeNull();
+  });
+
   it('la entrada existe pero sin zonas también muestra el aviso; sin descripción ("P") no consulta', () => {
     maestro[idDescripcion('RETIRO MATERIAL OSTEOSINTESIS')] = { zonas: [], lado: 'no_especificado', estado: 'sin_asignar' };
     render(<BodymapTab descripcion="RETIRO MATERIAL OSTEOSINTESIS" />);

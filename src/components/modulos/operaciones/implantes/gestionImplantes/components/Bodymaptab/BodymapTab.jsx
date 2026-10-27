@@ -6,13 +6,13 @@ import { useGranularPermission } from '../../../../../../../hooks/useGranularPer
 import CuerpoCompleto from '../../../../../../ui/bodymap/CuerpoCompleto';
 import DetalleZona from '../../../../../../ui/bodymap/DetalleZona';
 import {
-  zonaPorId, nombreLado, ladoEfectivo, esDescripcionValida, normalizarDescripcion, idDescripcion, ESTADOS, LADO_POR_DEFECTO,
+  nombreZona, esSinZonaEspecifica, nombreLado, ladoEfectivo, esDescripcionValida, normalizarDescripcion, idDescripcion, ESTADOS, LADO_POR_DEFECTO,
 } from '../../../../../../../../functions/bodymap/nucleo.mjs';
 
 // Implantes → Gestiones → "Bodymap": la(s) zona(s) del cuerpo de la gestión
 // según su descripción (Maestro "Zonas por diagnóstico",
 // maestros_zonas_diagnostico), en el cuerpo completo (anterior y posterior)
-// y en un detalle por zona. El lado: el de la gestión ("Lado" en
+// y en un detalle por zona ("Sin zona específica": solo un aviso, sin cuerpo). El lado: el de la gestión ("Lado" en
 // Información) y, si no lo especifica, el del Maestro; sin lado se
 // resaltan ambos. Escucha solo el documento de esa descripción.
 
@@ -37,6 +37,7 @@ export const BodymapTab = ({ descripcion, lado: ladoGestion, onAbrirMaestro }) =
   const cargando = valida && estado.id !== id;
   const entrada = estado.id === id ? estado.entrada : undefined;
   const zonas = entrada?.zonas || [];
+  const sinZonaEspecifica = esSinZonaEspecifica(zonas);
   const lado = ladoEfectivo(ladoGestion, entrada?.lado);
   const puedeAsignar = Boolean(onAbrirMaestro) && hasPermission(RUTA_MAESTRO, 'tabla_datos', 'action_editar');
 
@@ -53,13 +54,17 @@ export const BodymapTab = ({ descripcion, lado: ladoGestion, onAbrirMaestro }) =
           {zonas.length > 0 && (
             <p className="mt-1 flex flex-wrap items-center gap-1.5 text-gray-600 dark:text-gray-300">
               <span>Zona{zonas.length > 1 ? 's' : ''}:</span>
-              {zonas.map((z) => <span key={z} className="text-[10.5px] font-semibold px-1.5 py-0.5 rounded-full bg-[#2383C2]/10 text-[#1d6fa5] dark:text-blue-300">{zonaPorId(z)?.nombre || z}</span>)}
-              <span className="text-gray-400">·</span>
-              <span>Lado: <b>{nombreLado(lado)}</b>{ladoGestion && ladoGestion !== LADO_POR_DEFECTO ? ' (de la gestión)' : ''}</span>
+              {zonas.map((z) => <span key={z} className="text-[10.5px] font-semibold px-1.5 py-0.5 rounded-full bg-[#2383C2]/10 text-[#1d6fa5] dark:text-blue-300">{nombreZona(z)}</span>)}
+              {!sinZonaEspecifica && (
+                <>
+                  <span className="text-gray-400">·</span>
+                  <span>Lado: <b>{nombreLado(lado)}</b>{ladoGestion && ladoGestion !== LADO_POR_DEFECTO ? ' (de la gestión)' : ''}</span>
+                </>
+              )}
               {entrada?.estado === ESTADOS.SUGERIDA && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" title="Asignada automáticamente por palabras clave; aún no confirmada en el Maestro">Sugerida</span>}
             </p>
           )}
-          {zonas.length > 0 && lado === LADO_POR_DEFECTO && (
+          {zonas.length > 0 && !sinZonaEspecifica && lado === LADO_POR_DEFECTO && (
             <p className="text-amber-700 dark:text-amber-400 flex items-center gap-1"><Info size={12} /> Lado no especificado: se resaltan ambos lados.</p>
           )}
         </div>
@@ -69,6 +74,10 @@ export const BodymapTab = ({ descripcion, lado: ladoGestion, onAbrirMaestro }) =
         <p className="rounded-lg border border-slate-200 dark:border-gray-700 px-3 py-6 text-center text-gray-500">Esta gestión no tiene descripción: complétala en Información para ver su zona.</p>
       ) : cargando ? (
         <p className="py-10 text-center text-gray-400"><Loader2 size={14} className="inline animate-spin mr-1" />Cargando…</p>
+      ) : sinZonaEspecifica ? (
+        <p className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-gray-700 px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+          <Info size={13} className="shrink-0" /> Diagnóstico sin zona específica: depende de cada caso.
+        </p>
       ) : zonas.length === 0 ? (
         <div role="alert" className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-3 text-amber-900 dark:text-amber-200">
           <AlertTriangle size={15} className="shrink-0" />

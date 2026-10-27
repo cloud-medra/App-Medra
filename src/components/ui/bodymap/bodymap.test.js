@@ -77,3 +77,15 @@ describe('geometría del cuerpo', () => {
     expect(cajaZona('anterior', 'rodilla', 'derecho')).toHaveLength(4);
   });
 });
+
+describe('"Sin zona específica"', () => {
+  it('tiene nombre propio, no es una zona del cuerpo y nunca se sugiere', async () => {
+    const n = await import('../../../../functions/bodymap/nucleo.mjs');
+    expect(n.nombreZona(n.SIN_ZONA_ESPECIFICA)).toBe('Sin zona específica');
+    expect(n.nombreZona('rodilla')).toBe('Rodilla');
+    expect(n.ID_ZONAS).not.toContain(n.SIN_ZONA_ESPECIFICA);
+    expect(n.esSinZonaEspecifica(['sin_zona_especifica'])).toBe(true);
+    expect(n.esSinZonaEspecifica([])).toBe(false);
+    expect(n.sugerirZonas('BIOPSIA SIN ZONA ESPECIFICA').zonas).toEqual([]);
+  });
+});
