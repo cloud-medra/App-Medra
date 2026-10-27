@@ -18,6 +18,12 @@
   - Guardarlo fuera del repo (`$TEMP`) y borrarlo al terminar. Sin escrituras: si hay que corregir datos, avisar antes.
 - **No escribir datos en Firestore de producción** (cargas iniciales, migraciones, correcciones) sin mostrar antes una simulación y esperar aprobación explícita del usuario.
 
+## Flujo de trabajo
+
+- Hacer las tareas directo, sin pedir confirmación, salvo para cambiar reglas o índices de Firestore (mostrar antes el cambio) y para escribir datos en producción (simulación y aprobación).
+- Al terminar: `npm run build` y los tests unitarios que correspondan, commit y push a `main`, y desplegar solo lo que cambió (hosting y/o Functions por tandas, nunca `npm run deploy`).
+- Respuesta final breve: qué cambió, qué se desplegó y qué no se probó.
+
 ## Arquitectura
 
 Medra: SPA interna de una clínica para implantes, hemodinamia, consignación, documentos, laboratorio, vacunatorio, bodega e inventario, con imputación mensual por períodos. Proyecto Firebase `workcraft-491b7`.
