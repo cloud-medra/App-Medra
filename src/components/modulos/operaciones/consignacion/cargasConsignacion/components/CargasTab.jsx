@@ -627,6 +627,45 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
     }
   };
 
+  // Candado de la admisión, en la cabecera de "Ítems Registrados" (como el
+  // botón "Imputado" del bloque en Implantes): el candado de cada ítem va en
+  // la última columna de la tabla, que en pantallas normales queda fuera de
+  // la vista. Desbloquea de una vez los ítems SOLICITADO cuyo período está
+  // abierto (1 consulta por período distinto) y avisa de los demás.
+  const itemsImputados = items.filter(it => (it.estado || '').toUpperCase() === 'SOLICITADO');
+  const imputadosBloqueados = itemsImputados.filter(it => !desbloqueados.has(it.id));
+  const admisionBloqueada = imputadosBloqueados.length > 0;
+  const [verificandoCandadoAdmision, setVerificandoCandadoAdmision] = useState(false);
+
+  const handleAbrirCandadoAdmision = async () => {
+    if (verificandoCandadoAdmision || !admisionBloqueada) return;
+    setVerificandoCandadoAdmision(true);
+    try {
+      const abiertoPorPeriodo = new Map();
+      const abrir = [];
+      let cerrados = 0;
+      let sinPeriodo = 0;
+      for (const it of imputadosBloqueados) {
+        if (!it.periodoAnio || !it.periodoMes) { sinPeriodo++; continue; }
+        const clave = `${it.periodoAnio}/${it.periodoMes}`;
+        if (!abiertoPorPeriodo.has(clave)) abiertoPorPeriodo.set(clave, await periodoEstaAbierto(it.periodoAnio, it.periodoMes));
+        if (abiertoPorPeriodo.get(clave)) abrir.push(it.id); else cerrados++;
+      }
+      if (abrir.length) setDesbloqueados(prev => new Set([...prev, ...abrir]));
+      if (cerrados || sinPeriodo) {
+        const partes = [];
+        if (cerrados) partes.push(`${cerrados} con el período ya cerrado`);
+        if (sinPeriodo) partes.push(`${sinPeriodo} sin período registrado (dato legado; contactá a un administrador)`);
+        showToast(`${abrir.length ? `Se desbloquearon ${abrir.length} ítem(s). ` : 'No se desbloqueó ningún ítem. '}Quedan bloqueados: ${partes.join(' y ')}.`, abrir.length ? 'info' : 'error');
+      }
+    } catch (err) {
+      console.error('Error al verificar período para desbloquear candado:', err);
+      showToast('No se pudo verificar el período. Intentá de nuevo.', 'error');
+    } finally {
+      setVerificandoCandadoAdmision(false);
+    }
+  };
+
   const {
     sugerencias: sugerenciasEdicion, buscando: buscandoEdicion, mostrarSug: mostrarSugEdicion,
     setMostrarSug: setMostrarSugEdicion, containerRef: containerRefEdicion, portalRef: portalRefEdicion, skipNext: skipNextEdicion
@@ -1015,8 +1054,40 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
           <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
             Ítems Registrados
           </h3>
+          {itemsImputados.length > 0 && puedeDesbloquearCandado && (
+            <button
+              type="button"
+              onClick={admisionBloqueada ? handleAbrirCandadoAdmision : undefined}
+              disabled={!admisionBloqueada || verificandoCandadoAdmision}
+              title={
+                admisionBloqueada
+                  ? 'Hay ítems ya imputados — click para desbloquear su edición'
+                  : 'Desbloqueado — editá y guardá cada ítem para volver a bloquearlo'
+              }
+              className={`flex items-center gap-1 h-6 px-2 rounded text-[9px] font-bold transition shrink-0 ${
+                admisionBloqueada
+                  ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 cursor-pointer'
+                  : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 cursor-default'
+              } disabled:opacity-60`}
+            >
+              {verificandoCandadoAdmision ? <Loader2 size={11} className="animate-spin" /> : admisionBloqueada ? <Lock size={11} /> : <Unlock size={11} />}
+              <span>{admisionBloqueada ? 'Imputado' : 'Editando'}</span>
+            </button>
+          )}
           <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} className="ml-auto h-6" />
         </div>
+
+        {admisionBloqueada && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 text-[11px] text-amber-700 dark:text-amber-400">
+            <Lock size={14} className="shrink-0" />
+            <span>
+              {imputadosBloqueados.length === items.length
+                ? 'Esta admisión ya fue solicitada e imputada. Está en solo lectura'
+                : `${imputadosBloqueados.length} de ${items.length} ítem(s) ya fueron solicitados e imputados y están en solo lectura`}
+              {puedeDesbloquearCandado ? ' — presiona el candado "Imputado" para desbloquearlos y poder editarlos.' : '.'}
+            </span>
+          </div>
+        )}
 
         <div className="overflow-auto">
           <table

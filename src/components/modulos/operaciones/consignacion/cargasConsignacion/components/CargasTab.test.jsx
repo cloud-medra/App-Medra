@@ -28,6 +28,7 @@ vi.mock('./verificacionPeriodoConsignacion', () => ({ periodoEstaAbierto: vi.fn(
 vi.mock('../../registroConsignacion/utils/cacheMaestros', () => ({ obtenerCodigosCacheados: vi.fn() }));
 
 const { default: CargasTab } = await import('./CargasTab');
+const { periodoEstaAbierto } = await import('./verificacionPeriodoConsignacion');
 
 // Ítem con venta ya guardada coherente con la regla (el efecto de recargo no escribe).
 const ITEM = {
@@ -82,5 +83,40 @@ describe('Consignación → Cargas: editar precio', () => {
   it('muestra el badge en las filas con precio especial', () => {
     render(<CargasTab registro={{}} items={[{ ...ITEM, costo: 800, costoMaestro: 1000, precioEspecial: true, venta: 2400 }]} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);
     expect(screen.getByTitle('Precio especial (maestro: $1.000)')).toBeInTheDocument();
+  });
+});
+
+// Candado de la admisión en la cabecera de "Ítems Registrados" (el de cada
+// ítem queda en la última columna, fuera de la vista en pantallas normales).
+describe('Consignación → Cargas: candado de ítems imputados', () => {
+  const imputado = (id, extra = {}) => ({ ...ITEM, id, estado: 'SOLICITADO', periodoAnio: 2026, periodoMes: 'octubre', ...extra });
+  const montar = (items) => render(<CargasTab registro={{ gestionId: '500' }} items={items} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);
+
+  it('muestra "Imputado" y el aviso de solo lectura; al presionarlo desbloquea los ítems con período abierto', async () => {
+    montar([imputado('a'), imputado('b')]);
+    expect(screen.getByText(/Esta admisión ya fue solicitada e imputada/)).toBeInTheDocument();
+    expect(screen.queryByTitle('Editar ítem')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Imputado/ }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Editando/ })).toBeDisabled());
+    expect(screen.getAllByTitle('Desbloqueado — editá y guardá para volver a bloquearlo')).toHaveLength(2);
+    expect(screen.queryByText(/ya fue solicitada e imputada/)).toBeNull();
+    // Un solo período distinto: una sola consulta.
+    expect(periodoEstaAbierto).toHaveBeenCalledTimes(1);
+  });
+
+  it('deja bloqueados los de período cerrado o sin período, y avisa', async () => {
+    periodoEstaAbierto.mockClear();
+    periodoEstaAbierto.mockImplementation(async (_a, mes) => mes === 'octubre');
+    montar([imputado('a'), imputado('b', { periodoMes: 'septiembre' }), imputado('c', { periodoAnio: undefined, periodoMes: undefined })]);
+    fireEvent.click(screen.getByRole('button', { name: /Imputado/ }));
+    await waitFor(() => expect(showToast).toHaveBeenCalled());
+    expect(showToast.mock.calls[0][0]).toMatch(/Se desbloquearon 1 ítem\(s\)\. Quedan bloqueados: 1 con el período ya cerrado y 1 sin período/);
+    expect(screen.getByText(/2 de 3 ítem\(s\) ya fueron solicitados/)).toBeInTheDocument();
+    periodoEstaAbierto.mockImplementation(async () => true);
+  });
+
+  it('sin ítems imputados no aparece', () => {
+    montar([ITEM]);
+    expect(screen.queryByRole('button', { name: /Imputado/ })).toBeNull();
   });
 });
