@@ -29,10 +29,12 @@ import RecordatoriosAlarma from '../components/modulos/administracion/recordator
 import NotificacionesCampana from '../components/layout/NotificacionesCampana';
 import { useAlertasNoLeidas, RUTA_ALERTAS } from '../components/modulos/administracion/alertas/solicitudesServicio';
 import { subItemsVisibles, puedeAbrirVista, esAdministrador, RUTAS_SOLO_DESARROLLADOR } from '../config/accesoMenu';
-import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, colorEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
+import { entradaDeItem, entradaDeRuta, etiquetaEntrada, iconoEntrada, colorEntrada, moduloDeEntrada, MODULO_AGRUPADO } from '../config/gruposMenu.jsx';
 import CuadritoIcono from '../components/ui/CuadritoIcono';
 import { entradasDelSidebar, itemsDelSidebar } from '../config/menuSidebar';
 import { codigoEntrada, codigoItem, ENTRADA_AJUSTES } from '../config/codigosModulos';
+import { indiceMenu, ENTRADA_INICIO } from '../config/buscadorMenu';
+import BuscadorMenu, { BuscadorMenuModal } from '../components/layout/BuscadorMenu';
 import { vistaDeModulo, leerModuloDeURL } from '../config/vistaModulo';
 import { useHistorialVistaModulo } from '../hooks/useHistorialVistaModulo';
 import AccesoRapidoModulo from '../components/modulos/general/accesoModulo/AccesoRapidoModulo';
@@ -656,6 +658,49 @@ const Dashboard = () => {
   // (config/menuSidebar.js).
   const entradasPermitidas = entradasDelSidebar(userData, modulosActivos);
   const getSubItemsOrdenados = (entrada) => itemsDelSidebar(userData, entrada, modulosActivos);
+  const ajustesVisibles = AJUSTES_ITEMS.filter((item) => !item.soloDesarrollador || puedeConfigurarAtajos(userData));
+
+  // Buscador del sidebar (config/buscadorMenu.js): su índice es exactamente
+  // lo que el menú le muestra al usuario (permisos y módulos activos), así
+  // nunca revela un ítem sin acceso, ni por su código exacto.
+  const indiceBuscador = indiceMenu({
+    entradas: entradasPermitidas,
+    itemsDe: getSubItemsOrdenados,
+    etiquetaDe: etiquetaEntrada,
+    ajustes: ajustesVisibles,
+  });
+  const elegirDelBuscador = (r) => {
+    if (r.entrada === ENTRADA_INICIO) { irAlInicio(); return; }
+    if (r.entrada === ENTRADA_AJUSTES) {
+      if (r.tipo === 'modulo') { abrirAjustesGenerales(); return; }
+      setIsAjustesMode(true);
+      setActiveModule(null);
+      setActiveView(r.ruta);
+      return;
+    }
+    if (r.tipo === 'modulo') abrirAccesoModulo(r.entrada);
+    else abrirVistaDeModulo(moduloDeEntrada(r.entrada), r.ruta);
+  };
+  // Ctrl+K (⌘K): enfoca el campo del sidebar si está a la vista (lista de
+  // módulos, sidebar expandido y, en móvil, el drawer abierto); si no, abre
+  // el buscador flotante.
+  const [buscadorFlotante, setBuscadorFlotante] = useState(false);
+  const buscadorRef = useRef(null);
+  const campoBuscadorVisible = useRef(false);
+  useEffect(() => {
+    const escritorio = window.matchMedia?.('(min-width: 768px)').matches ?? true;
+    campoBuscadorVisible.current = !isAjustesMode && !activeModule && !colapsado && (escritorio || menuMovilAbierto);
+  });
+  useEffect(() => {
+    const alTeclear = (e) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== 'k') return;
+      e.preventDefault();
+      if (campoBuscadorVisible.current && buscadorRef.current) { buscadorRef.current.focus(); buscadorRef.current.select(); }
+      else setBuscadorFlotante(true);
+    };
+    document.addEventListener('keydown', alTeclear);
+    return () => document.removeEventListener('keydown', alTeclear);
+  }, []);
 
   // Documentos por procesar en las fases de Laboratorio: solo cuenta los
   // ítems que el menú lateral muestra ahora (con permiso), por conteo.
@@ -934,7 +979,7 @@ const Dashboard = () => {
               </div>
 
               <div className="space-y-1">
-                {AJUSTES_ITEMS.filter((item) => !item.soloDesarrollador || puedeConfigurarAtajos(userData)).map((item) => (
+                {ajustesVisibles.map((item) => (
                   <button
                     key={item.path}
                     onClick={() => setActiveView(item.path)}
@@ -958,6 +1003,7 @@ const Dashboard = () => {
 
               {/* SECCIÓN MÓDULOS (el inicio es el logo del header) */}
               {!activeModule ? (
+                <BuscadorMenu ref={buscadorRef} indice={indiceBuscador} onElegir={elegirDelBuscador} oculto={colapsado}>
                 <div className="space-y-1">
                   {entradasPermitidas.map((key) => (
                     <button
@@ -979,6 +1025,7 @@ const Dashboard = () => {
                     </button>
                   ))}
                 </div>
+                </BuscadorMenu>
               ) : (
                 <div className="space-y-1">
                   <VolverSidebar texto="Volver a módulos" onClick={() => setActiveModule(null)} colapsado={colapsado} />
@@ -1061,6 +1108,7 @@ const Dashboard = () => {
           )}
         </div>
       </aside>
+      {buscadorFlotante && <BuscadorMenuModal indice={indiceBuscador} onElegir={elegirDelBuscador} onCerrar={() => setBuscadorFlotante(false)} />}
 
         <main className="flex-grow min-w-0 px-3 pb-3 pt-5 overflow-y-auto">
           <div className="h-full">
