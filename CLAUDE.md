@@ -4,187 +4,91 @@
 
 ## Reglas
 
-- **No usar los emuladores de Firebase.** No iniciar `npm run emuladores`, `npm run dev:emuladores` ni `firebase emulators:*`, y no ejecutar `npm run test:emulador` ni los tests de `tests/emulador/`. Para verificar, usar `npm run build`, la revisión del código y los tests unitarios con vitest (`npm test` o `npx vitest run <ruta>`), que no usan emuladores y sí se pueden correr. Con la suite completa algunos tests pueden fallar por timeout de 5 s en este equipo: si fallan, correr esos archivos aparte (por ejemplo con `--testTimeout=30000`) antes de darlos por rotos.
-- **Desplegar las Cloud Functions de a 2 o 3 por vez.** La cuota de CPU de Cloud Run en `us-central1` ("Total CPU allocation, per project per region") está al límite y no se pudo aumentar: un `firebase deploy --only functions` completo falla con `Quota exceeded for total allowable CPU per project per region`. Desplegar por tandas, esperando a que termine cada una antes de lanzar la siguiente:
+- **No usar los emuladores de Firebase:** ni `npm run emuladores`, `npm run dev:emuladores`, `firebase emulators:*`, `npm run test:emulador` ni los tests de `tests/emulador/`. Verificar con `npm run build`, revisión de código y vitest (`npm test` o `npx vitest run <ruta>`). En la suite completa algunos tests fallan por timeout de 5 s en este equipo: correrlos aparte (`--testTimeout=30000`) antes de darlos por rotos.
+- **Desplegar las Cloud Functions de a 2 o 3 por vez**, esperando que termine cada tanda. La cuota de CPU de Cloud Run en `us-central1` ("Total CPU allocation, per project per region") está al límite y no se pudo aumentar: un deploy completo falla con `Quota exceeded for total allowable CPU per project per region`. Nunca `npm run deploy` (despliega todas juntas).
 
   ```bash
   FUNCTIONS_DISCOVERY_TIMEOUT=90 npx firebase-tools deploy --only functions:funcionA,functions:funcionB,functions:funcionC --project workcraft-491b7
   ```
 
-  Si una tanda falla por cuota, esperar unos minutos y reintentarla una vez; si vuelve a fallar, detenerse. Hacerlo de preferencia en horario de poco uso de la app.
-
-  `FUNCTIONS_DISCOVERY_TIMEOUT=90` (segundos) va siempre. Antes de desplegar, firebase-tools carga `functions/index.js` para ver qué Functions hay, y por defecto espera solo 10 s. En este equipo la carga tarda unos 25 s, así que sin la variable falla con `User code failed to load. Cannot determine backend specification. Timeout after 10000`. Ese error es por el tiempo de carga del código, **no por la cuota de CPU**: no hay que esperar ni contarlo como reintento por cuota; basta con correr el comando con la variable.
-
-  No usar `npm run deploy`, porque despliega todas las Functions juntas y falla por la cuota de CPU. Desplegar siempre por tandas.
-- **Verificar una Function desplegada leyendo Firestore, en modo solo lectura.** En este equipo `firebase functions:log` falla (`Failed to retrieve log entries from Google Cloud`) y `gcloud` no funciona porque falta Python.
-  - Lo que sí funciona es un script de Node temporal, con `firebase-admin` de `functions/node_modules` y las credenciales de aplicación de `%APPDATA%/gcloud/application_default_credentials.json`, que solo hace `get`/`getAll`/consultas sobre los documentos que la Function debió escribir (por ejemplo `alertas/pendientes_*`). Correrlo con `NODE_PATH=functions/node_modules` y `initializeApp({ projectId: 'workcraft-491b7' })`.
-  - Guardar el script fuera del repo (en `$TEMP`) y borrarlo al terminar. Sin escrituras: si hiciera falta corregir datos, avisar antes.
+  - Si una tanda falla por cuota: esperar unos minutos y reintentar una vez; si vuelve a fallar, detenerse. De preferencia en horario de poco uso.
+  - `FUNCTIONS_DISCOVERY_TIMEOUT=90` va siempre: firebase-tools carga `functions/index.js` antes de desplegar y espera 10 s por defecto, pero aquí tarda unos 25 s. Sin la variable falla con `User code failed to load. Cannot determine backend specification. Timeout after 10000`, que es por el tiempo de carga del código, **no por la cuota de CPU**: no se espera ni cuenta como reintento; basta con usar la variable.
+- **Verificar una Function desplegada leyendo Firestore, en modo solo lectura.** Aquí `firebase functions:log` falla (`Failed to retrieve log entries from Google Cloud`) y `gcloud` no funciona (falta Python).
+  - Usar un script de Node temporal con `firebase-admin` de `functions/node_modules` y las credenciales de `%APPDATA%/gcloud/application_default_credentials.json`, que solo haga `get`/`getAll`/consultas sobre lo que la Function debió escribir (ej. `alertas/pendientes_*`). Correrlo con `NODE_PATH=functions/node_modules` e `initializeApp({ projectId: 'workcraft-491b7' })`.
+  - Guardarlo fuera del repo (`$TEMP`) y borrarlo al terminar. Sin escrituras: si hay que corregir datos, avisar antes.
 
 ## Arquitectura
 
-Medra: plataforma interna (SPA) para gestionar implantes, hemodinamia, consignación, documentos, laboratorio, vacunatorio, bodega e inventario de una clínica, con imputación mensual por períodos. Proyecto Firebase `workcraft-491b7`.
+Medra: SPA interna de una clínica para implantes, hemodinamia, consignación, documentos, laboratorio, vacunatorio, bodega e inventario, con imputación mensual por períodos. Proyecto Firebase `workcraft-491b7`.
 
 ### Stack
-- **Frontend:** React 19 + Vite 8, Tailwind 4, `lucide-react`. `react-router-dom` solo separa el login (`/`) de `/plataforma/*`. Dentro de la plataforma, la navegación es por estado (ver Flujos).
-- **Backend:** Firebase: Auth (custom token), Firestore, Storage y Hosting (SPA, todo redirige a `index.html`). Cloud Functions v2 en `us-central1`, Node 24, CommonJS; la lógica compartida está en `.mjs`.
-- **Librerías clave:**
-  - Excel: `xlsx` (SheetJS) y `exceljs`.
-  - PDF: `jspdf` + `jspdf-autotable` para generar, `pdfjs-dist` + `tesseract.js` para leer guías.
-  - Otras: `papaparse` (CSV), `@zxing` (códigos de barra), `react-hook-form` + `zod` (formularios).
-- **Tests:** vitest + jsdom + Testing Library. Cada test va junto a su archivo (`*.test.js[x]`).
+- **Frontend:** React 19 + Vite 8, Tailwind 4, `lucide-react`. `react-router-dom` solo separa el login (`/`) de `/plataforma/*`; adentro se navega por estado (ver Flujos).
+- **Backend:** Firebase Auth (custom token), Firestore, Storage y Hosting (SPA, todo a `index.html`). Cloud Functions v2 en `us-central1`, Node 24, CommonJS; lógica compartida en `.mjs`.
+- **Librerías:** Excel `xlsx` (SheetJS) y `exceljs`; PDF `jspdf` + `jspdf-autotable` (generar), `pdfjs-dist` + `tesseract.js` (leer guías); `papaparse` (CSV), `@zxing` (códigos de barra), `react-hook-form` + `zod`.
+- **Tests:** vitest + jsdom + Testing Library, cada test junto a su archivo (`*.test.js[x]`).
 
 ### Carpetas
-- `src/pages/Dashboard.jsx`: armazón de la app después del login.
-  - Contiene el sidebar, el header y la vista de acceso rápido.
-  - `VIEW_MAP` asocia cada ruta de ítem a su pantalla.
-- `src/config/`: configuración del menú y los permisos. Si una pantalla no aparece en el menú, revisar acá primero.
-  - `modulesConfig.jsx`: `MODULES` (módulos e ítems del menú: ruta, ícono, color de `PALETA_MENU`, flags).
-  - `gruposMenu.jsx`: grupos del sidebar (Finanzas, Usuarios y accesos) dentro del módulo `administracion`.
-  - `accesoMenu.js`: qué ítems ve cada usuario.
-  - `componentMaps/`: secciones y botones de cada vista, para los permisos granulares.
-  - `modulosActivos.js`: módulos e ítems activos.
-- `src/components/modulos/<área>/<pantalla>/`: pantallas. Las áreas son:
-  - `operaciones/`: implantes, hemodinamia, consignación, documentos y `shared`.
-  - `gestiones/`: laboratorio y vacunatorio.
-  - `administracion/`: en la interfaz se llama "Herramientas".
-  - `maestros/`, `bodega/`, `inventario/`, `general/` (soporte, ajustes, perfil) y `dashboard/`.
-  - `privado/`: código antiguo de respaldo.
-- `operaciones/shared/`: una sola implementación para Implantes y Hemodinamia, parametrizada por `modulo`. `modulosGestion.js` define las colecciones, etiquetas, rutas y nombres de Excel de cada uno. Para un cambio en uno de los dos, hacerlo aquí.
-- `src/context/`: `UserContext`, `ToastContext` y `ModalContext` (`confirmAction`).
-- `src/hooks/`: `useGranularPermission`, `useColumnasPermitidas`, `useVisibleSnapshot` (`onSnapshotVisible`), `useColumnResize`.
-- `src/stores/`: cachés a nivel de módulo, compartidas entre pantallas (períodos, catálogos, módulos activos).
-- `src/components/ui/`: componentes visuales comunes. Las tablas corporativas están en `maestros/codigosMaestrosV2/ui/`.
-- `functions/`: Cloud Functions. Cada carpeta tiene un `index.js` (triggers y callables) y su lógica en `servicio.js` / `nucleo.mjs`. `functions/permisos/nucleo.mjs` también lo importa el frontend.
-- `docs/`: notas técnicas. Leer `firestore-buenas-practicas.md` antes de agregar consultas.
-- `tests/emulador/`: no se ejecuta (ver Reglas).
+- `src/pages/Dashboard.jsx`: armazón tras el login (sidebar, header, vista de acceso rápido); `VIEW_MAP` asocia cada ruta de ítem a su pantalla.
+- `src/config/`: menú y permisos (si una pantalla no aparece en el menú, revisar acá primero): `modulesConfig.jsx` (`MODULES`: ítems con ruta, ícono, color de `PALETA_MENU` y flags), `gruposMenu.jsx` (grupos Finanzas y Usuarios y accesos dentro de `administracion`), `accesoMenu.js` (qué ítems ve cada usuario), `componentMaps/` (secciones y botones por vista, para permisos granulares), `modulosActivos.js`.
+- `src/components/modulos/<área>/<pantalla>/`: `operaciones/` (implantes, hemodinamia, consignación, documentos, `shared`), `gestiones/` (laboratorio, vacunatorio), `administracion/` (en la interfaz "Herramientas"), `maestros/`, `bodega/`, `inventario/`, `general/` (soporte, ajustes, perfil), `dashboard/`, `privado/` (código antiguo de respaldo).
+- `operaciones/shared/`: una sola implementación para Implantes y Hemodinamia, parametrizada por `modulo` (`modulosGestion.js`: colecciones, etiquetas, rutas, nombres de Excel). Los cambios de uno de los dos van aquí.
+- `src/context/`: `UserContext`, `ToastContext`, `ModalContext` (`confirmAction`). `src/hooks/`: `useGranularPermission`, `useColumnasPermitidas`, `useVisibleSnapshot` (`onSnapshotVisible`), `useColumnResize`. `src/stores/`: cachés de módulo compartidas (períodos, catálogos, módulos activos). `src/components/ui/`: componentes comunes; tablas corporativas en `maestros/codigosMaestrosV2/ui/`.
+- `functions/`: cada carpeta con `index.js` (triggers y callables) y su lógica en `servicio.js` / `nucleo.mjs`. El frontend también importa `functions/permisos/nucleo.mjs`.
+- `docs/`: notas técnicas; leer `firestore-buenas-practicas.md` antes de agregar consultas. `tests/emulador/`: no se ejecuta.
 
 ### Cloud Functions (`functions/index.js`)
-- **Usuarios** (callables):
-  - `iniciarSesion`: login con correo o nombre de usuario, con control de intentos.
-  - `crearUsuario` y `desbloquearUsuario`.
-- **Permisos** (callables):
-  - `guardarPermisosUsuario` y `asignarCentroCostoMasivo`.
-  - `asignarAdministradoresMasivo` y `guardarPlantillaCentroCosto`.
-  - Reescriben el permiso efectivo de cada usuario en `usuarios/{uid}`.
-- **Solicitudes de cambio de datos** (callables): `crearSolicitud`, `resolverSolicitud`, `cancelarSolicitud` y `sincronizarMiCorreo`. Generan las alertas.
-- **`functions/alertas`** no es una Cloud Function propia: es un módulo que usan las de solicitudes para crear y resolver alertas.
-  - Su aviso por correo (`correo.js`) está desactivado, pendiente de activar.
-  - Hacen falta la cuenta remitente y la extensión "Trigger Email from Firestore" (colección `mail`).
-  - Se activa con `ALERTAS_CORREO_HABILITADO=true` en `functions/.env.<proyecto>`.
-- **Notificaciones** (`functions/notificaciones`): la campana del header (`layout/useNotificaciones.js`) muestra las alertas pendientes del usuario en `alertas`. El clic marca la alerta leída y abre su pantalla.
-  - `notificacionesPendientes` (cada 10 min) mantiene una alerta agregada por fuente con la cantidad pendiente (id `pendientes_<fuente>`). Las fuentes son zonas por diagnóstico sin confirmar, gestiones `SOLICITAR` de Implantes y Hemodinamia, ítems `CARGADO` de Consignación y descripciones pendientes.
-  - Esa alerta vuelve a "no leída" si la cantidad sube y se resuelve al llegar a 0.
-  - `notificacionesTicket` (trigger) crea una alerta por ticket nuevo y la resuelve cuando el ticket deja de estar NUEVO.
-  - Las solicitudes de cambio de datos ya creaban su alerta.
-  - Destinatarios: quien tiene la ruta de destino en sus permisos, más los desarrolladores. En los tickets, quien gestiona tickets y los administradores guardados en el ticket.
+- **Usuarios** (callables): `iniciarSesion` (correo o nombre de usuario, con control de intentos), `crearUsuario`, `desbloquearUsuario`.
+- **Permisos** (callables): `guardarPermisosUsuario`, `asignarCentroCostoMasivo`, `asignarAdministradoresMasivo`, `guardarPlantillaCentroCosto`; reescriben el permiso efectivo en `usuarios/{uid}`.
+- **Solicitudes de cambio de datos** (callables): `crearSolicitud`, `resolverSolicitud`, `cancelarSolicitud`, `sincronizarMiCorreo`; generan alertas.
+- **`functions/alertas`**: módulo (no Function) para crear y resolver alertas. Su aviso por correo (`correo.js`) está desactivado: requiere cuenta remitente y la extensión "Trigger Email from Firestore" (colección `mail`), y se activa con `ALERTAS_CORREO_HABILITADO=true` en `functions/.env.<proyecto>`.
+- **Notificaciones** (`functions/notificaciones`): la campana del header (`layout/useNotificaciones.js`) muestra las alertas pendientes del usuario en `alertas`; el clic la marca leída y abre su pantalla.
+  - `notificacionesPendientes` (cada 10 min): una alerta agregada por fuente con la cantidad (id `pendientes_<fuente>`): zonas por diagnóstico sin confirmar, gestiones `SOLICITAR` de Implantes y Hemodinamia, ítems `CARGADO` de Consignación y descripciones pendientes. Vuelve a "no leída" si la cantidad sube y se resuelve al llegar a 0.
+  - `notificacionesTicket` (trigger): una alerta por ticket nuevo, resuelta cuando deja de estar NUEVO. Las solicitudes de cambio de datos ya creaban la suya.
+  - Destinatarios: quien tiene la ruta de destino en sus permisos, más los desarrolladores; en tickets, quien gestiona tickets y los administradores guardados en el ticket.
 - **Períodos:** `cerrarPeriodoImputacion` (callable) cierra el mes de un módulo.
-- **Estadísticas:**
-  - `estadisticasImputada{Implantes,Consignacion,Hemodinamia}`: triggers sobre las imputadas.
-  - `estadisticasCierre`: trigger sobre `cierres_periodos`.
-  - `estadisticasNocturno`: todos los días a las 03:00, hora de Chile.
-  - `recalcularEstadisticasPeriodo`: callable.
-- **Bodega:** callables `bodega*` (catálogo, productos, códigos, documentos, egresos, tránsito, inventarios, cajas, consignación) y el trigger `bodegaPeriodo` sobre los cierres. El navegador solo lee las colecciones `bodega_*`; todas las escrituras pasan por estas funciones.
-- **Triggers sobre gestiones de Implantes:**
-  - `zonasDiagnosticoGestionImplante`: mantiene el maestro de zonas por diagnóstico.
-  - `admisionesGestionadasImplante`: marca las admisiones gestionadas.
-- **Reporte Info:** triggers `descripcionesReporteFila` y `descripcionesReporteMaestro` (descripciones ocultas).
-  - Estado de cada descripción en `maestros_descripciones_reporte`: `estadoDescripcion` / `esPendiente` de `functions/descripcionesReporte/nucleo.mjs`.
-  - **Pendiente:** tiene `pendienteDesde` y no tiene `actualizadoEl`. El trigger de fila pone `pendienteDesde` solo al crear una descripción nueva, y cualquier cambio desde la app (switch, "Marcar como revisada" u "Ocultar esta descripción" de Reporte Info) escribe `actualizadoEl` y la deja revisada.
-  - Si no es pendiente, es **oculta** (`ocultaImplantes` u `ocultaDocumentos` en true) o **visible**. Las anteriores a `pendienteDesde` cuentan como revisadas; no hubo migración.
-  - Para notificaciones: una descripción pasó a pendiente cuando aparece `pendienteDesde` (creación del documento). En cada corrida, `notificacionesPendientes` quita `pendienteDesde` de las que ya tienen `actualizadoEl`, para que su consulta traiga solo las pendientes.
-- **Otras:**
-  - `extraerGuiaDespacho`: OCR de una guía de despacho.
-  - `eliminarDocumentoAdmision`: mueve el PDF a la papelera y registra la auditoría.
+- **Estadísticas:** triggers `estadisticasImputada{Implantes,Consignacion,Hemodinamia}` (imputadas) y `estadisticasCierre` (`cierres_periodos`); `estadisticasNocturno` (diario 03:00, hora de Chile); callable `recalcularEstadisticasPeriodo`.
+- **Bodega:** callables `bodega*` (catálogo, productos, códigos, documentos, egresos, tránsito, inventarios, cajas, consignación) y trigger `bodegaPeriodo` sobre los cierres. El navegador solo lee `bodega_*`; toda escritura pasa por estas funciones.
+- **Triggers sobre gestiones de Implantes:** `zonasDiagnosticoGestionImplante` (maestro de zonas por diagnóstico) y `admisionesGestionadasImplante` (marca admisiones gestionadas).
+- **Reporte Info:** triggers `descripcionesReporteFila` y `descripcionesReporteMaestro` (descripciones ocultas). Estado de cada una en `maestros_descripciones_reporte` con `estadoDescripcion` / `esPendiente` (`functions/descripcionesReporte/nucleo.mjs`):
+  - **Pendiente:** tiene `pendienteDesde` y no tiene `actualizadoEl`. El trigger de fila pone `pendienteDesde` solo al crear una descripción nueva; cualquier cambio desde la app (switch, "Marcar como revisada" u "Ocultar esta descripción" de Reporte Info) escribe `actualizadoEl` y la deja revisada.
+  - Si no, **oculta** (`ocultaImplantes` u `ocultaDocumentos` en true) o **visible**. Las anteriores a `pendienteDesde` cuentan como revisadas (sin migración).
+  - Para notificaciones: pasa a pendiente cuando aparece `pendienteDesde` (creación del documento). Cada corrida de `notificacionesPendientes` quita `pendienteDesde` de las que ya tienen `actualizadoEl`, para que su consulta traiga solo las pendientes.
+- **Otras:** `extraerGuiaDespacho` (OCR de guía de despacho), `eliminarDocumentoAdmision` (mueve el PDF a la papelera y audita).
 
 ### Modelo de datos (Firestore)
-- **`usuarios/{uid}`**:
-  - Campos: `rol`, `activo`, `permisos` ({modulo: [rutas de ítems]}), `permisosGranulares` ({ruta: {secciones/elementos}}), `centroCostoId`, `ordenModulos` y `ordenSubItems`.
-  - Subcolección `logs`.
-  - Plantillas por centro y rol en `plantillas_permisos/{centroId}__{rol}`.
-  - Login: `nombres_usuario` e `intentos_login`.
-- **Gestiones** (Implantes y Hemodinamia):
-  - Ruta: `{mod}_gestiones/{anio}/mes/{mes}/dia/{dia}/admision/{adm}/empresa/{emp}/detalles/{id}`.
-  - Se consultan con `collectionGroup('detalles')` y un rango de `documentId()` (`rangoGestiones`).
-  - Ítems en `cotizaciones[0].items`; `solicitud` toma PENDIENTE, SOLICITAR o SOLICITADO.
-  - `itemsSolicitados` y `modificacionPendiente` alimentan "Solicitudes de modificaciones".
-  - Subcolección `logs` con `accion`, `usuario` y `timestamp`.
-- **Imputadas:** `{mod}_imputadas/{anio}/meses/{mes}/documentos/{itemId}` (implantes, hemodinamia y consignación); el collectionGroup es `documentos`. Es lo que se muestra en "Imputados".
-- **Períodos:**
-  - `configuracion_periodos/{modulo}`: período abierto.
-  - `cierres_periodos`: cierres.
-  - `imputaciones_periodos`: snapshot mensual por módulo.
-  - `estadisticas`: agregados.
-- **Consignación:** `consignacion_guias`, `consignacion_registros` y `consignacion_imputadas`.
-- **Maestros:** `maestros_*` (códigos, empresas, centros, convenios, recargos, previsiones, instituciones, zonas de diagnóstico…).
-- **Documentos y OC:** `documentos_reportesInfo`, `documentos_sistema`, `ordenesOC` (registro de PDF), `ocImport`, `resumen_facturacion_mensual` y `documentos_archivo`.
-- **Otras colecciones:**
-  - `laboratorio_*`, `vacunatorio_*`, `bodega_*` e `inventario_*`.
-  - `alertas`, `solicitudes`, `tickets` y `mail`.
-  - `modificaciones_exportadas` (historial).
-  - `configuracion_sistema` (por ejemplo `modulosActivos` y atajos).
+- **`usuarios/{uid}`:** `rol`, `activo`, `permisos` ({modulo: [rutas de ítems]}), `permisosGranulares` ({ruta: {secciones/elementos}}), `centroCostoId`, `ordenModulos`, `ordenSubItems`; subcolección `logs`. Plantillas por centro y rol en `plantillas_permisos/{centroId}__{rol}`. Login: `nombres_usuario` e `intentos_login`.
+- **Gestiones** (Implantes y Hemodinamia): `{mod}_gestiones/{anio}/mes/{mes}/dia/{dia}/admision/{adm}/empresa/{emp}/detalles/{id}`, consultadas con `collectionGroup('detalles')` y rango de `documentId()` (`rangoGestiones`). Ítems en `cotizaciones[0].items`; `solicitud`: PENDIENTE, SOLICITAR o SOLICITADO; `itemsSolicitados` y `modificacionPendiente` alimentan "Solicitudes de modificaciones"; subcolección `logs` (`accion`, `usuario`, `timestamp`).
+- **Imputadas:** `{mod}_imputadas/{anio}/meses/{mes}/documentos/{itemId}` (implantes, hemodinamia, consignación; collectionGroup `documentos`). Es lo que muestra "Imputados".
+- **Períodos:** `configuracion_periodos/{modulo}` (período abierto), `cierres_periodos`, `imputaciones_periodos` (snapshot mensual por módulo), `estadisticas` (agregados).
+- **Consignación:** `consignacion_guias`, `consignacion_registros`, `consignacion_imputadas`. **Maestros:** `maestros_*` (códigos, empresas, centros, convenios, recargos, previsiones, instituciones, zonas de diagnóstico…).
+- **Documentos y OC:** `documentos_reportesInfo`, `documentos_sistema`, `ordenesOC` (registro de PDF), `ocImport`, `resumen_facturacion_mensual`, `documentos_archivo`.
+- **Otras:** `laboratorio_*`, `vacunatorio_*`, `bodega_*`, `inventario_*`; `alertas`, `solicitudes`, `tickets`, `mail`; `modificaciones_exportadas` (historial); `configuracion_sistema` (ej. `modulosActivos`, atajos).
 
 ### Flujos principales
-- **Login:**
-  1. `LoginForm` llama a la callable `iniciarSesion`.
-  2. Con el token recibido hace `signInWithCustomToken`.
-  3. `UserContext` escucha `usuarios/{uid}` en vivo: los cambios de permisos se aplican sin volver a entrar, y si el usuario queda inactivo se cierra la sesión.
-- **Roles** (`functions/permisos/nucleo.mjs`):
-  - `dev` (Desarrollador): único rol con acceso total.
-  - `admin`: administra usuarios, pero solo ve lo asignado.
-  - `encargado` y `operador`: reciben la plantilla de su centro.
-- **Menú:** un ítem es visible si su ruta está en `permisos[modulo]`. Hay tres excepciones:
-  - `automaticoAdministradores`: lo ven siempre admin y dev.
-  - `soloDesarrollador`: solo lo ve dev.
-  - `heredaDe`: lo ve también quien tiene otra ruta (por ejemplo, Solicitudes de modificaciones hereda de Solicitud).
-- **Permisos granulares:**
-  - Se consultan con `hasPermission(ruta, seccion, elemento)`.
-  - Un usuario no dev sin configuración para la vista queda bloqueado.
-  - Las columnas se filtran con `useColumnasPermitidas`.
-- **Reglas de Firestore:** `tienePermiso(modulo)` exige tener algún ítem del módulo. Los permisos solo se cambian por callable, nunca escribiendo `usuarios/{uid}` desde el navegador.
-- **Navegación:** `activeView` es la ruta del ítem, y `?modulo=<entrada>` abre la vista de acceso rápido. Para agregar una pantalla:
-  1. Agregar el subItem en `MODULES` (con un color distinto al de sus vecinos).
-  2. Agregarla en `VIEW_MAP`.
-  3. Agregar su entrada en `componentMaps`.
-- **Ciclo de una gestión** (Implantes y Hemodinamia):
-  1. **Gestión:** se cargan los ítems.
-  2. **Solicitud:** exporta el Excel, marca SOLICITADO, imputa en el período abierto y guarda la copia `itemsSolicitados`.
-  3. **Edición posterior:** reimputa al guardar y marca `modificacionPendiente`.
-  4. **Solicitudes de modificaciones:** exporta solo lo que cambió.
-- **Cargas consolidadas** (Finanzas): exporta las tres fuentes juntas (Implantes, Consignación y Hemodinamia).
-- **Totales de Finanzas** (`administracion/totalesFinanzas/`): Consumos, Facturas y Valorización de bodega, por mes (o el año completo, en los dos primeros). Usan las mismas celdas que Control Mensual (`obtenerCelda` de `resumenImputacionesStore`, con los grupos de `controlMensual/constants.js`):
-  - Consumos: imputado de Implantes, Consignación y Hemodinamia (`{mod}_imputadas`).
-  - Facturas: imputado de Laboratorio y Vacunatorio (desde la factura electrónica).
-  - Valorización de bodega: saldo valorizado de Bodega (foto de `bodega_periodos` al cierre, o `sum()` de `bodega_movimientos` si el mes está abierto).
-  - En las imputadas, un mes cerrado sale del snapshot de `imputaciones_periodos` y uno abierto de `count()`/`sum()`. Un mes sin cierre en `cierres_periodos` vale 0 y no se lee.
-- **Comparativo mensual** (Finanzas, `totalesFinanzas/comparativoMes.js`): Consumos y Facturas de los mismos días (`desde`–`hasta`, sin pasar de hoy en Chile) del mes pasado y del actual, con la diferencia en monto y en %.
-  - El snapshot mensual no sirve para un rango de días: suma `count()`/`sum('total')` con rango sobre la fecha del documento. En Consumos es `fecha` (gestión o cirugía) y en Facturas `fchEmis` (emisión de la factura).
-  - Cada mes se busca en los períodos de imputación mes−1, mes y mes+1, sin pasar del actual.
-  - Un día que no existe en el mes pasado se toma como su último día.
-- **Períodos cerrados:** no se pueden editar.
-- **Gestión de módulos** (solo dev): activa o desactiva módulos e ítems para todos. El módulo `administracion` no se puede desactivar.
+- **Login:** `LoginForm` llama a `iniciarSesion` → `signInWithCustomToken` con el token → `UserContext` escucha `usuarios/{uid}` en vivo (los cambios de permisos se aplican sin reingresar; si queda inactivo se cierra la sesión).
+- **Roles** (`functions/permisos/nucleo.mjs`): `dev` (Desarrollador, único con acceso total); `admin` (administra usuarios, pero solo ve lo asignado); `encargado` y `operador` (reciben la plantilla de su centro).
+- **Menú:** un ítem es visible si su ruta está en `permisos[modulo]`, salvo: `automaticoAdministradores` (siempre admin y dev), `soloDesarrollador` (solo dev), `heredaDe` (también quien tiene otra ruta; ej. Solicitudes de modificaciones hereda de Solicitud) y `pestanaDe` (ex pestañas de Control Procesos de Laboratorio/Vacunatorio: con el contenedor en permisos y su ruta en `permisosGranulares`; ver `config/pestanasControlProcesos.js`).
+- **Permisos granulares:** `hasPermission(ruta, seccion, elemento)`; un no dev sin configuración para la vista queda bloqueado; columnas con `useColumnasPermitidas`.
+- **Reglas de Firestore:** `tienePermiso(modulo)` exige algún ítem del módulo. Los permisos solo se cambian por callable, nunca escribiendo `usuarios/{uid}` desde el navegador.
+- **Navegación:** `activeView` es la ruta del ítem; `?modulo=<entrada>` abre la vista de acceso rápido. Para agregar una pantalla: subItem en `MODULES` (color distinto al de sus vecinos), entrada en `VIEW_MAP` y en `componentMaps`.
+- **Ciclo de una gestión** (Implantes y Hemodinamia): 1) Gestión: se cargan los ítems. 2) Solicitud: exporta el Excel, marca SOLICITADO, imputa en el período abierto y guarda la copia `itemsSolicitados`. 3) Edición posterior: reimputa al guardar y marca `modificacionPendiente`. 4) Solicitudes de modificaciones: exporta solo lo que cambió.
+- **Cargas consolidadas** (Finanzas): exporta juntas Implantes, Consignación y Hemodinamia.
+- **Totales de Finanzas** (`administracion/totalesFinanzas/`): Consumos, Facturas y Valorización de bodega por mes (o año completo en los dos primeros), con las mismas celdas que Control Mensual (`obtenerCelda` de `resumenImputacionesStore`, grupos de `controlMensual/constants.js`):
+  - Consumos: imputado de Implantes, Consignación y Hemodinamia (`{mod}_imputadas`). Facturas: imputado de Laboratorio y Vacunatorio (factura electrónica). Valorización de bodega: saldo valorizado (foto de `bodega_periodos` al cierre, o `sum()` de `bodega_movimientos` con el mes abierto).
+  - En las imputadas, mes cerrado = snapshot de `imputaciones_periodos`; abierto = `count()`/`sum()`. Un mes sin cierre en `cierres_periodos` vale 0 y no se lee.
+- **Comparativo mensual** (Finanzas, `totalesFinanzas/comparativoMes.js`): Consumos y Facturas de los mismos días (`desde`–`hasta`, sin pasar de hoy en Chile) del mes pasado y del actual, con diferencia en monto y %.
+  - El snapshot mensual no sirve para días: suma `count()`/`sum('total')` con rango sobre la fecha del documento (`fecha` de gestión o cirugía en Consumos; `fchEmis`, emisión de la factura, en Facturas), buscando en los períodos mes−1, mes y mes+1 sin pasar del actual. Un día inexistente en el mes pasado se toma como su último día.
+- **Períodos cerrados:** no se editan. **Gestión de módulos** (solo dev): activa o desactiva módulos e ítems para todos; `administracion` no se puede desactivar.
 
 ### Comandos
-- Build: `npm run build`. Lint: `npm run lint`.
-- Tests: `npm test`, o un archivo: `npx vitest run <ruta> --testTimeout=30000`. Si fallan por timeout o los workers no arrancan, correrlos de a uno.
-- Deploy (siempre con `--project workcraft-491b7` y después de `npm run build`):
-  - Hosting: `npx firebase-tools deploy --only hosting`.
-  - Firestore: `--only firestore:rules,firestore:indexes`.
-  - Storage: `--only storage`.
-  - Functions: por tandas (ver Reglas). Nunca `npm run deploy`.
+- Build `npm run build`; lint `npm run lint`; tests `npm test` o `npx vitest run <ruta> --testTimeout=30000` (si fallan por timeout o no arrancan los workers, de a uno).
+- Deploy (siempre `--project workcraft-491b7`, tras `npm run build`): hosting `npx firebase-tools deploy --only hosting`; Firestore `--only firestore:rules,firestore:indexes`; Storage `--only storage`; Functions por tandas (ver Reglas), nunca `npm run deploy`.
 
 ### Convenciones
-- **Idioma:** todo en español (identificadores, comentarios, textos de la interfaz y commits). Los commits van con el formato `feat(alcance): descripción`. Fechas y montos con formato `es-CL`, hora de Chile.
-- **Comentarios:** explican el porqué y las decisiones; los archivos importantes llevan un comentario de cabecera. Hay que mantener esa densidad.
-- **Lecturas de Firestore (crítico):**
-  - Sin listeners ni consultas nuevas si no son estrictamente necesarios.
-  - `collectionGroup` siempre con rango de `documentId()`.
-  - Usar `onSnapshotVisible` (pausa los listeners con la pestaña oculta).
-  - Escribir solo los campos que cambian, con `writeBatch`.
-  - Cada cambio relevante se audita en la subcolección `logs`.
-- **Estructura:** la lógica pura va en `.js` con su test; el acceso a datos va en hooks `use<Pantalla>Data`; la pantalla, en `.jsx`.
-- **Tablas:**
-  - Se arman con `TablaCodigos` o `ThRedimensionable` + `useColumnResize`.
-  - Un `.jsx` con `<table>` literal debe usar `useColumnasPermitidas` o figurar en `TABLAS_PENDIENTES` (lo exige `coberturaPermisos.test.js`).
-  - Las vistas reutilizadas con otra ruta van en `RUTAS_DINAMICAS`.
-- **Cambios de nombre:** al renombrar algo visible, cambiar solo las etiquetas. Las rutas, las claves de permisos y las colecciones no se tocan, porque son las que guardan los usuarios y validan las reglas.
-- **Finales de línea:** hay archivos con CRLF y otros con LF. Al editarlos con scripts, conservar el que tienen.
+- **Idioma:** todo en español (identificadores, comentarios, interfaz y commits, con formato `feat(alcance): descripción`). Fechas y montos en `es-CL`, hora de Chile.
+- **Comentarios:** explican el porqué y las decisiones; los archivos importantes llevan cabecera. Mantener esa densidad.
+- **Lecturas de Firestore (crítico):** sin listeners ni consultas nuevas si no son estrictamente necesarios; `collectionGroup` siempre con rango de `documentId()`; usar `onSnapshotVisible` (pausa con la pestaña oculta); escribir solo los campos que cambian, con `writeBatch`; auditar cada cambio relevante en la subcolección `logs`.
+- **Estructura:** lógica pura en `.js` con su test; acceso a datos en hooks `use<Pantalla>Data`; pantalla en `.jsx`.
+- **Tablas:** con `TablaCodigos` o `ThRedimensionable` + `useColumnResize`. Un `.jsx` con `<table>` literal debe usar `useColumnasPermitidas` o estar en `TABLAS_PENDIENTES` (lo exige `coberturaPermisos.test.js`); las vistas reutilizadas con otra ruta van en `RUTAS_DINAMICAS`.
+- **Cambios de nombre:** al renombrar algo visible, cambiar solo etiquetas; rutas, claves de permisos y colecciones no se tocan (las guardan los usuarios y las validan las reglas).
+- **Finales de línea:** hay archivos con CRLF y otros con LF; al editarlos con scripts, conservar el que tienen.
