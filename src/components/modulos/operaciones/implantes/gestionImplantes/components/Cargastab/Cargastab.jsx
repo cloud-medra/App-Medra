@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, useMemo, useRef, forwardRef, useImperativeHandle } from 'react';
 import {
   UploadCloud,
   Building2,
@@ -29,6 +29,9 @@ import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
 // Foco para ingresar ítems seguidos con el teclado (ver src/utils/foco.js).
 import { enfocar, alPresionarEnter } from '../../../../../../../utils/foco';
 import { CLASE_SIN_FLECHAS, SIN_CAMBIO_ACCIDENTAL } from '../../../../../../ui/numeroSinFlechas';
+import { esCodigoFibra, fibrasUsadasEnBloques } from '../../../fibras/fibrasNucleo';
+import { SelectorFibra } from '../../../fibras/SelectorFibra';
+import { useFibrasDeReferencia } from '../../../fibras/useFibrasDeReferencia';
 
 const PATH_VISTA = '/implantes/gestionImplantes/cargas';
 const PATH_INFORMACION = '/implantes/gestionImplantes/informacion';
@@ -99,6 +102,10 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
   const cantidadContenidoRef = useRef(null);
   const [errores, setErrores] = useState({});
   const [esPad, setEsPad] = useState(false);
+  // Fibra reutilizable (check en Códigos Maestros): la línea exige elegir la
+  // fibra física usada; cantidad 1 y lote/vencimiento los de la fibra.
+  const [esFibra, setEsFibra] = useState(false);
+  const [fibraElegida, setFibraElegida] = useState(null);
   const [contenidoPad, setContenidoPad] = useState([]);
 
   const [numCotizacionPad, setNumCotizacionPad] = useState('');
@@ -123,6 +130,19 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
     containerRef: containerRefContenido,
     skipNext: skipNextContenido
   } = useAutocompleteReferencia(draftContenido.referencia);
+
+  const fibrasReferencia = useFibrasDeReferencia(nuevoItem.referencia, esFibra);
+  const fibrasUsadas = useMemo(() => fibrasUsadasEnBloques(formData?.bloques), [formData?.bloques]);
+
+  const elegirFibra = (fibra) => {
+    setFibraElegida(fibra);
+    setNuevoItem(prev => ({ ...prev, cantidad: '1', lote: fibra?.lote || '', vencimiento: fibra?.vencimiento || '' }));
+    if (errores.fibra) setErrores(prev => ({ ...prev, fibra: false }));
+  };
+  const resetFibra = () => {
+    setEsFibra(false);
+    setFibraElegida(null);
+  };
 
   const rangoActual = buscarRangoRecargoLocal(nuevoItem.precio, recargosActivos);
   const vecesCostoActual = rangoActual ? Number(rangoActual.vecesCosto) : 1;
@@ -162,6 +182,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
       setNuevoItem(prev => ({ ...prev, numCotizacion: '', totalCotizacion: '' }));
     }
     setEsPad(false);
+    resetFibra();
     resetContenidoPad();
     resetLotesAdicionales();
     setErrores({});
@@ -179,7 +200,10 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
   const handleSeleccionarSugerencia = (item) => {
     skipNext.current = true;
     const esPadItem = esClasePad(item.clase);
+    const esFibraItem = !esPadItem && esCodigoFibra(item);
     setEsPad(esPadItem);
+    setEsFibra(esFibraItem);
+    setFibraElegida(null);
     if (!esPadItem) resetContenidoPad();
     resetLotesAdicionales();
 
@@ -193,8 +217,9 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
       detalle: item.descriptorEmpresa || item.descriptorAuto || '',
       descriptorAuto: item.descriptorAuto || '',
       clase: item.clase || '',
-      lote: esPadItem ? VALOR_LOTE_VENCIMIENTO_PAD : prev.lote,
-      vencimiento: esPadItem ? VALOR_LOTE_VENCIMIENTO_PAD : prev.vencimiento
+      lote: esPadItem ? VALOR_LOTE_VENCIMIENTO_PAD : esFibraItem ? '' : prev.lote,
+      vencimiento: esPadItem ? VALOR_LOTE_VENCIMIENTO_PAD : esFibraItem ? '' : prev.vencimiento,
+      ...(esFibraItem ? { cantidad: '1' } : {})
     }));
     setMostrarSug(false);
   };
@@ -213,10 +238,13 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
         clase: ''
       }));
       setEsPad(false);
+      resetFibra();
       resetContenidoPad();
       resetLotesAdicionales();
       return;
     }
+    // Fibra: cantidad, lote y vencimiento los fija la fibra elegida.
+    if (esFibra && ['cantidad', 'lote', 'vencimiento'].includes(field)) return;
     if (field === 'cantidad' && lotesAdicionales.length > 0) {
       // Si ya se habían repartido lotes con la cantidad anterior, cambiar
       // la cantidad total invalida ese reparto (podría sumar más de lo
@@ -345,15 +373,18 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
     const idReferenciaConLotes = (!esPad && lotesAdicionales.length > 0) ? crypto.randomUUID() : undefined;
     const idPrincipalGenerado = idPadPrincipal || idReferenciaConLotes;
 
+    const conFibra = esFibra && fibraElegida;
     const itemPrincipal = {
       ...(idPrincipalGenerado ? { id: idPrincipalGenerado } : {}),
+      // Sin usoId: el uso (y su número) se registra al guardar la gestión.
+      ...(conFibra ? { fibra: { id: fibraElegida.id, codigoInterno: fibraElegida.codigoInterno, lote: fibraElegida.lote, vencimiento: fibraElegida.vencimiento, usosTotales: fibraElegida.usosTotales } } : {}),
       esPad,
       numCotizacion: nuevoItem.numCotizacion.trim(),
       totalCotizacion: nuevoItem.totalCotizacion ? Number(nuevoItem.totalCotizacion) : 0,
       referencia: nuevoItem.referencia.trim(),
-      cantidad: Number(nuevoItem.cantidad) || 0,
-      lote: esPad ? VALOR_LOTE_VENCIMIENTO_PAD : (nuevoItem.lote.trim() || 'Sin lote'),
-      vencimiento: esPad ? VALOR_LOTE_VENCIMIENTO_PAD : (nuevoItem.vencimiento || 'Sin fecha'),
+      cantidad: conFibra ? 1 : (Number(nuevoItem.cantidad) || 0),
+      lote: esPad ? VALOR_LOTE_VENCIMIENTO_PAD : conFibra ? fibraElegida.lote : (nuevoItem.lote.trim() || 'Sin lote'),
+      vencimiento: esPad ? VALOR_LOTE_VENCIMIENTO_PAD : conFibra ? fibraElegida.vencimiento : (nuevoItem.vencimiento || 'Sin fecha'),
       codigo: nuevoItem.codigo || '',
       precio: Number(nuevoItem.precio) || 0,
       vecesCosto,
@@ -411,6 +442,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
       totalCotizacion: prev.totalCotizacion
     }));
     setEsPad(false);
+    resetFibra();
     resetContenidoPad();
     resetLotesAdicionales();
     setErrores({});
@@ -423,11 +455,12 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
     if (!nuevoItem.numCotizacion.trim()) err.numCotizacion = true;
     if (!nuevoItem.referencia.trim()) err.referencia = true;
     if (!nuevoItem.cantidad || Number(nuevoItem.cantidad) <= 0) err.cantidad = true;
+    if (esFibra && !fibraElegida) err.fibra = true;
 
     if (Object.keys(err).length > 0) {
       setErrores(err);
       // Primer campo con error; los datos ingresados se conservan.
-      enfocar(err.numCotizacion ? numCotizacionRef : err.referencia ? referenciaRef : cantidadRef);
+      if (err.numCotizacion || err.referencia || err.cantidad) enfocar(err.numCotizacion ? numCotizacionRef : err.referencia ? referenciaRef : cantidadRef);
       return;
     }
 
@@ -492,6 +525,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
       if (!nuevoItem.numCotizacion.trim()) err.numCotizacion = true;
       if (!nuevoItem.referencia.trim()) err.referencia = true;
       if (!nuevoItem.cantidad || Number(nuevoItem.cantidad) <= 0) err.cantidad = true;
+    if (esFibra && !fibraElegida) err.fibra = true;
 
       if (Object.keys(err).length > 0) {
         setErrores(err);
@@ -698,6 +732,9 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                           {esClasePad(item.clase) && (
                             <span className="text-[8px] px-1 rounded bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-700 dark:text-fuchsia-400 font-bold">PAD</span>
                           )}
+                          {!esClasePad(item.clase) && esCodigoFibra(item) && (
+                            <span className="text-[8px] px-1 rounded bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-400 font-bold">FIBRA</span>
+                          )}
                         </div>
                         <div className="text-[9px] text-slate-400 dark:text-gray-500 flex items-center gap-1.5">
                           <span className="font-num text-emerald-600 dark:text-emerald-400">{item.codigo || 'S/C'}</span>
@@ -722,8 +759,10 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 type="number"
                 {...SIN_CAMBIO_ACCIDENTAL}
                 value={nuevoItem.cantidad}
+                disabled={esFibra}
+                title={esFibra ? 'Fibra reutilizable: cada línea es un uso' : undefined}
                 onChange={e => handleChange('cantidad', e.target.value)}
-                className={`${CLASE_SIN_FLECHAS} h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
+                className={`${CLASE_SIN_FLECHAS} disabled:bg-slate-100 dark:disabled:bg-gray-800 h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
                   }`}
                 placeholder="1"
               />
@@ -734,9 +773,9 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               <input
                 type="text"
                 value={esPad ? VALOR_LOTE_VENCIMIENTO_PAD : nuevoItem.lote}
-                disabled={esPad}
+                disabled={esPad || esFibra}
                 onChange={e => handleChange('lote', e.target.value)}
-                className={`h-7 px-2 text-[10px] border rounded outline-none ${esPad
+                className={`h-7 px-2 text-[10px] border rounded outline-none ${esPad || esFibra
                   ? 'bg-slate-100 dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-slate-500 dark:text-gray-400'
                   : 'bg-white dark:bg-gray-900 border-slate-300 dark:border-gray-600 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2]'
                   }`}
@@ -759,6 +798,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     type="date"
                     aria-label="Vencimiento"
                     value={nuevoItem.vencimiento}
+                    disabled={esFibra}
                     onChange={e => handleChange('vencimiento', e.target.value)}
                     onKeyDown={alPresionarEnter(() => { if (!sinPeriodoAbierto && !bloqueado) handleAgregar(); })}
                     className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
@@ -780,6 +820,25 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
           {(errores.numCotizacion || errores.referencia || errores.cantidad) && (
             <div className="text-[9px] text-red-500 font-medium flex items-center gap-1">
               <AlertCircle size={10} /> N° Cotización, Referencia y Cantidad son obligatorios
+            </div>
+          )}
+
+          {esFibra && (
+            <SelectorFibra
+              referencia={nuevoItem.referencia}
+              fechaCirugia={bloqueActivo.fecha}
+              fibras={fibrasReferencia.fibras}
+              cargando={fibrasReferencia.cargando}
+              error={fibrasReferencia.error}
+              excluir={fibrasUsadas}
+              seleccionadaId={fibraElegida?.id || null}
+              onElegir={elegirFibra}
+              deshabilitado={sinPeriodoAbierto || bloqueado}
+            />
+          )}
+          {errores.fibra && (
+            <div className="text-[9px] text-red-500 font-medium flex items-center gap-1">
+              <AlertCircle size={10} /> Elige la fibra usada
             </div>
           )}
 

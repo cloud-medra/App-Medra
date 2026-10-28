@@ -1,11 +1,58 @@
 import { mapaRespaldoDocumentos, mapaSincronizacionImputadas, reubicarMapa } from './operacionesCompartidas.js';
 import { mapaReportesInfo, mapaImportarDetallesOC, mapaSeguimientoFacturasGuias, mapaIngresoOrdenes } from './documentos.js';
 import { maestrosComponentMaps } from './maestros.js';
+import { columnas } from './columnas.js';
 
 // Implantes → Códigos: la misma pantalla que Maestros → Códigos con su propio
 // ítem de menú y permisos (ver reubicarMapa en operacionesCompartidas.js).
 
 export const implantesComponentMaps = {
+  // Fibras reutilizables (operaciones/implantes/fibras). Escribir usos desde
+  // Gestiones no depende de esta vista: basta con poder agregar líneas.
+  // "Anular pérdida" está denegada por defecto (ACCIONES_DENEGADAS_POR_DEFECTO):
+  // hay que asignarla a mano a quien corresponda.
+  '/implantes/fibrasReutilizables': {
+    label: 'Fibras reutilizables (FibrasReutilizables.jsx)',
+    sections: {
+      encabezado: {
+        label: 'Sección: Encabezado',
+        elements: {
+          btn_registrar_fibra: { label: 'Acción: Registrar fibra(s)' },
+        },
+      },
+      tabla_fibras: {
+        label: 'Sección: Tabla de fibras',
+        elements: {
+          ...columnas([
+            ['referencia', 'Referencia'],
+            ['descriptor', 'Descripción'],
+            ['lote', 'Lote'],
+            ['vencimiento', 'Vencimiento'],
+            ['usos', 'Usos'],
+            ['restantes', 'Restantes'],
+            ['estado', 'Estado'],
+          ]),
+          action_ver_detalle: { label: 'Operación: Detalle (usos y pérdidas)' },
+          action_editar: { label: 'Operación: Corregir lote, vencimiento o usos totales' },
+          action_registrar_perdida: { label: 'Operación: Registrar pérdida de un uso' },
+          action_anular_perdida: { label: 'Operación: Anular una pérdida (denegada por defecto)' },
+        },
+      },
+      detalle_usos: {
+        label: 'Sección: Detalle de una fibra (usos y pérdidas)',
+        elements: columnas([
+          ['tipo', 'Tipo'],
+          ['fecha', 'Fecha'],
+          ['gestionId', 'ID gestión'],
+          ['paciente', 'Paciente'],
+          ['medico', 'Médico'],
+          ['registradoPor', 'Registrado por'],
+          ['estado', 'Estado'],
+        ]),
+      },
+    },
+  },
+
   '/implantes/codigosImplantes': reubicarMapa(
     maestrosComponentMaps['/maestros/codigosMaestros'],
     '/maestros/codigosMaestros',

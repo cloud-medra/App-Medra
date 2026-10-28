@@ -168,6 +168,7 @@ const PUBLICADOS = `
   /implantes/importarDetallesOC IMPIOC
   /implantes/seguimientoFacturasGuias IMPSEG
   /implantes/ingresoOrdenes IMPORD
+  /implantes/fibrasReutilizables IMPFIB
   /hemodinamia/gestionHemodinamia HEMGES
   /hemodinamia/cargaMasivaDocumentos HEMMAS
   /hemodinamia/solicitudHemodinamia HEMSOL

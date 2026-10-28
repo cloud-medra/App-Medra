@@ -579,7 +579,9 @@ const GestionesImplantesDetalleView = forwardRef(({
         const reg = guardado.registros[idx];
         if (!reg) return b;
         registrosGuardadosRef.current.set(reg.id, reg);
-        return { ...b, idOriginal: reg.id, refPath: reg.refPath };
+        // cotizaciones: las guardadas (las líneas de fibra nuevas ya traen su
+        // uso); si no, un segundo guardado volvería a registrarlas.
+        return { ...b, idOriginal: reg.id, refPath: reg.refPath, cotizaciones: reg.cotizaciones || b.cotizaciones };
       });
     }
     if (creado) {

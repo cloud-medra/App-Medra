@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Activity,
   Archive,
+  Cable,
   FolderOpen,
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -301,6 +302,8 @@ export const MODULES = {
     color: PALETA_MENU.azul,
     subItems: [
       { label: 'Gestion', path: '/implantes/gestionImplantes', icon: <FolderKanban size={14} />, color: PALETA_MENU.verde },
+      // Fibras reutilizables (5 o 10 usos): registro, usos y pérdidas.
+      { label: 'Fibras', path: '/implantes/fibrasReutilizables', icon: <Cable size={14} />, color: PALETA_MENU.turquesa },
       { label: 'Carga masiva de documentos', path: '/implantes/cargaMasivaDocumentos', icon: <FolderUp size={14} />, color: PALETA_MENU.frambuesa },
       { label: 'Solicitud', path: '/implantes/solicitudImplantes', icon: <FilePlus size={14} />, color: PALETA_MENU.violeta },
       // Por defecto lo ve quien tiene Solicitud (heredaDe); ver config/accesoMenu.js.

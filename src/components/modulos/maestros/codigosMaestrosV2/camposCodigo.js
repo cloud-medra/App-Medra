@@ -9,10 +9,12 @@ export const SEGMENTOS_CODIGO = ['IMPLANTES', 'CONSIGNACION', 'HEMODINAMIA'];
 export const ESTADOS_CODIGO = ['ACTIVO', 'INACTIVO'];
 
 // Campos que se guardan en el documento (el "motivo" de Vista General solo
-// va al log, nunca al documento).
+// va al log, nunca al documento). fibraReutilizable (booleano): la referencia
+// es una fibra de varios usos; en Gestiones de Implantes exige elegir la fibra
+// física usada (ver operaciones/implantes/fibras).
 export const CAMPOS_REGISTRO = [
   'codigo', 'referencia', 'descriptorEmpresa', 'empresa', 'tipo', 'segmento',
-  'clase', 'descriptorAuto', 'precioNeto', 'cx', 'estado', 'observacion'
+  'clase', 'descriptorAuto', 'precioNeto', 'cx', 'estado', 'observacion', 'fibraReutilizable'
 ];
 
 // Qué muestra y exige cada modo del panel. `campos` son los editables;
@@ -92,15 +94,20 @@ export const formDesdeRegistro = (item) => ({
   cx: item?.cx || '',
   estado: item?.estado || 'ACTIVO',
   observacion: item?.observacion || '',
+  fibraReutilizable: item?.fibraReutilizable === true,
   motivo: ''
 });
 
-const normalizarCampo = (campo, valor) =>
-  campo === 'precioNeto' ? precioANumero(valor) : String(valor ?? '').trim().toUpperCase();
+const normalizarCampo = (campo, valor) => {
+  if (campo === 'precioNeto') return precioANumero(valor);
+  if (campo === 'fibraReutilizable') return valor === true;
+  return String(valor ?? '').trim().toUpperCase();
+};
 
 const valorGuardado = (campo, registro) => {
   if (campo === 'precioNeto') return Number(registro?.precioNeto) || 0;
   if (campo === 'estado') return registro?.estado || 'ACTIVO';
+  if (campo === 'fibraReutilizable') return registro?.fibraReutilizable === true;
   return registro?.[campo] ?? '';
 };
 
@@ -127,6 +134,8 @@ export const valoresParaCrear = (form, modo) => {
   CAMPOS_REGISTRO.forEach((campo) => {
     if (campo === 'estado') return;
     if (campo === 'codigo' && !config.campos.includes('codigo')) return;
+    // Solo se escribe marcado (sin el campo = no es fibra).
+    if (campo === 'fibraReutilizable' && form[campo] !== true) return;
     valores[campo] = normalizarCampo(campo, form[campo]);
   });
   if (config.descriptorAutomatico) valores.descriptorAuto = descriptorAutoDe(valores.referencia, valores.descriptorEmpresa);

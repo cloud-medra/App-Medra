@@ -117,7 +117,10 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
   const [showConfirmSalir, setShowConfirmSalir] = useState(false);
 
   const handleGuardarDetalle = async (datosActualizados) => {
-    await guardarDesdeDetalle(datosActualizados);
+    const resultado = await guardarDesdeDetalle(datosActualizados);
+    // Implantes: una fibra agotada o vencida no guarda nada; el detalle
+    // queda abierto para elegir otra (ver fibrasNucleo.js).
+    if (resultado?.mantenerAbierto) return;
     setRegistroSeleccionado(null);
   };
 

@@ -18,12 +18,14 @@ export const CAMPOS_AUDITABLES_REGISTRO = [
   { key: 'cx', label: 'CX' },
   { key: 'observacion', label: 'Observación' },
   { key: 'precioNeto', label: 'Precio Neto', tipoValor: 'moneda' },
-  { key: 'estado', label: 'Estado', tipoValor: 'estado' }
+  { key: 'estado', label: 'Estado', tipoValor: 'estado' },
+  { key: 'fibraReutilizable', label: 'Fibra reutilizable', tipoValor: 'booleano' }
 ];
 
 const normalizarValor = (valor, tipoValor) => {
   if (tipoValor === 'moneda') return Number(valor || 0);
   if (tipoValor === 'estado') return valor || 'ACTIVO';
+  if (tipoValor === 'booleano') return valor === true;
   return valor ?? '';
 };
 

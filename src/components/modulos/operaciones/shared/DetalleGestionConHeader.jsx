@@ -25,7 +25,9 @@ const DetalleGestionConHeader = ({ fila, onVolver, useGestiones, DetalleView, ti
   const [showConfirmSalir, setShowConfirmSalir] = useState(false);
 
   const handleGuardarDetalle = async (datosActualizados) => {
-    await implantesHook.guardarDesdeDetalle(datosActualizados);
+    const resultado = await implantesHook.guardarDesdeDetalle(datosActualizados);
+    // Fibra agotada o vencida (Implantes): no se guardó, sigue abierto.
+    if (resultado?.mantenerAbierto) return;
     onVolver();
   };
 

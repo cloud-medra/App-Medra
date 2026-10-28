@@ -159,6 +159,7 @@ export const CODIGOS_ITEMS = Object.freeze({
   '/implantes/importarDetallesOC': 'IMPIOC',
   '/implantes/seguimientoFacturasGuias': 'IMPSEG',
   '/implantes/ingresoOrdenes': 'IMPORD',
+  '/implantes/fibrasReutilizables': 'IMPFIB',
   // Hemodinamia
   '/hemodinamia/gestionHemodinamia': 'HEMGES',
   '/hemodinamia/cargaMasivaDocumentos': 'HEMMAS',

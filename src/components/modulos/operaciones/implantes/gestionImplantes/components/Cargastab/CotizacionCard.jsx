@@ -16,7 +16,8 @@ import {
   PackagePlus,
   Layers,
   Lock,
-  RotateCcw
+  RotateCcw,
+  Cable
 } from 'lucide-react';
 import {
   formatearFechaTabla,
@@ -37,6 +38,19 @@ import { useAutocompleteReferencia } from './useAutocompleteReferencia';
 import { PadContenidoRow, crearFilaContenidoPadVacia, construirItemContenidoPadDesdeFila } from './PadContenidoRow';
 import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
 import { CLASE_SIN_FLECHAS, SIN_CAMBIO_ACCIDENTAL } from '../../../../../../ui/numeroSinFlechas';
+import { esCodigoFibra } from '../../../fibras/fibrasNucleo';
+
+// Etiqueta de una línea de fibra reutilizable: "FIB-0007 · 2/5" (el mismo
+// número que el uso en Implantes → Fibras → Detalle) o "por registrar" si aún
+// no se guarda la gestión.
+const EtiquetaFibra = ({ fibra }) => (
+  <span
+    className="flex items-center gap-0.5 text-[8px] px-1 rounded bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-400 font-bold shrink-0"
+    title={fibra.numeroUso ? `Fibra ${fibra.codigoInterno}: uso ${fibra.numeroUso} de ${fibra.usosTotales}` : 'El uso se registra al guardar la gestión'}
+  >
+    <Cable size={9} /> {fibra.codigoInterno} · {fibra.numeroUso ? `${fibra.numeroUso}/${fibra.usosTotales}` : 'por registrar'}
+  </span>
+);
 
 // Mismo sistema de columnas redimensionables que usa el CotizacionCard de
 // Hemodinamia (Cargastab/CotizacionCard.jsx) — se agrega la columna "Veces
@@ -170,6 +184,10 @@ export const CotizacionCard = ({
   const [edicionEsPad, setEdicionEsPad] = useState(false);
   const [edicionEsContenidoPad, setEdicionEsContenidoPad] = useState(false);
   const [edicionEsLoteAdicional, setEdicionEsLoteAdicional] = useState(false);
+  // Línea de fibra: solo se edita el precio (para cambiar la fibra, se borra
+  // la línea y se agrega otra; el uso anterior queda anulado).
+  const [edicionEsFibra, setEdicionEsFibra] = useState(false);
+  const [avisoEdicion, setAvisoEdicion] = useState('');
 
   const [agregandoContenidoDePadId, setAgregandoContenidoDePadId] = useState(null);
   const [filasNuevoContenido, setFilasNuevoContenido] = useState([]);
@@ -230,6 +248,8 @@ export const CotizacionCard = ({
     setEdicionEsPad(!!it.esPad);
     setEdicionEsContenidoPad(!!it.padPadreId);
     setEdicionEsLoteAdicional(!!it.lotePadreId);
+    setEdicionEsFibra(!!it.fibra);
+    setAvisoEdicion('');
     setBorrador({
       referencia: it.referencia || '',
       codigo: it.codigo || '',
@@ -251,6 +271,8 @@ export const CotizacionCard = ({
     setEdicionEsPad(false);
     setEdicionEsContenidoPad(false);
     setEdicionEsLoteAdicional(false);
+    setEdicionEsFibra(false);
+    setAvisoEdicion('');
   };
 
   const handleReferenciaChange = (value) => {
@@ -269,6 +291,14 @@ export const CotizacionCard = ({
 
   const handleSeleccionarSugerencia = (sug) => {
     skipNext.current = true;
+    // Una fibra reutilizable necesita elegir la fibra física: va por el
+    // formulario de nueva línea, no cambiando la referencia de otra.
+    if (esCodigoFibra(sug)) {
+      setAvisoEdicion('Es una fibra reutilizable: agrégala como línea nueva para elegir la fibra usada.');
+      setMostrarSug(false);
+      return;
+    }
+    setAvisoEdicion('');
     const forzarSinCosto = edicionEsContenidoPad || edicionEsLoteAdicional;
     setBorrador(prev => ({
       ...prev,
@@ -594,6 +624,7 @@ export const CotizacionCard = ({
                               type="number"
                               {...SIN_CAMBIO_ACCIDENTAL}
                               value={borrador.cantidad}
+                              disabled={edicionEsFibra}
                               onChange={e => setBorrador(prev => ({ ...prev, cantidad: e.target.value }))}
                               className={`${CLASE_SIN_FLECHAS} w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-center`}
                             />
@@ -610,6 +641,8 @@ export const CotizacionCard = ({
                               <input
                                 type="text"
                                 value={borrador.referencia}
+                                readOnly={edicionEsFibra}
+                                title={edicionEsFibra ? 'Línea de fibra: para cambiarla, elimínala y agrega otra' : undefined}
                                 onChange={e => handleReferenciaChange(e.target.value)}
                                 onFocus={() => sugerencias.length > 0 && setMostrarSug(true)}
                                 autoComplete="off"
@@ -645,6 +678,9 @@ export const CotizacionCard = ({
                                   )}
                                 </div>
                               </DropdownReferenciaPortal>
+                            )}
+                            {avisoEdicion && (
+                              <span className="block text-[8px] text-amber-600 dark:text-amber-400 mt-0.5">{avisoEdicion}</span>
                             )}
                           </td>
 
@@ -700,6 +736,7 @@ export const CotizacionCard = ({
                               <input
                                 type="text"
                                 value={borrador.lote}
+                                disabled={edicionEsFibra}
                                 onChange={e => setBorrador(prev => ({ ...prev, lote: e.target.value }))}
                                 className="w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                               />
@@ -719,6 +756,7 @@ export const CotizacionCard = ({
                               <input
                                 type="date"
                                 value={borrador.vencimiento}
+                                disabled={edicionEsFibra}
                                 onChange={e => setBorrador(prev => ({ ...prev, vencimiento: e.target.value }))}
                                 className="w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                               />
@@ -818,6 +856,7 @@ export const CotizacionCard = ({
                                   <Layers size={9} /> LOTE
                                 </span>
                               )}
+                              {it.fibra && <EtiquetaFibra fibra={it.fibra} />}
                             </span>
                           </td>
                           <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-500 dark:text-gray-400" title={it.descriptorAuto}>
@@ -919,7 +958,7 @@ export const CotizacionCard = ({
                                 type="button"
                                 onClick={() => onEliminarItem(it.id)}
                                 disabled={soloLectura}
-                                title={soloLectura ? 'Bloqueado: ya imputado' : 'Eliminar ítem'}
+                                title={soloLectura ? 'Bloqueado: ya imputado' : it.fibra?.usoId ? 'Eliminar ítem (al guardar se anula el uso de la fibra)' : 'Eliminar ítem'}
                                 className="text-red-500 hover:text-red-700 transition p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 <Trash2 size={12} />

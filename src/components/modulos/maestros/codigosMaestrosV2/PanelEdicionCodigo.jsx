@@ -226,6 +226,18 @@ const PanelEdicionCodigo = ({ abierto, modo, registro, empresas, registros, user
               <Selector {...entrada('estado')} opciones={ESTADOS_CODIGO} vacio={null} />
             </Campo>
           )}
+          <Campo etiqueta="Fibra reutilizable" modificado={modificado('fibraReutilizable')} htmlFor="cod-fibraReutilizable" ayuda="Fibra de 5 o 10 usos: en Gestiones de Implantes se elige la fibra usada y se cuenta cada uso (Implantes → Fibras).">
+            <label className="flex items-center gap-2 h-9 text-[13px] text-slate-700 dark:text-gray-300 cursor-pointer">
+              <input
+                id="cod-fibraReutilizable"
+                type="checkbox"
+                checked={form.fibraReutilizable}
+                onChange={(e) => set('fibraReutilizable')(e.target.checked)}
+                className="w-4 h-4 accent-[#2383C2]"
+              />
+              Es una fibra reutilizable
+            </label>
+          </Campo>
           <Campo
             etiqueta={modo === 'modificarRegistro' || modo === 'editarConCodigo' ? 'Descriptor maestro' : 'Descriptor auto'}
             modificado={modificado('descriptorAuto')}

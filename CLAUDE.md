@@ -69,6 +69,9 @@ Medra: SPA interna de una clínica para implantes, hemodinamia, consignación, d
 - **Períodos:** `configuracion_periodos/{modulo}` (período abierto), `cierres_periodos`, `imputaciones_periodos` (snapshot mensual por módulo), `estadisticas` (agregados).
 - **Consignación:** `consignacion_guias`, `consignacion_registros`, `consignacion_imputadas`. **Maestros:** `maestros_*` (códigos, empresas, centros, convenios, recargos, previsiones, instituciones, zonas de diagnóstico…).
 - **Documentos y OC:** `documentos_reportesInfo`, `documentos_sistema`, `ordenesOC` (registro de PDF), `ocImport`, `resumen_facturacion_mensual`, `documentos_archivo`.
+- **Fibras reutilizables** (Implantes → Fibras, `operaciones/implantes/fibras/`): `implantes_fibras/{FIB-0001}` (una por fibra física; `usosTotales` 5 o 10, `usosPrevios`, `numerosOcupados`, `usosConsumidos`, `estado` ACTIVA/AGOTADA; VENCIDA se calcula) con subcolecciones `usos` (USO o PERDIDA, VIGENTE o ANULADO; nunca se borran) y `logs`; correlativo en `implantes_fibras_control/contador`. El código maestro se marca con `fibraReutilizable` (check en Códigos Maestros).
+  - En Cargas, una referencia fibra exige elegir la fibra (cantidad 1, lote y vencimiento de la fibra). El uso se registra al "Guardar Todo" en la MISMA transacción que la gestión (`confirmarConFibras`); borrar la línea o la gestión lo anula. No toca stock, imputación ni montos.
+  - Números fijos: cada uso conserva su número (`item.fibra.numeroUso` = el del Detalle); al anular uno, su número lo toma el siguiente uso. Las reglas validan el contador con `ultimoCambio` + get/getAfter del uso. "Anular pérdida" está denegada por defecto.
 - **Otras:** `laboratorio_*`, `vacunatorio_*`, `bodega_*`, `inventario_*`; `alertas`, `solicitudes`, `tickets`, `mail`; `modificaciones_exportadas` (historial); `configuracion_sistema` (ej. `modulosActivos`, atajos).
 
 ### Flujos principales

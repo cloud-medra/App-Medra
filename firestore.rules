@@ -1012,6 +1012,185 @@ service cloud.firestore {
       allow write: if estaActivo() && (esDev() || tienePermiso('implantes'));
     }
 
+    // =================================================================
+    // IMPLANTES → FIBRAS REUTILIZABLES (operaciones/implantes/fibras)
+    // =================================================================
+    // Una fibra física por documento (id = código interno, FIB-0001). Sus
+    // usos y pérdidas se escriben desde el navegador en transacciones
+    // (Gestiones al guardar o eliminar, y la pantalla Fibras). Aunque alguien
+    // se salte la app, estas reglas garantizan el contador:
+    //  - cada alta o baja cambia la fibra en exactamente un número
+    //    (ultimoCambio) y el uso con ese número se crea o anula en la misma
+    //    escritura (get/getAfter);
+    //  - nunca más usos que usosTotales ni dos vigentes con el mismo número;
+    //  - los usos no se borran: se anulan y quedan en el historial.
+    function rutaFibras() {
+      return '/implantes/fibrasReutilizables';
+    }
+    function accionFibras(seccion, accion) {
+      return accionEnVista('implantes', rutaFibras(), seccion, accion);
+    }
+    // Anular una pérdida está denegada por defecto (ACCIONES_DENEGADAS_POR_
+    // DEFECTO): exige la acción en true explícito, no basta "sin configurar".
+    function anulaPerdidas() {
+      let vista = getUsuario().get('permisosGranulares', {}).get(rutaFibras(), null);
+      let sec = vista == null ? {} : vista.get('tabla_fibras', {});
+      return esDev()
+        || (tienePermiso('implantes') && tieneItem('implantes', rutaFibras()) && vista != null
+          && sec.get('visible', true) != false
+          && sec.get('elements', {}).get('action_anular_perdida', false) == true);
+    }
+    function esFechaISO(v) {
+      return v is string && v.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}');
+    }
+    function fibraCoherente(d) {
+      return d.usosTotales in [5, 10]
+        && d.usosPrevios is int && d.usosPrevios >= 0
+        && d.numerosOcupados is list
+        && d.numerosOcupados.toSet().size() == d.numerosOcupados.size()
+        && d.usosConsumidos == d.usosPrevios + d.numerosOcupados.size()
+        && d.usosConsumidos <= d.usosTotales
+        && d.estado == (d.usosConsumidos == d.usosTotales ? 'AGOTADA' : 'ACTIVA')
+        && (d.usosTotales == 10 || !d.numerosOcupados.hasAny([6, 7, 8, 9, 10]));
+    }
+
+    match /implantes_fibras/{fibraId} {
+      function refUso(usoId) {
+        return /databases/$(database)/documents/implantes_fibras/$(fibraId)/usos/$(usoId);
+      }
+      // Alta: un número libre (después de los usos previos y hasta el total)
+      // pasa a ocupado y el uso nuevo con ese número se crea en la misma
+      // escritura.
+      function esAlta() {
+        let antes = resource.data;
+        let d = request.resource.data;
+        let c = d.ultimoCambio;
+        return c.tipo == 'ALTA'
+          && c.numero is int && c.numero > d.usosPrevios && c.numero <= d.usosTotales
+          && !(c.numero in antes.numerosOcupados)
+          && c.numero in d.numerosOcupados
+          && d.numerosOcupados.size() == antes.numerosOcupados.size() + 1
+          && d.numerosOcupados.hasAll(antes.numerosOcupados)
+          && !exists(refUso(c.usoId))
+          && getAfter(refUso(c.usoId)).data.numeroUso == c.numero
+          && getAfter(refUso(c.usoId)).data.estado == 'VIGENTE';
+      }
+      // Baja: el número de un uso vigente se libera y ese uso queda anulado.
+      function esBaja() {
+        let antes = resource.data;
+        let d = request.resource.data;
+        let c = d.ultimoCambio;
+        return c.tipo == 'BAJA'
+          && c.numero in antes.numerosOcupados
+          && !(c.numero in d.numerosOcupados)
+          && d.numerosOcupados.size() == antes.numerosOcupados.size() - 1
+          && antes.numerosOcupados.hasAll(d.numerosOcupados)
+          && get(refUso(c.usoId)).data.estado == 'VIGENTE'
+          && get(refUso(c.usoId)).data.numeroUso == c.numero
+          && getAfter(refUso(c.usoId)).data.estado == 'ANULADO';
+      }
+      function cambiaUso() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['usosConsumidos', 'numerosOcupados', 'estado', 'ultimoCambio', 'actualizadoEl'])
+          && fibraCoherente(request.resource.data)
+          && (esAlta() || esBaja());
+      }
+      // Corrección desde la pantalla: usos totales siempre (sin quedar bajo
+      // los consumidos ni bajo un número ocupado); lote y vencimiento solo sin
+      // usos registrados en el sistema.
+      function esCorreccion() {
+        let antes = resource.data;
+        let d = request.resource.data;
+        let cambia = d.diff(antes).affectedKeys();
+        return cambia.hasOnly(['lote', 'vencimiento', 'usosTotales', 'estado', 'actualizadoEl', 'actualizadoPor'])
+          && fibraCoherente(d)
+          && (!cambia.hasAny(['lote', 'vencimiento']) || antes.numerosOcupados.size() == 0)
+          && esFechaISO(d.vencimiento)
+          && d.lote is string && d.lote.size() > 0
+          && d.actualizadoPor.uid == request.auth.uid
+          && accionFibras('tabla_fibras', 'action_editar');
+      }
+
+      allow read: if estaActivo() && (esDev() || tienePermiso('implantes'));
+      allow create: if estaActivo() && accionFibras('encabezado', 'btn_registrar_fibra')
+        && request.resource.data.codigoInterno == fibraId
+        && fibraId.matches('FIB-[0-9]{4,}')
+        && fibraCoherente(request.resource.data)
+        && request.resource.data.numerosOcupados.size() == 0
+        && request.resource.data.usosPrevios < request.resource.data.usosTotales
+        && request.resource.data.ultimoCambio == null
+        && esFechaISO(request.resource.data.vencimiento)
+        && request.resource.data.lote is string && request.resource.data.lote.size() > 0
+        && request.resource.data.referencia is string && request.resource.data.referencia.size() > 0
+        && request.resource.data.creadoPor.uid == request.auth.uid;
+      allow update: if estaActivo() && (esDev() || tienePermiso('implantes')) && (cambiaUso() || esCorreccion());
+      allow delete: if false;
+
+      match /usos/{usoId} {
+        function fibraAntes() {
+          return get(/databases/$(database)/documents/implantes_fibras/$(fibraId)).data;
+        }
+        function cambioFibra() {
+          return getAfter(/databases/$(database)/documents/implantes_fibras/$(fibraId)).data.ultimoCambio;
+        }
+        function anulacion() {
+          let d = request.resource.data;
+          let c = cambioFibra();
+          return d.diff(resource.data).affectedKeys().hasOnly(['estado', 'anuladoEl', 'anuladoPor', 'motivoAnulacion', 'detalleAnulacion'])
+            && d.estado == 'ANULADO'
+            && d.anuladoPor.uid == request.auth.uid
+            && c != null && c.tipo == 'BAJA' && c.usoId == usoId && c.numero == resource.data.numeroUso
+            && (resource.data.tipo == 'USO'
+              ? d.motivoAnulacion in ['LINEA_ELIMINADA', 'GESTION_ELIMINADA', 'REFERENCIA_CAMBIADA', 'FIBRA_CAMBIADA']
+              : (d.motivoAnulacion == 'PERDIDA_ANULADA' && d.detalleAnulacion is string
+                && d.detalleAnulacion.size() > 0 && anulaPerdidas()));
+        }
+        // La gestión cambió de ruta, paciente, médico, empresa o fecha.
+        function actualizacionGestion() {
+          let d = request.resource.data;
+          return resource.data.tipo == 'USO'
+            && d.diff(resource.data).affectedKeys().hasOnly(['gestionId', 'paciente', 'medico', 'empresa', 'fecha', 'gestionRefPath', 'actualizadoEl'])
+            && esFechaISO(d.fecha) && d.fecha <= fibraAntes().vencimiento;
+        }
+
+        allow read: if estaActivo() && (esDev() || tienePermiso('implantes'));
+        allow create: if estaActivo() && (esDev() || tienePermiso('implantes'))
+          && request.resource.data.estado == 'VIGENTE'
+          && request.resource.data.fibraId == fibraId
+          && request.resource.data.usosTotales == fibraAntes().usosTotales
+          && request.resource.data.registradoPor.uid == request.auth.uid
+          && esFechaISO(request.resource.data.fecha)
+          && cambioFibra() != null && cambioFibra().tipo == 'ALTA' && cambioFibra().usoId == usoId
+          && cambioFibra().numero == request.resource.data.numeroUso
+          && ((request.resource.data.tipo == 'USO' && request.resource.data.fecha <= fibraAntes().vencimiento)
+            || (request.resource.data.tipo == 'PERDIDA' && request.resource.data.motivo is string
+              && request.resource.data.motivo.size() > 0 && accionFibras('tabla_fibras', 'action_registrar_perdida')));
+        allow update: if estaActivo() && (esDev() || tienePermiso('implantes'))
+          && resource.data.estado == 'VIGENTE'
+          && (anulacion() || actualizacionGestion());
+        allow delete: if false;
+      }
+
+      match /logs/{logId} {
+        allow read: if estaActivo() && (esDev() || tienePermiso('implantes'));
+        allow create: if estaActivo() && (esDev() || tienePermiso('implantes'))
+          && request.resource.data.uid == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+
+    // Correlativo de los códigos internos (FIB-0001…): solo sube.
+    match /implantes_fibras_control/{docId} {
+      allow read: if estaActivo() && (esDev() || tienePermiso('implantes'));
+      function escribeContador() {
+        return estaActivo() && docId == 'contador'
+          && accionFibras('encabezado', 'btn_registrar_fibra')
+          && request.resource.data.ultimo is int;
+      }
+      allow create: if escribeContador() && request.resource.data.ultimo > 0;
+      allow update: if escribeContador() && request.resource.data.ultimo > resource.data.ultimo;
+    }
+
     // Implantes → Respaldo de documentos: PDF cuyo ID no coincide con ninguna
     // gestión. Solo se lee con la vista; eliminar es lógico (papelera) y solo
     // "eliminar definitivamente" borra el registro.

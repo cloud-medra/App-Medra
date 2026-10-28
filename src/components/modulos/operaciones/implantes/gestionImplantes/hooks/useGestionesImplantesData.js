@@ -4,7 +4,6 @@ import {
   collectionGroup,
   addDoc,
   updateDoc,
-  deleteDoc,
   doc,
   query,
   orderBy,
@@ -30,6 +29,8 @@ import { existeGestionEnColeccion, extraerDatosBase, MENSAJE_DUPLICADO } from '.
 import { calcularOcPendiente, itemsDeGestion } from '../../../shared/ocIndex/indiceOC';
 import { calcularFechaRegistroAdmision } from '../../../shared/fechaRegistroAdmision';
 import { ordenarGestiones } from '../utils/ordenGestiones';
+import { prepararFibrasNuevas, planFibrasBloque, planFibrasEliminacion, operacionesDePlan, datosGestionDeUso, textoUsoRegistrado } from '../../fibras/fibrasNucleo';
+import { colaEscrituras, confirmarConFibras, nuevoUsoId } from '../../fibras/fibrasTransacciones';
 
 const getFechaActualISO = () => {
   const hoy = new Date();
@@ -617,6 +618,21 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
     }
   };
 
+  // Aviso de cada uso de fibra registrado ("Fibra lote ABC: uso 2/5, quedan
+  // 3"). El último uso se destaca además en un modal.
+  const avisarUsosFibra = (usos) => {
+    usos.forEach(u => showToast(textoUsoRegistrado(u), u.restantes === 0 ? 'info' : 'success'));
+    const ultimos = usos.filter(u => u.restantes === 0);
+    if (ultimos.length > 0) {
+      confirmAction(
+        ultimos.length === 1 ? 'Último uso de la fibra' : 'Último uso de fibras',
+        ultimos.map(textoUsoRegistrado).join(' '),
+        () => {},
+        { type: 'warning', confirmText: 'Entendido', cancelText: 'Cerrar' }
+      );
+    }
+  };
+
   // Devuelve { ok: true, registros } (registros guardados, en el mismo orden
   // que registrosActualizados) o { ok: false, error }. toastExito: false omite
   // el aviso genérico de éxito (el alta rápida muestra el suyo).
@@ -639,7 +655,10 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
       const gestionIdLimpio = admisionId?.trim() || 'P';
       const admisionValor = (gestionIdLimpio !== '' && gestionIdLimpio !== 'P') ? gestionIdLimpio : 'SIN_ADMISION';
 
-      const batch = writeBatch(db);
+      // Cola en vez de batch: si hay fibras, todo se confirma en una
+      // transacción junto con sus usos (ver confirmarConFibras).
+      const batch = colaEscrituras();
+      const operacionesFibra = [];
       const logsAAgregar = [];
 
       // Fallback de período para ítems legacy sin periodoAnio/periodoMes
@@ -667,7 +686,10 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
       const itemsNoSincronizados = [];
       const registrosGuardados = [];
 
-      for (const registro of registrosActualizados) {
+      for (const registroOriginal of registrosActualizados) {
+        // Las líneas de fibra nuevas reciben aquí su usoId (sobre una copia).
+        const { cotizaciones: cotizacionesConFibras } = prepararFibrasNuevas(registroOriginal.cotizaciones || [], nuevoUsoId);
+        const registro = { ...registroOriginal, cotizaciones: cotizacionesConFibras };
         const dataNormalizada = {
           gestionId: gestionIdLimpio,
           agendaId: gestionIdLimpio,
@@ -775,6 +797,21 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
 
         const itemsAntes = original?.cotizaciones?.[0]?.items || [];
         const itemsDespues = registro.cotizaciones?.[0]?.items || [];
+
+        // Fibras reutilizables: usos nuevos, anulados (línea eliminada o
+        // cambiada) y datos de la gestión copiados en los usos que siguen.
+        const datosUso = datosGestionDeUso({
+          gestionId: dataNormalizada.gestionId,
+          paciente: dataNormalizada.nombre,
+          medico: dataNormalizada.medico,
+          empresa: dataNormalizada.empresa,
+          fecha: dataNormalizada.fecha,
+          gestionRefPath: docRefFinal.path
+        });
+        const cambiaGestion = !original || original.refPath !== docRefFinal.path ||
+          ['nombre', 'medico'].some(k => (original[k] || 'P') !== dataNormalizada[k]);
+        operacionesFibra.push(...operacionesDePlan(planFibrasBloque({ itemsAntes, itemsDespues, cambiaGestion }), datosUso));
+
         const mapaAntes = new Map(itemsAntes.map(it => [it.id, it]));
         const mapaDespues = new Map(itemsDespues.map(it => [it.id, it]));
 
@@ -788,6 +825,7 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
             estadoCarga: it.estadoCarga,
             esPad: !!it.esPad,
             contenidoDePad: !!it.padPadreId,
+            ...(it.fibra?.codigoInterno ? { fibra: it.fibra.codigoInterno } : {}),
             paciente: dataNormalizada.nombre,
             admision: dataNormalizada.gestionId
           };
@@ -908,11 +946,12 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
         });
       }
 
-      await batch.commit();
+      const usosRegistrados = await confirmarConFibras(batch, operacionesFibra, userData);
 
       await Promise.all(
         logsAAgregar.map(({ docRef, accion, detalles }) => registrarLog(docRef, accion, detalles))
       );
+      avisarUsosFibra(usosRegistrados);
 
       if (totalImputadasActualizadas > 0) {
         const sufijoNoSincronizados = itemsNoSincronizados.length > 0
@@ -935,6 +974,12 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
       return { ok: true, registros: registrosGuardados };
     } catch (error) {
       console.error("Error al guardar:", error);
+      // Fibra agotada, vencida o elegida dos veces: no se guardó nada y el
+      // detalle queda abierto para corregir.
+      if (error?.esErrorFibra) {
+        showToast(error.message, "error");
+        return { ok: false, error: error.message, mantenerAbierto: true };
+      }
       showToast("Error al guardar: " + error.message, "error");
       return { ok: false, error: error.message };
     } finally {
@@ -945,10 +990,13 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
   const handleDelete = (id) => {
     const implanteAEliminar = implantes.find(i => i.id === id);
     if (!implanteAEliminar || !implanteAEliminar.refPath) return;
+    const itemsConFibra = (implanteAEliminar.cotizaciones?.[0]?.items || []).filter(it => it.fibra?.usoId);
 
     confirmAction(
       "Eliminar Gestión",
-      "¿Estás seguro de eliminar este registro? Esta acción no se puede deshacer.",
+      itemsConFibra.length > 0
+        ? "¿Estás seguro de eliminar este registro? Esta acción no se puede deshacer. Los usos de fibras reutilizables de esta gestión quedarán anulados."
+        : "¿Estás seguro de eliminar este registro? Esta acción no se puede deshacer.",
       async () => {
         try {
           const docRef = doc(db, implanteAEliminar.refPath);
@@ -957,11 +1005,20 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
             nombre: implanteAEliminar?.nombre || ''
           });
 
-          await deleteDoc(docRef);
-          showToast("Gestión eliminada correctamente", "info");
+          // Los usos de fibras de la gestión se anulan en la misma transacción
+          // que la elimina (sin fibras, un batch con solo el borrado).
+          const cola = colaEscrituras();
+          cola.delete(docRef);
+          await confirmarConFibras(cola, operacionesDePlan(planFibrasEliminacion(itemsConFibra), null), userData);
+          showToast(
+            itemsConFibra.length > 0
+              ? `Gestión eliminada. ${itemsConFibra.length === 1 ? 'Se anuló 1 uso' : `Se anularon ${itemsConFibra.length} usos`} de fibra.`
+              : "Gestión eliminada correctamente",
+            "info"
+          );
         } catch (error) {
           console.error("Error al eliminar:", error);
-          showToast("Error al eliminar", "error");
+          showToast(error?.esErrorFibra ? error.message : "Error al eliminar", "error");
         }
       }
     );

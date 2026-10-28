@@ -24,11 +24,16 @@ describe('ACCIONES_DENEGADAS_POR_DEFECTO', () => {
     });
   });
 
-  it('no se validan en reglas de Firestore/Storage (que usan "sin configurar = permitida")', () => {
+  // Las reglas usan "sin configurar = permitida" (accionPermitida); una acción
+  // denegada por defecto solo puede aparecer leída como true explícito
+  // (`.get('accion', false) == true`, ej. anulaPerdidas de implantes_fibras).
+  it('no se validan en reglas de Firestore/Storage salvo como true explícito', () => {
     const reglas = ['firestore.rules', 'storage.rules'].map((f) => fs.readFileSync(new URL(`../../../${f}`, import.meta.url), 'utf8')).join('\n');
     ACCIONES_DENEGADAS_POR_DEFECTO.forEach((clave) => {
       const [, , accion] = separar(clave);
-      expect(reglas.includes(`'${accion}'`), `${accion} aparece en las reglas: valídala en una Cloud Function`).toBe(false);
+      const usos = reglas.split(`'${accion}'`).length - 1;
+      const explicitos = reglas.split(`.get('${accion}', false) == true`).length - 1;
+      expect(usos - explicitos, `${accion} aparece en las reglas sin exigir true explícito: valídala en una Cloud Function`).toBe(0);
     });
   });
 

@@ -146,6 +146,7 @@ import SolicitudImplantes from '../components/modulos/operaciones/implantes/soli
 import ResumenImplantes from '../components/modulos/operaciones/implantes/resumenImplantes/ResumenImplantes.jsx';
 import SincronizacionImputadas from '../components/modulos/operaciones/implantes/sincronizacionImputadas/SincronizacionImputadas.jsx';
 import RespaldoDocumentos from '../components/modulos/operaciones/implantes/respaldoDocumentos/RespaldoDocumentos.jsx';
+import FibrasReutilizables from '../components/modulos/operaciones/implantes/fibras/FibrasReutilizables.jsx';
 import SolicitudModificaciones from '../components/modulos/operaciones/shared/solicitudModificaciones/SolicitudModificaciones.jsx';
 
 // --- HEMODINAMIA ---
@@ -586,6 +587,7 @@ const Dashboard = () => {
         }}
       />
     ),
+    '/implantes/fibrasReutilizables': <FibrasReutilizables />,
     '/implantes/cargaMasivaDocumentos': <CargaMasivaDocumentos />,
     '/implantes/solicitudImplantes': <SolicitudImplantes />,
     '/implantes/solicitudModificacionesImplantes': <SolicitudModificaciones modulo="implantes" />,

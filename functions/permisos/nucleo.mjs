@@ -90,6 +90,9 @@ export const ACCIONES_DENEGADAS_POR_DEFECTO = Object.freeze([
   // PDF de la admisión a la papelera.
   claveElemento('/implantes/gestionImplantes/documentos', 'contenido', 'btn_eliminar_documento'),
   claveElemento('/hemodinamia/gestionHemodinamia/documentos', 'contenido', 'btn_eliminar_documento'),
+  // Implantes → Fibras: anular una pérdida devuelve un uso a la fibra. Las
+  // reglas de Firestore exigen la acción en true explícito (implantes_fibras).
+  claveElemento('/implantes/fibrasReutilizables', 'tabla_fibras', 'action_anular_perdida'),
 ]);
 const DENEGADAS = new Set(ACCIONES_DENEGADAS_POR_DEFECTO);
 export const deniegaSinConfigurar = (ruta, seccion, accion) => DENEGADAS.has(claveElemento(ruta, seccion, accion));
