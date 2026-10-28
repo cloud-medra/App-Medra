@@ -29,8 +29,10 @@ import { existeGestionEnColeccion, extraerDatosBase, MENSAJE_DUPLICADO } from '.
 import { calcularOcPendiente, itemsDeGestion } from '../../../shared/ocIndex/indiceOC';
 import { calcularFechaRegistroAdmision } from '../../../shared/fechaRegistroAdmision';
 import { ordenarGestiones } from '../utils/ordenGestiones';
-import { prepararFibrasNuevas, planFibrasBloque, planFibrasEliminacion, operacionesDePlan, datosGestionDeUso, textoUsoRegistrado } from '../../fibras/fibrasNucleo';
-import { colaEscrituras, confirmarConFibras, nuevoUsoId } from '../../fibras/fibrasTransacciones';
+import { prepararFibrasNuevas, planFibrasBloque, planFibrasEliminacion, operacionesDePlan, datosGestionDeUso, textoUsoRegistrado, siguienteEnBodega, RUTA_FIBRAS } from '../../fibras/fibrasNucleo';
+import { colaEscrituras, confirmarConFibras, nuevoUsoId, leerFibrasActivas, ponerEnUso } from '../../fibras/fibrasTransacciones';
+import { useGranularPermission } from '../../../../../../hooks/useGranularPermission';
+import { fechaISOEnChile } from '../../../shared/gestion/rangoFechaGestiones';
 
 const getFechaActualISO = () => {
   const hoy = new Date();
@@ -150,6 +152,7 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
   const { showToast } = useToast();
   const { confirmAction } = useModal();
   const { userData } = useUser();
+  const { hasPermission } = useGranularPermission();
 
   const [sincronizando, setSincronizando] = useState(false);
   const idChangeTimeoutRef = useRef(null);
@@ -619,18 +622,46 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
   };
 
   // Aviso de cada uso de fibra registrado ("Fibra lote ABC: uso 2/5, quedan
-  // 3"). El último uso se destaca además en un modal.
-  const avisarUsosFibra = (usos) => {
-    usos.forEach(u => showToast(textoUsoRegistrado(u), u.restantes === 0 ? 'info' : 'success'));
+  // 3") y de los cambios de ubicación. El último uso se destaca en un modal
+  // que sugiere poner en uso la siguiente fibra en bodega de esa referencia
+  // (la de vencimiento más próximo); con la acción "Poner en uso / Devolver a
+  // bodega" se hace desde el mismo modal.
+  const avisarUsosFibra = async (usos) => {
+    usos.forEach(u => {
+      showToast(textoUsoRegistrado(u), u.restantes === 0 ? 'info' : 'success');
+      if (u.puestaEnUso) showToast(`${u.codigoInterno} quedó EN USO${u.devuelta ? `; ${u.devuelta} volvió a bodega` : ''}.`, 'success');
+    });
     const ultimos = usos.filter(u => u.restantes === 0);
-    if (ultimos.length > 0) {
-      confirmAction(
-        ultimos.length === 1 ? 'Último uso de la fibra' : 'Último uso de fibras',
-        ultimos.map(textoUsoRegistrado).join(' '),
-        () => {},
-        { type: 'warning', confirmText: 'Entendido', cancelText: 'Cerrar' }
-      );
+    if (ultimos.length === 0) return;
+    const textoUltimos = ultimos.map(textoUsoRegistrado).join(' ');
+    let siguiente = null;
+    try {
+      const u = ultimos[0];
+      siguiente = siguienteEnBodega(await leerFibrasActivas(u.referencia), u.referencia, fechaISOEnChile(), u.fibraId);
+    } catch (e) {
+      console.error('No se pudo buscar la siguiente fibra en bodega:', e);
     }
+    const puedeCambiarUbicacion = hasPermission(RUTA_FIBRAS, 'tabla_fibras', 'action_cambiar_ubicacion');
+    const titulo = ultimos.length === 1 ? 'Último uso de la fibra' : 'Último uso de fibras';
+    if (!siguiente) {
+      confirmAction(titulo, `${textoUltimos} No hay otra fibra de ${ultimos[0].referencia} en bodega para poner en uso.`, () => {},
+        { type: 'warning', confirmText: 'Entendido', cancelText: 'Cerrar' });
+      return;
+    }
+    const sugerencia = `Siguiente en bodega: ${siguiente.codigoInterno} (lote ${siguiente.lote}, vence ${siguiente.vencimiento}).`;
+    if (!puedeCambiarUbicacion) {
+      confirmAction(titulo, `${textoUltimos} ${sugerencia} Pide que la pongan en uso en Implantes → Fibras.`, () => {},
+        { type: 'warning', confirmText: 'Entendido', cancelText: 'Cerrar' });
+      return;
+    }
+    confirmAction(titulo, `${textoUltimos} ${sugerencia} ¿Ponerla en uso ahora?`, async () => {
+      try {
+        await ponerEnUso(siguiente.id, userData);
+        showToast(`${siguiente.codigoInterno} quedó EN USO.`, 'success');
+      } catch (e) {
+        showToast(e?.esErrorFibra ? e.message : `No se pudo poner en uso: ${e.message}`, 'error');
+      }
+    }, { type: 'warning', confirmText: `Poner en uso ${siguiente.codigoInterno}`, cancelText: 'Ahora no' });
   };
 
   // Devuelve { ok: true, registros } (registros guardados, en el mismo orden

@@ -4,7 +4,7 @@ import { useGranularPermission } from '../../../../../hooks/useGranularPermissio
 import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitidas';
 import { useColumnResize } from '../../../../../hooks/useColumnResize';
 import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../ui/ThRedimensionable';
-import { ordenarUsos, TIPO_USO, ESTADO_USO, TEXTO_MOTIVO_ANULACION, usosConsumidosDe } from './fibrasNucleo';
+import { ordenarUsos, TIPO_USO, ESTADO_USO, TEXTO_MOTIVO_ANULACION, usosConsumidosDe, ubicacionDe } from './fibrasNucleo';
 import { formatearFechaTabla } from '../gestionImplantes/components/Cargastab/cargasHelpers';
 
 const PATH_VISTA = '/implantes/fibrasReutilizables';
@@ -23,6 +23,22 @@ const COLUMNAS_DETALLE = [
 const TH = 'px-2 py-1.5 text-left text-[10px] font-bold uppercase text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/60';
 const TD = 'px-2 py-1.5 border-b border-slate-100 dark:border-gray-700/60 truncate';
 
+// Movimientos de ubicación (logs de la fibra) en palabras.
+const TEXTO_MOVIMIENTO = {
+  PUESTA_EN_USO: 'Puesta en uso',
+  DEVUELTA_A_BODEGA: 'Devuelta a bodega',
+  SALIDA_DE_USO: 'Fuera de uso (agotada)',
+  UBICACION_INICIAL: 'Ubicación inicial',
+};
+const fechaCorta = (t) => {
+  const d = t?.toDate ? t.toDate() : null;
+  return d ? d.toLocaleDateString('es-CL', { timeZone: 'America/Santiago', day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+};
+const textoMovimiento = (m) => {
+  const base = m.accion === 'UBICACION_INICIAL' ? `Ubicación inicial: ${(m.detalles?.a || '').toLowerCase()}` : TEXTO_MOVIMIENTO[m.accion] || m.accion;
+  return `${base} el ${fechaCorta(m.timestamp)} por ${m.usuario || ''}${m.detalles?.motivo ? ` (${m.detalles.motivo})` : ''}`;
+};
+
 const fechaHora = (t) => {
   const d = t?.toDate ? t.toDate() : null;
   return d ? d.toLocaleString('es-CL', { timeZone: 'America/Santiago', dateStyle: 'short', timeStyle: 'short' }) : '';
@@ -33,24 +49,25 @@ const fechaHora = (t) => {
  * mismo que muestra la línea de la gestión). Los anulados quedan tachados con
  * su motivo. `onAnularPerdida(uso)` solo si el usuario tiene la acción.
  */
-const DetalleFibra = ({ fibra, leerUsos, version, onAnularPerdida, onCerrar }) => {
+const DetalleFibra = ({ fibra, leerUsos, leerMovimientos, version, onAnularPerdida, onCerrar }) => {
   const { hasPermission } = useGranularPermission();
   const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'detalle_usos', COLUMNAS_DETALLE);
   const { anchos, handleResize } = useColumnResize(columnasVisibles);
   // Usos leídos, con la clave (fibra y versión) que los pidió: mientras no
   // coincida con la actual se muestra "Cargando".
   const clave = `${fibra.id}:${version}`;
-  const [leidos, setLeidos] = useState({ clave: '', usos: [] });
+  const [leidos, setLeidos] = useState({ clave: '', usos: [], movimientos: [] });
   const usos = leidos.clave === clave ? leidos.usos : null;
+  const movimientos = leidos.clave === clave ? leidos.movimientos : [];
   const puedeAnular = hasPermission(PATH_VISTA, 'tabla_fibras', 'action_anular_perdida') && Boolean(onAnularPerdida);
 
   useEffect(() => {
     let vigente = true;
-    leerUsos(fibra.id)
-      .then((lista) => { if (vigente) setLeidos({ clave, usos: ordenarUsos(lista) }); })
-      .catch(() => { if (vigente) setLeidos({ clave, usos: [] }); });
+    Promise.all([leerUsos(fibra.id), leerMovimientos ? leerMovimientos(fibra.id).catch(() => []) : []])
+      .then(([lista, movs]) => { if (vigente) setLeidos({ clave, usos: ordenarUsos(lista), movimientos: movs }); })
+      .catch(() => { if (vigente) setLeidos({ clave, usos: [], movimientos: [] }); });
     return () => { vigente = false; };
-  }, [fibra.id, leerUsos, clave]);
+  }, [fibra.id, leerUsos, leerMovimientos, clave]);
 
   const celda = (u, key) => {
     const anulado = u.estado === ESTADO_USO.ANULADO;
@@ -82,8 +99,13 @@ const DetalleFibra = ({ fibra, leerUsos, version, onAnularPerdida, onCerrar }) =
           <div>
             <h3 className="text-[14px] font-bold text-slate-800 dark:text-gray-100">{fibra.codigoInterno} · {fibra.referencia}</h3>
             <p className="text-slate-500 dark:text-gray-400">
-              Lote {fibra.lote} · vence {formatearFechaTabla(fibra.vencimiento)} · {usosConsumidosDe(fibra)} de {fibra.usosTotales} usos consumidos
+              Lote {fibra.lote} · vence {formatearFechaTabla(fibra.vencimiento)} · {usosConsumidosDe(fibra)} de {fibra.usosTotales} usos consumidos · {ubicacionDe(fibra).toLowerCase()}
             </p>
+            {movimientos.length > 0 && (
+              <ul className="mt-1.5 text-[10px] text-slate-500 dark:text-gray-400 space-y-0.5" aria-label="Movimientos de ubicación">
+                {movimientos.map((m) => <li key={m.id}>{textoMovimiento(m)}</li>)}
+              </ul>
+            )}
           </div>
           <button type="button" onClick={onCerrar} aria-label="Cerrar" className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
         </div>

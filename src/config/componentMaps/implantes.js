@@ -31,10 +31,14 @@ export const implantesComponentMaps = {
             ['usos', 'Usos'],
             ['restantes', 'Restantes'],
             ['estado', 'Estado'],
+            ['ubicacion', 'Ubicación (en uso / en bodega)'],
           ]),
           action_ver_detalle: { label: 'Operación: Detalle (usos y pérdidas)' },
           action_editar: { label: 'Operación: Corregir lote, vencimiento o usos totales' },
           action_registrar_perdida: { label: 'Operación: Registrar pérdida de un uso' },
+          // En Cargas, elegir una fibra de bodega la pone en uso sin esta acción
+          // (basta poder cargar líneas: no se bloquea el registro de la cirugía).
+          action_cambiar_ubicacion: { label: 'Operación: Poner en uso / Devolver a bodega' },
           action_anular_perdida: { label: 'Operación: Anular una pérdida (denegada por defecto)' },
         },
       },

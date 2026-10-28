@@ -1,14 +1,17 @@
 import { useMemo, useState } from 'react';
-import { Cable, Plus, RefreshCw, ListOrdered, Pencil, MinusCircle } from 'lucide-react';
+import { Cable, Plus, RefreshCw, ListOrdered, Pencil, MinusCircle, PlayCircle, Warehouse } from 'lucide-react';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitidas';
 import { useColumnResize } from '../../../../../hooks/useColumnResize';
 import { useUser } from '../../../../../context/UserContext';
+import { useModal } from '../../../../../context/ModalContext';
 import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../ui/ThRedimensionable';
 import { BotonRestablecerAnchos } from '../../../../ui/BotonRestablecerAnchos';
 import BuscadorConLimpiar from '../../../../ui/BuscadorConLimpiar';
 import { formatearFechaTabla } from '../gestionImplantes/components/Cargastab/cargasHelpers';
-import { ESTADO_FIBRA, estadoVisible, usosConsumidosDe, usosRestantes } from './fibrasNucleo';
+import {
+  ESTADO_FIBRA, UBICACION, estadoVisible, usosConsumidosDe, usosRestantes, ubicacionDe, motivoNoPonerEnUso, normalizarReferencia,
+} from './fibrasNucleo';
 import { useFibrasReutilizablesData } from './useFibrasReutilizablesData';
 import { RegistrarFibraDialogo, EditarFibraDialogo, PerdidaDialogo, AnularPerdidaDialogo } from './DialogosFibra';
 import DetalleFibra from './DetalleFibra';
@@ -27,7 +30,8 @@ const COLUMNAS = [
   { key: 'usos', label: 'Usos', ancho: 120, min: 90 },
   { key: 'restantes', label: 'Restantes', ancho: 80, min: 60 },
   { key: 'estado', label: 'Estado', ancho: 90, min: 70 },
-  { key: 'acciones', label: 'Acciones', fija: true, ancho: 95, min: 80 },
+  { key: 'ubicacion', label: 'Ubicación', ancho: 95, min: 80 },
+  { key: 'acciones', label: 'Acciones', fija: true, ancho: 120, min: 100 },
 ];
 
 const ESTILO_ESTADO = {
@@ -36,6 +40,12 @@ const ESTILO_ESTADO = {
   [ESTADO_FIBRA.VENCIDA]: 'bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800',
 };
 const ETIQUETA_ESTADO = { ACTIVA: 'Activa', AGOTADA: 'Agotada', VENCIDA: 'Vencida' };
+const ESTILO_UBICACION = {
+  [UBICACION.EN_USO]: 'bg-teal-50 text-teal-800 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800',
+  [UBICACION.EN_BODEGA]: 'bg-sky-50 text-sky-800 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800',
+  [UBICACION.AGOTADA]: 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-600',
+};
+const ETIQUETA_UBICACION = { [UBICACION.EN_USO]: 'En uso', [UBICACION.EN_BODEGA]: 'En bodega', [UBICACION.AGOTADA]: 'Fuera de uso' };
 
 const TH = 'px-2 py-1.5 text-left text-[10px] font-bold uppercase text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/60 sticky top-0 z-10';
 const TD = 'px-2 py-1.5 border-b border-slate-100 dark:border-gray-700/60 truncate';
@@ -43,12 +53,16 @@ const TD = 'px-2 py-1.5 border-b border-slate-100 dark:border-gray-700/60 trunca
 const FibrasReutilizables = () => {
   const { hasPermission } = useGranularPermission();
   const { userData } = useUser();
-  const { fibras, hoy, recargar, registrar, editar, registrarPerdida, anularPerdida, leerUsos } = useFibrasReutilizablesData();
+  const { confirmAction } = useModal();
+  const {
+    fibras, hoy, recargar, registrar, editar, registrarPerdida, anularPerdida, ponerEnUso, devolverABodega, leerUsos, leerMovimientos,
+  } = useFibrasReutilizablesData();
   const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'tabla_fibras', COLUMNAS);
   const { anchos, handleResize, restablecerAnchos, personalizados } = useColumnResize(columnasVisibles, { clave: 'implantes.fibras', usuario: userData?.uid });
 
   const [texto, setTexto] = useState('');
   const [filtroEstado, setFiltroEstado] = useState(ESTADO_FIBRA.ACTIVA);
+  const [filtroUbicacion, setFiltroUbicacion] = useState('');
   const [dialogo, setDialogo] = useState(null); // { tipo, fibra?, uso? }
   const [detalle, setDetalle] = useState(null);
   const [versionDetalle, setVersionDetalle] = useState(0);
@@ -60,15 +74,38 @@ const FibrasReutilizables = () => {
     return (fibras || [])
       .map((f) => ({ ...f, estadoVisible: estadoVisible(f, hoy) }))
       .filter((f) => !filtroEstado || f.estadoVisible === filtroEstado)
+      .filter((f) => !filtroUbicacion || ubicacionDe(f) === filtroUbicacion)
       .filter((f) => !t || [f.codigoInterno, f.referencia, f.lote, f.descriptor].some((v) => String(v || '').toUpperCase().includes(t)))
       .sort((a, b) => (a.codigoInterno || '').localeCompare(b.codigoInterno || ''));
-  }, [fibras, hoy, texto, filtroEstado]);
+  }, [fibras, hoy, texto, filtroEstado, filtroUbicacion]);
 
   const conteo = useMemo(() => {
     const c = { ACTIVA: 0, AGOTADA: 0, VENCIDA: 0 };
     (fibras || []).forEach((f) => { c[estadoVisible(f, hoy)]++; });
     return c;
   }, [fibras, hoy]);
+
+  // Poner en uso: si otra fibra de la referencia está en uso, se pregunta si
+  // vuelve a bodega (solo puede haber una EN USO por referencia); cancelar no
+  // cambia nada.
+  const pedirPonerEnUso = (f) => {
+    const otra = (fibras || []).find((x) => x.id !== f.id && ubicacionDe(x) === UBICACION.EN_USO
+      && normalizarReferencia(x.referencia) === normalizarReferencia(f.referencia));
+    confirmAction(
+      `Poner en uso ${f.codigoInterno}`,
+      otra
+        ? `Solo puede haber una fibra ${f.referencia} en uso. La ${otra.codigoInterno} (lote ${otra.lote}) volverá a bodega. ¿Continuar?`
+        : `La fibra ${f.codigoInterno} (lote ${f.lote}) pasará a EN USO.`,
+      async () => despuesDeAccion(await ponerEnUso(f)),
+      { type: 'warning', confirmText: otra ? 'Sí, devolver la anterior' : 'Poner en uso', cancelText: 'Cancelar' }
+    );
+  };
+  const pedirDevolver = (f) => confirmAction(
+    `Devolver ${f.codigoInterno} a bodega`,
+    `La fibra ${f.codigoInterno} (lote ${f.lote}) quedará EN BODEGA y ${f.referencia} quedará sin fibra en uso.`,
+    async () => despuesDeAccion(await devolverABodega(f)),
+    { type: 'warning', confirmText: 'Devolver a bodega', cancelText: 'Cancelar' }
+  );
 
   // Tras una acción sobre la fibra abierta en Detalle, se relee su detalle.
   const despuesDeAccion = (ok) => { if (ok) setVersionDetalle((v) => v + 1); return ok; };
@@ -94,6 +131,12 @@ const FibrasReutilizables = () => {
       }
       case 'restantes': return <span className={`font-num font-bold ${usosRestantes(f) === 1 ? 'text-amber-600' : ''}`}>{usosRestantes(f)}</span>;
       case 'estado': return <span className={`inline-flex px-1.5 py-0.5 rounded border text-[9px] font-bold ${ESTILO_ESTADO[f.estadoVisible]}`}>{ETIQUETA_ESTADO[f.estadoVisible]}</span>;
+      case 'ubicacion': {
+        const u = ubicacionDe(f);
+        const desde = f.ubicacionDesde?.fecha?.toDate?.();
+        const titulo = desde ? `Desde el ${desde.toLocaleDateString('es-CL', { timeZone: 'America/Santiago' })} por ${f.ubicacionDesde?.por?.nombre || ''}` : undefined;
+        return <span title={titulo} className={`inline-flex px-1.5 py-0.5 rounded border text-[9px] font-bold ${ESTILO_UBICACION[u]}`}>{ETIQUETA_UBICACION[u]}</span>;
+      }
       case 'acciones': return (
         <span className="flex items-center gap-1">
           {puede('tabla_fibras', 'action_ver_detalle') && (
@@ -101,6 +144,12 @@ const FibrasReutilizables = () => {
           )}
           {puede('tabla_fibras', 'action_editar') && (
             <button type="button" onClick={() => setDialogo({ tipo: 'editar', fibra: f })} title="Corregir" aria-label={`Corregir ${f.codigoInterno}`} className="p-0.5 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700 rounded"><Pencil size={12} /></button>
+          )}
+          {puede('tabla_fibras', 'action_cambiar_ubicacion') && ubicacionDe(f) === UBICACION.EN_BODEGA && motivoNoPonerEnUso(f, hoy) === null && (
+            <button type="button" onClick={() => pedirPonerEnUso(f)} title="Poner en uso" aria-label={`Poner en uso ${f.codigoInterno}`} className="p-0.5 text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/30 rounded"><PlayCircle size={13} /></button>
+          )}
+          {puede('tabla_fibras', 'action_cambiar_ubicacion') && ubicacionDe(f) === UBICACION.EN_USO && (
+            <button type="button" onClick={() => pedirDevolver(f)} title="Devolver a bodega" aria-label={`Devolver a bodega ${f.codigoInterno}`} className="p-0.5 text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 rounded"><Warehouse size={13} /></button>
           )}
           {puede('tabla_fibras', 'action_registrar_perdida') && usosRestantes(f) > 0 && (
             <button type="button" onClick={() => setDialogo({ tipo: 'perdida', fibra: f })} title="Registrar pérdida de un uso" aria-label={`Registrar pérdida ${f.codigoInterno}`} className="p-0.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"><MinusCircle size={13} /></button>
@@ -121,6 +170,12 @@ const FibrasReutilizables = () => {
             <option value={ESTADO_FIBRA.VENCIDA}>Vencidas ({conteo.VENCIDA})</option>
             <option value={ESTADO_FIBRA.AGOTADA}>Agotadas ({conteo.AGOTADA})</option>
             <option value="">Todas ({(fibras || []).length})</option>
+          </select>
+          <select aria-label="Ubicación" value={filtroUbicacion} onChange={(e) => setFiltroUbicacion(e.target.value)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900">
+            <option value="">Toda ubicación</option>
+            <option value={UBICACION.EN_USO}>En uso</option>
+            <option value={UBICACION.EN_BODEGA}>En bodega</option>
+            <option value={UBICACION.AGOTADA}>Fuera de uso</option>
           </select>
           <BuscadorConLimpiar value={texto} onChange={setTexto} className="w-56" placeholder="Buscar código, referencia, lote…" />
           <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1 text-gray-600 dark:text-gray-300"><RefreshCw size={12} /> Actualizar</button>
@@ -163,6 +218,7 @@ const FibrasReutilizables = () => {
         <DetalleFibra
           fibra={fibraActual(detalle)}
           leerUsos={leerUsos}
+          leerMovimientos={leerMovimientos}
           version={versionDetalle}
           onAnularPerdida={(uso) => setDialogo({ tipo: 'anular', fibra: fibraActual(detalle), uso })}
           onCerrar={() => setDetalle(null)}

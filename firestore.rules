@@ -1023,7 +1023,10 @@ service cloud.firestore {
     //    (ultimoCambio) y el uso con ese número se crea o anula en la misma
     //    escritura (get/getAfter);
     //  - nunca más usos que usosTotales ni dos vigentes con el mismo número;
-    //  - los usos no se borran: se anulan y quedan en el historial.
+    //  - los usos no se borran: se anulan y quedan en el historial;
+    //  - ubicación (EN BODEGA, EN USO, AGOTADA) coherente con el estado y una
+    //    sola fibra EN USO por referencia: el control enUso__{referencia} de
+    //    implantes_fibras_control cambia en la misma escritura.
     function rutaFibras() {
       return '/implantes/fibrasReutilizables';
     }
@@ -1052,7 +1055,17 @@ service cloud.firestore {
         && d.usosConsumidos <= d.usosTotales
         && d.estado == (d.usosConsumidos == d.usosTotales ? 'AGOTADA' : 'ACTIVA')
         && (d.usosTotales == 10 || !d.numerosOcupados.hasAny([6, 7, 8, 9, 10]))
-        && d.fechasUso is map && d.fechasUso.size() == d.numerosOcupados.size();
+        && d.fechasUso is map && d.fechasUso.size() == d.numerosOcupados.size()
+        && d.ubicacion in ['EN BODEGA', 'EN USO', 'AGOTADA']
+        && (d.estado == 'AGOTADA') == (d.ubicacion == 'AGOTADA');
+    }
+    function refFibra(id) {
+      return /databases/$(database)/documents/implantes_fibras/$(id);
+    }
+    // Vencimiento AAAA-MM-DD no pasado (con margen por la hora de Chile).
+    function vigenteHoy(v) {
+      let p = v.split('-');
+      return timestamp.date(int(p[0]), int(p[1]), int(p[2])) + duration.value(28, 'h') > request.time;
     }
     // Ningún uso o pérdida vigente con fecha posterior a `v` (fechasUso tiene
     // a lo más 10 números: se revisan uno por uno, las reglas no tienen bucles).
@@ -1121,28 +1134,68 @@ service cloud.firestore {
           && getAfter(refUso(c.usoId)).data.estado == 'VIGENTE'
           && getAfter(refUso(c.usoId)).data.fecha == d.fechasUso[n];
       }
-      function cambiaUso() {
-        return request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['usosConsumidos', 'numerosOcupados', 'fechasUso', 'estado', 'ultimoCambio', 'actualizadoEl'])
-          && fibraCoherente(request.resource.data)
+      // Las reglas tienen un tope de 1000 expresiones evaluadas por pedido:
+      // cada tipo de cambio se descarta primero con una comprobación barata
+      // (qué campos cambian) y lo común (coherencia y ubicación) se evalúa una
+      // sola vez, en actualizacionValida.
+      function cambiaUso(cambia) {
+        return cambia.hasAny(['ultimoCambio'])
+          && cambia.hasOnly(['usosConsumidos', 'numerosOcupados', 'fechasUso', 'estado', 'ubicacion', 'ubicacionDesde', 'ultimoCambio', 'actualizadoEl'])
           && (esAlta() || esBaja() || esCambioFecha());
+      }
+      // --- Ubicación ---
+      function controlEnUso() {
+        return getAfter(/databases/$(database)/documents/implantes_fibras_control/$('enUso__' + request.resource.data.referencia.replace('/', '_'))).data;
+      }
+      // Un cambio de ubicación: sin cambio, siempre válido. Si cambia, con
+      // usuario y hora del servidor; una agotada solo vuelve a bodega; quien
+      // pasa a EN USO (vigente) queda en el control y quien sale de EN USO deja
+      // de estarlo. Agotarse o volver de agotada es automático; los demás
+      // cambios exigen la acción o vienen de Cargas (cambioDesdeCargas).
+      function ubicacionValida() {
+        let d = request.resource.data;
+        let antes = resource.data.get('ubicacion', 'EN BODEGA');
+        return d.ubicacion == antes || (
+          d.ubicacionDesde.por.uid == request.auth.uid && d.ubicacionDesde.fecha == request.time
+          && (antes != 'AGOTADA' || d.ubicacion == 'EN BODEGA')
+          && (d.ubicacion != 'EN USO' || (controlEnUso().fibraId == fibraId && vigenteHoy(d.vencimiento)))
+          && (antes != 'EN USO' || controlEnUso().fibraId != fibraId)
+          && (d.ubicacion == 'AGOTADA' || antes == 'AGOTADA'
+            || accionFibras('tabla_fibras', 'action_cambiar_ubicacion') || cambioDesdeCargas()));
+      }
+      // Cargas (basta poder cargar líneas): la fibra elegida de bodega pasa a
+      // EN USO en la misma escritura en que registra un uso (alta), y la que
+      // estaba en uso vuelve a bodega porque otra (origen del control) registró
+      // un uso en esa misma escritura.
+      function cambioDesdeCargas() {
+        let d = request.resource.data;
+        let origen = refFibra(controlEnUso().origen);
+        return (d.ubicacion == 'EN USO' && d.ultimoCambio != null && d.ultimoCambio.tipo == 'ALTA'
+            && d.ultimoCambio != resource.data.ultimoCambio)
+          || (d.ubicacion == 'EN BODEGA' && controlEnUso().origen != fibraId
+            && getAfter(origen).data.ultimoCambio.tipo == 'ALTA'
+            && getAfter(origen).data.ultimoCambio != get(origen).data.ultimoCambio);
+      }
+      // Poner en uso o devolver a bodega (pantalla Fibras o la fibra que
+      // vuelve a bodega desde Cargas): solo cambia la ubicación.
+      function esCambioUbicacion(cambia) {
+        return cambia.hasOnly(['ubicacion', 'ubicacionDesde', 'actualizadoEl'])
+          && cambia.hasAny(['ubicacion']);
       }
       // Corrección desde la pantalla (con motivo, y su log en la misma
       // escritura): usos totales sin quedar bajo los consumidos ni bajo un
       // número ocupado; vencimiento sin quedar antes de ningún uso vigente;
       // lote solo sin usos registrados en el sistema.
-      function esCorreccion() {
+      function esCorreccion(cambia) {
         let antes = resource.data;
         let d = request.resource.data;
-        let cambia = d.diff(antes).affectedKeys();
-        return cambia.hasOnly(['lote', 'vencimiento', 'usosTotales', 'estado', 'ultimaCorreccion', 'actualizadoEl', 'actualizadoPor'])
-          && fibraCoherente(d)
+        return cambia.hasAny(['ultimaCorreccion'])
+          && cambia.hasOnly(['lote', 'vencimiento', 'usosTotales', 'estado', 'ubicacion', 'ubicacionDesde', 'ultimaCorreccion', 'actualizadoEl', 'actualizadoPor'])
           && (!cambia.hasAny(['lote']) || antes.numerosOcupados.size() == 0)
           && esFechaISO(d.vencimiento)
-          && sinUsoPosterior(d.fechasUso, d.vencimiento)
+          && (!cambia.hasAny(['vencimiento']) || sinUsoPosterior(d.fechasUso, d.vencimiento))
           && d.lote is string && d.lote.size() > 0
           && d.actualizadoPor.uid == request.auth.uid
-          && cambia.hasAny(['ultimaCorreccion'])
           && d.ultimaCorreccion.motivo is string && d.ultimaCorreccion.motivo.size() > 0
           && existsAfter(/databases/$(database)/documents/implantes_fibras/$(fibraId)/logs/$(d.ultimaCorreccion.logId))
           && accionFibras('tabla_fibras', 'action_editar');
@@ -1159,8 +1212,16 @@ service cloud.firestore {
         && esFechaISO(request.resource.data.vencimiento)
         && request.resource.data.lote is string && request.resource.data.lote.size() > 0
         && request.resource.data.referencia is string && request.resource.data.referencia.size() > 0
-        && request.resource.data.creadoPor.uid == request.auth.uid;
-      allow update: if estaActivo() && (esDev() || tienePermiso('implantes')) && (cambiaUso() || esCorreccion());
+        && request.resource.data.creadoPor.uid == request.auth.uid
+        && request.resource.data.ubicacion == 'EN BODEGA'
+        && request.resource.data.ubicacionDesde.por.uid == request.auth.uid;
+      function actualizacionValida() {
+        let cambia = request.resource.data.diff(resource.data).affectedKeys();
+        return (cambiaUso(cambia) || esCorreccion(cambia) || esCambioUbicacion(cambia))
+          && fibraCoherente(request.resource.data)
+          && ubicacionValida();
+      }
+      allow update: if estaActivo() && (esDev() || tienePermiso('implantes')) && actualizacionValida();
       allow delete: if false;
 
       match /usos/{usoId} {
@@ -1230,6 +1291,27 @@ service cloud.firestore {
       }
       allow create: if escribeContador() && request.resource.data.ultimo > 0;
       allow update: if escribeContador() && request.resource.data.ultimo > resource.data.ultimo;
+
+      // Control "en uso" de una referencia (enUso__{referencia}): fibraId es
+      // la única EN USO (o null) y origen, la fibra cuya ubicación cambió en
+      // esta misma escritura. Al cambiar de titular, el anterior ya no puede
+      // quedar EN USO: así nunca hay dos.
+      function controlEnUsoValido() {
+        let d = request.resource.data;
+        let origen = refFibra(d.origen);
+        return docId == 'enUso__' + d.referencia.replace('/', '_')
+          && d.keys().hasOnly(['referencia', 'fibraId', 'origen', 'actualizadoEl'])
+          && getAfter(origen).data.referencia == d.referencia
+          && getAfter(origen).data.get('ubicacion', 'EN BODEGA') != get(origen).data.get('ubicacion', 'EN BODEGA')
+          && (d.fibraId == null || (getAfter(refFibra(d.fibraId)).data.ubicacion == 'EN USO'
+            && getAfter(refFibra(d.fibraId)).data.referencia == d.referencia));
+      }
+      allow create: if estaActivo() && (esDev() || tienePermiso('implantes'))
+        && docId.matches('enUso__.+') && controlEnUsoValido();
+      allow update: if estaActivo() && (esDev() || tienePermiso('implantes'))
+        && docId.matches('enUso__.+') && controlEnUsoValido()
+        && (resource.data.fibraId == null || resource.data.fibraId == request.resource.data.fibraId
+          || getAfter(refFibra(resource.data.fibraId)).data.ubicacion != 'EN USO');
     }
 
     // Implantes → Respaldo de documentos: PDF cuyo ID no coincide con ninguna

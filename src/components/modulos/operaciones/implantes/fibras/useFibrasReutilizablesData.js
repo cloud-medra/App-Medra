@@ -7,6 +7,7 @@ import { fechaISOEnChile } from '../../shared/gestion/rangoFechaGestiones';
 import { textoUsoRegistrado } from './fibrasNucleo';
 import {
   leerTodasLasFibras, leerUsosDeFibra, registrarFibras, editarFibra, registrarPerdida, anularPerdida,
+  ponerEnUso, devolverABodega, leerMovimientosUbicacion,
 } from './fibrasTransacciones';
 
 // Códigos maestros marcados como fibra reutilizable (pocos: una consulta por
@@ -72,6 +73,15 @@ export const useFibrasReutilizablesData = () => {
       () => anularPerdida(fibraId, usoId, motivo, userData),
       'Pérdida anulada: el uso volvió a quedar disponible'
     ),
+    ponerEnUso: (fibra) => ejecutar(
+      () => ponerEnUso(fibra.id, userData),
+      ({ devuelta }) => `${fibra.codigoInterno} quedó EN USO${devuelta ? `; ${devuelta} volvió a bodega` : ''}`
+    ),
+    devolverABodega: (fibra) => ejecutar(
+      () => devolverABodega(fibra.id, userData),
+      `${fibra.codigoInterno} volvió a bodega`
+    ),
     leerUsos: leerUsosDeFibra,
+    leerMovimientos: leerMovimientosUbicacion,
   };
 };

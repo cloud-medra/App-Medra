@@ -17,6 +17,15 @@
 //                      regla del uso que se crea, anula o cambia de fecha en la
 //                      misma escritura
 //     ultimaCorreccion { motivo, logId } de la última corrección (auditada)
+//     ubicacion        EN BODEGA | EN USO | AGOTADA (aparte de `estado`: no
+//                      cambia el contador). Al agotarse sale de uso sola; si
+//                      vuelve a quedar activa (uso anulado), queda EN BODEGA.
+//     ubicacionDesde   { fecha, por: { uid, nombre } } del último cambio
+//   implantes_fibras_control/enUso__{referencia}
+//                    { referencia, fibraId | null, origen, actualizadoEl }: la
+//                    única fibra EN USO de la referencia. Las reglas exigen que
+//                    cada cambio de ubicación lo actualice en la misma
+//                    escritura (así nunca hay dos EN USO de una referencia).
 //     /usos/{usoId}    cada uso o pérdida (nunca se borra: se anula)
 //     /logs/{id}       auditoría de la fibra
 //
@@ -35,6 +44,7 @@ export const USOS_PERMITIDOS = Object.freeze([5, 10]);
 export const MAX_FIBRAS_POR_REGISTRO = 20;
 
 export const ESTADO_FIBRA = Object.freeze({ ACTIVA: 'ACTIVA', AGOTADA: 'AGOTADA', VENCIDA: 'VENCIDA' });
+export const UBICACION = Object.freeze({ EN_BODEGA: 'EN BODEGA', EN_USO: 'EN USO', AGOTADA: 'AGOTADA' });
 export const TIPO_USO = Object.freeze({ USO: 'USO', PERDIDA: 'PERDIDA' });
 export const ESTADO_USO = Object.freeze({ VIGENTE: 'VIGENTE', ANULADO: 'ANULADO' });
 export const MOTIVO_ANULACION = Object.freeze({
@@ -122,17 +132,52 @@ export const motivoNoPerdible = (fibra) => {
   return null;
 };
 
+// --- Ubicación --------------------------------------------------------------
+
+export const ubicacionDe = (fibra) => fibra?.ubicacion || UBICACION.EN_BODEGA;
+
+// Documento de control con la fibra EN USO de una referencia.
+export const idControlEnUso = (referencia) => `enUso__${normalizarReferencia(referencia).replace(/\//g, '_')}`;
+
+// Ubicación tras un cambio de estado: al agotarse sale de uso (AGOTADA); si
+// una agotada vuelve a quedar activa, queda EN BODEGA.
+export const ubicacionTrasEstado = (ubicacion, estado) => {
+  if (estado === ESTADO_FIBRA.AGOTADA) return UBICACION.AGOTADA;
+  return ubicacion === UBICACION.AGOTADA ? UBICACION.EN_BODEGA : ubicacion;
+};
+
+// Motivo por el que no se puede poner EN USO (null si se puede): agotada o
+// vencida respecto de hoy (AAAA-MM-DD en Chile).
+export const motivoNoPonerEnUso = (fibra, hoyISO) => {
+  if (!fibra) return 'La fibra ya no existe.';
+  if (usosRestantes(fibra) === 0) return `La fibra ${etiquetaFibra(fibra)} está agotada.`;
+  if (esISO(hoyISO) && fibra.vencimiento < hoyISO) return `La fibra ${etiquetaFibra(fibra)} está vencida (${fibra.vencimiento}).`;
+  if (ubicacionDe(fibra) === UBICACION.EN_USO) return `La fibra ${etiquetaFibra(fibra)} ya está en uso.`;
+  return null;
+};
+
+// Siguiente fibra de la referencia para poner en uso: en bodega, usable hoy,
+// la de vencimiento más próximo. null si no hay.
+export const siguienteEnBodega = (fibras = [], referencia, hoyISO, excluirId) =>
+  fibras
+    .filter((f) => f.id !== excluirId && normalizarReferencia(f.referencia) === normalizarReferencia(referencia)
+      && ubicacionDe(f) === UBICACION.EN_BODEGA && motivoNoPonerEnUso(f, hoyISO) === null)
+    .sort((a, b) => (a.vencimiento || '').localeCompare(b.vencimiento || '') || (a.codigoInterno || '').localeCompare(b.codigoInterno || ''))[0] || null;
+
 // Campos de la fibra al ocupar un número (alta, con la fecha del uso),
 // liberarlo (baja) o cambiar la fecha de un uso vigente (la gestión cambió de
-// fecha).
-export const fibraConAlta = (fibra, numero, usoId, fecha) => {
+// fecha). `ubicacionBase` (alta): EN USO si se pone en uso en esta misma
+// escritura (Cargas, fibra elegida de bodega).
+export const fibraConAlta = (fibra, numero, usoId, fecha, ubicacionBase = ubicacionDe(fibra)) => {
   const numerosOcupados = [...(fibra.numerosOcupados || []), numero].sort((a, b) => a - b);
   const usosConsumidos = (Number(fibra.usosPrevios) || 0) + numerosOcupados.length;
+  const estado = estadoGuardado(usosConsumidos, fibra.usosTotales);
   return {
     numerosOcupados,
     usosConsumidos,
     fechasUso: { ...(fibra.fechasUso || {}), [String(numero)]: fecha },
-    estado: estadoGuardado(usosConsumidos, fibra.usosTotales),
+    estado,
+    ubicacion: ubicacionTrasEstado(ubicacionBase, estado),
     ultimoCambio: { tipo: 'ALTA', numero, usoId },
   };
 };
@@ -142,11 +187,13 @@ export const fibraConBaja = (fibra, numero, usoId) => {
   const usosConsumidos = (Number(fibra.usosPrevios) || 0) + numerosOcupados.length;
   const fechasUso = { ...(fibra.fechasUso || {}) };
   delete fechasUso[String(numero)];
+  const estado = estadoGuardado(usosConsumidos, fibra.usosTotales);
   return {
     numerosOcupados,
     usosConsumidos,
     fechasUso,
-    estado: estadoGuardado(usosConsumidos, fibra.usosTotales),
+    estado,
+    ubicacion: ubicacionTrasEstado(ubicacionDe(fibra), estado),
     ultimoCambio: { tipo: 'BAJA', numero, usoId },
   };
 };
@@ -282,7 +329,12 @@ export const planFibrasBloque = ({ itemsAntes = [], itemsDespues = [], cambiaGes
 // de la gestión que se copian en el uso.
 export const operacionesDePlan = (plan, datosGestion) => [
   ...plan.anular.map(({ item, motivo }) => ({ tipo: 'anular', fibraId: item.fibra.id, usoId: item.fibra.usoId, motivo })),
-  ...plan.registrar.map((item) => ({ tipo: 'registrar', fibraId: item.fibra.id, usoId: item.fibra.usoId, item, datosGestion })),
+  ...plan.registrar.map((item) => ({
+    tipo: 'registrar', fibraId: item.fibra.id, usoId: item.fibra.usoId, item, datosGestion,
+    // Fibra elegida de bodega en Cargas: pasa a EN USO en este guardado y la
+    // que estaba en uso (`devolver`) vuelve a bodega.
+    ...(item.fibra.ponerEnUso ? { ponerEnUso: true, devolver: item.fibra.devolver || null } : {}),
+  })),
   ...plan.actualizar.map((item) => ({ tipo: 'actualizar', fibraId: item.fibra.id, usoId: item.fibra.usoId, datosGestion })),
 ];
 
@@ -297,9 +349,12 @@ export const planFibrasEliminacion = (items = []) => ({
 // exists y getAfter de documentos distintos; las repetidas del mismo
 // documento se cobran una vez por transacción). Firestore permite 20 por
 // transacción: 2 son del perfil del usuario (getUsuario). Ver firestore.rules.
+// Registrar: 4 (uso nuevo y fibra antes/después); 6 en el peor caso, cuando
+// la fibra cambia de ubicación (control "en uso" y la fibra que vuelve a
+// bodega). Se cuenta siempre el peor caso.
 export const MAX_ACCESOS_REGLAS = 20;
 const ACCESOS_PERFIL = 2;
-const ACCESOS_POR_OPERACION = { registrar: 4, anular: 3, actualizar: 3 };
+const ACCESOS_POR_OPERACION = { registrar: 6, anular: 3, actualizar: 3 };
 export const accesosReglas = (operaciones) =>
   ACCESOS_PERFIL + operaciones.reduce((n, op) => n + (ACCESOS_POR_OPERACION[op.tipo] || 0), 0);
 
@@ -309,7 +364,7 @@ export const accesosReglas = (operaciones) =>
 // error o null.
 export const validarUnCambioPorFibra = (operaciones) => {
   if (accesosReglas(operaciones) > MAX_ACCESOS_REGLAS) {
-    return 'Hay demasiados cambios de fibras en un solo guardado: guarda en partes (de a 4 líneas de fibra como máximo).';
+    return 'Hay demasiados cambios de fibras en un solo guardado: guarda en partes (de a 3 líneas de fibra como máximo).';
   }
   const vistas = new Map();
   for (const op of operaciones) {
@@ -339,6 +394,19 @@ export const fibrasElegibles = (fibras = [], fechaCirugia, excluir = new Set()) 
   fibras
     .filter((f) => !excluir.has(f.id) && motivoNoUsable(f, fechaCirugia) === null)
     .sort((a, b) => (a.vencimiento || '').localeCompare(b.vencimiento || '') || (a.codigoInterno || '').localeCompare(b.codigoInterno || ''));
+
+// Opciones del selector de Cargas: solo las EN USO elegibles; si ninguna
+// sirve para esta cirugía, las de bodega elegibles (al elegir una se pone en
+// uso en el mismo guardado y `enUsoActual` vuelve a bodega).
+export const opcionesSelectorFibra = (fibras = [], fechaCirugia, excluir = new Set()) => {
+  const elegibles = fibrasElegibles(fibras, fechaCirugia, excluir);
+  const enUso = elegibles.filter((f) => ubicacionDe(f) === UBICACION.EN_USO);
+  const bodega = elegibles.filter((f) => ubicacionDe(f) === UBICACION.EN_BODEGA);
+  const enUsoActual = fibras.find((f) => ubicacionDe(f) === UBICACION.EN_USO) || null;
+  return enUso.length > 0
+    ? { opciones: enUso, desdeBodega: false, enUsoActual }
+    : { opciones: bodega, desdeBodega: true, enUsoActual };
+};
 
 // --- Detalle -----------------------------------------------------------------
 

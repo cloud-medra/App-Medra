@@ -4,31 +4,38 @@
 // Escriben desde el navegador (no por Cloud Functions como Bodega): el uso de
 // una fibra se registra en la MISMA transacción que guarda la gestión, así no
 // puede quedar una gestión guardada sin su uso ni un uso sin su gestión. Las
-// reglas de Firestore validan el contador (implantes_fibras).
+// reglas de Firestore validan el contador y que haya una sola fibra EN USO
+// por referencia (implantes_fibras).
 
 import {
   collection, doc, getDocs, query, where, orderBy, runTransaction, writeBatch, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../../../../../firebaseConfig';
+import { fechaISOEnChile } from '../../shared/gestion/rangoFechaGestiones';
 import {
-  COL_FIBRAS, COL_CONTROL_FIBRAS, DOC_CONTADOR_FIBRAS, ESTADO_FIBRA, MOTIVO_ANULACION, ErrorFibra,
+  COL_FIBRAS, COL_CONTROL_FIBRAS, DOC_CONTADOR_FIBRAS, ESTADO_FIBRA, MOTIVO_ANULACION, UBICACION, ErrorFibra,
   codigoInterno, normalizarLote, normalizarReferencia, validarNuevaFibra, validarEdicionFibra, estadoGuardado,
+  ubicacionDe, ubicacionTrasEstado,
 } from './fibrasNucleo';
-import { aplicarOperacionesFibra } from './operacionesFibra';
+import {
+  aplicarOperacionesFibra, cambiarUbicacionFibra, camposUbicacion, logUbicacion, escribirControlEnUso,
+} from './operacionesFibra';
 
 export const refFibra = (id) => doc(db, COL_FIBRAS, id);
 export const refUso = (fibraId, usoId) => doc(db, COL_FIBRAS, fibraId, 'usos', usoId);
 const refLog = (fibraId) => doc(collection(db, COL_FIBRAS, fibraId, 'logs'));
 const refContador = () => doc(db, COL_CONTROL_FIBRAS, DOC_CONTADOR_FIBRAS);
+const refControl = (id) => doc(db, COL_CONTROL_FIBRAS, id);
 
 export const nuevoUsoId = (fibraId) => doc(collection(db, COL_FIBRAS, fibraId, 'usos')).id;
 
 export const usuarioDe = (userData) => ({ uid: userData?.uid || '', nombre: userData?.nombreCompleto || userData?.email || 'Usuario' });
 
 const contexto = (userData) => ({
-  refs: { fibra: refFibra, uso: refUso, log: refLog },
+  refs: { fibra: refFibra, uso: refUso, log: refLog, control: refControl },
   ahora: serverTimestamp(),
   usuario: usuarioDe(userData),
+  hoy: fechaISOEnChile(),
 });
 
 // Cola con la interfaz de un WriteBatch (set/update/delete): el guardado de la
@@ -125,6 +132,9 @@ export const registrarFibras = async (datos, userData) => {
         numerosOcupados: [],
         fechasUso: {},
         estado: estadoGuardado(usosPrevios, usosTotales),
+        // Toda fibra nueva queda guardada en bodega.
+        ubicacion: UBICACION.EN_BODEGA,
+        ubicacionDesde: { fecha: ahora, por: usuario },
         ultimoCambio: null,
         creadoEl: ahora,
         creadoPor: usuario,
@@ -145,11 +155,14 @@ export const registrarFibras = async (datos, userData) => {
 
 // Corrige lote, vencimiento o usos totales (validarEdicionFibra) y lo audita:
 // el motivo queda en la fibra (ultimaCorreccion, con el id del log) y en el
-// log, escritos juntos; las reglas exigen ambos.
+// log, escritos juntos; las reglas exigen ambos. Si los usos totales cambian
+// el estado, cambia también la ubicación (agotada sale de uso; activa de
+// nuevo, a bodega).
 export const editarFibra = async (fibraId, valores, userData) => {
   const motivo = String(valores.motivo || '').trim();
   if (!motivo) throw new ErrorFibra('Ingresa el motivo de la corrección.');
-  const { refs, ahora, usuario } = contexto(userData);
+  const ctx = contexto(userData);
+  const { refs, ahora, usuario } = ctx;
   return runTransaction(db, async (t) => {
     const snap = await t.get(refs.fibra(fibraId));
     if (!snap.exists()) throw new ErrorFibra('La fibra ya no existe.');
@@ -158,12 +171,19 @@ export const editarFibra = async (fibraId, valores, userData) => {
     if (Object.keys(errores).length > 0) throw new ErrorFibra(Object.values(errores)[0]);
     if (Object.keys(cambios).length === 0) return false;
     const refLogCorreccion = refs.log(fibraId);
+    const ubicacionAntes = ubicacionDe(fibra);
+    const ubicacionNueva = cambios.estado ? ubicacionTrasEstado(ubicacionAntes, cambios.estado) : ubicacionAntes;
     t.update(refs.fibra(fibraId), {
       ...cambios,
+      ...camposUbicacion(ubicacionAntes, ubicacionNueva, ctx),
       ultimaCorreccion: { motivo, logId: refLogCorreccion.id },
       actualizadoEl: ahora,
       actualizadoPor: usuario,
     });
+    logUbicacion(t, fibraId, ubicacionAntes, ubicacionNueva, `Corrección de usos totales: ${motivo}`, ctx);
+    if (ubicacionAntes === UBICACION.EN_USO && ubicacionNueva !== UBICACION.EN_USO) {
+      escribirControlEnUso(t, fibra.referencia, null, fibraId, ctx);
+    }
     const antes = Object.fromEntries(Object.keys(cambios).map((k) => [k, fibra[k] ?? null]));
     t.set(refLogCorreccion, {
       accion: 'EDICION',
@@ -184,6 +204,21 @@ export const registrarPerdida = async (fibraId, { motivo, fecha }, userData) => 
     }], contexto(userData));
     return resultado;
   });
+};
+
+// Poner en uso (la que estaba en uso en la referencia vuelve a bodega) o
+// devolver a bodega, desde la pantalla Fibras. Devuelve { devuelta }.
+export const ponerEnUso = (fibraId, userData) =>
+  runTransaction(db, (t) => cambiarUbicacionFibra(t, fibraId, UBICACION.EN_USO, contexto(userData)));
+export const devolverABodega = (fibraId, userData) =>
+  runTransaction(db, (t) => cambiarUbicacionFibra(t, fibraId, UBICACION.EN_BODEGA, contexto(userData)));
+
+// Movimientos de ubicación de una fibra (Detalle), del más antiguo al más nuevo.
+const ACCIONES_UBICACION = ['PUESTA_EN_USO', 'DEVUELTA_A_BODEGA', 'SALIDA_DE_USO', 'UBICACION_INICIAL'];
+export const leerMovimientosUbicacion = async (fibraId) => {
+  const snap = await getDocs(query(collection(db, COL_FIBRAS, fibraId, 'logs'), where('accion', 'in', ACCIONES_UBICACION)));
+  const ms = (x) => x.timestamp?.toMillis?.() || 0;
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => ms(a) - ms(b));
 };
 
 export const anularPerdida = async (fibraId, usoId, motivo, userData) => {

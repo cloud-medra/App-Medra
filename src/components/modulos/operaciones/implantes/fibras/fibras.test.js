@@ -4,13 +4,15 @@ import {
   fibraConAlta, fibraConBaja, textoUsoRegistrado, validarNuevaFibra, validarEdicionFibra,
   prepararFibrasNuevas, planFibrasBloque, planFibrasEliminacion, operacionesDePlan, validarUnCambioPorFibra,
   fibrasElegibles, fibrasUsadasEnBloques, ordenarUsos, MOTIVO_ANULACION, ESTADO_USO, TIPO_USO,
-  accesosReglas, fechaUltimoUsoVigente,
+  accesosReglas, fechaUltimoUsoVigente, UBICACION, ubicacionTrasEstado, motivoNoPonerEnUso, siguienteEnBodega,
+  opcionesSelectorFibra, idControlEnUso,
 } from './fibrasNucleo';
-import { aplicarOperacionesFibra } from './operacionesFibra';
+import { aplicarOperacionesFibra, cambiarUbicacionFibra } from './operacionesFibra';
 
 const fibra = (extra = {}) => ({
   id: 'FIB-0001', codigoInterno: 'FIB-0001', referencia: 'FL-365', lote: 'ABC', vencimiento: '2027-01-31',
-  usosTotales: 5, usosPrevios: 0, numerosOcupados: [], usosConsumidos: 0, fechasUso: {}, estado: 'ACTIVA', ...extra,
+  usosTotales: 5, usosPrevios: 0, numerosOcupados: [], usosConsumidos: 0, fechasUso: {}, estado: 'ACTIVA',
+  ubicacion: 'EN USO', ...extra,
 });
 
 // --- Firestore simulado: documentos en memoria y transacciones con control
@@ -24,6 +26,7 @@ const crearBase = (docs) => {
     fibra: (id) => ref(`fibras/${id}`),
     uso: (fibraId, usoId) => ref(`fibras/${fibraId}/usos/${usoId}`),
     log: (fibraId) => ref(`fibras/${fibraId}/logs/${Math.random()}`),
+    control: (id) => ref(`control/${id}`),
   };
   const ejecutarTransaccion = async (fn, { antesDeConfirmar } = {}) => {
     for (let intento = 0; intento < 5; intento++) {
@@ -53,7 +56,7 @@ const crearBase = (docs) => {
   return { datos, refs, ejecutarTransaccion };
 };
 
-const ctx = (refs) => ({ refs, ahora: 'TS', usuario: { uid: 'u1', nombre: 'Ana' } });
+const ctx = (refs) => ({ refs, ahora: 'TS', usuario: { uid: 'u1', nombre: 'Ana' }, hoy: '2026-10-28' });
 const gestion = (fecha = '2026-10-20') => ({ gestionId: '115000', paciente: 'PACIENTE', medico: 'MEDICO', empresa: 'EMP', fecha, gestionRefPath: 'g/1' });
 const registrar = (usoId, extra = {}) => ({ tipo: 'registrar', fibraId: 'FIB-0001', usoId, datosGestion: gestion(), ...extra });
 
@@ -74,9 +77,9 @@ describe('conteo y números de uso', () => {
   it('alta y baja actualizan contador, lista de números, fechas de uso y estado', () => {
     const fechas = { 1: '2026-10-01', 2: '2026-10-02', 3: '2026-10-03', 4: '2026-10-04' };
     const alta = fibraConAlta(fibra({ numerosOcupados: [1, 2, 3, 4], fechasUso: fechas }), 5, 'u5', '2026-10-05');
-    expect(alta).toEqual({ numerosOcupados: [1, 2, 3, 4, 5], usosConsumidos: 5, fechasUso: { ...fechas, 5: '2026-10-05' }, estado: 'AGOTADA', ultimoCambio: { tipo: 'ALTA', numero: 5, usoId: 'u5' } });
+    expect(alta).toEqual({ numerosOcupados: [1, 2, 3, 4, 5], usosConsumidos: 5, fechasUso: { ...fechas, 5: '2026-10-05' }, estado: 'AGOTADA', ubicacion: 'AGOTADA', ultimoCambio: { tipo: 'ALTA', numero: 5, usoId: 'u5' } });
     const baja = fibraConBaja({ ...fibra(), ...alta }, 2, 'u2');
-    expect(baja).toEqual({ numerosOcupados: [1, 3, 4, 5], usosConsumidos: 4, fechasUso: { 1: '2026-10-01', 3: '2026-10-03', 4: '2026-10-04', 5: '2026-10-05' }, estado: 'ACTIVA', ultimoCambio: { tipo: 'BAJA', numero: 2, usoId: 'u2' } });
+    expect(baja).toEqual({ numerosOcupados: [1, 3, 4, 5], usosConsumidos: 4, fechasUso: { 1: '2026-10-01', 3: '2026-10-03', 4: '2026-10-04', 5: '2026-10-05' }, estado: 'ACTIVA', ubicacion: 'EN BODEGA', ultimoCambio: { tipo: 'BAJA', numero: 2, usoId: 'u2' } });
     expect(fechaUltimoUsoVigente({ ...fibra(), ...baja })).toBe('2026-10-05');
   });
 
@@ -219,10 +222,11 @@ describe('plan al guardar la gestión', () => {
 
   it('lecturas de las reglas: hasta 4 líneas de fibra por guardado (límite de 20 por transacción)', () => {
     const registrar = (n) => Array.from({ length: n }, (_, i) => ({ tipo: 'registrar', fibraId: `F${i}` }));
-    expect(accesosReglas(registrar(2))).toBe(10);
+    // Registrar cuenta el peor caso (6: con cambio de ubicación).
+    expect(accesosReglas(registrar(2))).toBe(14);
     expect(accesosReglas([{ tipo: 'anular', fibraId: 'A' }, { tipo: 'anular', fibraId: 'B' }])).toBe(8);
-    expect(validarUnCambioPorFibra(registrar(4))).toBeNull();
-    expect(validarUnCambioPorFibra(registrar(5))).toMatch(/demasiados cambios/);
+    expect(validarUnCambioPorFibra(registrar(3))).toBeNull();
+    expect(validarUnCambioPorFibra(registrar(4))).toMatch(/demasiados cambios/);
   });
 
   it('una fibra no puede tener dos altas o bajas en el mismo guardado', () => {
@@ -237,7 +241,7 @@ describe('transacción de usos (Firestore simulado)', () => {
     const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra() });
     const item = { id: 'i1', fibra: { id: 'FIB-0001', usoId: 'U1' } };
     const res = await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U1', { item })], ctx(refs)));
-    expect(res).toEqual([{ tipo: 'USO', fibraId: 'FIB-0001', codigoInterno: 'FIB-0001', lote: 'ABC', numeroUso: 1, usosTotales: 5, restantes: 4 }]);
+    expect(res).toEqual([{ tipo: 'USO', fibraId: 'FIB-0001', codigoInterno: 'FIB-0001', referencia: 'FL-365', lote: 'ABC', numeroUso: 1, usosTotales: 5, restantes: 4, puestaEnUso: false, devuelta: null }]);
     expect(item.fibra).toMatchObject({ numeroUso: 1, usosTotales: 5 });
     expect(datos.get('fibras/FIB-0001')).toMatchObject({ usosConsumidos: 1, numerosOcupados: [1], fechasUso: { 1: '2026-10-20' }, estado: 'ACTIVA' });
     expect(datos.get('fibras/FIB-0001/usos/U1')).toMatchObject({ tipo: 'USO', estado: 'VIGENTE', numeroUso: 1, paciente: 'PACIENTE', medico: 'MEDICO', gestionId: '115000', itemId: 'i1', registradoPor: { uid: 'u1', nombre: 'Ana' } });
@@ -337,6 +341,156 @@ describe('transacción de usos (Firestore simulado)', () => {
     expect(datos.get('fibras/FIB-0001/usos/UB').numeroUso).toBe(1);
     expect(datos.get('fibras/FIB-0001/usos/UA').numeroUso).toBe(2);
     expect(datos.get('fibras/FIB-0001').usosConsumidos).toBe(2);
+  });
+});
+
+describe('ubicación (en uso / en bodega)', () => {
+  const hoy = '2026-10-28';
+
+  it('agotarse saca de uso; volver a tener usos deja en bodega', () => {
+    expect(ubicacionTrasEstado('EN USO', 'AGOTADA')).toBe('AGOTADA');
+    expect(ubicacionTrasEstado('EN BODEGA', 'AGOTADA')).toBe('AGOTADA');
+    expect(ubicacionTrasEstado('AGOTADA', 'ACTIVA')).toBe('EN BODEGA');
+    expect(ubicacionTrasEstado('EN USO', 'ACTIVA')).toBe('EN USO');
+  });
+
+  it('no se pone en uso una agotada, una vencida ni una ya en uso', () => {
+    const bodega = fibra({ ubicacion: 'EN BODEGA' });
+    expect(motivoNoPonerEnUso(bodega, hoy)).toBeNull();
+    expect(motivoNoPonerEnUso(fibra({ ubicacion: 'EN BODEGA', vencimiento: hoy }), hoy)).toBeNull();
+    expect(motivoNoPonerEnUso({ ...bodega, numerosOcupados: [1, 2, 3, 4, 5] }, hoy)).toMatch(/agotada/);
+    expect(motivoNoPonerEnUso({ ...bodega, vencimiento: '2026-10-27' }, hoy)).toMatch(/vencida/);
+    expect(motivoNoPonerEnUso(fibra(), hoy)).toMatch(/ya está en uso/);
+  });
+
+  it('siguiente en bodega: misma referencia, usable, la de vencimiento más próximo', () => {
+    const lista = [
+      fibra({ id: 'A', codigoInterno: 'FIB-0001', ubicacion: 'EN BODEGA', vencimiento: '2028-01-01' }),
+      fibra({ id: 'B', codigoInterno: 'FIB-0002', ubicacion: 'EN BODEGA', vencimiento: '2027-06-01' }),
+      fibra({ id: 'V', ubicacion: 'EN BODEGA', vencimiento: '2026-01-01' }),
+      fibra({ id: 'O', ubicacion: 'EN BODEGA', referencia: 'FL-550', vencimiento: '2026-11-01' }),
+      fibra({ id: 'U' }),
+    ];
+    expect(siguienteEnBodega(lista, 'FL-365', hoy, 'U').id).toBe('B');
+    expect(siguienteEnBodega(lista, 'FL-1000', hoy)).toBeNull();
+  });
+
+  it('selector: solo EN USO; si ninguna sirve, las de bodega y cuál está en uso', () => {
+    const enUso = fibra({ id: 'U' });
+    const bodega = fibra({ id: 'B', ubicacion: 'EN BODEGA' });
+    expect(opcionesSelectorFibra([enUso, bodega], '2026-10-20')).toMatchObject({ opciones: [enUso], desdeBodega: false });
+    // La en uso ya se usó en la admisión: se ofrecen las de bodega.
+    expect(opcionesSelectorFibra([enUso, bodega], '2026-10-20', new Set(['U']))).toMatchObject({ opciones: [bodega], desdeBodega: true, enUsoActual: enUso });
+    // Sin ninguna en uso.
+    expect(opcionesSelectorFibra([bodega], '2026-10-20')).toMatchObject({ opciones: [bodega], desdeBodega: true, enUsoActual: null });
+  });
+
+  it('id del control "en uso" por referencia', () => {
+    expect(idControlEnUso(' fl-365 ')).toBe('enUso__FL-365');
+    expect(idControlEnUso('AB/12')).toBe('enUso__AB_12');
+  });
+
+  it('último uso de la fibra en uso: queda AGOTADA, la referencia sin fibra en uso y con log', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra({ numerosOcupados: [1, 2, 3, 4], usosConsumidos: 4, fechasUso: { 1: 'a', 2: 'b', 3: 'c', 4: 'd' } }) });
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U5')], ctx(refs)));
+    expect(datos.get('fibras/FIB-0001')).toMatchObject({ estado: 'AGOTADA', ubicacion: 'AGOTADA', ubicacionDesde: { fecha: 'TS', por: { uid: 'u1', nombre: 'Ana' } } });
+    expect(datos.get('control/enUso__FL-365')).toEqual({ referencia: 'FL-365', fibraId: null, origen: 'FIB-0001', actualizadoEl: 'TS' });
+    const logs = [...datos].filter(([k]) => k.startsWith('fibras/FIB-0001/logs/')).map(([, v]) => v.accion);
+    expect(logs).toContain('SALIDA_DE_USO');
+  });
+
+  it('uso normal con la fibra en uso: no toca ubicación ni control', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra() });
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U1')], ctx(refs)));
+    expect(datos.get('fibras/FIB-0001').ubicacionDesde).toBeUndefined();
+    expect(datos.has('control/enUso__FL-365')).toBe(false);
+  });
+
+  it('Cargas: elegida de bodega pasa a EN USO y la que estaba en uso vuelve a bodega, en el mismo guardado', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({
+      'fibras/FIB-0001': fibra({ ubicacion: 'EN BODEGA' }),
+      'fibras/FIB-0002': fibra({ id: 'FIB-0002', codigoInterno: 'FIB-0002' }),
+      'control/enUso__FL-365': { referencia: 'FL-365', fibraId: 'FIB-0002', origen: 'FIB-0002' },
+    });
+    const item = { id: 'i1', fibra: { id: 'FIB-0001', usoId: 'U1', ponerEnUso: true, devolver: 'FIB-0002' } };
+    const [r] = await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U1', { item, ponerEnUso: true, devolver: 'FIB-0002' })], ctx(refs)));
+    expect(r).toMatchObject({ puestaEnUso: true, devuelta: 'FIB-0002', numeroUso: 1 });
+    expect(datos.get('fibras/FIB-0001').ubicacion).toBe('EN USO');
+    expect(datos.get('fibras/FIB-0002').ubicacion).toBe('EN BODEGA');
+    expect(datos.get('control/enUso__FL-365')).toMatchObject({ fibraId: 'FIB-0001', origen: 'FIB-0001' });
+    // Las marcas no quedan en la línea de la gestión.
+    expect(item.fibra).toEqual({ id: 'FIB-0001', usoId: 'U1', numeroUso: 1, usosTotales: 5 });
+  });
+
+  it('Cargas: si mientras editabas se puso en uso otra fibra, no guarda nada', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({
+      'fibras/FIB-0001': fibra({ ubicacion: 'EN BODEGA' }),
+      'control/enUso__FL-365': { referencia: 'FL-365', fibraId: 'FIB-0009', origen: 'FIB-0009' },
+    });
+    await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U1', { ponerEnUso: true, devolver: null })], ctx(refs)))).rejects.toThrow(/otra fibra/);
+    expect(datos.get('fibras/FIB-0001').ubicacion).toBe('EN BODEGA');
+  });
+
+  it('Cargas: una de bodega con un solo uso pasa directo a AGOTADA y la referencia queda sin fibra en uso', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({
+      'fibras/FIB-0001': fibra({ ubicacion: 'EN BODEGA', numerosOcupados: [1, 2, 3, 4], usosConsumidos: 4, fechasUso: { 1: 'a', 2: 'b', 3: 'c', 4: 'd' } }),
+      'fibras/FIB-0002': fibra({ id: 'FIB-0002', codigoInterno: 'FIB-0002' }),
+      'control/enUso__FL-365': { referencia: 'FL-365', fibraId: 'FIB-0002', origen: 'FIB-0002' },
+    });
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U5', { ponerEnUso: true, devolver: 'FIB-0002' })], ctx(refs)));
+    expect(datos.get('fibras/FIB-0001').ubicacion).toBe('AGOTADA');
+    expect(datos.get('fibras/FIB-0002').ubicacion).toBe('EN BODEGA');
+    expect(datos.get('control/enUso__FL-365')).toMatchObject({ fibraId: null, origen: 'FIB-0001' });
+  });
+
+  it('anular un uso de una agotada: vuelve a tener usos y queda EN BODEGA', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({
+      'fibras/FIB-0001': fibra({ ubicacion: 'AGOTADA', estado: 'AGOTADA', numerosOcupados: [1, 2, 3, 4, 5], usosConsumidos: 5, fechasUso: { 1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e' } }),
+      'fibras/FIB-0001/usos/U5': { tipo: 'USO', estado: 'VIGENTE', numeroUso: 5 },
+    });
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [{ tipo: 'anular', fibraId: 'FIB-0001', usoId: 'U5', motivo: MOTIVO_ANULACION.LINEA_ELIMINADA }], ctx(refs)));
+    expect(datos.get('fibras/FIB-0001')).toMatchObject({ estado: 'ACTIVA', ubicacion: 'EN BODEGA' });
+  });
+
+  it('pantalla: poner en uso devuelve a bodega la anterior; devolver deja la referencia sin fibra en uso', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({
+      'fibras/FIB-0001': fibra({ ubicacion: 'EN BODEGA' }),
+      'fibras/FIB-0002': fibra({ id: 'FIB-0002', codigoInterno: 'FIB-0002' }),
+      'control/enUso__FL-365': { referencia: 'FL-365', fibraId: 'FIB-0002', origen: 'FIB-0002' },
+    });
+    const r = await ejecutarTransaccion((t) => cambiarUbicacionFibra(t, 'FIB-0001', UBICACION.EN_USO, ctx(refs)));
+    expect(r).toEqual({ devuelta: 'FIB-0002' });
+    expect(datos.get('fibras/FIB-0001').ubicacion).toBe('EN USO');
+    expect(datos.get('fibras/FIB-0002').ubicacion).toBe('EN BODEGA');
+    expect(datos.get('control/enUso__FL-365').fibraId).toBe('FIB-0001');
+    await ejecutarTransaccion((t) => cambiarUbicacionFibra(t, 'FIB-0001', UBICACION.EN_BODEGA, ctx(refs)));
+    expect(datos.get('fibras/FIB-0001').ubicacion).toBe('EN BODEGA');
+    expect(datos.get('control/enUso__FL-365').fibraId).toBeNull();
+    const acciones = [...datos].filter(([k]) => k.startsWith('fibras/FIB-0001/logs/')).map(([, v]) => v.accion).sort();
+    expect(acciones).toEqual(['DEVUELTA_A_BODEGA', 'PUESTA_EN_USO']);
+  });
+
+  it('pantalla: no pone en uso una agotada ni una vencida', async () => {
+    const { refs, ejecutarTransaccion } = crearBase({
+      'fibras/A': fibra({ ubicacion: 'AGOTADA', estado: 'AGOTADA', usosPrevios: 5, usosConsumidos: 5 }),
+      'fibras/V': fibra({ ubicacion: 'EN BODEGA', vencimiento: '2026-01-01' }),
+    });
+    await expect(ejecutarTransaccion((t) => cambiarUbicacionFibra(t, 'A', UBICACION.EN_USO, ctx(refs)))).rejects.toThrow(/agotada/);
+    await expect(ejecutarTransaccion((t) => cambiarUbicacionFibra(t, 'V', UBICACION.EN_USO, ctx(refs)))).rejects.toThrow(/vencida/);
+  });
+
+  it('dos personas ponen en uso fibras distintas de la misma referencia: queda una sola EN USO', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({
+      'fibras/FIB-0001': fibra({ ubicacion: 'EN BODEGA' }),
+      'fibras/FIB-0002': fibra({ id: 'FIB-0002', codigoInterno: 'FIB-0002', ubicacion: 'EN BODEGA' }),
+    });
+    await ejecutarTransaccion(
+      (t) => cambiarUbicacionFibra(t, 'FIB-0001', UBICACION.EN_USO, ctx(refs)),
+      { antesDeConfirmar: () => ejecutarTransaccion((t) => cambiarUbicacionFibra(t, 'FIB-0002', UBICACION.EN_USO, ctx(refs))) }
+    );
+    const enUso = ['FIB-0001', 'FIB-0002'].filter((id) => datos.get(`fibras/${id}`).ubicacion === 'EN USO');
+    expect(enUso).toEqual(['FIB-0001']);
+    expect(datos.get('control/enUso__FL-365').fibraId).toBe('FIB-0001');
   });
 });
 

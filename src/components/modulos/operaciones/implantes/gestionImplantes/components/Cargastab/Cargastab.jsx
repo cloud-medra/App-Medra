@@ -377,7 +377,12 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
     const itemPrincipal = {
       ...(idPrincipalGenerado ? { id: idPrincipalGenerado } : {}),
       // Sin usoId: el uso (y su número) se registra al guardar la gestión.
-      ...(conFibra ? { fibra: { id: fibraElegida.id, codigoInterno: fibraElegida.codigoInterno, lote: fibraElegida.lote, vencimiento: fibraElegida.vencimiento, usosTotales: fibraElegida.usosTotales } } : {}),
+      // Elegida de bodega: ponerEnUso/devolver (no se guardan en la gestión,
+      // ver aplicarOperacionesFibra).
+      ...(conFibra ? { fibra: {
+        id: fibraElegida.id, codigoInterno: fibraElegida.codigoInterno, lote: fibraElegida.lote, vencimiento: fibraElegida.vencimiento, usosTotales: fibraElegida.usosTotales,
+        ...(fibraElegida.ponerEnUso ? { ponerEnUso: true, devolver: fibraElegida.devolver || null } : {}),
+      } } : {}),
       esPad,
       numCotizacion: nuevoItem.numCotizacion.trim(),
       totalCotizacion: nuevoItem.totalCotizacion ? Number(nuevoItem.totalCotizacion) : 0,
