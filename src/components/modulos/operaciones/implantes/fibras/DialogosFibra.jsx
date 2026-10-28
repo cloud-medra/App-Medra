@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import {
   USOS_PERMITIDOS, MAX_FIBRAS_POR_REGISTRO, validarNuevaFibra, validarEdicionFibra,
-  usosConsumidosDe, usosRestantes, siguienteNumeroUso,
+  usosConsumidosDe, usosRestantes, siguienteNumeroUso, fechaUltimoUsoVigente,
 } from './fibrasNucleo';
 import { leerCodigosFibra } from './useFibrasReutilizablesData';
 
@@ -132,6 +132,7 @@ export const EditarFibraDialogo = ({ fibra, onGuardar, onCerrar }) => {
   const [intento, setIntento] = useState(false);
   const [guardando, guardar] = useGuardar(onGuardar, onCerrar);
   const conUsos = (fibra.numerosOcupados || []).length > 0;
+  const ultimoUso = fechaUltimoUsoVigente(fibra);
   const valores = { ...form, usosTotales: Number(form.usosTotales) };
   const { errores } = validarEdicionFibra(fibra, valores);
   const erroresVisibles = intento ? errores : {};
@@ -148,8 +149,8 @@ export const EditarFibraDialogo = ({ fibra, onGuardar, onCerrar }) => {
         <Campo etiqueta="Lote" error={erroresVisibles.lote} htmlFor="fe-lote" ayuda={conUsos ? 'Con usos registrados no se puede cambiar.' : undefined}>
           <input id="fe-lote" className={INPUT} value={form.lote} onChange={set('lote')} disabled={conUsos} />
         </Campo>
-        <Campo etiqueta="Vencimiento" error={erroresVisibles.vencimiento} htmlFor="fe-venc" ayuda={conUsos ? 'Con usos registrados no se puede cambiar.' : undefined}>
-          <input id="fe-venc" type="date" className={INPUT} value={form.vencimiento} onChange={set('vencimiento')} disabled={conUsos} />
+        <Campo etiqueta="Vencimiento" error={erroresVisibles.vencimiento} htmlFor="fe-venc" ayuda={ultimoUso ? `No antes del último uso vigente (${ultimoUso}).` : undefined}>
+          <input id="fe-venc" type="date" className={INPUT} value={form.vencimiento} onChange={set('vencimiento')} min={ultimoUso || undefined} />
         </Campo>
       </div>
       <Campo etiqueta="Usos totales" error={erroresVisibles.usosTotales} htmlFor="fe-usos" ayuda="No puede quedar por debajo de los usos consumidos.">

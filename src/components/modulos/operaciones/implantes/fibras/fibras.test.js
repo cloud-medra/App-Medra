@@ -4,12 +4,13 @@ import {
   fibraConAlta, fibraConBaja, textoUsoRegistrado, validarNuevaFibra, validarEdicionFibra,
   prepararFibrasNuevas, planFibrasBloque, planFibrasEliminacion, operacionesDePlan, validarUnCambioPorFibra,
   fibrasElegibles, fibrasUsadasEnBloques, ordenarUsos, MOTIVO_ANULACION, ESTADO_USO, TIPO_USO,
+  accesosReglas, fechaUltimoUsoVigente,
 } from './fibrasNucleo';
 import { aplicarOperacionesFibra } from './operacionesFibra';
 
 const fibra = (extra = {}) => ({
   id: 'FIB-0001', codigoInterno: 'FIB-0001', referencia: 'FL-365', lote: 'ABC', vencimiento: '2027-01-31',
-  usosTotales: 5, usosPrevios: 0, numerosOcupados: [], usosConsumidos: 0, estado: 'ACTIVA', ...extra,
+  usosTotales: 5, usosPrevios: 0, numerosOcupados: [], usosConsumidos: 0, fechasUso: {}, estado: 'ACTIVA', ...extra,
 });
 
 // --- Firestore simulado: documentos en memoria y transacciones con control
@@ -70,11 +71,13 @@ describe('conteo y números de uso', () => {
     expect(usosRestantes(f)).toBe(2);
   });
 
-  it('alta y baja actualizan contador, lista de números y estado', () => {
-    const alta = fibraConAlta(fibra({ numerosOcupados: [1, 2, 3, 4] }), 5, 'u5');
-    expect(alta).toEqual({ numerosOcupados: [1, 2, 3, 4, 5], usosConsumidos: 5, estado: 'AGOTADA', ultimoCambio: { tipo: 'ALTA', numero: 5, usoId: 'u5' } });
+  it('alta y baja actualizan contador, lista de números, fechas de uso y estado', () => {
+    const fechas = { 1: '2026-10-01', 2: '2026-10-02', 3: '2026-10-03', 4: '2026-10-04' };
+    const alta = fibraConAlta(fibra({ numerosOcupados: [1, 2, 3, 4], fechasUso: fechas }), 5, 'u5', '2026-10-05');
+    expect(alta).toEqual({ numerosOcupados: [1, 2, 3, 4, 5], usosConsumidos: 5, fechasUso: { ...fechas, 5: '2026-10-05' }, estado: 'AGOTADA', ultimoCambio: { tipo: 'ALTA', numero: 5, usoId: 'u5' } });
     const baja = fibraConBaja({ ...fibra(), ...alta }, 2, 'u2');
-    expect(baja).toEqual({ numerosOcupados: [1, 3, 4, 5], usosConsumidos: 4, estado: 'ACTIVA', ultimoCambio: { tipo: 'BAJA', numero: 2, usoId: 'u2' } });
+    expect(baja).toEqual({ numerosOcupados: [1, 3, 4, 5], usosConsumidos: 4, fechasUso: { 1: '2026-10-01', 3: '2026-10-03', 4: '2026-10-04', 5: '2026-10-05' }, estado: 'ACTIVA', ultimoCambio: { tipo: 'BAJA', numero: 2, usoId: 'u2' } });
+    expect(fechaUltimoUsoVigente({ ...fibra(), ...baja })).toBe('2026-10-05');
   });
 
   it('texto del aviso con el número de uso y el último uso destacado', () => {
@@ -153,9 +156,24 @@ describe('formularios', () => {
     expect(validarEdicionFibra(f, { lote: 'ABC', vencimiento: '2027-01-31', usosTotales: 5 }).cambios).toEqual({ usosTotales: 5, estado: 'AGOTADA' });
   });
 
-  it('lote y vencimiento no se cambian con usos registrados', () => {
-    const { errores } = validarEdicionFibra(fibra({ numerosOcupados: [1] }), { lote: 'OTRO', vencimiento: '2028-01-01', usosTotales: 5 });
-    expect(Object.keys(errores).sort()).toEqual(['lote', 'vencimiento']);
+  it('el lote no se cambia con usos registrados', () => {
+    const { errores } = validarEdicionFibra(fibra({ numerosOcupados: [1], fechasUso: { 1: '2026-10-01' } }), { lote: 'OTRO', vencimiento: '2027-01-31', usosTotales: 5 });
+    expect(Object.keys(errores)).toEqual(['lote']);
+  });
+
+  it('vencimiento con usos: se corrige si no queda antes de ningún uso vigente', () => {
+    const f = fibra({ numerosOcupados: [1, 2], fechasUso: { 1: '2026-09-10', 2: '2026-10-20' } });
+    const valores = (vencimiento) => ({ lote: 'ABC', vencimiento, usosTotales: 5 });
+    expect(validarEdicionFibra(f, valores('2026-12-31'))).toEqual({ errores: {}, cambios: { vencimiento: '2026-12-31' } });
+    expect(validarEdicionFibra(f, valores('2026-10-20')).cambios).toEqual({ vencimiento: '2026-10-20' });
+    expect(validarEdicionFibra(f, valores('2026-10-19')).errores.vencimiento).toMatch(/2026-10-20/);
+    expect(validarEdicionFibra(f, valores('31/12/2026')).errores.vencimiento).toMatch(/Ingresa/);
+  });
+
+  it('un uso anulado ya no limita el vencimiento', () => {
+    const f = fibra({ numerosOcupados: [1, 2], fechasUso: { 1: '2026-09-10', 2: '2026-10-20' } });
+    const sinEl2 = { ...f, ...fibraConBaja(f, 2, 'u2') };
+    expect(validarEdicionFibra(sinEl2, { lote: 'ABC', vencimiento: '2026-10-01', usosTotales: 5 }).errores).toEqual({});
   });
 });
 
@@ -199,6 +217,14 @@ describe('plan al guardar la gestión', () => {
     expect(operacionesDePlan(plan, null)).toEqual([{ tipo: 'anular', fibraId: 'FIB-0001', usoId: 'U1', motivo: MOTIVO_ANULACION.GESTION_ELIMINADA }]);
   });
 
+  it('lecturas de las reglas: hasta 4 líneas de fibra por guardado (límite de 20 por transacción)', () => {
+    const registrar = (n) => Array.from({ length: n }, (_, i) => ({ tipo: 'registrar', fibraId: `F${i}` }));
+    expect(accesosReglas(registrar(2))).toBe(10);
+    expect(accesosReglas([{ tipo: 'anular', fibraId: 'A' }, { tipo: 'anular', fibraId: 'B' }])).toBe(8);
+    expect(validarUnCambioPorFibra(registrar(4))).toBeNull();
+    expect(validarUnCambioPorFibra(registrar(5))).toMatch(/demasiados cambios/);
+  });
+
   it('una fibra no puede tener dos altas o bajas en el mismo guardado', () => {
     expect(validarUnCambioPorFibra([{ tipo: 'anular', fibraId: 'F' }, { tipo: 'registrar', fibraId: 'F' }])).toMatch(/guarda primero/);
     expect(validarUnCambioPorFibra([{ tipo: 'registrar', fibraId: 'F' }, { tipo: 'registrar', fibraId: 'F' }])).toMatch(/más de una línea/);
@@ -213,7 +239,7 @@ describe('transacción de usos (Firestore simulado)', () => {
     const res = await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U1', { item })], ctx(refs)));
     expect(res).toEqual([{ tipo: 'USO', fibraId: 'FIB-0001', codigoInterno: 'FIB-0001', lote: 'ABC', numeroUso: 1, usosTotales: 5, restantes: 4 }]);
     expect(item.fibra).toMatchObject({ numeroUso: 1, usosTotales: 5 });
-    expect(datos.get('fibras/FIB-0001')).toMatchObject({ usosConsumidos: 1, numerosOcupados: [1], estado: 'ACTIVA' });
+    expect(datos.get('fibras/FIB-0001')).toMatchObject({ usosConsumidos: 1, numerosOcupados: [1], fechasUso: { 1: '2026-10-20' }, estado: 'ACTIVA' });
     expect(datos.get('fibras/FIB-0001/usos/U1')).toMatchObject({ tipo: 'USO', estado: 'VIGENTE', numeroUso: 1, paciente: 'PACIENTE', medico: 'MEDICO', gestionId: '115000', itemId: 'i1', registradoPor: { uid: 'u1', nombre: 'Ana' } });
   });
 
@@ -280,6 +306,11 @@ describe('transacción de usos (Firestore simulado)', () => {
     await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U1')], ctx(refs)));
     await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [{ tipo: 'actualizar', fibraId: 'FIB-0001', usoId: 'U1', datosGestion: { ...gestion(), paciente: 'OTRO' } }], ctx(refs)));
     expect(datos.get('fibras/FIB-0001/usos/U1').paciente).toBe('OTRO');
+    // Sin cambio de fecha, la fibra no se toca.
+    expect(datos.get('fibras/FIB-0001').ultimoCambio.tipo).toBe('ALTA');
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [{ tipo: 'actualizar', fibraId: 'FIB-0001', usoId: 'U1', datosGestion: gestion('2026-11-15') }], ctx(refs)));
+    expect(datos.get('fibras/FIB-0001')).toMatchObject({ fechasUso: { 1: '2026-11-15' }, ultimoCambio: { tipo: 'FECHA', numero: 1, usoId: 'U1' } });
+    expect(datos.get('fibras/FIB-0001/usos/U1').fecha).toBe('2026-11-15');
     await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [{ tipo: 'actualizar', fibraId: 'FIB-0001', usoId: 'U1', datosGestion: gestion('2027-03-01') }], ctx(refs)))).rejects.toThrow(/nueva fecha/);
   });
 

@@ -17,7 +17,7 @@
 
 import {
   ErrorFibra, ESTADO_USO, TIPO_USO, MOTIVO_ANULACION,
-  motivoNoUsable, motivoNoPerdible, siguienteNumeroUso, fibraConAlta, fibraConBaja,
+  motivoNoUsable, motivoNoPerdible, siguienteNumeroUso, fibraConAlta, fibraConBaja, fibraConFecha,
   usosRestantes, validarUnCambioPorFibra, etiquetaFibra,
 } from './fibrasNucleo';
 
@@ -53,7 +53,8 @@ export const aplicarOperacionesFibra = async (t, operaciones, { refs, ahora, usu
       const motivo = perdida ? motivoNoPerdible(fibra) : motivoNoUsable(fibra, op.datosGestion?.fecha);
       if (motivo) throw new ErrorFibra(motivo);
       const numeroUso = siguienteNumeroUso(fibra);
-      const cambios = fibraConAlta(fibra, numeroUso, op.usoId);
+      const fecha = perdida ? op.perdida.fecha : op.datosGestion.fecha;
+      const cambios = fibraConAlta(fibra, numeroUso, op.usoId, fecha);
       t.update(refFibra, { ...cambios, actualizadoEl: ahora });
       t.set(refUso, {
         tipo: perdida ? TIPO_USO.PERDIDA : TIPO_USO.USO,
@@ -120,6 +121,12 @@ export const aplicarOperacionesFibra = async (t, operaciones, { refs, ahora, usu
       }
       const cambios = Object.fromEntries(Object.entries(op.datosGestion).filter(([k, v]) => uso[k] !== v));
       if (Object.keys(cambios).length > 0) t.update(refUso, { ...cambios, actualizadoEl: ahora });
+      // Nueva fecha de cirugía: también la fecha del uso en la fibra (fechasUso).
+      if (fecha !== uso.fecha) {
+        const cambiosFibra = fibraConFecha(fibra, uso.numeroUso, op.usoId, fecha);
+        t.update(refFibra, { ...cambiosFibra, actualizadoEl: ahora });
+        fibras.set(op.fibraId, { ...fibra, ...cambiosFibra });
+      }
     }
   }
   return resultados;

@@ -1051,7 +1051,16 @@ service cloud.firestore {
         && d.usosConsumidos == d.usosPrevios + d.numerosOcupados.size()
         && d.usosConsumidos <= d.usosTotales
         && d.estado == (d.usosConsumidos == d.usosTotales ? 'AGOTADA' : 'ACTIVA')
-        && (d.usosTotales == 10 || !d.numerosOcupados.hasAny([6, 7, 8, 9, 10]));
+        && (d.usosTotales == 10 || !d.numerosOcupados.hasAny([6, 7, 8, 9, 10]))
+        && d.fechasUso is map && d.fechasUso.size() == d.numerosOcupados.size();
+    }
+    // Ningún uso o pérdida vigente con fecha posterior a `v` (fechasUso tiene
+    // a lo más 10 números: se revisan uno por uno, las reglas no tienen bucles).
+    function sinUsoPosterior(m, v) {
+      return m.get('1', '0') <= v && m.get('2', '0') <= v && m.get('3', '0') <= v
+        && m.get('4', '0') <= v && m.get('5', '0') <= v && m.get('6', '0') <= v
+        && m.get('7', '0') <= v && m.get('8', '0') <= v && m.get('9', '0') <= v
+        && m.get('10', '0') <= v;
     }
 
     match /implantes_fibras/{fibraId} {
@@ -1059,55 +1068,83 @@ service cloud.firestore {
         return /databases/$(database)/documents/implantes_fibras/$(fibraId)/usos/$(usoId);
       }
       // Alta: un número libre (después de los usos previos y hasta el total)
-      // pasa a ocupado y el uso nuevo con ese número se crea en la misma
-      // escritura.
+      // pasa a ocupado, con la fecha del uso, y el uso nuevo con ese número se
+      // crea en la misma escritura.
       function esAlta() {
         let antes = resource.data;
         let d = request.resource.data;
         let c = d.ultimoCambio;
+        let n = string(c.numero);
         return c.tipo == 'ALTA'
           && c.numero is int && c.numero > d.usosPrevios && c.numero <= d.usosTotales
           && !(c.numero in antes.numerosOcupados)
           && c.numero in d.numerosOcupados
           && d.numerosOcupados.size() == antes.numerosOcupados.size() + 1
           && d.numerosOcupados.hasAll(antes.numerosOcupados)
+          && d.fechasUso.diff(antes.fechasUso).affectedKeys() == [n].toSet()
+          && n in d.fechasUso
           && !exists(refUso(c.usoId))
           && getAfter(refUso(c.usoId)).data.numeroUso == c.numero
-          && getAfter(refUso(c.usoId)).data.estado == 'VIGENTE';
+          && getAfter(refUso(c.usoId)).data.estado == 'VIGENTE'
+          && getAfter(refUso(c.usoId)).data.fecha == d.fechasUso[n];
       }
-      // Baja: el número de un uso vigente se libera y ese uso queda anulado.
+      // Baja: el número de un uso vigente se libera (con su fecha) y ese uso
+      // queda anulado.
       function esBaja() {
         let antes = resource.data;
         let d = request.resource.data;
         let c = d.ultimoCambio;
+        let n = string(c.numero);
         return c.tipo == 'BAJA'
           && c.numero in antes.numerosOcupados
           && !(c.numero in d.numerosOcupados)
           && d.numerosOcupados.size() == antes.numerosOcupados.size() - 1
           && antes.numerosOcupados.hasAll(d.numerosOcupados)
+          && d.fechasUso.diff(antes.fechasUso).affectedKeys() == [n].toSet()
+          && !(n in d.fechasUso)
           && get(refUso(c.usoId)).data.estado == 'VIGENTE'
           && get(refUso(c.usoId)).data.numeroUso == c.numero
           && getAfter(refUso(c.usoId)).data.estado == 'ANULADO';
       }
+      // La gestión de un uso vigente cambió de fecha: cambia solo esa fecha.
+      function esCambioFecha() {
+        let antes = resource.data;
+        let d = request.resource.data;
+        let c = d.ultimoCambio;
+        let n = string(c.numero);
+        return c.tipo == 'FECHA'
+          && c.numero in d.numerosOcupados
+          && d.fechasUso.diff(antes.fechasUso).affectedKeys() == [n].toSet()
+          && n in d.fechasUso
+          && d.fechasUso[n] <= d.vencimiento
+          && getAfter(refUso(c.usoId)).data.numeroUso == c.numero
+          && getAfter(refUso(c.usoId)).data.estado == 'VIGENTE'
+          && getAfter(refUso(c.usoId)).data.fecha == d.fechasUso[n];
+      }
       function cambiaUso() {
         return request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['usosConsumidos', 'numerosOcupados', 'estado', 'ultimoCambio', 'actualizadoEl'])
+            .hasOnly(['usosConsumidos', 'numerosOcupados', 'fechasUso', 'estado', 'ultimoCambio', 'actualizadoEl'])
           && fibraCoherente(request.resource.data)
-          && (esAlta() || esBaja());
+          && (esAlta() || esBaja() || esCambioFecha());
       }
-      // Corrección desde la pantalla: usos totales siempre (sin quedar bajo
-      // los consumidos ni bajo un número ocupado); lote y vencimiento solo sin
-      // usos registrados en el sistema.
+      // Corrección desde la pantalla (con motivo, y su log en la misma
+      // escritura): usos totales sin quedar bajo los consumidos ni bajo un
+      // número ocupado; vencimiento sin quedar antes de ningún uso vigente;
+      // lote solo sin usos registrados en el sistema.
       function esCorreccion() {
         let antes = resource.data;
         let d = request.resource.data;
         let cambia = d.diff(antes).affectedKeys();
-        return cambia.hasOnly(['lote', 'vencimiento', 'usosTotales', 'estado', 'actualizadoEl', 'actualizadoPor'])
+        return cambia.hasOnly(['lote', 'vencimiento', 'usosTotales', 'estado', 'ultimaCorreccion', 'actualizadoEl', 'actualizadoPor'])
           && fibraCoherente(d)
-          && (!cambia.hasAny(['lote', 'vencimiento']) || antes.numerosOcupados.size() == 0)
+          && (!cambia.hasAny(['lote']) || antes.numerosOcupados.size() == 0)
           && esFechaISO(d.vencimiento)
+          && sinUsoPosterior(d.fechasUso, d.vencimiento)
           && d.lote is string && d.lote.size() > 0
           && d.actualizadoPor.uid == request.auth.uid
+          && cambia.hasAny(['ultimaCorreccion'])
+          && d.ultimaCorreccion.motivo is string && d.ultimaCorreccion.motivo.size() > 0
+          && existsAfter(/databases/$(database)/documents/implantes_fibras/$(fibraId)/logs/$(d.ultimaCorreccion.logId))
           && accionFibras('tabla_fibras', 'action_editar');
       }
 
@@ -1145,12 +1182,16 @@ service cloud.firestore {
               : (d.motivoAnulacion == 'PERDIDA_ANULADA' && d.detalleAnulacion is string
                 && d.detalleAnulacion.size() > 0 && anulaPerdidas()));
         }
-        // La gestión cambió de ruta, paciente, médico, empresa o fecha.
+        // La gestión cambió de ruta, paciente, médico, empresa o fecha. Una
+        // fecha nueva va con su cambio en fechasUso de la fibra (FECHA).
         function actualizacionGestion() {
           let d = request.resource.data;
+          let cambia = d.diff(resource.data).affectedKeys();
           return resource.data.tipo == 'USO'
-            && d.diff(resource.data).affectedKeys().hasOnly(['gestionId', 'paciente', 'medico', 'empresa', 'fecha', 'gestionRefPath', 'actualizadoEl'])
-            && esFechaISO(d.fecha) && d.fecha <= fibraAntes().vencimiento;
+            && cambia.hasOnly(['gestionId', 'paciente', 'medico', 'empresa', 'fecha', 'gestionRefPath', 'actualizadoEl'])
+            && esFechaISO(d.fecha) && d.fecha <= fibraAntes().vencimiento
+            && (!cambia.hasAny(['fecha'])
+              || (cambioFibra().tipo == 'FECHA' && cambioFibra().usoId == usoId && cambioFibra().numero == resource.data.numeroUso));
         }
 
         allow read: if estaActivo() && (esDev() || tienePermiso('implantes'));

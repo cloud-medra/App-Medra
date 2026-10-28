@@ -123,6 +123,7 @@ export const registrarFibras = async (datos, userData) => {
         usosPrevios,
         usosConsumidos: usosPrevios,
         numerosOcupados: [],
+        fechasUso: {},
         estado: estadoGuardado(usosPrevios, usosTotales),
         ultimoCambio: null,
         creadoEl: ahora,
@@ -142,8 +143,12 @@ export const registrarFibras = async (datos, userData) => {
   });
 };
 
-// Corrige lote, vencimiento o usos totales (validarEdicionFibra) y lo audita.
+// Corrige lote, vencimiento o usos totales (validarEdicionFibra) y lo audita:
+// el motivo queda en la fibra (ultimaCorreccion, con el id del log) y en el
+// log, escritos juntos; las reglas exigen ambos.
 export const editarFibra = async (fibraId, valores, userData) => {
+  const motivo = String(valores.motivo || '').trim();
+  if (!motivo) throw new ErrorFibra('Ingresa el motivo de la corrección.');
   const { refs, ahora, usuario } = contexto(userData);
   return runTransaction(db, async (t) => {
     const snap = await t.get(refs.fibra(fibraId));
@@ -152,11 +157,17 @@ export const editarFibra = async (fibraId, valores, userData) => {
     const { errores, cambios } = validarEdicionFibra(fibra, valores);
     if (Object.keys(errores).length > 0) throw new ErrorFibra(Object.values(errores)[0]);
     if (Object.keys(cambios).length === 0) return false;
-    t.update(refs.fibra(fibraId), { ...cambios, actualizadoEl: ahora, actualizadoPor: usuario });
+    const refLogCorreccion = refs.log(fibraId);
+    t.update(refs.fibra(fibraId), {
+      ...cambios,
+      ultimaCorreccion: { motivo, logId: refLogCorreccion.id },
+      actualizadoEl: ahora,
+      actualizadoPor: usuario,
+    });
     const antes = Object.fromEntries(Object.keys(cambios).map((k) => [k, fibra[k] ?? null]));
-    t.set(refs.log(fibraId), {
+    t.set(refLogCorreccion, {
       accion: 'EDICION',
-      detalles: { antes, despues: cambios, motivo: String(valores.motivo || '').trim() },
+      detalles: { antes, despues: cambios, motivo },
       usuario: usuario.nombre,
       uid: usuario.uid,
       timestamp: ahora,

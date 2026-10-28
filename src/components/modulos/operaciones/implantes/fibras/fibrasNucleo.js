@@ -9,9 +9,14 @@
 //                      los números 1..usosPrevios
 //     numerosOcupados  números de los usos y pérdidas VIGENTES registrados
 //     usosConsumidos   usosPrevios + numerosOcupados.length
+//     fechasUso        { '<número>': 'AAAA-MM-DD' } de cada uso o pérdida
+//                      vigente: las reglas validan con él que el vencimiento
+//                      corregido no quede antes de ningún uso (sin leer usos)
 //     estado           ACTIVA | AGOTADA (VENCIDA se calcula al mostrar)
-//     ultimoCambio     { tipo: ALTA|BAJA, numero, usoId }: lo valida la regla
-//                      del uso que se crea o se anula en la misma escritura
+//     ultimoCambio     { tipo: ALTA|BAJA|FECHA, numero, usoId }: lo valida la
+//                      regla del uso que se crea, anula o cambia de fecha en la
+//                      misma escritura
+//     ultimaCorreccion { motivo, logId } de la última corrección (auditada)
 //     /usos/{usoId}    cada uso o pérdida (nunca se borra: se anula)
 //     /logs/{id}       auditoría de la fibra
 //
@@ -117,13 +122,16 @@ export const motivoNoPerdible = (fibra) => {
   return null;
 };
 
-// Campos de la fibra al ocupar un número (alta) o liberarlo (baja).
-export const fibraConAlta = (fibra, numero, usoId) => {
+// Campos de la fibra al ocupar un número (alta, con la fecha del uso),
+// liberarlo (baja) o cambiar la fecha de un uso vigente (la gestión cambió de
+// fecha).
+export const fibraConAlta = (fibra, numero, usoId, fecha) => {
   const numerosOcupados = [...(fibra.numerosOcupados || []), numero].sort((a, b) => a - b);
   const usosConsumidos = (Number(fibra.usosPrevios) || 0) + numerosOcupados.length;
   return {
     numerosOcupados,
     usosConsumidos,
+    fechasUso: { ...(fibra.fechasUso || {}), [String(numero)]: fecha },
     estado: estadoGuardado(usosConsumidos, fibra.usosTotales),
     ultimoCambio: { tipo: 'ALTA', numero, usoId },
   };
@@ -132,13 +140,25 @@ export const fibraConAlta = (fibra, numero, usoId) => {
 export const fibraConBaja = (fibra, numero, usoId) => {
   const numerosOcupados = (fibra.numerosOcupados || []).filter((n) => n !== numero);
   const usosConsumidos = (Number(fibra.usosPrevios) || 0) + numerosOcupados.length;
+  const fechasUso = { ...(fibra.fechasUso || {}) };
+  delete fechasUso[String(numero)];
   return {
     numerosOcupados,
     usosConsumidos,
+    fechasUso,
     estado: estadoGuardado(usosConsumidos, fibra.usosTotales),
     ultimoCambio: { tipo: 'BAJA', numero, usoId },
   };
 };
+
+export const fibraConFecha = (fibra, numero, usoId, fecha) => ({
+  fechasUso: { ...(fibra.fechasUso || {}), [String(numero)]: fecha },
+  ultimoCambio: { tipo: 'FECHA', numero, usoId },
+});
+
+// Fecha más tardía entre los usos y pérdidas vigentes ('' si no hay).
+export const fechaUltimoUsoVigente = (fibra) =>
+  Object.values(fibra?.fechasUso || {}).reduce((max, f) => (f > max ? f : max), '');
 
 // Aviso tras registrar un uso o pérdida.
 export const textoUsoRegistrado = ({ lote, codigoInterno: codigo, numeroUso, usosTotales, restantes, tipo }) => {
@@ -163,9 +183,10 @@ export const validarNuevaFibra = ({ referencia, lote, vencimiento, usosTotales, 
   return errores;
 };
 
-// Edición: lote y vencimiento solo sin usos registrados en el sistema; los
-// usos totales siempre que no queden por debajo de los consumidos ni de un
-// número ya ocupado. Devuelve { errores, cambios } (cambios: solo lo que cambia).
+// Edición: el lote solo sin usos registrados en el sistema; el vencimiento,
+// sin quedar antes de la fecha de ningún uso o pérdida vigente; los usos
+// totales, sin quedar por debajo de los consumidos ni de un número ya
+// ocupado. Devuelve { errores, cambios } (cambios: solo lo que cambia).
 export const validarEdicionFibra = (fibra, { lote, vencimiento, usosTotales }) => {
   const errores = {};
   const cambios = {};
@@ -177,8 +198,9 @@ export const validarEdicionFibra = (fibra, { lote, vencimiento, usosTotales }) =
     else cambios.lote = loteN;
   }
   if (vencimiento !== fibra.vencimiento) {
-    if (!sinUsos) errores.vencimiento = 'No se puede cambiar: la fibra ya tiene usos registrados';
-    else if (!esISO(vencimiento)) errores.vencimiento = 'Ingresa el vencimiento';
+    const ultimo = fechaUltimoUsoVigente(fibra);
+    if (!esISO(vencimiento)) errores.vencimiento = 'Ingresa el vencimiento';
+    else if (ultimo && vencimiento < ultimo) errores.vencimiento = `No puede quedar antes de un uso vigente (${ultimo})`;
     else cambios.vencimiento = vencimiento;
   }
   const total = Number(usosTotales);
@@ -271,10 +293,24 @@ export const planFibrasEliminacion = (items = []) => ({
   actualizar: [],
 });
 
+// Lecturas que hacen las reglas de Firestore por operación de fibra (get,
+// exists y getAfter de documentos distintos; las repetidas del mismo
+// documento se cobran una vez por transacción). Firestore permite 20 por
+// transacción: 2 son del perfil del usuario (getUsuario). Ver firestore.rules.
+export const MAX_ACCESOS_REGLAS = 20;
+const ACCESOS_PERFIL = 2;
+const ACCESOS_POR_OPERACION = { registrar: 4, anular: 3, actualizar: 3 };
+export const accesosReglas = (operaciones) =>
+  ACCESOS_PERFIL + operaciones.reduce((n, op) => n + (ACCESOS_POR_OPERACION[op.tipo] || 0), 0);
+
 // Una misma fibra no puede tener dos altas o bajas en una sola escritura (la
-// regla valida un único `ultimoCambio` por fibra). Devuelve el mensaje de
+// regla valida un único `ultimoCambio` por fibra). Tampoco se pueden pasar las
+// lecturas que permiten las reglas en una transacción. Devuelve el mensaje de
 // error o null.
 export const validarUnCambioPorFibra = (operaciones) => {
+  if (accesosReglas(operaciones) > MAX_ACCESOS_REGLAS) {
+    return 'Hay demasiados cambios de fibras en un solo guardado: guarda en partes (de a 4 líneas de fibra como máximo).';
+  }
   const vistas = new Map();
   for (const op of operaciones) {
     if (op.tipo === 'actualizar') continue;
