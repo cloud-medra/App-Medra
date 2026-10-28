@@ -32,6 +32,7 @@ export const implantesComponentMaps = {
             ['restantes', 'Restantes'],
             ['estado', 'Estado'],
             ['ubicacion', 'Ubicación (en uso / en bodega)'],
+            ['ultimoUso', 'Último uso (agotadas)'],
           ]),
           action_ver_detalle: { label: 'Operación: Detalle (usos y pérdidas)' },
           action_editar: { label: 'Operación: Corregir lote, vencimiento o usos totales' },
