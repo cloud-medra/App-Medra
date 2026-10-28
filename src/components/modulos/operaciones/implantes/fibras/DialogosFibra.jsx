@@ -128,12 +128,12 @@ export const RegistrarFibraDialogo = ({ onGuardar, onCerrar }) => {
 };
 
 export const EditarFibraDialogo = ({ fibra, onGuardar, onCerrar }) => {
-  const [form, setForm] = useState({ lote: fibra.lote, vencimiento: fibra.vencimiento, usosTotales: String(fibra.usosTotales), motivo: '' });
+  const [form, setForm] = useState({ lote: fibra.lote, vencimiento: fibra.vencimiento, usosTotales: String(fibra.usosTotales), usosPrevios: String(fibra.usosPrevios ?? 0), motivo: '' });
   const [intento, setIntento] = useState(false);
   const [guardando, guardar] = useGuardar(onGuardar, onCerrar);
   const conUsos = (fibra.numerosOcupados || []).length > 0;
   const ultimoUso = fechaUltimoUsoVigente(fibra);
-  const valores = { ...form, usosTotales: Number(form.usosTotales) };
+  const valores = { ...form, usosTotales: Number(form.usosTotales), usosPrevios: form.usosPrevios === '' ? NaN : Number(form.usosPrevios) };
   const { errores } = validarEdicionFibra(fibra, valores);
   const erroresVisibles = intento ? errores : {};
   const set = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value }));
@@ -153,11 +153,16 @@ export const EditarFibraDialogo = ({ fibra, onGuardar, onCerrar }) => {
           <input id="fe-venc" type="date" className={INPUT} value={form.vencimiento} onChange={set('vencimiento')} min={ultimoUso || undefined} />
         </Campo>
       </div>
-      <Campo etiqueta="Usos totales" error={erroresVisibles.usosTotales} htmlFor="fe-usos" ayuda="No puede quedar por debajo de los usos consumidos.">
-        <select id="fe-usos" className={INPUT} value={form.usosTotales} onChange={set('usosTotales')}>
-          {USOS_PERMITIDOS.map((n) => <option key={n} value={n}>{n} usos</option>)}
-        </select>
-      </Campo>
+      <div className="grid grid-cols-2 gap-3">
+        <Campo etiqueta="Usos totales" error={erroresVisibles.usosTotales} htmlFor="fe-usos" ayuda="No puede quedar por debajo de los usos consumidos.">
+          <select id="fe-usos" className={INPUT} value={form.usosTotales} onChange={set('usosTotales')}>
+            {USOS_PERMITIDOS.map((n) => <option key={n} value={n}>{n} usos</option>)}
+          </select>
+        </Campo>
+        <Campo etiqueta="Usos previos" error={erroresVisibles.usosPrevios} htmlFor="fe-previos" ayuda="Usos de antes del sistema (sin detalle).">
+          <input id="fe-previos" type="number" min="0" className={INPUT} value={form.usosPrevios} onChange={set('usosPrevios')} />
+        </Campo>
+      </div>
       <Campo etiqueta="Motivo de la corrección" error={intento && !form.motivo.trim() ? 'Ingresa el motivo' : undefined} htmlFor="fe-motivo" ayuda="Queda en el historial de la fibra.">
         <input id="fe-motivo" className={INPUT} value={form.motivo} onChange={set('motivo')} placeholder="Ej: se registró de 5 y era de 10" />
       </Campo>

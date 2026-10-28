@@ -21,7 +21,7 @@
 import {
   ErrorFibra, ESTADO_USO, TIPO_USO, MOTIVO_ANULACION, UBICACION,
   motivoNoUsable, motivoNoPerdible, motivoNoPonerEnUso, siguienteNumeroUso, fibraConAlta, fibraConBaja, fibraConFecha,
-  usosRestantes, validarUnCambioPorFibra, etiquetaFibra, ubicacionDe, idControlEnUso, normalizarReferencia,
+  usosRestantes, validarUnCambioPorFibra, validarLecturasReglas, etiquetaFibra, ubicacionDe, idControlEnUso, normalizarReferencia,
 } from './fibrasNucleo';
 
 // --- Ubicación (compartido con fibrasTransacciones.js) ------------------------
@@ -97,6 +97,16 @@ export const aplicarOperacionesFibra = async (t, operaciones, ctx) => {
     const snapTitular = titularId ? await t.get(refs.fibra(titularId)) : null;
     enUsoPorOp.set(op, snapTitular?.exists() ? { id: titularId, ...snapTitular.data() } : null);
   }
+
+  // Con lo leído ya se sabe qué altas cambian la ubicación (eligen una de
+  // bodega o agotan la fibra en uso): se vuelve a validar el tope de lecturas
+  // de las reglas, ahora exacto.
+  const lecturas = validarLecturasReglas(operaciones.map((op) => {
+    const f = fibras.get(op.fibraId);
+    const agotaLaEnUso = op.tipo === 'registrar' && f && ubicacionDe(f) === UBICACION.EN_USO && usosRestantes(f) === 1;
+    return { ...op, cambiaUbicacion: enUsoPorOp.has(op) || Boolean(agotaLaEnUso) };
+  }));
+  if (lecturas) throw new ErrorFibra(lecturas);
 
   // 2) Validar, calcular y escribir.
   const resultados = [];

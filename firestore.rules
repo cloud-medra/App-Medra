@@ -1183,15 +1183,18 @@ service cloud.firestore {
           && cambia.hasAny(['ubicacion']);
       }
       // Corrección desde la pantalla (con motivo, y su log en la misma
-      // escritura): usos totales sin quedar bajo los consumidos ni bajo un
-      // número ocupado; vencimiento sin quedar antes de ningún uso vigente;
-      // lote solo sin usos registrados en el sistema.
+      // escritura): usos totales y previos sin que los consumidos pasen del
+      // total (fibraCoherente) ni choquen con un número ocupado (los previos
+      // ocupan 1..usosPrevios); vencimiento sin quedar antes de ningún uso
+      // vigente; lote solo sin usos registrados en el sistema.
       function esCorreccion(cambia) {
         let antes = resource.data;
         let d = request.resource.data;
         return cambia.hasAny(['ultimaCorreccion'])
-          && cambia.hasOnly(['lote', 'vencimiento', 'usosTotales', 'estado', 'ubicacion', 'ubicacionDesde', 'ultimaCorreccion', 'actualizadoEl', 'actualizadoPor'])
+          && cambia.hasOnly(['lote', 'vencimiento', 'usosTotales', 'usosPrevios', 'usosConsumidos', 'estado', 'ubicacion', 'ubicacionDesde', 'ultimaCorreccion', 'actualizadoEl', 'actualizadoPor'])
           && (!cambia.hasAny(['lote']) || antes.numerosOcupados.size() == 0)
+          && (!cambia.hasAny(['usosPrevios'])
+            || !d.numerosOcupados.hasAny([1, 2, 3, 4, 5, 6, 7, 8, 9, 10][0:d.usosPrevios]))
           && esFechaISO(d.vencimiento)
           && (!cambia.hasAny(['vencimiento']) || sinUsoPosterior(d.fechasUso, d.vencimiento))
           && d.lote is string && d.lote.size() > 0

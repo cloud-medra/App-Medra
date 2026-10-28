@@ -232,9 +232,10 @@ export const validarNuevaFibra = ({ referencia, lote, vencimiento, usosTotales, 
 
 // Edición: el lote solo sin usos registrados en el sistema; el vencimiento,
 // sin quedar antes de la fecha de ningún uso o pérdida vigente; los usos
-// totales, sin quedar por debajo de los consumidos ni de un número ya
-// ocupado. Devuelve { errores, cambios } (cambios: solo lo que cambia).
-export const validarEdicionFibra = (fibra, { lote, vencimiento, usosTotales }) => {
+// totales y los previos, sin que los consumidos pasen del total ni choquen con
+// un número ya ocupado (los previos ocupan 1..usosPrevios). Devuelve
+// { errores, cambios } (cambios: solo lo que cambia; con estado si cambia).
+export const validarEdicionFibra = (fibra, { lote, vencimiento, usosTotales, usosPrevios = fibra.usosPrevios }) => {
   const errores = {};
   const cambios = {};
   const sinUsos = (fibra.numerosOcupados || []).length === 0;
@@ -250,16 +251,31 @@ export const validarEdicionFibra = (fibra, { lote, vencimiento, usosTotales }) =
     else if (ultimo && vencimiento < ultimo) errores.vencimiento = `No puede quedar antes de un uso vigente (${ultimo})`;
     else cambios.vencimiento = vencimiento;
   }
+  const ocupados = fibra.numerosOcupados || [];
+  const previos = Number(usosPrevios);
+  if (previos !== (Number(fibra.usosPrevios) || 0)) {
+    const menorOcupado = Math.min(...ocupados);
+    if (!Number.isInteger(previos) || previos < 0) errores.usosPrevios = 'Número entero, 0 o más';
+    else if (ocupados.length > 0 && previos >= menorOcupado) errores.usosPrevios = `Ya hay un uso registrado con el número ${menorOcupado}: los previos no pueden pasar de ${menorOcupado - 1}`;
+    else cambios.usosPrevios = previos;
+  }
+  const previosFinal = cambios.usosPrevios ?? (Number(fibra.usosPrevios) || 0);
+  const consumidos = previosFinal + ocupados.length;
   const total = Number(usosTotales);
   if (total !== Number(fibra.usosTotales)) {
-    const maxOcupado = Math.max(Number(fibra.usosPrevios) || 0, ...(fibra.numerosOcupados || []));
+    const maxOcupado = Math.max(previosFinal, ...ocupados);
     if (!USOS_PERMITIDOS.includes(total)) errores.usosTotales = 'Elige 5 o 10 usos';
-    else if (total < usosConsumidosDe(fibra)) errores.usosTotales = `No puede ser menor que los usos consumidos (${usosConsumidosDe(fibra)})`;
+    else if (total < consumidos) errores.usosTotales = `No puede ser menor que los usos consumidos (${consumidos})`;
     else if (total < maxOcupado) errores.usosTotales = `Ya hay un uso con el número ${maxOcupado}`;
-    else {
-      cambios.usosTotales = total;
-      cambios.estado = estadoGuardado(usosConsumidosDe(fibra), total);
-    }
+    else cambios.usosTotales = total;
+  } else if ('usosPrevios' in cambios && consumidos > total) {
+    errores.usosPrevios = `Los usos consumidos (${consumidos}) pasarían del total (${total})`;
+    delete cambios.usosPrevios;
+  }
+  if ('usosPrevios' in cambios) cambios.usosConsumidos = consumidos;
+  if ('usosPrevios' in cambios || 'usosTotales' in cambios) {
+    const estado = estadoGuardado(consumidos, cambios.usosTotales ?? Number(fibra.usosTotales));
+    if (estado !== fibra.estado) cambios.estado = estado;
   }
   return { errores, cambios };
 };
@@ -349,23 +365,28 @@ export const planFibrasEliminacion = (items = []) => ({
 // exists y getAfter de documentos distintos; las repetidas del mismo
 // documento se cobran una vez por transacción). Firestore permite 20 por
 // transacción: 2 son del perfil del usuario (getUsuario). Ver firestore.rules.
-// Registrar: 4 (uso nuevo y fibra antes/después); 6 en el peor caso, cuando
-// la fibra cambia de ubicación (control "en uso" y la fibra que vuelve a
-// bodega). Se cuenta siempre el peor caso.
+// Registrar: 4 (uso nuevo y fibra antes/después); 6 si la fibra cambia de
+// ubicación (`cambiaUbicacion`: control "en uso" y la fibra que vuelve a
+// bodega). Se deja un margen de 4: hasta 3 líneas de fibra por guardado, o 2
+// si alguna cambia de ubicación.
 export const MAX_ACCESOS_REGLAS = 20;
+export const LIMITE_ACCESOS_REGLAS = 16;
 const ACCESOS_PERFIL = 2;
-const ACCESOS_POR_OPERACION = { registrar: 6, anular: 3, actualizar: 3 };
-export const accesosReglas = (operaciones) =>
-  ACCESOS_PERFIL + operaciones.reduce((n, op) => n + (ACCESOS_POR_OPERACION[op.tipo] || 0), 0);
+const accesosDe = (op) => (op.tipo === 'registrar' ? (op.cambiaUbicacion ? 6 : 4) : op.tipo === 'anular' || op.tipo === 'actualizar' ? 3 : 0);
+export const accesosReglas = (operaciones) => ACCESOS_PERFIL + operaciones.reduce((n, op) => n + accesosDe(op), 0);
+export const validarLecturasReglas = (operaciones) => (accesosReglas(operaciones) > LIMITE_ACCESOS_REGLAS
+  ? 'Hay demasiados cambios de fibras en un solo guardado: guarda en partes (hasta 3 líneas de fibra, o 2 si alguna pone en uso una fibra de bodega o agota la fibra en uso).'
+  : null);
 
 // Una misma fibra no puede tener dos altas o bajas en una sola escritura (la
 // regla valida un único `ultimoCambio` por fibra). Tampoco se pueden pasar las
 // lecturas que permiten las reglas en una transacción. Devuelve el mensaje de
 // error o null.
 export const validarUnCambioPorFibra = (operaciones) => {
-  if (accesosReglas(operaciones) > MAX_ACCESOS_REGLAS) {
-    return 'Hay demasiados cambios de fibras en un solo guardado: guarda en partes (de a 3 líneas de fibra como máximo).';
-  }
+  // Antes de leer: solo se sabe qué líneas eligen una fibra de bodega (la
+  // transacción vuelve a validar con lo leído, ver aplicarOperacionesFibra).
+  const lecturas = validarLecturasReglas(operaciones.map((op) => ({ ...op, cambiaUbicacion: Boolean(op.ponerEnUso) })));
+  if (lecturas) return lecturas;
   const vistas = new Map();
   for (const op of operaciones) {
     if (op.tipo === 'actualizar') continue;

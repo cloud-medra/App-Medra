@@ -4,7 +4,7 @@ import {
   fibraConAlta, fibraConBaja, textoUsoRegistrado, validarNuevaFibra, validarEdicionFibra,
   prepararFibrasNuevas, planFibrasBloque, planFibrasEliminacion, operacionesDePlan, validarUnCambioPorFibra,
   fibrasElegibles, fibrasUsadasEnBloques, ordenarUsos, MOTIVO_ANULACION, ESTADO_USO, TIPO_USO,
-  accesosReglas, fechaUltimoUsoVigente, UBICACION, ubicacionTrasEstado, motivoNoPonerEnUso, siguienteEnBodega,
+  accesosReglas, validarLecturasReglas, fechaUltimoUsoVigente, UBICACION, ubicacionTrasEstado, motivoNoPonerEnUso, siguienteEnBodega,
   opcionesSelectorFibra, idControlEnUso,
 } from './fibrasNucleo';
 import { aplicarOperacionesFibra, cambiarUbicacionFibra } from './operacionesFibra';
@@ -147,7 +147,7 @@ describe('formularios', () => {
   it('corregir usos totales tras el primer uso: de 5 a 10 sí; por debajo de lo consumido o de un número ocupado, no', () => {
     const f = fibra({ numerosOcupados: [1, 2, 3] });
     expect(validarEdicionFibra(f, { lote: 'ABC', vencimiento: '2027-01-31', usosTotales: 10 }))
-      .toEqual({ errores: {}, cambios: { usosTotales: 10, estado: 'ACTIVA' } });
+      .toEqual({ errores: {}, cambios: { usosTotales: 10 } });
     const g = fibra({ usosTotales: 10, numerosOcupados: [1, 2, 3, 4, 5, 6] });
     expect(validarEdicionFibra(g, { lote: 'ABC', vencimiento: '2027-01-31', usosTotales: 5 }).errores.usosTotales).toMatch(/menor/);
     const h = fibra({ usosTotales: 10, numerosOcupados: [1, 7] });
@@ -157,6 +157,21 @@ describe('formularios', () => {
   it('bajar a 5 usos con 5 consumidos deja la fibra agotada', () => {
     const f = fibra({ usosTotales: 10, numerosOcupados: [1, 2, 3, 4, 5] });
     expect(validarEdicionFibra(f, { lote: 'ABC', vencimiento: '2027-01-31', usosTotales: 5 }).cambios).toEqual({ usosTotales: 5, estado: 'AGOTADA' });
+  });
+
+  it('usos previos: se corrigen con usos registrados si no chocan con un número ocupado ni pasan del total', () => {
+    const f = fibra({ usosTotales: 10, usosPrevios: 2, numerosOcupados: [3, 4], usosConsumidos: 4, fechasUso: { 3: 'a', 4: 'b' } });
+    const v = (usosPrevios, usosTotales = 10) => validarEdicionFibra(f, { lote: 'ABC', vencimiento: '2027-01-31', usosTotales, usosPrevios });
+    expect(v(1)).toEqual({ errores: {}, cambios: { usosPrevios: 1, usosConsumidos: 3 } });
+    expect(v(3).errores.usosPrevios).toMatch(/número 3/);
+    expect(v(-1).errores.usosPrevios).toMatch(/entero/);
+    // Sin usos registrados: hasta el total (deja la fibra agotada).
+    const g = fibra({ usosTotales: 5 });
+    expect(validarEdicionFibra(g, { lote: 'ABC', vencimiento: '2027-01-31', usosTotales: 5, usosPrevios: 2 }).cambios).toEqual({ usosPrevios: 2, usosConsumidos: 2 });
+    expect(validarEdicionFibra(g, { lote: 'ABC', vencimiento: '2027-01-31', usosTotales: 5, usosPrevios: 5 }).cambios).toEqual({ usosPrevios: 5, usosConsumidos: 5, estado: 'AGOTADA' });
+    expect(validarEdicionFibra(g, { lote: 'ABC', vencimiento: '2027-01-31', usosTotales: 5, usosPrevios: 6 }).errores.usosPrevios).toMatch(/pasarían del total/);
+    // Junto con subir el total: 5 → 10 y previos 7.
+    expect(validarEdicionFibra(g, { lote: 'ABC', vencimiento: '2027-01-31', usosTotales: 10, usosPrevios: 7 }).cambios).toEqual({ usosPrevios: 7, usosConsumidos: 7, usosTotales: 10 });
   });
 
   it('el lote no se cambia con usos registrados', () => {
@@ -220,13 +235,28 @@ describe('plan al guardar la gestión', () => {
     expect(operacionesDePlan(plan, null)).toEqual([{ tipo: 'anular', fibraId: 'FIB-0001', usoId: 'U1', motivo: MOTIVO_ANULACION.GESTION_ELIMINADA }]);
   });
 
-  it('lecturas de las reglas: hasta 4 líneas de fibra por guardado (límite de 20 por transacción)', () => {
-    const registrar = (n) => Array.from({ length: n }, (_, i) => ({ tipo: 'registrar', fibraId: `F${i}` }));
-    // Registrar cuenta el peor caso (6: con cambio de ubicación).
-    expect(accesosReglas(registrar(2))).toBe(14);
+  it('lecturas de las reglas: 3 líneas de fibra, o 2 si alguna cambia de ubicación (margen de 4 sobre 20)', () => {
+    const registrar = (n, cambian = 0) => Array.from({ length: n }, (_, i) => ({ tipo: 'registrar', fibraId: `F${i}`, cambiaUbicacion: i < cambian }));
+    expect(accesosReglas(registrar(3))).toBe(14);
+    expect(accesosReglas(registrar(2, 2))).toBe(14);
     expect(accesosReglas([{ tipo: 'anular', fibraId: 'A' }, { tipo: 'anular', fibraId: 'B' }])).toBe(8);
-    expect(validarUnCambioPorFibra(registrar(3))).toBeNull();
-    expect(validarUnCambioPorFibra(registrar(4))).toMatch(/demasiados cambios/);
+    expect(validarLecturasReglas(registrar(3))).toBeNull();
+    expect(validarLecturasReglas(registrar(4))).toMatch(/demasiados cambios/);
+    expect(validarLecturasReglas(registrar(2, 2))).toBeNull();
+    expect(validarLecturasReglas(registrar(3, 1))).toBeNull();
+    expect(validarLecturasReglas(registrar(3, 2))).toMatch(/demasiados cambios/);
+    // Antes de leer, solo cuentan las elegidas de bodega (ponerEnUso).
+    const conBodega = (n) => registrar(3).map((op, i) => ({ ...op, cambiaUbicacion: undefined, ponerEnUso: i < n }));
+    expect(validarUnCambioPorFibra(conBodega(1))).toBeNull();
+    expect(validarUnCambioPorFibra(conBodega(2))).toMatch(/demasiados cambios/);
+  });
+
+  it('transacción: 3 líneas donde 2 agotan su fibra en uso se rechazan sin escribir', async () => {
+    const casi = (id) => fibra({ id, codigoInterno: id, referencia: `R-${id}`, numerosOcupados: [1, 2, 3, 4], usosConsumidos: 4, fechasUso: { 1: 'a', 2: 'b', 3: 'c', 4: 'd' } });
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/A': casi('A'), 'fibras/B': casi('B'), 'fibras/C': fibra({ id: 'C', codigoInterno: 'C' }) });
+    const ops = ['A', 'B', 'C'].map((id) => ({ tipo: 'registrar', fibraId: id, usoId: `U${id}`, datosGestion: gestion() }));
+    await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, ops, ctx(refs)))).rejects.toThrow(/demasiados cambios/);
+    expect(datos.get('fibras/A').usosConsumidos).toBe(4);
   });
 
   it('una fibra no puede tener dos altas o bajas en el mismo guardado', () => {
