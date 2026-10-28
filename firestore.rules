@@ -808,11 +808,13 @@ service cloud.firestore {
     match /bodega_lotes/{document=**} {
       allow read: if leeBodega();
     }
-    // Control Mensual y Período Actual suman los movimientos del periodo
-    // abierto (sum() de su valor) para el saldo de Bodega.
+    // Control Mensual, Período Actual y Finanzas → Valorización de bodega
+    // suman los movimientos del periodo abierto (sum() de su valor) para el
+    // saldo de Bodega. Solo lectura: se usa únicamente en `allow read`.
     function leePeriodosBodega() {
       return estaActivo() && (tieneItem('administracion', '/administracion/controlMensual')
-        || tieneItem('administracion', '/administracion/ResumenPeriodoAbierto'));
+        || tieneItem('administracion', '/administracion/ResumenPeriodoAbierto')
+        || tieneItem('administracion', '/administracion/valorizacionBodega'));
     }
     match /bodega_movimientos/{document=**} {
       allow read: if leeBodega() || leePeriodosBodega();

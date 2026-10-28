@@ -6,8 +6,9 @@ import { FUENTES_COMPARATIVO, periodosAConsultar } from './comparativoMes';
 // Totales del Comparativo mensual (ver comparativoMes.js). Por módulo y mes
 // se hace un count()/sum('total') con rango sobre la fecha del documento en
 // cada período donde puede estar imputado (hasta 3): 1 lectura por cada
-// 1.000 documentos del rango (mínimo 1 por consulta), con el índice
-// automático de un campo (sin índices nuevos). Se recuerda 5 minutos para
+// 1.000 documentos del rango (mínimo 1 por consulta). Un sum() con filtro
+// necesita un índice compuesto con el campo sumado: `documentos` (fecha,
+// total) y (fchEmis, total), ver indicesAgregaciones.test.js. Se recuerda 5 minutos para
 // no repetir lecturas al mover el rango de un lado a otro.
 const TTL_MS = 5 * 60 * 1000;
 const cache = new Map(); // clave -> { ts, promesa }
