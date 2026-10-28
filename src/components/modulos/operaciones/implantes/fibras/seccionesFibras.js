@@ -14,11 +14,15 @@ const sumarDias = (iso, dias) => {
 
 export const estaVencida = (fibra, hoy) => Boolean(fibra?.vencimiento) && fibra.vencimiento < hoy;
 
+// Vigente, pero vence en los próximos DIAS_AVISO_VENCE días (hoy incluido).
+export const venceProximamente = (fibra, hoy) => !estaVencida(fibra, hoy)
+  && Boolean(fibra?.vencimiento) && fibra.vencimiento <= sumarDias(hoy, DIAS_AVISO_VENCE);
+
 // Alerta de una fibra en uso: 'rojo' vencida; 'ambar' si le queda 1 uso o
 // vence en los próximos 30 días; null si no.
 export const alertaFibra = (fibra, hoy) => {
   if (estaVencida(fibra, hoy)) return 'rojo';
-  if (usosRestantes(fibra) === 1 || (fibra.vencimiento && fibra.vencimiento <= sumarDias(hoy, DIAS_AVISO_VENCE))) return 'ambar';
+  if (usosRestantes(fibra) === 1 || venceProximamente(fibra, hoy)) return 'ambar';
   return null;
 };
 

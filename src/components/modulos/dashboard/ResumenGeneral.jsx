@@ -52,8 +52,8 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
               <AtajosCard permisos={userData?.permisos} onAbrir={onAbrirAtajo} />
             </div>
 
-            {/* Resumen del mes (Finanzas por ahora), según los permisos del usuario */}
-            <PanelInicioCard userData={userData} />
+            {/* Resumen del mes (Finanzas y Pendientes), según los permisos del usuario */}
+            <PanelInicioCard userData={userData} onAbrir={onAbrirAtajo} />
           </div>
 
           <div className="border-t border-gray-100 dark:border-gray-700 pt-3 bg-gray-50/30 dark:bg-black/10 -mx-4 -mb-4 p-4 rounded-b-lg mt-3 flex-shrink-0">

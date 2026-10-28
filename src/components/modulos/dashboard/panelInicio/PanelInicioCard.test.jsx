@@ -16,6 +16,9 @@ vi.mock('../../administracion/totalesFinanzas/useTotalesFinanzasData', () => ({
   useTotalesFinanzasData: (args) => { pedidos.push(args); return datos; },
 }));
 
+// Pendientes tiene sus propios tests (PendientesSeccion.test.jsx): aquí solo se ve si aparece.
+vi.mock('./PendientesSeccion', () => ({ default: ({ bloques }) => <div>Pendientes: {bloques.cirugias.join(',')}</div> }));
+
 const { default: PanelInicioCard } = await import('./PanelInicioCard.jsx');
 const { default: TotalFinanzas } = await import('../../administracion/totalesFinanzas/TotalFinanzas.jsx');
 const { mesActualEnChile } = await import('../../administracion/totalesFinanzas/totalesFinanzas');
@@ -69,7 +72,16 @@ describe('Inicio — Resumen del mes (Finanzas)', () => {
     });
   });
 
-  it('sin permisos de Finanzas no se muestra el panel', () => {
+  it('Pendientes aparece con Gestión aunque no tenga Finanzas, y el filtro se pasa al abrir', () => {
+    render(<PanelInicioCard userData={operador([])} />);
+    expect(screen.queryByText(/Pendientes/)).toBeNull();
+    cleanup();
+    render(<PanelInicioCard userData={{ rol: 'operador', activo: true, permisos: { hemodinamia: ['/hemodinamia/gestionHemodinamia'] } }} />);
+    expect(screen.getByText('Pendientes: hemodinamia')).toBeTruthy();
+    expect(screen.queryByLabelText('Resumen de Finanzas')).toBeNull();
+  });
+
+  it('sin permisos de Finanzas ni Pendientes no se muestra el panel', () => {
     const { container } = render(<PanelInicioCard userData={operador(['/administracion/controlMensual'])} />);
     expect(container.innerHTML).toBe('');
     expect(pedidos).toEqual([]);

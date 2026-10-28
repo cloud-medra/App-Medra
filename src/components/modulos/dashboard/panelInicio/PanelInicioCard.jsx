@@ -1,14 +1,18 @@
 import { BarChart3 } from 'lucide-react';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useModulosActivos } from '../../../../stores/modulosActivosStore';
+import { fijarFiltroInicial } from '../../../../stores/filtroInicialStore';
 import ResumenFinanzasSeccion from './ResumenFinanzasSeccion';
+import PendientesSeccion from './PendientesSeccion';
 import { totalesVisibles } from './resumenFinanzas';
+import { bloquesPendientes, hayBloques } from './pendientesInicio';
 
 // Panel del Inicio, debajo de Accesos rápidos: una lista de secciones que
 // se muestran según los permisos del usuario. Para sumar una sección,
 // agregarla a SECCIONES con su `props(ctx)`: devuelve las props del
 // componente o null si el usuario no la ve. Sin secciones visibles no se
-// muestra el panel.
+// muestra el panel. `ctx.onAbrir(modulo, ruta, filtro?)` abre la pantalla
+// como el menú y, con `filtro`, la deja filtrada (filtroInicialStore).
 const SECCIONES = [
   {
     id: 'finanzas',
@@ -18,15 +22,27 @@ const SECCIONES = [
       return totales.length ? { totales } : null;
     },
   },
+  {
+    id: 'pendientes',
+    Componente: PendientesSeccion,
+    props: ({ userData, modulosActivos, onAbrir }) => {
+      const bloques = bloquesPendientes(userData, modulosActivos);
+      return hayBloques(bloques) ? { bloques, onAbrir } : null;
+    },
+  },
 ];
 
-const PanelInicioCard = ({ userData }) => {
+const PanelInicioCard = ({ userData, onAbrir }) => {
   const modulosActivos = useModulosActivos();
   const { hasPermission } = useGranularPermission();
   // Hasta saber qué módulos están activos no se sabe qué se puede mostrar.
   if (!modulosActivos) return null;
 
-  const ctx = { userData, modulosActivos, hasPermission };
+  const abrir = (modulo, ruta, filtro = null) => {
+    fijarFiltroInicial(ruta, filtro);
+    onAbrir?.(modulo, ruta);
+  };
+  const ctx = { userData, modulosActivos, hasPermission, onAbrir: abrir };
   const visibles = SECCIONES
     .map((s) => ({ ...s, propsSeccion: s.props(ctx) }))
     .filter((s) => s.propsSeccion);

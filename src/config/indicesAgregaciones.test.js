@@ -81,3 +81,104 @@ describe('índices de las agregaciones sum()', () => {
     expect(sinIndice).toEqual([]);
   });
 });
+
+// count() (getCountFromServer o count() en getAggregateFromServer) con
+// filtros: sin índice falla igual que sum() y el contador queda vacío o en 0.
+//   - Sin filtros, o un solo campo en una consulta de colección: alcanza el
+//     índice automático de un campo (salvo que un fieldOverride lo quite).
+//   - Un campo en collectionGroup (el rango de documentId() no cuenta): el
+//     índice de un campo NO es automático para collection group; tiene que
+//     estar en fieldOverrides con queryScope COLLECTION_GROUP.
+//   - Más campos: índice compuesto con esos campos en el mismo alcance.
+// CONTEOS lista cada consulta count() de src/ por archivo (`alcance`
+// COLLECTION o COLLECTION_GROUP; `filtros` sin __name__). Un or(...) se
+// declara como una consulta por rama. También van aquí las consultas
+// getDocs del panel del Inicio que comparten sus índices.
+const CONTEOS = {
+  'components/modulos/administracion/controlMensual/bodegaPeriodoStore.js': [
+    { coleccion: 'bodega_movimientos', alcance: 'COLLECTION', filtros: ['periodoId'] },
+  ],
+  'components/modulos/administracion/controlMensual/resumenImputacionesStore.js': [
+    { coleccion: 'documentos', alcance: 'COLLECTION', filtros: [] },
+  ],
+  'components/modulos/administracion/totalesFinanzas/useComparativoMesData.js': [
+    { coleccion: 'documentos', alcance: 'COLLECTION', filtros: ['fecha', 'total'] },
+    { coleccion: 'documentos', alcance: 'COLLECTION', filtros: ['fchEmis', 'total'] },
+  ],
+  // Control Procesos de Laboratorio: estado in (…) + rango de documentId().
+  'components/modulos/gestiones/laboratorio/procesos/usePendientesLaboratorio.js': [
+    { coleccion: 'documentos', alcance: 'COLLECTION_GROUP', filtros: ['estado'] },
+  ],
+  // Cantidad de ítems de cada PAD: toda la subcolección.
+  'components/modulos/maestros/padMaestros/PadMaestros.jsx': [
+    { coleccion: 'items_pad', alcance: 'COLLECTION', filtros: [] },
+  ],
+  // Descripciones ocultas de un mes (ocultaImplantes u ocultaDocumentos).
+  'components/modulos/operaciones/documentos/reportesInfo/ReportesInfo.jsx': [
+    { coleccion: 'registros', alcance: 'COLLECTION', filtros: ['ocultaImplantes'] },
+    { coleccion: 'registros', alcance: 'COLLECTION', filtros: ['ocultaDocumentos'] },
+  ],
+  // Seguimiento de Facturas y Guías: despacho pendiente (numero_guia) y
+  // pendiente de factura (or: estado | numero_factura).
+  'components/modulos/operaciones/documentos/seguimientoFacturasGuias/hooks/useMesesConPendientes.js': [
+    { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['numero_guia'] },
+    { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['estado'] },
+    { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['numero_factura'] },
+  ],
+  // Inicio → Pendientes (gestiones de Implantes y Hemodinamia).
+  'components/modulos/dashboard/panelInicio/usePendientesInicioData.js': [
+    { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['solicitud'] },
+    { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['estado'] },
+    { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['estado', 'fecha'] },
+    // getDocs de las cirugías del día (fecha == día).
+    { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['fecha'] },
+  ],
+  // Herramienta de medición (solo desarrollo): colecciones completas.
+  'dev/firestoreMeter.js': [
+    { coleccion: '*', alcance: 'COLLECTION', filtros: [] },
+  ],
+};
+
+// Código sin comentarios (los comentarios mencionan count() a menudo).
+const sinComentarios = (codigo) => codigo.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');
+const usaCount = (codigo) => /\bcount\(\)|getCountFromServer\(/.test(sinComentarios(codigo));
+
+const overrideDe = (coleccion, campo) => (INDICES.fieldOverrides || [])
+  .find((f) => f.collectionGroup === coleccion && f.fieldPath === campo);
+const tieneIndiceConteo = ({ coleccion, alcance, filtros }) => {
+  if (filtros.length === 0) return true;
+  const buscados = JSON.stringify([...filtros].sort());
+  const compuesto = INDICES.indexes.some((i) => i.collectionGroup === coleccion && i.queryScope === alcance
+    && JSON.stringify([...camposIndice(i)].sort()) === buscados);
+  if (compuesto || filtros.length > 1) return compuesto;
+  const override = overrideDe(coleccion, filtros[0]);
+  if (alcance === 'COLLECTION') return !override || override.indexes.some((i) => i.queryScope === 'COLLECTION' && i.order);
+  return Boolean(override?.indexes.some((i) => i.queryScope === 'COLLECTION_GROUP' && i.order));
+};
+
+describe('índices de los conteos count()', () => {
+  const conCount = recorrer(RAIZ)
+    .filter((p) => usaCount(fs.readFileSync(p, 'utf8')))
+    .map(relativo);
+
+  it('todo archivo con count() está en CONTEOS', () => {
+    expect(conCount.filter((a) => !CONTEOS[a])).toEqual([]);
+  });
+
+  it('CONTEOS no tiene archivos que ya no usan count()', () => {
+    expect(Object.keys(CONTEOS).filter((a) => !conCount.includes(a))).toEqual([]);
+  });
+
+  it('cada count() con filtros tiene su índice en firestore.indexes.json', () => {
+    const sinIndice = Object.entries(CONTEOS).flatMap(([archivo, consultas]) => consultas
+      .filter((c) => !tieneIndiceConteo(c))
+      .map((c) => `${archivo}: ${c.coleccion} ${c.alcance} (${c.filtros.join(', ')})`));
+    expect(sinIndice).toEqual([]);
+  });
+
+  it('detecta las reglas: collectionGroup de un campo sin override, o varios campos sin compuesto, fallan', () => {
+    expect(tieneIndiceConteo({ coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['campoInventado'] })).toBe(false);
+    expect(tieneIndiceConteo({ coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['estado', 'campoInventado'] })).toBe(false);
+    expect(tieneIndiceConteo({ coleccion: 'cualquiera', alcance: 'COLLECTION', filtros: ['campo'] })).toBe(true);
+  });
+});

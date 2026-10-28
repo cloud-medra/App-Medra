@@ -11,12 +11,13 @@ import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../../../bodega/shar
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../../../bodega/shared/anchosTablaBodega';
 import { formatearFechaTabla } from '../gestionImplantes/components/Cargastab/cargasHelpers';
 import {
-  UBICACION, usosConsumidosDe, usosRestantes, ubicacionDe, motivoNoPonerEnUso, normalizarReferencia,
+  UBICACION, RUTA_FIBRAS, usosConsumidosDe, usosRestantes, ubicacionDe, motivoNoPonerEnUso, normalizarReferencia,
 } from './fibrasNucleo';
 import { seccionesFibras, alertaFibra, estaVencida } from './seccionesFibras';
 import { useFibrasReutilizablesData } from './useFibrasReutilizablesData';
 import { RegistrarFibraDialogo, EditarFibraDialogo, PerdidaDialogo, AnularPerdidaDialogo } from './DialogosFibra';
 import DetalleFibra from './DetalleFibra';
+import { useFiltroInicial } from '../../../../../stores/filtroInicialStore';
 
 // Implantes → Fibras: fibras láser reutilizables (5 o 10 usos). Cada fibra
 // física tiene su código interno; sus usos se registran desde Gestiones
@@ -93,7 +94,9 @@ const FibrasReutilizables = () => {
   const anchosBodega = useAnchosTablaBodega(columnasVisibles, 'implantes.fibras.bodega');
   const anchosAgotadas = useAnchosTablaBodega(columnasAgotadas, 'implantes.fibras.agotadas');
 
-  const [texto, setTexto] = useState('');
+  // Búsqueda inicial si se abrió desde el panel del Inicio (filtroInicialStore).
+  const filtroInicial = useFiltroInicial(RUTA_FIBRAS);
+  const [texto, setTexto] = useState(filtroInicial?.texto || '');
   const [agotadasAbiertas, setAgotadasAbiertas] = useState(false);
   const [dialogo, setDialogo] = useState(null); // { tipo, fibra?, uso? }
   const [detalle, setDetalle] = useState(null);

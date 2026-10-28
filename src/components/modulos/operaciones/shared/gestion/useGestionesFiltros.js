@@ -26,22 +26,26 @@ export const opcionesPeriodoGestiones = (implantes, { filtroAnio = '', filtroMes
 };
 
 // `sinPeriodo`: arranca sin año/mes y con "Todos los días" (solo valor inicial).
+// `filtroInicial` (opcional, del panel del Inicio vía filtroInicialStore):
+// { anio, mes, dias, estados, rango } con que arranca la pantalla; manda
+// sobre `sinPeriodo`. Solo valor inicial: después se cambia como siempre.
 // Filtros, búsqueda y paginación de Gestión (Implantes y Hemodinamia).
-export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
+export const useGestionesFiltros = (implantes, { sinPeriodo = false, filtroInicial = null } = {}) => {
+  const ini = filtroInicial || {};
   const [busqueda, setBusqueda] = useState('');
 
   const fechaHoy = new Date();
-  const [filtroAnio, setFiltroAnio] = useState(sinPeriodo ? '' : fechaHoy.getFullYear().toString());
-  const [filtroMes, setFiltroMes] = useState(sinPeriodo ? '' : String(fechaHoy.getMonth() + 1).padStart(2, '0'));
-  const [filtrosDias, setFiltrosDias] = useState([]);
-  const [filtrosEstados, setFiltrosEstados] = useState([]);
+  const [filtroAnio, setFiltroAnio] = useState(ini.anio ?? (sinPeriodo ? '' : fechaHoy.getFullYear().toString()));
+  const [filtroMes, setFiltroMes] = useState(ini.mes ?? (sinPeriodo ? '' : String(fechaHoy.getMonth() + 1).padStart(2, '0')));
+  const [filtrosDias, setFiltrosDias] = useState(ini.dias || []);
+  const [filtrosEstados, setFiltrosEstados] = useState(ini.estados || []);
   const [pagina, setPagina] = useState(1);
 
   // Filtro de rango de fecha (rangoFechaGestiones.js), independiente y
   // combinable con año/mes/día y estados: Hasta ayer (predeterminado), Hasta
   // hoy, Solo hoy, Desde mañana o Todos los días. "Hoy" es en hora de Chile.
   // No se recuerda entre visitas: cada entrada arranca en el predeterminado.
-  const [filtroRangoFecha, setFiltroRangoFecha] = useState(sinPeriodo ? 'todos' : RANGO_FECHA_PREDETERMINADO);
+  const [filtroRangoFecha, setFiltroRangoFecha] = useState(ini.rango || (sinPeriodo ? 'todos' : RANGO_FECHA_PREDETERMINADO));
 
   // Años/meses disponibles, desde las gestiones ya cargadas (0 lecturas):
   // solo períodos con datos, años del más reciente al más antiguo y meses
@@ -108,14 +112,17 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false } = {}) => {
   // (porque el usuario cambió año/mes/estado/rango de fecha y ese día ya no
   // tiene registros), se deselecciona automáticamente en vez de quedar
   // "elegido" pero sin resultados — evita la confusión de un filtro que
-  // parece activo pero no filtra nada visible.
+  // parece activo pero no filtra nada visible. Sin gestiones todavía (cargando)
+  // no se recorta: borraría el día de un filtro inicial (ej. "mañana" desde
+  // el Inicio) antes de que lleguen los datos.
   useEffect(() => {
+    if (implantes.length === 0) return;
     setFiltrosDias(prev => {
       const disponibles = new Set(opcionesDias);
       const siguenValidos = prev.filter(d => disponibles.has(d));
       return siguenValidos.length === prev.length ? prev : siguenValidos;
     });
-  }, [opcionesDias]);
+  }, [opcionesDias, implantes.length]);
 
   const implantesFiltrados = useMemo(() => {
     if (filtrosDias.length === 0) return implantesFiltradosSinDia;
