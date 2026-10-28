@@ -302,6 +302,15 @@ service cloud.firestore {
     // LABORATORIO
     // =================================================================
 
+    // fchEmis (fecha de emisión de la factura) en 'AAAA-MM-DD', como el XML
+    // del SII: Finanzas → Comparativo mensual filtra por rango sobre ese
+    // texto (src/components/modulos/gestiones/shared/fechaISO.js). Solo se
+    // valida si el documento trae el campo (años, meses y logs no lo tienen).
+    function fchEmisValida() {
+      let d = request.resource.data;
+      return !('fchEmis' in d) || (d.fchEmis is string && d.fchEmis.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'));
+    }
+
     match /laboratorio_empresas/{document=**} {
       allow read: if estaActivo();
       allow create, update: if estaActivo() && escribeVista('laboratorio', '/laboratorio/empresasLaboratorio');
@@ -325,7 +334,8 @@ service cloud.firestore {
 
     match /laboratorio_documentos/{document=**} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('laboratorio'));
+      allow create, update: if estaActivo() && (esDev() || tienePermiso('laboratorio')) && fchEmisValida();
+      allow delete: if estaActivo() && (esDev() || tienePermiso('laboratorio'));
     }
 
     match /laboratorio_cierres/{document=**} {
@@ -334,7 +344,8 @@ service cloud.firestore {
     }
     match /laboratorio_imputadas/{document=**} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('laboratorio'));
+      allow create, update: if estaActivo() && (esDev() || tienePermiso('laboratorio')) && fchEmisValida();
+      allow delete: if estaActivo() && (esDev() || tienePermiso('laboratorio'));
     }
 
     // =================================================================
@@ -364,7 +375,8 @@ service cloud.firestore {
 
     match /vacunatorio_documentos/{document=**} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('vacunatorio'));
+      allow create, update: if estaActivo() && (esDev() || tienePermiso('vacunatorio')) && fchEmisValida();
+      allow delete: if estaActivo() && (esDev() || tienePermiso('vacunatorio'));
     }
 
     match /vacunatorio_cierres/{document=**} {
@@ -373,7 +385,8 @@ service cloud.firestore {
     }
     match /vacunatorio_imputadas/{document=**} {
       allow read: if estaActivo();
-      allow write: if estaActivo() && (esDev() || tienePermiso('vacunatorio'));
+      allow create, update: if estaActivo() && (esDev() || tienePermiso('vacunatorio')) && fchEmisValida();
+      allow delete: if estaActivo() && (esDev() || tienePermiso('vacunatorio'));
     }
 
     // =================================================================
