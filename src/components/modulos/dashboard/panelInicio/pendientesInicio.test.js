@@ -1,10 +1,10 @@
-// Inicio → Pendientes: quién ve cada bloque, conteo de cirugías y fibras
-// (con las mismas reglas que la pantalla Fibras) y los valores Al día /
-// No disponible.
+// Inicio → Pendientes: quién ve cada bloque, conteo de cirugías, uso de
+// fibras por referencia (con las alertas de la pantalla Fibras) y los
+// valores Al día / No disponible.
 import { describe, it, expect } from 'vitest';
 import { alertaFibra } from '../../operaciones/implantes/fibras/seccionesFibras';
 import {
-  bloquesPendientes, hayBloques, cirugiasDelDia, unirCirugias, indicadoresFibras, filtroGestion, filtroFibras,
+  bloquesPendientes, hayBloques, contarCirugias, usoFibrasPorReferencia, filtroGestion, tipoPorRevisar,
   valorIndicador, sumarResultados, diaSiguienteISO,
 } from './pendientesInicio';
 
@@ -53,24 +53,15 @@ describe('Pendientes — permisos', () => {
 });
 
 describe('Pendientes — cirugías', () => {
-  it('cuenta pacientes (admisiones) distintos y limpia los datos vacíos', () => {
-    const lista = cirugiasDelDia([
-      { gestionId: '123', nombre: 'Ana Pérez', medico: 'Dr. Soto', empresa: 'A' },
-      { gestionId: '123', nombre: 'Ana Pérez', medico: 'Dr. Soto', empresa: 'B' },
-      { gestionId: 'P', nombre: 'P', medico: 'P', refPath: 'x/1' },
-      { gestionId: 'P', nombre: 'Luis', medico: 'Dra. Rojas', refPath: 'x/2' },
-    ], 'implantes');
-    expect(lista).toHaveLength(3);
-    expect(lista[0]).toMatchObject({ modulo: 'implantes', gestionId: '123', paciente: 'Ana Pérez', medico: 'Dr. Soto' });
-    expect(lista[1]).toMatchObject({ gestionId: '', paciente: 'Sin nombre', medico: 'Sin médico' });
-  });
-
-  it('une Implantes y Hemodinamia ordenadas por paciente', () => {
-    const unidas = unirCirugias([
-      cirugiasDelDia([{ gestionId: '1', nombre: 'Zoe' }], 'implantes'),
-      cirugiasDelDia([{ gestionId: '1', nombre: 'Ana' }], 'hemodinamia'),
-    ]);
-    expect(unidas.map((c) => [c.paciente, c.modulo])).toEqual([['Ana', 'hemodinamia'], ['Zoe', 'implantes']]);
+  it('cuenta pacientes (admisiones) distintos; una gestión sin admisión cuenta sola', () => {
+    expect(contarCirugias([
+      { gestionId: '123', empresa: 'A' },
+      { gestionId: '123', empresa: 'B' },
+      { agendaId: '124' },
+      { gestionId: 'P', refPath: 'x/1' },
+      { gestionId: 'P', refPath: 'x/2' },
+    ])).toBe(4);
+    expect(contarCirugias([])).toBe(0);
   });
 
   it('mañana es el día siguiente, también a fin de mes y de año', () => {
@@ -84,49 +75,49 @@ describe('Pendientes — cirugías', () => {
     expect(filtroGestion('manana', '2026-10-31')).toEqual({ anio: '2026', mes: '11', dias: ['01'], rango: 'desdeManana', estados: [] });
     expect(filtroGestion('incompletas', '2026-10-28')).toMatchObject({ rango: 'todos', estados: ['INCOMPLETO'] });
     expect(filtroGestion('agendadasVencidas', '2026-10-28')).toMatchObject({ rango: 'hastaAyer', estados: ['AGENDANDO', 'AGENDADO'] });
-    expect(filtroGestion('enRevision', '2026-10-28').estados).toEqual(expect.arrayContaining(['REVISAR', 'S/COTIZACION']));
+    expect(filtroGestion('porRevisar', '2026-10-28').estados).toEqual(expect.arrayContaining(['REVISAR', 'S/COTIZACION', 'AGENDANDO']));
+  });
+
+  it('Por revisar abre con el filtro de la parte que tiene gestiones', () => {
+    expect(tipoPorRevisar({ n: 2 }, { n: 0 })).toBe('enRevision');
+    expect(tipoPorRevisar({ n: 0 }, { n: 1 })).toBe('agendadasVencidas');
+    expect(tipoPorRevisar({ n: 2 }, { n: 1 })).toBe('porRevisar');
+    expect(tipoPorRevisar({ error: true }, { n: 1 })).toBe('porRevisar');
   });
 });
 
 describe('Pendientes — fibras', () => {
   const hoy = '2026-10-28';
-  const f = (id, referencia, extra) => ({ id, codigoInterno: id, referencia, usosTotales: 5, usosPrevios: 0, vencimiento: '2027-12-31', ...extra });
+  const f = (id, referencia, extra) => ({ id, codigoInterno: id, referencia, usosTotales: 10, usosPrevios: 0, vencimiento: '2027-12-31', ...extra });
   const fibras = [
-    f('F1', 'R1', { ubicacion: 'EN USO', usosPrevios: 4 }),             // último uso
-    f('F2', 'R2', { ubicacion: 'EN USO', vencimiento: '2026-11-15' }),     // vence pronto
-    f('F3', 'R3', { ubicacion: 'EN BODEGA', vencimiento: '2026-10-01' }),  // vencida, en bodega
-    f('F4', 'R4', { ubicacion: 'EN BODEGA' }),                             // R4 en bodega, ninguna en uso
-    f('F5', 'R5', { ubicacion: 'AGOTADA', usosPrevios: 5, estado: 'AGOTADA' }), // R5 sin disponibles
+    f('F1', 'FL-1000', { ubicacion: 'EN USO', usosPrevios: 8 }),
+    f('F2', 'FL-365', { ubicacion: 'EN USO', usosTotales: 5, usosPrevios: 1 }),
+    f('F3', 'FL-365', { ubicacion: 'EN BODEGA' }),
+    f('F4', 'FL-200', { ubicacion: 'EN BODEGA' }),
+    f('F5', 'FL-550', { ubicacion: 'EN USO', usosPrevios: 9 }),
+    f('F6', 'FL-600', { ubicacion: 'EN USO', usosPrevios: 2, vencimiento: '2026-10-01' }),
+    f('F7', 'FL-700', { ubicacion: 'AGOTADA', usosPrevios: 10 }),
   ];
-  const codigos = [{ referencia: 'R1' }, { referencia: 'R2' }, { referencia: 'r3' }, { referencia: 'R4' }, { referencia: 'R5' }, { referencia: 'R6' }];
+  const codigos = [{ referencia: 'fl-1000' }, { referencia: 'FL-365' }, { referencia: 'FL-700' }, { referencia: 'FL-800' }];
 
-  it('cuenta cada alerta y sus referencias', () => {
-    const r = indicadoresFibras(fibras, codigos, hoy);
-    expect(r.ultimoUso).toEqual({ n: 1, referencias: ['R1'] });
-    expect(r.vencenPronto).toEqual({ n: 1, referencias: ['R2'] });
-    expect(r.vencidas).toEqual({ n: 1, referencias: ['R3'] });
-    // R3 (solo una vencida en bodega) y R4 no tienen fibra en uso.
-    expect(r.bodegaSinUso).toEqual({ n: 2, referencias: ['R3', 'R4'] });
-    // Sin ninguna vigente en uso ni en bodega: R3 (vencida), R5 (agotada) y R6 (nunca registrada).
-    expect(r.sinDisponibles).toEqual({ n: 3, referencias: ['R3', 'R5', 'R6'] });
+  it('una línea por referencia con el uso (consumidos/totales) de su fibra en uso', () => {
+    const lineas = usoFibrasPorReferencia(fibras, codigos, hoy);
+    expect(lineas.map((l) => [l.referencia, l.uso && `${l.uso.consumidos}/${l.uso.totales}`])).toEqual([
+      ['fl-1000', '8/10'], ['FL-200', null], ['FL-365', '1/5'], ['FL-550', '9/10'], ['FL-600', '2/10'], ['FL-700', null], ['FL-800', null],
+    ]);
   });
 
-  it('coincide con las alertas ámbar y roja de la pantalla Fibras para las fibras en uso', () => {
-    const enUso = fibras.filter((x) => x.ubicacion === 'EN USO');
-    const r = indicadoresFibras(enUso, [], hoy);
-    expect(enUso.filter((x) => alertaFibra(x, hoy) === 'ambar')).toHaveLength(r.ultimoUso.n + r.vencenPronto.n);
-    expect(enUso.filter((x) => alertaFibra(x, hoy) === 'rojo')).toHaveLength(r.vencidas.n);
+  it('el color es el de la pantalla Fibras: ámbar con 1 uso restante o por vencer, rojo vencida', () => {
+    const porRef = Object.fromEntries(usoFibrasPorReferencia(fibras, codigos, hoy).map((l) => [l.referencia, l.uso?.alerta ?? null]));
+    expect(porRef).toMatchObject({ 'FL-550': 'ambar', 'FL-600': 'rojo', 'fl-1000': null, 'FL-365': null });
+    fibras.filter((x) => x.ubicacion === 'EN USO').forEach((x) => {
+      const linea = usoFibrasPorReferencia([x], [], hoy)[0];
+      expect(linea.uso.alerta).toBe(alertaFibra(x, hoy));
+    });
   });
 
-  it('sin fibras ni códigos todo está al día', () => {
-    const r = indicadoresFibras([], [], hoy);
-    expect(Object.values(r).map((x) => x.n)).toEqual([0, 0, 0, 0, 0]);
-  });
-
-  it('abre Fibras filtrada solo si hay una referencia', () => {
-    expect(filtroFibras(['R1'])).toEqual({ texto: 'R1' });
-    expect(filtroFibras(['R1', 'R2'])).toBeNull();
-    expect(filtroFibras()).toBeNull();
+  it('sin fibras ni códigos no hay líneas', () => {
+    expect(usoFibrasPorReferencia([], [], hoy)).toEqual([]);
   });
 });
 

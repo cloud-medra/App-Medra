@@ -57,7 +57,7 @@ const NuevoModuloCard = () => {
                   : 'bg-gray-50 dark:bg-gray-900/50 border-gray-100 dark:border-gray-700/50 hover:border-gray-200 dark:hover:border-gray-600'
               }`}
             >
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 min-w-0">
                 {nota.tipo === 'checklist' ? (
                   <CheckSquare size={13} className="text-[#2383C2] shrink-0" />
                 ) : (
@@ -93,7 +93,7 @@ const NuevoModuloCard = () => {
                       </span>
                       <span
                         style={visual.texto}
-                        className={`text-[10.5px] leading-tight ${
+                        className={`text-[10.5px] leading-tight [overflow-wrap:anywhere] ${
                           item.completado
                             ? `line-through ${visual.textoPropio ? 'opacity-60' : 'text-gray-400 dark:text-gray-500'}`
                             : claseTexto
@@ -105,7 +105,7 @@ const NuevoModuloCard = () => {
                   ))}
                 </div>
               ) : (
-                <p style={visual.texto} className={`text-[10.5px] leading-relaxed whitespace-pre-wrap ${claseTexto}`}>
+                <p style={visual.texto} className={`text-[10.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] ${claseTexto}`}>
                   {nota.contenido}
                 </p>
               )}

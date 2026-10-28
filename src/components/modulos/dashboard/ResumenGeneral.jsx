@@ -26,9 +26,9 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
   // En pantallas anchas cabe sin scroll; en angostas las tarjetas se apilan y
   // desplaza el contenedor de la vista.
   return (
-    <div className="w-full lg:h-full flex flex-col gap-3 lg:overflow-hidden pr-1">
+    <div className="w-full min-w-0 lg:h-full flex flex-col gap-3 lg:overflow-hidden lg:pr-1">
 
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex items-center justify-between p-2.5 flex-shrink-0">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex flex-wrap items-center justify-between gap-2 p-2.5 flex-shrink-0">
         <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-2 uppercase tracking-wider">
           <LayoutDashboard size={14} className="text-[#2383C2]" /> Panel de Control General
         </h2>
@@ -40,23 +40,26 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 flex-grow min-h-0 items-stretch">
 
         {/* Columna Izquierda principal */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex flex-col justify-between p-4 min-h-0 lg:h-full">
+        <div className="lg:col-span-2 min-w-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex flex-col justify-between p-3 sm:p-4 min-h-0 lg:h-full">
 
           <div className="flex flex-col gap-3 flex-1 min-h-0">
             <BienvenidaCard userData={userData} />
 
             <BrandingCard />
 
-            {/* Accesos rápidos a la izquierda (y primero al apilar en móvil), compacto; si no caben, desplaza su propia grilla */}
-            <div className="min-h-0 flex flex-col overflow-hidden">
+            {/* Accesos rápidos siempre completo y arriba del resumen (y primero al apilar en móvil) */}
+            <div className="flex-shrink-0 flex flex-col">
               <AtajosCard permisos={userData?.permisos} onAbrir={onAbrirAtajo} />
             </div>
 
-            {/* Resumen del mes (Finanzas y Pendientes), según los permisos del usuario */}
-            <PanelInicioCard userData={userData} onAbrir={onAbrirAtajo} />
+            {/* Resumen del mes (Finanzas y Pendientes), según los permisos del usuario.
+                En pantallas anchas ocupa el alto que queda y desplaza su contenido. */}
+            <div className="min-h-0 lg:flex-1 lg:overflow-y-auto">
+              <PanelInicioCard userData={userData} onAbrir={onAbrirAtajo} />
+            </div>
           </div>
 
-          <div className="border-t border-gray-100 dark:border-gray-700 pt-3 bg-gray-50/30 dark:bg-black/10 -mx-4 -mb-4 p-4 rounded-b-lg mt-3 flex-shrink-0">
+          <div className="border-t border-gray-100 dark:border-gray-700 pt-3 bg-gray-50/30 dark:bg-black/10 -mx-3 -mb-3 sm:-mx-4 sm:-mb-4 p-3 sm:p-4 rounded-b-lg mt-3 flex-shrink-0">
             <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase block mb-0.5 tracking-wider">Seguridad y Permisos</span>
             <p className="text-[11.5px] text-gray-500 dark:text-gray-400">
               Tu perfil <span className="font-semibold text-gray-700 dark:text-gray-200 uppercase">{userData?.rol || 'Operador'}</span> registra acceso a <strong className="text-gray-700 dark:text-gray-200">{Object.keys(userData?.permisos || {}).length} secciones</strong> configuradas.
@@ -65,7 +68,7 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
         </div>
 
         {/* Columna Derecha */}
-        <div className="flex flex-col gap-3 min-h-0">
+        <div className="flex flex-col gap-3 min-h-0 min-w-0">
           <AgendaCarrusel
             currentDate={currentDate}
             selectedDate={selectedDate}

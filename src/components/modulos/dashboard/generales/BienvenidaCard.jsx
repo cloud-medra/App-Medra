@@ -5,8 +5,8 @@ const BienvenidaCard = ({ userData }) => {
   const nombreMostrar = obtenerNombreMostrar(userData, { mayusculas: true }) || 'CARGANDO...';
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700/60 rounded-lg p-4">
-      <p className="text-[14px] font-medium text-gray-700 dark:text-gray-200 mb-1">
+    <div className="bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700/60 rounded-lg p-3 sm:p-4 min-w-0">
+      <p className="text-[14px] font-medium text-gray-700 dark:text-gray-200 mb-1 [overflow-wrap:anywhere]">
         Hola, <span className="text-[#2383C2] font-bold">{nombreMostrar}</span>.
       </p>
       <p className="text-[11.5px] leading-relaxed text-gray-500 dark:text-gray-400">

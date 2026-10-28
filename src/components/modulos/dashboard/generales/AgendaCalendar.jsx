@@ -38,7 +38,7 @@ const AgendaCalendar = ({
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-3 flex flex-col justify-between">
-      <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-2 mb-2">
+      <div className="flex flex-wrap items-center justify-between gap-1 border-b border-gray-100 dark:border-gray-700 pb-2 mb-2">
         <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 flex items-center gap-1 uppercase tracking-wide">
           <CalendarIcon size={13} className="text-[#2383C2]" /> Agenda
         </span>

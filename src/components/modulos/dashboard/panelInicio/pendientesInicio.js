@@ -1,6 +1,8 @@
 // Inicio → Pendientes: qué bloques ve cada usuario, cómo se cuentan las
-// cirugías y las alertas de fibras, y con qué filtro se abre cada pantalla.
-// Lógica pura, sin Firestore (las consultas están en usePendientesInicioData).
+// cirugías, el uso de las fibras por referencia y con qué filtro se abre
+// cada pantalla. Solo cantidades: en el Inicio no se muestran nombres de
+// pacientes. Lógica pura, sin Firestore (las consultas están en
+// usePendientesInicioData).
 //
 //   - Implantes (con Gestión de Implantes):
 //       Por imputar   solicitud == SOLICITAR (lo que lista Solicitud; se
@@ -13,17 +15,17 @@
 //   - Cirugías de hoy y de mañana: Implantes y Hemodinamia (HEM), cada uno
 //     con su Gestión. Se cuentan pacientes (admisiones) distintos: una
 //     cirugía con dos empresas son dos gestiones.
-//   - Fibras (con la pantalla Fibras): mismas reglas que seccionesFibras.js.
+//   - Fibras (con la pantalla Fibras): una línea por referencia con el uso
+//     de su fibra en uso (consumidos/totales) y el color de alertaFibra.
 import { subItemsVisibles } from '../../../../config/accesoMenu';
 import { moduloGestion } from '../../operaciones/shared/modulosGestion';
-import { UBICACION, RUTA_FIBRAS, ubicacionDe, usosRestantes, normalizarReferencia } from '../../operaciones/implantes/fibras/fibrasNucleo';
-import { seccionesFibras, estaVencida, venceProximamente } from '../../operaciones/implantes/fibras/seccionesFibras';
+import { UBICACION, RUTA_FIBRAS, ubicacionDe, usosConsumidosDe, normalizarReferencia } from '../../operaciones/implantes/fibras/fibrasNucleo';
+import { alertaFibra } from '../../operaciones/implantes/fibras/seccionesFibras';
 
 export { RUTA_FIBRAS };
 export const MODULOS_CIRUGIAS = Object.freeze(['implantes', 'hemodinamia']);
 export const ESTADOS_EN_REVISION = Object.freeze(['REVISAR', 'S/COTIZACION', 'SIN COTIZACION']);
 export const ESTADOS_AGENDADA = Object.freeze(['AGENDANDO', 'AGENDADO']);
-export const MAX_CIRUGIAS_LISTA = 5;
 
 // Qué bloques ve el usuario (mismas reglas que el menú, con Gestión de módulos).
 export const bloquesPendientes = (userData, modulosActivos) => {
@@ -49,54 +51,33 @@ export const diaSiguienteISO = (iso) => {
   return d.toISOString().slice(0, 10);
 };
 
-const sinDato = (v) => !v || v === 'P' || v === 'Cargando...';
+const sinDato = (v) => !v || v === 'P';
 
-// Gestiones del día (de un módulo) -> cirugías: una por admisión, por nombre.
-export const cirugiasDelDia = (gestiones = [], modulo) => {
-  const porAdmision = new Map();
-  gestiones.forEach((g) => {
-    const id = String(g.gestionId || g.agendaId || '').trim();
-    const clave = sinDato(id) ? `ref:${g.refPath || g.id}` : id;
-    if (!porAdmision.has(clave)) {
-      porAdmision.set(clave, {
-        clave: `${modulo}:${clave}`,
-        modulo,
-        gestionId: sinDato(id) ? '' : id,
-        paciente: sinDato(g.nombre) ? 'Sin nombre' : g.nombre,
-        medico: sinDato(g.medico) ? 'Sin médico' : g.medico,
-      });
-    }
-  });
-  return [...porAdmision.values()];
-};
+// Gestiones del día de un módulo -> cantidad de cirugías (admisiones
+// distintas; una gestión sin admisión cuenta sola).
+export const contarCirugias = (gestiones = []) => new Set(gestiones.map((g) => {
+  const id = String(g.gestionId || g.agendaId || '').trim();
+  return sinDato(id) ? `ref:${g.refPath || g.id}` : id;
+})).size;
 
-// Cirugías de varios módulos (ya deduplicadas) ordenadas por paciente.
-export const unirCirugias = (listas) => listas.flat()
-  .sort((a, b) => a.paciente.localeCompare(b.paciente, 'es') || a.modulo.localeCompare(b.modulo));
-
-// Fibras + códigos marcados como fibra -> los cinco indicadores, con las
-// referencias involucradas (para abrir Fibras ya filtrada si es una sola).
-export const indicadoresFibras = (fibras = [], codigos = [], hoy) => {
-  const activas = fibras.filter((f) => ubicacionDe(f) !== UBICACION.AGOTADA);
-  const refs = (lista) => [...new Set(lista.map((f) => normalizarReferencia(f.referencia)))];
-  const ultimoUso = activas.filter((f) => ubicacionDe(f) === UBICACION.EN_USO && usosRestantes(f) === 1);
-  const vencenPronto = activas.filter((f) => venceProximamente(f, hoy));
-  const vencidas = activas.filter((f) => estaVencida(f, hoy));
-  const bodegaSinUso = seccionesFibras(fibras, hoy).enUso.filter((t) => !t.fibra);
-  const conDisponible = new Set(activas.filter((f) => !estaVencida(f, hoy)).map((f) => normalizarReferencia(f.referencia)));
-  const sinDisponibles = [...new Set(codigos.map((c) => normalizarReferencia(c.referencia)).filter(Boolean))]
-    .filter((r) => !conDisponible.has(r)).sort();
-  return {
-    ultimoUso: { n: ultimoUso.length, referencias: refs(ultimoUso) },
-    vencenPronto: { n: vencenPronto.length, referencias: refs(vencenPronto) },
-    vencidas: { n: vencidas.length, referencias: refs(vencidas) },
-    bodegaSinUso: { n: bodegaSinUso.length, referencias: refs(bodegaSinUso) },
-    sinDisponibles: { n: sinDisponibles.length, referencias: sinDisponibles },
+// Fibras + códigos marcados como fibra -> una línea por referencia, en orden:
+// { referencia, uso: { consumidos, totales, alerta } | null }. `uso` es el de
+// la fibra EN USO (null si la referencia no tiene ninguna); `alerta` es la de
+// la pantalla Fibras ('ambar' | 'rojo' | null).
+export const usoFibrasPorReferencia = (fibras = [], codigos = [], hoy) => {
+  const lineas = new Map();
+  const agregar = (referencia) => {
+    const clave = normalizarReferencia(referencia);
+    if (clave && !lineas.has(clave)) lineas.set(clave, { referencia: String(referencia).trim(), uso: null });
   };
+  codigos.forEach((c) => agregar(c.referencia));
+  fibras.filter((f) => ubicacionDe(f) !== UBICACION.AGOTADA).forEach((f) => agregar(f.referencia));
+  fibras.filter((f) => ubicacionDe(f) === UBICACION.EN_USO).forEach((f) => {
+    const linea = lineas.get(normalizarReferencia(f.referencia));
+    if (linea) linea.uso = { consumidos: usosConsumidosDe(f), totales: Number(f.usosTotales) || 0, alerta: alertaFibra(f, hoy) };
+  });
+  return [...lineas.values()].sort((a, b) => normalizarReferencia(a.referencia).localeCompare(normalizarReferencia(b.referencia)));
 };
-
-// Búsqueda con la que se abre Fibras: la referencia si es una sola.
-export const filtroFibras = (referencias = []) => (referencias.length === 1 ? { texto: referencias[0] } : null);
 
 // Filtros iniciales de Gestión (useGestionesFiltros) para cada indicador.
 export const filtroGestion = (tipo, hoy) => {
@@ -105,6 +86,7 @@ export const filtroGestion = (tipo, hoy) => {
     case 'incompletas': return { ...todas, estados: ['INCOMPLETO'] };
     case 'enRevision': return { ...todas, estados: [...ESTADOS_EN_REVISION] };
     case 'agendadasVencidas': return { ...todas, rango: 'hastaAyer', estados: [...ESTADOS_AGENDADA] };
+    case 'porRevisar': return { ...todas, estados: [...ESTADOS_EN_REVISION, ...ESTADOS_AGENDADA] };
     case 'hoy': return { ...todas, rango: 'soloHoy', estados: [] };
     case 'manana': {
       const [anio, mes, dia] = diaSiguienteISO(hoy).split('-');
@@ -112,6 +94,15 @@ export const filtroGestion = (tipo, hoy) => {
     }
     default: return null;
   }
+};
+
+// Con qué filtro abre "Por revisar": el de la parte que tiene gestiones; si
+// las dos tienen (o no se sabe), ambos estados con todas las fechas.
+export const tipoPorRevisar = (enRevision, agendadasVencidas) => {
+  const n = (r) => (r && Number.isFinite(r.n) ? r.n : null);
+  if (n(enRevision) > 0 && n(agendadasVencidas) === 0) return 'enRevision';
+  if (n(agendadasVencidas) > 0 && n(enRevision) === 0) return 'agendadasVencidas';
+  return 'porRevisar';
 };
 
 // Resultado de una lectura ({ n } | { error } | undefined mientras carga)

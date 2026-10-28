@@ -1,11 +1,17 @@
 // @vitest-environment jsdom
-// Inicio → Pendientes (pantalla): números, Al día, No disponible, cirugías
-// con "Ver todas" y navegación con filtro. Las lecturas se simulan en
-// LECTURAS (usePendientesInicioData), con su caché real.
+// Inicio → Pendientes (pantalla): resumen de cantidades, Al día, No
+// disponible, cirugías por módulo (HEM), uso de fibras por referencia y
+// navegación con filtro. Las lecturas se simulan en LECTURAS
+// (usePendientesInicioData), con su caché real.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor, within } from '@testing-library/react';
 
+const getDocs = vi.fn();
 vi.mock('../../../../firebaseConfig', () => ({ db: {} }));
+vi.mock('firebase/firestore', () => ({
+  collectionGroup: vi.fn(), documentId: vi.fn(), getCountFromServer: vi.fn(), query: vi.fn(), where: vi.fn(),
+  getDocs: (...a) => getDocs(...a),
+}));
 vi.mock('../../operaciones/implantes/fibras/fibrasTransacciones', () => ({ leerTodasLasFibras: vi.fn() }));
 vi.mock('../../operaciones/implantes/fibras/useFibrasReutilizablesData', () => ({ leerCodigosFibra: vi.fn() }));
 
@@ -15,8 +21,15 @@ const { default: PendientesSeccion } = await import('./PendientesSeccion.jsx');
 afterEach(cleanup);
 
 const todos = { implantes: true, abreSolicitud: true, cirugias: ['implantes', 'hemodinamia'], fibras: true };
-const caja = (etiqueta) => screen.getByText(etiqueta).parentElement;
-const FIBRAS_OK = { indicadores: { ultimoUso: { n: 1, referencias: ['R1'] }, vencenPronto: { n: 0, referencias: [] }, vencidas: { n: 2, referencias: ['R3', 'R4'] }, bodegaSinUso: { n: 0, referencias: [] }, sinDisponibles: { n: 0, referencias: [] } } };
+const linea = (texto) => screen.getByText(texto).closest('button, div');
+const FIBRAS_OK = {
+  referencias: [
+    { referencia: 'FL-1000', uso: { consumidos: 8, totales: 10, alerta: null } },
+    { referencia: 'FL-365', uso: { consumidos: 4, totales: 5, alerta: 'ambar' } },
+    { referencia: 'FL-600', uso: { consumidos: 2, totales: 10, alerta: 'rojo' } },
+    { referencia: 'FL-200', uso: null },
+  ],
+};
 
 const espiar = (valores) => {
   Object.entries(valores).forEach(([k, v]) => vi.spyOn(LECTURAS, k).mockImplementation(v));
@@ -31,78 +44,106 @@ describe('Inicio — Pendientes', () => {
       incompletas: async () => ({ n: 0 }),
       enRevision: async () => ({ n: 2 }),
       agendadasVencidas: async () => ({ n: 1 }),
-      cirugias: async (modulo) => ({
-        lista: Array.from({ length: modulo === 'implantes' ? 4 : 3 }, (_, i) => ({
-          clave: `${modulo}:${i}`, modulo, gestionId: String(100 + i), paciente: `${modulo === 'implantes' ? 'P' : 'H'}${i}`, medico: 'Dr. X',
-        })),
-      }),
+      cirugias: async (modulo, dia) => ({ n: modulo === 'implantes' ? (dia.endsWith('-28') ? 1 : 3) : 2 }),
       fibras: async () => FIBRAS_OK,
     });
   });
 
-  it('muestra los números, "Al día" en los que están en 0 y la suma de Por revisar', async () => {
+  it('Implantes: solo nombre y número, "Al día" en 0 y Por revisar sumado', async () => {
     render(<PendientesSeccion bloques={todos} onAbrir={vi.fn()} />);
-    await waitFor(() => expect(caja('Por imputar').textContent).toContain('4'));
-    expect(caja('Incompletas').textContent).toContain('Al día');
-    expect(caja('Por revisar').textContent).toContain('3');
-    expect(caja('Vencidas').textContent).toContain('2');
-    expect(caja('Vencen en 30 días').textContent).toContain('Al día');
+    await waitFor(() => expect(linea('Por imputar').textContent).toBe('Por imputar4'));
+    expect(linea('Incompletas').textContent).toContain('Al día');
+    expect(linea('Por revisar').textContent).toBe('Por revisar3');
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('una lectura fallida muestra "No disponible" con aviso, nunca 0 ni "Al día"', async () => {
-    espiar({ incompletas: async () => { throw new Error('FAILED_PRECONDITION'); }, fibras: async () => { throw new Error('x'); } });
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('cirugías: solo cantidades de hoy y mañana, con una línea HEM aparte', async () => {
     render(<PendientesSeccion bloques={todos} onAbrir={vi.fn()} />);
-    await waitFor(() => expect(caja('Incompletas').textContent).toContain('No disponible'));
-    expect(caja('Incompletas').textContent).not.toContain('Al día');
-    expect(caja('En su último uso').textContent).toContain('No disponible');
-    expect(caja('Por comprar').textContent).not.toMatch(/\b0\b/);
+    const impl = screen.getByLabelText('Cirugías Implantes');
+    const hem = screen.getByLabelText('Cirugías Hemodinamia');
+    await waitFor(() => expect(hem.textContent).toContain('2'));
+    expect(within(impl).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      expect.stringMatching(/^Hoy \d\d-\d\d\d+$/), expect.stringMatching(/^Mañana \d\d-\d\d\d+$/),
+    ]);
+    expect(impl.textContent).not.toContain('HEM');
+    expect(within(hem).getAllByText('HEM')).toHaveLength(2);
+    expect(screen.queryByText(/Ver todas/)).toBeNull();
+    expect(document.querySelectorAll('li')).toHaveLength(0);
+  });
+
+  it('fibras: una línea por referencia con su uso, el color de la alerta y "Sin fibra en uso"', async () => {
+    render(<PendientesSeccion bloques={todos} onAbrir={vi.fn()} />);
+    await waitFor(() => expect(linea('FL-1000').textContent).toBe('FL-10008/10'));
+    expect(screen.getByText('4/5').className).toMatch(/amber/);
+    expect(screen.getByText('2/10').className).toMatch(/red/);
+    expect(screen.getByText('8/10').className).not.toMatch(/amber|red/);
+    expect(linea('FL-200').textContent).toContain('Sin fibra en uso');
+    expect(screen.queryByText(/último uso|Vencidas|Por comprar/)).toBeNull();
+  });
+
+  it('una lectura fallida muestra "No disponible" con aviso, nunca 0 ni "Al día"', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    espiar({
+      incompletas: async () => { throw new Error('FAILED_PRECONDITION'); },
+      cirugias: async () => { throw new Error('x'); },
+      fibras: async () => { throw new Error('x'); },
+    });
+    render(<PendientesSeccion bloques={todos} onAbrir={vi.fn()} />);
+    await waitFor(() => expect(linea('Incompletas').textContent).toContain('No disponible'));
+    expect(linea('Incompletas').textContent).not.toContain('Al día');
+    await waitFor(() => expect(screen.getByLabelText('Cirugías Implantes').textContent).toContain('No disponible'));
+    expect(screen.getByLabelText('Cirugías Implantes').textContent).not.toMatch(/\d\d-\d\d0/);
+    expect(linea('Uso de fibras').textContent).toContain('No disponible');
     expect(screen.getByRole('alert')).toBeTruthy();
   });
 
-  it('cirugías: lista las primeras 5 (con HEM), la cantidad total y "Ver todas" por módulo', async () => {
+  it('cada línea abre su pantalla con el filtro', async () => {
     const onAbrir = vi.fn();
     render(<PendientesSeccion bloques={todos} onAbrir={onAbrir} />);
-    const hoy = await screen.findByLabelText(/^Hoy/);
-    await waitFor(() => expect(hoy.textContent).toContain('7'));
-    expect(hoy.querySelectorAll('li')).toHaveLength(5);
-    expect(hoy.textContent).toContain('HEM');
-    expect(hoy.textContent).toContain('ID 100');
-    fireEvent.click(screen.getAllByText('Ver todas en Hemodinamia')[0]);
-    expect(onAbrir).toHaveBeenCalledWith('hemodinamia', '/hemodinamia/gestionHemodinamia', expect.objectContaining({ rango: 'soloHoy' }));
-  });
-
-  it('cada indicador abre su pantalla con el filtro', async () => {
-    const onAbrir = vi.fn();
-    render(<PendientesSeccion bloques={todos} onAbrir={onAbrir} />);
-    await waitFor(() => expect(caja('En su último uso').textContent).toContain('1'));
-    fireEvent.click(caja('Incompletas'));
+    await waitFor(() => expect(linea('FL-200').tagName).toBe('BUTTON'));
+    fireEvent.click(linea('Incompletas'));
     expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/gestionImplantes', expect.objectContaining({ estados: ['INCOMPLETO'] }));
-    fireEvent.click(caja('Por imputar'));
+    fireEvent.click(linea('Por imputar'));
     expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/solicitudImplantes');
-    fireEvent.click(caja('En su último uso'));
-    expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/fibrasReutilizables', { texto: 'R1' });
-    fireEvent.click(caja('Vencidas'));
-    expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/fibrasReutilizables', null);
-    fireEvent.click(screen.getByText(/agendadas sin cargar/));
-    expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/gestionImplantes', expect.objectContaining({ rango: 'hastaAyer' }));
+    fireEvent.click(linea('Por revisar'));
+    expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/gestionImplantes', expect.objectContaining({ rango: 'todos' }));
+    fireEvent.click(within(screen.getByLabelText('Cirugías Hemodinamia')).getByText(/^Mañana/).closest('button'));
+    expect(onAbrir).toHaveBeenLastCalledWith('hemodinamia', '/hemodinamia/gestionHemodinamia', expect.objectContaining({ rango: 'desdeManana' }));
+    fireEvent.click(linea('FL-365'));
+    expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/fibrasReutilizables', { texto: 'FL-365' });
   });
 
   it('sin Solicitud, Por imputar se ve pero no abre nada', async () => {
     render(<PendientesSeccion bloques={{ ...todos, abreSolicitud: false }} onAbrir={vi.fn()} />);
-    await waitFor(() => expect(caja('Por imputar').textContent).toContain('4'));
-    expect(caja('Por imputar').tagName).toBe('DIV');
+    await waitFor(() => expect(linea('Por imputar').textContent).toContain('4'));
+    expect(linea('Por imputar').tagName).toBe('DIV');
   });
 
-  it('solo pide y muestra los bloques permitidos', async () => {
+  it('solo pide y muestra los bloques permitidos (solo Hemodinamia: una línea HEM)', async () => {
     render(<PendientesSeccion bloques={{ implantes: false, abreSolicitud: false, cirugias: ['hemodinamia'], fibras: false }} onAbrir={vi.fn()} />);
-    await screen.findByLabelText(/^Hoy/);
+    await waitFor(() => expect(screen.getByLabelText('Cirugías Hemodinamia').textContent).toContain('2'));
+    expect(screen.queryByLabelText('Cirugías Implantes')).toBeNull();
     expect(screen.queryByText('Por imputar')).toBeNull();
-    expect(screen.queryByText('Vencidas')).toBeNull();
+    expect(screen.queryByText('Fibras')).toBeNull();
     expect(LECTURAS.porImputar).not.toHaveBeenCalled();
     expect(LECTURAS.fibras).not.toHaveBeenCalled();
     expect(LECTURAS.cirugias.mock.calls.map((c) => c[0])).toEqual(['hemodinamia', 'hemodinamia']);
+  });
+});
+
+describe('cirugías sin nombres de pacientes', () => {
+  beforeEach(() => { vi.restoreAllMocks(); olvidarPendientesInicio(); });
+
+  it('la lectura devuelve solo la cantidad de admisiones distintas', async () => {
+    const doc = (id, datos) => ({ ref: { path: `implantes_gestiones/x/${id}` }, get: (c) => datos[c], data: () => datos });
+    getDocs.mockResolvedValue({ docs: [
+      doc('a', { gestionId: '10', nombre: 'Ana Pérez', medico: 'Dr. Soto' }),
+      doc('b', { gestionId: '10', nombre: 'Ana Pérez', medico: 'Dr. Soto' }),
+      doc('c', { gestionId: '11', nombre: 'Luis Rojas', medico: 'Dra. Vera' }),
+    ] });
+    const r = await LECTURAS.cirugias('implantes', '2026-10-28');
+    expect(r).toEqual({ n: 2 });
+    expect(JSON.stringify(r)).not.toMatch(/Ana|Luis|Soto|Vera/);
   });
 });
 

@@ -6,7 +6,7 @@ import { fechaISOEnChile } from '../../operaciones/shared/gestion/rangoFechaGest
 import { leerTodasLasFibras } from '../../operaciones/implantes/fibras/fibrasTransacciones';
 import { leerCodigosFibra } from '../../operaciones/implantes/fibras/useFibrasReutilizablesData';
 import {
-  ESTADOS_EN_REVISION, ESTADOS_AGENDADA, cirugiasDelDia, diaSiguienteISO, indicadoresFibras,
+  ESTADOS_EN_REVISION, ESTADOS_AGENDADA, contarCirugias, diaSiguienteISO, usoFibrasPorReferencia,
 } from './pendientesInicio';
 
 // Lecturas de Inicio → Pendientes. Cada una se recuerda TTL_MS (los mismos 5
@@ -20,10 +20,11 @@ import {
 //       (estado, fecha, __name__).
 //   - Cirugías: getDocs de las gestiones con fecha == día (índice simple de
 //     collection group de `fecha`); son pocas por día y hay que deduplicar
-//     por admisión, que count() no puede.
+//     por admisión, que count() no puede. Solo se guarda la cantidad: los
+//     nombres de pacientes no salen de aquí.
 //   - Fibras: la colección completa (es chica) y los códigos marcados como
-//     fibra, igual que la pantalla Fibras; sus alertas se calculan, así que
-//     no sirve count().
+//     fibra, igual que la pantalla Fibras; el uso y las alertas se
+//     calculan, así que no sirve count().
 export const TTL_MS = 5 * 60 * 1000;
 
 const cache = new Map(); // clave -> { ts, promesa }
@@ -52,16 +53,16 @@ export const LECTURAS = {
   agendadasVencidas: (hoy) => contar(gestionesDe('implantes', where('estado', 'in', [...ESTADOS_AGENDADA]), where('fecha', '<', hoy))),
   cirugias: async (modulo, dia) => {
     const snap = await getDocs(gestionesDe(modulo, where('fecha', '==', dia)));
-    return { lista: cirugiasDelDia(snap.docs.map((d) => ({ id: d.id, refPath: d.ref.path, ...d.data() })), modulo) };
+    return { n: contarCirugias(snap.docs.map((d) => ({ refPath: d.ref.path, gestionId: d.get('gestionId'), agendaId: d.get('agendaId') }))) };
   },
   fibras: async (hoy) => {
     const [fibras, codigos] = await Promise.all([leerTodasLasFibras(), leerCodigosFibra()]);
-    return { indicadores: indicadoresFibras(fibras, codigos, hoy) };
+    return { referencias: usoFibrasPorReferencia(fibras, codigos, hoy) };
   },
 };
 
 // Lee lo que corresponde a los bloques visibles. Devuelve { [clave]: resultado }
-// con resultado = { n } | { lista } | { indicadores } | { error }; sin clave
+// con resultado = { n } | { referencias } | { error }; sin clave
 // mientras carga.
 export const usePendientesInicioData = (bloques) => {
   const hoy = useMemo(() => fechaISOEnChile(), []);
