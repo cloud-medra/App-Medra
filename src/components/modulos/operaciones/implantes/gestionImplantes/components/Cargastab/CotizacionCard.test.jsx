@@ -148,3 +148,19 @@ describe('CotizacionCard - columna N°', () => {
     expect(numerosDeFila()).toEqual(['1', '2', '3', '4', '5']);
   });
 });
+
+describe('fila SIN CARGO', () => {
+  it('muestra el código real con la marca "Sin cargo, no lleva OC" (no el texto guardado)', () => {
+    const cotizacion = { id: 'cot_1', numCotizacion: 'COT-1', totalCotizacion: 0, items: [
+      itemBase({ id: 'sc', estadoCarga: 'SIN CARGO', codigo: 'No lleva OC', precio: 0, venta: 0, totalItem: 0, sinCargoOriginal: { codigo: '0301001', precio: 100 } }),
+    ] };
+    for (const modoLectura of [false, true]) {
+      render(<CotizacionCard cotizacion={cotizacion} bloqueEmpresa="EMPRESA X" gestionId="123" bloqueFecha="2026-01-01" recargosActivos={[]} defaultOpen={true} modoLectura={modoLectura}
+        onAgregarItem={() => {}} onEliminarItem={() => {}} onEliminarCotizacion={() => {}} onActualizarEstadoItem={() => {}} onEditarItem={() => {}} />);
+      expect(screen.getByText('0301001')).toBeTruthy();
+      expect(screen.getByText('Sin cargo, no lleva OC')).toBeTruthy();
+      expect(screen.queryByText('No lleva OC')).toBeNull();
+      cleanup();
+    }
+  });
+});

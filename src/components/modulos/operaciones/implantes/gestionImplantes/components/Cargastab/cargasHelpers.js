@@ -111,6 +111,16 @@ export const camposCambioEstadoCarga = (item, nuevoEstado, recargosActivos = [])
   return { estadoCarga: nuevoEstado };
 };
 
+// Código que se MUESTRA en la columna Código: en una fila SIN CARGO, el real
+// del producto (sinCargoOriginal.codigo). Solo pantalla: lo guardado sigue
+// siendo "No lleva OC", que es lo que la deja fuera del Excel de Solicitud,
+// del consolidado y de las OC. { codigo, sinCargo }.
+export const codigoParaMostrar = (item) => {
+  const sinCargo = item?.estadoCarga === ESTADO_SIN_CARGO;
+  const original = sinCargo ? String(item?.sinCargoOriginal?.codigo || '').trim() : '';
+  return { codigo: original || item?.codigo || '', sinCargo };
+};
+
 // El contenido de un PAD es OPCIONAL al momento de crear el ítem: puede
 // completarse después, en otra sesión. Esta función determina si un ítem
 // PAD "padre" ya tiene al menos un ítem de contenido asociado.

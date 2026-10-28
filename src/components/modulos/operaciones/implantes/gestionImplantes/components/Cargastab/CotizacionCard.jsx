@@ -31,7 +31,8 @@ import {
   CODIGO_SIN_OC,
   VALOR_LOTE_VENCIMIENTO_PAD,
   tieneContenidoPad,
-  anchosConExtra
+  anchosConExtra,
+  codigoParaMostrar
 } from './cargasHelpers';
 import { ManijaRedimension } from '../../../../../../ui/ManijaRedimension';
 import { useAutocompleteReferencia } from './useAutocompleteReferencia';
@@ -821,8 +822,12 @@ export const CotizacionCard = ({
                               : it.sinCodigo
                                 ? 'text-red-600 dark:text-red-400 font-bold'
                                 : 'text-emerald-600 dark:text-emerald-400'
-                            }`}>
-                            {it.codigo || 'S/C'}
+                            }`} title={codigoParaMostrar(it).sinCargo ? `${codigoParaMostrar(it).codigo} · Sin cargo: no lleva OC` : undefined}>
+                            {/* SIN CARGO: el código real del producto (lo guardado sigue siendo "No lleva OC"). */}
+                            {codigoParaMostrar(it).codigo || 'S/C'}
+                            {codigoParaMostrar(it).sinCargo && (
+                              <span className="ml-1 text-[8px] px-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold not-italic font-sans">Sin cargo, no lleva OC</span>
+                            )}
                           </td>
                           <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-slate-600 dark:text-gray-300">
                             {it.cantidad}
