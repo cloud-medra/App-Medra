@@ -524,12 +524,15 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
     }
   };
 
+  // Devuelve { ok: true, nueva } o { ok: false, campo }: el formulario deja
+  // el cursor en Nombre tras registrar una nueva, o en el campo con el error
+  // (`campo` null si el error no es de un campo, ej. sin conexión).
   const handleGuardar = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
 
     if (!formData.fecha) {
       showToast("La fecha es requerida para organizar la gestión", "error");
-      return;
+      return { ok: false, campo: 'fecha' };
     }
 
     setCargando(true);
@@ -549,7 +552,7 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
       if (existeDuplicado) {
         showToast("Ya existe un registro con el mismo ID, Fecha y Empresa.", "error");
         setCargando(false);
-        return;
+        return { ok: false, campo: 'gestionId' };
       }
 
       if (editingId && editingRefPath) {
@@ -581,9 +584,11 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
       }
 
       cancelarEdicion();
+      return { ok: true, nueva: !editingId };
     } catch (error) {
       console.error("Error al guardar:", error);
       showToast("Error al guardar: " + error.message, "error");
+      return { ok: false, campo: null };
     } finally {
       setCargando(false);
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Plus, Save, X, Info, Loader2, AlertCircle } from 'lucide-react';
 import EmpresaSelect from '../../implantes/gestionImplantes/components/EmpresaSelect';
 import EstadoBadge from '../estadoGestion/EstadoBadge';
@@ -6,6 +6,11 @@ import { moduloGestion } from '../modulosGestion';
 
 // Formulario de registro de Gestión de Implantes y de Hemodinamia (`modulo`,
 // ver modulosGestion.js: centro, atributo y textos).
+// Tras registrar una gestión nueva el formulario queda limpio (no se
+// conserva ningún campo; la fecha vuelve a hoy) y el cursor en Nombre, listo
+// para la siguiente. Si falla, el cursor va al campo con el error
+// (`handleGuardar` devuelve { ok, nueva, campo }); un error que no es de un
+// campo deja el cursor donde estaba.
 const GestionesForm = ({
   modulo = 'implantes',
   formData,
@@ -17,17 +22,28 @@ const GestionesForm = ({
 }) => {
   const config = moduloGestion(modulo);
   const [errorFecha, setErrorFecha] = useState(false);
+  const refId = useRef(null);
+  const refNombre = useRef(null);
+  const refFecha = useRef(null);
+  const enfocar = (campo) => ({ gestionId: refId, nombre: refNombre, fecha: refFecha })[campo]?.current?.focus();
 
-  const onSubmitForm = (e) => {
+  const onSubmitForm = async (e) => {
     e.preventDefault();
 
     if (!formData.fecha || formData.fecha.trim() === '') {
       setErrorFecha(true);
+      enfocar('fecha');
       return;
     }
 
     setErrorFecha(false);
-    handleGuardar(e);
+    const resultado = await handleGuardar(e);
+    if (resultado?.ok) {
+      if (resultado.nueva) enfocar('nombre');
+    } else if (resultado?.campo) {
+      if (resultado.campo === 'fecha') setErrorFecha(true);
+      enfocar(resultado.campo);
+    }
   };
 
   const renderValorVinculado = (valor) => {
@@ -48,6 +64,8 @@ const GestionesForm = ({
         <div className="w-[110px]">
           <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">ID</label>
           <input
+            ref={refId}
+            aria-label="ID"
             type="text"
             inputMode="numeric"
             value={formData.gestionId || ''}
@@ -63,6 +81,8 @@ const GestionesForm = ({
         <div className="w-[200px]">
           <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Nombre</label>
           <input
+            ref={refNombre}
+            aria-label="Nombre"
             value={formData.nombre || ''}
             onChange={e => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
             className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 uppercase"
@@ -76,6 +96,8 @@ const GestionesForm = ({
             <span className="text-red-500 font-bold">*</span>
           </label>
           <input
+            ref={refFecha}
+            aria-label="Fecha"
             type="date"
             value={formData.fecha || ''}
             onChange={e => {
