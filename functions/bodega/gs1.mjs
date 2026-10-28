@@ -171,6 +171,28 @@ export const interpretarLectura = (texto) => {
 // código crudo `ambiguo` que en realidad está vinculado a un producto.
 export const lecturaComoCodigoNormal = (lectura) => ({ ...lectura, clave: lectura.codigo.split(GS).join(''), gs1: VACIO, soloDatosLote: false });
 
+// Segundo código crudo con SOLO lote: "10" + lote, sin vencimiento ni GTIN
+// (ej. "105505P62" = (10) 5505P62). parsearGS1 no lo acepta solo (cualquier
+// código interno que empiece con "10" calzaría), así que se lee aparte y
+// solo con contexto: lo pide quien sabe que hay un producto en curso
+// esperando su lote (ver identificarLectura). No lo usa la Cloud Function.
+// Devuelve el lote ('' si el texto no es eso).
+export const parsearSoloLote = (valor) => {
+  const texto = normalizarCodigoLeido(valor).replace(PREFIJO_SIMBOLOGIA, '');
+  if (texto.startsWith('(')) return '';
+  const ais = parsearCrudo(texto);
+  if (!ais || Object.keys(ais).length !== 1 || ais['10'] === undefined) return '';
+  return String(ais['10']).trim();
+};
+
+// Lectura -> la misma como segundo código de solo lote (sin vencimiento).
+export const lecturaSoloLote = (lectura, lote) => ({
+  ...lectura,
+  clave: '',
+  soloDatosLote: true,
+  gs1: { ...VACIO, esGS1: true, lote, ais: { 10: lote }, soloLote: true },
+});
+
 // Clave del código -> id de documento válido en Firestore (no admite "/",
 // ni "." / ".." solos, ni el patrón __x__). Mismo criterio que el
 // inventario anterior, así los ids de los vínculos migrados coinciden.

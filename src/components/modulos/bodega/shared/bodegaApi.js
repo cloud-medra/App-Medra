@@ -227,6 +227,17 @@ export const leerLotesPorVencer = async (hasta) => {
   };
 };
 
+// Lotes sin vencimiento (guardados con vencimiento null) que tienen stock,
+// para el filtro "Con lotes sin vencimiento" del Maestro: completarlos más
+// adelante. Igualdad sobre un campo: índice simple automático.
+export const leerLotesSinVencimiento = async () => {
+  const snap = await getDocs(query(collection(db, COL.lotes), where('vencimiento', '==', null), limit(MAX_LOTES_POR_VENCER)));
+  return {
+    lotes: snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((l) => (l.disponible || 0) + (l.transito || 0) + (l.enCentro || 0) > 0),
+    completo: snap.size < MAX_LOTES_POR_VENCER,
+  };
+};
+
 // Entregas (consumo) en un rango, opcionalmente de un centro y/o producto.
 // Incluye lo entregado desde lo dejado en el centro.
 export const leerEntregas = async ({ desde, hasta, centroId, productoId, max = 5000 }) => {

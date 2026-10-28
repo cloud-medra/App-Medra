@@ -30,6 +30,15 @@ export const rangoVencimiento = (modo, dias, hoy) => (modo === 'vencidos'
   ? { hasta: sumarDias(hoy, -1) }
   : { hasta: sumarDias(hoy, Number(dias) || 0) });
 
+// Lotes sin vencimiento -> { [productoId]: { sinVencimiento: true, lotes } },
+// solo de productos que manejan vencimiento (en los demás es lo normal).
+export const sinVencimientoPorProducto = (lotes, productosPorId) => lotes
+  .filter((l) => !l.vencimiento && productosPorId[l.productoId]?.manejaVencimiento)
+  .reduce((acc, l) => {
+    acc[l.productoId] = { sinVencimiento: true, lotes: (acc[l.productoId]?.lotes || 0) + 1 };
+    return acc;
+  }, {});
+
 // Lotes leídos -> { [productoId]: { vencimiento (el más próximo), lotes } }
 // según el modo (próximos: desde hoy en adelante).
 export const vencimientoPorProducto = (lotes, modo, hoy) => lotes

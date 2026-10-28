@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('../bodegaApi', () => ({ leerVinculo: vi.fn(), obtenerProducto: vi.fn() }));
-const { identificarLectura, datosLoteDeLectura, datosLoteEnEspera, combinarDatosLote, opcionesLote, VIGENCIA_DATOS_LOTE_MS, datosLoteEnTexto } = await import('./identificarLectura');
+const { identificarLectura, datosLoteDeLectura, datosLoteEnEspera, combinarDatosLote, opcionesLote, VIGENCIA_DATOS_LOTE_MS, datosLoteEnTexto, esSoloLote } = await import('./identificarLectura');
 
 const GTIN = '07612345678900';
 const PRODUCTO = { id: 'p1', nombre: 'Sonda' };
@@ -90,5 +90,58 @@ describe('código 2 escaneado dentro de un campo (Lote o modal)', () => {
     expect(datosLoteEnTexto('L-2024')).toBeNull();
     expect(datosLoteEnTexto('01076118191390912016')).toBeNull();
     expect(datosLoteEnTexto('')).toBeNull();
+  });
+});
+
+// Ejemplos reales de Carga inicial: barras (código 2 con solo lote) y
+// sierras (código 2 con vencimiento y lote).
+describe('código 2 con solo lote (barras)', () => {
+  const BARRAS_1 = '01076118190259122015';
+  const BARRAS_2 = '105505P62';
+  const SIERRAS_2 = '17360201' + '1083142p2';
+  const sinVinculo = { leer: async () => null, producto: async () => PRODUCTO };
+
+  it('código 1 de barras identifica el producto por el GTIN', async () => {
+    const leer = vi.fn(async () => ({ productoId: 'p1' }));
+    const r = await identificarLectura(BARRAS_1, { leer, producto: async () => PRODUCTO });
+    expect(leer).toHaveBeenCalledWith('07611819025912');
+    expect(r.tipo).toBe('producto');
+  });
+
+  it('con producto en curso: lote 5505P62, sin vencimiento', async () => {
+    const r = await identificarLectura(BARRAS_2, { ...sinVinculo, conProductoEnCurso: true });
+    expect(r.tipo).toBe('datosLote');
+    expect(datosLoteDeLectura(r.lectura)).toEqual({ lote: '5505P62', vencimiento: '' });
+    expect(esSoloLote(r.lectura)).toBe(true);
+    expect(datosLoteEnEspera(r.lectura, 1)).toMatchObject({ lote: '5505P62', vencimiento: '', codigoLote: BARRAS_2 });
+  });
+
+  it('sin producto en curso: código común (no queda en espera)', async () => {
+    const r = await identificarLectura(BARRAS_2, sinVinculo);
+    expect(r.tipo).toBe('sinVincular');
+    expect(r.lectura.clave).toBe(BARRAS_2);
+  });
+
+  it('si ese texto está vinculado a un producto, gana el vínculo', async () => {
+    const leer = vi.fn(async () => ({ productoId: 'p1' }));
+    const r = await identificarLectura(BARRAS_2, { leer, producto: async () => PRODUCTO, conProductoEnCurso: true });
+    expect(leer).toHaveBeenCalledWith(BARRAS_2);
+    expect(r).toMatchObject({ tipo: 'producto', producto: PRODUCTO });
+  });
+
+  it('sierras (lote y vencimiento) sigue igual, con o sin producto en curso', async () => {
+    for (const conProductoEnCurso of [false, true]) {
+      const r = await identificarLectura(SIERRAS_2, { ...sinVinculo, conProductoEnCurso });
+      expect(r.tipo).toBe('datosLote');
+      expect(datosLoteDeLectura(r.lectura)).toEqual({ lote: '83142p2', vencimiento: '2036-02-01' });
+      expect(esSoloLote(r.lectura)).toBe(false);
+    }
+  });
+
+  it('en el campo Lote: convierte el código de solo lote; un lote escrito a mano no cambia', () => {
+    expect(datosLoteEnTexto(BARRAS_2, { soloLote: true })).toMatchObject({ lote: '5505P62', vencimiento: '', codigoLote: BARRAS_2 });
+    expect(datosLoteEnTexto(BARRAS_2)).toBeNull();
+    expect(datosLoteEnTexto('ABC123', { soloLote: true })).toBeNull();
+    expect(datosLoteEnTexto(SIERRAS_2, { soloLote: true })).toMatchObject({ lote: '83142p2', vencimiento: '2036-02-01' });
   });
 });

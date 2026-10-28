@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filtrarProductos, rangoVencimiento, vencimientoPorProducto } from './filtrarProductos';
+import { filtrarProductos, rangoVencimiento, vencimientoPorProducto, sinVencimientoPorProducto } from './filtrarProductos';
 
 const P = [
   { id: '1', nombre: 'Guante nitrilo M', codigoMaestro: 'GN-M', categoriaId: 'c1', disponible: 10, transito: 0, stockMinimo: 20, codigosBarra: ['7801'] },
@@ -35,5 +35,16 @@ describe('filtro de vencimiento', () => {
     ];
     expect(vencimientoPorProducto(lotes, 'vencidos', HOY)).toEqual({ a: { vencimiento: '2026-10-01', lotes: 1 } });
     expect(vencimientoPorProducto(lotes, 'proximos', HOY)).toEqual({ a: { vencimiento: '2026-10-20', lotes: 2 }, b: { vencimiento: '2026-10-14', lotes: 1 } });
+  });
+});
+
+describe('sinVencimientoPorProducto', () => {
+  it('cuenta los lotes sin vencimiento por producto, solo de productos que manejan vencimiento', () => {
+    const productos = { a: { manejaVencimiento: true }, b: { manejaVencimiento: false } };
+    const lotes = [
+      { productoId: 'a', vencimiento: null }, { productoId: 'a', vencimiento: null },
+      { productoId: 'a', vencimiento: '2027-01-01' }, { productoId: 'b', vencimiento: null },
+    ];
+    expect(sinVencimientoPorProducto(lotes, productos)).toEqual({ a: { sinVencimiento: true, lotes: 2 } });
   });
 });

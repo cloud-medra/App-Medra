@@ -131,3 +131,30 @@ describe('dos códigos GS1-128 (GTIN + lote/vencimiento)', () => {
     expect(lecturaComoCodigoNormal(interpretarLectura('173412011035769P5'))).toMatchObject({ clave: '173412011035769P5', soloDatosLote: false, gs1: { esGS1: false } });
   });
 });
+
+// Ejemplos reales de Bodega → Carga inicial (texto del lector).
+describe('segundo código con solo lote (parsearSoloLote)', () => {
+  it('barras: "10" + lote, sin vencimiento', async () => {
+    const { parsearSoloLote } = await import('./gs1.mjs');
+    expect(parsearSoloLote('105505P62')).toBe('5505P62');
+    expect(parsearSoloLote(']C1105505P62')).toBe('5505P62');
+  });
+  it('no es "solo lote": con vencimiento, con GTIN, con paréntesis o vacío', async () => {
+    const { parsearSoloLote } = await import('./gs1.mjs');
+    expect(parsearSoloLote('17360201' + '1083142p2')).toBe('');
+    expect(parsearSoloLote('01076118190259122015')).toBe('');
+    expect(parsearSoloLote('(10)ABC')).toBe('');
+    expect(parsearSoloLote('10')).toBe('');
+    expect(parsearSoloLote('780123456')).toBe('');
+  });
+  it('la interpretación general (también la de la Cloud Function) no cambia', () => {
+    // Sin contexto, "10" + lote solo no es GS1: se trata como código común.
+    expect(interpretarLectura('105505P62')).toMatchObject({ clave: '105505P62', soloDatosLote: false, gs1: { esGS1: false } });
+    // Sierras: código 2 con vencimiento y lote sigue siendo segundo código.
+    expect(interpretarLectura('17360201' + '1083142p2')).toMatchObject({ soloDatosLote: true, gs1: { lote: '83142p2', vencimiento: '2036-02-01' } });
+    // Código 1 de barras y de sierras: el GTIN identifica el producto.
+    expect(interpretarLectura('01076118190259122015')).toMatchObject({ clave: '07611819025912', soloDatosLote: false });
+    expect(interpretarLectura(`0107611819025912${GS}2015`)).toMatchObject({ clave: '07611819025912' });
+    expect(interpretarLectura('01076118191390912016')).toMatchObject({ clave: '07611819139091' });
+  });
+});

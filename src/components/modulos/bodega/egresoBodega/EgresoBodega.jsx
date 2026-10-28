@@ -123,7 +123,9 @@ const EgresoBodega = () => {
 
   const onLectura = async (texto) => {
     try {
-      const r = await identificarLectura(texto);
+      // Con un producto elegido que maneja lote, un código con solo lote
+      // ("10" + lote, sin vencimiento) elige ese lote (segundo código).
+      const r = await identificarLectura(texto, { conProductoEnCurso: Boolean(seleccion?.producto?.manejaLote) });
       if (!r) return;
       if (r.tipo === 'datosLote') {
         const datos = datosLoteDeLectura(r.lectura);

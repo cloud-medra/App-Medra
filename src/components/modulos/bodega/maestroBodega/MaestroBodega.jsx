@@ -14,14 +14,14 @@ import { stockTotal, bajoMinimo } from '../../../../../functions/bodega/nucleo.m
 import { filtrarProductos } from './filtrarProductos';
 import { formatoCantidad, nombresPorId, opcionesCatalogo } from '../shared/catalogosBodega';
 import { identificarLectura } from '../shared/escaneo/identificarLectura';
-import { guardarProducto, leerLotesPorVencer, mensajeError } from '../shared/bodegaApi';
+import { guardarProducto, leerLotesPorVencer, leerLotesSinVencimiento, mensajeError } from '../shared/bodegaApi';
 import { exportarExcel, exportarCsv } from '../shared/exportar';
 import { estadoVencimiento } from '../shared/vencimientos';
 import { lotesHasta } from '../shared/listasLocales';
 import { hoyISO, referenciaProducto } from '../shared/documentos/lineasDocumento';
 import { formatoPesos } from '../inventarioBodega/formato';
 import { precioNetoProducto, totalValorizado, totalValorizadoLista } from './valorizacion';
-import { rangoVencimiento, vencimientoPorProducto } from './filtrarProductos';
+import { rangoVencimiento, vencimientoPorProducto, sinVencimientoPorProducto } from './filtrarProductos';
 import FormProducto from '../shared/FormProducto';
 import { PRODUCTO_VACIO } from '../shared/productoFormulario';
 import ModalVincularCodigo from '../shared/ModalVincularCodigo';
@@ -99,7 +99,8 @@ const MaestroBodega = () => {
   const [abierto, setAbierto] = useState(null); // { id, pestana }
   const [lecturaSinVincular, setLecturaSinVincular] = useState(null);
   const [creando, setCreando] = useState(false);
-  // Filtro de vencimiento: '' | 'vencidos' | 'proximos' (en `dias` días).
+  // Filtro de vencimiento: '' | 'vencidos' | 'proximos' (en `dias` días) |
+  // 'sinVencimiento' (lotes con stock sin vencimiento, para completarlos).
   const [vencimiento, setVencimiento] = useState({ modo: '', dias: 90 });
   const [lotesVenc, setLotesVenc] = useState(null);
   // Los días se consultan cuando el usuario deja de escribir (no por tecla).
@@ -117,6 +118,13 @@ const MaestroBodega = () => {
   // fecha (1 consulta) y se filtra el listado a sus productos.
   useEffect(() => {
     if (!vencimiento.modo) return undefined;
+    if (vencimiento.modo === 'sinVencimiento') {
+      let vigente = true;
+      leerLotesSinVencimiento()
+        .then(({ lotes }) => { if (vigente) setLotesVenc(lotes); })
+        .catch((e) => { if (vigente) { setLotesVenc([]); showToast(mensajeError(e), 'error'); } });
+      return () => { vigente = false; };
+    }
     const { hasta } = rangoVencimiento(vencimiento.modo, diasConsulta, hoyISO());
     const previa = lotesLeidosRef.current;
     if (previa && hasta <= previa.hasta) { setLotesVenc(lotesHasta(previa.lotes, hasta)); return undefined; }
@@ -130,9 +138,15 @@ const MaestroBodega = () => {
       .catch((e) => { if (vigente) { setLotesVenc([]); showToast(mensajeError(e), 'error'); } });
     return () => { vigente = false; };
   }, [vencimiento.modo, diasConsulta, versionVenc, showToast]);
+  const productosPorId = useMemo(() => Object.fromEntries(productos.map((p) => [p.id, p])), [productos]);
   const vencePorProducto = useMemo(
-    () => (vencimiento.modo && lotesVenc ? vencimientoPorProducto(lotesVenc, vencimiento.modo, hoyISO()) : null),
-    [lotesVenc, vencimiento.modo]
+    () => {
+      if (!vencimiento.modo || !lotesVenc) return null;
+      return vencimiento.modo === 'sinVencimiento'
+        ? sinVencimientoPorProducto(lotesVenc, productosPorId)
+        : vencimientoPorProducto(lotesVenc, vencimiento.modo, hoyISO());
+    },
+    [lotesVenc, vencimiento.modo, productosPorId]
   );
   const filtrados = useMemo(
     () => filtrarProductos(productos, { texto, ...filtros })
@@ -266,6 +280,7 @@ const MaestroBodega = () => {
           <option value="">Cualquier vencimiento</option>
           <option value="vencidos">Con lotes vencidos</option>
           <option value="proximos">Próximos a vencer</option>
+          <option value="sinVencimiento">Con lotes sin vencimiento</option>
         </select>
         {vencimiento.modo === 'proximos' && (
           <label className="flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300">en
@@ -308,7 +323,12 @@ const MaestroBodega = () => {
                     <td className={`${TD} text-gray-800 dark:text-gray-100`} title={`${p.nombre} · ${p.codigoMaestro}`}>
                       <button type="button" onClick={() => setAbierto({ id: p.id, pestana: 'stock' })} className="text-left font-semibold hover:text-[#2383C2] hover:underline">{p.nombre}</button>
                       {p.activo === false && <span className="ml-1 text-[9px] font-bold px-1 rounded bg-gray-200 dark:bg-gray-700">INACTIVO</span>}
-                      {vencePorProducto?.[p.id] && (
+                      {vencePorProducto?.[p.id]?.sinVencimiento && (
+                        <span className="ml-1 text-[9px] font-bold px-1 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                          {vencePorProducto[p.id].lotes} lote(s) sin vencimiento
+                        </span>
+                      )}
+                      {vencePorProducto?.[p.id] && !vencePorProducto[p.id].sinVencimiento && (
                         <span className={`ml-1 text-[9px] font-bold px-1 rounded ${estadoVencimiento(vencePorProducto[p.id].vencimiento, { diasAviso: vencimiento.dias }).badge}`}>
                           {vencePorProducto[p.id].lotes} lote(s) · vence {vencePorProducto[p.id].vencimiento}
                         </span>

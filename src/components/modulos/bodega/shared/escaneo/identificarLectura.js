@@ -1,4 +1,4 @@
-import { interpretarLectura, lecturaComoCodigoNormal } from '../../../../../../functions/bodega/gs1.mjs';
+import { interpretarLectura, lecturaComoCodigoNormal, parsearSoloLote, lecturaSoloLote } from '../../../../../../functions/bodega/gs1.mjs';
 import { leerVinculo, obtenerProducto } from '../bodegaApi';
 
 // Qué es lo que se acaba de escanear (o escribir y confirmar con Enter):
@@ -11,7 +11,14 @@ import { leerVinculo, obtenerProducto } from '../bodegaApi';
 // `lectura` = interpretarLectura (codigo, clave, gs1 con lote/vencimiento).
 // Lee directo de Firestore (1 lectura: el vínculo) y el producto de la copia
 // en memoria del maestro.
-export const identificarLectura = async (texto, { leer = leerVinculo, producto = obtenerProducto } = {}) => {
+//
+// `conProductoEnCurso`: hay un producto escaneado esperando su segundo
+// código. Solo entonces un código crudo con SOLO lote ("10" + lote, sin
+// vencimiento; ej. "105505P62") se toma como su lote, y únicamente si ese
+// texto no está vinculado a un producto (gana el vínculo). Sin producto en
+// curso es un código común (no queda en espera): podría ser el código de un
+// producto que empieza con "10".
+export const identificarLectura = async (texto, { leer = leerVinculo, producto = obtenerProducto, conProductoEnCurso = false } = {}) => {
   const lectura = interpretarLectura(texto);
   if (!lectura) return null;
   if (lectura.soloDatosLote) {
@@ -24,10 +31,16 @@ export const identificarLectura = async (texto, { leer = leerVinculo, producto =
     return productoNormal ? { tipo: 'producto', producto: productoNormal, lectura: normal } : { tipo: 'datosLote', lectura };
   }
   const vinculo = await leer(lectura.clave);
-  if (!vinculo?.productoId) return { tipo: 'sinVincular', lectura };
-  const encontrado = await producto(vinculo.productoId);
-  return encontrado ? { tipo: 'producto', producto: encontrado, lectura } : { tipo: 'sinVincular', lectura };
+  const encontrado = vinculo?.productoId ? await producto(vinculo.productoId) : null;
+  if (encontrado) return { tipo: 'producto', producto: encontrado, lectura };
+  const soloLote = conProductoEnCurso && !lectura.gs1.esGS1 ? parsearSoloLote(lectura.codigo) : '';
+  if (soloLote) return { tipo: 'datosLote', lectura: lecturaSoloLote(lectura, soloLote) };
+  return { tipo: 'sinVincular', lectura };
 };
+
+// ¿La lectura trae solo lote (segundo código sin vencimiento)? Para avisar
+// "Sin vencimiento" y dejar el campo editable.
+export const esSoloLote = (lectura) => Boolean(lectura?.gs1?.soloLote);
 
 // Lote y vencimiento que trae una lectura (para autocompletar).
 export const datosLoteDeLectura = (lectura) => ({
@@ -39,9 +52,15 @@ export const datosLoteDeLectura = (lectura) => ({
 // vincular"…): si es GS1 con lote o vencimiento, los datos para rellenar
 // { lote, vencimiento, codigoLote, lectura } en vez de dejar el código
 // completo como texto. null si no lo es (texto escrito a mano).
-export const datosLoteEnTexto = (texto) => {
+// `soloLote`: en el campo Lote de un producto en curso, acepta también el
+// segundo código crudo con solo lote ("10" + lote), sin vencimiento.
+export const datosLoteEnTexto = (texto, { soloLote = false } = {}) => {
   const lectura = interpretarLectura(texto);
-  if (!lectura?.gs1?.esGS1) return null;
+  if (!lectura) return null;
+  if (!lectura.gs1.esGS1) {
+    const lote = soloLote ? parsearSoloLote(lectura.codigo) : '';
+    return lote ? { lote, vencimiento: '', codigoLote: lectura.codigo, lectura: lecturaSoloLote(lectura, lote) } : null;
+  }
   const datos = datosLoteDeLectura(lectura);
   if (!datos.lote && !datos.vencimiento) return null;
   return { ...datos, codigoLote: lectura.soloDatosLote ? lectura.codigo : '', lectura };

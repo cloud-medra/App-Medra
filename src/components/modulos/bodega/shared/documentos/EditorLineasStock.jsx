@@ -3,7 +3,7 @@ import { Plus, Trash2, X, PackageCheck } from 'lucide-react';
 import { useCatalogo } from '../../../../../hooks/useCatalogo';
 import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitidas';
 import CampoEscaneoBodega from '../escaneo/CampoEscaneoBodega';
-import { identificarLectura, datosLoteDeLectura, datosLoteEnEspera, combinarDatosLote, opcionesLote, datosLoteEnTexto } from '../escaneo/identificarLectura';
+import { identificarLectura, datosLoteDeLectura, datosLoteEnEspera, combinarDatosLote, opcionesLote, datosLoteEnTexto, esSoloLote } from '../escaneo/identificarLectura';
 import ModalVincularCodigo from '../ModalVincularCodigo';
 import BuscadorProducto from '../BuscadorProducto';
 import { mensajeError, leerLotesDeProducto } from '../bodegaApi';
@@ -62,6 +62,12 @@ const INPUT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text
 // Lotes que ya existen del producto en curso (al escanear solo el GTIN):
 // clic para usar ese lote y vencimiento. Si lo escrito no calza con
 // ninguno, se avisa que se creará un lote nuevo al confirmar.
+// Aviso de lote sin vencimiento (se puede guardar así y completarlo después:
+// Maestro → filtro "Con lotes sin vencimiento").
+const SinVencimiento = () => (
+  <span className="ml-1 normal-case px-1 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">Sin vencimiento</span>
+);
+
 const LotesExistentes = ({ opciones, lote, vencimiento, onElegir }) => {
   if (opciones === undefined) return null;
   const actual = normalizarLote(lote);
@@ -109,6 +115,10 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
   const precioRef = useRef(null);
   const loteRef = useRef(null);
   const vencimientoRef = useRef(null);
+  // Último texto del campo Lote convertido como código de solo lote ("10" +
+  // lote): si se vuelve a escribir igual y Enter, se deja tal cual (un lote
+  // que de verdad empieza con "10").
+  const loteLiteralRef = useRef('');
 
   const refDe = (campo) => ({ cantidad: cantidadRef, precio: precioRef, lote: loteRef, vencimiento: vencimientoRef }[campo] || escanerRef);
   // El foco se mueve en un efecto, después de que React pinta el panel del
@@ -175,7 +185,9 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
 
   const onLectura = async (texto) => {
     try {
-      const r = await identificarLectura(texto);
+      // Con un producto en curso que maneja lote, un código con solo lote
+      // ("10" + lote, sin vencimiento) se toma como su segundo código.
+      const r = await identificarLectura(texto, { conProductoEnCurso: Boolean(pendiente?.producto?.manejaLote) });
       if (!r) return;
       if (r.tipo === 'datosLote') {
         const datos = datosLoteDeLectura(r.lectura);
@@ -195,7 +207,9 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
         const sugerido = campoSugerido(completado);
         if (!falta && !sugerido && auto) { agregar(completado); return; }
         setPendiente(completado);
-        setSenal({ tipo: 'ok', mensaje: `Lote/vencimiento completados para ${pendiente.producto.nombre}.` });
+        setSenal(esSoloLote(r.lectura) && !completado.vencimiento
+          ? { tipo: 'aviso', mensaje: `Lote ${datos.lote} leído para ${pendiente.producto.nombre}: el código no trae vencimiento. Escríbelo si viene en la caja, o déjalo vacío y presiona Enter.` }
+          : { tipo: 'ok', mensaje: `Lote/vencimiento completados para ${pendiente.producto.nombre}.` });
         enfocar(campoInicial(completado, precioEnLinea), true);
         return;
       }
@@ -232,16 +246,21 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
   // texto y pasa a Cantidad. Si no, Enter funciona como siempre.
   const alTeclaEnLote = (e) => {
     if (e.key !== 'Enter' && e.key !== 'Tab') return;
-    const datos = datosLoteEnTexto(e.currentTarget.value);
+    const texto = e.currentTarget.value;
+    const datos = datosLoteEnTexto(texto, { soloLote: texto !== loteLiteralRef.current });
     if (!datos) { alPresionarEnter(e); return; }
     e.preventDefault();
+    const soloLote = esSoloLote(datos.lectura);
+    loteLiteralRef.current = soloLote ? texto : '';
     const completado = {
       ...pendiente,
       lote: datos.lote || '',
       vencimiento: datos.vencimiento || pendiente.vencimiento,
       codigoLote: datos.codigoLote || pendiente.codigoLote || '',
     };
-    setSenal({ tipo: 'ok', mensaje: `Código de lote leído: lote ${datos.lote || '—'} · vence ${datos.vencimiento || '—'}. Ingresa la cantidad.` });
+    setSenal(soloLote && !completado.vencimiento
+      ? { tipo: 'aviso', mensaje: `Código de lote leído: lote ${datos.lote}, sin vencimiento. Escríbelo si viene en la caja, o déjalo vacío y presiona Enter. (Si el lote es literalmente ${texto}, escríbelo de nuevo.)` }
+      : { tipo: 'ok', mensaje: `Código de lote leído: lote ${datos.lote || '—'} · vence ${datos.vencimiento || '—'}. Ingresa la cantidad.` });
     if (!campoFaltante(completado) && !campoSugerido(completado) && auto) { agregar(completado); return; }
     setPendiente(completado);
     enfocar(campoInicial(completado, precioEnLinea), true);
@@ -279,7 +298,10 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
           )}
           {pendiente.producto.manejaVencimiento && (
             <label className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Vencimiento <span className="normal-case font-normal">(opcional)</span></span>
+              <span className="text-[10px] font-bold uppercase text-gray-500">
+                Vencimiento <span className="normal-case font-normal">(opcional)</span>
+                {!pendiente.vencimiento && <SinVencimiento />}
+              </span>
               <input ref={vencimientoRef} type="date" value={pendiente.vencimiento} onChange={cambiar('vencimiento')} data-campo="vencimiento" onKeyDown={alPresionarEnter} className={`${INPUT} w-40 font-num`} />
             </label>
           )}
@@ -322,7 +344,7 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
               referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p?.codigoMaestro || ''}` : p?.codigoMaestro}>{referencia || '—'}</td>,
               producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={p?.nombre || ''}>{p?.nombre || <span className="text-red-600">Producto no encontrado</span>}</td>,
               lote: <td className={`${TD} font-num`} title={l.lote || ''}>{l.lote || '—'}</td>,
-              vencimiento: <td className={`${TD} font-num`}>{l.vencimiento || '—'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
+              vencimiento: <td className={`${TD} font-num`}>{l.vencimiento || (p?.manejaVencimiento ? <SinVencimiento /> : '—')} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
               cantidad: (
                 <td className={TD_CAMPO}>
                   <input type="number" min="1" step="1" inputMode="numeric" value={l.cantidad} disabled={deshabilitado}
