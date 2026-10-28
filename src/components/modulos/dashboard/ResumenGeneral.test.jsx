@@ -11,7 +11,7 @@ vi.mock('firebase/firestore', () => ({ doc: vi.fn(), updateDoc: vi.fn(), where: 
 vi.mock('../../../stores/catalogosStore', () => ({ upsertLocal: vi.fn() }));
 vi.mock('../administracion/notasAdmin/useNotasPanel', () => ({ useNotasPanel: () => ({ notas }) }));
 vi.mock('./generales/BienvenidaCard', () => ({ default: () => null }));
-vi.mock('./generales/BrandingCard', () => ({ default: () => null }));
+vi.mock('./generales/BrandingCard', () => ({ default: () => <div>Desarrollado por</div> }));
 vi.mock('./generales/AgendaCarrusel', () => ({ default: () => <div>Agenda</div> }));
 vi.mock('./generales/AtajosCard', () => ({ default: () => <div>Accesos rápidos</div> }));
 vi.mock('./panelInicio/PanelInicioCard', () => ({ default: () => null }));
@@ -28,6 +28,13 @@ describe('Dashboard — Accesos rápidos y Notas', () => {
     expect(accesos.closest('.lg\\:col-span-2')).not.toBeNull();
     expect(notasCard.closest('.lg\\:col-span-2')).toBeNull();
     expect(screen.getByText('Agenda').compareDocumentPosition(notasCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('"Desarrollado por" va debajo de Notas, fuera de la columna de Accesos rápidos', () => {
+    render(<ResumenGeneral userData={{ rol: 'operador' }} />);
+    const branding = screen.getByText('Desarrollado por');
+    expect(branding.closest('.lg\\:col-span-2')).toBeNull();
+    expect(screen.getByText('Notas del Panel').compareDocumentPosition(branding) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('aplica el estilo de la nota (y el de siempre si no tiene)', () => {

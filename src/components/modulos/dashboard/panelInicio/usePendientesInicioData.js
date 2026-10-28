@@ -51,8 +51,8 @@ export const LECTURAS = {
   incompletas: () => contar(gestionesDe('implantes', where('estado', '==', 'INCOMPLETO'))),
   enRevision: () => contar(gestionesDe('implantes', where('estado', 'in', [...ESTADOS_EN_REVISION]))),
   agendadasVencidas: (hoy) => contar(gestionesDe('implantes', where('estado', 'in', [...ESTADOS_AGENDADA]), where('fecha', '<', hoy))),
-  cirugias: async (modulo, dia) => {
-    const snap = await getDocs(gestionesDe(modulo, where('fecha', '==', dia)));
+  cirugias: async (dia) => {
+    const snap = await getDocs(gestionesDe('implantes', where('fecha', '==', dia)));
     return { n: contarCirugias(snap.docs.map((d) => ({ refPath: d.ref.path, gestionId: d.get('gestionId'), agendaId: d.get('agendaId') }))) };
   },
   fibras: async (hoy) => {
@@ -77,10 +77,10 @@ export const usePendientesInicioData = (bloques) => {
       lista.push(['enRevision', 'enRevision', () => LECTURAS.enRevision()]);
       lista.push(['agendadasVencidas', `agendadasVencidas|${hoy}`, () => LECTURAS.agendadasVencidas(hoy)]);
     }
-    bloques.cirugias.forEach((m) => {
-      lista.push([`hoy:${m}`, `cirugias|${m}|${hoy}`, () => LECTURAS.cirugias(m, hoy)]);
-      lista.push([`manana:${m}`, `cirugias|${m}|${manana}`, () => LECTURAS.cirugias(m, manana)]);
-    });
+    if (bloques.cirugias) {
+      lista.push(['hoy', `cirugias|${hoy}`, () => LECTURAS.cirugias(hoy)]);
+      lista.push(['manana', `cirugias|${manana}`, () => LECTURAS.cirugias(manana)]);
+    }
     if (bloques.fibras) lista.push(['fibras', `fibras|${hoy}`, () => LECTURAS.fibras(hoy)]);
     return lista;
   }, [bloques.implantes, bloques.fibras, bloques.cirugias, hoy, manana]);

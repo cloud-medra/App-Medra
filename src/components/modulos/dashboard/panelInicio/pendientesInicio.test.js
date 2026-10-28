@@ -17,38 +17,40 @@ const usuario = (permisos) => ({ rol: 'operador', activo: true, permisos });
 describe('Pendientes — permisos', () => {
   it('el Desarrollador ve todos los bloques', () => {
     expect(bloquesPendientes({ rol: 'dev', activo: true, permisos: {} })).toEqual({
-      implantes: true, abreSolicitud: true, cirugias: ['implantes', 'hemodinamia'], fibras: true,
+      implantes: true, abreSolicitud: true, cirugias: true, fibras: true,
     });
   });
 
   it('sin Gestión ni Fibras no hay bloques (la sección no aparece)', () => {
     const b = bloquesPendientes(usuario({ implantes: [SOLICITUD_IMP, '/implantes/resumenImplantes'] }));
-    expect(b).toEqual({ implantes: false, abreSolicitud: false, cirugias: [], fibras: false });
+    expect(b).toEqual({ implantes: false, abreSolicitud: false, cirugias: false, fibras: false });
     expect(hayBloques(b)).toBe(false);
     expect(hayBloques(bloquesPendientes({ rol: 'admin', activo: true, permisos: {} }))).toBe(false);
   });
 
   it('Gestión de Implantes da el bloque Implantes y sus cirugías; Solicitud solo habilita el clic de Por imputar', () => {
     expect(bloquesPendientes(usuario({ implantes: [GESTION_IMP] })))
-      .toEqual({ implantes: true, abreSolicitud: false, cirugias: ['implantes'], fibras: false });
+      .toEqual({ implantes: true, abreSolicitud: false, cirugias: true, fibras: false });
     expect(bloquesPendientes(usuario({ implantes: [GESTION_IMP, SOLICITUD_IMP] })).abreSolicitud).toBe(true);
   });
 
-  it('Hemodinamia solo agrega sus cirugías (HEM), con su propia Gestión', () => {
+  it('Gestión de Hemodinamia no agrega nada: sus procedimientos no se agendan', () => {
     const b = bloquesPendientes(usuario({ hemodinamia: [GESTION_HEM] }));
-    expect(b).toEqual({ implantes: false, abreSolicitud: false, cirugias: ['hemodinamia'], fibras: false });
-    expect(hayBloques(b)).toBe(true);
+    expect(b).toEqual({ implantes: false, abreSolicitud: false, cirugias: false, fibras: false });
+    expect(hayBloques(b)).toBe(false);
   });
 
   it('Fibras solo con la pantalla Fibras', () => {
     expect(bloquesPendientes(usuario({ implantes: [FIBRAS] })))
-      .toEqual({ implantes: false, abreSolicitud: false, cirugias: [], fibras: true });
+      .toEqual({ implantes: false, abreSolicitud: false, cirugias: false, fibras: true });
   });
 
   it('un ítem desactivado en Gestión de módulos oculta su bloque, también al Desarrollador', () => {
-    const b = bloquesPendientes({ rol: 'dev', activo: true, permisos: {} }, { itemsInactivos: [FIBRAS], modulosInactivos: ['hemodinamia'] });
+    const b = bloquesPendientes({ rol: 'dev', activo: true, permisos: {} }, { itemsInactivos: [FIBRAS] });
     expect(b.fibras).toBe(false);
-    expect(b.cirugias).toEqual(['implantes']);
+    expect(b.cirugias).toBe(true);
+    expect(bloquesPendientes({ rol: 'dev', activo: true, permisos: {} }, { itemsInactivos: [GESTION_IMP] }))
+      .toMatchObject({ implantes: false, cirugias: false });
   });
 });
 

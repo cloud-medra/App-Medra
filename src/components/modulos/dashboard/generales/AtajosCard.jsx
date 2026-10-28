@@ -12,8 +12,8 @@ import CuadritoIcono from '../../../ui/CuadritoIcono';
 // config/atajosDashboard.js) y se muestran solo los que el usuario tiene
 // permitidos. `onAbrir(modulo, path)` hace lo mismo que el menú (abre el
 // módulo y deja activo el ítem).
-// Compacto: 2 columnas en pantallas angostas y hasta 4 en anchas, con
-// botones de unos 36 px de alto (fáciles de presionar).
+// 2 columnas en pantallas angostas y hasta 4 en anchas, con botones de unos
+// 40 px de alto (fáciles de presionar).
 const AtajosCard = ({ permisos, onAbrir }) => {
   const configurados = useAtajosConfigurados();
   const modulosActivos = useModulosActivos();
@@ -23,7 +23,7 @@ const AtajosCard = ({ permisos, onAbrir }) => {
     : [];
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 shadow-sm flex flex-col gap-1.5 min-h-0 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm flex flex-col gap-2 min-h-0 overflow-hidden">
       <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-1.5 flex-shrink-0">
         <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 flex items-center gap-1.5 uppercase tracking-wide">
           <Zap size={13} className="text-[#2383C2]" /> Accesos rápidos
@@ -39,17 +39,17 @@ const AtajosCard = ({ permisos, onAbrir }) => {
           No tienes accesos rápidos disponibles con tus permisos actuales.
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2">
           {atajos.map((a) => (
             <button
               key={`${a.modulo}:${a.path}`}
               type="button"
               onClick={() => onAbrir?.(a.modulo, a.path)}
               title={`${a.moduloLabel} → ${a.label}`}
-              className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-[#2383C2]/30 dark:border-[#2383C2]/40 bg-[#2383C2]/[0.06] dark:bg-[#2383C2]/10 shadow-sm hover:border-[#2383C2] hover:bg-[#2383C2]/[0.12] dark:hover:bg-[#2383C2]/20 hover:shadow-md transition text-left min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2] focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
+              className="group flex items-center gap-2 px-2 py-2 rounded-md border border-[#2383C2]/30 dark:border-[#2383C2]/40 bg-[#2383C2]/[0.06] dark:bg-[#2383C2]/10 shadow-sm hover:border-[#2383C2] hover:bg-[#2383C2]/[0.12] dark:hover:bg-[#2383C2]/20 hover:shadow-md transition text-left min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2] focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
             >
               {/* Mismo ícono y color que el ítem en el sidebar (config/modulesConfig.jsx). */}
-              <CuadritoIcono icon={a.icon} color={a.color} tamano="sm" />
+              <CuadritoIcono icon={a.icon} color={a.color} />
 
               <span className="flex flex-col min-w-0">
                 <span className="text-[11px] leading-tight font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-[#1b6a9e] dark:group-hover:text-sky-300">

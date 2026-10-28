@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Inicio → Pendientes (pantalla): resumen de cantidades, Al día, No
-// disponible, cirugías por módulo (HEM), uso de fibras por referencia y
+// disponible, cirugías de hoy y mañana (solo Implantes), uso de fibras por referencia y
 // navegación con filtro. Las lecturas se simulan en LECTURAS
 // (usePendientesInicioData), con su caché real.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -20,7 +20,7 @@ const { default: PendientesSeccion } = await import('./PendientesSeccion.jsx');
 
 afterEach(cleanup);
 
-const todos = { implantes: true, abreSolicitud: true, cirugias: ['implantes', 'hemodinamia'], fibras: true };
+const todos = { implantes: true, abreSolicitud: true, cirugias: true, fibras: true };
 const linea = (texto) => screen.getByText(texto).closest('button, div');
 const FIBRAS_OK = {
   referencias: [
@@ -44,7 +44,7 @@ describe('Inicio — Pendientes', () => {
       incompletas: async () => ({ n: 0 }),
       enRevision: async () => ({ n: 2 }),
       agendadasVencidas: async () => ({ n: 1 }),
-      cirugias: async (modulo, dia) => ({ n: modulo === 'implantes' ? (dia.endsWith('-28') ? 1 : 3) : 2 }),
+      cirugias: async () => ({ n: 3 }),
       fibras: async () => FIBRAS_OK,
     });
   });
@@ -57,16 +57,15 @@ describe('Inicio — Pendientes', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('cirugías: solo cantidades de hoy y mañana, con una línea HEM aparte', async () => {
+  it('cirugías: una sola línea con las cantidades de hoy y mañana (sin HEM)', async () => {
     render(<PendientesSeccion bloques={todos} onAbrir={vi.fn()} />);
-    const impl = screen.getByLabelText('Cirugías Implantes');
-    const hem = screen.getByLabelText('Cirugías Hemodinamia');
-    await waitFor(() => expect(hem.textContent).toContain('2'));
-    expect(within(impl).getAllByRole('button').map((b) => b.textContent)).toEqual([
-      expect.stringMatching(/^Hoy \d\d-\d\d\d+$/), expect.stringMatching(/^Mañana \d\d-\d\d\d+$/),
+    const cirugias = screen.getByLabelText('Cirugías');
+    await waitFor(() => expect(within(cirugias).getAllByRole('button')).toHaveLength(2));
+    expect(within(cirugias).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      expect.stringMatching(/^Hoy \d\d-\d\d3$/), expect.stringMatching(/^Mañana \d\d-\d\d3$/),
     ]);
-    expect(impl.textContent).not.toContain('HEM');
-    expect(within(hem).getAllByText('HEM')).toHaveLength(2);
+    expect(screen.queryByText('HEM')).toBeNull();
+    expect(LECTURAS.cirugias).toHaveBeenCalledTimes(2);
     expect(screen.queryByText(/Ver todas/)).toBeNull();
     expect(document.querySelectorAll('li')).toHaveLength(0);
   });
@@ -91,8 +90,8 @@ describe('Inicio — Pendientes', () => {
     render(<PendientesSeccion bloques={todos} onAbrir={vi.fn()} />);
     await waitFor(() => expect(linea('Incompletas').textContent).toContain('No disponible'));
     expect(linea('Incompletas').textContent).not.toContain('Al día');
-    await waitFor(() => expect(screen.getByLabelText('Cirugías Implantes').textContent).toContain('No disponible'));
-    expect(screen.getByLabelText('Cirugías Implantes').textContent).not.toMatch(/\d\d-\d\d0/);
+    await waitFor(() => expect(screen.getByLabelText('Cirugías').textContent).toContain('No disponible'));
+    expect(screen.getByLabelText('Cirugías').textContent).not.toMatch(/\d\d-\d\d0/);
     expect(linea('Uso de fibras').textContent).toContain('No disponible');
     expect(screen.getByRole('alert')).toBeTruthy();
   });
@@ -107,8 +106,8 @@ describe('Inicio — Pendientes', () => {
     expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/solicitudImplantes');
     fireEvent.click(linea('Por revisar'));
     expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/gestionImplantes', expect.objectContaining({ rango: 'todos' }));
-    fireEvent.click(within(screen.getByLabelText('Cirugías Hemodinamia')).getByText(/^Mañana/).closest('button'));
-    expect(onAbrir).toHaveBeenLastCalledWith('hemodinamia', '/hemodinamia/gestionHemodinamia', expect.objectContaining({ rango: 'desdeManana' }));
+    fireEvent.click(within(screen.getByLabelText('Cirugías')).getByText(/^Mañana/).closest('button'));
+    expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/gestionImplantes', expect.objectContaining({ rango: 'desdeManana' }));
     fireEvent.click(linea('FL-365'));
     expect(onAbrir).toHaveBeenLastCalledWith('implantes', '/implantes/fibrasReutilizables', { texto: 'FL-365' });
   });
@@ -119,15 +118,13 @@ describe('Inicio — Pendientes', () => {
     expect(linea('Por imputar').tagName).toBe('DIV');
   });
 
-  it('solo pide y muestra los bloques permitidos (solo Hemodinamia: una línea HEM)', async () => {
-    render(<PendientesSeccion bloques={{ implantes: false, abreSolicitud: false, cirugias: ['hemodinamia'], fibras: false }} onAbrir={vi.fn()} />);
-    await waitFor(() => expect(screen.getByLabelText('Cirugías Hemodinamia').textContent).toContain('2'));
-    expect(screen.queryByLabelText('Cirugías Implantes')).toBeNull();
+  it('solo pide y muestra los bloques permitidos (solo Fibras)', async () => {
+    render(<PendientesSeccion bloques={{ implantes: false, abreSolicitud: false, cirugias: false, fibras: true }} onAbrir={vi.fn()} />);
+    await waitFor(() => expect(linea('FL-1000').textContent).toContain('8/10'));
+    expect(screen.queryByLabelText('Cirugías')).toBeNull();
     expect(screen.queryByText('Por imputar')).toBeNull();
-    expect(screen.queryByText('Fibras')).toBeNull();
     expect(LECTURAS.porImputar).not.toHaveBeenCalled();
-    expect(LECTURAS.fibras).not.toHaveBeenCalled();
-    expect(LECTURAS.cirugias.mock.calls.map((c) => c[0])).toEqual(['hemodinamia', 'hemodinamia']);
+    expect(LECTURAS.cirugias).not.toHaveBeenCalled();
   });
 });
 
@@ -141,7 +138,7 @@ describe('cirugías sin nombres de pacientes', () => {
       doc('b', { gestionId: '10', nombre: 'Ana Pérez', medico: 'Dr. Soto' }),
       doc('c', { gestionId: '11', nombre: 'Luis Rojas', medico: 'Dra. Vera' }),
     ] });
-    const r = await LECTURAS.cirugias('implantes', '2026-10-28');
+    const r = await LECTURAS.cirugias('2026-10-28');
     expect(r).toEqual({ n: 2 });
     expect(JSON.stringify(r)).not.toMatch(/Ana|Luis|Soto|Vera/);
   });

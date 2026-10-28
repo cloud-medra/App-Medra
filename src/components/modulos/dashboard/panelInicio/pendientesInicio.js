@@ -12,9 +12,9 @@
 //                     AGENDADO con cirugía anterior a hoy (ya pasó y no se
 //                     cargó nada).
 //     Todas las fechas, sin filtro por período.
-//   - Cirugías de hoy y de mañana: Implantes y Hemodinamia (HEM), cada uno
-//     con su Gestión. Se cuentan pacientes (admisiones) distintos: una
-//     cirugía con dos empresas son dos gestiones.
+//   - Cirugías de hoy y de mañana (con Gestión de Implantes): se cuentan
+//     pacientes (admisiones) distintos; una cirugía con dos empresas son dos
+//     gestiones. Hemodinamia no va: sus procedimientos no se agendan.
 //   - Fibras (con la pantalla Fibras): una línea por referencia con el uso
 //     de su fibra en uso (consumidos/totales) y el color de alertaFibra.
 import { subItemsVisibles } from '../../../../config/accesoMenu';
@@ -23,7 +23,6 @@ import { UBICACION, RUTA_FIBRAS, ubicacionDe, usosConsumidosDe, normalizarRefere
 import { alertaFibra } from '../../operaciones/implantes/fibras/seccionesFibras';
 
 export { RUTA_FIBRAS };
-export const MODULOS_CIRUGIAS = Object.freeze(['implantes', 'hemodinamia']);
 export const ESTADOS_EN_REVISION = Object.freeze(['REVISAR', 'S/COTIZACION', 'SIN COTIZACION']);
 export const ESTADOS_AGENDADA = Object.freeze(['AGENDANDO', 'AGENDADO']);
 
@@ -31,18 +30,17 @@ export const ESTADOS_AGENDADA = Object.freeze(['AGENDANDO', 'AGENDADO']);
 export const bloquesPendientes = (userData, modulosActivos) => {
   const rutas = (modulo) => new Set(subItemsVisibles(userData, modulo, modulosActivos).map((s) => s.path));
   const impl = rutas('implantes');
-  const hem = rutas('hemodinamia');
-  const veGestion = { implantes: impl.has(moduloGestion('implantes').rutas.gestion), hemodinamia: hem.has(moduloGestion('hemodinamia').rutas.gestion) };
+  const veGestion = impl.has(moduloGestion('implantes').rutas.gestion);
   return {
-    implantes: veGestion.implantes,
+    implantes: veGestion,
     // "Por imputar" se resuelve en Solicitud: sin ese ítem se ve pero no abre nada.
-    abreSolicitud: veGestion.implantes && impl.has(moduloGestion('implantes').rutas.solicitud),
-    cirugias: MODULOS_CIRUGIAS.filter((m) => veGestion[m]),
+    abreSolicitud: veGestion && impl.has(moduloGestion('implantes').rutas.solicitud),
+    cirugias: veGestion,
     fibras: impl.has(RUTA_FIBRAS),
   };
 };
 
-export const hayBloques = (b) => b.implantes || b.cirugias.length > 0 || b.fibras;
+export const hayBloques = (b) => b.implantes || b.cirugias || b.fibras;
 
 // 'AAAA-MM-DD' del día siguiente (sin zona: la fecha ya viene en hora de Chile).
 export const diaSiguienteISO = (iso) => {

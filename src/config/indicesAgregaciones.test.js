@@ -125,7 +125,7 @@ const CONTEOS = {
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['estado'] },
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['numero_factura'] },
   ],
-  // Inicio → Pendientes (gestiones de Implantes y Hemodinamia).
+  // Inicio → Pendientes (gestiones de Implantes).
   'components/modulos/dashboard/panelInicio/usePendientesInicioData.js': [
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['solicitud'] },
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['estado'] },

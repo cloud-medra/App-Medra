@@ -45,8 +45,6 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
           <div className="flex flex-col gap-3 flex-1 min-h-0">
             <BienvenidaCard userData={userData} />
 
-            <BrandingCard />
-
             {/* Accesos rápidos siempre completo y arriba del resumen (y primero al apilar en móvil) */}
             <div className="flex-shrink-0 flex flex-col">
               <AtajosCard permisos={userData?.permisos} onAbrir={onAbrirAtajo} />
@@ -83,6 +81,11 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
           {/* Notas a la derecha; ocupa el alto que deja la agenda */}
           <div className="flex-1 min-h-[240px] flex flex-col overflow-hidden">
             <NuevoModuloCard />
+          </div>
+
+          {/* "Desarrollado por", al pie de la columna derecha (debajo de Notas) */}
+          <div className="flex-shrink-0">
+            <BrandingCard />
           </div>
         </div>
 

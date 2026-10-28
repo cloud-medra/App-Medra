@@ -87,23 +87,16 @@ const PendientesSeccion = ({ bloques, onAbrir }) => {
         </Bloque>
       )}
 
-      {bloques.cirugias.length > 0 && (
+      {bloques.cirugias && (
         <Bloque titulo="Cirugías">
-          {bloques.cirugias.map((m) => (
-            <div key={m} className="grid grid-cols-2 gap-1" aria-label={m === 'hemodinamia' ? 'Cirugías Hemodinamia' : 'Cirugías Implantes'}>
-              {[['hoy', 'Hoy', hoy], ['manana', 'Mañana', manana]].map(([tipo, texto, dia]) => (
-                <Linea key={tipo} cargando={!r[`${tipo}:${m}`]} onClick={() => abrirGestion(m, tipo)} titulo={`Abrir Gestión con las cirugías de ${texto.toLowerCase()}`}>
-                  <span className={`${ETIQUETA} flex items-center gap-1`}>
-                    {m === 'hemodinamia' && (
-                      <span className="text-[8.5px] font-bold px-1 rounded bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 shrink-0">HEM</span>
-                    )}
-                    <span className="truncate">{texto} {ddmm(dia)}</span>
-                  </span>
-                  <Cantidad resultado={r[`${tipo}:${m}`]} alDia={false} />
-                </Linea>
-              ))}
-            </div>
-          ))}
+          <div className="grid grid-cols-2 gap-1" aria-label="Cirugías">
+            {[['hoy', 'Hoy', hoy], ['manana', 'Mañana', manana]].map(([tipo, texto, dia]) => (
+              <Linea key={tipo} cargando={!r[tipo]} onClick={() => abrirGestion('implantes', tipo)} titulo={`Abrir Gestión con las cirugías de ${texto.toLowerCase()}`}>
+                <span className={ETIQUETA}>{texto} {ddmm(dia)}</span>
+                <Cantidad resultado={r[tipo]} alDia={false} />
+              </Linea>
+            ))}
+          </div>
         </Bloque>
       )}
 

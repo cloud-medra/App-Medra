@@ -17,7 +17,7 @@ vi.mock('../../administracion/totalesFinanzas/useTotalesFinanzasData', () => ({
 }));
 
 // Pendientes tiene sus propios tests (PendientesSeccion.test.jsx): aquí solo se ve si aparece.
-vi.mock('./PendientesSeccion', () => ({ default: ({ bloques }) => <div>Pendientes: {bloques.cirugias.join(',')}</div> }));
+vi.mock('./PendientesSeccion', () => ({ default: ({ bloques }) => <div>Pendientes: {Object.keys(bloques).filter((k) => bloques[k]).join(',')}</div> }));
 
 const { default: PanelInicioCard } = await import('./PanelInicioCard.jsx');
 const { default: TotalFinanzas } = await import('../../administracion/totalesFinanzas/TotalFinanzas.jsx');
@@ -72,12 +72,12 @@ describe('Inicio — Resumen del mes (Finanzas)', () => {
     });
   });
 
-  it('Pendientes aparece con Gestión aunque no tenga Finanzas, y el filtro se pasa al abrir', () => {
-    render(<PanelInicioCard userData={operador([])} />);
+  it('Pendientes aparece con Gestión de Implantes aunque no tenga Finanzas; Hemodinamia sola no lo muestra', () => {
+    render(<PanelInicioCard userData={{ rol: 'operador', activo: true, permisos: { hemodinamia: ['/hemodinamia/gestionHemodinamia'] } }} />);
     expect(screen.queryByText(/Pendientes/)).toBeNull();
     cleanup();
-    render(<PanelInicioCard userData={{ rol: 'operador', activo: true, permisos: { hemodinamia: ['/hemodinamia/gestionHemodinamia'] } }} />);
-    expect(screen.getByText('Pendientes: hemodinamia')).toBeTruthy();
+    render(<PanelInicioCard userData={{ rol: 'operador', activo: true, permisos: { implantes: ['/implantes/gestionImplantes'] } }} />);
+    expect(screen.getByText('Pendientes: implantes,cirugias')).toBeTruthy();
     expect(screen.queryByLabelText('Resumen de Finanzas')).toBeNull();
   });
 
