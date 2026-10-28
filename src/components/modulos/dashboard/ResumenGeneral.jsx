@@ -6,6 +6,7 @@ import BrandingCard from './generales/BrandingCard';
 import NuevoModuloCard from './generales/NuevoModuloCard';
 import AgendaCarrusel from './generales/AgendaCarrusel';
 import AtajosCard from './generales/AtajosCard';
+import PanelInicioCard from './panelInicio/PanelInicioCard';
 // AvanceInventario.jsx queda fuera de circulación a propósito (sin
 // eliminar el archivo); en su lugar va el widget de Accesos rápidos.
 // import AvanceInventario from './generales/AvanceInventario';
@@ -22,8 +23,10 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
   const handleMonthChange = (e) => setCurrentDate(new Date(year, parseInt(e.target.value), 1));
   const handleYearChange = (e) => setCurrentDate(new Date(parseInt(e.target.value), month, 1));
 
+  // En pantallas anchas cabe sin scroll; en angostas las tarjetas se apilan y
+  // desplaza el contenedor de la vista.
   return (
-    <div className="w-full h-full flex flex-col gap-3 overflow-hidden pr-1">
+    <div className="w-full lg:h-full flex flex-col gap-3 lg:overflow-hidden pr-1">
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex items-center justify-between p-2.5 flex-shrink-0">
         <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-2 uppercase tracking-wider">
@@ -37,17 +40,20 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 flex-grow min-h-0 items-stretch">
 
         {/* Columna Izquierda principal */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex flex-col justify-between p-4 min-h-0 h-full">
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex flex-col justify-between p-4 min-h-0 lg:h-full">
 
-          <div className="flex flex-col gap-3 flex-1 min-h-0 h-full">
+          <div className="flex flex-col gap-3 flex-1 min-h-0">
             <BienvenidaCard userData={userData} />
 
             <BrandingCard />
 
-            {/* Accesos rápidos a la izquierda (y primero al apilar en móvil); aprovecha el espacio restante sin forzar el scroll global */}
-            <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden">
+            {/* Accesos rápidos a la izquierda (y primero al apilar en móvil), compacto; si no caben, desplaza su propia grilla */}
+            <div className="min-h-0 flex flex-col overflow-hidden">
               <AtajosCard permisos={userData?.permisos} onAbrir={onAbrirAtajo} />
             </div>
+
+            {/* Resumen del mes (Finanzas por ahora), según los permisos del usuario */}
+            <PanelInicioCard userData={userData} />
           </div>
 
           <div className="border-t border-gray-100 dark:border-gray-700 pt-3 bg-gray-50/30 dark:bg-black/10 -mx-4 -mb-4 p-4 rounded-b-lg mt-3 flex-shrink-0">

@@ -11,8 +11,11 @@ import { celdasAConsultar } from './totalesFinanzas';
 //   - Mes abierto: count()/sum() sobre las imputadas o los movimientos de
 //     Bodega (1 lectura por cada 1.000 documentos), recordado 5 minutos.
 //   - Mes nunca abierto: 0, sin leer.
+// `errorEstados`: no se pudo escuchar cierres_periodos. Sin estados todo
+// parecería "sin abrir" ($0), así que quien muestre el total debe tratarlo
+// como no disponible.
 export const useTotalesFinanzasData = ({ moduloIds, anio, mes }) => {
-  const { estadosModulos, cargando: cargandoEstados } = useCierresAnio(anio);
+  const { estadosModulos, cargando: cargandoEstados, error: errorEstados } = useCierresAnio(anio);
   const [resultado, setResultado] = useState({ clave: null, celdas: [] });
 
   const celdas = useMemo(
@@ -39,6 +42,7 @@ export const useTotalesFinanzasData = ({ moduloIds, anio, mes }) => {
   return {
     celdas: resultado.clave === firma ? resultado.celdas : [],
     estadosModulos,
+    errorEstados: errorEstados || null,
     cargando: !firma || resultado.clave !== firma,
   };
 };

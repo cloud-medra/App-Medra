@@ -12,6 +12,8 @@ import CuadritoIcono from '../../../ui/CuadritoIcono';
 // config/atajosDashboard.js) y se muestran solo los que el usuario tiene
 // permitidos. `onAbrir(modulo, path)` hace lo mismo que el menú (abre el
 // módulo y deja activo el ítem).
+// Compacto: 2 columnas en pantallas angostas y hasta 4 en anchas, con
+// botones de unos 36 px de alto (fáciles de presionar).
 const AtajosCard = ({ permisos, onAbrir }) => {
   const configurados = useAtajosConfigurados();
   const modulosActivos = useModulosActivos();
@@ -21,39 +23,39 @@ const AtajosCard = ({ permisos, onAbrir }) => {
     : [];
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm flex flex-col gap-2 flex-grow min-h-0 overflow-hidden">
-      <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-2 flex-shrink-0">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 shadow-sm flex flex-col gap-1.5 min-h-0 overflow-hidden">
+      <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-1.5 flex-shrink-0">
         <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 flex items-center gap-1.5 uppercase tracking-wide">
           <Zap size={13} className="text-[#2383C2]" /> Accesos rápidos
         </span>
       </div>
 
       {!configurados || !modulosActivos ? (
-        <div className="flex-1 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">
+        <div className="py-3 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">
           Cargando accesos rápidos...
         </div>
       ) : atajos.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center text-center text-[10px] text-gray-400 dark:text-gray-500 px-2">
+        <div className="py-3 flex items-center justify-center text-center text-[10px] text-gray-400 dark:text-gray-500 px-2">
           No tienes accesos rápidos disponibles con tus permisos actuales.
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto min-h-0 pr-0.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-1.5 overflow-y-auto min-h-0 pr-0.5">
           {atajos.map((a) => (
             <button
               key={`${a.modulo}:${a.path}`}
               type="button"
               onClick={() => onAbrir?.(a.modulo, a.path)}
               title={`${a.moduloLabel} → ${a.label}`}
-              className="group flex items-center gap-2 p-2 rounded-lg border border-[#2383C2]/30 dark:border-[#2383C2]/40 bg-[#2383C2]/[0.06] dark:bg-[#2383C2]/10 shadow-sm hover:border-[#2383C2] hover:bg-[#2383C2]/[0.12] dark:hover:bg-[#2383C2]/20 hover:shadow-md transition text-left min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2] focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
+              className="group flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-[#2383C2]/30 dark:border-[#2383C2]/40 bg-[#2383C2]/[0.06] dark:bg-[#2383C2]/10 shadow-sm hover:border-[#2383C2] hover:bg-[#2383C2]/[0.12] dark:hover:bg-[#2383C2]/20 hover:shadow-md transition text-left min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2] focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800"
             >
               {/* Mismo ícono y color que el ítem en el sidebar (config/modulesConfig.jsx). */}
-              <CuadritoIcono icon={a.icon} color={a.color} />
+              <CuadritoIcono icon={a.icon} color={a.color} tamano="sm" />
 
               <span className="flex flex-col min-w-0">
-                <span className="text-[11px] font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-[#1b6a9e] dark:group-hover:text-sky-300">
+                <span className="text-[11px] leading-tight font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-[#1b6a9e] dark:group-hover:text-sky-300">
                   {a.label}
                 </span>
-                <span className="text-[9px] text-gray-600 dark:text-gray-400 uppercase tracking-wide truncate">
+                <span className="text-[8.5px] leading-tight text-gray-600 dark:text-gray-400 uppercase tracking-wide truncate">
                   {a.moduloLabel}
                 </span>
               </span>

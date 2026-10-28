@@ -24,7 +24,7 @@ const TotalFinanzas = ({ tipo }) => {
   const { hasPermission } = useGranularPermission();
   const verDesglose = hasPermission(config.ruta, 'desglose');
 
-  const { celdas, estadosModulos, cargando } = useTotalesFinanzasData({ moduloIds, anio, mes });
+  const { celdas, estadosModulos, errorEstados, cargando } = useTotalesFinanzasData({ moduloIds, anio, mes });
   const total = useMemo(() => totalizar(moduloIds, celdas), [moduloIds, celdas]);
 
   const nombrePeriodo = mes === TODO_EL_ANIO
@@ -33,7 +33,8 @@ const TotalFinanzas = ({ tipo }) => {
   const esBodega = tipo === 'bodega';
   const celdaBodega = esBodega ? celdas.find((c) => c.modulo === MODULO_BODEGA) : null;
   const estadoBodega = esBodega ? (estadosModulos?.[MODULO_BODEGA]?.[mes]?.estado || 'SIN_INICIAR') : null;
-  const sinAbrir = !cargando && celdas.length === 0;
+  // Sin los estados de cierres_periodos todo parecería "sin abrir": no se muestra $0.
+  const sinAbrir = !cargando && !errorEstados && celdas.length === 0;
 
   return (
     <div className="w-full max-w-3xl flex flex-col gap-3">
@@ -68,9 +69,9 @@ const TotalFinanzas = ({ tipo }) => {
               Total · {nombrePeriodo}
             </p>
             <p className="text-2xl font-extrabold text-slate-800 dark:text-white mt-0.5 font-num">
-              {cargando ? '…' : pesos(total.montoTotal)}
+              {cargando ? '…' : errorEstados ? 'No disponible' : pesos(total.montoTotal)}
             </p>
-            {!cargando && !esBodega && (
+            {!cargando && !errorEstados && !esBodega && (
               <p className="text-[10px] text-slate-500 dark:text-gray-400 mt-1">
                 {total.cantidad.toLocaleString('es-CL')} documento(s) imputado(s)
               </p>
@@ -84,7 +85,7 @@ const TotalFinanzas = ({ tipo }) => {
             </p>
           )}
 
-          {verDesglose && !esBodega && !cargando && !sinAbrir && (
+          {verDesglose && !esBodega && !cargando && !errorEstados && !sinAbrir && (
             <div className="divide-y divide-slate-100 dark:divide-gray-700/60">
               {total.porModulo.map((m) => (
                 <div key={m.moduloId} className="flex items-center justify-between gap-3 px-4 py-2 text-[11px] text-slate-700 dark:text-gray-300">
@@ -98,6 +99,13 @@ const TotalFinanzas = ({ tipo }) => {
             </div>
           )}
         </div>
+      )}
+
+      {errorEstados && (
+        <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md px-3 py-2 flex items-center gap-2">
+          <AlertTriangle size={13} className="shrink-0" />
+          No se pudo leer el estado de los períodos: el total no está disponible. Actualiza la página.
+        </p>
       )}
 
       {total.conError && (

@@ -14,6 +14,7 @@ vi.mock('./generales/BienvenidaCard', () => ({ default: () => null }));
 vi.mock('./generales/BrandingCard', () => ({ default: () => null }));
 vi.mock('./generales/AgendaCarrusel', () => ({ default: () => <div>Agenda</div> }));
 vi.mock('./generales/AtajosCard', () => ({ default: () => <div>Accesos rápidos</div> }));
+vi.mock('./panelInicio/PanelInicioCard', () => ({ default: () => null }));
 
 const { default: ResumenGeneral } = await import('./ResumenGeneral');
 afterEach(cleanup);
