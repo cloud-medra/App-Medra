@@ -15,6 +15,7 @@ import {
 import { useDropzone } from 'react-dropzone';
 import { db } from '../../../../../firebaseConfig';
 import { numeroDesdeXml } from '../../shared/numerosDocumento';
+import { esFechaISO } from '../../shared/fechaISO';
 import { useLaboratorioData } from '../LaboratorioDataContext';
 import { FileText, Search, Upload, X } from 'lucide-react';
 import { useToast } from '../../../../../context/ToastContext';
@@ -95,6 +96,7 @@ const XmlDocLaboratorio = () => {
   const onDrop = useCallback(async (acceptedFiles) => {
     setCargando(true);
     let omitidos = 0;
+    let sinFecha = 0;
     let nuevosAnios = [];
     let nuevosMeses = [];
 
@@ -104,9 +106,15 @@ const XmlDocLaboratorio = () => {
         const xmlDoc = new DOMParser().parseFromString(text, "text/xml");
 
         const folio = xmlDoc.getElementsByTagName("Folio")[0]?.textContent;
-        const fchEmis = xmlDoc.getElementsByTagName("FchEmis")[0]?.textContent;
+        const fchEmis = xmlDoc.getElementsByTagName("FchEmis")[0]?.textContent?.trim();
 
-        if (!fchEmis || !folio) continue;
+        if (!folio) continue;
+        // El SII emite <FchEmis> en 'AAAA-MM-DD' (shared/fechaISO.js): sin
+        // una fecha válida en ese formato no se importa.
+        if (!esFechaISO(fchEmis)) {
+          sinFecha++;
+          continue;
+        }
 
         const referencias = Array.from(xmlDoc.getElementsByTagName("Referencia"));
         const refOrdenCompra = referencias.find(ref => {
@@ -196,10 +204,14 @@ const XmlDocLaboratorio = () => {
         setMesesDisponibles(prev => ordenarMeses(new Set([...prev, ...nuevosMeses])));
       }
 
-      const mensaje = omitidos > 0
-        ? `Importación finalizada. ${omitidos} archivo(s) omitido(s) por duplicidad.`
+      const avisos = [
+        omitidos > 0 ? `${omitidos} archivo(s) omitido(s) por duplicidad` : '',
+        sinFecha > 0 ? `${sinFecha} archivo(s) omitido(s) por fecha de emisión inválida` : ''
+      ].filter(Boolean);
+      const mensaje = avisos.length
+        ? `Importación finalizada. ${avisos.join('; ')}.`
         : "Importación completada con éxito.";
-      showToast(mensaje, omitidos > 0 ? "warning" : "success");
+      showToast(mensaje, avisos.length ? "warning" : "success");
       setShowModal(false);
     } catch (error) {
       console.error("Error al importar XML:", error);

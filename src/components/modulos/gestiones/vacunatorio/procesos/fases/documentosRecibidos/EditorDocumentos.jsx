@@ -4,20 +4,7 @@ import { doc, updateDoc, collection, addDoc, serverTimestamp, deleteField } from
 import { db, auth } from '../../../../../../../firebaseConfig';
 import { useToast } from '../../../../../../../context/ToastContext';
 import { useColumnasPermitidas } from '../../../../../../../hooks/useColumnasPermitidas';
-
-const formatToDDMMYYYY = (dateStr) => {
-  if (!dateStr) return '';
-  if (dateStr.includes('/')) return dateStr;
-  const [year, month, day] = dateStr.split('T')[0].split('-');
-  return (year && month && day) ? `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}` : dateStr;
-};
-
-const formatToYYYYMMDD = (dateStr) => {
-  if (!dateStr) return '';
-  if (dateStr.includes('-')) return dateStr.split('T')[0];
-  const [day, month, year] = dateStr.split('/');
-  return (year && month && day) ? `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}` : '';
-};
+import { aFechaISO, esFechaISO } from '../../../../shared/fechaISO';
 
 const PATH_VISTA = '/vacunatorio/archivosControlVacunatorio/documentosRecibidos';
 
@@ -42,7 +29,9 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
   const [loading, setLoading] = useState(false);
 
   const [folio, setFolio] = useState(documento.folio || '');
-  const [fchEmis, setFchEmis] = useState(formatToDDMMYYYY(documento.fchEmis || ''));
+  // Siempre 'AAAA-MM-DD' (lo que entrega el input date); antes se guardaba
+  // como se mostraba, 'DD/MM/AAAA' (ver shared/fechaISO.js).
+  const [fchEmis, setFchEmis] = useState(aFechaISO(documento.fchEmis));
   const [rznSoc, setRznSoc] = useState(documento.rznSoc || '');
   const [folioRef, setFolioRef] = useState(documento.folioRef || '');
 
@@ -95,6 +84,10 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!esFechaISO(fchEmis)) {
+      showToast("Ingresa una fecha de emisión válida", "error");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -268,8 +261,8 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
               </label>
               <input
                 type="date"
-                value={formatToYYYYMMDD(fchEmis)}
-                onChange={(e) => setFchEmis(formatToDDMMYYYY(e.target.value))}
+                value={fchEmis}
+                onChange={(e) => setFchEmis(e.target.value)}
                 className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none focus:border-[#2383C2]"
               />
             </div>

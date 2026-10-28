@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, FileText, Package, User, Building2, Briefcase, Save } from 'lucide-react';
 import { getEstadoProcesoClase } from '../../../../shared/estadosProceso';
 import { useColumnasPermitidas } from '../../../../../../../hooks/useColumnasPermitidas';
+import { useToast } from '../../../../../../../context/ToastContext';
+import { aFechaISO, esFechaISO } from '../../../../shared/fechaISO';
 
 const PATH_VISTA = '/vacunatorio/archivosControlVacunatorio/documentosImputados';
 
@@ -19,10 +21,14 @@ const COLUMNAS_TABLA = [
 
 const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
   const { ver: verColumna } = useColumnasPermitidas(PATH_VISTA, 'tabla_edicion', COLUMNAS_TABLA);
+  const { showToast } = useToast();
   if (!documento) return null;
 
   const [formData, setFormData] = useState({
     ...documento,
+    // fchEmis siempre 'AAAA-MM-DD' (shared/fechaISO.js); los antiguos en
+    // 'DD/MM/AAAA' se convierten al abrir para que el input date los muestre.
+    ...(documento.fchEmis !== undefined ? { fchEmis: aFechaISO(documento.fchEmis) } : {}),
     detalles: documento.detalles ? [...documento.detalles] : [],
     ordenCompraVinculada: documento.ordenCompraVinculada ? { ...documento.ordenCompraVinculada } : {},
     procesoIniciado: typeof documento.procesoIniciado === 'object' && documento.procesoIniciado !== null 
@@ -63,6 +69,10 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (formData.fchEmis !== undefined && !esFechaISO(formData.fchEmis)) {
+      showToast('Ingresa una fecha de emisión válida', 'error');
+      return;
+    }
     if (onGuardar) {
       onGuardar(formData); 
     }
