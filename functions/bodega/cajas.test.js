@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validarCaja, totalesCaja, faltanteCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja, aplicarMovimiento } from './nucleo.mjs';
+import { validarCaja, validarOrdenCaja, idsOrdenadosCaja, compararNombreNatural, totalesCaja, faltanteCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja, aplicarMovimiento } from './nucleo.mjs';
 
 describe('cajas: validarCaja', () => {
   it('nombre obligatorio, objetivo entero >= 0 y sin productos repetidos', () => {
@@ -55,5 +55,48 @@ describe('cajas: reposición', () => {
 
   it('REPOSICION_CAJA baja el disponible y no toca el tránsito', () => {
     expect(aplicarMovimiento({ disponible: 5, transito: 2 }, { tipo: 'REPOSICION_CAJA', cantidad: 3 })).toEqual({ disponible: 2, transito: 2, transitoPorCentro: {}, enCentro: 0, enCentroPorCentro: {} });
+  });
+});
+
+describe('cajas: orden de los productos', () => {
+  it('compararNombreNatural: números naturales, sin mayúsculas ni tildes', () => {
+    const nombres = ['Tornillo 10', 'tornillo 2', 'Tornillo 1'];
+    expect([...nombres].sort(compararNombreNatural)).toEqual(['Tornillo 1', 'tornillo 2', 'Tornillo 10']);
+    expect(compararNombreNatural('Árbol', 'arbol')).toBe(0);
+  });
+
+  it('idsOrdenadosCaja: primero por orden; sin orden al final por nombre natural; el id desempata', () => {
+    const productos = {
+      x: { nombre: 'Tornillo 10' },
+      y: { nombre: 'Tornillo 2' },
+      a: { nombre: 'Zeta', orden: 1 },
+      b: { nombre: 'Alfa', orden: 0 },
+      d: { nombre: 'Gasa' },
+      c: { nombre: 'gasa' },
+    };
+    expect(idsOrdenadosCaja(productos)).toEqual(['b', 'a', 'c', 'd', 'y', 'x']);
+    expect(idsOrdenadosCaja({})).toEqual([]);
+  });
+
+  it('idsOrdenadosCaja: los números no consecutivos (tras quitar uno) mantienen el orden relativo', () => {
+    expect(idsOrdenadosCaja({ a: { nombre: 'A', orden: 5 }, b: { nombre: 'B', orden: 0 }, c: { nombre: 'C', orden: 2 } })).toEqual(['b', 'c', 'a']);
+  });
+
+  it('validarOrdenCaja: exige exactamente los productos de la caja, sin repetir', () => {
+    const productos = { a: { nombre: 'A', orden: 0 }, b: { nombre: 'B', orden: 1 }, c: { nombre: 'C' } };
+    expect(validarOrdenCaja(productos, undefined).errores[0]).toMatch(/Falta/);
+    expect(validarOrdenCaja(productos, []).errores[0]).toMatch(/Falta/);
+    expect(validarOrdenCaja(productos, ['a', 'a', 'b']).errores[0]).toMatch(/repetido/);
+    expect(validarOrdenCaja(productos, ['a', 'b']).errores[0]).toMatch(/cambió/);
+    expect(validarOrdenCaja(productos, ['a', 'b', 'z']).errores[0]).toMatch(/cambió/);
+    expect(validarOrdenCaja(productos, ['a', 'b', 'c', 'd']).errores[0]).toMatch(/cambió/);
+  });
+
+  it('validarOrdenCaja: devuelve solo los órdenes que cambian (incluye los que no tenían)', () => {
+    const productos = { a: { nombre: 'A', orden: 0 }, b: { nombre: 'B', orden: 1 }, c: { nombre: 'C' } };
+    expect(validarOrdenCaja(productos, ['a', 'b', 'c'])).toEqual({ errores: [], cambios: { c: 2 } });
+    expect(validarOrdenCaja(productos, ['b', 'a', 'c'])).toEqual({ errores: [], cambios: { b: 0, a: 1, c: 2 } });
+    const yaOrdenado = { a: { orden: 0 }, b: { orden: 1 } };
+    expect(validarOrdenCaja(yaOrdenado, ['a', 'b']).cambios).toEqual({});
   });
 });

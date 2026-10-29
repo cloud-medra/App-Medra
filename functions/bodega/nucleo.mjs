@@ -61,6 +61,8 @@ export const ACCIONES = Object.freeze({
   cerrarInventario: [MODULO, RUTAS.inventario, 'inventario', 'btn_cerrar'],
   anularInventario: [MODULO, RUTAS.inventario, 'inventario', 'btn_anular'],
   guardarCaja: [MODULO, RUTAS.cajas, 'cajas', 'btn_guardar'],
+  // Reordenar los productos de una caja es parte de editarla (mismo permiso).
+  ordenarCaja: [MODULO, RUTAS.cajas, 'cajas', 'btn_guardar'],
   inventariarCaja: [MODULO, RUTAS.cajas, 'caja', 'btn_inventario'],
   reponerCaja: [MODULO, RUTAS.cajas, 'caja', 'btn_reponer'],
   guardarConsignacion: [MODULO, RUTAS.consignaciones, 'consignacion', 'btn_guardar'],
@@ -645,6 +647,42 @@ export const validarCaja = (datos = {}) => {
     productos.push({ productoId, stockObjetivo });
   });
   return { errores: [...new Set(errores)], caja: { nombre, descripcion, activa: datos.activa !== false }, productos };
+};
+
+// Orden de los productos dentro de una caja. Cada producto del mapa guarda
+// `orden` (número); los que no lo tienen (cajas anteriores al orden manual)
+// van después, por nombre en comparación natural ("Tornillo 2" antes que
+// "Tornillo 10"), y el id desempata. Así una caja sin `orden` se sigue
+// viendo como antes, sin migración: el orden completo se escribe la primera
+// vez que se reordena o se edita.
+export const compararNombreNatural = (a, b) => String(a ?? '').localeCompare(String(b ?? ''), 'es', { numeric: true, sensitivity: 'base' });
+
+const tieneOrden = (p) => typeof p?.orden === 'number' && Number.isFinite(p.orden);
+
+// productos: { [productoId]: { nombre, orden? } } -> [productoId] en orden.
+export const idsOrdenadosCaja = (productos = {}) => Object.entries(productos)
+  .sort(([idA, a], [idB, b]) => {
+    if (tieneOrden(a) !== tieneOrden(b)) return tieneOrden(a) ? -1 : 1;
+    if (tieneOrden(a) && a.orden !== b.orden) return a.orden - b.orden;
+    return compararNombreNatural(a.nombre, b.nombre) || (idA < idB ? -1 : idA > idB ? 1 : 0);
+  })
+  .map(([id]) => id);
+
+// Reordenamiento manual: `orden` debe traer exactamente los productos
+// actuales de la caja, sin repetir. Si la caja cambió mientras tanto (alguien
+// agregó o quitó un producto) se rechaza para no pisar ese cambio.
+// -> { errores, cambios: { [productoId]: nuevoOrden } } (solo los que cambian).
+export const validarOrdenCaja = (productos = {}, orden) => {
+  if (!Array.isArray(orden) || !orden.length) return { errores: ['Falta el orden de los productos.'], cambios: {} };
+  const ids = orden.map((id) => String(id ?? ''));
+  if (new Set(ids).size !== ids.length) return { errores: ['Un producto está repetido en el orden.'], cambios: {} };
+  const actuales = Object.keys(productos);
+  if (ids.length !== actuales.length || ids.some((id) => !productos[id])) {
+    return { errores: ['La caja cambió mientras la ordenabas. Actualiza e inténtalo de nuevo.'], cambios: {} };
+  }
+  const cambios = {};
+  ids.forEach((id, i) => { if (productos[id].orden !== i) cambios[id] = i; });
+  return { errores: [], cambios };
 };
 
 // Faltante de un producto de la caja para llegar al objetivo (nunca negativo).

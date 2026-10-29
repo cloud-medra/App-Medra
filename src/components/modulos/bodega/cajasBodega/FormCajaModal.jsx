@@ -7,6 +7,7 @@ import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
 import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
 import { useReferenciaDe } from '../shared/referencias';
+import { productosDeCaja } from './cajas';
 
 const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-60';
 
@@ -26,9 +27,10 @@ const FormCajaModal = ({ caja = null, onCerrar, onGuardada }) => {
   const [nombre, setNombre] = useState(caja?.nombre || '');
   const [descripcion, setDescripcion] = useState(caja?.descripcion || '');
   const [activa, setActiva] = useState(caja?.activa !== false);
-  const [productos, setProductos] = useState(() => Object.entries(caja?.productos || {})
-    .map(([productoId, p]) => ({ productoId, nombre: p.nombre, codigoMaestro: p.codigoMaestro, stockObjetivo: String(p.stockObjetivo), stockActual: p.stockActual || 0 }))
-    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')));
+  // En el orden de la caja: al guardar, el servidor toma esta posición como
+  // `orden` (los agregados quedan al final).
+  const [productos, setProductos] = useState(() => productosDeCaja(caja)
+    .map((p) => ({ productoId: p.productoId, nombre: p.nombre, codigoMaestro: p.codigoMaestro, stockObjetivo: String(p.stockObjetivo), stockActual: p.stockActual || 0 })));
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState('');
   const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(COLUMNAS, 'bodega.modal.caja');

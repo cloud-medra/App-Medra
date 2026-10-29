@@ -314,6 +314,9 @@ export const leerHistorialCaja = async (cajaId, tipo, maximo = 30) => {
 // { id?, nombre, descripcion, activa, productos: [{ productoId, stockObjetivo }] } -> { id }
 export const guardarCaja = (datos) => llamar('bodegaGuardarCaja')(datos);
 
+// { cajaId, orden: [productoId] } -> { id, cambios }. Orden manual de los productos.
+export const ordenarCaja = (datos) => llamar('bodegaOrdenarCaja')(datos);
+
 // { cajaId, conteos: { [productoId]: contado } } -> { id, lineas, resumen }
 export const inventariarCaja = (datos) => llamar('bodegaInventariarCaja')(datos);
 

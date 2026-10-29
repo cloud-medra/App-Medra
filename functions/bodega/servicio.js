@@ -31,7 +31,7 @@ const {
   agruparLineasEgreso, aplicarMovimientoCentro, aplicarAccionTransito, accionTransito, normalizarIdEntrega,
   ESTADOS_INVENTARIO, NO_CONTADOS, MAX_CONTEOS_POR_ENVIO, MAX_NOMBRE_INVENTARIO, diferenciaLinea, resumenInventario,
   aplicarConteo, idLote,
-  validarCaja, totalesCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja,
+  validarCaja, validarOrdenCaja, idsOrdenadosCaja, totalesCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja,
   saldoDe, fotoSaldo, datosPropietario, movimientoDeAccion, DESDE, ACCIONES_SOBRE_TRANSITO, lotesPropios,
   validarConsignacion,
   costoDe, valorizarMovimiento, camposCosto, costoEnCentro, periodoVigente, MODULO_PERIODO, ESTADOS_PERIODO_ABIERTO,
@@ -1264,6 +1264,9 @@ const guardarCajaComo = (db, por, datos = {}) => {
     const previos = antes?.productos || {};
     const erroresProductos = [];
     const mapa = {};
+    // `orden` = posición en la lista enviada: el modal la manda en el orden
+    // actual de la caja con los nuevos al final. Renumerar 0..n-1 deja sin
+    // huecos el orden de los que quedan cuando se quita uno.
     productos.forEach((p, i) => {
       const s = snapsProductos[i];
       if (!s.exists) { erroresProductos.push('Un producto ya no existe en el maestro.'); return; }
@@ -1271,7 +1274,7 @@ const guardarCajaComo = (db, por, datos = {}) => {
       if (d.activo === false && !previos[p.productoId]) erroresProductos.push(`${d.nombre}: el producto está inactivo.`);
       mapa[p.productoId] = {
         nombre: d.nombre, codigoMaestro: d.codigoMaestro || '', stockObjetivo: p.stockObjetivo,
-        stockActual: Number(previos[p.productoId]?.stockActual) || 0,
+        stockActual: Number(previos[p.productoId]?.stockActual) || 0, orden: i,
       };
     });
     exigirSinErrores([...new Set(erroresProductos)]);
@@ -1297,6 +1300,35 @@ const guardarCaja = async (db, uid, datos) => {
   const perfil = await perfilActivo(db, uid);
   exigir(perfil, ACCIONES.guardarCaja);
   return guardarCajaComo(db, datosPor(uid, perfil), datos);
+};
+
+// Orden manual de los productos: { cajaId, orden: [productoId] }. Un solo
+// update en una transacción que escribe solo los `productos.<id>.orden` que
+// cambian (el resto del mapa no se toca). Rechaza si la caja cambió.
+const ordenarCajaComo = (db, por, datos = {}) => {
+  const cajaId = String(datos.cajaId || '');
+  if (!cajaId) throw new HttpsError('invalid-argument', 'Falta la caja.');
+  return db.runTransaction(async (t) => {
+    const ref = refCaja(db, cajaId);
+    const snap = await t.get(ref);
+    if (!snap.exists) throw new HttpsError('not-found', 'La caja ya no existe.');
+    const productos = snap.data().productos || {};
+    const { errores, cambios } = validarOrdenCaja(productos, datos.orden);
+    if (errores.length) throw new HttpsError('failed-precondition', errores.join(' '));
+    if (!Object.keys(cambios).length) return { id: cajaId, cambios: 0 };
+    t.update(ref, {
+      ...Object.fromEntries(Object.entries(cambios).map(([id, n]) => [`productos.${id}.orden`, n])),
+      actualizadoPor: por, actualizadoEn: ahora(),
+    });
+    registrarLog(t, ref, 'ORDEN', por, { antes: idsOrdenadosCaja(productos), despues: datos.orden.map(String) });
+    return { id: cajaId, cambios: Object.keys(cambios).length };
+  });
+};
+
+const ordenarCaja = async (db, uid, datos) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.ordenarCaja);
+  return ordenarCajaComo(db, datosPor(uid, perfil), datos);
 };
 
 // Inventario de la caja: { cajaId, conteos: { [productoId]: contado } }.
@@ -1522,6 +1554,8 @@ module.exports = {
   inventariarCajaComo,
   guardarCaja,
   guardarCajaComo,
+  ordenarCaja,
+  ordenarCajaComo,
   iniciarInventario,
   reanudarInventario,
   registrarConteo,

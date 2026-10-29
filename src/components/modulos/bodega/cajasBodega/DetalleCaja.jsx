@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Pencil, ClipboardCheck, History, PackagePlus } from 'lucide-react';
+import { ArrowLeft, Pencil, ClipboardCheck, History, PackagePlus, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import { formatoCantidad } from '../shared/catalogosBodega';
@@ -8,12 +8,12 @@ import FormCajaModal from './FormCajaModal';
 import InventarioCajaModal from './InventarioCajaModal';
 import HistorialCaja from './HistorialCaja';
 import ReponerCajaModal from './ReponerCajaModal';
-import { productosDeCaja, cajaTrasInventario } from './cajas';
+import { productosDeCaja, cajaTrasInventario, moverElemento } from './cajas';
 import { BarraCompletitud, BotonesExportar } from './comunes';
 import { exportarContenidoCaja, exportarInventarioCaja, exportarReposicionCaja } from './exportarCajas';
 import { useUser } from '../../../../context/UserContext';
 import { useToast } from '../../../../context/ToastContext';
-import { mensajeError } from '../shared/bodegaApi';
+import { mensajeError, ordenarCaja } from '../shared/bodegaApi';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { referenciaProducto } from '../shared/documentos/lineasDocumento';
 import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
@@ -55,7 +55,40 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
   const [verHistorial, setVerHistorial] = useState(false);
   const [versionHistorial, setVersionHistorial] = useState(0);
   const cambio = () => { onCambio(); setVersionHistorial((v) => v + 1); };
-  const productos = useMemo(() => productosDeCaja(caja), [caja]);
+  const productosGuardados = useMemo(() => productosDeCaja(caja), [caja]);
+
+  // Orden manual (arrastre o flechas), con actualización optimista: se
+  // muestra al tiro y se guarda con una sola llamada. Va atado a la caja
+  // recibida, así que al llegar la caja releída se descarta solo; si el
+  // guardado falla se descarta y vuelve el orden guardado.
+  const puedeOrdenar = hasPermission(PATH_VISTA, 'cajas', 'btn_guardar');
+  const [optimista, setOptimista] = useState(null); // { caja, ids }
+  const [ordenando, setOrdenando] = useState(false);
+  const [arrastre, setArrastre] = useState(null); // { desde, sobre } (índices)
+  const productos = useMemo(() => {
+    if (optimista?.caja !== caja) return productosGuardados;
+    const porProducto = Object.fromEntries(productosGuardados.map((p) => [p.productoId, p]));
+    return optimista.ids.map((id) => porProducto[id]).filter(Boolean);
+  }, [optimista, caja, productosGuardados]);
+  // Mientras se guarda (y se relee la caja) no se permite otro movimiento.
+  const mover = async (desde, hasta) => {
+    const actuales = productos.map((p) => p.productoId);
+    const ids = moverElemento(actuales, desde, hasta);
+    if (ordenando || ids === actuales) return;
+    setOptimista({ caja, ids });
+    setOrdenando(true);
+    try {
+      await ordenarCaja({ cajaId: caja.id, orden: ids });
+    } catch (e) {
+      setOptimista(null);
+      setOrdenando(false);
+      showToast(mensajeError(e, 'No se pudo guardar el orden.'), 'error');
+      return;
+    }
+    await onCambio();
+    setOrdenando(false);
+  };
+  const arrastrable = puedeOrdenar && !ordenando && productos.length > 1;
 
   return (
     <div className="flex flex-col gap-2">
@@ -86,11 +119,34 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
       <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
         <TablaBodega columnas={columnasVisibles} anchos={anchos} onResize={handleResize}>
           {productos.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>La caja no tiene productos. Usa “Editar” para agregarlos.</FilaAnchoCompleto>}
-          {productos.map((p) => {
+          {productos.map((p, i) => {
             const referencia = referenciaProducto(porId[p.productoId]);
+            // Arrastre nativo de HTML5 (como Orden de módulos); en celular,
+            // donde no hay arrastre, sirven las flechas.
+            const eventosArrastre = arrastrable ? {
+              draggable: true,
+              onDragStart: (e) => { setArrastre({ desde: i, sobre: i }); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', p.productoId); },
+              onDragOver: (e) => { e.preventDefault(); if (arrastre && arrastre.sobre !== i) setArrastre({ ...arrastre, sobre: i }); },
+              onDrop: (e) => { e.preventDefault(); if (arrastre) mover(arrastre.desde, i); setArrastre(null); },
+              onDragEnd: () => setArrastre(null),
+            } : {};
+            // Línea azul donde va a caer: abajo si baja, arriba si sube.
+            const marcaDestino = arrastre && arrastre.sobre === i && arrastre.desde !== i
+              ? (arrastre.desde < i ? 'shadow-[inset_0_-2px_0_#2383C2]' : 'shadow-[inset_0_2px_0_#2383C2]') : '';
             return (
-              <FilaBodega key={p.productoId} columnas={columnasVisibles} celdas={{
-                producto: <td className={TD} title={p.nombre}>{p.nombre}</td>,
+              <FilaBodega key={p.productoId} columnas={columnasVisibles} className={`${arrastrable ? 'cursor-grab' : ''} ${marcaDestino}`} {...eventosArrastre} celdas={{
+                producto: (
+                  <td className={TD} title={p.nombre}>
+                    {puedeOrdenar && productos.length > 1 ? (
+                      <span className="flex items-center gap-1 min-w-0">
+                        <GripVertical size={12} className="shrink-0 text-gray-400" aria-hidden="true" />
+                        <button type="button" onClick={() => mover(i, i - 1)} disabled={ordenando || i === 0} aria-label={`Subir ${p.nombre}`} title="Subir" className="shrink-0 p-0.5 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><ChevronUp size={12} /></button>
+                        <button type="button" onClick={() => mover(i, i + 1)} disabled={ordenando || i === productos.length - 1} aria-label={`Bajar ${p.nombre}`} title="Bajar" className="shrink-0 p-0.5 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><ChevronDown size={12} /></button>
+                        <span className="truncate">{p.nombre}</span>
+                      </span>
+                    ) : p.nombre}
+                  </td>
+                ),
                 referencia: <td className={`${TD} font-num text-gray-600 dark:text-gray-300`} title={`${referencia} · ${p.codigoMaestro || ''}`}>{referencia || '—'}</td>,
                 objetivo: <td className={`${TD} text-right font-num`}>{formatoCantidad(p.stockObjetivo)}</td>,
                 actual: <td className={`${TD} text-right font-num`}>{formatoCantidad(p.stockActual)}</td>,
