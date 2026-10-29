@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockExcel = vi.fn();
 const mockPdf = vi.fn();
-vi.mock('../shared/exportar', () => ({ exportarExcel: (...a) => mockExcel(...a), exportarPdf: (...a) => mockPdf(...a) }));
+vi.mock('../shared/exportar', () => ({ exportarExcel: (...a) => mockExcel(...a) }));
+// El PDF de Cajas tiene su propio generador (pdfCajas.js); acá solo se revisa lo que recibe.
+vi.mock('./pdfCajas', async (original) => ({ ...(await original()), generarPdfCaja: (...a) => mockPdf(...a) }));
 // Maestro de productos en memoria: la exportación usa su referencia (no el código).
 vi.mock('../../../../stores/catalogosStore', () => ({ leerCatalogo: () => [{ id: 'a', referencia: 'REF-T1' }, { id: 'b', referencia: '' }] }));
 
@@ -21,7 +23,9 @@ describe('exportarCajas', () => {
     await exportarContenidoCaja(caja, 'pdf');
     const [, opciones] = mockPdf.mock.calls[0];
     expect(opciones.titulo).toBe('Caja de tutores');
-    expect(valores(opciones.columnas, opciones.filas[0])).toEqual(['REF-T1', 'Tutor S', 5, 2, 3]);
+    const [{ columnas, filas, resaltar }] = opciones.secciones;
+    expect(valores(columnas, filas[0])).toEqual(['REF-T1', 'Tutor S', 5, 2, 3]);
+    expect(resaltar(filas[0])).toBe(true);
   });
 
   it('inventario: dos hojas en Excel y dos secciones en PDF', async () => {
@@ -34,8 +38,20 @@ describe('exportarCajas', () => {
     expect(hojas.map((h) => [h.nombre, h.filas.length])).toEqual([['Consumo vs actual', 2], ['Faltante vs objetivo', 1]]);
     await exportarInventarioCaja(caja, inv, 'pdf');
     const opciones = mockPdf.mock.calls[0][1];
-    expect(opciones.subtitulo).toMatch(/Ana/);
+    expect(opciones.detalle).toMatch(/Ana/);
     expect(opciones.secciones).toHaveLength(2);
+  });
+
+  it('PDF: inventario y reposición en el orden de la caja, no en el guardado', async () => {
+    const ordenada = { ...caja, productos: { a: { ...caja.productos.a, orden: 1 }, b: { nombre: 'Venda', stockObjetivo: 1, stockActual: 0, orden: 0 } } };
+    const lineas = [{ productoId: 'a', nombre: 'Tutor S', faltante: 1, pendiente: 1 }, { productoId: 'z', nombre: 'Quitado', faltante: 0 }, { productoId: 'b', nombre: 'Venda', faltante: 1, pendiente: 0 }];
+    await exportarInventarioCaja(ordenada, { lineas }, 'pdf');
+    expect(mockPdf.mock.calls[0][1].secciones[0].filas.map((l) => l.productoId)).toEqual(['b', 'a', 'z']);
+    await exportarReposicionCaja(ordenada, { lineas, totalPendiente: 1 }, 'pdf');
+    const { secciones, resumen } = mockPdf.mock.calls[1][1];
+    expect(secciones[0].filas.map((l) => l.productoId)).toEqual(['b', 'a', 'z']);
+    expect(secciones[0].resaltar(lineas[0])).toBe(true);
+    expect(resumen.find((r) => r.etiqueta === 'Unidades pendientes').alerta).toBe(true);
   });
 
   it('reposición: lotes legibles y pendiente', async () => {
