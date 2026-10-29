@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, within, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, within, waitFor, act } from '@testing-library/react';
 import SeguimientoFacturasGuias from './SeguimientoFacturasGuias';
 
 const mockGetDocs = vi.fn();
@@ -13,6 +13,14 @@ vi.mock('../../../../../context/ToastContext', () => ({ useToast: () => ({ showT
 vi.mock('../../../../../hooks/useGranularPermission', () => ({
   useGranularPermission: () => ({ hasPermission: () => true })
 }));
+// Maestros → Empresas para el RUT junto al filtro (catalogosStore aparte, así
+// no se mezcla con las consultas de la tabla).
+const mockEmpresas = [
+  { id: 'a', nombre: 'EMPRESA A S.A.', rut: '761234567' },
+  { id: 'b', nombre: 'Empresa B', rut: '' }
+];
+const mockUseCatalogo = vi.fn(() => ({ datos: mockEmpresas, cargando: false, error: null }));
+vi.mock('../../../../../hooks/useCatalogo', () => ({ useCatalogo: (...args) => mockUseCatalogo(...args) }));
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn((_db, ...seg) => ({ _type: 'collection', path: seg.join('/') })),
   collectionGroup: vi.fn((_db, nombre) => ({ _type: 'collectionGroup', nombre })),
@@ -42,6 +50,7 @@ describe('SeguimientoFacturasGuias', () => {
     mockWhere.mockClear();
     mockCount.mockReset();
     mockCount.mockResolvedValue(conteo(1));
+    mockUseCatalogo.mockClear();
   });
 
   afterEach(() => {
@@ -189,6 +198,54 @@ describe('SeguimientoFacturasGuias', () => {
     it('el botón Exportar Excel se habilita con registros', async () => {
       await abrirFacturas2026();
       expect(screen.getByRole('button', { name: /Exportar Excel/ })).toBeEnabled();
+    });
+
+    describe('RUT de la empresa elegida', () => {
+      afterEach(() => {
+        vi.useRealTimers();
+        Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true });
+      });
+
+      it('sin empresa elegida no se muestra ni se lee Maestros', async () => {
+        await abrirFacturas2026();
+        expect(screen.queryByRole('button', { name: /Copiar RUT/ })).not.toBeInTheDocument();
+        expect(screen.queryByText('Sin RUT')).not.toBeInTheDocument();
+        expect(mockUseCatalogo).not.toHaveBeenCalled();
+      });
+
+      it('muestra el RUT formateado (cruce flexible por nombre) y lo copia con "¡Copiado!" por 2 s', async () => {
+        const writeText = vi.fn().mockResolvedValue();
+        Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+        await abrirFacturas2026();
+        fireEvent.change(screen.getByDisplayValue('Empresa'), { target: { value: 'Empresa A' } });
+
+        const boton = screen.getByRole('button', { name: 'Copiar RUT 76.123.456-7' });
+        expect(boton).toHaveAttribute('title', 'Clic para copiar');
+        vi.useFakeTimers();
+        fireEvent.click(boton);
+        await vi.waitFor(() => expect(boton).toHaveTextContent('¡Copiado!'));
+        expect(writeText).toHaveBeenCalledWith('76.123.456-7');
+        act(() => vi.advanceTimersByTime(2000));
+        expect(boton).toHaveTextContent('76.123.456-7');
+      });
+
+      it('"Sin RUT" si está en Maestros sin RUT y "No encontrada en Maestros" si no está', async () => {
+        FILAS.push({ admision: '103', proveedor: 'Empresa Z', oc: '4504', oc_monto: 1 });
+        try {
+          await abrirFacturas2026();
+          fireEvent.change(screen.getByDisplayValue('Empresa'), { target: { value: 'Empresa B' } });
+          expect(screen.getByText('Sin RUT')).toBeInTheDocument();
+          expect(screen.queryByRole('button', { name: /Copiar RUT/ })).not.toBeInTheDocument();
+
+          fireEvent.change(screen.getByDisplayValue('Empresa B'), { target: { value: 'Empresa Z' } });
+          expect(screen.getByText('No encontrada en Maestros')).toBeInTheDocument();
+
+          fireEvent.change(screen.getByDisplayValue('Empresa Z'), { target: { value: '' } });
+          expect(screen.queryByText('No encontrada en Maestros')).not.toBeInTheDocument();
+        } finally {
+          FILAS.pop();
+        }
+      });
     });
   });
 

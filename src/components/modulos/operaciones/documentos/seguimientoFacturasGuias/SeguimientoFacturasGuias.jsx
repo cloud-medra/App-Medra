@@ -15,6 +15,7 @@ import { COLUMNAS, formatearMonedaCLP } from './utils/columnasSeguimiento';
 import { exportarSeguimientoExcel } from './utils/exportarSeguimientoExcel';
 import { filtroPendienteFactura } from '../resumenFacturacion/resumenFacturacionService';
 import ResumenMensual from './ResumenMensual';
+import RutEmpresa from './RutEmpresa';
 
 // Objetos estables a nivel de módulo (no se recrean en cada render) — se
 // pasan tal cual a useDocumentosSistemaPeriodo(filtroServidor). NUMERO_GUIA
@@ -227,6 +228,9 @@ const SeguimientoFacturasGuias = ({ pathVista = '/documentos/seguimientoFacturas
                   <option key={nombre} value={nombre}>{nombre}</option>
                 ))}
               </select>
+
+              {/* key: al cambiar de empresa se descarta el "¡Copiado!" de la anterior. */}
+              {empresa && <RutEmpresa key={empresa} nombre={empresa} />}
 
               <div className="relative">
                 <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" />
