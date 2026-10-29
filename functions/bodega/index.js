@@ -52,6 +52,7 @@ exports.bodegaAnularInventario = callable('anularInventario');
 // Cajas (kits): mantenedor, inventario de la caja y reposición desde la Bodega General.
 exports.bodegaGuardarCaja = callable('guardarCaja');
 exports.bodegaOrdenarCaja = callable('ordenarCaja');
+exports.bodegaDuplicarCaja = callable('duplicarCaja');
 exports.bodegaInventariarCaja = callable('inventariarCaja');
 exports.bodegaReponerCaja = callable('reponerCaja');
 // Stock consignado: lo que cada empresa consignante dejó (no mueve stock).

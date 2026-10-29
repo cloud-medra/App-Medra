@@ -63,6 +63,8 @@ export const ACCIONES = Object.freeze({
   guardarCaja: [MODULO, RUTAS.cajas, 'cajas', 'btn_guardar'],
   // Reordenar los productos de una caja es parte de editarla (mismo permiso).
   ordenarCaja: [MODULO, RUTAS.cajas, 'cajas', 'btn_guardar'],
+  // Duplicar crea una caja: mismo permiso que crearla.
+  duplicarCaja: [MODULO, RUTAS.cajas, 'cajas', 'btn_guardar'],
   inventariarCaja: [MODULO, RUTAS.cajas, 'caja', 'btn_inventario'],
   reponerCaja: [MODULO, RUTAS.cajas, 'caja', 'btn_reponer'],
   guardarConsignacion: [MODULO, RUTAS.consignaciones, 'consignacion', 'btn_guardar'],
@@ -683,6 +685,47 @@ export const validarOrdenCaja = (productos = {}, orden) => {
   const cambios = {};
   ids.forEach((id, i) => { if (productos[id].orden !== i) cambios[id] = i; });
   return { errores: [], cambios };
+};
+
+// --- Duplicar una caja ---
+//
+// Nombre sugerido para la copia: si termina en número, el siguiente
+// (conservando los ceros a la izquierda: "Caja #1" -> "Caja #2",
+// "Kit 09" -> "Kit 10"); si no, "<nombre> (copia)". Nunca pasa del largo
+// máximo (se recorta la base, no el sufijo).
+export const nombreSugeridoCopia = (nombre) => {
+  const base = String(nombre ?? '').trim().replace(/\s+/g, ' ');
+  const conNumero = base.match(/^(.*?)(\d+)$/);
+  if (conNumero) {
+    const [, prefijo, digitos] = conNumero;
+    const siguiente = String(BigInt(digitos) + 1n).padStart(digitos.length, '0');
+    return `${prefijo.slice(0, MAX_NOMBRE_CAJA - siguiente.length)}${siguiente}`;
+  }
+  const sufijo = ' (copia)';
+  return `${base.slice(0, MAX_NOMBRE_CAJA - sufijo.length).trim()}${sufijo}`;
+};
+
+// Productos de la caja nueva: mismos productos, stock objetivo y orden
+// (renumerado 0..n-1 en el orden de la original, también si la original
+// aún no tenía orden manual), con el stock actual en 0. `maestro`
+// ({ [productoId]: producto }, opcional) refresca nombre y código.
+export const productosDuplicados = (productos = {}, maestro = null) => Object.fromEntries(
+  idsOrdenadosCaja(productos).map((id, i) => {
+    const p = productos[id];
+    const m = maestro?.[id];
+    return [id, {
+      nombre: m?.nombre ?? p.nombre, codigoMaestro: (m ? m.codigoMaestro : p.codigoMaestro) || '',
+      stockObjetivo: Number(p.stockObjetivo) || 0, stockActual: 0, orden: i,
+    }];
+  }),
+);
+
+// datos: { cajaId, nombre, version } (version = actualizadoEn de la caja
+// original en ms, tal como la vio quien duplica) -> { errores, cajaId, nombre }.
+export const validarDuplicadoCaja = (datos = {}) => {
+  const cajaId = String(datos.cajaId ?? '').trim();
+  const { errores, caja } = validarCaja({ nombre: datos.nombre, productos: [] });
+  return { errores: [...(cajaId ? [] : ['Falta la caja a duplicar.']), ...errores], cajaId, nombre: caja.nombre };
 };
 
 // Faltante de un producto de la caja para llegar al objetivo (nunca negativo).

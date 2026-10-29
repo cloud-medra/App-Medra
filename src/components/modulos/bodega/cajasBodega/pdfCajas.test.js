@@ -28,6 +28,9 @@ describe('pdfCajas', () => {
     expect(paginas).toBeGreaterThan(1);
     const salida = doc.output();
     expect(salida).toContain('/Title (Contenido de la caja');
+    // Sin logo ni marca: ni imágenes ni "Medra" (texto, autor o creador).
+    expect(salida).not.toMatch(/Medra/i);
+    expect(salida).not.toContain('/Subtype /Image');
     // "Página" va codificada en el PDF; basta con el resto del texto.
     for (let p = 1; p <= paginas; p += 1) expect(salida).toContain(`gina ${p} de ${paginas}`);
   });

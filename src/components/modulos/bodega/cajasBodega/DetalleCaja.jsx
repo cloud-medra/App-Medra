@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, Pencil, ClipboardCheck, History, PackagePlus, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Pencil, Copy, ClipboardCheck, History, PackagePlus, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import { formatoCantidad } from '../shared/catalogosBodega';
 import { fechaHora } from '../shared/transito/transitos';
 import FormCajaModal from './FormCajaModal';
+import DuplicarCajaModal from './DuplicarCajaModal';
 import InventarioCajaModal from './InventarioCajaModal';
 import HistorialCaja from './HistorialCaja';
 import ReponerCajaModal from './ReponerCajaModal';
@@ -31,7 +32,7 @@ const COLUMNAS = [
 ];
 
 // Contenido de una caja (objetivo, actual, faltante) con sus acciones.
-const DetalleCaja = ({ caja, onVolver, onCambio }) => {
+const DetalleCaja = ({ caja, onVolver, onCambio, onDuplicada, nombresOcupados }) => {
   const { hasPermission } = useGranularPermission();
   const { columnasVisibles } = useColumnasPermitidas(PATH_VISTA, 'caja', COLUMNAS);
   const { anchos, handleResize, restablecerAnchos, personalizados } = useAnchosTablaBodega(columnasVisibles, 'bodega.caja');
@@ -39,6 +40,7 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
   const { datos: maestro } = useCatalogo('bodegaProductos');
   const porId = useMemo(() => Object.fromEntries(maestro.map((p) => [p.id, p])), [maestro]);
   const [editando, setEditando] = useState(false);
+  const [duplicando, setDuplicando] = useState(false);
   const [inventariando, setInventariando] = useState(false);
   const [reponiendo, setReponiendo] = useState(null); // caja a reponer (la actual o la recién inventariada)
   const puedeReponer = hasPermission(PATH_VISTA, 'caja', 'btn_reponer');
@@ -108,7 +110,10 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
           {puedeExportar && <BotonesExportar deshabilitado={!productos.length} exportar={exportarCon((f) => exportarContenidoCaja(caja, f))} />}
           <button type="button" onClick={() => setVerHistorial((v) => !v)} className={`h-7 px-2 rounded border font-semibold flex items-center gap-1 ${verHistorial ? 'border-[#2383C2] text-[#2383C2]' : 'border-gray-300 dark:border-gray-600'}`}><History size={12} /> Historial</button>
           {hasPermission(PATH_VISTA, 'cajas', 'btn_guardar') && (
-            <button type="button" onClick={() => setEditando(true)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><Pencil size={12} /> Editar</button>
+            <>
+              <button type="button" onClick={() => setDuplicando(true)} title="Crear otra caja con los mismos productos, stock objetivo y orden" className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><Copy size={12} /> Duplicar</button>
+              <button type="button" onClick={() => setEditando(true)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><Pencil size={12} /> Editar</button>
+            </>
           )}
         </div>
       </div>
@@ -176,6 +181,7 @@ const DetalleCaja = ({ caja, onVolver, onCambio }) => {
       )}
       {reponiendo && <ReponerCajaModal caja={reponiendo} onCerrar={() => setReponiendo(null)} onHecho={cambio} pie={botonesReposicion} />}
       {editando && <FormCajaModal caja={caja} onCerrar={() => setEditando(false)} onGuardada={() => { setEditando(false); onCambio(); }} />}
+      {duplicando && <DuplicarCajaModal caja={caja} nombresOcupados={nombresOcupados} onCerrar={() => setDuplicando(false)} onDuplicada={(id) => { setDuplicando(false); onDuplicada(id); }} />}
     </div>
   );
 };

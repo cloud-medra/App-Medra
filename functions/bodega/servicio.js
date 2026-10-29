@@ -31,7 +31,7 @@ const {
   agruparLineasEgreso, aplicarMovimientoCentro, aplicarAccionTransito, accionTransito, normalizarIdEntrega,
   ESTADOS_INVENTARIO, NO_CONTADOS, MAX_CONTEOS_POR_ENVIO, MAX_NOMBRE_INVENTARIO, diferenciaLinea, resumenInventario,
   aplicarConteo, idLote,
-  validarCaja, validarOrdenCaja, idsOrdenadosCaja, totalesCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja,
+  validarCaja, validarOrdenCaja, idsOrdenadosCaja, validarDuplicadoCaja, productosDuplicados, totalesCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja,
   saldoDe, fotoSaldo, datosPropietario, movimientoDeAccion, DESDE, ACCIONES_SOBRE_TRANSITO, lotesPropios,
   validarConsignacion,
   costoDe, valorizarMovimiento, camposCosto, costoEnCentro, periodoVigente, MODULO_PERIODO, ESTADOS_PERIODO_ABIERTO,
@@ -1325,6 +1325,51 @@ const ordenarCajaComo = (db, por, datos = {}) => {
   });
 };
 
+// Duplicar: { cajaId, nombre, version }. En una transacción lee la original
+// (y su `actualizadoEn`: si no coincide con `version`, alguien la cambió
+// desde que se abrió), el candado del nombre nuevo y los productos del
+// maestro (nombre y código al día); crea la caja con los mismos productos,
+// stock objetivo y orden, y el stock actual en 0. No copia inventarios,
+// reposiciones ni logs. Queda un log en las dos cajas.
+const duplicarCajaComo = (db, por, datos = {}) => {
+  const { errores, cajaId, nombre } = validarDuplicadoCaja(datos);
+  exigirSinErrores(errores);
+  return db.runTransaction(async (t) => {
+    const refOriginal = refCaja(db, cajaId);
+    const refNuevoUnico = refUnico(db, idUnico.caja(nombre));
+    const [snap, snapUnico] = await Promise.all([t.get(refOriginal), t.get(refNuevoUnico)]);
+    if (!snap.exists) throw new HttpsError('not-found', 'La caja que quieres duplicar ya no existe.');
+    const original = snap.data();
+    const version = original.actualizadoEn?.toMillis?.() ?? null;
+    if ((datos.version ?? null) !== version) throw new HttpsError('failed-precondition', 'La caja original cambió desde que la abriste. Actualízala e inténtalo de nuevo.');
+    if (snapUnico.exists) throw new HttpsError('already-exists', `Ya existe una caja llamada "${nombre}".`);
+    const ids = Object.keys(original.productos || {});
+    const snapsProductos = await Promise.all(ids.map((id) => t.get(db.collection(COL.productos).doc(id))));
+    const faltan = snapsProductos.filter((s) => !s.exists);
+    if (faltan.length) throw new HttpsError('failed-precondition', 'Un producto de la caja original ya no existe en el maestro. Edítala antes de duplicarla.');
+    const maestro = Object.fromEntries(snapsProductos.map((s) => [s.id, s.data()]));
+
+    const ref = db.collection(COL.cajas).doc();
+    t.set(refNuevoUnico, { tipo: 'caja', refId: ref.id });
+    t.set(ref, {
+      nombre, descripcion: original.descripcion || '', activa: original.activa !== false,
+      ...conTotales(productosDuplicados(original.productos, maestro)),
+      duplicadaDe: { id: cajaId, nombre: original.nombre },
+      creadoPor: por, creadoEn: ahora(), ultimoInventario: null, ultimaReposicion: null,
+      actualizadoPor: por, actualizadoEn: ahora(),
+    });
+    registrarLog(t, ref, 'DUPLICACION', por, { origen: { id: cajaId, nombre: original.nombre }, productos: ids.length });
+    registrarLog(t, refOriginal, 'DUPLICADA', por, { copia: { id: ref.id, nombre } });
+    return { id: ref.id };
+  });
+};
+
+const duplicarCaja = async (db, uid, datos) => {
+  const perfil = await perfilActivo(db, uid);
+  exigir(perfil, ACCIONES.duplicarCaja);
+  return duplicarCajaComo(db, datosPor(uid, perfil), datos);
+};
+
 const ordenarCaja = async (db, uid, datos) => {
   const perfil = await perfilActivo(db, uid);
   exigir(perfil, ACCIONES.ordenarCaja);
@@ -1556,6 +1601,8 @@ module.exports = {
   guardarCajaComo,
   ordenarCaja,
   ordenarCajaComo,
+  duplicarCaja,
+  duplicarCajaComo,
   iniciarInventario,
   reanudarInventario,
   registrarConteo,

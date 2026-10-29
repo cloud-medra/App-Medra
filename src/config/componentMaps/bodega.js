@@ -229,7 +229,7 @@ export const bodegaComponentMaps = {
       cajas: {
         label: 'Sección: Listado y mantenedor de cajas',
         elements: {
-          btn_guardar: { label: 'Acción: Crear, editar o desactivar cajas y sus productos / stock objetivo, y ordenar sus productos' },
+          btn_guardar: { label: 'Acción: Crear, editar, duplicar o desactivar cajas y sus productos / stock objetivo, y ordenar sus productos' },
           ...columnas([['productos', 'Productos'], ['completitud', '% completitud'], ['faltante', 'Unidades faltantes'], ['ultimoInventario', 'Último inventario']]),
         },
       },

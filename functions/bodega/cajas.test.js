@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validarCaja, validarOrdenCaja, idsOrdenadosCaja, compararNombreNatural, totalesCaja, faltanteCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja, aplicarMovimiento } from './nucleo.mjs';
+import { validarCaja, validarOrdenCaja, nombreSugeridoCopia, productosDuplicados, validarDuplicadoCaja, MAX_NOMBRE_CAJA,idsOrdenadosCaja, compararNombreNatural, totalesCaja, faltanteCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja, aplicarMovimiento } from './nucleo.mjs';
 
 describe('cajas: validarCaja', () => {
   it('nombre obligatorio, objetivo entero >= 0 y sin productos repetidos', () => {
@@ -98,5 +98,57 @@ describe('cajas: orden de los productos', () => {
     expect(validarOrdenCaja(productos, ['b', 'a', 'c'])).toEqual({ errores: [], cambios: { b: 0, a: 1, c: 2 } });
     const yaOrdenado = { a: { orden: 0 }, b: { orden: 1 } };
     expect(validarOrdenCaja(yaOrdenado, ['a', 'b']).cambios).toEqual({});
+  });
+});
+
+describe('cajas: duplicar', () => {
+  it('nombreSugeridoCopia: el siguiente número o "(copia)"', () => {
+    expect(nombreSugeridoCopia('Caja #1')).toBe('Caja #2');
+    expect(nombreSugeridoCopia('Caja 9')).toBe('Caja 10');
+    expect(nombreSugeridoCopia('Kit 09')).toBe('Kit 10');
+    expect(nombreSugeridoCopia('Kit 007')).toBe('Kit 008');
+    expect(nombreSugeridoCopia('Caja 99')).toBe('Caja 100');
+    expect(nombreSugeridoCopia('  Caja   de tutores ')).toBe('Caja de tutores (copia)');
+    expect(nombreSugeridoCopia('Caja 2B')).toBe('Caja 2B (copia)');
+  });
+
+  it('nombreSugeridoCopia: nunca pasa del largo máximo', () => {
+    const largo = 'A'.repeat(MAX_NOMBRE_CAJA);
+    expect(nombreSugeridoCopia(largo)).toHaveLength(MAX_NOMBRE_CAJA);
+    expect(nombreSugeridoCopia(largo).endsWith(' (copia)')).toBe(true);
+    const conNumero = 'B'.repeat(MAX_NOMBRE_CAJA - 1) + '9';
+    expect(nombreSugeridoCopia(conNumero)).toHaveLength(MAX_NOMBRE_CAJA);
+    expect(nombreSugeridoCopia(conNumero).endsWith('10')).toBe(true);
+  });
+
+  it('productosDuplicados: mismo objetivo y orden, stock actual en 0', () => {
+    const productos = {
+      a: { nombre: 'A', codigoMaestro: 'CA', stockObjetivo: 5, stockActual: 3, orden: 4 },
+      b: { nombre: 'B', codigoMaestro: 'CB', stockObjetivo: 2, stockActual: 9, orden: 1 },
+      c: { nombre: 'C', stockObjetivo: 1, stockActual: 1 },
+    };
+    expect(productosDuplicados(productos)).toEqual({
+      b: { nombre: 'B', codigoMaestro: 'CB', stockObjetivo: 2, stockActual: 0, orden: 0 },
+      a: { nombre: 'A', codigoMaestro: 'CA', stockObjetivo: 5, stockActual: 0, orden: 1 },
+      c: { nombre: 'C', codigoMaestro: '', stockObjetivo: 1, stockActual: 0, orden: 2 },
+    });
+    expect(productosDuplicados({})).toEqual({});
+  });
+
+  it('productosDuplicados: una caja sin orden manual conserva el orden por nombre natural', () => {
+    const productos = { x: { nombre: 'Tornillo 10', stockObjetivo: 1 }, y: { nombre: 'Tornillo 2', stockObjetivo: 1 } };
+    expect(productosDuplicados(productos)).toMatchObject({ y: { orden: 0 }, x: { orden: 1 } });
+  });
+
+  it('productosDuplicados: toma nombre y código al día del maestro', () => {
+    const r = productosDuplicados({ a: { nombre: 'Viejo', codigoMaestro: 'V', stockObjetivo: 3, stockActual: 2 } }, { a: { nombre: 'Nuevo', codigoMaestro: 'N' } });
+    expect(r.a).toEqual({ nombre: 'Nuevo', codigoMaestro: 'N', stockObjetivo: 3, stockActual: 0, orden: 0 });
+  });
+
+  it('validarDuplicadoCaja: exige caja y nombre válido, y normaliza el nombre', () => {
+    expect(validarDuplicadoCaja({ nombre: 'Caja #2' }).errores[0]).toMatch(/Falta la caja/);
+    expect(validarDuplicadoCaja({ cajaId: 'c1', nombre: '   ' }).errores[0]).toMatch(/obligatorio/);
+    expect(validarDuplicadoCaja({ cajaId: 'c1', nombre: 'x'.repeat(MAX_NOMBRE_CAJA + 1) }).errores[0]).toMatch(/superar/);
+    expect(validarDuplicadoCaja({ cajaId: ' c1 ', nombre: '  Caja   #2 ' })).toEqual({ errores: [], cajaId: 'c1', nombre: 'Caja #2' });
   });
 });

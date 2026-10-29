@@ -1,13 +1,12 @@
 // PDF de Cajas (contenido, inventario y reposición) con un mismo diseño:
-// encabezado con el logo de Medra, el tipo de documento, la fecha de
-// generación y el nombre de la caja; tarjetas de resumen; tablas con
+// encabezado con el tipo de documento, la fecha de generación y el nombre
+// de la caja (sin logo ni marca); tarjetas de resumen; tablas con
 // encabezado azul (repetido en cada página), filas alternadas, números a la
 // derecha y los productos con faltante resaltados en rojo; pie con
 // "Página X de Y". Se abre en una pestaña nueva (abrirVisorPdf).
 //
 // construirPdfCaja es puro (recibe jsPDF y autoTable) para poder generarlo
-// fuera del navegador; generarPdfCaja carga las librerías y el logo.
-import logoMedra from '../../../../assets/logo/png/medra-logo-claro-512.png';
+// fuera del navegador; generarPdfCaja carga las librerías.
 import { abrirVisorPdf } from '../shared/abrirPdf';
 import { nombreArchivo } from '../shared/exportar';
 
@@ -19,7 +18,6 @@ const ALTERNA = [245, 248, 252];
 const ROJO = [185, 28, 28];
 const FONDO_ROJO = [254, 238, 238];
 const MARGEN = 14;
-const LOGO_PROPORCION = 169 / 512; // alto / ancho del PNG
 
 // Helvetica (fuente estándar del PDF) no tiene el signo menos tipográfico.
 const limpio = (texto) => String(texto ?? '').replace(/−/g, '-');
@@ -40,40 +38,37 @@ export const enOrdenDeCaja = (lineas = [], idsCaja = []) => {
 //   tipo: 'Contenido de la caja', titulo: nombre de la caja, detalle: texto bajo el título,
 //   generado: 'dd-mm-aaaa hh:mm', resumen: [{ etiqueta, valor, alerta? }],
 //   secciones: [{ titulo?, columnas: [{ titulo, valor, numero?, ancho? }], filas,
-//                 resaltar?: (fila) => bool, alerta?: titulo de la columna en rojo, vacio? }],
-//   logo?: { datos: Uint8Array | dataURL, formato: 'PNG' } }
-export const construirPdfCaja = ({ jsPDF, autoTable }, { tipo, titulo, detalle = '', generado, resumen = [], secciones = [], logo = null }) => {
+//                 resaltar?: (fila) => bool, alerta?: titulo de la columna en rojo, vacio? }] }
+export const construirPdfCaja = ({ jsPDF, autoTable }, { tipo, titulo, detalle = '', generado, resumen = [], secciones = [] }) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const ancho = doc.internal.pageSize.getWidth();
   const alto = doc.internal.pageSize.getHeight();
   const derecha = ancho - MARGEN;
   const nombreDocumento = `${tipo} · ${titulo}`;
-  doc.setProperties({ title: limpio(nombreDocumento), subject: tipo, author: 'Medra', creator: 'Medra · Bodega' });
+  // Sin autor ni creador: el PDF no lleva marca (solo el productor de jsPDF).
+  doc.setProperties({ title: limpio(nombreDocumento), subject: tipo });
   doc.viewerPreferences({ DisplayDocTitle: true });
   doc.setFont('helvetica', 'normal');
 
-  // Encabezado de la primera página.
-  if (logo) {
-    try { doc.addImage(logo.datos, logo.formato || 'PNG', MARGEN, 10, 36, 36 * LOGO_PROPORCION); } catch { /* sin logo */ }
-  }
+  // Encabezado de la primera página: tipo de documento y fecha de generación.
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(...AZUL);
-  doc.text(tipo.toUpperCase(), derecha, 15, { align: 'right' });
+  doc.text(tipo.toUpperCase(), MARGEN, 15);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   doc.setTextColor(...GRIS);
-  doc.text(`Generado el ${generado}`, derecha, 20, { align: 'right' });
+  doc.text(`Generado el ${generado}`, derecha, 15, { align: 'right' });
   doc.setDrawColor(...AZUL);
   doc.setLineWidth(0.6);
-  doc.line(MARGEN, 26, derecha, 26);
+  doc.line(MARGEN, 19, derecha, 19);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(...TEXTO);
   const lineasTitulo = doc.splitTextToSize(limpio(titulo), derecha - MARGEN);
-  doc.text(lineasTitulo, MARGEN, 35);
-  let y = 35 + (lineasTitulo.length - 1) * 6.5;
+  doc.text(lineasTitulo, MARGEN, 28);
+  let y = 28 + (lineasTitulo.length - 1) * 6.5;
   if (detalle) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
@@ -183,20 +178,10 @@ export const construirPdfCaja = ({ jsPDF, autoTable }, { tipo, titulo, detalle =
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(...GRIS);
-    doc.text(limpio(`Medra · Bodega · ${nombreDocumento}`), MARGEN, alto - 7.5, { maxWidth: 140 });
+    doc.text(limpio(`Bodega · ${nombreDocumento}`), MARGEN, alto - 7.5, { maxWidth: 140 });
     doc.text(`Página ${p} de ${paginas}`, derecha, alto - 7.5, { align: 'right' });
   }
   return doc;
-};
-
-const leerLogo = async () => {
-  try {
-    const respuesta = await fetch(logoMedra);
-    if (!respuesta.ok) return null;
-    return { datos: new Uint8Array(await respuesta.arrayBuffer()), formato: 'PNG' };
-  } catch {
-    return null;
-  }
 };
 
 // Abre la pestaña de inmediato (mismo clic), genera y la carga. Si algo
@@ -204,8 +189,8 @@ const leerLogo = async () => {
 export const generarPdfCaja = async (base, opciones) => {
   const visor = abrirVisorPdf(`${opciones.tipo} · ${opciones.titulo}`);
   try {
-    const [{ jsPDF }, { default: autoTable }, logo] = await Promise.all([import('jspdf'), import('jspdf-autotable'), leerLogo()]);
-    const doc = construirPdfCaja({ jsPDF, autoTable }, { ...opciones, logo });
+    const [{ jsPDF }, { default: autoTable }] = await Promise.all([import('jspdf'), import('jspdf-autotable')]);
+    const doc = construirPdfCaja({ jsPDF, autoTable }, opciones);
     visor.mostrar(doc, nombreArchivo(base, 'pdf'));
   } catch (e) {
     visor.cerrar();

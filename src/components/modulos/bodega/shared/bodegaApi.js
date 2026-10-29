@@ -317,6 +317,10 @@ export const guardarCaja = (datos) => llamar('bodegaGuardarCaja')(datos);
 // { cajaId, orden: [productoId] } -> { id, cambios }. Orden manual de los productos.
 export const ordenarCaja = (datos) => llamar('bodegaOrdenarCaja')(datos);
 
+// { cajaId, nombre, version } -> { id } de la caja nueva (mismos productos,
+// objetivo y orden; stock actual en 0). `version`: actualizadoEn en ms.
+export const duplicarCaja = (datos) => llamar('bodegaDuplicarCaja')(datos);
+
 // { cajaId, conteos: { [productoId]: contado } } -> { id, lineas, resumen }
 export const inventariarCaja = (datos) => llamar('bodegaInventariarCaja')(datos);
 

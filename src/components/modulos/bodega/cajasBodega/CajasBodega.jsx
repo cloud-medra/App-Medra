@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Package, RefreshCw, Plus } from 'lucide-react';
 import { useToast } from '../../../../context/ToastContext';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
@@ -9,6 +9,7 @@ import { fechaHora } from '../shared/transito/transitos';
 import DetalleCaja from './DetalleCaja';
 import FormCajaModal from './FormCajaModal';
 import { BarraCompletitud } from './comunes';
+import { idUnico } from '../../../../../functions/bodega/nucleo.mjs';
 import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
 import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBodega';
@@ -58,6 +59,8 @@ const CajasBodega = () => {
   };
 
   const visibles = (cajas || []).filter((c) => verInactivas || c.activa !== false);
+  // Nombres en uso (activas e inactivas), con la misma clave del candado del servidor.
+  const nombresOcupados = useMemo(() => new Set((cajas || []).map((c) => idUnico.caja(c.nombre))), [cajas]);
 
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[11px]">
@@ -75,7 +78,13 @@ const CajasBodega = () => {
       </div>
       <div className="flex-1 overflow-auto p-3">
         {abierta ? (
-          <DetalleCaja caja={abierta} onVolver={() => setAbierta(null)} onCambio={() => refrescarAbierta()} />
+          <DetalleCaja
+            key={abierta.id} // al pasar a otra caja (p. ej. la duplicada) no arrastra historial ni modales
+            caja={abierta} onVolver={() => setAbierta(null)} onCambio={() => refrescarAbierta()}
+            nombresOcupados={nombresOcupados}
+            // Igual que al crear: relee el listado y abre la caja nueva.
+            onDuplicada={(id) => { recargar(); refrescarAbierta(id); }}
+          />
         ) : cajas === null ? (
           <p className="text-gray-400 italic">Cargando…</p>
         ) : (
