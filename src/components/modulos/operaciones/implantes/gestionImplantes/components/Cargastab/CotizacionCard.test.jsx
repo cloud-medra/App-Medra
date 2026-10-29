@@ -72,7 +72,7 @@ describe('CotizacionCard - carga masiva "Marcar todos como Cargado"', () => {
     renderCard(onActualizarEstadoItem);
 
     fireEvent.click(screen.getByRole('button', { name: /marcar todos como cargado/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^confirmar$/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar carga' }));
 
     const idsActualizados = onActualizarEstadoItem.mock.calls.map(call => call[0]);
 
@@ -107,7 +107,7 @@ describe('CotizacionCard - carga masiva "Marcar todos como Cargado"', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: /marcar todos como cargado/i }));
-    fireEvent.click(screen.getByRole('button', { name: /^confirmar$/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar carga' }));
 
     const idsActualizados = onActualizarEstadoItem.mock.calls.map(call => call[0]);
     expect(idsActualizados.sort()).toEqual(['item_2', 'item_3']);

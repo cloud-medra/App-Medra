@@ -35,6 +35,7 @@ import { ManijaRedimension } from '../ManijaRedimension';
 import { useAutocompleteReferencia } from './useAutocompleteReferencia';
 import { PadContenidoRow, crearFilaContenidoPadVacia, construirItemContenidoPadDesdeFila } from './PadContenidoRow';
 import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
+import ModalConfirmarCarga from '../../../../shared/ModalConfirmarCarga';
 
 // `px` (opcional): relleno horizontal de la columna en encabezado y celdas
 // (por defecto px-2.5); permite columnas más angostas sin cortar el contenido.
@@ -364,7 +365,6 @@ export const CotizacionCard = ({
     !it.esPad && !it.padPadreId && !it.sinCodigo && (it.estadoCarga || 'PENDIENTE') !== 'CARGADO'
   );
   const cantidadElegibles = itemsElegiblesCargaMasiva.length;
-  const textoCantidadElegibles = `${cantidadElegibles} ítem${cantidadElegibles === 1 ? '' : 's'}`;
 
   const [mostrarConfirmCargaMasiva, setMostrarConfirmCargaMasiva] = useState(false);
 
@@ -911,50 +911,18 @@ export const CotizacionCard = ({
         </div>
       )}
 
-      {mostrarConfirmCargaMasiva && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[1px]">
-          <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 bg-emerald-50/60 dark:bg-emerald-950/20">
-              <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <h3 className="text-[12px] font-bold text-gray-800 dark:text-gray-100">Confirmar carga masiva</h3>
-              <button
-                type="button"
-                onClick={() => setMostrarConfirmCargaMasiva(false)}
-                className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
-              >
-                <X size={15} />
-              </button>
-            </div>
-
-            <div className="px-4 py-3">
-              <p className="text-[11px] text-gray-600 dark:text-gray-300">
-                Esta acción marcará como "Cargado" {textoCantidadElegibles} de esta cotización. Los ítems con referencia PAD
-                no se verán afectados y mantendrán su estado actual.
-              </p>
-              <p className="text-[11px] text-gray-600 dark:text-gray-300 mt-2">
-                ¿Deseas continuar?
-              </p>
-            </div>
-
-            <div className="px-4 py-3 bg-gray-50/60 dark:bg-gray-900/40 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setMostrarConfirmCargaMasiva(false)}
-                className="h-8 px-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition text-[11px]"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmarCargaMasiva}
-                className="h-8 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-semibold transition text-[11px]"
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ModalConfirmarCarga
+        abierto={mostrarConfirmCargaMasiva}
+        onCerrar={() => setMostrarConfirmCargaMasiva(false)}
+        onConfirmar={confirmarCargaMasiva}
+        cantidad={cantidadElegibles}
+        detalles={[
+          { etiqueta: 'Cotización', valor: cotizacion.numCotizacion },
+          { etiqueta: 'Empresa', valor: bloqueEmpresa },
+          { etiqueta: 'Fecha', valor: fechaMostrada }
+        ]}
+        notaExclusiones="ítems PAD y sin código"
+      />
     </div>
   );
 };

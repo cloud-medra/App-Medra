@@ -119,6 +119,25 @@
   animation: shake 0.55s cubic-bezier(.36, .07, .19, .97) both;
 }
 
+/* Entrada de diálogos (ModalConfirmarCarga): el fondo aparece y la caja
+   crece apenas desde 96 %. */
+@keyframes entrada-fondo {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes entrada-dialogo {
+  from { opacity: 0; transform: translateY(4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.entrada-fondo { animation: entrada-fondo 0.15s ease-out both; }
+.entrada-dialogo { animation: entrada-dialogo 0.18s cubic-bezier(.2, .8, .3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .entrada-fondo, .entrada-dialogo { animation: none; }
+}
+
 @layer base {
   body {
     @apply transition-colors duration-300;
