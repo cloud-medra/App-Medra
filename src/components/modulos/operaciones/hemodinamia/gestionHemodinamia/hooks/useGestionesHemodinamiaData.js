@@ -31,6 +31,7 @@ import { calcularOcPendiente, itemsDeGestion } from '../../../shared/ocIndex/ind
 import { ordenarGestiones } from '../../../implantes/gestionImplantes/utils/ordenGestiones';
 import { existeGestionEnColeccion, extraerDatosBase, MENSAJE_DUPLICADO } from '../../../shared/empresaFechaDesdeDetalle';
 import { calcularFechaRegistroAdmision } from '../../../shared/fechaRegistroAdmision';
+import { cambiaIdentidad, revisarDuplicadoGestion, confirmarRegistroDuplicado } from '../../../shared/gestion/duplicadosGestion';
 
 const getFechaActualISO = () => {
   const hoy = new Date();
@@ -553,6 +554,20 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
         showToast("Ya existe un registro con el mismo ID, Fecha y Empresa.", "error");
         setCargando(false);
         return { ok: false, campo: 'gestionId' };
+      }
+
+      // Posible duplicado (mismo nombre + fecha + empresa, o mismo ID) en
+      // Firestore: avisa y deja elegir; no bloquea. Al editar, solo si
+      // cambió algo que identifica a la gestión, y sin compararla consigo
+      // misma. Ver shared/gestion/duplicadosGestion.js.
+      const original = editingId ? implantes.find(i => i.id === editingId) : null;
+      if (cambiaIdentidad(original, dataNormalizada)) {
+        const duplicado = await revisarDuplicadoGestion('hemodinamia', dataNormalizada, { excluirRefPath: editingRefPath });
+        if (duplicado) {
+          setCargando(false);
+          if (!(await confirmarRegistroDuplicado(confirmAction, duplicado))) return { ok: false, campo: null };
+          setCargando(true);
+        }
       }
 
       if (editingId && editingRefPath) {
