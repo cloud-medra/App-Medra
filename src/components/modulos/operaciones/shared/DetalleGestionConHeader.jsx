@@ -56,8 +56,8 @@ const DetalleGestionConHeader = ({ fila, onVolver, useGestiones, DetalleView, ti
       )}
 
       {showConfirmSalir && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[1px]">
-          <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[1px] p-4">
+          <div className="bg-white dark:bg-gray-800 w-full max-w-sm max-h-full overflow-y-auto rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 bg-amber-50/60 dark:bg-amber-950/20">
               <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
               <h3 className="text-[12px] font-bold text-gray-800 dark:text-gray-100">Cambios sin guardar</h3>
@@ -71,19 +71,19 @@ const DetalleGestionConHeader = ({ fila, onVolver, useGestiones, DetalleView, ti
             <div className="px-4 py-3 bg-gray-50/60 dark:bg-gray-900/40 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-2">
               <button
                 onClick={() => { setShowConfirmSalir(false); detalleRef.current?.guardarTodo(); }}
-                className="w-full h-8 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center justify-center gap-1.5 transition text-[11px]"
+                className="w-full h-10 md:h-8 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center justify-center gap-1.5 transition text-[11px]"
               >
                 <Save size={13} /> Guardar y salir
               </button>
               <button
                 onClick={() => { setShowConfirmSalir(false); onVolver(); }}
-                className="w-full h-8 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 rounded font-semibold transition text-[11px]"
+                className="w-full h-10 md:h-8 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 rounded font-semibold transition text-[11px]"
               >
                 Salir sin guardar
               </button>
               <button
                 onClick={() => setShowConfirmSalir(false)}
-                className="w-full h-8 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition text-[11px]"
+                className="w-full h-10 md:h-8 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition text-[11px]"
               >
                 Seguir editando
               </button>
@@ -95,7 +95,7 @@ const DetalleGestionConHeader = ({ fila, onVolver, useGestiones, DetalleView, ti
       <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <button
           onClick={handleIntentarVolver}
-          className="p-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition shadow-xs"
+          className="p-1.5 md:p-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition shadow-xs"
           title="Volver al listado"
         >
           <ArrowLeft size={13} />
@@ -105,7 +105,7 @@ const DetalleGestionConHeader = ({ fila, onVolver, useGestiones, DetalleView, ti
         </span>
         <button
           onClick={() => detalleRef.current?.guardarTodo()}
-          className="ml-auto h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center gap-1.5 transition text-[11px] shadow-xs active:scale-[0.98]"
+          className="ml-auto h-9 md:h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center gap-1.5 transition text-[11px] shadow-xs active:scale-[0.98]"
         >
           <Save size={13} /> Guardar Todo
         </button>

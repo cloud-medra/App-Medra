@@ -61,7 +61,7 @@ const GestionesForm = ({
     <form onSubmit={onSubmitForm} className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/20 flex flex-col gap-2">
       <div className="flex flex-wrap items-end gap-2.5">
 
-        <div className="w-[110px]">
+        <div className="w-[calc(50%-0.3125rem)] sm:w-[110px]">
           <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">ID</label>
           <input
             ref={refId}
@@ -73,24 +73,24 @@ const GestionesForm = ({
               const soloNumeros = e.target.value.replace(/\D/g, '');
               handleIdChange(soloNumeros);
             }}
-            className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-semibold"
+            className="w-full h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-base md:text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-semibold"
             placeholder="Ej: 102"
           />
         </div>
 
-        <div className="w-[200px]">
+        <div className="w-full sm:w-[200px]">
           <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Nombre</label>
           <input
             ref={refNombre}
             aria-label="Nombre"
             value={formData.nombre || ''}
             onChange={e => setFormData({ ...formData, nombre: e.target.value.toUpperCase() })}
-            className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 uppercase"
+            className="w-full h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-base md:text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 uppercase"
             placeholder={config.placeholderNombre}
           />
         </div>
 
-        <div className="w-[130px]">
+        <div className="w-[calc(50%-0.3125rem)] sm:w-[130px]">
           <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5 flex justify-between">
             <span>Fecha</span>
             <span className="text-red-500 font-bold">*</span>
@@ -104,7 +104,7 @@ const GestionesForm = ({
               if (e.target.value) setErrorFecha(false);
               setFormData({ ...formData, fecha: e.target.value });
             }}
-            className={`w-full h-7 px-2 border rounded text-[11px] outline-none transition bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 ${errorFecha
+            className={`w-full h-9 md:h-7 px-2 border rounded text-base md:text-[11px] outline-none transition bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 ${errorFecha
               ? 'border-red-500 ring-1 ring-red-500/30 bg-red-50/20'
               : 'border-gray-300 dark:border-gray-600 focus:border-[#2383C2]'
               }`}
@@ -116,7 +116,7 @@ const GestionesForm = ({
           )}
         </div>
 
-        <div className="w-[200px]">
+        <div className="w-full sm:w-[200px]">
           <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Empresa</label>
           <EmpresaSelect
             value={formData.empresa}
@@ -130,13 +130,13 @@ const GestionesForm = ({
           />
         </div>
 
-        <div className="flex items-end gap-1.5">
-          <div className="w-[160px]">
+        <div className="flex flex-wrap items-end gap-1.5 w-full sm:w-auto">
+          <div className="w-full sm:w-[160px]">
             <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Informe</label>
             <select
               value={formData.informe || 'PENDIENTE'}
               onChange={e => setFormData({ ...formData, informe: e.target.value })}
-              className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-medium cursor-pointer"
+              className="w-full h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-base md:text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-medium cursor-pointer"
             >
               <option value="PENDIENTE">PENDIENTE</option>
               <option value="DISPONIBLE">DISPONIBLE</option>
@@ -144,20 +144,20 @@ const GestionesForm = ({
             </select>
           </div>
 
-          <div className="w-[220px]">
+          <div className="w-full sm:w-[220px]">
             <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Observación</label>
             <input
               type="text"
               value={formData.observacion || ''}
               onChange={e => setFormData({ ...formData, observacion: e.target.value.toUpperCase() })}
-              className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+              className="w-full h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-base md:text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
               placeholder="Observación libre..."
             />
           </div>
 
           <button
             type="submit"
-            className={`h-7 px-3 rounded font-bold text-[11px] flex items-center gap-1.5 ${editingId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2383C2] hover:bg-[#369BCE]'} text-white transition shrink-0`}
+            className={`h-9 md:h-7 px-3 rounded font-bold text-[11px] flex flex-1 sm:flex-none justify-center items-center gap-1.5 ${editingId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2383C2] hover:bg-[#369BCE]'} text-white transition shrink-0`}
           >
             {editingId ? <><Save size={13} /> Actualizar</> : <><Plus size={13} /> Registrar</>}
           </button>
@@ -166,7 +166,7 @@ const GestionesForm = ({
             <button
               type="button"
               onClick={cancelarEdicion}
-              className="h-7 px-3 bg-gray-200 dark:bg-gray-700 rounded font-bold text-[11px] text-gray-600 dark:text-gray-300 flex items-center gap-1.5 hover:bg-gray-300 dark:hover:bg-gray-600 transition shrink-0"
+              className="h-9 md:h-7 px-3 bg-gray-200 dark:bg-gray-700 rounded font-bold text-[11px] text-gray-600 dark:text-gray-300 flex flex-1 sm:flex-none justify-center items-center gap-1.5 hover:bg-gray-300 dark:hover:bg-gray-600 transition shrink-0"
             >
               <X size={13} /> Cancelar
             </button>
@@ -175,7 +175,7 @@ const GestionesForm = ({
 
       </div>
 
-      <div className="flex flex-wrap items-center gap-6 pt-1 px-2 bg-gray-100/60 dark:bg-gray-900/40 rounded border border-dashed border-gray-200 dark:border-gray-700/60 py-1.5 text-[11px]">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1 pt-1 px-2 bg-gray-100/60 dark:bg-gray-900/40 rounded border border-dashed border-gray-200 dark:border-gray-700/60 py-1.5 text-[11px]">
         <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
           <Info size={13} className="text-[#2383C2]" />
           <span className="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Datos Vinculados:</span>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useMemo, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Info, ListFilter, UploadCloud, Unlock, Lock, History, ShieldAlert, Folder, ClipboardList } from 'lucide-react';
 
 import { usePeriodoAbiertoStore } from '../../../../../../hooks/usePeriodoAbiertoStore';
@@ -38,7 +38,6 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
   item,
   todosLosRegistros = [],
   onGuardar,
-  onCancelar,
   onAgregarEmpresaFecha,
   logsList = [],
   loadingLogs = false,
@@ -625,10 +624,10 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
         )
       )}
 
-      <div className="flex-grow flex overflow-hidden">
+      <div className="flex-grow flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
 
-        <div className="w-36 shrink-0 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex flex-col">
-          <div className="p-2 border-b border-slate-200 dark:border-gray-700">
+        <div className="w-full md:w-36 shrink-0 bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-slate-200 dark:border-gray-700 flex flex-col">
+          <div className="hidden md:block p-2 border-b border-slate-200 dark:border-gray-700">
             <h2 className="text-[10px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
               Menú de Opción
             </h2>
@@ -640,7 +639,7 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
               Sin pestañas habilitadas para su perfil.
             </div>
           ) : (
-            <div className="p-1.5 space-y-1">
+            <div className="p-1.5 flex gap-1 overflow-x-auto md:block md:space-y-1">
               {tabsPermitidas.map((tab) => {
                 const TabIcon = tab.Icon;
                 const isActive = tabActual?.id === tab.id;
@@ -649,7 +648,7 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md font-medium transition text-left ${isActive
+                    className={`shrink-0 md:w-full flex items-center gap-2 px-2.5 py-2 md:py-1.5 rounded-md font-medium whitespace-nowrap transition text-left ${isActive
                       ? 'bg-[#2383C2]/10 text-[#2383C2] dark:bg-blue-950/50 dark:text-blue-400 font-semibold'
                       : 'text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700/50'
                       }`}
@@ -682,7 +681,7 @@ const GestionesHemodinamiaDetalleView = forwardRef(({
           />
         )}
 
-        <div className="flex-grow flex flex-col overflow-auto">
+        <div className="flex-grow flex flex-col overflow-auto min-h-[70vh] md:min-h-0">
 
           {!tabActual && (
             <div className="flex-grow flex flex-col items-center justify-center text-center p-6 text-slate-500 dark:text-gray-400 text-[10px] gap-1.5">

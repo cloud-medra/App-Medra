@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useDropdownFlotante } from '../../../../../hooks/useDropdownFlotante';
 import { ListFilter, ChevronDown, Check } from 'lucide-react';
@@ -25,7 +25,7 @@ export const EstadoFilterDropdown = ({
     <div className="relative" ref={anclaRef}>
       <button
         onClick={() => setOpen(o => !o)}
-        className={`h-7 px-2 border rounded text-[11px] flex items-center gap-1.5 transition
+        className={`h-9 md:h-7 px-2 border rounded text-[11px] flex items-center gap-1.5 transition
           ${hayFiltroActivo
             ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 font-semibold'
             : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900'}`}

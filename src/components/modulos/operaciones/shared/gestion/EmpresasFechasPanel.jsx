@@ -46,7 +46,7 @@ export const EmpresasFechasPanel = ({
   };
 
   return (
-    <div className="w-48 shrink-0 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex flex-col overflow-y-auto">
+    <div className="w-full md:w-48 max-h-48 md:max-h-none shrink-0 bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-slate-200 dark:border-gray-700 flex flex-col overflow-y-auto">
       <div className="p-2 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5 sticky top-0 bg-white dark:bg-gray-800 z-10">
         <Layers size={13} className="text-[#2383C2]" />
         <h2 className="text-[10px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
@@ -59,7 +59,7 @@ export const EmpresasFechasPanel = ({
             disabled={agregando || !!motivoAgregarDeshabilitado}
             title={motivoAgregarDeshabilitado || 'Agregar empresa/fecha'}
             aria-label="Agregar empresa/fecha"
-            className="ml-auto p-0.5 rounded text-[#2383C2] hover:bg-[#2383C2]/10 dark:hover:bg-blue-950/50 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            className="ml-auto p-1.5 md:p-0.5 rounded text-[#2383C2] hover:bg-[#2383C2]/10 dark:hover:bg-blue-950/50 transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
             <Plus size={14} />
           </button>
