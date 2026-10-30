@@ -10,7 +10,8 @@ import { GestionesTable } from './GestionesTable';
 import { EstadoFilterDropdown } from './EstadoFilterDropdown';
 import { DiaFilterDropdown } from './DiaFilterDropdown';
 import { RANGOS_FECHA, RANGO_FECHA_PREDETERMINADO } from './rangoFechaGestiones';
-import { useFijarColumnas, esPantallaEscritorio } from './fijarColumnas';
+import { useFijarColumnas } from './fijarColumnas';
+import { useFormularioVisible } from './formularioVisible';
 import { SincronizarOCResumenModal } from '../ocIndex/SincronizarOCResumenModal';
 import { useSincronizarOC } from '../ocIndex/useSincronizarOC';
 import { useRegistroPdfGestiones } from '../ordenesOC/estadoOrdenGestion';
@@ -44,11 +45,10 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
   const { hasPermission } = useGranularPermission();
   const [refPathAbierto, setRefPathAbierto] = useState(apertura?.refPath || null);
   const [admisionFiltrada, setAdmisionFiltrada] = useState(apertura && !apertura.refPath ? String(apertura.admision) : null);
-  // Formulario de registro visible/oculto: visible al entrar en escritorio;
-  // en el celular parte oculto para que la tabla quede a la vista (se abre
-  // con el chevron o al editar una fila). Al ocultarlo, la tabla (flex-grow)
-  // ocupa el espacio liberado.
-  const [formularioVisible, setFormularioVisible] = useState(esPantallaEscritorio);
+  // Editar una fila abre el formulario aunque el usuario lo tenga oculto,
+  // sin tocar su preferencia guardada: al guardar o cancelar (editingId
+  // vacío) vuelve a lo que había elegido. Ver formularioPreferido abajo.
+  const [abiertoPorEdicion, setAbiertoPorEdicion] = useState(false);
   const [fijarColumnas, setFijarColumnas] = useFijarColumnas(modulo);
   const {
     implantes,
@@ -112,6 +112,12 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
   // (no una lectura por fila). Ver estadoOrdenGestion.js.
   const { pdfs: pdfsOC, error: errorPdfOC } = useRegistroPdfGestiones(hasPermission(PATH_VISTA, 'tabla_datos') && !refPathAbierto);
   const { userData } = useUser();
+  // Formulario de registro visible/oculto: preferencia guardada por usuario
+  // (formularioVisible.js); sin preferencia, visible en escritorio y oculto
+  // en el celular para que la tabla quede a la vista. Solo el chevron la
+  // cambia. Al ocultarlo, la tabla (flex-grow) ocupa el espacio liberado.
+  const [formularioPreferido, setFormularioPreferido] = useFormularioVisible(modulo, userData?.uid);
+  const formularioVisible = formularioPreferido || (abiertoPorEdicion && Boolean(editingId));
   // Rol Administrador/Desarrollador y la acción (denegada por defecto).
   const esAdminODev = esRolAdministrador(userData?.rol) && hasPermission(PATH_VISTA, 'drawer_configuracion', 'btn_marcar_oc_pendiente');
   const marcarOcPendiente = useMarcarOcPendiente({ habilitado: esAdminODev && showConfigDrawer, modulo });
@@ -259,7 +265,10 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
             {hasPermission(PATH_VISTA, "formulario_registro") && (
               <button
                 type="button"
-                onClick={() => setFormularioVisible(v => !v)}
+                onClick={() => {
+                  setFormularioPreferido(!formularioVisible);
+                  setAbiertoPorEdicion(false);
+                }}
                 className="p-2 md:p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                 title={formularioVisible ? "Ocultar formulario" : "Mostrar formulario"}
                 aria-label={formularioVisible ? "Ocultar formulario" : "Mostrar formulario"}
@@ -437,8 +446,9 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                 handleCopiarTexto={handleCopiarTexto}
                 abrirHistorialLogs={abrirHistorialLogs}
                 iniciarEdicion={(...args) => {
-                  // Editar carga la fila en el formulario: si estaba oculto, se muestra.
-                  setFormularioVisible(true);
+                  // Editar carga la fila en el formulario: si estaba oculto, se
+                  // muestra solo mientras dure la edición.
+                  setAbiertoPorEdicion(true);
                   return iniciarEdicion(...args);
                 }}
                 handleDelete={handleDelete}

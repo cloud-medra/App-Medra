@@ -7,7 +7,7 @@ import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 
 vi.mock('../../../../../hooks/useGranularPermission', () => ({ useGranularPermission: () => ({ hasPermission: () => true }) }));
-vi.mock('../../../../../context/UserContext', () => ({ useUser: () => ({ userData: { rol: 'dev' } }) }));
+vi.mock('../../../../../context/UserContext', () => ({ useUser: () => ({ userData: { rol: 'dev', uid: 'u1' } }) }));
 const sincronizarPedidos = [];
 vi.mock('../ocIndex/useSincronizarOC', () => ({
   useSincronizarOC: ({ modulo }) => { sincronizarPedidos.push(modulo); return { sincronizandoOC: false, handleSincronizarOC: vi.fn(), resumenOC: null, cerrarResumenOC: vi.fn() }; },
@@ -20,12 +20,13 @@ vi.mock('../ordenesOC/registroPdfOC', () => ({
 }));
 vi.mock('../ocIndex/SincronizarOCResumenModal', () => ({ SincronizarOCResumenModal: () => null }));
 vi.mock('./GestionesForm', () => ({ default: ({ modulo }) => <div data-testid="formulario">form {modulo}</div> }));
-vi.mock('./GestionesTable', () => ({ GestionesTable: ({ modulo, implantesFiltrados, onRowDoubleClick }) => (
-  <div data-testid="tabla">tabla {modulo} {implantesFiltrados.length}<button onClick={() => onRowDoubleClick({ id: 'g1' })}>abrir detalle</button></div>
+vi.mock('./GestionesTable', () => ({ GestionesTable: ({ modulo, implantesFiltrados, onRowDoubleClick, iniciarEdicion }) => (
+  <div data-testid="tabla">tabla {modulo} {implantesFiltrados.length}<button onClick={() => onRowDoubleClick({ id: 'g1' })}>abrir detalle</button>
+    <button onClick={() => iniciarEdicion({ id: 'g1' })}>editar fila</button></div>
 ) }));
 
 const { default: GestionGestiones } = await import('./GestionGestiones');
-afterEach(() => { cleanup(); sincronizarPedidos.length = 0; listenerPdf.abiertos = 0; listenerPdf.cerrados = 0; });
+afterEach(() => { cleanup(); localStorage.clear(); datos.editingId = null; sincronizarPedidos.length = 0; listenerPdf.abiertos = 0; listenerPdf.cerrados = 0; });
 
 const datos = {
   implantes: [], hayMasGestiones: false, cargarMasGestiones: vi.fn(), implantesFiltrados: Array(60).fill({}), implantesPagina: Array(50).fill({}),
@@ -33,7 +34,7 @@ const datos = {
   filtroAnio: '2026', setFiltroAnio: vi.fn(), filtroMes: '10', setFiltroMes: vi.fn(), filtrosDias: [], toggleFiltroDia: vi.fn(),
   limpiarFiltroDias: vi.fn(), opcionesDias: [], filtroRangoFecha: 'hastaAyer', setFiltroRangoFecha: vi.fn(),
   opcionesFechas: { anios: ['2026'], meses: ['10'] }, limpiarFiltrosFecha: vi.fn(), opcionesEstados: [], filtrosEstados: [],
-  toggleFiltroEstado: vi.fn(), limpiarFiltroEstados: vi.fn(), editingId: null, cargando: false, showLogDrawer: false,
+  toggleFiltroEstado: vi.fn(), limpiarFiltroEstados: vi.fn(), editingId: null, iniciarEdicion: vi.fn(), cargando: false, showLogDrawer: false,
   setShowLogDrawer: vi.fn(), logsList: [], loadingLogs: false, showConfigDrawer: false, setShowConfigDrawer: vi.fn(),
   importing: false,
 };
@@ -63,6 +64,29 @@ describe('Gestión compartida', () => {
     expect(colapsar).toHaveAttribute('aria-controls', `gestion-${modulo}-formulario`);
     fireEvent.click(colapsar);
     expect(screen.getByRole('button', { name: 'Mostrar formulario' })).toBeInTheDocument();
+  });
+});
+
+describe('Formulario oculto: preferencia guardada', () => {
+  it('se recuerda al volver a la pantalla; editar lo abre solo mientras dura la edición', () => {
+    const { unmount } = render(<GestionGestiones modulo="implantes" componentes={componentes} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar formulario' }));
+    unmount();
+
+    const { rerender } = render(<GestionGestiones modulo="implantes" componentes={componentes} />);
+    expect(screen.getByRole('button', { name: 'Mostrar formulario' })).toBeInTheDocument();
+
+    // Editar una fila muestra el formulario sin cambiar la preferencia.
+    fireEvent.click(screen.getByText('editar fila'));
+    datos.editingId = 'g1';
+    rerender(<GestionGestiones modulo="implantes" componentes={componentes} />);
+    expect(screen.getByRole('button', { name: 'Ocultar formulario' })).toBeInTheDocument();
+
+    // Guardar o cancelar (editingId vacío): vuelve a quedar oculto.
+    datos.editingId = null;
+    rerender(<GestionGestiones modulo="implantes" componentes={componentes} />);
+    expect(screen.getByRole('button', { name: 'Mostrar formulario' })).toBeInTheDocument();
+    expect(localStorage.getItem('medra:gestiones:implantes:u1:formularioVisible')).toBe('0');
   });
 });
 
