@@ -100,7 +100,7 @@ export const InformacionTab = forwardRef(({
 
   return (
     <>
-      <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-4 py-2 shadow-xs">
+      <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 md:px-4 py-2 shadow-xs">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-1.5">
             <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 dark:text-gray-400">
@@ -124,7 +124,7 @@ export const InformacionTab = forwardRef(({
                   ? 'Este bloque ya está imputado — click para desbloquear edición'
                   : 'Desbloqueado — edita y presiona "Guardar Todo" para volver a bloquearlo'
               }
-              className={`mt-1 flex items-center gap-1 h-6 px-2 rounded text-[9px] font-bold transition ${
+              className={`mt-1 flex items-center gap-1 h-9 md:h-6 px-2 rounded text-[9px] font-bold transition ${
                 bloqueado
                   ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 cursor-pointer'
                   : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 cursor-default'
@@ -137,7 +137,7 @@ export const InformacionTab = forwardRef(({
         </div>
       </div>
 
-      <div className="p-4 max-w-7xl mx-auto w-full space-y-4">
+      <div className="p-3 md:p-4 max-w-7xl mx-auto w-full space-y-4">
 
         {bloqueado && (
           <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-[11px] text-amber-700 dark:text-amber-400">
@@ -176,7 +176,7 @@ export const InformacionTab = forwardRef(({
                 onChange={(e) => handleGeneralChange({
                   target: { name: 'gestionId', value: limpiarInputConservandoCursor(e.target, soloDigitos) }
                 })}
-                className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
 
@@ -192,7 +192,7 @@ export const InformacionTab = forwardRef(({
                   target: { name: 'nombre', value: limpiarInputConservandoCursor(e.target, nombreEnMayusculas) }
                 })}
                 placeholder="Nombre del paciente"
-                className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
 
@@ -203,7 +203,7 @@ export const InformacionTab = forwardRef(({
                 name="convenio"
                 value={formData.convenio}
                 onChange={handleGeneralChange}
-                className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
 
@@ -216,7 +216,7 @@ export const InformacionTab = forwardRef(({
                 name="prevision"
                 value={formData.prevision}
                 onChange={handleGeneralChange}
-                className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
 
@@ -229,7 +229,7 @@ export const InformacionTab = forwardRef(({
                 name="medico"
                 value={formData.medico}
                 onChange={handleGeneralChange}
-                className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
           </div>
@@ -273,7 +273,7 @@ export const InformacionTab = forwardRef(({
                   type="date"
                   value={formData.bloques[bloqueActivoIndex].fecha}
                   onChange={(e) => handleBloqueChange(bloqueActivoIndex, 'fecha', e.target.value)}
-                  className={`h-6.5 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none transition ${erroresFecha[bloqueActivoIndex]
+                  className={`h-9 md:h-6.5 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none transition ${erroresFecha[bloqueActivoIndex]
                     ? 'border-red-500 ring-1 ring-red-500/30 bg-red-50/20'
                     : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
                     }`}
@@ -299,7 +299,7 @@ export const InformacionTab = forwardRef(({
                       const soloNumeros = e.target.value.replace(/\D/g, '');
                       handleBloqueChange(bloqueActivoIndex, 'costo', soloNumeros ? Number(soloNumeros) : 0);
                     }}
-                    className="w-full h-6.5 pl-5 pr-2 text-[10px] text-slate-800 dark:text-gray-100 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                    className="w-full h-9 md:h-6.5 pl-5 pr-2 text-base md:text-[10px] text-slate-800 dark:text-gray-100 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 focus:ring-1 focus:ring-[#2383C2] outline-none"
                     placeholder="0"
                   />
                 </div>
@@ -325,7 +325,7 @@ export const InformacionTab = forwardRef(({
                   value={normalizarEstadoOperativo(formData.bloques[bloqueActivoIndex]?.estado)}
                   onChange={(e) => handleBloqueChange(bloqueActivoIndex, 'estado', e.target.value)}
                   disabled={!formData.bloques[bloqueActivoIndex]}
-                  className="w-full h-6.5 pl-2 pr-6 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none appearance-none disabled:opacity-50"
+                  className="w-full h-9 md:h-6.5 pl-2 pr-6 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none appearance-none disabled:opacity-50"
                 >
                   <option value="AGENDADO">AGENDADO</option>
                   <option value="PENDIENTE">PENDIENTE</option>
@@ -345,7 +345,7 @@ export const InformacionTab = forwardRef(({
                   name="informe"
                   value={formData.informe}
                   onChange={handleGeneralChange}
-                  className={`w-full h-6.5 pl-2 pr-6 text-[10px] border rounded focus:ring-1 focus:ring-[#2383C2] outline-none appearance-none font-semibold ${ESTADO_INFORME_ESTILOS[formData.informe] || ESTADO_INFORME_ESTILO_DEFAULT}`}
+                  className={`w-full h-9 md:h-6.5 pl-2 pr-6 text-base md:text-[10px] border rounded focus:ring-1 focus:ring-[#2383C2] outline-none appearance-none font-semibold ${ESTADO_INFORME_ESTILOS[formData.informe] || ESTADO_INFORME_ESTILO_DEFAULT}`}
                 >
                   <option value="PENDIENTE">PENDIENTE</option>
                   <option value="DISPONIBLE">DISPONIBLE</option>
@@ -362,7 +362,7 @@ export const InformacionTab = forwardRef(({
                 name="atributo"
                 value={formData.atributo}
                 onChange={handleGeneralChange}
-                className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </fieldset>
 
@@ -373,7 +373,7 @@ export const InformacionTab = forwardRef(({
                 value={CENTRO_HEMODINAMIA}
                 readOnly
                 tabIndex={-1}
-                className="h-6.5 px-2 text-[10px] border border-slate-200 dark:border-gray-700 rounded bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 outline-none cursor-not-allowed"
+                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-200 dark:border-gray-700 rounded bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 outline-none cursor-not-allowed"
               />
             </fieldset>
           </div>
@@ -397,7 +397,7 @@ export const InformacionTab = forwardRef(({
                 value={formData.descripcion}
                 onChange={handleGeneralChange}
                 placeholder="Ingrese detalles técnicos..."
-                className="p-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none resize-none"
+                className="p-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none resize-none"
               />
             </div>
 
@@ -409,7 +409,7 @@ export const InformacionTab = forwardRef(({
                 value={formData.observacion}
                 onChange={(e) => handleGeneralChange({ target: { name: 'observacion', value: e.target.value.toUpperCase() } })}
                 placeholder="Observaciones adicionales..."
-                className="p-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none resize-none"
+                className="p-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none resize-none"
               />
             </div>
           </div>

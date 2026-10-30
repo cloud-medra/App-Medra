@@ -20,7 +20,7 @@ export const ConfirmarEliminarDocumento = ({ documento, eliminando, onConfirmar,
       aria-modal="true"
       aria-labelledby="titulo-eliminar-documento"
     >
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-sm p-5 border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-sm max-h-full overflow-y-auto p-5 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col items-center text-center">
           <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
             <AlertTriangle size={20} />
@@ -38,7 +38,7 @@ export const ConfirmarEliminarDocumento = ({ documento, eliminando, onConfirmar,
             type="button"
             onClick={onCancelar}
             disabled={eliminando}
-            className="flex-1 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-[11px] font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 transition"
+            className="flex-1 py-2.5 md:py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-[11px] font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 transition"
           >
             Cancelar
           </button>
@@ -46,7 +46,7 @@ export const ConfirmarEliminarDocumento = ({ documento, eliminando, onConfirmar,
             type="button"
             onClick={onConfirmar}
             disabled={eliminando}
-            className="flex-1 py-2 rounded-lg inline-flex items-center justify-center gap-1.5 text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 transition"
+            className="flex-1 py-2.5 md:py-2 rounded-lg inline-flex items-center justify-center gap-1.5 text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 transition"
           >
             {eliminando ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
             {eliminando ? 'Eliminando...' : 'Eliminar'}

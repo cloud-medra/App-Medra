@@ -115,7 +115,7 @@ const EmpresaSelect = ({ value, onChange, placeholder = "Seleccionar empresa..."
         aria-disabled={disabled || undefined}
         onClick={disabled ? undefined : () => (abierto ? cerrar() : abrir())}
         onKeyDown={handleTriggerKeyDown}
-        className={`w-full h-7 px-2 border rounded text-[11px] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex items-center justify-between outline-none focus:border-[#2383C2] ${abierto ? 'border-[#2383C2]' : 'border-gray-300 dark:border-gray-600'} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`w-full h-9 md:h-7 px-2 border rounded text-[11px] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex items-center justify-between outline-none focus:border-[#2383C2] ${abierto ? 'border-[#2383C2]' : 'border-gray-300 dark:border-gray-600'} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span className={`truncate ${!empresaSeleccionada ? 'text-gray-400' : ''}`}>
           {empresaSeleccionada ? `${empresaSeleccionada.nombre} (${empresaSeleccionada.rut})` : placeholder}
@@ -142,7 +142,7 @@ const EmpresaSelect = ({ value, onChange, placeholder = "Seleccionar empresa..."
               aria-controls={listboxId}
               aria-activedescendant={empresasFiltradas[activo] ? `${listboxId}-${activo}` : undefined}
               placeholder="Buscar por nombre o RUT..."
-              className="w-full text-[11px] bg-transparent outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400"
+              className="w-full text-base md:text-[11px] bg-transparent outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400"
             />
           </div>
 
@@ -159,7 +159,7 @@ const EmpresaSelect = ({ value, onChange, placeholder = "Seleccionar empresa..."
                     aria-selected={isSelected}
                     onClick={() => handleSelect(emp)}
                     onMouseEnter={() => setActivo(i)}
-                    className={`px-2 py-1.5 flex items-center justify-between cursor-pointer ${
+                    className={`px-2 py-2.5 md:py-1.5 flex items-center justify-between cursor-pointer ${
                       isActivo ? 'bg-gray-100 dark:bg-gray-700/60' : ''
                     } ${
                       isSelected ? 'text-[#2383C2] font-semibold' : 'text-gray-700 dark:text-gray-200'

@@ -225,7 +225,7 @@ export const DocumentosTab = ({
                   type="button"
                   onClick={() => handleCopiarTexto(construirTextoAdmisionNombre(gestionId, nombre))}
                   title="Copiar Admisión - Nombre"
-                  className="p-0.5 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition shrink-0"
+                  className="p-1 md:p-0.5 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition shrink-0"
                 >
                   <Copy size={11} />
                 </button>
@@ -240,7 +240,7 @@ export const DocumentosTab = ({
                 onClick={onRecargar}
                 disabled={cargando}
                 title="Actualizar listado"
-                className="h-7 w-7 inline-flex items-center justify-center rounded border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-500 dark:text-gray-400 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 transition"
+                className="h-9 w-9 md:h-7 md:w-7 inline-flex items-center justify-center rounded border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-500 dark:text-gray-400 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 transition"
               >
                 <RefreshCw size={12} className={cargando ? 'animate-spin' : ''} />
               </button>
@@ -249,7 +249,7 @@ export const DocumentosTab = ({
               type="button"
               onClick={() => setMostrarSubida(v => !v)}
               disabled={subidaDeshabilitada}
-              className="h-7 px-2.5 inline-flex items-center gap-1.5 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[10.5px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="h-9 md:h-7 px-2.5 inline-flex items-center gap-1.5 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[10.5px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               {zonaSubidaVisible && lista.length > 0 && !progreso ? <ChevronUp size={13} /> : <UploadCloud size={13} />}
               Subir documentos
@@ -318,7 +318,7 @@ export const DocumentosTab = ({
                     <button
                       type="button"
                       onClick={() => setRespaldoAbierto(true)}
-                      className="ml-auto h-6 px-2 rounded border border-red-300 dark:border-red-800 bg-white dark:bg-gray-800 text-[10.5px] font-semibold text-red-700 dark:text-red-400 inline-flex items-center gap-1 hover:bg-red-100 dark:hover:bg-red-950/40"
+                      className="ml-auto h-9 md:h-6 px-2 rounded border border-red-300 dark:border-red-800 bg-white dark:bg-gray-800 text-[10.5px] font-semibold text-red-700 dark:text-red-400 inline-flex items-center gap-1 hover:bg-red-100 dark:hover:bg-red-950/40"
                       title="Guárdalos en Respaldo de documentos con su propio ID"
                     >
                       <Archive size={12} /> Enviar {respaldables.length} a respaldo
@@ -430,7 +430,7 @@ export const DocumentosTab = ({
   );
 };
 
-const BOTON_ACCION = 'h-6 w-6 inline-flex items-center justify-center rounded text-slate-500 dark:text-gray-400 hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40 transition';
+const BOTON_ACCION = 'h-8 w-8 md:h-6 md:w-6 inline-flex items-center justify-center rounded text-slate-500 dark:text-gray-400 hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40 transition';
 
 // Filas de una categoría: la celda "Categoría" (tipo + cantidad) va solo en
 // la primera fila y abarca todas las del grupo (rowSpan).

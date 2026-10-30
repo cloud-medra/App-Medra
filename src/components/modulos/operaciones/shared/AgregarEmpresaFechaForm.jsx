@@ -61,7 +61,7 @@ const AgregarEmpresaFechaForm = ({ EmpresaSelect, validar, onAgregar, onCancelar
           autoFocus
           value={fecha}
           onChange={e => { setFecha(e.target.value); setError(''); }}
-          className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+          className="w-full h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-base md:text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
         />
       </div>
 
@@ -84,7 +84,7 @@ const AgregarEmpresaFechaForm = ({ EmpresaSelect, validar, onAgregar, onCancelar
         <button
           type="submit"
           disabled={guardando}
-          className="flex-1 h-7 rounded font-bold text-[11px] flex items-center justify-center gap-1 bg-[#2383C2] hover:bg-[#369BCE] text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+          className="flex-1 h-9 md:h-7 rounded font-bold text-[11px] flex items-center justify-center gap-1 bg-[#2383C2] hover:bg-[#369BCE] text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {guardando ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
           Agregar
@@ -93,7 +93,7 @@ const AgregarEmpresaFechaForm = ({ EmpresaSelect, validar, onAgregar, onCancelar
           type="button"
           onClick={onCancelar}
           disabled={guardando}
-          className="flex-1 h-7 rounded font-bold text-[11px] flex items-center justify-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-60"
+          className="flex-1 h-9 md:h-7 rounded font-bold text-[11px] flex items-center justify-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-60"
         >
           <X size={12} /> Cancelar
         </button>

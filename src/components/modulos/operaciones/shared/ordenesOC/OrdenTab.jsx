@@ -39,7 +39,7 @@ export const OrdenTab = ({
   };
 
   return (
-    <div className="p-4 max-w-5xl mx-auto w-full space-y-4">
+    <div className="p-3 md:p-4 max-w-5xl mx-auto w-full space-y-4">
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
           <ClipboardList size={13} className="text-[#2383C2]" />
@@ -58,7 +58,7 @@ export const OrdenTab = ({
                 type="button"
                 onClick={() => handleCopiarTexto?.(oc)}
                 title="Copiar OC"
-                className="flex items-center gap-1 px-2 py-0.5 text-[#2383C2] dark:text-blue-400 font-num font-semibold text-[11px] hover:bg-[#2383C2]/10 transition rounded-l"
+                className="flex items-center gap-1 px-2 py-1.5 md:py-0.5 text-[#2383C2] dark:text-blue-400 font-num font-semibold text-[11px] hover:bg-[#2383C2]/10 transition rounded-l"
               >
                 {oc} <Copy size={10} className="opacity-60" />
               </button>
@@ -72,7 +72,7 @@ export const OrdenTab = ({
             <button
               type="button"
               onClick={onRecargarRegistroPdf}
-              className="flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700/50"
+              className="flex items-center gap-1 px-2 py-1.5 md:py-0.5 rounded border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700/50"
             >
               <RefreshCw size={10} /> Reintentar
             </button>
@@ -86,7 +86,7 @@ export const OrdenTab = ({
       </div>
 
       {bloques.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-x-auto">
           <table className="w-full text-left text-[10px] border-collapse">
             <thead className="bg-slate-50 dark:bg-gray-900/60">
               <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">

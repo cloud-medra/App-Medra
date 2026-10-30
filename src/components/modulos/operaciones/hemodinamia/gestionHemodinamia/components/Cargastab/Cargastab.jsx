@@ -501,7 +501,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
 
   if (!bloqueActivo) {
     return (
-      <div className="px-4 lg:px-6 py-4 w-full max-w-[2200px] mx-auto">
+      <div className="px-3 md:px-4 lg:px-6 py-3 md:py-4 w-full max-w-[2200px] mx-auto">
         <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs p-6 text-[10px] text-slate-500 dark:text-gray-400">
           Selecciona una empresa/fecha en el panel lateral para gestionar sus cargas.
         </div>
@@ -512,10 +512,10 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
   const sinPeriodoAbierto = !cargandoPeriodo && !periodoAbierto;
 
   return (
-    <div className="px-4 lg:px-6 py-4 w-full max-w-[2200px] mx-auto space-y-3">
+    <div className="px-3 md:px-4 lg:px-6 py-3 md:py-4 w-full max-w-[2200px] mx-auto space-y-3">
 
-      <div className="flex items-center justify-between gap-1.5 px-1">
-        <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-1.5 gap-y-1 px-1">
+        <div className="flex flex-wrap items-center gap-1.5">
           <UploadCloud size={13} className="text-[#2383C2]" />
           <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
             Cotizaciones — Admisión #{formData?.gestionId || 'N/A'} - {formData?.nombre || 'P'}
@@ -525,7 +525,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               type="button"
               onClick={() => handleCopiarTexto(construirTextoAdmisionNombre(formData?.gestionId, formData?.nombre))}
               title="Copiar Admisión - Nombre"
-              className="p-0.5 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition shrink-0"
+              className="p-1 md:p-0.5 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition shrink-0"
             >
               <Copy size={11} />
             </button>
@@ -540,7 +540,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                   ? 'Este bloque ya está imputado — click para desbloquear edición'
                   : 'Desbloqueado — edita y presiona "Guardar Todo" para volver a bloquearlo'
               }
-              className={`flex items-center gap-1 h-6 px-2 rounded text-[9px] font-bold transition shrink-0 ${
+              className={`flex items-center gap-1 h-9 md:h-6 px-2 rounded text-[9px] font-bold transition shrink-0 ${
                 bloqueado
                   ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 cursor-pointer'
                   : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 cursor-default'
@@ -558,7 +558,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-[9px] text-slate-500 dark:text-gray-400">
+        <div className="flex flex-wrap items-center gap-2 text-[9px] text-slate-500 dark:text-gray-400">
           <span className="flex items-center gap-1">
             <Building2 size={11} className="text-[#2383C2]" />
             {bloqueActivo.empresa || 'SIN EMPRESA'}
@@ -616,7 +616,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
 
       <fieldset disabled={sinPeriodoAbierto || bloqueado} className={sinPeriodoAbierto || bloqueado ? 'opacity-60' : ''}>
         <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs p-3 space-y-2.5">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 items-end">
 
             <div className="flex flex-col gap-1">
               <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase flex justify-between">
@@ -629,7 +629,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 type="text"
                 value={nuevoItem.numCotizacion}
                 onChange={e => handleChange('numCotizacion', e.target.value)}
-                className={`h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.numCotizacion ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
+                className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.numCotizacion ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
                   }`}
                 placeholder="Ej: COT-001"
               />
@@ -647,7 +647,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                   const soloNumeros = e.target.value.replace(/\D/g, '');
                   handleChange('totalCotizacion', soloNumeros);
                 }}
-                className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
+                className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
                 placeholder="0"
               />
             </div>
@@ -665,7 +665,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 onChange={e => handleChange('referencia', e.target.value)}
                 onFocus={() => sugerencias.length > 0 && setMostrarSug(true)}
                 autoComplete="off"
-                className={`h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.referencia ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
+                className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.referencia ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
                   }`}
                 placeholder="Buscar por referencia o descripción..."
               />
@@ -711,7 +711,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 type="number"
                 value={nuevoItem.cantidad}
                 onChange={e => handleChange('cantidad', e.target.value)}
-                className={`h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
+                className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
                   }`}
                 placeholder="1"
               />
@@ -724,7 +724,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 value={esPad ? VALOR_LOTE_VENCIMIENTO_PAD : nuevoItem.lote}
                 disabled={esPad}
                 onChange={e => handleChange('lote', e.target.value)}
-                className={`h-7 px-2 text-[10px] border rounded outline-none ${esPad
+                className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded outline-none ${esPad
                   ? 'bg-slate-100 dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-slate-500 dark:text-gray-400'
                   : 'bg-white dark:bg-gray-900 border-slate-300 dark:border-gray-600 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2]'
                   }`}
@@ -740,7 +740,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     type="text"
                     value={VALOR_LOTE_VENCIMIENTO_PAD}
                     disabled
-                    className="h-7 px-2 text-[10px] border border-slate-200 dark:border-gray-700 rounded bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 outline-none"
+                    className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-200 dark:border-gray-700 rounded bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 outline-none"
                   />
                 ) : (
                   <input
@@ -749,7 +749,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     value={nuevoItem.vencimiento}
                     onChange={e => handleChange('vencimiento', e.target.value)}
                     onKeyDown={alPresionarEnter(() => { if (!sinPeriodoAbierto && !bloqueado) handleAgregar(); })}
-                    className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
+                    className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
                   />
                 )}
               </div>
@@ -757,7 +757,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 type="button"
                 onClick={handleAgregar}
                 disabled={sinPeriodoAbierto || bloqueado}
-                className="h-7 px-2.5 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center justify-center gap-1 transition text-[10px] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 md:h-7 px-2.5 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center justify-center gap-1 transition text-[10px] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={bloqueado ? 'Bloqueado: desbloquea el candado para agregar ítems' : sinPeriodoAbierto ? "No hay período abierto para Hemodinamia" : "Agregar ítem"}
               >
                 <Plus size={13} />
@@ -785,7 +785,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                   type="text"
                   value={numCotizacionPad}
                   onChange={e => setNumCotizacionPad(e.target.value)}
-                  className="w-full h-7 px-2 text-[10px] border border-fuchsia-300 dark:border-fuchsia-800 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-fuchsia-500"
+                  className="w-full h-9 md:h-7 px-2 text-base md:text-[10px] border border-fuchsia-300 dark:border-fuchsia-800 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-fuchsia-500"
                   placeholder={nuevoItem.numCotizacion ? `Vacío = ${nuevoItem.numCotizacion}` : 'Ej: COT-002'}
                 />
                 <p className="text-[9px] text-fuchsia-500 dark:text-fuchsia-500 italic">
@@ -793,7 +793,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end bg-white dark:bg-gray-900/60 rounded border border-fuchsia-200 dark:border-fuchsia-900/60 p-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-end bg-white dark:bg-gray-900/60 rounded border border-fuchsia-200 dark:border-fuchsia-900/60 p-2">
                 <div className="flex flex-col gap-1 relative md:col-span-2" ref={containerRefContenido}>
                   <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Referencia contenido</label>
                   <input
@@ -804,7 +804,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     onChange={e => handleDraftReferenciaChange(e.target.value)}
                     onFocus={() => sugerenciasContenido.length > 0 && setMostrarSugContenido(true)}
                     autoComplete="off"
-                    className={`h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftContenido.referencia ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'}`}
+                    className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftContenido.referencia ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'}`}
                     placeholder="Buscar referencia..."
                   />
                   {mostrarSugContenido && (
@@ -844,7 +844,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     type="number"
                     value={draftContenido.cantidad}
                     onChange={e => handleDraftChange('cantidad', e.target.value)}
-                    className={`h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftContenido.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
+                    className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftContenido.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
                     placeholder="1"
                   />
                 </div>
@@ -855,7 +855,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     type="text"
                     value={draftContenido.lote}
                     onChange={e => handleDraftChange('lote', e.target.value)}
-                    className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                    className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                     placeholder="Vacío = Sin lote"
                   />
                 </div>
@@ -869,13 +869,13 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                       value={draftContenido.vencimiento}
                       onChange={e => handleDraftChange('vencimiento', e.target.value)}
                       onKeyDown={alPresionarEnter(handleRegistrarContenido)}
-                      className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                      className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={handleRegistrarContenido}
-                    className="h-7 px-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded font-semibold flex items-center justify-center gap-1 transition text-[10px] shrink-0"
+                    className="h-9 md:h-7 px-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded font-semibold flex items-center justify-center gap-1 transition text-[10px] shrink-0"
                     title="Registrar esta línea de contenido"
                   >
                     <Check size={13} />
@@ -926,7 +926,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               </div>
 
               {restanteLotes > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-end bg-white dark:bg-gray-900/60 rounded border border-sky-200 dark:border-sky-900/60 p-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 items-end bg-white dark:bg-gray-900/60 rounded border border-sky-200 dark:border-sky-900/60 p-2">
                   <div className="flex flex-col gap-1">
                     <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">
                       Cant. <span className="text-slate-400 normal-case font-normal">(máx. {restanteLotes})</span>
@@ -935,7 +935,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                       type="number"
                       value={draftLote.cantidad}
                       onChange={e => handleDraftLoteChange('cantidad', e.target.value)}
-                      className={`h-7 px-2 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftLote.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
+                      className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftLote.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
                       placeholder="1"
                     />
                   </div>
@@ -946,7 +946,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                       type="text"
                       value={draftLote.lote}
                       onChange={e => handleDraftLoteChange('lote', e.target.value)}
-                      className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                      className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                       placeholder="Ej: L-9921"
                     />
                   </div>
@@ -958,13 +958,13 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                         type="date"
                         value={draftLote.vencimiento}
                         onChange={e => handleDraftLoteChange('vencimiento', e.target.value)}
-                        className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                        className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={handleRegistrarLote}
-                      className="h-7 px-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded font-semibold flex items-center justify-center gap-1 transition text-[10px] shrink-0"
+                      className="h-9 md:h-7 px-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded font-semibold flex items-center justify-center gap-1 transition text-[10px] shrink-0"
                       title="Registrar este lote"
                     >
                       <Check size={13} />
@@ -988,7 +988,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               )}
 
               {lotesAdicionales.length > 0 && (
-                <div className="overflow-hidden rounded border border-sky-200 dark:border-sky-900/60">
+                <div className="overflow-x-auto rounded border border-sky-200 dark:border-sky-900/60">
                   <table className="w-full text-left text-[10px] border-collapse">
                     <thead className="bg-sky-100/60 dark:bg-sky-950/30">
                       <tr className="text-sky-700 dark:text-sky-400 uppercase font-bold text-[9px]">
@@ -1018,7 +1018,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                             <button
                               type="button"
                               onClick={() => handleEliminarLoteRegistrado(fila.tempId)}
-                              className="text-red-500 hover:text-red-700 p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30"
+                              className="text-red-500 hover:text-red-700 p-1 md:p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30"
                               title="Quitar este lote"
                             >
                               <Trash2 size={12} />

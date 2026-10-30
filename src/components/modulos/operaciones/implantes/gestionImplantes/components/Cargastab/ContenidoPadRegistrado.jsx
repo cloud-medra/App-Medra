@@ -35,7 +35,7 @@ const ContenidoPadRegistrado = ({ filas, onActualizar, onEliminar, deshabilitado
   const td = 'px-2 py-1 border-b border-r last:border-r-0 border-fuchsia-100 dark:border-fuchsia-900/40';
 
   return (
-    <div className="overflow-hidden rounded border border-fuchsia-200 dark:border-fuchsia-900/60">
+    <div className="overflow-x-auto rounded border border-fuchsia-200 dark:border-fuchsia-900/60">
       <table className="w-full text-left text-[10px] border-collapse" aria-label="Contenido del PAD registrado">
         <thead className="bg-fuchsia-100/60 dark:bg-fuchsia-950/30">
           <tr className="text-fuchsia-700 dark:text-fuchsia-400 uppercase font-bold text-[9px]">
@@ -61,10 +61,10 @@ const ContenidoPadRegistrado = ({ filas, onActualizar, onEliminar, deshabilitado
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <button type="button" onClick={guardar} className="h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold text-[10px] inline-flex items-center gap-1">
+                    <button type="button" onClick={guardar} className="h-9 md:h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold text-[10px] inline-flex items-center gap-1">
                       <Check size={12} /> Guardar
                     </button>
-                    <button type="button" onClick={cancelar} className="h-7 px-3 text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200 font-medium text-[10px] inline-flex items-center gap-1">
+                    <button type="button" onClick={cancelar} className="h-9 md:h-7 px-3 text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200 font-medium text-[10px] inline-flex items-center gap-1">
                       <X size={12} /> Cancelar
                     </button>
                     <span className="text-[9px] text-slate-400 dark:text-gray-500">Enter guarda · Esc cancela</span>
@@ -86,12 +86,12 @@ const ContenidoPadRegistrado = ({ filas, onActualizar, onEliminar, deshabilitado
                 <span className="inline-flex items-center gap-1">
                   <button type="button" onClick={() => editar(fila)} disabled={deshabilitado || Boolean(editandoId)}
                     title={deshabilitado ? 'Bloqueado: desbloquea el candado para editar' : 'Editar esta línea'} aria-label={`Editar ${fila.referencia}`}
-                    className="text-blue-600 hover:text-blue-800 p-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+                    className="text-blue-600 hover:text-blue-800 p-1 md:p-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                     <Pencil size={12} />
                   </button>
                   <button type="button" onClick={() => onEliminar(fila.tempId)} disabled={deshabilitado || Boolean(editandoId)}
                     title="Quitar esta línea" aria-label={`Quitar ${fila.referencia}`}
-                    className="text-red-500 hover:text-red-700 p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
+                    className="text-red-500 hover:text-red-700 p-1 md:p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent">
                     <Trash2 size={12} />
                   </button>
                 </span>

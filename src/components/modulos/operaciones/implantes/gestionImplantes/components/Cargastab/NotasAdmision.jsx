@@ -35,7 +35,7 @@ const Seccion = ({ titulo, texto, onCopiar }) => {
         <h4 className="text-[9px] font-bold uppercase tracking-wide text-slate-500 dark:text-gray-400">{titulo}</h4>
         {texto && onCopiar && (
           <button type="button" onClick={() => onCopiar(texto)} title={`Copiar ${titulo}`} aria-label={`Copiar ${titulo}`}
-            className="ml-auto p-0.5 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+            className="ml-auto p-1 md:p-0.5 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition">
             <Copy size={11} />
           </button>
         )}
@@ -80,7 +80,7 @@ const NotasAdmision = ({ descripcion, observacion, onCopiar, onEditar, verDescri
           {!abierto && (desc || obs) && <span className="text-[9.5px] text-slate-400 dark:text-gray-500 truncate">· {desc || obs}</span>}
         </button>
         {onEditar && (
-          <button type="button" onClick={onEditar} className="shrink-0 inline-flex items-center gap-1 text-[9.5px] font-semibold text-[#2383C2] hover:underline">
+          <button type="button" onClick={onEditar} className="shrink-0 inline-flex items-center gap-1 py-1.5 md:py-0 text-[9.5px] font-semibold text-[#2383C2] hover:underline">
             <Pencil size={10} /> Editar en Información
           </button>
         )}

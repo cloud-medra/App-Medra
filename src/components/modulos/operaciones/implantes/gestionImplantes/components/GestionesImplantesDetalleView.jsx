@@ -683,7 +683,12 @@ const GestionesImplantesDetalleView = forwardRef(({
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => setActiveTab(tab.id)}
+                    // Celular: el menú es una fila con scroll horizontal; la
+                    // pestaña elegida se desplaza a la vista (en md+ no hace nada).
+                    onClick={(e) => {
+                      setActiveTab(tab.id);
+                      e.currentTarget.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+                    }}
                     className={`shrink-0 md:w-full flex items-center gap-2 px-2.5 py-2 md:py-1.5 rounded-md font-medium whitespace-nowrap transition text-left ${isActive
                       ? 'bg-[#2383C2]/10 text-[#2383C2] dark:bg-blue-950/50 dark:text-blue-400 font-semibold'
                       : 'text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700/50'

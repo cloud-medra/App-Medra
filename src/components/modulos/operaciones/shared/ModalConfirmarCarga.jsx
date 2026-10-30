@@ -12,7 +12,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CheckCircle2, X, Loader2, Info } from 'lucide-react';
 
-const BOTON = 'h-8 px-3.5 inline-flex items-center justify-center gap-1.5 rounded-lg text-[11px] font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed';
+const BOTON = 'h-10 md:h-8 px-3.5 inline-flex items-center justify-center gap-1.5 rounded-lg text-[11px] font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed';
 
 const ModalConfirmarCarga = ({
   abierto,
@@ -82,7 +82,7 @@ const ModalConfirmarCarga = ({
         aria-modal="true"
         aria-labelledby={idTitulo}
         aria-describedby={idDescripcion}
-        className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden entrada-dialogo"
+        className="w-full max-w-md max-h-full overflow-y-auto bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 entrada-dialogo"
       >
         <div className="px-5 pt-5 pb-4 flex items-start gap-3">
           <div className="w-10 h-10 shrink-0 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 text-[#2383C2]">
@@ -99,7 +99,7 @@ const ModalConfirmarCarga = ({
             onClick={cerrar}
             disabled={procesando}
             aria-label="Cerrar"
-            className="-mr-1 -mt-1 p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="-mr-1 -mt-1 p-2 md:p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <X size={16} />
           </button>

@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Download, ExternalLink, X, Loader2, AlertCir
 import { obtenerBlobDocumento } from './documentosStorage';
 import { mensajeErrorStorage, TIPOS_DOCUMENTO } from './documentosHelpers';
 
-const BOTON = 'h-7 px-2 inline-flex items-center gap-1.5 rounded border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-[10.5px] font-medium text-slate-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:text-slate-600 transition';
+const BOTON = 'h-9 md:h-7 px-2 inline-flex items-center gap-1.5 rounded border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-[10.5px] font-medium text-slate-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:text-slate-600 transition';
 
 const etiquetaTipo = (tipo) => {
   const info = TIPOS_DOCUMENTO.find((t) => t.id === tipo);
@@ -118,7 +118,7 @@ export const VisorDocumentoModal = ({ documentos, indiceInicial = 0, onCerrar, d
             <button
               type="button"
               onClick={onCerrar}
-              className="h-7 w-7 inline-flex items-center justify-center rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition"
+              className="h-9 w-9 md:h-7 md:w-7 inline-flex items-center justify-center rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition"
               title="Cerrar (Esc)"
             >
               <X size={16} />

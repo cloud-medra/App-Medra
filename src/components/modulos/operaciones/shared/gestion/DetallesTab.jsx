@@ -100,7 +100,7 @@ export const DetallesTab = ({ formData, ocPorItemBloques = [], modulo = 'implant
     : '';
 
   return (
-    <div className="p-4 max-w-7xl mx-auto w-full space-y-4">
+    <div className="p-3 md:p-4 max-w-7xl mx-auto w-full space-y-4">
 
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
@@ -110,7 +110,7 @@ export const DetallesTab = ({ formData, ocPorItemBloques = [], modulo = 'implant
           </h3>
         </div>
 
-        <div className="p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2.5 text-[10px]">
+        <div className="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2.5 text-[10px]">
           <div className="flex flex-col gap-0.5">
             <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Paciente</span>
             <span className="text-slate-700 dark:text-gray-200 font-medium">{formData?.nombre || 'P'}</span>
@@ -192,7 +192,7 @@ export const DetallesTab = ({ formData, ocPorItemBloques = [], modulo = 'implant
             <div key={bloque.uniqueKey || idx} className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
 
               <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 dark:text-gray-200">
                     <Building2 size={13} className="text-[#2383C2]" />
                     {bloque.empresa || 'SIN EMPRESA'}
@@ -209,7 +209,7 @@ export const DetallesTab = ({ formData, ocPorItemBloques = [], modulo = 'implant
                   )}
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="flex items-center gap-1 text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
                     <DollarSign size={11} />
                     ${formatearPesos(bloque.costo || 0)}

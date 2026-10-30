@@ -6,6 +6,7 @@ import { coloresEstadoGestion, normalizarEstadoGestion } from '../estadoGestion/
 import { ocsDeGestion, textoOCs } from '../ocIndex/indiceOC';
 import { moduloGestion } from '../modulosGestion';
 import { estadoOrdenGestion } from '../ordenesOC/estadoOrdenGestion';
+import { abreDetalleConUnToque, esToqueEnControl } from './aperturaDetalle';
 
 // Color de la fila según la Orden y su PDF (estadoOrdenGestion): fondo suave
 // en la fila, el mismo tono (opaco) en las columnas fijas para que tapen al
@@ -340,8 +341,15 @@ export const GestionesTable = ({
                     if (window.getSelection()?.toString().trim()) return;
                     if (onRowDoubleClick) onRowDoubleClick(i);
                   }}
+                  // Celular o pantalla táctil: un toque abre el detalle (ver
+                  // aperturaDetalle.js). En escritorio el clic simple no hace nada.
+                  onClick={(e) => {
+                    if (!onRowDoubleClick || !abreDetalleConUnToque() || esToqueEnControl(e.target)) return;
+                    if (window.getSelection()?.toString().trim()) return;
+                    onRowDoubleClick(i);
+                  }}
                   className={`group border-l-2 border-transparent hover:border-[#2383C2] ${tono.fila} transition-colors cursor-pointer`}
-                  title="Doble clic en un espacio sin texto (o botón Ver Detalle) para abrir la vista detallada"
+                  title="Doble clic en un espacio sin texto (en el celular, un toque; o botón Ver Detalle) para abrir la vista detallada"
                 >
                   <td style={getStickyStyle('estado')} className={`${celdaBase} text-center ${fija('estado')}`}>
                     <div className="flex items-center justify-center">

@@ -22,7 +22,7 @@ export const ControlPdfOC = ({ oc, tienePdf, subiendo = null, abriendo = false, 
     <span
       {...getRootProps()}
       title={soloLectura ? undefined : `Suelta aquí el PDF de la OC ${oc}`}
-      className={`relative inline-flex items-center gap-1 px-1 py-0.5 rounded border transition ${
+      className={`relative inline-flex items-center gap-1 px-1 py-1 md:py-0.5 rounded border transition ${
         isDragActive ? 'border-[#2383C2] bg-[#2383C2]/10' : 'border-transparent'
       }`}
     >

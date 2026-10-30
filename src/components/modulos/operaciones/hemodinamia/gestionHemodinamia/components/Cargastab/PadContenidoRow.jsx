@@ -68,7 +68,7 @@ export const PadContenidoRow = ({ fila, onChange, onRemove, puedeEliminar }) => 
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-2 items-end bg-white dark:bg-gray-900/60 rounded border border-slate-200 dark:border-gray-700 p-2">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-end bg-white dark:bg-gray-900/60 rounded border border-slate-200 dark:border-gray-700 p-2">
       <div className="flex flex-col gap-1 relative md:col-span-2" ref={containerRef}>
         <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Referencia contenido</label>
         <input
@@ -77,7 +77,7 @@ export const PadContenidoRow = ({ fila, onChange, onRemove, puedeEliminar }) => 
           onChange={e => handleReferenciaChange(e.target.value)}
           onFocus={() => sugerencias.length > 0 && setMostrarSug(true)}
           autoComplete="off"
-          className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
+          className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
           placeholder="Buscar referencia..."
         />
         {mostrarSug && (
@@ -115,7 +115,7 @@ export const PadContenidoRow = ({ fila, onChange, onRemove, puedeEliminar }) => 
           type="number"
           value={fila.cantidad}
           onChange={e => onChange({ ...fila, cantidad: e.target.value })}
-          className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+          className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
           placeholder="1"
         />
       </div>
@@ -126,7 +126,7 @@ export const PadContenidoRow = ({ fila, onChange, onRemove, puedeEliminar }) => 
           type="text"
           value={fila.lote}
           onChange={e => onChange({ ...fila, lote: e.target.value })}
-          className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+          className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
           placeholder="Ej: L-4521"
         />
       </div>
@@ -138,14 +138,14 @@ export const PadContenidoRow = ({ fila, onChange, onRemove, puedeEliminar }) => 
             type="date"
             value={fila.vencimiento}
             onChange={e => onChange({ ...fila, vencimiento: e.target.value })}
-            className="h-7 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+            className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
           />
         </div>
         {puedeEliminar && (
           <button
             type="button"
             onClick={onRemove}
-            className="h-7 px-2 text-red-500 hover:text-red-700 rounded hover:bg-red-50 dark:hover:bg-red-950/30"
+            className="h-9 md:h-7 px-2 text-red-500 hover:text-red-700 rounded hover:bg-red-50 dark:hover:bg-red-950/30"
             title="Quitar esta línea"
           >
             <Trash2 size={13} />

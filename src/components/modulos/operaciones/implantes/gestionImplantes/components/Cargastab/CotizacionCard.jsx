@@ -41,6 +41,7 @@ import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
 import ModalConfirmarCarga from '../../../../shared/ModalConfirmarCarga';
 import { CLASE_SIN_FLECHAS, SIN_CAMBIO_ACCIDENTAL } from '../../../../../../ui/numeroSinFlechas';
 import { esCodigoFibra } from '../../../fibras/fibrasNucleo';
+import { esPantallaEscritorio } from '../../../../shared/gestion/fijarColumnas';
 
 // Etiqueta de una línea de fibra reutilizable: "FIB-0007 · 2/5" (el mismo
 // número que el uso en Implantes → Fibras → Detalle) o "por registrar" si aún
@@ -85,7 +86,13 @@ const COLUMNAS_ITEMS = [
 // Modo lectura (Reporte Info → detalle de la gestión): sin "Acciones".
 const COLUMNAS_LECTURA = COLUMNAS_ITEMS.filter(col => col.key !== 'acciones');
 
-const anchosItemsPorDefecto = () => COLUMNAS_ITEMS.reduce((acc, col) => ({ ...acc, [col.key]: col.ancho }), {});
+// En el celular los botones de Acciones son más grandes (táctiles): la
+// columna parte más ancha para que no se recorten.
+const ANCHO_ACCIONES_CELULAR = 110;
+const anchosItemsPorDefecto = () => {
+  const anchos = COLUMNAS_ITEMS.reduce((acc, col) => ({ ...acc, [col.key]: col.ancho }), {});
+  return esPantallaEscritorio() ? anchos : { ...anchos, acciones: ANCHO_ACCIONES_CELULAR };
+};
 
 // El listado de sugerencias vive dentro de la tabla de ítems, que tiene
 // overflow-auto (para poder hacer scroll horizontal/vertical) — eso recorta
@@ -456,7 +463,7 @@ export const CotizacionCard = ({
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
-      <div className="w-full px-3 py-2 flex items-center justify-between gap-2 bg-slate-50/80 dark:bg-gray-800/80">
+      <div className="w-full px-3 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 bg-slate-50/80 dark:bg-gray-800/80">
         <button
           type="button"
           onClick={() => setAbierto(o => !o)}
@@ -468,7 +475,7 @@ export const CotizacionCard = ({
           <span className="text-[10px] text-slate-400 dark:text-gray-500">({items.length} ítem{items.length !== 1 ? 's' : ''})</span>
         </button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {hayItemsSinCodigo && (
             <span className="flex items-center gap-1 text-[9px] font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-1.5 py-0.5 rounded">
               <AlertCircle size={10} /> Sin código
@@ -497,7 +504,7 @@ export const CotizacionCard = ({
             onClick={() => onEliminarCotizacion(cotizacion.id)}
             disabled={soloLectura}
             title={soloLectura ? 'Bloqueado: ya imputado' : 'Eliminar cotización completa'}
-            className="text-red-500 hover:text-red-700 transition p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            className="text-red-500 hover:text-red-700 transition p-1 md:p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
           >
             <Trash2 size={12} />
           </button>}
@@ -528,7 +535,7 @@ export const CotizacionCard = ({
               onClick={marcarTodosComoCargado}
               disabled={itemsElegiblesCargaMasiva.length === 0 || soloLectura}
               title={soloLectura ? 'Bloqueado: ya imputado' : 'Marca como CARGADO todos los ítems de esta cotización (los ítems PAD no se modifican)'}
-              className="flex items-center gap-1 h-6 px-2 text-[9px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 rounded hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center gap-1 h-9 md:h-6 px-2 text-[9px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 rounded hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <CheckCircle2 size={11} /> Marcar todos como Cargado
             </button>}
@@ -627,7 +634,7 @@ export const CotizacionCard = ({
                               value={borrador.cantidad}
                               disabled={edicionEsFibra}
                               onChange={e => setBorrador(prev => ({ ...prev, cantidad: e.target.value }))}
-                              className={`${CLASE_SIN_FLECHAS} w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-center`}
+                              className={`${CLASE_SIN_FLECHAS} w-full min-w-0 h-9 md:h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-center`}
                             />
                           </td>
 
@@ -648,7 +655,7 @@ export const CotizacionCard = ({
                                 onFocus={() => sugerencias.length > 0 && setMostrarSug(true)}
                                 autoComplete="off"
                                 autoFocus
-                                className="w-full h-6.5 px-1.5 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                                className="w-full h-9 md:h-6.5 px-1.5 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                               />
                             </div>
                             {mostrarSug && (
@@ -702,7 +709,7 @@ export const CotizacionCard = ({
                                 min="0"
                                 value={borrador.precio}
                                 onChange={e => setBorrador(prev => ({ ...prev, precio: e.target.value }))}
-                                className={`${CLASE_SIN_FLECHAS} w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none`}
+                                className={`${CLASE_SIN_FLECHAS} w-full min-w-0 h-9 md:h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none`}
                               />
                             )}
                           </td>
@@ -731,7 +738,7 @@ export const CotizacionCard = ({
                                 type="text"
                                 value={VALOR_LOTE_VENCIMIENTO_PAD}
                                 disabled
-                                className="w-full min-w-0 h-6.5 px-1 text-[10px] border border-slate-200 dark:border-gray-700 rounded bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 outline-none"
+                                className="w-full min-w-0 h-9 md:h-6.5 px-1 text-[10px] border border-slate-200 dark:border-gray-700 rounded bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 outline-none"
                               />
                             ) : (
                               <input
@@ -739,7 +746,7 @@ export const CotizacionCard = ({
                                 value={borrador.lote}
                                 disabled={edicionEsFibra}
                                 onChange={e => setBorrador(prev => ({ ...prev, lote: e.target.value }))}
-                                className="w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                                className="w-full min-w-0 h-9 md:h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                               />
                             )}
                           </td>
@@ -751,7 +758,7 @@ export const CotizacionCard = ({
                                 type="text"
                                 value={VALOR_LOTE_VENCIMIENTO_PAD}
                                 disabled
-                                className="w-full min-w-0 h-6.5 px-1 text-[10px] border border-slate-200 dark:border-gray-700 rounded bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 outline-none"
+                                className="w-full min-w-0 h-9 md:h-6.5 px-1 text-[10px] border border-slate-200 dark:border-gray-700 rounded bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 outline-none"
                               />
                             ) : (
                               <input
@@ -759,7 +766,7 @@ export const CotizacionCard = ({
                                 value={borrador.vencimiento}
                                 disabled={edicionEsFibra}
                                 onChange={e => setBorrador(prev => ({ ...prev, vencimiento: e.target.value }))}
-                                className="w-full min-w-0 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                                className="w-full min-w-0 h-9 md:h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
                               />
                             )}
                           </td>
@@ -778,7 +785,7 @@ export const CotizacionCard = ({
                                 type="button"
                                 onClick={guardarEdicion}
                                 title="Guardar cambios"
-                                className="text-emerald-600 hover:text-emerald-800 transition p-0.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                                className="text-emerald-600 hover:text-emerald-800 transition p-1 md:p-0.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
                               >
                                 <Check size={13} />
                               </button>
@@ -786,7 +793,7 @@ export const CotizacionCard = ({
                                 type="button"
                                 onClick={cancelarEdicion}
                                 title="Cancelar edición"
-                                className="text-slate-400 hover:text-slate-600 transition p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
+                                className="text-slate-400 hover:text-slate-600 transition p-1 md:p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
                               >
                                 <X size={13} />
                               </button>
@@ -913,7 +920,7 @@ export const CotizacionCard = ({
                                   value={it.estadoCarga || 'PENDIENTE'}
                                   onChange={(e) => cambiarEstadoCarga(it, e.target.value)}
                                   disabled={soloLectura}
-                                  className={`w-full min-w-0 h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${estilo.bg} ${estilo.border} ${estilo.text}`}
+                                  className={`w-full min-w-0 h-9 md:h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${estilo.bg} ${estilo.border} ${estilo.text}`}
                                 >
                                   {ESTADO_CARGA_OPTIONS.map(op => (
                                     <option key={op} value={op}>{op}</option>
@@ -945,7 +952,7 @@ export const CotizacionCard = ({
                                   onClick={() => mostrandoFormularioContenido ? cerrarFormularioContenido() : abrirFormularioContenido(it.id)}
                                   disabled={soloLectura}
                                   title={soloLectura ? 'Bloqueado: ya imputado' : sinContenidoAun ? "Agregar contenido del PAD" : "Agregar más contenido a este PAD"}
-                                  className="text-fuchsia-600 hover:text-fuchsia-800 transition p-0.5 rounded hover:bg-fuchsia-50 dark:hover:bg-fuchsia-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                  className="text-fuchsia-600 hover:text-fuchsia-800 transition p-1 md:p-0.5 rounded hover:bg-fuchsia-50 dark:hover:bg-fuchsia-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                                 >
                                   <PackagePlus size={13} />
                                 </button>
@@ -955,7 +962,7 @@ export const CotizacionCard = ({
                                 onClick={() => iniciarEdicion(it)}
                                 disabled={soloLectura}
                                 title={soloLectura ? 'Bloqueado: ya imputado' : 'Editar ítem'}
-                                className="text-blue-600 hover:text-blue-800 transition p-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                className="text-blue-600 hover:text-blue-800 transition p-1 md:p-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 <Pencil size={12} />
                               </button>
@@ -964,7 +971,7 @@ export const CotizacionCard = ({
                                 onClick={() => onEliminarItem(it.id)}
                                 disabled={soloLectura}
                                 title={soloLectura ? 'Bloqueado: ya imputado' : it.fibra?.usoId ? 'Eliminar ítem (al guardar se anula el uso de la fibra)' : 'Eliminar ítem'}
-                                className="text-red-500 hover:text-red-700 transition p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                                className="text-red-500 hover:text-red-700 transition p-1 md:p-0.5 rounded hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                               >
                                 <Trash2 size={12} />
                               </button>
@@ -1009,14 +1016,14 @@ export const CotizacionCard = ({
                                     <button
                                       type="button"
                                       onClick={() => guardarNuevoContenido(it)}
-                                      className="h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold text-[10px] transition"
+                                      className="h-9 md:h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold text-[10px] transition"
                                     >
                                       Guardar contenido
                                     </button>
                                     <button
                                       type="button"
                                       onClick={cerrarFormularioContenido}
-                                      className="h-7 px-3 text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200 font-medium text-[10px] transition"
+                                      className="h-9 md:h-7 px-3 text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200 font-medium text-[10px] transition"
                                     >
                                       Cerrar
                                     </button>
