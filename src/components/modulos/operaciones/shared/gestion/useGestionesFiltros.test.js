@@ -176,13 +176,16 @@ describe('useGestionesFiltros — cascada del filtro de Día', () => {
 describe('opcionesPeriodoGestiones', () => {
   const gestiones = [{ fecha: '2026-09-15' }, { fecha: '2026-03-01' }, { fecha: '2025-12-20' }, { fecha: 'P' }];
 
-  it('solo períodos con datos: años del más reciente al más antiguo, meses cronológicos del año elegido', () => {
-    expect(opcionesPeriodoGestiones(gestiones)).toEqual({ anios: ['2026', '2025'], meses: ['03', '09', '12'] });
-    expect(opcionesPeriodoGestiones(gestiones, { filtroAnio: '2026' }).meses).toEqual(['03', '09']);
-    expect(opcionesPeriodoGestiones(gestiones, { filtroAnio: '2025' }).meses).toEqual(['12']);
+  const DOCE_MESES = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+
+  it('los 12 meses siempre, tengan o no gestiones cargadas', () => {
+    expect(opcionesPeriodoGestiones([], { hoyISO: '2026-11-02' }).meses).toEqual(DOCE_MESES);
+    expect(opcionesPeriodoGestiones(gestiones, { filtroAnio: '2025', hoyISO: '2026-11-02' }).meses).toEqual(DOCE_MESES);
   });
 
-  it('incluye el filtro activo aunque no tenga datos', () => {
-    expect(opcionesPeriodoGestiones(gestiones, { filtroAnio: '2026', filtroMes: '10' }).meses).toEqual(['03', '09', '10']);
+  it('años desde el primero con gestiones hasta el próximo, más los cargados y el filtro activo', () => {
+    expect(opcionesPeriodoGestiones([], { hoyISO: '2026-11-02' }).anios).toEqual(['2027', '2026']);
+    expect(opcionesPeriodoGestiones(gestiones, { hoyISO: '2026-11-02' }).anios).toEqual(['2027', '2026', '2025']);
+    expect(opcionesPeriodoGestiones([], { filtroAnio: '2024', hoyISO: '2026-11-02' }).anios).toEqual(['2027', '2026', '2024']);
   });
 });

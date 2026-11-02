@@ -52,6 +52,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
   const [fijarColumnas, setFijarColumnas] = useFijarColumnas(modulo);
   const {
     implantes,
+    soloRecientes,
     hayMasGestiones,
     cargarMasGestiones,
     implantesFiltrados,
@@ -439,6 +440,27 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
 
           {hasPermission(PATH_VISTA, "tabla_datos") && (
             <>
+              {/* Sin mes elegido se escuchan solo las gestiones más recientes
+                  (con mes, el mes completo): se avisa arriba de la tabla para
+                  que no parezca que faltan registros, con el botón ahí mismo. */}
+              {soloRecientes && (
+                <div role="status" className="flex flex-wrap items-center gap-2 px-2 py-1.5 mb-1 rounded border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 text-[11px]">
+                  <AlertTriangle size={12} className="shrink-0" />
+                  <span className="flex-1 min-w-[12rem]">
+                    Se ven solo las {implantes.length} gestiones más recientes. Para ver un mes completo, elige año y mes.
+                  </span>
+                  {hayMasGestiones && (
+                    <button
+                      type="button"
+                      onClick={cargarMasGestiones}
+                      className="h-9 md:h-7 px-3 bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-100 rounded text-[11px] font-medium transition"
+                      title="Amplía la lista con gestiones anteriores; los filtros aplican solo sobre las cargadas"
+                    >
+                      Cargar gestiones anteriores
+                    </button>
+                  )}
+                </div>
+              )}
               <GestionesTable
                 modulo={modulo}
                 implantesFiltrados={implantesPagina}
@@ -464,18 +486,6 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                 totalFilas={implantesFiltrados.length}
                 setPagina={setPagina}
               />
-              {hayMasGestiones && (
-                <div className="flex justify-center py-1.5 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    type="button"
-                    onClick={cargarMasGestiones}
-                    className="h-9 md:h-7 px-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded text-[11px] font-medium transition"
-                    title="Se muestran las gestiones más recientes; los filtros aplican solo sobre las cargadas"
-                  >
-                    Cargar gestiones anteriores
-                  </button>
-                </div>
-              )}
             </>
           )}
         </>

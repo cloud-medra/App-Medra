@@ -32,6 +32,7 @@ import { ordenarGestiones } from '../../../implantes/gestionImplantes/utils/orde
 import { existeGestionEnColeccion, extraerDatosBase, MENSAJE_DUPLICADO } from '../../../shared/empresaFechaDesdeDetalle';
 import { calcularFechaRegistroAdmision } from '../../../shared/fechaRegistroAdmision';
 import { cambiaIdentidad, revisarDuplicadoGestion, confirmarRegistroDuplicado } from '../../../shared/gestion/duplicadosGestion';
+import { periodoConsultaGestiones, rangoRutaMesGestiones, esRutaDelMes } from '../../../shared/gestion/consultaGestiones';
 
 const getFechaActualISO = () => {
   const hoy = new Date();
@@ -130,8 +131,10 @@ const normalizarGestion = (formData) => {
 // gestiones más recientes, escucha solo las de esa admisión (lo que
 // necesita el detalle abierto desde Cargas Consolidado). Sigue en tiempo
 // real: es la gestión en edición. `refPath` (opcional): si la admisión aún
-// no tiene código, se escucha solo ese documento.
-export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
+// no tiene código, se escucha solo ese documento. `periodo` (opcional,
+// { anio, mes } del filtro de la pantalla): con ambos, escucha el mes
+// completo en vez de la ventana de las más recientes (consultaGestiones.js).
+export const useGestionesHemodinamiaData = ({ admision, refPath, periodo } = {}) => {
   const [implantes, setImplantes] = useState([]);
   const [formData, setFormData] = useState(getInitialFormState);
 
@@ -163,10 +166,18 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
   // escuchando) el histórico COMPLETO de gestiones. Ahora escucha las
   // TAMANO_PAGINA más recientes (orden por __name__ desc: el path lleva
   // año/mes/día con ceros a la izquierda) y "Cargar más" amplía la ventana.
+  // Solo sin mes elegido: con mes, se escucha el mes completo (igual que Implantes).
   const TAMANO_PAGINA = 150;
   const [limiteGestiones, setLimiteGestiones] = useState(TAMANO_PAGINA);
   const [hayMasGestiones, setHayMasGestiones] = useState(false);
   const cargarMasGestiones = () => setLimiteGestiones(l => l + TAMANO_PAGINA);
+
+  // Año/mes como texto para que el efecto solo se rehaga (y cierre el
+  // listener anterior) cuando cambian de verdad. Ver Implantes.
+  const periodoConsulta = periodoConsultaGestiones(periodo);
+  const anioConsulta = periodoConsulta?.anio || null;
+  const mesConsulta = periodoConsulta?.mes || null;
+  const soloRecientes = !admision && !refPath && !periodoConsulta;
 
   useEffect(() => {
     const mapearYOrdenar = (docs) => {
@@ -210,6 +221,19 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
       return () => unsubs.forEach(u => u());
     }
 
+    if (anioConsulta && mesConsulta) {
+      const mes = { anio: anioConsulta, mes: mesConsulta };
+      const { desde, hasta } = rangoRutaMesGestiones('hemodinamia_gestiones', mes);
+      return onSnapshotVisible(
+        query(collectionGroup(db, "detalles"), where(documentId(), ">=", desde), where(documentId(), "<", hasta)),
+        (snapshot) => {
+          setImplantes(mapearYOrdenar(snapshot.docs.filter(d => esRutaDelMes(d.ref.path, 'hemodinamia_gestiones', mes))));
+          setHayMasGestiones(false);
+        },
+        (error) => console.error(`Error al escuchar gestiones de ${mesConsulta}/${anioConsulta}:`, error)
+      );
+    }
+
     const q = query(
       collectionGroup(db, "detalles"),
       where(documentId(), ">=", RANGO_MIN_GESTIONES),
@@ -224,7 +248,7 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
       console.error("Error al escuchar gestiones:", error);
     });
     return () => unsubscribe();
-  }, [limiteGestiones, admision, refPath]);
+  }, [limiteGestiones, admision, refPath, anioConsulta, mesConsulta]);
 
   const registrarLog = (docRef, accion, detalles) => registrarLogHemodinamia(docRef, accion, detalles, userData);
 
@@ -1071,6 +1095,7 @@ export const useGestionesHemodinamiaData = ({ admision, refPath } = {}) => {
 
   return {
     implantes,
+    soloRecientes,
     hayMasGestiones,
     cargarMasGestiones,
     formData,

@@ -34,6 +34,7 @@ import { colaEscrituras, confirmarConFibras, nuevoUsoId, leerFibrasActivas, pone
 import { useGranularPermission } from '../../../../../../hooks/useGranularPermission';
 import { fechaISOEnChile } from '../../../shared/gestion/rangoFechaGestiones';
 import { cambiaIdentidad, revisarDuplicadoGestion, confirmarRegistroDuplicado } from '../../../shared/gestion/duplicadosGestion';
+import { periodoConsultaGestiones, rangoRutaMesGestiones, esRutaDelMes } from '../../../shared/gestion/consultaGestiones';
 
 const getFechaActualISO = () => {
   const hoy = new Date();
@@ -132,8 +133,10 @@ const normalizarGestion = (formData) => {
 // gestiones más recientes, escucha solo las de esa admisión (lo que
 // necesita el detalle abierto desde Cargas Consolidado). Sigue en tiempo
 // real: es la gestión en edición. `refPath` (opcional): si la admisión aún
-// no tiene código, se escucha solo ese documento.
-export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
+// no tiene código, se escucha solo ese documento. `periodo` (opcional,
+// { anio, mes } del filtro de la pantalla): con ambos, escucha el mes
+// completo en vez de la ventana de las más recientes (consultaGestiones.js).
+export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) => {
   const [implantes, setImplantes] = useState([]);
   const [formData, setFormData] = useState(getInitialFormState);
 
@@ -187,11 +190,22 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
   // acotar a "los últimos N"), sin necesitar un índice nuevo de Firestore
   // (el orden por __name__ ya viene soportado siempre). limit() acota la
   // ventana en vivo a las gestiones más recientes en vez de todo el histórico.
+  // Solo se usa sin mes elegido ("Mes (Todos)"): con mes, se escucha el mes
+  // completo, porque con la ventana un mes con datos quedaba fuera de la tabla.
   const TAMANO_PAGINA = 150;
   // "Cargar más": amplía la ventana en vivo de a TAMANO_PAGINA gestiones.
   const [limiteGestiones, setLimiteGestiones] = useState(TAMANO_PAGINA);
   const [hayMasGestiones, setHayMasGestiones] = useState(false);
   const cargarMasGestiones = () => setLimiteGestiones(l => l + TAMANO_PAGINA);
+
+  // Año/mes normalizados ('01'..'12') o null. Como texto (no el objeto) para
+  // que el efecto solo se rehaga cuando cambian de verdad: al cambiar de mes
+  // o año, React corre la limpieza y cierra el listener anterior.
+  const periodoConsulta = periodoConsultaGestiones(periodo);
+  const anioConsulta = periodoConsulta?.anio || null;
+  const mesConsulta = periodoConsulta?.mes || null;
+  // Sin admisión ni mes: la tabla muestra solo las más recientes (aviso arriba).
+  const soloRecientes = !admision && !refPath && !periodoConsulta;
 
   useEffect(() => {
     const mapearYOrdenar = (docs) => {
@@ -237,6 +251,19 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
       return () => unsubs.forEach(u => u());
     }
 
+    if (anioConsulta && mesConsulta) {
+      const mes = { anio: anioConsulta, mes: mesConsulta };
+      const { desde, hasta } = rangoRutaMesGestiones('implantes_gestiones', mes);
+      return onSnapshotVisible(
+        query(collectionGroup(db, "detalles"), where(documentId(), ">=", desde), where(documentId(), "<", hasta)),
+        (snapshot) => {
+          setImplantes(mapearYOrdenar(snapshot.docs.filter(d => esRutaDelMes(d.ref.path, 'implantes_gestiones', mes))));
+          setHayMasGestiones(false);
+        },
+        (error) => console.error(`Error al escuchar gestiones de ${mesConsulta}/${anioConsulta}:`, error)
+      );
+    }
+
     const q = query(
       collectionGroup(db, "detalles"),
       where(documentId(), ">=", RANGO_MIN_GESTIONES),
@@ -251,7 +278,7 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
       console.error("Error al escuchar gestiones:", error);
     });
     return () => unsubscribe();
-  }, [limiteGestiones, admision, refPath]);
+  }, [limiteGestiones, admision, refPath, anioConsulta, mesConsulta]);
 
   const registrarLog = (docRef, accion, detalles) => registrarLogImplantes(docRef, accion, detalles, userData);
 
@@ -1203,6 +1230,7 @@ export const useGestionesImplantesData = ({ admision, refPath } = {}) => {
 
   return {
     implantes,
+    soloRecientes,
     hayMasGestiones,
     cargarMasGestiones,
     formData,

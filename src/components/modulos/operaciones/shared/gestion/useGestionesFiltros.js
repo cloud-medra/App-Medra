@@ -5,38 +5,58 @@ import { ocsDeGestion } from '../ocIndex/indiceOC';
 
 export const TAMANO_PAGINA_TABLA = 50;
 
-// Años y meses con gestiones (fecha 'YYYY-MM-DD'): años del más reciente al
-// más antiguo; meses en orden cronológico (ordenarMeses), solo del año
-// elegido. El filtro activo se incluye
-// aunque no tenga datos (por defecto es el mes actual), para que el
-// selector muestre lo que realmente está filtrando.
-export const opcionesPeriodoGestiones = (implantes, { filtroAnio = '', filtroMes = '' } = {}) => {
+// Primer año con gestiones (no hay rutas anteriores a 2026 en Implantes ni
+// en Hemodinamia). Los años del selector van desde acá hasta el próximo
+// (agendas de enero cargadas en diciembre).
+export const ANIO_PRIMERAS_GESTIONES = 2026;
+
+const MESES_DEL_ANIO = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+
+// Opciones de año y mes del selector. NO salen de las gestiones cargadas:
+// con un mes elegido solo está cargado ese mes, y antes (con la ventana de
+// las 150 más recientes) un mes con datos podía no aparecer. Meses: los 12,
+// siempre. Años: de ANIO_PRIMERAS_GESTIONES al próximo, más los que traigan
+// las gestiones cargadas y el filtro activo; del más reciente al más antiguo.
+export const opcionesPeriodoGestiones = (implantes, { filtroAnio = '', hoyISO = fechaISOEnChile() } = {}) => {
+  const anioActual = Number(hoyISO.slice(0, 4));
   const anios = new Set(filtroAnio ? [filtroAnio] : []);
-  const meses = new Set(filtroMes ? [filtroMes] : []);
+  for (let a = ANIO_PRIMERAS_GESTIONES; a <= anioActual + 1; a++) anios.add(String(a));
   implantes.forEach(({ fecha }) => {
-    const m = String(fecha || '').match(/^(\d{4})-(\d{2})/);
-    if (!m) return;
-    anios.add(m[1]);
-    if (!filtroAnio || m[1] === filtroAnio) meses.add(m[2]);
+    const m = String(fecha || '').match(/^(\d{4})-\d{2}/);
+    if (m) anios.add(m[1]);
   });
   return {
     anios: [...anios].sort().reverse(),
-    meses: ordenarMeses(meses)
+    meses: ordenarMeses(MESES_DEL_ANIO)
   };
+};
+
+// Año y mes del filtro. Están aparte porque también los necesita el hook de
+// datos (la consulta escucha el mes elegido): useGestionesImplantes y
+// useGestionesHemodinamia lo crean, se lo pasan a los dos y useGestionesFiltros
+// lo recibe en `periodo`. Por defecto, el mes actual en hora de Chile.
+// `sinPeriodo` y `filtroInicial`: ver useGestionesFiltros.
+export const usePeriodoGestiones = ({ sinPeriodo = false, filtroInicial = null } = {}) => {
+  const ini = filtroInicial || {};
+  const [anioHoy, mesHoy] = fechaISOEnChile().split('-');
+  const [filtroAnio, setFiltroAnio] = useState(ini.anio ?? (sinPeriodo ? '' : anioHoy));
+  const [filtroMes, setFiltroMes] = useState(ini.mes ?? (sinPeriodo ? '' : mesHoy));
+  return { filtroAnio, setFiltroAnio, filtroMes, setFiltroMes };
 };
 
 // `sinPeriodo`: arranca sin año/mes y con "Todos los días" (solo valor inicial).
 // `filtroInicial` (opcional, del panel del Inicio vía filtroInicialStore):
 // { anio, mes, dias, estados, rango } con que arranca la pantalla; manda
 // sobre `sinPeriodo`. Solo valor inicial: después se cambia como siempre.
+// `periodo` (opcional): el de usePeriodoGestiones, compartido con el hook de
+// datos; sin él, el año/mes es propio de este hook.
 // Filtros, búsqueda y paginación de Gestión (Implantes y Hemodinamia).
-export const useGestionesFiltros = (implantes, { sinPeriodo = false, filtroInicial = null } = {}) => {
+export const useGestionesFiltros = (implantes, { sinPeriodo = false, filtroInicial = null, periodo = null } = {}) => {
   const ini = filtroInicial || {};
   const [busqueda, setBusqueda] = useState('');
 
-  const fechaHoy = new Date();
-  const [filtroAnio, setFiltroAnio] = useState(ini.anio ?? (sinPeriodo ? '' : fechaHoy.getFullYear().toString()));
-  const [filtroMes, setFiltroMes] = useState(ini.mes ?? (sinPeriodo ? '' : String(fechaHoy.getMonth() + 1).padStart(2, '0')));
+  const periodoPropio = usePeriodoGestiones({ sinPeriodo, filtroInicial });
+  const { filtroAnio, setFiltroAnio, filtroMes, setFiltroMes } = periodo || periodoPropio;
   const [filtrosDias, setFiltrosDias] = useState(ini.dias || []);
   const [filtrosEstados, setFiltrosEstados] = useState(ini.estados || []);
   const [pagina, setPagina] = useState(1);
@@ -47,12 +67,10 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false, filtroInici
   // No se recuerda entre visitas: cada entrada arranca en el predeterminado.
   const [filtroRangoFecha, setFiltroRangoFecha] = useState(ini.rango || (sinPeriodo ? 'todos' : RANGO_FECHA_PREDETERMINADO));
 
-  // Años/meses disponibles, desde las gestiones ya cargadas (0 lecturas):
-  // solo períodos con datos, años del más reciente al más antiguo y meses
-  // en orden cronológico, solo del año elegido. Ver opcionesPeriodoGestiones.
+  // Años/meses del selector (0 lecturas). Ver opcionesPeriodoGestiones.
   const opcionesFechas = useMemo(
-    () => opcionesPeriodoGestiones(implantes, { filtroAnio, filtroMes }),
-    [implantes, filtroAnio, filtroMes]
+    () => opcionesPeriodoGestiones(implantes, { filtroAnio }),
+    [implantes, filtroAnio]
   );
 
   // Filtrado en cascada: primero se aplican todos los filtros EXCEPTO
@@ -137,7 +155,8 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false, filtroInici
   // que ya viene ordenado (useGestionesImplantesData ordena por fecha
   // desc, nombre y empresa — utils/ordenGestiones.js) — acá solo se corta en
   // trozos de 50, sin volver a ordenar. Es 100% client-side: los datos del
-  // mes ya están en memoria (acotados por el listener a los más recientes),
+  // mes ya están en memoria (el listener escucha el mes elegido o, sin mes,
+  // las más recientes),
   // así que no hace falta una consulta nueva a Firestore por cada página.
   // Se reinicia a la página 1 cada vez que cambia cualquier filtro.
   useEffect(() => {
@@ -153,9 +172,9 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false, filtroInici
   }, [implantesFiltrados, paginaSegura]);
 
   const limpiarFiltrosFecha = () => {
-    const d = new Date();
-    setFiltroAnio(d.getFullYear().toString());
-    setFiltroMes(String(d.getMonth() + 1).padStart(2, '0'));
+    const [anioHoy, mesHoy] = fechaISOEnChile().split('-');
+    setFiltroAnio(anioHoy);
+    setFiltroMes(mesHoy);
     setFiltrosDias([]);
   };
 
