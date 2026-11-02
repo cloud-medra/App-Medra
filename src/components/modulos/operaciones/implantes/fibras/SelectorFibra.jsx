@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { AlertTriangle, Cable, Loader2, Warehouse } from 'lucide-react';
 import { useModal } from '../../../../../context/ModalContext';
-import { opcionesSelectorFibra, siguienteNumeroUso, usosRestantes } from './fibrasNucleo';
+import { opcionesSelectorFibra, siguienteNumeroUso, usosRestantes, textoFibra } from './fibrasNucleo';
 
 /**
  * Selector "Fibra usada" de Cargas: solo las fibras EN USO de la referencia,
@@ -37,8 +37,8 @@ export const SelectorFibra = ({ referencia, fechaCirugia, fibras, cargando, erro
     if (!modal?.confirmAction) { elegirDeBodega(); return; }
     modal.confirmAction(
       'Poner en uso una fibra de bodega',
-      `La fibra ${fibra.codigoInterno} (lote ${fibra.lote}) pasará a EN USO al guardar la gestión.`
-        + (conDevolucion ? ` La ${enUsoActual.codigoInterno}, que está en uso, volverá a bodega.` : ''),
+      `La fibra ${textoFibra(fibra)} (lote ${fibra.lote}) pasará a EN USO al guardar la gestión.`
+        + (conDevolucion ? ` La ${textoFibra(enUsoActual)}, que está en uso, volverá a bodega.` : ''),
       elegirDeBodega,
       { confirmText: 'Poner en uso', cancelText: 'Cancelar', type: 'warning' }
     );
@@ -69,7 +69,7 @@ export const SelectorFibra = ({ referencia, fechaCirugia, fibras, cargando, erro
             <div className="text-[10px] text-amber-700 dark:text-amber-400 flex items-center gap-1">
               <Warehouse size={11} className="shrink-0" />
               {enUsoActual
-                ? `La fibra en uso (${enUsoActual.codigoInterno}) no sirve para esta cirugía.`
+                ? `La fibra en uso (${textoFibra(enUsoActual)}) no sirve para esta cirugía.`
                 : `No hay fibras de ${referencia} en uso.`}
               {' '}Elige una de bodega: pasará a EN USO al guardar.
             </div>
@@ -83,9 +83,10 @@ export const SelectorFibra = ({ referencia, fechaCirugia, fibras, cargando, erro
               className="h-7 px-2 text-[10px] border border-teal-300 dark:border-teal-800 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-teal-500 min-w-[260px]"
             >
               {(opciones.length > 1 || desdeBodega) && <option value="">Elige la fibra…</option>}
+              {/* <option> no admite estilos: referencia primero y el código entre paréntesis. */}
               {opciones.map((f) => (
                 <option key={f.id} value={f.id}>
-                  {f.codigoInterno} · lote {f.lote} · vence {f.vencimiento} · quedan {usosRestantes(f)} de {f.usosTotales}{desdeBodega ? ' · en bodega' : ''}
+                  {textoFibra(f)} · lote {f.lote} · vence {f.vencimiento} · quedan {usosRestantes(f)} de {f.usosTotales}{desdeBodega ? ' · en bodega' : ''}
                 </option>
               ))}
             </select>

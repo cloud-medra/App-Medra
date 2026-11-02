@@ -108,7 +108,18 @@ export const siguienteNumeroUso = (fibra) => {
   return null;
 };
 
-export const etiquetaFibra = (fibra) => `${fibra?.codigoInterno || fibra?.id || 'Fibra'} · lote ${fibra?.lote || 'sin lote'}`;
+// Cómo se nombra una fibra en textos (avisos, confirmaciones, errores): la
+// referencia es lo principal y el código interno va entre paréntesis, porque
+// distingue fibras de la misma referencia (ej. "FL-272 (FIB-0005)"). En
+// pantalla, con estilos, ver NombreFibra.jsx.
+export const textoFibra = (fibra) => {
+  const codigo = fibra?.codigoInterno || fibra?.id || '';
+  const referencia = fibra?.referencia || '';
+  if (referencia && codigo) return `${referencia} (${codigo})`;
+  return referencia || codigo || 'Fibra';
+};
+
+export const etiquetaFibra = (fibra) => `${textoFibra(fibra)} · lote ${fibra?.lote || 'sin lote'}`;
 
 // Motivo por el que no se puede registrar un USO con esta fibra en una
 // cirugía de fecha `fechaCirugia` (AAAA-MM-DD); null si se puede.
@@ -208,9 +219,10 @@ export const fechaUltimoUsoVigente = (fibra) =>
   Object.values(fibra?.fechasUso || {}).reduce((max, f) => (f > max ? f : max), '');
 
 // Aviso tras registrar un uso o pérdida.
-export const textoUsoRegistrado = ({ lote, codigoInterno: codigo, numeroUso, usosTotales, restantes, tipo }) => {
+export const textoUsoRegistrado = ({ referencia, lote, codigoInterno, numeroUso, usosTotales, restantes, tipo }) => {
   const que = tipo === TIPO_USO.PERDIDA ? 'pérdida registrada como uso' : 'uso';
-  const base = `Fibra lote ${lote}${codigo ? ` (${codigo})` : ''}: ${que} ${numeroUso}/${usosTotales}`;
+  const nombre = referencia || codigoInterno ? `${textoFibra({ referencia, codigoInterno })}, lote ${lote}` : `lote ${lote}`;
+  const base = `Fibra ${nombre}: ${que} ${numeroUso}/${usosTotales}`;
   return restantes === 0 ? `${base}. Era el último uso: la fibra quedó AGOTADA.` : `${base}, quedan ${restantes}.`;
 };
 

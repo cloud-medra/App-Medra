@@ -4,7 +4,7 @@ import { db } from '../../../../../firebaseConfig';
 import { useToast } from '../../../../../context/ToastContext';
 import { useUser } from '../../../../../context/UserContext';
 import { fechaISOEnChile } from '../../shared/gestion/rangoFechaGestiones';
-import { textoUsoRegistrado } from './fibrasNucleo';
+import { textoUsoRegistrado, textoFibra } from './fibrasNucleo';
 import {
   leerTodasLasFibras, leerUsosDeFibra, registrarFibras, editarFibra, registrarPerdida, anularPerdida,
   ponerEnUso, devolverABodega, leerMovimientosUbicacion,
@@ -75,11 +75,11 @@ export const useFibrasReutilizablesData = () => {
     ),
     ponerEnUso: (fibra) => ejecutar(
       () => ponerEnUso(fibra.id, userData),
-      ({ devuelta }) => `${fibra.codigoInterno} quedó EN USO${devuelta ? `; ${devuelta} volvió a bodega` : ''}`
+      ({ devuelta }) => `${textoFibra(fibra)} quedó EN USO${devuelta ? `; ${textoFibra({ referencia: fibra.referencia, codigoInterno: devuelta })} volvió a bodega` : ''}`
     ),
     devolverABodega: (fibra) => ejecutar(
       () => devolverABodega(fibra.id, userData),
-      `${fibra.codigoInterno} volvió a bodega`
+      `${textoFibra(fibra)} volvió a bodega`
     ),
     leerUsos: leerUsosDeFibra,
     leerMovimientos: leerMovimientosUbicacion,

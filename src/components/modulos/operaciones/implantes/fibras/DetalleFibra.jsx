@@ -4,7 +4,8 @@ import { useGranularPermission } from '../../../../../hooks/useGranularPermissio
 import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitidas';
 import { useColumnResize } from '../../../../../hooks/useColumnResize';
 import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../ui/ThRedimensionable';
-import { ordenarUsos, TIPO_USO, ESTADO_USO, TEXTO_MOTIVO_ANULACION, usosConsumidosDe, ubicacionDe } from './fibrasNucleo';
+import { ordenarUsos, TIPO_USO, ESTADO_USO, TEXTO_MOTIVO_ANULACION, usosConsumidosDe, ubicacionDe, textoFibra } from './fibrasNucleo';
+import NombreFibra from './NombreFibra';
 import { formatearFechaTabla } from '../gestionImplantes/components/Cargastab/cargasHelpers';
 
 const PATH_VISTA = '/implantes/fibrasReutilizables';
@@ -94,10 +95,10 @@ const DetalleFibra = ({ fibra, leerUsos, leerMovimientos, version, onAnularPerdi
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-black/30" onClick={onCerrar}>
-      <div className="h-full w-full max-w-5xl bg-white dark:bg-gray-800 shadow-xl flex flex-col text-[11px]" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Detalle ${fibra.codigoInterno}`}>
+      <div className="h-full w-full max-w-5xl bg-white dark:bg-gray-800 shadow-xl flex flex-col text-[11px]" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Detalle ${textoFibra(fibra)}`}>
         <div className="px-4 py-3 border-b border-slate-200 dark:border-gray-700 flex items-start justify-between gap-2">
           <div>
-            <h3 className="text-[14px] font-bold text-slate-800 dark:text-gray-100">{fibra.codigoInterno} · {fibra.referencia}</h3>
+            <h3 className="text-[14px]"><NombreFibra fibra={fibra} claseReferencia="font-bold text-slate-800 dark:text-gray-100" /></h3>
             <p className="text-slate-500 dark:text-gray-400">
               Lote {fibra.lote} · vence {formatearFechaTabla(fibra.vencimiento)} · {usosConsumidosDe(fibra)} de {fibra.usosTotales} usos consumidos · {ubicacionDe(fibra).toLowerCase()}
             </p>

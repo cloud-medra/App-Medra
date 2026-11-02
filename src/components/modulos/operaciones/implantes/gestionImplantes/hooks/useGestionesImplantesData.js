@@ -29,7 +29,7 @@ import { existeGestionEnColeccion, extraerDatosBase, MENSAJE_DUPLICADO } from '.
 import { calcularOcPendiente, itemsDeGestion } from '../../../shared/ocIndex/indiceOC';
 import { calcularFechaRegistroAdmision } from '../../../shared/fechaRegistroAdmision';
 import { ordenarGestiones } from '../utils/ordenGestiones';
-import { prepararFibrasNuevas, planFibrasBloque, planFibrasEliminacion, operacionesDePlan, datosGestionDeUso, textoUsoRegistrado, siguienteEnBodega, RUTA_FIBRAS } from '../../fibras/fibrasNucleo';
+import { prepararFibrasNuevas, planFibrasBloque, planFibrasEliminacion, operacionesDePlan, datosGestionDeUso, textoUsoRegistrado, siguienteEnBodega, RUTA_FIBRAS, textoFibra } from '../../fibras/fibrasNucleo';
 import { colaEscrituras, confirmarConFibras, nuevoUsoId, leerFibrasActivas, ponerEnUso } from '../../fibras/fibrasTransacciones';
 import { useGranularPermission } from '../../../../../../hooks/useGranularPermission';
 import { fechaISOEnChile } from '../../../shared/gestion/rangoFechaGestiones';
@@ -676,7 +676,7 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
   const avisarUsosFibra = async (usos) => {
     usos.forEach(u => {
       showToast(textoUsoRegistrado(u), u.restantes === 0 ? 'info' : 'success');
-      if (u.puestaEnUso) showToast(`${u.codigoInterno} quedó EN USO${u.devuelta ? `; ${u.devuelta} volvió a bodega` : ''}.`, 'success');
+      if (u.puestaEnUso) showToast(`${textoFibra(u)} quedó EN USO${u.devuelta ? `; ${textoFibra({ referencia: u.referencia, codigoInterno: u.devuelta })} volvió a bodega` : ''}.`, 'success');
     });
     const ultimos = usos.filter(u => u.restantes === 0);
     if (ultimos.length === 0) return;
@@ -695,7 +695,7 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
         { type: 'warning', confirmText: 'Entendido', cancelText: 'Cerrar' });
       return;
     }
-    const sugerencia = `Siguiente en bodega: ${siguiente.codigoInterno} (lote ${siguiente.lote}, vence ${siguiente.vencimiento}).`;
+    const sugerencia = `Siguiente en bodega: ${textoFibra(siguiente)} (lote ${siguiente.lote}, vence ${siguiente.vencimiento}).`;
     if (!puedeCambiarUbicacion) {
       confirmAction(titulo, `${textoUltimos} ${sugerencia} Pide que la pongan en uso en Implantes → Fibras.`, () => {},
         { type: 'warning', confirmText: 'Entendido', cancelText: 'Cerrar' });
@@ -704,11 +704,11 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
     confirmAction(titulo, `${textoUltimos} ${sugerencia} ¿Ponerla en uso ahora?`, async () => {
       try {
         await ponerEnUso(siguiente.id, userData);
-        showToast(`${siguiente.codigoInterno} quedó EN USO.`, 'success');
+        showToast(`${textoFibra(siguiente)} quedó EN USO.`, 'success');
       } catch (e) {
         showToast(e?.esErrorFibra ? e.message : `No se pudo poner en uso: ${e.message}`, 'error');
       }
-    }, { type: 'warning', confirmText: `Poner en uso ${siguiente.codigoInterno}`, cancelText: 'Ahora no' });
+    }, { type: 'warning', confirmText: `Poner en uso ${textoFibra(siguiente)}`, cancelText: 'Ahora no' });
   };
 
   // Devuelve { ok: true, registros } (registros guardados, en el mismo orden

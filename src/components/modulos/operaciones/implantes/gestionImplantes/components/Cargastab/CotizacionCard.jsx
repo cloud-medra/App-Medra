@@ -40,18 +40,21 @@ import { PadContenidoRow, crearFilaContenidoPadVacia, construirItemContenidoPadD
 import { formatearPesos } from '../../../../../../../utils/formatearMoneda';
 import ModalConfirmarCarga from '../../../../shared/ModalConfirmarCarga';
 import { CLASE_SIN_FLECHAS, SIN_CAMBIO_ACCIDENTAL } from '../../../../../../ui/numeroSinFlechas';
-import { esCodigoFibra } from '../../../fibras/fibrasNucleo';
+import { esCodigoFibra, textoFibra } from '../../../fibras/fibrasNucleo';
 import { esPantallaEscritorio } from '../../../../shared/gestion/fijarColumnas';
 
-// Etiqueta de una línea de fibra reutilizable: "FIB-0007 · 2/5" (el mismo
+// Etiqueta de una línea de fibra reutilizable: "2/5 FIB-0007" (el mismo
 // número que el uso en Implantes → Fibras → Detalle) o "por registrar" si aún
-// no se guarda la gestión.
-const EtiquetaFibra = ({ fibra }) => (
+// no se guarda la gestión. La referencia (lo principal) ya es la de la línea;
+// el código interno va en tono suave, solo para distinguir fibras de la misma
+// referencia.
+const EtiquetaFibra = ({ fibra, referencia }) => (
   <span
     className="flex items-center gap-0.5 text-[8px] px-1 rounded bg-teal-100 dark:bg-teal-950/40 text-teal-700 dark:text-teal-400 font-bold shrink-0"
-    title={fibra.numeroUso ? `Fibra ${fibra.codigoInterno}: uso ${fibra.numeroUso} de ${fibra.usosTotales}` : 'El uso se registra al guardar la gestión'}
+    title={fibra.numeroUso ? `Fibra ${textoFibra({ ...fibra, referencia })}: uso ${fibra.numeroUso} de ${fibra.usosTotales}` : 'El uso se registra al guardar la gestión'}
   >
-    <Cable size={9} /> {fibra.codigoInterno} · {fibra.numeroUso ? `${fibra.numeroUso}/${fibra.usosTotales}` : 'por registrar'}
+    <Cable size={9} /> {fibra.numeroUso ? `${fibra.numeroUso}/${fibra.usosTotales}` : 'por registrar'}
+    <span className="font-mono font-normal text-teal-500/80 dark:text-teal-500/70">{fibra.codigoInterno}</span>
   </span>
 );
 
@@ -868,7 +871,7 @@ export const CotizacionCard = ({
                                   <Layers size={9} /> LOTE
                                 </span>
                               )}
-                              {it.fibra && <EtiquetaFibra fibra={it.fibra} />}
+                              {it.fibra && <EtiquetaFibra fibra={it.fibra} referencia={it.referencia} />}
                             </span>
                           </td>
                           <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-500 dark:text-gray-400" title={it.descriptorAuto}>

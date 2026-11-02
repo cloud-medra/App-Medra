@@ -11,8 +11,9 @@ import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../../../bodega/shar
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../../../bodega/shared/anchosTablaBodega';
 import { formatearFechaTabla } from '../gestionImplantes/components/Cargastab/cargasHelpers';
 import {
-  UBICACION, RUTA_FIBRAS, usosConsumidosDe, usosRestantes, ubicacionDe, motivoNoPonerEnUso, normalizarReferencia,
+  UBICACION, RUTA_FIBRAS, usosConsumidosDe, usosRestantes, ubicacionDe, motivoNoPonerEnUso, normalizarReferencia, textoFibra,
 } from './fibrasNucleo';
+import NombreFibra from './NombreFibra';
 import { seccionesFibras, alertaFibra, estaVencida } from './seccionesFibras';
 import { useFibrasReutilizablesData } from './useFibrasReutilizablesData';
 import { RegistrarFibraDialogo, EditarFibraDialogo, PerdidaDialogo, AnularPerdidaDialogo } from './DialogosFibra';
@@ -27,9 +28,11 @@ import { useFiltroInicial } from '../../../../../stores/filtroInicialStore';
 
 const PATH_VISTA = '/implantes/fibrasReutilizables';
 // Tabla "En bodega" (y campos de las tarjetas, con los mismos permisos de columna).
+// La referencia es lo principal (primera columna, en negrita); el código
+// interno va después, en gris, para distinguir fibras de la misma referencia.
 const COLUMNAS = [
-  { key: 'codigo', label: 'Código', fija: true, ancho: 85, min: 70 },
   { key: 'referencia', label: 'Referencia', ancho: 100, min: 70 },
+  { key: 'codigo', label: 'Código', fija: true, ancho: 85, min: 70 },
   { key: 'descriptor', label: 'Descripción', ancho: 230, min: 100 },
   { key: 'lote', label: 'Lote', ancho: 100, min: 60 },
   { key: 'vencimiento', label: 'Vencimiento', ancho: 120, min: 80 },
@@ -38,8 +41,8 @@ const COLUMNAS = [
   { key: 'acciones', label: 'Acciones', fija: true, ancho: 120, min: 100 },
 ];
 const COLUMNAS_AGOTADAS = [
-  { key: 'codigo', label: 'Código', fija: true, ancho: 85, min: 70 },
   { key: 'referencia', label: 'Referencia', ancho: 100, min: 70 },
+  { key: 'codigo', label: 'Código', fija: true, ancho: 85, min: 70 },
   { key: 'descriptor', label: 'Descripción', ancho: 230, min: 100 },
   { key: 'lote', label: 'Lote', ancho: 100, min: 60 },
   { key: 'vencimiento', label: 'Vencimiento', ancho: 95, min: 80 },
@@ -112,17 +115,17 @@ const FibrasReutilizables = () => {
     const otra = (fibras || []).find((x) => x.id !== f.id && ubicacionDe(x) === UBICACION.EN_USO
       && normalizarReferencia(x.referencia) === normalizarReferencia(f.referencia));
     confirmAction(
-      `Poner en uso ${f.codigoInterno}`,
+      `Poner en uso ${textoFibra(f)}`,
       otra
-        ? `Solo puede haber una fibra ${f.referencia} en uso. La ${otra.codigoInterno} (lote ${otra.lote}) volverá a bodega. ¿Continuar?`
-        : `La fibra ${f.codigoInterno} (lote ${f.lote}) pasará a EN USO.`,
+        ? `Solo puede haber una fibra ${f.referencia} en uso. La ${textoFibra(otra)} (lote ${otra.lote}) volverá a bodega. ¿Continuar?`
+        : `La fibra ${textoFibra(f)} (lote ${f.lote}) pasará a EN USO.`,
       async () => despuesDeAccion(await ponerEnUso(f)),
       { type: 'warning', confirmText: otra ? 'Sí, devolver la anterior' : 'Poner en uso', cancelText: 'Cancelar' }
     );
   };
   const pedirDevolver = (f) => confirmAction(
-    `Devolver ${f.codigoInterno} a bodega`,
-    `La fibra ${f.codigoInterno} (lote ${f.lote}) quedará EN BODEGA y ${f.referencia} quedará sin fibra en uso.`,
+    `Devolver ${textoFibra(f)} a bodega`,
+    `La fibra ${textoFibra(f)} (lote ${f.lote}) quedará EN BODEGA y ${f.referencia} quedará sin fibra en uso.`,
     async () => despuesDeAccion(await devolverABodega(f)),
     { type: 'warning', confirmText: 'Devolver a bodega', cancelText: 'Cancelar' }
   );
@@ -132,29 +135,32 @@ const FibrasReutilizables = () => {
   const fibraActual = (f) => (fibras || []).find((x) => x.id === f?.id) || f;
 
   // Acciones de una fibra según permisos (las mismas en tarjetas y tablas).
-  const acciones = (f) => (
-    <span className="flex items-center gap-1">
-      {puede('tabla_fibras', 'action_ver_detalle') && (
-        <button type="button" onClick={() => setDetalle(f)} title="Detalle de usos" aria-label={`Detalle ${f.codigoInterno}`} className="p-0.5 text-[#2383C2] hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded"><ListOrdered size={13} /></button>
-      )}
-      {puede('tabla_fibras', 'action_editar') && (
-        <button type="button" onClick={() => setDialogo({ tipo: 'editar', fibra: f })} title="Corregir" aria-label={`Corregir ${f.codigoInterno}`} className="p-0.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"><Pencil size={12} /></button>
-      )}
-      {puede('tabla_fibras', 'action_cambiar_ubicacion') && ubicacionDe(f) === UBICACION.EN_BODEGA && motivoNoPonerEnUso(f, hoy) === null && (
-        <button type="button" onClick={() => pedirPonerEnUso(f)} title="Poner en uso" aria-label={`Poner en uso ${f.codigoInterno}`} className="p-0.5 text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/30 rounded"><PlayCircle size={13} /></button>
-      )}
-      {puede('tabla_fibras', 'action_cambiar_ubicacion') && ubicacionDe(f) === UBICACION.EN_USO && (
-        <button type="button" onClick={() => pedirDevolver(f)} title="Devolver a bodega" aria-label={`Devolver a bodega ${f.codigoInterno}`} className="p-0.5 text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 rounded"><Warehouse size={13} /></button>
-      )}
-      {puede('tabla_fibras', 'action_registrar_perdida') && usosRestantes(f) > 0 && (
-        <button type="button" onClick={() => setDialogo({ tipo: 'perdida', fibra: f })} title="Registrar pérdida de un uso" aria-label={`Registrar pérdida ${f.codigoInterno}`} className="p-0.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"><MinusCircle size={13} /></button>
-      )}
-    </span>
-  );
+  const acciones = (f) => {
+    const nombre = textoFibra(f);
+    return (
+      <span className="flex items-center gap-1">
+        {puede('tabla_fibras', 'action_ver_detalle') && (
+          <button type="button" onClick={() => setDetalle(f)} title="Detalle de usos" aria-label={`Detalle ${nombre}`} className="p-0.5 text-[#2383C2] hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded"><ListOrdered size={13} /></button>
+        )}
+        {puede('tabla_fibras', 'action_editar') && (
+          <button type="button" onClick={() => setDialogo({ tipo: 'editar', fibra: f })} title="Corregir" aria-label={`Corregir ${nombre}`} className="p-0.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"><Pencil size={12} /></button>
+        )}
+        {puede('tabla_fibras', 'action_cambiar_ubicacion') && ubicacionDe(f) === UBICACION.EN_BODEGA && motivoNoPonerEnUso(f, hoy) === null && (
+          <button type="button" onClick={() => pedirPonerEnUso(f)} title="Poner en uso" aria-label={`Poner en uso ${nombre}`} className="p-0.5 text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/30 rounded"><PlayCircle size={13} /></button>
+        )}
+        {puede('tabla_fibras', 'action_cambiar_ubicacion') && ubicacionDe(f) === UBICACION.EN_USO && (
+          <button type="button" onClick={() => pedirDevolver(f)} title="Devolver a bodega" aria-label={`Devolver a bodega ${nombre}`} className="p-0.5 text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 rounded"><Warehouse size={13} /></button>
+        )}
+        {puede('tabla_fibras', 'action_registrar_perdida') && usosRestantes(f) > 0 && (
+          <button type="button" onClick={() => setDialogo({ tipo: 'perdida', fibra: f })} title="Registrar pérdida de un uso" aria-label={`Registrar pérdida ${nombre}`} className="p-0.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"><MinusCircle size={13} /></button>
+        )}
+      </span>
+    );
+  };
 
   const celdas = (f) => ({
-    codigo: <td className={`${TD} font-mono font-bold text-[#2383C2]`}>{f.codigoInterno}</td>,
-    referencia: <td className={TD}>{f.referencia}</td>,
+    referencia: <td className={`${TD} font-bold text-gray-800 dark:text-gray-100`}>{f.referencia}</td>,
+    codigo: <td className={`${TD} font-mono text-[10px] text-gray-400 dark:text-gray-500`}>{f.codigoInterno}</td>,
     descriptor: <td className={TD} title={f.descriptor}>{f.descriptor}</td>,
     lote: <td className={`${TD} font-num`}>{f.lote}</td>,
     vencimiento: (
@@ -176,8 +182,7 @@ const FibrasReutilizables = () => {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="font-mono font-bold text-[#2383C2]">{f.codigoInterno}</span>
-              <span className="font-bold text-gray-800 dark:text-gray-100">{f.referencia}</span>
+              <NombreFibra fibra={f} claseReferencia="font-bold text-[13px] text-gray-800 dark:text-gray-100" />
               {alerta === 'rojo' && <span className={ETIQUETA_VENCIDA}>VENCIDA</span>}
             </div>
             {ver('descriptor') && <p className="text-gray-500 dark:text-gray-400 truncate" title={f.descriptor}>{f.descriptor}</p>}
@@ -213,7 +218,8 @@ const FibrasReutilizables = () => {
       {ver('descriptor') && <p className="text-gray-500 dark:text-gray-400 truncate" title={tarjeta.descriptor}>{tarjeta.descriptor}</p>}
       {puede('tabla_fibras', 'action_cambiar_ubicacion') && (tarjeta.siguiente ? (
         <button type="button" onClick={() => pedirPonerEnUso(tarjeta.siguiente)} className="self-start h-7 px-2.5 rounded bg-teal-600 hover:bg-teal-700 text-white font-semibold flex items-center gap-1">
-          <PlayCircle size={13} /> Poner en uso {tarjeta.siguiente.codigoInterno}
+          {/* La tarjeta ya muestra la referencia: el botón solo distingue cuál de bodega. */}
+          <PlayCircle size={13} /> Poner en uso <span className="font-mono font-normal text-[10px] text-teal-100">{tarjeta.siguiente.codigoInterno}</span>
         </button>
       ) : (
         <p className="text-[10px] text-gray-500 italic">Las de bodega están vencidas: no se pueden poner en uso.</p>

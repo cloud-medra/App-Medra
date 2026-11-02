@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import {
   USOS_PERMITIDOS, MAX_FIBRAS_POR_REGISTRO, validarNuevaFibra, validarEdicionFibra,
-  usosConsumidosDe, usosRestantes, siguienteNumeroUso, fechaUltimoUsoVigente,
+  usosConsumidosDe, usosRestantes, siguienteNumeroUso, fechaUltimoUsoVigente, textoFibra,
 } from './fibrasNucleo';
 import { leerCodigosFibra } from './useFibrasReutilizablesData';
 
@@ -144,7 +144,7 @@ export const EditarFibraDialogo = ({ fibra, onGuardar, onCerrar }) => {
     guardar(valores);
   };
   return (
-    <Dialogo titulo={`Corregir ${fibra.codigoInterno}`} subtitulo={`${fibra.referencia} · ${usosConsumidosDe(fibra)} uso(s) consumido(s)`} onCerrar={onCerrar} onGuardar={enviar} guardando={guardando}>
+    <Dialogo titulo={`Corregir ${textoFibra(fibra)}`} subtitulo={`Lote ${fibra.lote} · ${usosConsumidosDe(fibra)} uso(s) consumido(s)`} onCerrar={onCerrar} onGuardar={enviar} guardando={guardando}>
       <div className="grid grid-cols-2 gap-3">
         <Campo etiqueta="Lote" error={erroresVisibles.lote} htmlFor="fe-lote" ayuda={conUsos ? 'Con usos registrados no se puede cambiar.' : undefined}>
           <input id="fe-lote" className={INPUT} value={form.lote} onChange={set('lote')} disabled={conUsos} />
@@ -178,7 +178,7 @@ export const PerdidaDialogo = ({ fibra, onGuardar, onCerrar }) => {
   const ultimo = usosRestantes(fibra) === 1;
   return (
     <Dialogo
-      titulo={`Registrar pérdida · ${fibra.codigoInterno}`}
+      titulo={`Registrar pérdida · ${textoFibra(fibra)}`}
       subtitulo={`Lote ${fibra.lote}: descuenta un uso igual que uno normal.`}
       onCerrar={onCerrar}
       onGuardar={() => { setIntento(true); if (motivo.trim()) guardar(motivo.trim()); }}
@@ -203,7 +203,7 @@ export const AnularPerdidaDialogo = ({ fibra, uso, onGuardar, onCerrar }) => {
   return (
     <Dialogo
       titulo={`Anular pérdida ${uso.numeroUso}/${uso.usosTotales}`}
-      subtitulo={`${fibra.codigoInterno} · lote ${fibra.lote}: el uso vuelve a quedar disponible.`}
+      subtitulo={`${textoFibra(fibra)} · lote ${fibra.lote}: el uso vuelve a quedar disponible.`}
       onCerrar={onCerrar}
       onGuardar={() => { setIntento(true); if (motivo.trim()) guardar(motivo.trim()); }}
       textoGuardar="Anular pérdida"

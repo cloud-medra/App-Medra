@@ -5,7 +5,7 @@ import {
   prepararFibrasNuevas, planFibrasBloque, planFibrasEliminacion, operacionesDePlan, validarUnCambioPorFibra,
   fibrasElegibles, fibrasUsadasEnBloques, ordenarUsos, MOTIVO_ANULACION, ESTADO_USO, TIPO_USO,
   accesosReglas, validarLecturasReglas, fechaUltimoUsoVigente, UBICACION, ubicacionTrasEstado, motivoNoPonerEnUso, siguienteEnBodega,
-  opcionesSelectorFibra, idControlEnUso,
+  opcionesSelectorFibra, idControlEnUso, textoFibra, etiquetaFibra,
 } from './fibrasNucleo';
 import { aplicarOperacionesFibra, cambiarUbicacionFibra } from './operacionesFibra';
 
@@ -84,10 +84,20 @@ describe('conteo y números de uso', () => {
   });
 
   it('texto del aviso con el número de uso y el último uso destacado', () => {
+    expect(textoUsoRegistrado({ referencia: 'FL-365', lote: 'ABC', codigoInterno: 'FIB-0001', numeroUso: 2, usosTotales: 5, restantes: 3 }))
+      .toBe('Fibra FL-365 (FIB-0001), lote ABC: uso 2/5, quedan 3.');
     expect(textoUsoRegistrado({ lote: 'ABC', codigoInterno: 'FIB-0001', numeroUso: 2, usosTotales: 5, restantes: 3 }))
-      .toBe('Fibra lote ABC (FIB-0001): uso 2/5, quedan 3.');
+      .toBe('Fibra FIB-0001, lote ABC: uso 2/5, quedan 3.');
     expect(textoUsoRegistrado({ lote: 'ABC', numeroUso: 5, usosTotales: 5, restantes: 0 }))
       .toBe('Fibra lote ABC: uso 5/5. Era el último uso: la fibra quedó AGOTADA.');
+  });
+
+  it('nombre de la fibra en textos: referencia primero y el código entre paréntesis', () => {
+    expect(textoFibra({ referencia: 'FL-272', codigoInterno: 'FIB-0005' })).toBe('FL-272 (FIB-0005)');
+    expect(textoFibra({ id: 'FIB-0005' })).toBe('FIB-0005');
+    expect(textoFibra({ referencia: 'FL-272' })).toBe('FL-272');
+    expect(textoFibra(null)).toBe('Fibra');
+    expect(etiquetaFibra({ referencia: 'FL-272', codigoInterno: 'FIB-0005', lote: 'A1' })).toBe('FL-272 (FIB-0005) · lote A1');
   });
 });
 
