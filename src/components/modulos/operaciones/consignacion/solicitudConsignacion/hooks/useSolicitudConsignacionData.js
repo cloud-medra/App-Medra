@@ -7,6 +7,7 @@ import { useModal } from '../../../../../../context/ModalContext';
 import { useUser } from '../../../../../../context/UserContext';
 import { registrarLogConsignacion } from '../../utils/registrarLogConsignacion';
 import { cargarCandidatosSolicitudConsignacion } from '../utils/cargarCandidatosSolicitudConsignacion';
+import { ordenarFilasPorAdmision } from '../utils/ordenFilasSolicitudConsignacion';
 import { construirFilasResumenSolicitudConsignacion } from '../utils/filasResumenSolicitudConsignacion';
 import { fotoRegistroConsignacion } from '../../utils/modificacionesConsignacion';
 
@@ -50,9 +51,11 @@ export const useSolicitudConsignacionData = () => {
     setCargando(true);
     try {
       // Mismo orden que Cargas (carga masiva en el orden de ingreso, cada
-      // admisión junta); el Excel exportado sigue este orden.
+      // admisión junta) y, dentro de cada admisión, códigos solos, después el
+      // PAD y al final sus "No lleva OC" (ordenarFilasPorAdmision). Las dos
+      // hojas del Excel salen de los seleccionados en este mismo orden.
       const listaFinal = await cargarCandidatosSolicitudConsignacion(forzarRelecturaGuias, { ordenCarga: true });
-      setItems(listaFinal);
+      setItems(ordenarFilasPorAdmision(listaFinal));
     } catch (error) {
       console.error('Error al cargar registros CARGADO de Consignación:', error);
       showToast('Error al cargar los registros pendientes de solicitar', 'error');

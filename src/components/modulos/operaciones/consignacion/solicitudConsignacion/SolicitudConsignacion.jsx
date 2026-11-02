@@ -234,9 +234,12 @@ const SolicitudConsignacion = () => {
         </span>
       </div>
 
-      {/* TABLA PRINCIPAL — plana, sin subfilas */}
-      <div className="flex-grow overflow-auto select-none relative">
-        <div className="sticky top-0 z-20 flex justify-end px-1 py-0.5 bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      {/* TABLA PRINCIPAL — plana, sin subfilas. El texto de las celdas se
+          puede seleccionar y copiar: solo el encabezado (manijas de ancho)
+          es select-none. La fila no tiene clic propio, así que seleccionar
+          texto no marca ni desmarca: eso lo hace solo el checkbox. */}
+      <div className="flex-grow overflow-auto relative">
+        <div className="sticky top-0 z-20 flex justify-end px-1 py-0.5 bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 select-none">
           <button
             type="button"
             onClick={restablecerAnchos}
@@ -257,7 +260,7 @@ const SolicitudConsignacion = () => {
             ))}
           </colgroup>
 
-          <thead className="bg-gray-100 dark:bg-gray-900 sticky top-[22px] z-10">
+          <thead className="bg-gray-100 dark:bg-gray-900 sticky top-[22px] z-10 select-none">
             <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[9px]">
               <th className="relative py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 text-center overflow-hidden">
                 <input
