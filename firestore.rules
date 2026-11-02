@@ -260,7 +260,9 @@ service cloud.firestore {
         && despues.noLeidoUsuario == false
         && (!cambios.hasAny(['mensajes'])
           || (despues.mensajes.size() == n + 1
-            && despues.mensajes[0:n] == antes.mensajes
+            // Sin mensajes previos no hay nada que conservar, y el corte
+            // [0:0] da un error de índice en las reglas (= rechazo).
+            && (n == 0 || despues.mensajes[0:n] == antes.mensajes)
             && despues.mensajes[n].autorUid == request.auth.uid
             && despues.mensajes[n].tipo == 'mensaje'
             && despues.mensajes[n].deGestor == false
@@ -1193,7 +1195,9 @@ service cloud.firestore {
         return cambia.hasAny(['ultimaCorreccion'])
           && cambia.hasOnly(['lote', 'vencimiento', 'usosTotales', 'usosPrevios', 'usosConsumidos', 'estado', 'ubicacion', 'ubicacionDesde', 'ultimaCorreccion', 'actualizadoEl', 'actualizadoPor'])
           && (!cambia.hasAny(['lote']) || antes.numerosOcupados.size() == 0)
-          && (!cambia.hasAny(['usosPrevios'])
+          // Con 0 previos no hay número que choque, y el corte [0:0] da un
+          // error de índice en las reglas (= rechazo): se descarta antes.
+          && (!cambia.hasAny(['usosPrevios']) || d.usosPrevios == 0
             || !d.numerosOcupados.hasAny([1, 2, 3, 4, 5, 6, 7, 8, 9, 10][0:d.usosPrevios]))
           && esFechaISO(d.vencimiento)
           && (!cambia.hasAny(['vencimiento']) || sinUsoPosterior(d.fechasUso, d.vencimiento))
