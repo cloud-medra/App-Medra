@@ -1,33 +1,49 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { fechaISOEnChile, coincideRangoFecha, RANGO_FECHA_PREDETERMINADO } from './rangoFechaGestiones';
 import { ordenarMeses } from '../../../../../utils/ordenarMeses';
 import { ocsDeGestion } from '../ocIndex/indiceOC';
+import { ANIO_RESPALDO_GESTIONES, MESES_DEL_ANIO } from './consultaGestiones';
 
 export const TAMANO_PAGINA_TABLA = 50;
 
-// Primer año con gestiones (no hay rutas anteriores a 2026 en Implantes ni
-// en Hemodinamia). Los años del selector van desde acá hasta el próximo
-// (agendas de enero cargadas en diciembre).
-export const ANIO_PRIMERAS_GESTIONES = 2026;
-
-const MESES_DEL_ANIO = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
-
-// Opciones de año y mes del selector. NO salen de las gestiones cargadas:
-// con un mes elegido solo está cargado ese mes, y antes (con la ventana de
-// las 150 más recientes) un mes con datos podía no aparecer. Meses: los 12,
-// siempre. Años: de ANIO_PRIMERAS_GESTIONES al próximo, más los que traigan
-// las gestiones cargadas y el filtro activo; del más reciente al más antiguo.
-export const opcionesPeriodoGestiones = (implantes, { filtroAnio = '', hoyISO = fechaISOEnChile() } = {}) => {
+// Opciones de año y mes del selector. NO salen solo de las gestiones
+// cargadas: con un mes elegido solo está cargado ese mes, y antes (con la
+// ventana de las 150 más recientes) un mes con datos podía no aparecer.
+//   - Con conteos (usePeriodosConDatos.js): solo años y meses con gestiones,
+//     y `cantidades` por mes para mostrarlas ("Septiembre (116)"). La del mes
+//     elegido sale de las gestiones cargadas (en vivo), si ya llegaron.
+//   - Sin conteos (cargando o fallaron): años desde ANIO_RESPALDO_GESTIONES
+//     al próximo y los 12 meses, para no esconder nunca un mes con datos.
+// Siempre se incluyen el filtro activo y lo que traigan las gestiones
+// cargadas. Años del más reciente al más antiguo; meses cronológicos.
+export const opcionesPeriodoGestiones = (implantes, {
+  filtroAnio = '', filtroMes = '', hoyISO = fechaISOEnChile(), conteoAnios = null, conteoMeses = null,
+} = {}) => {
   const anioActual = Number(hoyISO.slice(0, 4));
   const anios = new Set(filtroAnio ? [filtroAnio] : []);
-  for (let a = ANIO_PRIMERAS_GESTIONES; a <= anioActual + 1; a++) anios.add(String(a));
+  if (conteoAnios) Object.entries(conteoAnios).forEach(([a, n]) => { if (n > 0) anios.add(a); });
+  else for (let a = ANIO_RESPALDO_GESTIONES; a <= anioActual + 1; a++) anios.add(String(a));
+
+  const usarConteoMeses = Boolean(filtroAnio && conteoMeses);
+  const meses = new Set(filtroMes ? [filtroMes] : []);
+  if (usarConteoMeses) MESES_DEL_ANIO.forEach((m) => { if ((conteoMeses[m] || 0) > 0) meses.add(m); });
+  else MESES_DEL_ANIO.forEach((m) => meses.add(m));
+
+  let cargadasMesElegido = 0;
   implantes.forEach(({ fecha }) => {
-    const m = String(fecha || '').match(/^(\d{4})-\d{2}/);
-    if (m) anios.add(m[1]);
+    const m = String(fecha || '').match(/^(\d{4})-(\d{2})/);
+    if (!m) return;
+    anios.add(m[1]);
+    if (m[1] === filtroAnio) meses.add(m[2]);
+    if (m[1] === filtroAnio && m[2] === filtroMes) cargadasMesElegido++;
   });
+
+  const cantidades = usarConteoMeses ? { ...conteoMeses } : {};
+  if (usarConteoMeses && filtroMes && cargadasMesElegido > 0) cantidades[filtroMes] = cargadasMesElegido;
   return {
     anios: [...anios].sort().reverse(),
-    meses: ordenarMeses(MESES_DEL_ANIO)
+    meses: ordenarMeses([...meses]),
+    cantidades
   };
 };
 
@@ -35,13 +51,24 @@ export const opcionesPeriodoGestiones = (implantes, { filtroAnio = '', hoyISO = 
 // datos (la consulta escucha el mes elegido): useGestionesImplantes y
 // useGestionesHemodinamia lo crean, se lo pasan a los dos y useGestionesFiltros
 // lo recibe en `periodo`. Por defecto, el mes actual en hora de Chile.
+// `fijarPeriodoInicial(anio, mes)`: lo usa useMesInicialConDatos para pasar
+// al mes más reciente con gestiones; no hace nada si el usuario ya eligió
+// año o mes (setFiltroAnio/setFiltroMes lo marcan).
 // `sinPeriodo` y `filtroInicial`: ver useGestionesFiltros.
 export const usePeriodoGestiones = ({ sinPeriodo = false, filtroInicial = null } = {}) => {
   const ini = filtroInicial || {};
   const [anioHoy, mesHoy] = fechaISOEnChile().split('-');
-  const [filtroAnio, setFiltroAnio] = useState(ini.anio ?? (sinPeriodo ? '' : anioHoy));
-  const [filtroMes, setFiltroMes] = useState(ini.mes ?? (sinPeriodo ? '' : mesHoy));
-  return { filtroAnio, setFiltroAnio, filtroMes, setFiltroMes };
+  const [filtroAnio, setAnio] = useState(ini.anio ?? (sinPeriodo ? '' : anioHoy));
+  const [filtroMes, setMes] = useState(ini.mes ?? (sinPeriodo ? '' : mesHoy));
+  const elegidoPorUsuario = useRef(false);
+  const setFiltroAnio = useCallback((v) => { elegidoPorUsuario.current = true; setAnio(v); }, []);
+  const setFiltroMes = useCallback((v) => { elegidoPorUsuario.current = true; setMes(v); }, []);
+  const fijarPeriodoInicial = useCallback((anio, mes) => {
+    if (elegidoPorUsuario.current) return;
+    setAnio(anio);
+    setMes(mes);
+  }, []);
+  return { filtroAnio, setFiltroAnio, filtroMes, setFiltroMes, fijarPeriodoInicial };
 };
 
 // `sinPeriodo`: arranca sin año/mes y con "Todos los días" (solo valor inicial).
@@ -50,8 +77,10 @@ export const usePeriodoGestiones = ({ sinPeriodo = false, filtroInicial = null }
 // sobre `sinPeriodo`. Solo valor inicial: después se cambia como siempre.
 // `periodo` (opcional): el de usePeriodoGestiones, compartido con el hook de
 // datos; sin él, el año/mes es propio de este hook.
+// `conteos` (opcional): { conteoAnios, conteoMeses } de
+// useConteosPeriodosGestiones, para mostrar solo años/meses con gestiones.
 // Filtros, búsqueda y paginación de Gestión (Implantes y Hemodinamia).
-export const useGestionesFiltros = (implantes, { sinPeriodo = false, filtroInicial = null, periodo = null } = {}) => {
+export const useGestionesFiltros = (implantes, { sinPeriodo = false, filtroInicial = null, periodo = null, conteos = null } = {}) => {
   const ini = filtroInicial || {};
   const [busqueda, setBusqueda] = useState('');
 
@@ -67,10 +96,13 @@ export const useGestionesFiltros = (implantes, { sinPeriodo = false, filtroInici
   // No se recuerda entre visitas: cada entrada arranca en el predeterminado.
   const [filtroRangoFecha, setFiltroRangoFecha] = useState(ini.rango || (sinPeriodo ? 'todos' : RANGO_FECHA_PREDETERMINADO));
 
-  // Años/meses del selector (0 lecturas). Ver opcionesPeriodoGestiones.
+  // Años/meses del selector (los conteos los lee useConteosPeriodosGestiones).
+  // Ver opcionesPeriodoGestiones.
+  const conteoAnios = conteos?.conteoAnios || null;
+  const conteoMeses = conteos?.conteoMeses || null;
   const opcionesFechas = useMemo(
-    () => opcionesPeriodoGestiones(implantes, { filtroAnio }),
-    [implantes, filtroAnio]
+    () => opcionesPeriodoGestiones(implantes, { filtroAnio, filtroMes, conteoAnios, conteoMeses }),
+    [implantes, filtroAnio, filtroMes, conteoAnios, conteoMeses]
   );
 
   // Filtrado en cascada: primero se aplican todos los filtros EXCEPTO

@@ -388,8 +388,11 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                   className="h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-base md:text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
                 >
                   <option value="">Mes (Todos)</option>
+                  {/* Solo meses con gestiones, con su cantidad (usePeriodosConDatos). */}
                   {opcionesFechas.meses.map(mm => (
-                    <option key={mm} value={mm}>{NOMBRES_MESES[mm] || mm}</option>
+                    <option key={mm} value={mm}>
+                      {NOMBRES_MESES[mm] || mm}{opcionesFechas.cantidades?.[mm] != null ? ` (${opcionesFechas.cantidades[mm]})` : ''}
+                    </option>
                   ))}
                 </select>
 

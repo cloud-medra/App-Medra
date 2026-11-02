@@ -48,3 +48,55 @@ export const esRutaDelMes = (ruta, coleccion, { anio, mes }) => {
   const partes = String(ruta || '').split('/');
   return partes[0] === coleccion && partes[1] === anio && partes[2] === 'mes' && partes[3] === mes;
 };
+
+// --- Años y meses con gestiones (usePeriodosConDatos.js) --------------------
+// Los documentos de año y mes no existen (las gestiones se guardan directo en
+// .../detalles), así que no se pueden listar: se cuentan por rango de ruta.
+
+// Año de respaldo si no se puede leer la gestión más antigua.
+export const ANIO_RESPALDO_GESTIONES = 2026;
+export const MESES_DEL_ANIO = Object.freeze(Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')));
+
+// Rango de la gestión más antigua: desde el año 2000, para que una ruta de
+// respaldo '0000' (gestión sin fecha, ver getDetallesRef) no arrastre el
+// primer año a cero.
+export const rangoRutaGestionesReales = (coleccion) => ({ desde: `${coleccion}/2000`, hasta: `${coleccion}/9999` });
+
+// Límites de documentId() para un año completo.
+export const rangoRutaAnioGestiones = (coleccion, anio) => ({ desde: `${coleccion}/${anio}`, hasta: `${coleccion}/${anio}~` });
+
+// Año (número) de la ruta de una gestión de esa colección, o null.
+export const anioDeRutaGestion = (ruta, coleccion) => {
+  const [col, anio] = String(ruta || '').split('/');
+  return col === coleccion && /^\d{4}$/.test(anio || '') ? Number(anio) : null;
+};
+
+// Años a contar: del de la gestión más antigua (o el de respaldo) hasta el
+// próximo al actual (agendas de enero cargadas en diciembre).
+export const aniosAContar = (primerAnio, anioActual) => {
+  const desde = Number.isInteger(primerAnio) ? primerAnio : ANIO_RESPALDO_GESTIONES;
+  const hasta = Math.max(anioActual + 1, desde);
+  return Array.from({ length: hasta - desde + 1 }, (_, i) => String(desde + i));
+};
+
+// Año con gestiones más cercano al actual: el actual; si no, el más reciente
+// anterior; si no, el primero posterior. null si no hay ninguno.
+export const anioMasRecienteConDatos = (conteoAnios, anioActual) => {
+  const conDatos = Object.entries(conteoAnios || {}).filter(([, n]) => n > 0).map(([a]) => Number(a));
+  if (conDatos.includes(anioActual)) return anioActual;
+  const anteriores = conDatos.filter((a) => a < anioActual);
+  if (anteriores.length) return Math.max(...anteriores);
+  const posteriores = conDatos.filter((a) => a > anioActual);
+  return posteriores.length ? Math.min(...posteriores) : null;
+};
+
+// Mes con gestiones más cercano a `mesReferencia` ('01'..'12'): ese mismo; si
+// no, el más reciente anterior; si no, el primero posterior. null si ninguno.
+// Para un año pasado se usa '12' (el último con datos); para uno futuro, '00'.
+export const mesMasRecienteConDatos = (conteoMeses, mesReferencia) => {
+  const conDatos = MESES_DEL_ANIO.filter((m) => (conteoMeses?.[m] || 0) > 0);
+  if (conDatos.includes(mesReferencia)) return mesReferencia;
+  const anteriores = conDatos.filter((m) => m < mesReferencia);
+  if (anteriores.length) return anteriores[anteriores.length - 1];
+  return conDatos.find((m) => m > mesReferencia) || null;
+};

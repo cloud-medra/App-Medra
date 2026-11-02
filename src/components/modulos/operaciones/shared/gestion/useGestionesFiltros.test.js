@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { useGestionesFiltros, opcionesPeriodoGestiones } from './useGestionesFiltros';
+import { useGestionesFiltros, opcionesPeriodoGestiones, usePeriodoGestiones } from './useGestionesFiltros';
 import { fechaISOEnChile } from './rangoFechaGestiones';
 
 const implante = (id, fecha, estado) => ({
@@ -178,14 +178,49 @@ describe('opcionesPeriodoGestiones', () => {
 
   const DOCE_MESES = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
 
-  it('los 12 meses siempre, tengan o no gestiones cargadas', () => {
+  it('sin conteos (cargando o fallaron): los 12 meses, para no esconder ninguno con datos', () => {
     expect(opcionesPeriodoGestiones([], { hoyISO: '2026-11-02' }).meses).toEqual(DOCE_MESES);
     expect(opcionesPeriodoGestiones(gestiones, { filtroAnio: '2025', hoyISO: '2026-11-02' }).meses).toEqual(DOCE_MESES);
+    expect(opcionesPeriodoGestiones([], { filtroAnio: '2026', hoyISO: '2026-11-02' }).cantidades).toEqual({});
   });
 
-  it('años desde el primero con gestiones hasta el próximo, más los cargados y el filtro activo', () => {
+  it('sin conteos: años desde el de respaldo hasta el próximo, más los cargados y el filtro activo', () => {
     expect(opcionesPeriodoGestiones([], { hoyISO: '2026-11-02' }).anios).toEqual(['2027', '2026']);
     expect(opcionesPeriodoGestiones(gestiones, { hoyISO: '2026-11-02' }).anios).toEqual(['2027', '2026', '2025']);
     expect(opcionesPeriodoGestiones([], { filtroAnio: '2024', hoyISO: '2026-11-02' }).anios).toEqual(['2027', '2026', '2024']);
+  });
+
+  const conteoAnios = { 2026: 297, 2027: 0 };
+  const conteoMeses = { ...Object.fromEntries(DOCE_MESES.map((m) => [m, 0])), '09': 116, '10': 162, 11: 19 };
+
+  it('con conteos: solo años y meses con gestiones, con la cantidad de cada mes', () => {
+    const op = opcionesPeriodoGestiones([], { filtroAnio: '2026', filtroMes: '10', hoyISO: '2026-11-02', conteoAnios, conteoMeses });
+    expect(op.anios).toEqual(['2026']);
+    expect(op.meses).toEqual(['09', '10', '11']);
+    expect(op.cantidades).toMatchObject({ '09': 116, '10': 162, 11: 19 });
+  });
+
+  it('con conteos: el filtro activo aparece aunque no tenga gestiones', () => {
+    const op = opcionesPeriodoGestiones([], { filtroAnio: '2027', filtroMes: '01', hoyISO: '2026-11-02', conteoAnios, conteoMeses: { '01': 0 } });
+    expect(op.anios).toEqual(['2027', '2026']);
+    expect(op.meses).toEqual(['01']);
+  });
+
+  it('el mes elegido muestra en vivo las gestiones cargadas (un mes nuevo aparece al crear su primera gestión)', () => {
+    const nuevas = [{ fecha: '2026-12-03' }, { fecha: '2026-12-04' }];
+    const op = opcionesPeriodoGestiones(nuevas, { filtroAnio: '2026', filtroMes: '12', hoyISO: '2026-12-03', conteoAnios, conteoMeses });
+    expect(op.meses).toEqual(['09', '10', '11', '12']);
+    expect(op.cantidades['12']).toBe(2);
+  });
+});
+
+describe('usePeriodoGestiones', () => {
+  it('fijarPeriodoInicial cambia el período solo si el usuario no eligió otro', () => {
+    const { result } = renderHook(() => usePeriodoGestiones());
+    act(() => result.current.fijarPeriodoInicial('2026', '10'));
+    expect([result.current.filtroAnio, result.current.filtroMes]).toEqual(['2026', '10']);
+    act(() => result.current.setFiltroMes('09'));
+    act(() => result.current.fijarPeriodoInicial('2026', '11'));
+    expect(result.current.filtroMes).toBe('09');
   });
 });
