@@ -10,7 +10,7 @@
 //   5. Opcional: liberar la OC en las gestiones de Implantes que la tenían
 //      por esas filas (ocPendiente: true), salvo que otra fila que queda
 //      respalde la misma OC para esa admisión, fecha y código.
-import { doc, writeBatch, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, setDoc, serverTimestamp } from 'firebase/firestore';
 import { actualizarMeses } from '../../resumenFacturacion/resumenFacturacionService';
 import { db } from '../../../../../../firebaseConfig';
 import { normalizarProveedorId } from './normalizarProveedor';
@@ -64,6 +64,24 @@ export const planificarEliminacion = (ids, snapshot) => {
   });
 
   return { marcadores: [...marcadores.values()], ocALiberar };
+};
+
+// Monto total (oc_monto) de las filas, para la confirmación.
+export const montoTotalFilas = (filas) => filas.reduce((s, f) => s + (Number(f.oc_monto) || 0), 0);
+
+// Filas completas desde Firestore por su ruta (1 lectura por fila), para
+// eliminar las que "ya no vienen en el archivo": el resumen de la
+// importación solo trae lo del snapshot y el respaldo necesita el documento
+// entero. Las que ya no existen van en `noEncontradas`.
+export const leerFilasPorRuta = async (refPaths) => {
+  const snaps = await Promise.all(refPaths.map(p => getDoc(doc(db, p))));
+  const filas = [];
+  const noEncontradas = [];
+  snaps.forEach((s, i) => {
+    if (s.exists()) filas.push({ id: s.id, refPath: refPaths[i], ...s.data() });
+    else noEncontradas.push(refPaths[i]);
+  });
+  return { filas, noEncontradas };
 };
 
 /**

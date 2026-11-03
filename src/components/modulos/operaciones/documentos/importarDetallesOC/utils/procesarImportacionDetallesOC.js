@@ -269,7 +269,8 @@ export const procesarImportacionDetallesOC = async (file, { onProgreso, usuario 
     fechasCambiadas: plan.fechasCambiadas.filter(f => idsConfirmados.has(f.idNuevo))
       .map(({ idAntes, idNuevo, fechaAntes, fechaDespues, filaExcel }) => ({ idAntes, idNuevo, fechaAntes, fechaDespues, filaExcel })),
     fechasAmbiguas: plan.fechasAmbiguas,
-    yaNoVienen: plan.yaNoVienen,
+    // Con la ruta del documento, para poder eliminarlas desde el resumen.
+    yaNoVienen: plan.yaNoVienen.map(y => ({ ...y, refPath: [...rutaDetalle(partesRuta(y.fecha, y.admision, y.proveedor)).empresa, 'detalles', y.id].join('/') })),
     pendientes,
     errores,
     indiceOC,

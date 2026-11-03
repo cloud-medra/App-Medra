@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Trash2, X, Loader2 } from 'lucide-react';
+import { Trash2, X, Loader2, AlertTriangle } from 'lucide-react';
+import { montoTotalFilas } from '../utils/eliminarFilasDetallesOC';
 
 const MAX_LISTA = 20;
 
@@ -9,10 +10,15 @@ const fechaCorta = (valor) => {
   return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
 };
 
-// Confirmación de "Eliminar filas seleccionadas" (admin/dev).
-export const ModalEliminarFilas = ({ filas, eliminando, progreso, onConfirmar, onCerrar }) => {
+const pesos = (n) => `$ ${n.toLocaleString('es-CL', { maximumFractionDigits: 2 })}`;
+
+// Confirmación de "Eliminar filas seleccionadas" (admin/dev), desde la tabla
+// o desde "Registradas que ya no vienen en el archivo" (`aviso` explica el
+// caso). Muestra cuántas filas son y cuánto suman.
+export const ModalEliminarFilas = ({ filas, eliminando, progreso, onConfirmar, onCerrar, aviso }) => {
   const [liberarOC, setLiberarOC] = useState(true);
   const conOC = filas.filter(f => f.oc).length;
+  const total = montoTotalFilas(filas);
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-[1px] p-4">
@@ -26,6 +32,14 @@ export const ModalEliminarFilas = ({ filas, eliminando, progreso, onConfirmar, o
         </div>
 
         <div className="px-4 py-3 flex flex-col gap-2.5 overflow-auto text-gray-700 dark:text-gray-200">
+          {aviso && (
+            <p className="flex items-start gap-1.5 px-2 py-1.5 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
+              <AlertTriangle size={12} className="shrink-0 mt-0.5" /> {aviso}
+            </p>
+          )}
+          <p className="font-semibold text-gray-800 dark:text-gray-100">
+            {filas.length} fila(s) · Monto OC total: <span className="font-num text-red-700 dark:text-red-400">{pesos(total)}</span>
+          </p>
           <p>
             Se borran de Firestore y salen del snapshot y del índice de OC. Antes se guarda una copia de cada una en
             <code className="mx-1">detallesOCEliminados</code> (solo admin/dev la pueden ver). Si la fila vuelve a venir en un Excel, se importa como nueva.
@@ -34,7 +48,7 @@ export const ModalEliminarFilas = ({ filas, eliminando, progreso, onConfirmar, o
           <ul className="max-h-48 overflow-auto font-num text-[10px] border border-slate-200 dark:border-gray-700 rounded px-2 py-1 space-y-0.5 select-text">
             {filas.slice(0, MAX_LISTA).map(f => (
               <li key={f.refPath} className="truncate" title={f.id}>
-                Adm. {f.admision} · {fechaCorta(f.fecha_cx)} · {f.proveedor} · {f.codigo}{f.oc ? ` · OC ${f.oc}` : ''}
+                Adm. {f.admision} · {fechaCorta(f.fecha_cx)} · {f.proveedor} · {f.codigo}{f.oc ? ` · OC ${f.oc}` : ''} · {pesos(Number(f.oc_monto) || 0)}
               </li>
             ))}
             {filas.length > MAX_LISTA && <li>… y {filas.length - MAX_LISTA} más</li>}

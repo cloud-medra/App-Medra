@@ -140,7 +140,7 @@ export const planificarImportacion = (filas, snapshot = {}) => {
     ocCambiadas: [],      // { id, admision, fecha, proveedor, codigo, ocAntes, ocDespues, filaExcel }
     fechasCambiadas: [],  // { idAntes, idNuevo, fila, combinados, fechaAntes, fechaDespues }
     fechasAmbiguas: [],   // { id, filaExcel, fecha, candidatos: [{ id, fecha }] }
-    yaNoVienen: [],       // { id, admision, fecha, proveedor, codigo, enGrupoPresente }
+    yaNoVienen: [],       // { id, admision, fecha, proveedor, codigo, oc, monto, enGrupoPresente }
     idsFueraDelIndice: [],
     meses: []
   };
@@ -264,14 +264,16 @@ export const planificarImportacion = (filas, snapshot = {}) => {
     plan.nuevas.push({ id, fila, valores: fila._valores });
   });
 
-  // 6) Guardadas que no vinieron (solo en los meses que cubre el archivo).
-  // Nunca se borran; las de un grupo que sí viene salen del índice de OC.
+  // 6) Guardadas que no vinieron, SOLO de los año-mes ('YYYY-MM') que trae
+  // el archivo: nunca se proponen filas de otros meses. La importación no
+  // las borra (se pueden eliminar a mano desde el resumen); las de un grupo
+  // que sí viene salen del índice de OC.
   const gruposPresentes = new Set(porGrupo.keys());
   noVinieron.filter(id => !idsMovidos.has(id)).forEach((id) => {
     const e = snapshot[id];
     if (!meses.has(String(e.f).slice(0, 7))) return;
     const enGrupoPresente = gruposPresentes.has(e.g);
-    plan.yaNoVienen.push({ id, admision: e.a, fecha: e.f, proveedor: e.p, codigo: e.v.codigo, enGrupoPresente });
+    plan.yaNoVienen.push({ id, admision: e.a, fecha: e.f, proveedor: e.p, codigo: e.v.codigo, oc: e.v.oc, monto: e.v.oc_monto, enGrupoPresente });
     if (enGrupoPresente) plan.idsFueraDelIndice.push(id);
   });
 

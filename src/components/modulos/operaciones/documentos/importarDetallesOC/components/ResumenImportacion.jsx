@@ -1,4 +1,5 @@
-import { PlusCircle, RefreshCw, MinusCircle, AlertTriangle, Hash, Database, ShieldAlert, ArrowRightLeft, CalendarClock, HelpCircle, EyeOff, X } from 'lucide-react';
+import { useState } from 'react';
+import { PlusCircle, RefreshCw, MinusCircle, AlertTriangle, Hash, Database, ShieldAlert, ArrowRightLeft, CalendarClock, HelpCircle, EyeOff, X, Trash2, Loader2 } from 'lucide-react';
 
 const NOMBRES_CAMPO = {
   paciente: 'Paciente', medico: 'Médico', codigo: 'Código', descripcion: 'Descripción', cantidad: 'Cantidad',
@@ -37,7 +38,67 @@ const Seccion = ({ titulo, items, Icono, tono = 'aviso', ayuda, render }) => {
 
 const fila = (it) => `${it.filaExcel ? `Fila ${it.filaExcel}` : 'Sin fila'}${it.id ? ` (ID ${it.id})` : ''}`;
 
-export const ResumenImportacion = ({ resumen, onCerrar, onReintentar, reintentando }) => {
+const AYUDA_YA_NO_VIENEN = 'Filas guardadas de los meses que cubre este archivo que no vinieron. No se borraron.';
+const textoYaNoViene = (it) => `Adm. ${it.admision} · ${fechaCorta(it.fecha)} · ${it.proveedor} · ${it.codigo}`
+  + `${it.oc ? ` · OC ${it.oc}` : ''} · $ ${(Number(it.monto) || 0).toLocaleString('es-CL', { maximumFractionDigits: 2 })}`
+  + `${it.enGrupoPresente ? ' · (repetida de una fila que sí vino: sale del índice de OC)' : ''}`;
+
+// "Registradas que ya no vienen" con selección (admin/dev): por defecto no
+// hay nada marcado; solo se elimina lo que se elija y se confirme.
+const SeccionYaNoVienen = ({ items, onEliminar, preparando }) => {
+  const [seleccion, setSeleccion] = useState(() => new Set());
+  if (!items?.length) return null;
+  const marcadas = items.filter(it => seleccion.has(it.id));
+  const todas = marcadas.length === items.length;
+  const alternar = (id) => setSeleccion((prev) => {
+    const s = new Set(prev);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    return s;
+  });
+  return (
+    <details className="w-full text-amber-700 dark:text-amber-400">
+      <summary className="cursor-pointer font-semibold inline-flex items-center gap-1" title={AYUDA_YA_NO_VIENEN}>
+        <EyeOff size={12} /> Registradas que ya no vienen en el archivo ({items.length})
+      </summary>
+      <p className="mt-0.5 text-[10px] text-slate-500 dark:text-gray-400">
+        {AYUDA_YA_NO_VIENEN} Puedes seleccionar las que sobran y eliminarlas (con respaldo). Si el archivo trae solo parte del mes, aquí aparece también el resto: revisa antes de eliminar.
+      </p>
+      <div className="mt-1 flex items-center gap-2 text-[10.5px] text-slate-700 dark:text-gray-200">
+        <label className="inline-flex items-center gap-1 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={todas}
+            ref={el => { if (el) el.indeterminate = marcadas.length > 0 && !todas; }}
+            onChange={() => setSeleccion(todas ? new Set() : new Set(items.map(it => it.id)))}
+          />
+          Seleccionar todas
+        </label>
+        <button
+          type="button"
+          onClick={() => onEliminar(marcadas)}
+          disabled={marcadas.length === 0 || preparando}
+          className="ml-auto h-6 px-2 rounded bg-red-600 hover:bg-red-700 text-white font-semibold flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {preparando ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />} Eliminar seleccionadas ({marcadas.length})
+        </button>
+      </div>
+      <ul className="mt-1 max-h-40 overflow-auto font-num text-[10px] space-y-0.5 text-slate-700 dark:text-gray-300 select-text">
+        {items.map(it => (
+          <li key={it.id}>
+            <label className="inline-flex items-start gap-1.5 cursor-pointer" title={it.id}>
+              <input type="checkbox" className="mt-0.5" checked={seleccion.has(it.id)} onChange={() => alternar(it.id)} />
+              <span>{textoYaNoViene(it)}</span>
+            </label>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+};
+
+// `onEliminarYaNoVienen` (solo admin/dev): habilita seleccionar y eliminar
+// las filas que ya no vienen; sin él, la sección es solo informativa.
+export const ResumenImportacion = ({ resumen, onCerrar, onReintentar, reintentando, onEliminarYaNoVienen, preparandoEliminacion }) => {
   const camposActualizados = Object.entries(resumen.camposActualizados || {})
     .sort((a, b) => b[1] - a[1])
     .map(([c, n]) => `${nombreCampo(c)}: ${n}`).join(' · ');
@@ -108,11 +169,14 @@ export const ResumenImportacion = ({ resumen, onCerrar, onReintentar, reintentan
         ayuda="Coincide con más de una fila guardada con otra fecha: se guardó como nueva, sin mover ninguna. Revisa si alguna de las anteriores sobra."
         render={it => `${fila(it)} · ${fechaCorta(it.fecha)} · posibles: ${it.candidatos.map(c => `${fechaCorta(c.fecha)} (${c.id})`).join(', ')}`}
       />
-      <Seccion
-        titulo="Registradas que ya no vienen en el archivo" items={resumen.yaNoVienen} Icono={EyeOff}
-        ayuda="Filas guardadas de los meses que cubre este archivo que no vinieron. No se borraron."
-        render={it => `Adm. ${it.admision} · ${fechaCorta(it.fecha)} · ${it.proveedor} · ${it.codigo}${it.enGrupoPresente ? ' · (repetida de una fila que sí vino: sale del índice de OC)' : ''}`}
-      />
+      {onEliminarYaNoVienen ? (
+        <SeccionYaNoVienen items={resumen.yaNoVienen} onEliminar={onEliminarYaNoVienen} preparando={preparandoEliminacion} />
+      ) : (
+        <Seccion
+          titulo="Registradas que ya no vienen en el archivo" items={resumen.yaNoVienen} Icono={EyeOff}
+          ayuda={AYUDA_YA_NO_VIENEN} render={textoYaNoViene}
+        />
+      )}
       <Seccion
         titulo="Con error (no se guardaron)" items={resumen.errores} Icono={AlertTriangle} tono="error"
         render={it => `${fila(it)}: ${it.error}`}

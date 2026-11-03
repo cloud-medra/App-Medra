@@ -101,6 +101,19 @@ describe('procesarImportacionDetallesOC', () => {
     expect(resumen.data.meses['09']).toMatchObject({ total: 5000, cantidad: 2 });
   });
 
+  it('código importado dos veces y corregido: la _2 queda en "ya no vienen" con su ruta y monto, sin borrarse', async () => {
+    const f = new Date(2026, 9, 22);
+    await importar([fila({ adm: 116020, fecha: f, cod: 711163, precio: 32550 }), fila({ adm: 116020, fecha: f, cod: 711163, precio: 32550 })]);
+    const r = await importar([fila({ adm: 116020, fecha: f, cod: 711163, precio: 32550 }), fila({ adm: 116020, fecha: f, cod: 711035, precio: 32550 })]);
+    expect(r).toMatchObject({ nuevas: 1, sinCambios: 1 });
+    expect(r.yaNoVienen).toEqual([expect.objectContaining({
+      id: '116020_20261022_medtronic_711163_2',
+      refPath: 'documentos_sistema/2026/meses/10/admisiones/116020/empresas/medtronic/detalles/116020_20261022_medtronic_711163_2',
+      codigo: '711163', enGrupoPresente: true
+    })]);
+    expect(estado.escrituras.some(e => e.tipo === 'delete')).toBe(false);
+  });
+
   it('repetidos en otro orden: sin escrituras', async () => {
     await importar([fila({ cant: 1 }), fila({ cant: 2 }), fila({ cant: 1 })]);
     const r = await importar([fila({ cant: 2 }), fila({ cant: 1 }), fila({ cant: 1 })]);

@@ -12,7 +12,7 @@ import { procesarImportacionDetallesOC, SnapshotAntiguoError } from './utils/pro
 import { reconstruirSnapshotDetallesOC } from './utils/snapshotStorageDetallesOC';
 import { ResumenImportacion } from './components/ResumenImportacion';
 import { ModalEliminarFilas } from './components/ModalEliminarFilas';
-import { eliminarFilasDetallesOC } from './utils/eliminarFilasDetallesOC';
+import { eliminarFilasDetallesOC, leerFilasPorRuta } from './utils/eliminarFilasDetallesOC';
 import { exportarDetallesOCExcel } from './utils/exportarDetallesOCExcel';
 import { useModal } from '../../../../../context/ModalContext';
 import { useDetallesOCData } from './hooks/useDetallesOCData';
@@ -96,7 +96,10 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
   // "Eliminar filas seleccionadas" (solo admin/dev). La selección guarda
   // refPath; solo cuentan las filas que siguen en el período cargado.
   const [seleccion, setSeleccion] = useState(() => new Set());
-  const [modalEliminar, setModalEliminar] = useState(false);
+  // Filas del modal de eliminación (null = cerrado): las seleccionadas en la
+  // tabla o las elegidas en "Registradas que ya no vienen" (con su aviso).
+  const [modalEliminar, setModalEliminar] = useState(null);
+  const [preparandoEliminacion, setPreparandoEliminacion] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const [progresoEliminar, setProgresoEliminar] = useState(null);
   const [resultadoEliminacion, setResultadoEliminacion] = useState(null);
@@ -117,23 +120,48 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
   const ANCHO_SELECCION = 30;
   const anchoTabla = anchoTotalTabla + (esAdminODev ? ANCHO_SELECCION : 0);
 
-  const handleEliminar = async ({ liberarOC }) => {
-    setEliminando(true);
-    setProgresoEliminar({ actual: 0, total: seleccionadas.length });
+  // "Ya no vienen": el resumen solo trae lo del snapshot; se leen los
+  // documentos (1 lectura por fila) para confirmar con sus montos reales y
+  // respaldarlos completos.
+  const prepararEliminarYaNoVienen = async (items) => {
+    setPreparandoEliminacion(true);
     try {
-      const r = await eliminarFilasDetallesOC(seleccionadas, { liberarOC, usuario: userData, onProgreso: setProgresoEliminar });
+      const { filas: leidas, noEncontradas } = await leerFilasPorRuta(items.map(it => it.refPath));
+      if (noEncontradas.length) showToast(`${noEncontradas.length} fila(s) ya no existen en la base.`, 'info');
+      if (leidas.length === 0) return;
+      setModalEliminar({
+        filas: leidas,
+        aviso: `Son filas guardadas de ${resumen?.meses?.join(', ') || 'los meses del archivo'} que no vinieron en el último archivo importado. Si ese archivo traía solo parte del mes, las demás también aparecen aquí: elimina solo las que sobran.`
+      });
+    } catch (err) {
+      console.error('Error al leer las filas que ya no vienen:', err);
+      showToast('No se pudieron leer las filas: ' + err.message, 'error');
+    } finally {
+      setPreparandoEliminacion(false);
+    }
+  };
+
+  const handleEliminar = async ({ liberarOC }) => {
+    const aEliminar = modalEliminar?.filas || [];
+    setEliminando(true);
+    setProgresoEliminar({ actual: 0, total: aEliminar.length });
+    try {
+      const r = await eliminarFilasDetallesOC(aEliminar, { liberarOC, usuario: userData, onProgreso: setProgresoEliminar });
       const errores = new Set(r.errores.map(e => e.id));
-      const eliminadas = seleccionadas.filter(f => !errores.has(f.id)).map(f => f.refPath);
+      const eliminadasFilas = aEliminar.filter(f => !errores.has(f.id));
+      const eliminadas = eliminadasFilas.map(f => f.refPath);
       quitarFilas(eliminadas);
       setSeleccion(prev => { const s = new Set(prev); eliminadas.forEach(p => s.delete(p)); return s; });
+      const idsEliminados = new Set(eliminadasFilas.map(f => f.id));
+      setResumen(prev => (prev ? { ...prev, yaNoVienen: (prev.yaNoVienen || []).filter(y => !idsEliminados.has(y.id)) } : prev));
       setResultadoEliminacion(r);
-      setModalEliminar(false);
+      setModalEliminar(null);
       showToast(`${r.eliminadas} fila(s) eliminada(s)${r.errores.length ? `, ${r.errores.length} con error` : ''}.`, r.errores.length ? 'error' : 'success');
       if (r.resumenFacturacion?.ok === false) showToast(r.resumenFacturacion.error, 'error');
     } catch (err) {
       console.error('Error al eliminar filas de Detalles OC:', err);
       showToast(err instanceof SnapshotAntiguoError ? err.message : 'No se pudieron eliminar las filas: ' + err.message, 'error');
-      if (err instanceof SnapshotAntiguoError) { setSnapshotAntiguo(true); setModalEliminar(false); }
+      if (err instanceof SnapshotAntiguoError) { setSnapshotAntiguo(true); setModalEliminar(null); }
     } finally {
       setEliminando(false);
       setProgresoEliminar(null);
@@ -358,11 +386,12 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
 
       {modalEliminar && (
         <ModalEliminarFilas
-          filas={seleccionadas}
+          filas={modalEliminar.filas}
+          aviso={modalEliminar.aviso}
           eliminando={eliminando}
           progreso={progresoEliminar}
           onConfirmar={handleEliminar}
-          onCerrar={() => setModalEliminar(false)}
+          onCerrar={() => setModalEliminar(null)}
         />
       )}
 
@@ -372,6 +401,8 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
           onCerrar={() => setResumen(null)}
           onReintentar={ultimoArchivo ? () => importarArchivo(ultimoArchivo) : null}
           reintentando={procesando}
+          onEliminarYaNoVienen={esAdminODev ? prepararEliminarYaNoVienen : undefined}
+          preparandoEliminacion={preparandoEliminacion}
         />
       )}
 
@@ -451,7 +482,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
               </button>
               <button
                 type="button"
-                onClick={() => setModalEliminar(true)}
+                onClick={() => setModalEliminar({ filas: seleccionadas })}
                 className="h-7 px-2 rounded bg-red-600 hover:bg-red-700 text-white text-[10.5px] font-semibold flex items-center gap-1"
               >
                 <Trash2 size={12} /> Eliminar seleccionadas ({seleccionadas.length})
