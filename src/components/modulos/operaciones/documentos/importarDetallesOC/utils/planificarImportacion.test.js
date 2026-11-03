@@ -70,6 +70,24 @@ describe('planificarImportacion', () => {
     expect(plan.noSobrescritos).toEqual([{ id: '114584_20260915_medtronic_510012_1', filaExcel: 2, campo: 'numero_factura', valorGuardado: 'F-1' }]);
   });
 
+  it('un 0 escrito en el Excel sobrescribe precio, cantidad y monto guardados', () => {
+    const snap = aplicar(planificarImportacion(leer([fila({ precio_u: 141184, cantidad: 2, oc_monto: 282368 })]), {}));
+    const plan = planificarImportacion(leer([fila({ precio_u: 0, cantidad: 0, oc_monto: 0, _vacios: [] })]), snap);
+    expect(plan.nuevas).toEqual([]);
+    expect(plan.actualizadas).toHaveLength(1);
+    expect(plan.actualizadas[0].cambios).toEqual({ precio_u: 0, cantidad: 0, oc_monto: 0 });
+    expect(plan.actualizadas[0].combinados).toMatchObject({ precio_u: 0, cantidad: 0, oc_monto: 0 });
+    expect(plan.noSobrescritos).toEqual([]);
+  });
+
+  it('una celda numérica vacía no pisa el valor guardado (se informa)', () => {
+    const snap = aplicar(planificarImportacion(leer([fila({ precio_u: 141184, oc_monto: 141184 })]), {}));
+    const plan = planificarImportacion(leer([fila({ precio_u: 0, oc_monto: 0, _vacios: ['precio_u', 'oc_monto'] })]), snap);
+    expect(plan.actualizadas).toEqual([]);
+    expect(plan.sinCambios).toBe(1);
+    expect(plan.noSobrescritos.map(n => [n.campo, n.valorGuardado])).toEqual([['precio_u', 141184], ['oc_monto', 141184]]);
+  });
+
   it('solo un vacío sobre un valor: sin escrituras, pero se informa', () => {
     const snap = aplicar(planificarImportacion(leer([fila({ numero_factura: 'F-1' })]), {}));
     const plan = planificarImportacion(leer([fila()]), snap);

@@ -40,7 +40,17 @@ export const normalizarValor = (v) => {
 };
 
 // Vacío: texto vacío o 0 (el parser deja en 0 los números que vienen vacíos).
+// Sirve para lo GUARDADO, donde un 0 no distingue "vacío" de "cero".
 export const esVacio = (v) => v === '' || v === null || v === undefined || v === 0;
+
+export const CAMPOS_NUMERICOS = ['cantidad', 'precio_u', 'oc_monto'];
+
+// Vacío en el ARCHIVO: en los numéricos solo si la celda venía vacía
+// (`_vacios`, ver normalizarFilaDetalleOC); un 0 escrito es un valor real
+// que sí sobrescribe lo guardado.
+export const vacioEnArchivo = (fila, campo, valor) => (CAMPOS_NUMERICOS.includes(campo)
+  ? valor === '' || Boolean(fila?._vacios?.includes(campo))
+  : esVacio(valor));
 
 export const valoresDeFila = (fila) =>
   CAMPOS_COMPARADOS.reduce((acc, c) => { acc[c] = normalizarValor(fila[c]); return acc; }, {});
@@ -82,8 +92,9 @@ export const diferenciasFila = (fila, valores, guardados) => {
     const nuevo = valores[c];
     const viejo = guardados[c] ?? '';
     if (nuevo === viejo) return;
-    if (esVacio(nuevo) && !esVacio(viejo)) { noSobrescritos.push({ campo: c, valorGuardado: viejo }); return; }
-    if (esVacio(nuevo) && esVacio(viejo)) return; // '' vs 0
+    const vacio = vacioEnArchivo(fila, c, nuevo);
+    if (vacio && !esVacio(viejo)) { noSobrescritos.push({ campo: c, valorGuardado: viejo }); return; }
+    if (vacio && esVacio(viejo)) return; // '' vs 0
     cambios[c] = fila[c];
     combinados[c] = nuevo;
     if (c === 'oc' && !esVacio(viejo)) ocAntes = viejo;

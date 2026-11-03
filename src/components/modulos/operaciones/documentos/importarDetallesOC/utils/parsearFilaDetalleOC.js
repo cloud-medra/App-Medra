@@ -212,9 +212,16 @@ export const normalizarFilaDetalleOC = (filaCruda, XLSX) => {
   resultado.admision = resultado.admision.replace(/\.0+$/, '');
   resultado.oc = limpiarOC(filaCruda['OC']);
 
+  // Un numérico vacío (o que no es número) se guarda como 0, pero queda
+  // anotado en `_vacios`: al reimportar, un 0 escrito en el Excel SÍ pisa
+  // el valor guardado y una celda vacía no (planificarImportacion.js).
+  const vacios = [];
   CAMPOS_NUMERICOS.forEach(([origen, destino]) => {
-    resultado[destino] = numeroFlexible(filaCruda[origen]) ?? 0;
+    const n = numeroFlexible(filaCruda[origen]);
+    if (n === null) vacios.push(destino);
+    resultado[destino] = n ?? 0;
   });
+  resultado._vacios = vacios;
 
   CAMPOS_FECHA.forEach(([origen, destino]) => {
     resultado[destino] = parsearFechaExcel(filaCruda[origen], XLSX);

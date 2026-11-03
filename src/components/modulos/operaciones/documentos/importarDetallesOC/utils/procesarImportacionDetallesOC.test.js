@@ -15,6 +15,7 @@ vi.mock('firebase/firestore', () => ({
       commit: async () => { estado.escrituras.push(...ops); }
     };
   },
+  serverTimestamp: () => 'ahora',
   setDoc: async (ref, data) => { estado.meta = { ...estado.meta, ...data }; estado.escrituras.push({ tipo: 'meta', path: ref.path, data }); }
 }));
 vi.mock('./snapshotStorageDetallesOC', () => ({
@@ -76,6 +77,28 @@ describe('procesarImportacionDetallesOC', () => {
     expect(estado.escrituras.filter(e => !e.path?.includes('/detalles/') && e.tipo !== 'meta')).toEqual([]); // sin marcadores
     expect(r.noSobrescritos).toEqual([expect.objectContaining({ campo: 'numero_factura', valorGuardado: 'F-1' })]);
     expect(r.camposActualizados).toEqual({ lote: 1, numero_guia: 1, numero_factura: 1 });
+  });
+
+  it('precio y monto en 0 sobrescriben lo guardado y el Resumen Mensual se recalcula; vacío conserva', async () => {
+    const enc = ['ID_PACIENTE', 'FECHA_CIRUGIA', 'PROVEEDOR', 'CODIGO_CLINICA', 'CANTIDAD', 'PRECIO_UNITARIO', 'OC_MONTO'];
+    const conMonto = (filas) => {
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([enc, ...filas]), 'planilla');
+      const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+      estado.escrituras = [];
+      return procesarImportacionDetallesOC({ arrayBuffer: async () => buf.slice(0) });
+    };
+    const f = new Date(2026, 8, 15);
+    await conMonto([[114584, f, 'MEDTRONIC', 510012, 1, 141184, 141184], [114584, f, 'MEDTRONIC', 510013, 1, 5000, 5000]]);
+
+    const r = await conMonto([[114584, f, 'MEDTRONIC', 510012, 1, 0, 0], [114584, f, 'MEDTRONIC', 510013, 1, null, null]]);
+    expect(r).toMatchObject({ nuevas: 0, actualizadas: 1, sinCambios: 1 });
+    const [escrita] = escriturasDeFilas();
+    expect(escrita).toMatchObject({ tipo: 'merge', data: { precio_u: 0, oc_monto: 0 } });
+    expect(r.noSobrescritos.map(n => n.campo).sort()).toEqual(['oc_monto', 'precio_u']);
+    expect(r.resumenFacturacion).toMatchObject({ ok: true, escrituras: 1 });
+    const resumen = estado.escrituras.find(e => e.path === 'resumen_facturacion_mensual/2026');
+    expect(resumen.data.meses['09']).toMatchObject({ total: 5000, cantidad: 2 });
   });
 
   it('repetidos en otro orden: sin escrituras', async () => {
