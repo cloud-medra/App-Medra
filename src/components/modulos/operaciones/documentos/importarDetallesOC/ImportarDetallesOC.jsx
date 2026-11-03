@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import {
   FileSpreadsheet, Upload, X, Loader2, AlertTriangle,
-  Search, CalendarSearch, Database, Trash2
+  Search, CalendarSearch, Database, Trash2, Download
 } from 'lucide-react';
 import { useToast } from '../../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
@@ -13,6 +13,7 @@ import { reconstruirSnapshotDetallesOC } from './utils/snapshotStorageDetallesOC
 import { ResumenImportacion } from './components/ResumenImportacion';
 import { ModalEliminarFilas } from './components/ModalEliminarFilas';
 import { eliminarFilasDetallesOC } from './utils/eliminarFilasDetallesOC';
+import { exportarDetallesOCExcel } from './utils/exportarDetallesOCExcel';
 import { useModal } from '../../../../../context/ModalContext';
 import { useDetallesOCData } from './hooks/useDetallesOCData';
 import { useDetallesOCFiltros, CAMPOS_BUSQUEDA_OC } from './hooks/useDetallesOCFiltros';
@@ -142,6 +143,32 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
   const periodoSeleccionado = Boolean(anio && mes);
   const cargando = cargandoFilas;
 
+  // "Descargar Excel del mes": todas las filas guardadas del período (no
+  // solo las filtradas), con las que la tabla ya cargó (0 lecturas). Si el
+  // período llegó al tope de lectura no se descarga: el total no calzaría
+  // con el Resumen Mensual.
+  const [descargando, setDescargando] = useState(false);
+  const descargarExcelMes = async () => {
+    if (huboTope) {
+      showToast('El mes tiene más filas de las que carga la pantalla: el Excel quedaría incompleto y no se descargó.', 'error');
+      return;
+    }
+    if (filas.length === 0) {
+      showToast(`${nombreDeMes(mes)} ${anio} no tiene filas guardadas.`, 'info');
+      return;
+    }
+    setDescargando(true);
+    try {
+      await exportarDetallesOCExcel(filas, { anio, mes });
+      showToast(`Excel descargado: ${filas.length} fila(s).`, 'success');
+    } catch (err) {
+      console.error('Error al descargar el Excel de Detalles OC:', err);
+      showToast('No se pudo generar el Excel: ' + err.message, 'error');
+    } finally {
+      setDescargando(false);
+    }
+  };
+
   const importarArchivo = useCallback(async (file) => {
     if (!file) return;
     setUltimoArchivo(file);
@@ -261,6 +288,18 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
             className="px-2 py-1 rounded text-[10px] border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-50 flex items-center gap-1"
           >
             {reconstruyendo ? <Loader2 size={11} className="animate-spin" /> : <Database size={11} />} Reconstruir snapshot
+          </button>
+        )}
+        {hasPermission(pathVista, 'cabecera_acciones', 'btn_descargar_excel') && (
+          <button
+            type="button"
+            onClick={descargarExcelMes}
+            disabled={!periodoSeleccionado || cargando || descargando || procesando}
+            title={periodoSeleccionado ? 'Descarga todas las filas guardadas del mes seleccionado' : 'Selecciona un año y mes'}
+            className="px-2 py-1 rounded text-[10px] border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+          >
+            {descargando ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
+            {descargando ? 'Generando...' : 'Descargar Excel del mes'}
           </button>
         )}
         {hasPermission(pathVista, 'cabecera_acciones', 'btn_importar') && (

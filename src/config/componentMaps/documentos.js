@@ -41,6 +41,7 @@ export const mapaImportarDetallesOC = {
       label: 'Sección: Encabezado',
       elements: {
         btn_importar: { label: 'Acción: Importar Excel' },
+        btn_descargar_excel: { label: 'Acción: Descargar Excel del mes (todas las filas guardadas del año y mes elegidos, solo lectura)' },
       },
     },
     barra_filtros: {
