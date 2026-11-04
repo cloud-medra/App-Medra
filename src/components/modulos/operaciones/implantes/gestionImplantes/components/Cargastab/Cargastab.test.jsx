@@ -29,16 +29,18 @@ vi.mock('../../../../../../../hooks/useGranularPermission', () => ({
 }));
 vi.mock('./CotizacionCard', () => ({ CotizacionCard: () => null }));
 vi.mock('./NotasAdmision', () => ({ default: () => null }));
+const showToast = vi.fn();
+vi.mock('../../../../../../../context/ToastContext', () => ({ useToast: () => ({ showToast }) }));
 
 const { CargasTab } = await import('./Cargastab');
 
 const onAgregarItem = vi.fn();
-beforeEach(() => { vi.useFakeTimers(); onAgregarItem.mockClear(); });
+beforeEach(() => { vi.useFakeTimers(); onAgregarItem.mockClear(); showToast.mockClear(); });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
-const montar = () => render(
+const montar = (cotizaciones = []) => render(
   <CargasTab
-    formData={{ bloques: [{ cotizaciones: [], solicitud: '' }] }}
+    formData={{ bloques: [{ cotizaciones, solicitud: '' }] }}
     bloqueActivoIndex={0}
     onAgregarItem={onAgregarItem}
     periodoAbierto={{ anio: 2026, mes: 'OCTUBRE' }}
@@ -179,5 +181,31 @@ describe('Cargas: contenido de un PAD', () => {
     expect(onAgregarItem).toHaveBeenCalledTimes(2); // PAD + 1 línea de contenido
     expect(screen.getByLabelText('Referencia')).toHaveFocus();
     expect(screen.queryByLabelText('Referencia contenido')).not.toBeInTheDocument();
+  });
+});
+
+describe('Cargas: código duplicado en el ingreso normal', () => {
+  // Una fila normal con "tornillo 3.5" y una de contenido de PAD con TORNILLO 9.
+  const COTIZACIONES = [{ id: 'c1', numCotizacion: 'COT-1', items: [
+    { id: 'a', referencia: ' tornillo 3.5 ' },
+    { id: 'b', referencia: 'TORNILLO 9', padPadreId: 'p' },
+  ] }];
+
+  it('avisa con el código (sin distinguir mayúsculas ni espacios) y agrega igual', async () => {
+    montar(COTIZACIONES);
+    llenarItem('TORNILLO 3.5 ');
+    await agregar();
+    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('"TORNILLO 3.5"'), 'warning');
+    expect(onAgregarItem).toHaveBeenCalledTimes(1);
+  });
+
+  it('no avisa si el código solo está como contenido de un PAD o no existe', async () => {
+    montar(COTIZACIONES);
+    llenarItem('TORNILLO 9');
+    await agregar();
+    llenarItem('OTRO');
+    await agregar();
+    expect(showToast).not.toHaveBeenCalled();
+    expect(onAgregarItem).toHaveBeenCalledTimes(2);
   });
 });

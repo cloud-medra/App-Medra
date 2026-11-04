@@ -127,6 +127,35 @@ export const codigoParaMostrar = (item) => {
 export const tieneContenidoPad = (items, padPadreId) =>
   (items || []).some(it => it.padPadreId === padPadreId);
 
+// Códigos duplicados (solo advertencia, no bloquea): se comparan las filas
+// del ingreso normal, es decir, las que no son contenido de un PAD
+// (padPadreId) ni detalle de lotes (lotePadreId). Esas repiten la referencia
+// a propósito y quedan fuera. Sin espacios al inicio/final ni mayúsculas.
+export const normalizarReferencia = (referencia) => String(referencia ?? '').trim().toLowerCase();
+export const esIngresoNormal = (item) => !item?.padPadreId && !item?.lotePadreId;
+
+// Set con las referencias normalizadas que aparecen en 2 o más filas normales.
+export const referenciasDuplicadas = (items) => {
+  const vistas = new Set();
+  const duplicadas = new Set();
+  (items || []).forEach(it => {
+    if (!esIngresoNormal(it)) return;
+    const ref = normalizarReferencia(it.referencia);
+    if (!ref) return;
+    if (vistas.has(ref)) duplicadas.add(ref);
+    else vistas.add(ref);
+  });
+  return duplicadas;
+};
+
+// ¿Otra fila normal (distinta de `excluirId`) ya tiene esta referencia?
+export const existeReferenciaNormal = (items, referencia, excluirId) => {
+  const ref = normalizarReferencia(referencia);
+  return !!ref && (items || []).some(it =>
+    it.id !== excluirId && esIngresoNormal(it) && normalizarReferencia(it.referencia) === ref
+  );
+};
+
 // Lista (sin duplicados) de los períodos {anio, mes} presentes entre los
 // ítems de un bloque — usada por el candado de bloqueo para saber contra
 // qué período(s) de Control Mensual hay que validar antes de permitir editar

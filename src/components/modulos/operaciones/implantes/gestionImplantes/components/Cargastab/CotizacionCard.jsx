@@ -32,7 +32,9 @@ import {
   VALOR_LOTE_VENCIMIENTO_PAD,
   tieneContenidoPad,
   anchosConExtra,
-  codigoParaMostrar
+  codigoParaMostrar,
+  normalizarReferencia,
+  esIngresoNormal
 } from './cargasHelpers';
 import { ManijaRedimension } from '../../../../../../ui/ManijaRedimension';
 import { useAutocompleteReferencia } from './useAutocompleteReferencia';
@@ -153,6 +155,12 @@ export const CotizacionCard = ({
   soloLectura = false,
   // Permiso "Agregar Contenido de PAD" (tabla_cotizaciones.formulario_contenido_pad).
   puedeAgregarContenidoPad = true,
+  // Códigos duplicados del ingreso normal en el bloque (ver Cargastab): Set
+  // de referencias normalizadas que se marcan en rojo; `hayReferenciaNormal`
+  // y `onCodigoDuplicado` avisan si al editar una fila se repite el código.
+  referenciasDuplicadas,
+  hayReferenciaNormal,
+  onCodigoDuplicado,
   // Solo lectura de verdad (Reporte Info): sin acciones ni edición, el estado
   // de carga como etiqueta, el contenido de cada PAD plegable y la tabla con
   // encabezado fijo y scroll interno. No carga el catálogo de códigos.
@@ -386,6 +394,11 @@ export const CotizacionCard = ({
       borrador.precio, cantidadNum, recargosActivos
     );
 
+    // Solo si cambió el código: editar otro campo de una fila ya duplicada no vuelve a avisar.
+    const original = items.find(it => it.id === editandoId);
+    const cambioReferencia = normalizarReferencia(original?.referencia) !== normalizarReferencia(borrador.referencia);
+    if (cambioReferencia && hayReferenciaNormal?.(borrador.referencia, editandoId)) onCodigoDuplicado?.(borrador.referencia);
+
     onEditarItem(editandoId, {
       referencia: borrador.referencia.trim(),
       codigo: borrador.codigo || '',
@@ -594,6 +607,7 @@ export const CotizacionCard = ({
                     const esContenidoPad = !!it.padPadreId;
                     const esLoteAdicional = !!it.lotePadreId;
                     const esSateliteSinCosto = esContenidoPad || esLoteAdicional;
+                    const esDuplicado = !modoLectura && esIngresoNormal(it) && !!referenciasDuplicadas?.has(normalizarReferencia(it.referencia));
                     const sinContenidoAun = esPrincipalPad && !tieneContenidoPad(items, it.id);
                     const mostrandoFormularioContenido = agregandoContenidoDePadId === it.id;
                     if (!filaVisible(it)) return null;
@@ -809,14 +823,17 @@ export const CotizacionCard = ({
                     return (
                       <React.Fragment key={it.id}>
                         <tr
-                          className={`border-l-2 border-transparent hover:border-[#2383C2] transition ${it.sinCodigo
+                          data-duplicado={esDuplicado || undefined}
+                          className={`border-l-2 transition ${esDuplicado
+                            ? 'border-red-500 bg-red-100/80 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/50'
+                            : `border-transparent hover:border-[#2383C2] ${it.sinCodigo
                             ? 'bg-red-50/70 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-950/30'
                             : esContenidoPad
                               ? 'bg-fuchsia-50/30 dark:bg-fuchsia-950/10 hover:bg-fuchsia-50/60 dark:hover:bg-fuchsia-950/20'
                               // Cualquier ítem con <select> real de Estado Carga (normal,
                               // PAD principal o lote adicional) se colorea según su estado.
                               : getEstadoCargaRowStyle(it.estadoCarga)
-                            }`}
+                            }`}`}
                         >
                           {celdaNumero}
                           <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-500 dark:text-gray-400">
@@ -849,7 +866,12 @@ export const CotizacionCard = ({
                             <span className="flex items-center gap-1">
                               {esContenidoPad && <span className="text-fuchsia-400 dark:text-fuchsia-600 shrink-0">↳</span>}
                               {esLoteAdicional && <span className="text-sky-400 dark:text-sky-600 shrink-0">↳</span>}
-                              <span className="truncate">{it.referencia}</span>
+                              <span className={`truncate ${esDuplicado ? 'text-red-700 dark:text-red-400 font-bold' : ''}`}>{it.referencia}</span>
+                              {esDuplicado && (
+                                <span title="Este código está ingresado en otra fila" className="flex items-center gap-0.5 text-[8px] px-1 rounded bg-red-600 text-white font-bold shrink-0">
+                                  <AlertTriangle size={9} /> DUPLICADO
+                                </span>
+                              )}
                               {esPrincipalPad && (
                                 <span className="flex items-center gap-0.5 text-[8px] px-1 rounded bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-700 dark:text-fuchsia-400 font-bold shrink-0">
                                   <Package size={9} /> PAD

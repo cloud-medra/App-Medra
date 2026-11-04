@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 
 const Toast = ({ message, type = 'success', isLeaving, onClose }) => {
   const styles = {
@@ -20,6 +20,12 @@ const Toast = ({ message, type = 'success', isLeaving, onClose }) => {
       text: 'text-gray-800 dark:text-gray-200',
       bar: 'bg-blue-500',
       icon: <Info className="w-5 h-5 text-blue-500 mr-3" />
+    },
+    warning: {
+      border: 'border-l-amber-500',
+      text: 'text-gray-800 dark:text-gray-200',
+      bar: 'bg-amber-500',
+      icon: <AlertTriangle className="w-5 h-5 text-amber-500 mr-3" />
     }
   };
 

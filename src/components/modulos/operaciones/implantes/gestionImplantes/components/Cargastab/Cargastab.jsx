@@ -14,7 +14,8 @@ import {
   Trash2,
   Copy
 } from 'lucide-react';
-import { formatearFechaTabla, calcularCamposFinancieros, esClasePad, VALOR_LOTE_VENCIMIENTO_PAD } from './cargasHelpers';
+import { formatearFechaTabla, calcularCamposFinancieros, esClasePad, VALOR_LOTE_VENCIMIENTO_PAD, referenciasDuplicadas, existeReferenciaNormal } from './cargasHelpers';
+import { useToast } from '../../../../../../../context/ToastContext';
 import { verificarPeriodosBloque } from './verificacionPeriodoBloque';
 import { construirTextoAdmisionNombre } from '../../utils/gestionesImportExport';
 import { useRecargosActivos } from './useRecargosActivos';
@@ -70,6 +71,17 @@ const DRAFT_LOTE_VACIO = { cantidad: '', lote: '', vencimiento: '' };
 export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarItem, onEliminarItem, onEliminarCotizacion, onActualizarEstadoItem, onEditarItem, periodoAbierto, cargandoPeriodo, handleCopiarTexto, onIrAInformacion }, ref) => {
   const bloqueActivo = formData?.bloques?.[bloqueActivoIndex];
   const cotizaciones = bloqueActivo?.cotizaciones || [];
+  const { showToast } = useToast();
+
+  // Códigos repetidos del ingreso normal en todo el bloque (cualquier
+  // cotización): sus filas se marcan en rojo y se avisa al ingresarlos.
+  // Solo advertencia: no bloquea agregar ni guardar.
+  const cotizacionesBloque = bloqueActivo?.cotizaciones;
+  const itemsBloque = useMemo(() => (cotizacionesBloque || []).flatMap(cot => cot.items || []), [cotizacionesBloque]);
+  const duplicadasBloque = useMemo(() => referenciasDuplicadas(itemsBloque), [itemsBloque]);
+  const avisarCodigoDuplicado = (referencia) => {
+    showToast(`Código duplicado: "${referencia.trim()}" ya está ingresado en otra fila.`, 'warning');
+  };
 
   // Candado de bloqueo: un bloque ya SOLICITADO (ya copiado a
   // implantes_imputadas) queda de solo lectura hasta que el usuario lo
@@ -469,6 +481,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
       return;
     }
 
+    if (existeReferenciaNormal(itemsBloque, nuevoItem.referencia)) avisarCodigoDuplicado(nuevoItem.referencia);
     construirItemsDesdeFormulario().forEach(item => onAgregarItem(bloqueActivoIndex, item));
     limpiarFormularioNuevoItem();
     // Lista para la siguiente referencia (el formulario la deja vacía).
@@ -537,6 +550,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
         return { status: 'incompleto' };
       }
 
+      if (existeReferenciaNormal(itemsBloque, nuevoItem.referencia)) avisarCodigoDuplicado(nuevoItem.referencia);
       const items = construirItemsDesdeFormulario();
       limpiarFormularioNuevoItem();
       return { status: 'ok', items };
@@ -1188,6 +1202,9 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               periodoAbierto={periodoAbierto}
               soloLectura={bloqueado}
               puedeAgregarContenidoPad={puedeAgregarContenidoPad}
+              referenciasDuplicadas={duplicadasBloque}
+              hayReferenciaNormal={(referencia, excluirId) => existeReferenciaNormal(itemsBloque, referencia, excluirId)}
+              onCodigoDuplicado={avisarCodigoDuplicado}
               onAgregarItem={(itemData) => onAgregarItem(bloqueActivoIndex, itemData)}
               onEliminarItem={(itemId) => onEliminarItem(bloqueActivoIndex, cot.id, itemId)}
               onEliminarCotizacion={() => onEliminarCotizacion(bloqueActivoIndex, cot.id)}
