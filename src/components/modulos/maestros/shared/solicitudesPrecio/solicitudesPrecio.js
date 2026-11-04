@@ -3,7 +3,9 @@
 // externo. Este sistema tiene el precio correcto; la lista se descarga en
 // Excel desde Maestro Códigos → "Solicitud de precios a TI" para que TI
 // actualice el otro sistema. Lógica pura (sin Firestore).
-import { normalizarReferencia } from '../../../operaciones/implantes/gestionImplantes/components/Cargastab/cargasHelpers';
+import { normalizarReferencia, buscarRangoRecargo, CODIGO_SIN_OC } from '../../../operaciones/implantes/gestionImplantes/components/Cargastab/cargasHelpers';
+import { PORCENTAJE_RECARGO_HEMODINAMIA } from '../../../operaciones/hemodinamia/gestionHemodinamia/components/Cargastab/cargasHelpers';
+import { buscarReglaRecargo } from '../../../operaciones/consignacion/utils/precioEspecial';
 
 export const COL_SOLICITUDES_PRECIO = 'maestros_solicitudes_precio';
 
@@ -29,9 +31,22 @@ const textoReal = (valor) => {
   return t && t !== 'P' ? t : '';
 };
 
-// Costo y venta UNITARIOS (es el precio que TI actualiza). La venta de la
-// fila ya trae el recargo (rango de Recargos o el 27% de Hemodinamia) por
-// la cantidad, así que se divide por ella.
+// Código del maestro: vacío si no tiene ("No lleva OC" y "0" no son códigos).
+const codigoReal = (valor) => {
+  const t = textoReal(valor);
+  return t && t !== CODIGO_SIN_OC && t !== '0' ? t : '';
+};
+
+// Multiplicador con que la carga calculó la venta, tal cual (sin redondear).
+const vecesCostoReal = (valor) => (Number(valor) > 0 ? Number(valor) : null);
+
+// Costo y venta UNITARIOS (es el precio que TI actualiza). El costo va exacto,
+// como en el maestro (puede tener decimales); la venta, redondeada a pesos.
+// La venta de la fila trae el recargo por la cantidad, así que se divide por ella.
+// Cómo calcula la venta cada módulo (veces costo = el multiplicador guardado):
+// - Implantes: costo × veces costo (rango de Recargos; 1 si no cae en ninguno), sin redondeo.
+// - Hemodinamia: costo / (1 − 27%) redondeado a pesos; veces costo = 1/0,73 = 1,369863…
+// - Consignación: costo × veces costo (rango de Recargos), redondeado a pesos.
 const ventaUnitaria = (venta, cantidad) => {
   const v = Number(venta) || 0;
   const c = Number(cantidad) || 0;
@@ -46,26 +61,32 @@ export const puedeSolicitarPrecioCargas = (it) =>
 
 export const solicitudDesdeItemCargas = (it) => ({
   referencia: String(it.referencia).trim(),
+  codigo: codigoReal(it.codigo),
   descripcion: textoReal(it.descriptorAuto) || textoReal(it.detalle),
-  costo: Math.round(Number(it.precio) || 0),
+  costo: Number(it.precio) || 0,
+  vecesCosto: vecesCostoReal(it.vecesCosto),
   venta: ventaUnitaria(it.venta, it.cantidad)
 });
 
 export const puedeSolicitarPrecioConsignacion = (it) =>
   !!textoReal(it?.referencia) && Number(it.costo) > 0;
 
-// `venta`: la guardada en el ítem o, si aún no está, la calculada en pantalla.
-export const solicitudDesdeItemConsignacion = (it, venta) => ({
+// `venta` y `vecesCosto`: los guardados en el ítem (venta, recargoVecesCosto)
+// o, si aún no están, los calculados en pantalla con la misma regla.
+export const solicitudDesdeItemConsignacion = (it, venta, vecesCosto) => ({
   referencia: String(it.referencia).trim(),
+  codigo: codigoReal(it.codigo),
   descripcion: textoReal(it.descripcion),
-  costo: Math.round(Number(it.costo) || 0),
+  costo: Number(it.costo) || 0,
+  vecesCosto: vecesCostoReal(vecesCosto),
   venta: ventaUnitaria(venta, it.cantidad)
 });
 
 export const cambioPrecio = (anterior, nueva) =>
   Number(anterior?.costo) !== nueva.costo || Number(anterior?.venta) !== nueva.venta;
 
-const pesos = (n) => `$${Math.round(Number(n) || 0).toLocaleString('es-CL')}`;
+// Con decimales si los tiene (el costo del maestro puede tenerlos).
+const pesos = (n) => `$${(Number(n) || 0).toLocaleString('es-CL', { maximumFractionDigits: 2 })}`;
 
 // Aviso al marcar. Si la referencia ya estaba con otro precio, se dice
 // cuál cambió para que no pase inadvertido.
@@ -90,13 +111,64 @@ export const formatearFechaSolicitud = (valor) => {
   });
 };
 
-export const COLUMNAS_EXCEL = ['Referencia', 'Descripción', 'Módulo', 'Costo', 'Venta', 'Fecha agregada'];
+// Veces costo con hasta 4 decimales (Hemodinamia: 1,3699; el resto tal cual: 1,3 · 3).
+export const formatearVecesCosto = (valor) =>
+  (Number(valor) > 0 ? Number(valor).toLocaleString('es-CL', { maximumFractionDigits: 4 }) : '');
+
+// --- Referencias guardadas antes de que se registraran código y veces costo ---
+// Se completan al mostrar la pestaña y al generar el Excel, sin escribir en la base.
+
+// Código del catálogo de Maestro Códigos para una referencia: solo registros
+// activos con código real; con dos códigos activos distintos, vacío (no se adivina).
+export const codigoDelCatalogo = (catalogo, referencia) => {
+  const ref = normalizarReferencia(referencia);
+  if (!ref) return '';
+  const codigos = new Set((catalogo || [])
+    .filter((c) => normalizarReferencia(c.referencia) === ref && String(c.estado || 'ACTIVO').toUpperCase() !== 'INACTIVO')
+    .map((c) => codigoReal(c.codigo))
+    .filter(Boolean));
+  return codigos.size === 1 ? [...codigos][0] : '';
+};
+
+// Módulo cuya regla aplica: el último donde se marcó o, en las antiguas, el
+// único de la lista (con varios y sin `ultimoModulo` no se sabe cuál).
+const moduloDeLaRegla = (registro) =>
+  registro.ultimoModulo || (registro.modulos?.length === 1 ? registro.modulos[0] : null);
+
+// Veces costo con la misma regla que usa la carga de ese módulo (no venta ÷ costo).
+// `recargos`: catálogo maestros_recargos.
+export const vecesCostoSegunModulo = (modulo, costo, recargos) => {
+  const precio = Number(costo) || 0;
+  if (!(precio > 0)) return null;
+  if (modulo === MODULO_SOLICITUD.hemodinamia) return 1 / (1 - PORCENTAJE_RECARGO_HEMODINAMIA);
+  if (modulo === MODULO_SOLICITUD.implantes) {
+    // Implantes: solo rangos ACTIVO; sin rango, 1 (como en Cargas).
+    const rango = buscarRangoRecargo(precio, (recargos || []).filter((r) => r.estado === 'ACTIVO'));
+    return rango ? Number(rango.vecesCosto) : 1;
+  }
+  if (modulo === MODULO_SOLICITUD.consignacion) {
+    const regla = buscarReglaRecargo(recargos, precio);
+    return regla ? Number(regla.vecesCosto) : null;
+  }
+  return null;
+};
+
+// Lo guardado manda; solo se completa lo que falta.
+export const completarSolicitud = (registro, { catalogo, recargos }) => ({
+  ...registro,
+  codigo: codigoReal(registro.codigo) || codigoDelCatalogo(catalogo, registro.referencia),
+  vecesCosto: vecesCostoReal(registro.vecesCosto) ?? vecesCostoSegunModulo(moduloDeLaRegla(registro), registro.costo, recargos)
+});
+
+export const COLUMNAS_EXCEL = ['Código', 'Referencia', 'Descripción', 'Módulo', 'Costo', 'Veces costo', 'Venta', 'Fecha agregada'];
 
 export const filasExcelSolicitudes = (registros) => registros.map((r) => ({
+  'Código': r.codigo || '',
   Referencia: r.referencia || '',
   'Descripción': r.descripcion || '',
   'Módulo': textoModulos(r.modulos),
   Costo: Number(r.costo) || 0,
+  'Veces costo': Number(r.vecesCosto) > 0 ? Number(r.vecesCosto) : '',
   Venta: Number(r.venta) || 0,
   'Fecha agregada': formatearFechaSolicitud(r.agregadoEl)
 }));

@@ -572,7 +572,7 @@ export const maestrosComponentMaps = {
             elements: {
               btn_descargar_excel: { label: 'Acción: Descargar Excel (quita las filas descargadas)' },
               ...columnas([
-                ['seleccion', 'Seleccionar'], ['referencia', 'Referencia'], ['descripcion', 'Descripción'], ['modulo', 'Módulo'], ['costo', 'Costo'], ['venta', 'Venta'], ['fecha', 'Fecha agregada'],
+                ['seleccion', 'Seleccionar'], ['codigo', 'Código'], ['referencia', 'Referencia'], ['descripcion', 'Descripción'], ['modulo', 'Módulo'], ['costo', 'Costo'], ['vecesCosto', 'Veces costo'], ['venta', 'Venta'], ['fecha', 'Fecha agregada'],
               ]),
             },
           },

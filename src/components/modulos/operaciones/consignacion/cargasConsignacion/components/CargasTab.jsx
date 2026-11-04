@@ -1422,7 +1422,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                             {puedeSolicitarPrecioConsignacion(it) && (
                               <button
                                 type="button"
-                                onClick={() => solicitarPrecio(solicitudDesdeItemConsignacion(it, it.venta ?? calcularVenta(it).venta))}
+                                onClick={() => { const calculado = calcularVenta(it); solicitarPrecio(solicitudDesdeItemConsignacion(it, it.venta ?? calculado.venta, it.recargoVecesCosto ?? calculado.vecesCosto)); }}
                                 title="Solicitar actualización de precio"
                                 aria-label="Solicitar actualización de precio"
                                 className="ml-1.5 text-amber-600 hover:text-amber-800 transition p-0.5 rounded hover:bg-amber-50 dark:hover:bg-amber-950/30"

@@ -19,6 +19,7 @@ export const agregarSolicitudPrecio = async ({ solicitud, modulo, userData }) =>
         ...solicitud,
         referenciaNormalizada: normalizarReferencia(solicitud.referencia),
         modulos: [modulo],
+        ultimoModulo: modulo,
         vecesMarcada: 1,
         agregadoEl: serverTimestamp(),
         agregadoPor: usuario,
@@ -28,11 +29,16 @@ export const agregarSolicitudPrecio = async ({ solicitud, modulo, userData }) =>
       return { precioAnterior: null };
     }
     const anterior = snap.data();
+    // Código, veces costo, costo y venta: los de la última marca (el módulo
+    // que marcó último define cómo se calculó la venta: `ultimoModulo`).
     tx.update(ref, {
       descripcion: solicitud.descripcion || anterior.descripcion || '',
+      codigo: solicitud.codigo || anterior.codigo || '',
       costo: solicitud.costo,
+      vecesCosto: solicitud.vecesCosto ?? null,
       venta: solicitud.venta,
       modulos: arrayUnion(modulo),
+      ultimoModulo: modulo,
       vecesMarcada: increment(1),
       actualizadoEl: serverTimestamp(),
       actualizadoPor: usuario

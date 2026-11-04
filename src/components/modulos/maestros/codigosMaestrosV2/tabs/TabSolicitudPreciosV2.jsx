@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, RefreshCw } from 'lucide-react';
 import { useToast } from '../../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../../hooks/useGranularPermission';
 import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitidas';
 import { useColumnResize } from '../../../../../hooks/useColumnResize';
+import { useCatalogo } from '../../../../../hooks/useCatalogo';
 import { TablaCodigos, Boton } from '../ui/TablaCodigos';
 import { formatearPrecio } from '../camposCodigo';
 import { leerSolicitudesPrecio, eliminarDescargadas } from '../../shared/solicitudesPrecio/accionesSolicitudesPrecio';
-import { ordenarSolicitudes, textoModulos, formatearFechaSolicitud } from '../../shared/solicitudesPrecio/solicitudesPrecio';
+import { ordenarSolicitudes, textoModulos, formatearFechaSolicitud, formatearVecesCosto, completarSolicitud } from '../../shared/solicitudesPrecio/solicitudesPrecio';
 import { descargarExcelSolicitudes } from '../../shared/solicitudesPrecio/descargarExcelSolicitudes';
 
 // Solicitud de precios a TI: referencias marcadas desde Cargas (Implantes,
@@ -16,10 +17,12 @@ import { descargarExcelSolicitudes } from '../../shared/solicitudesPrecio/descar
 // se quitan de la lista. Permisos por columna: `col_<key>` en 'tabla_datos'.
 const COLUMNAS = [
   { key: 'seleccion', label: 'Seleccionar', ancho: 36, min: 32, align: 'center' },
+  { key: 'codigo', label: 'Código', ancho: 90, min: 60 },
   { key: 'referencia', label: 'Referencia', ancho: 160, min: 80 },
-  { key: 'descripcion', label: 'Descripción', ancho: 340, min: 100 },
+  { key: 'descripcion', label: 'Descripción', ancho: 320, min: 100 },
   { key: 'modulo', label: 'Módulo', ancho: 170, min: 80 },
   { key: 'costo', label: 'Costo', ancho: 100, min: 70, align: 'right' },
+  { key: 'vecesCosto', label: 'Veces costo', ancho: 85, min: 60, align: 'right' },
   { key: 'venta', label: 'Venta', ancho: 100, min: 70, align: 'right' },
   { key: 'fecha', label: 'Fecha agregada', ancho: 130, min: 90 }
 ];
@@ -32,7 +35,7 @@ const TabSolicitudPreciosV2 = ({ rutaVista = '/maestros/codigosMaestros/solicitu
   const PATH_VISTA = rutaVista;
   const puedeDescargar = hasPermission(PATH_VISTA, 'tabla_datos', 'btn_descargar_excel');
 
-  const [registros, setRegistros] = useState([]);
+  const [guardados, setGuardados] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [seleccion, setSeleccion] = useState(() => new Set());
   const [descargando, setDescargando] = useState(false);
@@ -41,7 +44,7 @@ const TabSolicitudPreciosV2 = ({ rutaVista = '/maestros/codigosMaestros/solicitu
   const leer = useCallback(() => leerSolicitudesPrecio()
     .then((datos) => {
       const nuevos = ordenarSolicitudes(datos);
-      setRegistros(nuevos);
+      setGuardados(nuevos);
       // La selección conserva solo las filas que siguen en la lista.
       setSeleccion((prev) => new Set(nuevos.filter((r) => prev.has(r.id)).map((r) => r.id)));
     })
@@ -52,6 +55,16 @@ const TabSolicitudPreciosV2 = ({ rutaVista = '/maestros/codigosMaestros/solicitu
     .finally(() => setCargando(false)), [showToast]);
 
   useEffect(() => { leer(); }, [leer]);
+
+  // Las referencias guardadas antes de registrar código y veces costo se
+  // completan aquí (catálogo de Códigos y regla de Recargos del módulo), sin
+  // escribir en la base. Ambos catálogos son compartidos (catalogosStore).
+  const { datos: catalogo } = useCatalogo('codigos');
+  const { datos: recargos } = useCatalogo('recargos');
+  const registros = useMemo(
+    () => guardados.map((r) => completarSolicitud(r, { catalogo, recargos })),
+    [guardados, catalogo, recargos]
+  );
 
   const cargar = () => {
     setCargando(true);
@@ -124,10 +137,12 @@ const TabSolicitudPreciosV2 = ({ rutaVista = '/maestros/codigosMaestros/solicitu
           onChange={() => alternarFila(item.id)}
         />
       );
+      case 'codigo': return <span className="font-bold text-emerald-600 dark:text-emerald-400">{item.codigo}</span>;
       case 'referencia': return <span className="text-gray-700 dark:text-gray-200 font-medium" title={item.referencia}>{item.referencia}</span>;
       case 'descripcion': return <span title={item.descripcion}>{item.descripcion || 'N/A'}</span>;
       case 'modulo': return <span title={textoModulos(item.modulos)}>{textoModulos(item.modulos)}</span>;
       case 'costo': return formatearPrecio(item.costo);
+      case 'vecesCosto': return <span className="tabular-nums" title={item.vecesCosto ? String(item.vecesCosto) : undefined}>{formatearVecesCosto(item.vecesCosto)}</span>;
       case 'venta': return <span className="font-bold">{formatearPrecio(item.venta)}</span>;
       case 'fecha': return <span className="text-gray-500 dark:text-gray-400">{formatearFechaSolicitud(item.agregadoEl) || '—'}</span>;
       default: return null;

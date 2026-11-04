@@ -124,11 +124,11 @@ describe('Consignación → Cargas: candado de ítems imputados', () => {
 });
 
 describe('Consignación → Cargas: solicitar actualización de precio', () => {
-  it('agrega la referencia con costo y venta unitarios, sin tocar el ítem', () => {
+  it('agrega la referencia con código, costo, veces costo y venta unitaria, sin tocar el ítem', () => {
     render(<CargasTab registro={{ gestionId: '500' }} items={[ITEM]} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);
     fireEvent.click(screen.getByTitle('Solicitar actualización de precio'));
     // Venta guardada 3000 por 2 unidades → 1500 por unidad.
-    expect(solicitarPrecio).toHaveBeenCalledWith({ referencia: 'REF-1', descripcion: 'PLACA', costo: 1000, venta: 1500 });
+    expect(solicitarPrecio).toHaveBeenCalledWith({ referencia: 'REF-1', codigo: 'C1', descripcion: 'PLACA', costo: 1000, vecesCosto: 1.5, venta: 1500 });
     expect(updateDoc).not.toHaveBeenCalled();
     expect(registrarLog).not.toHaveBeenCalled();
   });
