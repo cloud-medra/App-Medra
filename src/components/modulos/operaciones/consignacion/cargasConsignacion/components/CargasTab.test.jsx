@@ -51,9 +51,10 @@ describe('Consignación → Cargas: editar precio', () => {
     const precio = editar();
     fireEvent.change(precio, { target: { value: '800' } });
     expect(screen.getByText('Maestro: $1.000')).toBeInTheDocument();
-    // Total del ítem y total de la admisión, en vivo (800 × 2).
+    // Total del ítem (Ítems Registrados) y de la admisión, en vivo (800 × 2).
     expect(screen.getAllByText('$1.600')).toHaveLength(2);
-    expect(screen.getByText(/Venta \$2\.400/)).toBeInTheDocument(); // 800 × 1,5 × 2
+    // Venta en la fila de Cargas que se edita: 800 × 1,5 × 2.
+    expect(within(precio.closest('tr')).getByText(/\$2\.400/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByTitle('Guardar cambios'));
     await waitFor(() => expect(updateDoc).toHaveBeenCalledTimes(1));
@@ -82,14 +83,56 @@ describe('Consignación → Cargas: editar precio', () => {
     expect(updateDoc.mock.calls[0][1]).toEqual({ cantidad: 3, venta: 4500 });
   });
 
-  it('muestra el badge en las filas con precio especial', () => {
+  it('muestra el badge en las filas con precio especial (en las dos tablas)', () => {
     render(<CargasTab registro={{}} items={[{ ...ITEM, costo: 800, costoMaestro: 1000, precioEspecial: true, venta: 2400 }]} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);
-    expect(screen.getByTitle('Precio especial (maestro: $1.000)')).toBeInTheDocument();
+    expect(screen.getAllByTitle('Precio especial (maestro: $1.000)')).toHaveLength(2);
   });
 });
 
-// Candado de la admisión en la cabecera de "Ítems Registrados" (el de cada
-// ítem queda en la última columna, fuera de la vista en pantallas normales).
+// La edición y las Acciones están en "Cargas"; "Ítems Registrados" es solo consulta.
+describe('Consignación → Cargas: edición en la tabla Cargas', () => {
+  const montar = () => render(<CargasTab registro={{ gestionId: '500' }} items={[ITEM]} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);
+  const tabla = (titulo) => screen.getByText(titulo, { selector: 'h3' }).closest('div.rounded-lg').querySelector('table');
+
+  it('Cargas muestra referencia, descripción, costo y las acciones; Ítems Registrados no tiene acciones', () => {
+    montar();
+    const cargas = tabla('Cargas');
+    expect(within(cargas).getByText('REF-1')).toBeInTheDocument();
+    expect(within(cargas).getByText('PLACA')).toBeInTheDocument();
+    expect(within(cargas).getByText('$1.000')).toBeInTheDocument();
+    expect(within(cargas).getByTitle('Editar ítem')).toBeInTheDocument();
+    expect(within(cargas).getByTitle('Solicitar actualización de precio')).toBeInTheDocument();
+    const registrados = tabla('Ítems Registrados');
+    expect(within(registrados).queryByText('Acciones')).toBeNull();
+    expect(within(registrados).queryByRole('button')).toBeNull();
+    expect(within(registrados).queryByRole('combobox')).toBeNull();
+    // Lote y vencimiento no son columnas de Cargas fuera de la edición.
+    expect(within(cargas).queryByText('L1')).toBeNull();
+    expect(within(cargas).queryByLabelText('Lote')).toBeNull();
+  });
+
+  it('lote y vencimiento se editan en la fila expandida y se guardan con el mismo ✓', async () => {
+    montar();
+    fireEvent.click(screen.getByTitle('Editar ítem'));
+    const cargas = tabla('Cargas');
+    fireEvent.change(within(cargas).getByLabelText('Lote'), { target: { value: 'L2' } });
+    fireEvent.change(within(cargas).getByLabelText('Vencimiento'), { target: { value: '2027-05-31' } });
+    fireEvent.click(screen.getByTitle('Guardar cambios'));
+    await waitFor(() => expect(updateDoc).toHaveBeenCalledTimes(1));
+    expect(updateDoc.mock.calls[0][1]).toEqual({ lote: 'L2', vencimiento: '2027-05-31' });
+    await waitFor(() => expect(within(tabla('Cargas')).queryByLabelText('Lote')).toBeNull());
+  });
+
+  it('cancelar cierra la edición sin guardar', () => {
+    montar();
+    fireEvent.click(screen.getByTitle('Editar ítem'));
+    fireEvent.click(screen.getByTitle('Cancelar edición'));
+    expect(screen.queryByLabelText('Precio')).toBeNull();
+    expect(updateDoc).not.toHaveBeenCalled();
+  });
+});
+
+// Candado de la admisión en la cabecera de "Cargas" (el de cada ítem, en Acciones).
 describe('Consignación → Cargas: candado de ítems imputados', () => {
   const imputado = (id, extra = {}) => ({ ...ITEM, id, estado: 'SOLICITADO', periodoAnio: 2026, periodoMes: 'octubre', ...extra });
   const montar = (items) => render(<CargasTab registro={{ gestionId: '500' }} items={items} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);

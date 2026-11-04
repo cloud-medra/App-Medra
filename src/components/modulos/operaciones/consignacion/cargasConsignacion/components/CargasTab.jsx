@@ -34,7 +34,27 @@ const formatearFechaTabla = (fechaString) => {
   return `${dd}-${mm}-${yyyy}`;
 };
 
+// Columnas de "Cargas" (redimensionables; ancho y mínimo en px). Es la tabla
+// donde se edita, como Cargas de Implantes: una fila por ítem con las
+// Acciones. Lote y vencimiento no son columnas: se editan en una fila
+// expandida debajo de la que está en edición.
+const COLUMNAS_CARGAS = [
+  { key: 'estadoCarga', label: 'Estado Carga', ancho: 110, min: 100 },
+  { key: 'admision', label: 'Admisión', ancho: 80, min: 60 },
+  { key: 'codigo', label: 'Código', ancho: 90, min: 60 },
+  { key: 'referencia', label: 'Referencia', ancho: 150, min: 90 },
+  { key: 'descripcion', label: 'Descripción', ancho: 220, min: 90 },
+  { key: 'cantidad', label: 'Cantidad', ancho: 70, min: 55, extra: 'text-center' },
+  { key: 'costo', label: 'Costo', ancho: 115, min: 70 },
+  { key: 'venta', label: 'Venta', ancho: 125, min: 70 },
+  { key: 'recargo', label: 'Recargo', ancho: 70, min: 55, extra: 'text-center' },
+  { key: 'estado', label: 'Estado', ancho: 135, min: 80 },
+  { key: 'acciones', label: 'Acciones', ancho: 90, min: 80, extra: 'text-center' }
+];
+const COLSPAN_CARGAS = COLUMNAS_CARGAS.length + 1;
+
 // Columnas de "Ítems Registrados" (redimensionables; ancho y mínimo en px).
+// Solo consulta: sin Acciones (la edición está en "Cargas").
 const COLUMNAS_ITEMS = [
   { key: 'codigo', label: 'Código', ancho: 95, min: 60 },
   { key: 'referencia', label: 'Referencia', ancho: 140, min: 80 },
@@ -48,8 +68,7 @@ const COLUMNAS_ITEMS = [
   { key: 'delivery', label: 'Delivery', ancho: 105, min: 65 },
   { key: 'numGuia', label: 'N° Guía', ancho: 95, min: 60 },
   { key: 'atributo', label: 'Atributo', ancho: 110, min: 65 },
-  { key: 'estadoCarga', label: 'Estado Carga', ancho: 125, min: 110 },
-  { key: 'acciones', label: 'Acciones', ancho: 85, min: 75, extra: 'text-center' }
+  { key: 'estadoCarga', label: 'Estado Carga', ancho: 125, min: 110 }
 ];
 // +1 por la columna de relleno (ColgroupRedimensionable con `relleno`).
 const COLSPAN_ITEMS = COLUMNAS_ITEMS.length + 1;
@@ -233,7 +252,6 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
                 {p.tipo || '-'}
               </td>
               <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate" />
-              <td className="px-2.5 py-1 border-b border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate" />
               <TdRelleno className="border-b border-slate-100 dark:border-gray-700/60" />
             </tr>
           );
@@ -329,7 +347,6 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
               {cargandoVinculos ? '...' : (vinculo?.tipo || '-')}
             </td>
             <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate" />
-            <td className="px-2.5 py-1 border-b border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate" />
             <TdRelleno className="border-b border-slate-100 dark:border-gray-700/60" />
           </tr>
         );
@@ -391,6 +408,13 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
   // en un monitor normal); los anchos guardados no se modifican.
   const [contenedorItems, setContenedorItems] = useState(null);
   const { anchos, anchoTotal: anchoTotalTabla } = useAnchosAjustados(COLUMNAS_ITEMS, anchosGuardados, contenedorItems);
+  // Lo mismo para "Cargas", con sus anchos recordados aparte.
+  const {
+    anchos: anchosCargasGuardados, handleResize: handleResizeCargas,
+    restablecerAnchos: restablecerAnchosCargas, personalizados: personalizadosCargas
+  } = useColumnResize(COLUMNAS_CARGAS, { clave: 'cargasConsignacion.cargas', usuario: userData?.uid });
+  const [contenedorCargas, setContenedorCargas] = useState(null);
+  const { anchos: anchosCargas, anchoTotal: anchoTotalCargas } = useAnchosAjustados(COLUMNAS_CARGAS, anchosCargasGuardados, contenedorCargas);
   const { hasPermission } = useGranularPermission();
 
   const registrarLog = (docRef, accion, detalles) => registrarLogConsignacion(docRef, accion, detalles, userData);
@@ -577,7 +601,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
     }
   };
 
-  // Edición inline por fila de la tabla "Ítems Registrados" — mismo patrón
+  // Edición inline por fila de la tabla "Cargas" — mismo patrón
   // que CotizacionCard.jsx de Implantes (lápiz → fila editable → guardar),
   // pero acá cada ítem es un documento propio y se persiste al toque con
   // updateDoc (no hay "Guardar Todo" en este módulo). El recargo/venta no
@@ -587,9 +611,9 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
   const [borradorItem, setBorradorItem] = useState(BORRADOR_ITEM_VACIO);
   const [guardandoEdicionId, setGuardandoEdicionId] = useState(null);
 
-  // Vista previa en vivo mientras se edita un ítem: la tabla "Cargas" (venta,
-  // recargo) y el total de la admisión usan el precio y la cantidad del
-  // borrador. Se calcula en el cliente, sin lecturas.
+  // Vista previa en vivo mientras se edita un ítem: las dos tablas (venta,
+  // recargo, total) y el total de la admisión usan el precio y la cantidad
+  // del borrador. Se calcula en el cliente, sin lecturas.
   const itemsVista = useMemo(() => items.map((it) => {
     if (it.id !== editandoId) return it;
     const costo = precioANumero(borradorItem.costo);
@@ -635,10 +659,9 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
     }
   };
 
-  // Candado de la admisión, en la cabecera de "Ítems Registrados" (como el
-  // botón "Imputado" del bloque en Implantes): el candado de cada ítem va en
-  // la última columna de la tabla, que en pantallas normales queda fuera de
-  // la vista. Desbloquea de una vez los ítems SOLICITADO cuyo período está
+  // Candado de la admisión, en la cabecera de "Cargas" (como el botón
+  // "Imputado" del bloque en Implantes); el de cada ítem va en Acciones.
+  // Desbloquea de una vez los ítems SOLICITADO cuyo período está
   // abierto (1 consulta por período distinto) y avisa de los demás.
   const itemsImputados = items.filter(it => (it.estado || '').toUpperCase() === 'SOLICITADO');
   const imputadosBloqueados = itemsImputados.filter(it => !desbloqueados.has(it.id));
@@ -960,107 +983,13 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
         </div>
       </div>
 
-      {/* Contenedor 2: Cargas — Admisión, Código, Cantidad, Venta, Estado */}
+      {/* Contenedor 2: Cargas — una fila por ítem. Acá se edita (como Cargas de
+          Implantes): lápiz, candado y solicitud de precio en Acciones. */}
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
           <UploadCloud size={13} className="text-[#2383C2]" />
           <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
             Cargas
-          </h3>
-        </div>
-
-        <div className="overflow-auto">
-          <table className="w-full text-left text-[10px] border-collapse">
-            <thead className="bg-slate-50 dark:bg-gray-900/60">
-              <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
-                <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Estado Carga</th>
-                <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Admisión</th>
-                <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Código</th>
-                <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700 text-center">Cantidad</th>
-                <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Venta</th>
-                <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700 text-center">Recargo</th>
-                <th className="px-2.5 py-1.5 border-b border-slate-200 dark:border-gray-700">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-3 py-4 text-center text-slate-400 dark:text-gray-500">
-                    Sin ítems registrados para esta admisión
-                  </td>
-                </tr>
-              ) : (
-                itemsVista.map((it) => {
-                  const estadoKey = (it.estado || 'INGRESADO').toUpperCase();
-                  const costo = Number(it.costo) || 0;
-                  const { vecesCosto: vecesCostoCalculado, venta: ventaCalculada } = calcularVenta(it);
-                  const vecesCosto = it.recargoVecesCosto ?? vecesCostoCalculado;
-                  const venta = it.venta ?? ventaCalculada;
-                  const actualizando = actualizandoEstadoId === it.id;
-                  const estaSolicitadoResumen = estadoKey === 'SOLICITADO';
-                  const candadoBloqueadoResumen = estaSolicitadoResumen && !desbloqueados.has(it.id);
-                  const estadoCargaValor = ESTADO_CARGA_OPTIONS.includes(estadoKey)
-                    ? estadoKey
-                    : (estaSolicitadoResumen ? 'CARGADO' : 'PENDIENTE');
-                  return (
-                    <tr key={it.id} className={`border-l-2 border-transparent hover:border-[#2383C2] transition-colors ${ESTADO_CARGA_ROW_STYLE[estadoCargaValor]}`}>
-                      <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60">
-                        <select
-                          value={estadoCargaValor}
-                          disabled={actualizando || candadoBloqueadoResumen}
-                          onChange={(e) => handleActualizarEstadoCarga(it, e.target.value)}
-                          title={candadoBloqueadoResumen ? 'Bloqueado: ya fue solicitado/imputado — desbloqueá desde "Ítems Registrados"' : undefined}
-                          className={`h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}
-                        >
-                          {ESTADO_CARGA_OPTIONS.map(op => (
-                            <option key={op} value={op}>{op}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-semibold text-[#2383C2]">
-                        {registro?.gestionId || 'N/A'}
-                      </td>
-                      <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-num text-emerald-600 dark:text-emerald-400">
-                        {it.codigo || 'S/C'}
-                      </td>
-                      <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-slate-700 dark:text-gray-200 font-semibold">
-                        {it.cantidad ?? 0}
-                      </td>
-                      <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 font-semibold">
-                        {venta != null ? (
-                          <>
-                            ${Number(venta).toLocaleString('es-CL')}
-                            {editandoId === it.id && <span className="ml-1 text-[8px] font-normal text-blue-600 dark:text-blue-400 italic">(en edición)</span>}
-                          </>
-                        ) : costo === 0 ? (
-                          <span className="text-slate-400 dark:text-gray-500 italic font-normal">Sin costo</span>
-                        ) : (
-                          <span className="text-amber-600 dark:text-amber-400 italic font-normal">Sin regla</span>
-                        )}
-                      </td>
-                      <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-slate-700 dark:text-gray-200">
-                        {vecesCosto != null ? `${vecesCosto} x` : '-'}
-                      </td>
-                      <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60">
-                        <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold rounded-full uppercase ${ESTADO_BADGE[estadoKey] || 'bg-slate-100 text-slate-600'}`}>
-                          {estadoKey}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Contenedor 3: Ítems Registrados — tabla completa, incluyendo el ítem vinculado del delivery */}
-      <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
-        <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
-          <Package size={13} className="text-[#2383C2]" />
-          <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
-            Ítems Registrados
           </h3>
           {itemsImputados.length > 0 && puedeDesbloquearCandado && (
             <button
@@ -1082,7 +1011,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
               <span>{admisionBloqueada ? 'Imputado' : 'Editando'}</span>
             </button>
           )}
-          <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} className="ml-auto h-6" />
+          <BotonRestablecerAnchos onClick={restablecerAnchosCargas} personalizados={personalizadosCargas} className="ml-auto h-6" />
         </div>
 
         {admisionBloqueada && (
@@ -1096,6 +1025,336 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
             </span>
           </div>
         )}
+
+        <div className="overflow-auto" ref={setContenedorCargas}>
+          <table
+            className="text-left text-[10px] border-collapse"
+            style={{ tableLayout: 'fixed', width: anchoTotalCargas, minWidth: '100%' }}
+          >
+            <ColgroupRedimensionable columnas={COLUMNAS_CARGAS} anchos={anchosCargas} relleno />
+            <thead className="bg-slate-50 dark:bg-gray-900/60">
+              <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+                {COLUMNAS_CARGAS.map((col) => (
+                  <ThRedimensionable
+                    key={col.key}
+                    col={col}
+                    anchos={anchosCargas}
+                    onResize={handleResizeCargas}
+                    className={`px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700 ${col.extra || ''}`}
+                  >
+                    {col.label}
+                  </ThRedimensionable>
+                ))}
+                <ThRelleno className="border-b border-slate-200 dark:border-gray-700" />
+              </tr>
+            </thead>
+            <tbody>
+              {items.length === 0 ? (
+                <tr>
+                  <td colSpan={COLSPAN_CARGAS} className="px-3 py-4 text-center text-slate-400 dark:text-gray-500">
+                    Sin ítems registrados para esta admisión
+                  </td>
+                </tr>
+              ) : (
+                itemsVista.map((it) => {
+                  const estadoKey = (it.estado || 'INGRESADO').toUpperCase();
+                  const costo = Number(it.costo) || 0;
+                  const { vecesCosto: vecesCostoCalculado, venta: ventaCalculada } = calcularVenta(it);
+                  const vecesCosto = it.recargoVecesCosto ?? vecesCostoCalculado;
+                  const venta = it.venta ?? ventaCalculada;
+                  const actualizando = actualizandoEstadoId === it.id;
+                  const estaSolicitado = estadoKey === 'SOLICITADO';
+                  const candadoBloqueado = estaSolicitado && !desbloqueados.has(it.id);
+                  const estadoCargaValor = ESTADO_CARGA_OPTIONS.includes(estadoKey)
+                    ? estadoKey
+                    : (estaSolicitado ? 'CARGADO' : 'PENDIENTE');
+                  const enEdicion = editandoId === it.id;
+                  const guardandoEsteItem = guardandoEdicionId === it.id;
+                  const verificandoEsteCandado = verificandoCandadoId === it.id;
+                  // Las acciones que guardan reciben el ítem tal como está en la
+                  // base: el de itemsVista trae la vista previa del borrador.
+                  const guardado = enEdicion ? items.find((i) => i.id === it.id) : it;
+                  const celda = 'px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60';
+                  const input = 'h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none';
+                  return (
+                    <React.Fragment key={it.id}>
+                      <tr className={enEdicion
+                        ? 'bg-blue-50/60 dark:bg-blue-950/20'
+                        : `border-l-2 border-transparent hover:border-[#2383C2] transition-colors ${ESTADO_CARGA_ROW_STYLE[estadoCargaValor]}`}
+                      >
+                        <td className={celda}>
+                          <select
+                            value={estadoCargaValor}
+                            disabled={actualizando || candadoBloqueado}
+                            onChange={(e) => handleActualizarEstadoCarga(guardado, e.target.value)}
+                            title={candadoBloqueado ? 'Bloqueado: ya fue solicitado/imputado — desbloquealo con el candado' : undefined}
+                            className={`h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}
+                          >
+                            {ESTADO_CARGA_OPTIONS.map(op => (
+                              <option key={op} value={op}>{op}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className={`${celda} font-semibold text-[#2383C2] truncate`}>
+                          {registro?.gestionId || 'N/A'}
+                        </td>
+                        {enEdicion ? (
+                          <td className={`${celda} font-num truncate`}>
+                            {borradorItem.codigo || <span className="text-red-500 font-bold">S/C</span>}
+                          </td>
+                        ) : (
+                          <td className={`${celda} font-num text-emerald-600 dark:text-emerald-400 truncate`} title={it.codigo || 'S/C'}>
+                            {it.codigo || 'S/C'}
+                          </td>
+                        )}
+                        {enEdicion ? (
+                          <td className={`${celda} relative`} ref={containerRefEdicion}>
+                            <input
+                              type="text"
+                              value={borradorItem.referencia}
+                              onChange={e => handleReferenciaEdicionChange(e.target.value)}
+                              onFocus={() => sugerenciasEdicion.length > 0 && setMostrarSugEdicion(true)}
+                              autoComplete="off"
+                              autoFocus
+                              aria-label="Referencia"
+                              className={`w-full ${input}`}
+                            />
+                            {mostrarSugEdicion && (
+                              <DropdownReferenciaPortal anchorRef={containerRefEdicion} portalRef={portalRefEdicion}>
+                                <div className="w-56 max-h-48 overflow-y-auto bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded shadow-lg">
+                                  {buscandoEdicion ? (
+                                    <div className="px-2.5 py-2 text-[10px] text-slate-400 flex items-center gap-1.5">
+                                      <Loader2 size={11} className="animate-spin" /> Buscando...
+                                    </div>
+                                  ) : sugerenciasEdicion.length === 0 ? (
+                                    <div className="px-2.5 py-2 text-[10px] text-slate-400">Sin coincidencias</div>
+                                  ) : (
+                                    sugerenciasEdicion.map(sug => (
+                                      <button
+                                        key={sug.id}
+                                        type="button"
+                                        onClick={() => handleSeleccionarSugerenciaEdicion(sug)}
+                                        className="w-full text-left px-2.5 py-1.5 hover:bg-slate-100 dark:hover:bg-gray-700/60 border-b border-slate-100 dark:border-gray-700/50 last:border-b-0"
+                                      >
+                                        <div className="text-[10px] font-semibold text-slate-700 dark:text-gray-200 truncate">{sug.referencia}</div>
+                                        <div className="text-[9px] text-slate-400 dark:text-gray-500 flex items-center gap-1.5">
+                                          <span className="font-num text-emerald-600 dark:text-emerald-400">{sug.codigo || 'S/C'}</span>
+                                          <span>·</span>
+                                          <span className="truncate">{sug.empresa}</span>
+                                        </div>
+                                      </button>
+                                    ))
+                                  )}
+                                </div>
+                              </DropdownReferenciaPortal>
+                            )}
+                          </td>
+                        ) : (
+                          <td className={`${celda} font-medium text-slate-700 dark:text-gray-200 truncate`} title={it.referencia}>
+                            {it.referencia || '-'}
+                          </td>
+                        )}
+                        <td
+                          className={`${celda} text-slate-500 dark:text-gray-400 truncate`}
+                          title={enEdicion ? borradorItem.descripcion : it.descripcion}
+                        >
+                          {(enEdicion ? borradorItem.descripcion : it.descripcion) || '-'}
+                        </td>
+                        <td className={`${celda} text-center text-slate-700 dark:text-gray-200 font-semibold truncate`}>
+                          {enEdicion ? (
+                            <input
+                              type="number"
+                              value={borradorItem.cantidad}
+                              onChange={e => setBorradorItem(prev => ({ ...prev, cantidad: e.target.value }))}
+                              aria-label="Cantidad"
+                              className={`w-full max-w-14 text-center ${input}`}
+                            />
+                          ) : (it.cantidad ?? 0)}
+                        </td>
+                        {enEdicion ? (
+                          // Precio editable (solo esta carga; el maestro no se toca).
+                          <td className={celda}>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={borradorItem.costo}
+                              onChange={e => setBorradorItem(prev => ({ ...prev, costo: e.target.value }))}
+                              aria-label="Precio"
+                              aria-invalid={Boolean(errorPrecio(borradorItem.costo))}
+                              title={errorPrecio(borradorItem.costo) || 'Precio de esta carga (no modifica el maestro)'}
+                              className={`w-full h-6.5 px-1 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-right ${errorPrecio(borradorItem.costo) ? 'border-red-400 dark:border-red-600' : 'border-blue-300 dark:border-blue-700'}`}
+                            />
+                            {borradorItem.costoMaestro !== '' && precioANumero(borradorItem.costo) !== Number(borradorItem.costoMaestro) && (
+                              <div className="text-[8px] text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">
+                                Maestro: ${Number(borradorItem.costoMaestro).toLocaleString('es-CL')}
+                              </div>
+                            )}
+                          </td>
+                        ) : (
+                          <td className={`${celda} text-emerald-700 dark:text-emerald-400 truncate`} title={costo ? `$${costo.toLocaleString('es-CL')}` : '-'}>
+                            {costo ? `$${costo.toLocaleString('es-CL')}` : '-'}
+                            {esPrecioEspecial(it) && <BadgePrecioEspecial costoMaestro={it.costoMaestro} />}
+                          </td>
+                        )}
+                        {/* Venta y recargo en vivo con el precio y la cantidad del borrador (itemsVista). */}
+                        <td className={`${celda} text-emerald-700 dark:text-emerald-400 font-semibold truncate`}>
+                          {venta != null ? (
+                            <>
+                              ${Number(venta).toLocaleString('es-CL')}
+                              {enEdicion && <span className="ml-1 text-[8px] font-normal text-blue-600 dark:text-blue-400 italic">(en edición)</span>}
+                            </>
+                          ) : costo === 0 ? (
+                            <span className="text-slate-400 dark:text-gray-500 italic font-normal">Sin costo</span>
+                          ) : (
+                            <span className="text-amber-600 dark:text-amber-400 italic font-normal">Sin regla</span>
+                          )}
+                        </td>
+                        <td className={`${celda} text-center text-slate-700 dark:text-gray-200 truncate`}>
+                          {vecesCosto != null ? `${vecesCosto} x` : '-'}
+                        </td>
+                        <td className={`${celda} whitespace-nowrap overflow-hidden`}>
+                          <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold rounded-full uppercase ${ESTADO_BADGE[estadoKey] || 'bg-slate-100 text-slate-600'}`}>
+                            {estadoKey}
+                          </span>
+                          {/* Editado después de solicitar: se descarga en "Solicitudes de modificaciones". */}
+                          {it.modificacionPendiente && (
+                            <span
+                              title="Modificación pendiente: cambios después de solicitar, aún no descargados en Solicitudes de modificaciones"
+                              className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full uppercase bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                            >
+                              Modif. pendiente
+                            </span>
+                          )}
+                        </td>
+                        <td className={`${celda} text-center whitespace-nowrap`}>
+                          {enEdicion ? (
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleActualizarDesdeMaestro(guardado)}
+                                disabled={guardandoEsteItem || actualizandoMaestroId === it.id}
+                                title="Actualizar desde maestro (descripción, código, empresa y precio)"
+                                className="text-blue-600 hover:text-blue-800 transition p-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-40"
+                              >
+                                <RefreshCw size={13} className={actualizandoMaestroId === it.id ? 'animate-spin' : ''} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => guardarEdicionItem(guardado)}
+                                disabled={guardandoEsteItem}
+                                title="Guardar cambios"
+                                className="text-emerald-600 hover:text-emerald-800 transition p-0.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-40"
+                              >
+                                {guardandoEsteItem ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelarEdicionItem}
+                                disabled={guardandoEsteItem}
+                                title="Cancelar edición"
+                                className="text-slate-400 hover:text-slate-600 transition p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40"
+                              >
+                                <X size={13} />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              {candadoBloqueado ? (
+                                puedeDesbloquearCandado ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAbrirCandadoItem(it)}
+                                    disabled={verificandoEsteCandado}
+                                    title="Este ítem ya está imputado — click para desbloquear edición"
+                                    className="text-amber-600 hover:text-amber-800 transition p-0.5 rounded hover:bg-amber-50 dark:hover:bg-amber-950/30 disabled:opacity-40"
+                                  >
+                                    {verificandoEsteCandado ? <Loader2 size={12} className="animate-spin" /> : <Lock size={12} />}
+                                  </button>
+                                ) : (
+                                  <span title="Bloqueado: ya fue solicitado/imputado. No tenés permiso para desbloquear." className="inline-flex text-slate-300 dark:text-gray-600">
+                                    <Lock size={12} />
+                                  </span>
+                                )
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => iniciarEdicionItem(it)}
+                                  title={estaSolicitado ? 'Desbloqueado — editá y guardá para volver a bloquearlo' : 'Editar ítem'}
+                                  className="text-blue-600 hover:text-blue-800 transition p-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                                >
+                                  {estaSolicitado ? <Unlock size={12} className="text-emerald-600" /> : <Pencil size={12} />}
+                                </button>
+                              )}
+                              {/* Solo agrega la referencia a Maestro Códigos → Solicitud de precios a TI;
+                                  no cambia el ítem, así que también está con el candado cerrado. Fuera de
+                                  edición `it` es el ítem guardado (itemsVista solo cambia el que se edita). */}
+                              {puedeSolicitarPrecioConsignacion(it) && (
+                                <button
+                                  type="button"
+                                  onClick={() => { const calculado = calcularVenta(it); solicitarPrecio(solicitudDesdeItemConsignacion(it, it.venta ?? calculado.venta, it.recargoVecesCosto ?? calculado.vecesCosto)); }}
+                                  title="Solicitar actualización de precio"
+                                  aria-label="Solicitar actualización de precio"
+                                  className="ml-1.5 text-amber-600 hover:text-amber-800 transition p-0.5 rounded hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                >
+                                  <ListPlus size={13} />
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </td>
+                        <TdRelleno className="border-b border-slate-100 dark:border-gray-700/60" />
+                      </tr>
+
+                      {/* Lote y vencimiento no son columnas de "Cargas" (se ven en
+                          "Ítems Registrados"): se editan acá y se guardan con el mismo ✓. */}
+                      {enEdicion && (
+                        <tr className="bg-blue-50/60 dark:bg-blue-950/20">
+                          <td colSpan={COLSPAN_CARGAS} className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                              <label className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-slate-500 dark:text-gray-400">
+                                Lote
+                                <input
+                                  type="text"
+                                  value={borradorItem.lote}
+                                  onChange={e => setBorradorItem(prev => ({ ...prev, lote: e.target.value }))}
+                                  placeholder="Sin lote"
+                                  className={`w-32 font-normal normal-case ${input}`}
+                                />
+                              </label>
+                              <label className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-slate-500 dark:text-gray-400">
+                                Vencimiento
+                                <input
+                                  type="date"
+                                  value={borradorItem.vencimiento}
+                                  onChange={e => setBorradorItem(prev => ({ ...prev, vencimiento: e.target.value }))}
+                                  className={`font-normal normal-case ${input}`}
+                                />
+                              </label>
+                              <span className="text-[9px] text-slate-400 dark:text-gray-500">Se guardan con ✓ junto al resto de la fila.</span>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Contenedor 3: Ítems Registrados — solo consulta (la edición está en
+          "Cargas"), incluyendo el ítem vinculado del delivery */}
+      <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
+        <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
+          <Package size={13} className="text-[#2383C2]" />
+          <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+            Ítems Registrados
+          </h3>
+          <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} className="ml-auto h-6" />
+        </div>
 
         <div className="overflow-auto" ref={setContenedorItems}>
           <table
@@ -1129,11 +1388,11 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
               ) : (
                 (() => {
                   const deliveriesMostrados = new Set();
-                  return items.map((it) => {
+                  // itemsVista: el ítem en edición muestra cantidad, costo y total del borrador.
+                  return itemsVista.map((it) => {
                     const estadoKey = (it.estado || 'INGRESADO').toUpperCase();
                     const estaSolicitado = estadoKey === 'SOLICITADO';
-                    const desbloqueado = desbloqueados.has(it.id);
-                    const candadoBloqueado = estaSolicitado && !desbloqueado;
+                    const candadoBloqueado = estaSolicitado && !desbloqueados.has(it.id);
                     const estadoCargaValor = ESTADO_CARGA_OPTIONS.includes(estadoKey)
                       ? estadoKey
                       : (estaSolicitado ? 'CARGADO' : 'PENDIENTE');
@@ -1142,185 +1401,10 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                     const mostrarDesglose = Boolean(deliveryValor) && !deliveriesMostrados.has(deliveryValor);
                     if (mostrarDesglose) deliveriesMostrados.add(deliveryValor);
                     const pendiente = pendientes[it.id]?.payload;
-                    const actualizandoEstado = actualizandoEstadoId === it.id;
-                    const enEdicion = editandoId === it.id;
-                    const guardandoEsteItem = guardandoEdicionId === it.id;
-                    const verificandoEsteCandado = verificandoCandadoId === it.id;
-
-                    if (enEdicion) {
-                      return (
-                        <tr key={it.id} className="bg-blue-50/60 dark:bg-blue-950/20">
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-num text-[9px] truncate">
-                            {borradorItem.codigo || <span className="text-red-500 font-bold">S/C</span>}
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 relative truncate" ref={containerRefEdicion}>
-                            <input
-                              type="text"
-                              value={borradorItem.referencia}
-                              onChange={e => handleReferenciaEdicionChange(e.target.value)}
-                              onFocus={() => sugerenciasEdicion.length > 0 && setMostrarSugEdicion(true)}
-                              autoComplete="off"
-                              autoFocus
-                              className="w-full h-6.5 px-1.5 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
-                            />
-                            {mostrarSugEdicion && (
-                              <DropdownReferenciaPortal anchorRef={containerRefEdicion} portalRef={portalRefEdicion}>
-                                <div className="w-56 max-h-48 overflow-y-auto bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded shadow-lg">
-                                  {buscandoEdicion ? (
-                                    <div className="px-2.5 py-2 text-[10px] text-slate-400 flex items-center gap-1.5">
-                                      <Loader2 size={11} className="animate-spin" /> Buscando...
-                                    </div>
-                                  ) : sugerenciasEdicion.length === 0 ? (
-                                    <div className="px-2.5 py-2 text-[10px] text-slate-400">Sin coincidencias</div>
-                                  ) : (
-                                    sugerenciasEdicion.map(sug => (
-                                      <button
-                                        key={sug.id}
-                                        type="button"
-                                        onClick={() => handleSeleccionarSugerenciaEdicion(sug)}
-                                        className="w-full text-left px-2.5 py-1.5 hover:bg-slate-100 dark:hover:bg-gray-700/60 border-b border-slate-100 dark:border-gray-700/50 last:border-b-0"
-                                      >
-                                        <div className="text-[10px] font-semibold text-slate-700 dark:text-gray-200 truncate">{sug.referencia}</div>
-                                        <div className="text-[9px] text-slate-400 dark:text-gray-500 flex items-center gap-1.5">
-                                          <span className="font-num text-emerald-600 dark:text-emerald-400">{sug.codigo || 'S/C'}</span>
-                                          <span>·</span>
-                                          <span className="truncate">{sug.empresa}</span>
-                                        </div>
-                                      </button>
-                                    ))
-                                  )}
-                                </div>
-                              </DropdownReferenciaPortal>
-                            )}
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] text-slate-500 dark:text-gray-400 truncate" title={borradorItem.descripcion}>
-                            {borradorItem.descripcion || '-'}
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] text-slate-600 dark:text-gray-300 truncate" title={renderP(borradorItem.empresa)}>
-                            {renderP(borradorItem.empresa)}
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center truncate">
-                            <input
-                              type="number"
-                              value={borradorItem.cantidad}
-                              onChange={e => setBorradorItem(prev => ({ ...prev, cantidad: e.target.value }))}
-                              className="w-14 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-center"
-                            />
-                          </td>
-                          {/* Precio editable (solo esta carga; el maestro no se toca). */}
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60">
-                            <input
-                              type="number"
-                              min="0"
-                              step="any"
-                              value={borradorItem.costo}
-                              onChange={e => setBorradorItem(prev => ({ ...prev, costo: e.target.value }))}
-                              aria-label="Precio"
-                              aria-invalid={Boolean(errorPrecio(borradorItem.costo))}
-                              title={errorPrecio(borradorItem.costo) || 'Precio de esta carga (no modifica el maestro)'}
-                              className={`w-20 h-6.5 px-1 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-right ${errorPrecio(borradorItem.costo) ? 'border-red-400 dark:border-red-600' : 'border-blue-300 dark:border-blue-700'}`}
-                            />
-                            {borradorItem.costoMaestro !== '' && precioANumero(borradorItem.costo) !== Number(borradorItem.costoMaestro) && (
-                              <div className="text-[8px] text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">
-                                Maestro: ${Number(borradorItem.costoMaestro).toLocaleString('es-CL')}
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 truncate">
-                            <input
-                              type="text"
-                              value={borradorItem.lote}
-                              onChange={e => setBorradorItem(prev => ({ ...prev, lote: e.target.value }))}
-                              placeholder="Sin lote"
-                              className="w-20 h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
-                            />
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 truncate">
-                            <input
-                              type="date"
-                              value={borradorItem.vencimiento}
-                              onChange={e => setBorradorItem(prev => ({ ...prev, vencimiento: e.target.value }))}
-                              className="h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
-                            />
-                          </td>
-                          {/* Total y venta en vivo con el precio y la cantidad del borrador. */}
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] whitespace-nowrap">
-                            {(() => {
-                              const costoBorrador = precioANumero(borradorItem.costo);
-                              if (!Number.isFinite(costoBorrador) || costoBorrador <= 0) return <span className="text-slate-400 dark:text-gray-500">—</span>;
-                              const v = calcularVenta({ costo: costoBorrador, cantidad: borradorItem.cantidad });
-                              return (
-                                <>
-                                  <div className="text-emerald-700 dark:text-emerald-400 font-semibold">${Math.round(v.total).toLocaleString('es-CL')}</div>
-                                  <div className="text-slate-500 dark:text-gray-400" title="Venta = precio × veces costo × cantidad">
-                                    {v.venta != null
-                                      ? <>Venta ${v.venta.toLocaleString('es-CL')} · {v.vecesCosto} x</>
-                                      : <span className="text-amber-600 dark:text-amber-400 italic">Sin regla de recargo</span>}
-                                  </div>
-                                </>
-                              );
-                            })()}
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] text-slate-600 dark:text-gray-300 truncate" title={it.delivery || '-'}>
-                            {it.delivery || '-'}
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] text-slate-600 dark:text-gray-300 truncate">
-                            <NumeroGuiaCell it={it} pendiente={pendiente} />
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-[9px] text-slate-600 dark:text-gray-300 truncate" title={it.atributo || '-'}>
-                            {it.atributo || '-'}
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 whitespace-nowrap">
-                            <select
-                              value={estadoCargaValor}
-                              disabled={actualizandoEstado}
-                              onChange={(e) => handleActualizarEstadoCarga(it, e.target.value)}
-                              className={`h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}
-                            >
-                              {ESTADO_CARGA_OPTIONS.map(op => (
-                                <option key={op} value={op}>{op}</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-2 py-1.5 border-b border-slate-100 dark:border-gray-700/60 text-center whitespace-nowrap">
-                            <div className="flex items-center justify-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => handleActualizarDesdeMaestro(it)}
-                                disabled={guardandoEsteItem || actualizandoMaestroId === it.id}
-                                title="Actualizar desde maestro (descripción, código, empresa y precio)"
-                                className="text-blue-600 hover:text-blue-800 transition p-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/30 disabled:opacity-40"
-                              >
-                                <RefreshCw size={13} className={actualizandoMaestroId === it.id ? 'animate-spin' : ''} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => guardarEdicionItem(it)}
-                                disabled={guardandoEsteItem}
-                                title="Guardar cambios"
-                                className="text-emerald-600 hover:text-emerald-800 transition p-0.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-950/30 disabled:opacity-40"
-                              >
-                                {guardandoEsteItem ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={cancelarEdicionItem}
-                                disabled={guardandoEsteItem}
-                                title="Cancelar edición"
-                                className="text-slate-400 hover:text-slate-600 transition p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40"
-                              >
-                                <X size={13} />
-                              </button>
-                            </div>
-                          </td>
-                          <TdRelleno className="border-b border-slate-100 dark:border-gray-700/60" />
-                        </tr>
-                      );
-                    }
 
                     return (
                       <React.Fragment key={it.id}>
-                        <tr className="border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors">
+                        <tr className={`border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors ${editandoId === it.id ? 'bg-blue-50/40 dark:bg-blue-950/10' : ''}`}>
                           <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-num text-emerald-600 dark:text-emerald-400 truncate" title={it.codigo || 'S/C'}>
                             {it.codigo || 'S/C'}
                           </td>
@@ -1360,7 +1444,8 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                           <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate" title={it.atributo || '-'}>
                             {it.atributo || '-'}
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 whitespace-nowrap">
+                          {/* Solo lectura: el estado se cambia en "Cargas". */}
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 whitespace-nowrap overflow-hidden">
                             {candadoBloqueado ? (
                               <span
                                 title="Bloqueado: ya fue solicitado/imputado"
@@ -1369,18 +1454,10 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                                 <Lock size={9} /> SOLICITADO
                               </span>
                             ) : (
-                              <select
-                                value={estadoCargaValor}
-                                disabled={actualizandoEstado}
-                                onChange={(e) => handleActualizarEstadoCarga(it, e.target.value)}
-                                className={`h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}
-                              >
-                                {ESTADO_CARGA_OPTIONS.map(op => (
-                                  <option key={op} value={op}>{op}</option>
-                                ))}
-                              </select>
+                              <span className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded border ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}>
+                                {estadoCargaValor}
+                              </span>
                             )}
-                            {/* Editado después de solicitar: se descarga en "Solicitudes de modificaciones". */}
                             {it.modificacionPendiente && (
                               <span
                                 title="Modificación pendiente: cambios después de solicitar, aún no descargados en Solicitudes de modificaciones"
@@ -1388,47 +1465,6 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                               >
                                 Modif. pendiente
                               </span>
-                            )}
-                          </td>
-                          <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60 text-center whitespace-nowrap">
-                            {candadoBloqueado ? (
-                              puedeDesbloquearCandado ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleAbrirCandadoItem(it)}
-                                  disabled={verificandoEsteCandado}
-                                  title="Este ítem ya está imputado — click para desbloquear edición"
-                                  className="text-amber-600 hover:text-amber-800 transition p-0.5 rounded hover:bg-amber-50 dark:hover:bg-amber-950/30 disabled:opacity-40"
-                                >
-                                  {verificandoEsteCandado ? <Loader2 size={12} className="animate-spin" /> : <Lock size={12} />}
-                                </button>
-                              ) : (
-                                <span title="Bloqueado: ya fue solicitado/imputado. No tenés permiso para desbloquear." className="inline-flex text-slate-300 dark:text-gray-600">
-                                  <Lock size={12} />
-                                </span>
-                              )
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => iniciarEdicionItem(it)}
-                                title={estaSolicitado ? 'Desbloqueado — editá y guardá para volver a bloquearlo' : 'Editar ítem'}
-                                className="text-blue-600 hover:text-blue-800 transition p-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/30"
-                              >
-                                {estaSolicitado ? <Unlock size={12} className="text-emerald-600" /> : <Pencil size={12} />}
-                              </button>
-                            )}
-                            {/* Solo agrega la referencia a Maestro Códigos → Solicitud de precios a TI;
-                                no cambia el ítem, así que también está con el candado cerrado. */}
-                            {puedeSolicitarPrecioConsignacion(it) && (
-                              <button
-                                type="button"
-                                onClick={() => { const calculado = calcularVenta(it); solicitarPrecio(solicitudDesdeItemConsignacion(it, it.venta ?? calculado.venta, it.recargoVecesCosto ?? calculado.vecesCosto)); }}
-                                title="Solicitar actualización de precio"
-                                aria-label="Solicitar actualización de precio"
-                                className="ml-1.5 text-amber-600 hover:text-amber-800 transition p-0.5 rounded hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                              >
-                                <ListPlus size={13} />
-                              </button>
                             )}
                           </td>
                           <TdRelleno className="border-b border-slate-100 dark:border-gray-700/60" />
@@ -1458,7 +1494,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                   <td className="px-2.5 py-1.5 border-t border-r border-slate-200 dark:border-gray-700 text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
                     ${Math.round(sumaCostos).toLocaleString('es-CL')}
                   </td>
-                  <td colSpan={6} className="border-t border-slate-200 dark:border-gray-700"></td>
+                  <td colSpan={5} className="border-t border-slate-200 dark:border-gray-700"></td>
                 </tr>
               </tfoot>
             )}

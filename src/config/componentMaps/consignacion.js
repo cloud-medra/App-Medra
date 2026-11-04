@@ -333,7 +333,7 @@ export const consignacionComponentMaps = {
             elements: {},
           },
           tabla_cargas: {
-            label: 'Sección: Tabla de Cargas',
+            label: 'Sección: Tabla de Cargas (edición de ítems, candado y solicitud de precio)',
             elements: {
               checkbox_cargado: { label: 'Campo: Marcar como Cargado' },
               col_empresa: { label: 'Columna: Empresa (vinculada)' },
@@ -345,13 +345,15 @@ export const consignacionComponentMaps = {
           },
           tabla_items_completa: {
             label: 'Sección: Ítems Registrados (con desglose de guía vinculada)',
+            // La edición y el candado se movieron a la tabla Cargas; las
+            // claves quedan acá porque ya están guardadas en los permisos.
             elements: {
-              action_editar_item: { label: 'Operación: Editar Ítem (referencia, cantidad, lote, vencimiento)' },
+              action_editar_item: { label: 'Operación: Editar Ítem en la tabla Cargas (referencia, cantidad, costo, lote, vencimiento)' },
               // Corrige un ítem ya SOLICITADO (exportado a
               // consignacion_imputadas), saltándose el candado — mismo
               // criterio que accion_desbloquear_candado en Implantes
               // (Cargastab.jsx / componentMaps/implantes.js).
-              accion_desbloquear_candado: { label: 'Operación: Desbloquear edición de un ítem ya solicitado/imputado (candado)' },
+              accion_desbloquear_candado: { label: 'Operación: Desbloquear edición de un ítem ya solicitado/imputado (candado de la tabla Cargas)' },
             },
           },
         },
