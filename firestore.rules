@@ -692,6 +692,19 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Solicitud de precios a TI (Maestro Códigos → Solicitud de precios a TI):
+    // un documento por referencia normalizada. Se agregan desde Cargas de
+    // Implantes, Hemodinamia o Consignación; los quita quien ve Códigos al
+    // descargar el Excel.
+    match /maestros_solicitudes_precio/{referenciaId} {
+      allow read: if estaActivo();
+      allow create, update: if estaActivo() && (esDev() || tienePermiso('implantes')
+        || tienePermiso('hemodinamia') || tienePermiso('consignacion'));
+      allow delete: if estaActivo() && (esDev() || tienePermiso('maestros')
+        || tieneItem('implantes', '/implantes/codigosImplantes')
+        || tieneItem('hemodinamia', '/hemodinamia/codigosHemodinamia'));
+    }
+
     match /maestros_pad/{document=**} {
       allow read: if estaActivo();
       // Toda escritura de PAD es "Guardar / Actualizar PAD" (incluye el

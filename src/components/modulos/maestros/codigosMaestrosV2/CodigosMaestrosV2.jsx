@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calendar, CheckCircle2, Clock, List, ShieldAlert } from 'lucide-react';
+import { BadgeDollarSign, Calendar, CheckCircle2, Clock, List, ShieldAlert } from 'lucide-react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../../firebaseConfig';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
@@ -8,6 +8,7 @@ import { RUTA_CODIGOS_MAESTROS, RUTA_CODIGOS_IMPLANTES, RUTA_CODIGOS_HEMODINAMIA
 import TabPendientesV2 from './tabs/TabPendientesV2';
 import TabConCodigoV2 from './tabs/TabConCodigoV2';
 import TabVistaGeneralV2 from './tabs/TabVistaGeneralV2';
+import TabSolicitudPreciosV2 from './tabs/TabSolicitudPreciosV2';
 import { tieneCodigo } from './camposCodigo';
 
 // Códigos (Maestros, Implantes y Hemodinamia): cada pestaña es un `proceso`
@@ -16,7 +17,9 @@ import { tieneCodigo } from './camposCodigo';
 const PESTANAS = [
   { id: 'pendientes', label: 'Sin código', Icon: Clock, sub: 'pendientes' },
   { id: 'con_codigo', label: 'Con código', Icon: CheckCircle2, sub: 'conCodigo' },
-  { id: 'todos', label: 'Vista general', Icon: List, sub: 'vistaGeneral' }
+  { id: 'todos', label: 'Vista general', Icon: List, sub: 'vistaGeneral' },
+  // Referencias marcadas en Cargas para que TI actualice su precio (lista propia, sin contador).
+  { id: 'solicitud_precios', label: 'Solicitud de precios a TI', Icon: BadgeDollarSign, sub: 'solicitudPrecios' }
 ];
 
 const MODULO_POR_RUTA = {
@@ -100,7 +103,7 @@ const CodigosMaestrosV2 = ({ rutaBase = RUTA_CODIGOS_MAESTROS } = {}) => {
               >
                 <Icono size={14} className={activa ? 'text-[#2383C2]' : ''} />
                 {tab.label}
-                {cargado && (
+                {cargado && conteo[tab.id] != null && (
                   <span className={`ml-0.5 px-1.5 rounded-full text-[11px] tabular-nums ${activa ? 'bg-[#2383C2]/10 text-[#2383C2] dark:text-[#369BCE]' : 'bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400'}`}>
                     {conteo[tab.id].toLocaleString('es-ES')}
                   </span>
@@ -115,6 +118,7 @@ const CodigosMaestrosV2 = ({ rutaBase = RUTA_CODIGOS_MAESTROS } = {}) => {
         {actual.id === 'pendientes' && <TabPendientesV2 rutaVista={actual.path} />}
         {actual.id === 'con_codigo' && <TabConCodigoV2 rutaVista={actual.path} />}
         {actual.id === 'todos' && <TabVistaGeneralV2 rutaVista={actual.path} />}
+        {actual.id === 'solicitud_precios' && <TabSolicitudPreciosV2 rutaVista={actual.path} />}
       </div>
     </div>
   );

@@ -20,10 +20,11 @@ export const ToastProvider = ({ children }) => {
     setTimeout(() => removeToast(id), EXIT_DURATION);
   }, [removeToast]);
 
-  const showToast = useCallback((message, type = 'success') => {
+  // `duracion` (ms, opcional): para avisos largos que no deben pasar inadvertidos.
+  const showToast = useCallback((message, type = 'success', duracion = DISPLAY_DURATION) => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     setToasts((prev) => [...prev, { id, message, type, isLeaving: false }]);
-    setTimeout(() => startExit(id), DISPLAY_DURATION);
+    setTimeout(() => startExit(id), duracion);
   }, [startExit]);
 
   return (

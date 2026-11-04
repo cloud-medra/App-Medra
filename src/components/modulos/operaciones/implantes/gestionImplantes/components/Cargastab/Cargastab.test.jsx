@@ -29,6 +29,7 @@ vi.mock('../../../../../../../hooks/useGranularPermission', () => ({
 }));
 vi.mock('./CotizacionCard', () => ({ CotizacionCard: () => null }));
 vi.mock('./NotasAdmision', () => ({ default: () => null }));
+vi.mock('../../../../../maestros/shared/solicitudesPrecio/useSolicitarPrecio', () => ({ useSolicitarPrecio: () => vi.fn() }));
 const showToast = vi.fn();
 vi.mock('../../../../../../../context/ToastContext', () => ({ useToast: () => ({ showToast }) }));
 

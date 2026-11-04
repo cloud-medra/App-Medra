@@ -26,6 +26,8 @@ vi.mock('./useAutocompleteReferenciaConsignacion', () => ({
 }));
 vi.mock('./verificacionPeriodoConsignacion', () => ({ periodoEstaAbierto: vi.fn(async () => true) }));
 vi.mock('../../registroConsignacion/utils/cacheMaestros', () => ({ obtenerCodigosCacheados: vi.fn() }));
+const solicitarPrecio = vi.fn();
+vi.mock('../../../../maestros/shared/solicitudesPrecio/useSolicitarPrecio', () => ({ useSolicitarPrecio: () => solicitarPrecio }));
 
 const { default: CargasTab } = await import('./CargasTab');
 const { periodoEstaAbierto } = await import('./verificacionPeriodoConsignacion');
@@ -36,7 +38,7 @@ const ITEM = {
   costo: 1000, cantidad: 2, lote: 'L1', vencimiento: '', estado: 'INGRESADO', recargoVecesCosto: 1.5, venta: 3000,
 };
 
-afterEach(() => { cleanup(); updateDoc.mockClear(); registrarLog.mockClear(); showToast.mockClear(); });
+afterEach(() => { cleanup(); updateDoc.mockClear(); registrarLog.mockClear(); showToast.mockClear(); solicitarPrecio.mockClear(); });
 
 const editar = () => {
   render(<CargasTab registro={{ gestionId: '500' }} items={[ITEM]} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);
@@ -118,5 +120,16 @@ describe('Consignación → Cargas: candado de ítems imputados', () => {
   it('sin ítems imputados no aparece', () => {
     montar([ITEM]);
     expect(screen.queryByRole('button', { name: /Imputado/ })).toBeNull();
+  });
+});
+
+describe('Consignación → Cargas: solicitar actualización de precio', () => {
+  it('agrega la referencia con costo y venta unitarios, sin tocar el ítem', () => {
+    render(<CargasTab registro={{ gestionId: '500' }} items={[ITEM]} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);
+    fireEvent.click(screen.getByTitle('Solicitar actualización de precio'));
+    // Venta guardada 3000 por 2 unidades → 1500 por unidad.
+    expect(solicitarPrecio).toHaveBeenCalledWith({ referencia: 'REF-1', descripcion: 'PLACA', costo: 1000, venta: 1500 });
+    expect(updateDoc).not.toHaveBeenCalled();
+    expect(registrarLog).not.toHaveBeenCalled();
   });
 });

@@ -20,6 +20,8 @@ import { construirTextoAdmisionNombre } from '../../utils/gestionesImportExport'
 import { useAutocompleteReferencia } from './useAutocompleteReferencia';
 import { useGranularPermission } from '../../../../../../../hooks/useGranularPermission';
 import { CotizacionCard } from './CotizacionCard';
+import { useSolicitarPrecio } from '../../../../../maestros/shared/solicitudesPrecio/useSolicitarPrecio';
+import { MODULO_SOLICITUD, solicitudDesdeItemCargas } from '../../../../../maestros/shared/solicitudesPrecio/solicitudesPrecio';
 import { PadContenidoRow, construirItemContenidoPadDesdeFila } from './PadContenidoRow';
 // Mismos componentes que Cargas de Implantes (notas de la admisión y edición
 // de las líneas ya registradas del contenido del PAD).
@@ -67,6 +69,7 @@ const DRAFT_LOTE_VACIO = { cantidad: '', lote: '', vencimiento: '' };
 export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarItem, onEliminarItem, onEliminarCotizacion, onActualizarEstadoItem, onEditarItem, periodoAbierto, cargandoPeriodo, handleCopiarTexto, onIrAInformacion }, ref) => {
   const bloqueActivo = formData?.bloques?.[bloqueActivoIndex];
   const cotizaciones = bloqueActivo?.cotizaciones || [];
+  const solicitarPrecio = useSolicitarPrecio(MODULO_SOLICITUD.hemodinamia);
 
   // Candado de bloqueo: un bloque ya SOLICITADO (ya copiado a
   // hemodinamia_imputadas) queda de solo lectura hasta que el usuario lo
@@ -1100,6 +1103,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               periodoAbierto={periodoAbierto}
               soloLectura={bloqueado}
               puedeAgregarContenidoPad={puedeAgregarContenidoPad}
+              onSolicitarPrecio={(it) => solicitarPrecio(solicitudDesdeItemCargas(it))}
               onAgregarItem={(itemData) => onAgregarItem(bloqueActivoIndex, itemData)}
               onEliminarItem={(itemId) => onEliminarItem(bloqueActivoIndex, cot.id, itemId)}
               onEliminarCotizacion={() => onEliminarCotizacion(bloqueActivoIndex, cot.id)}

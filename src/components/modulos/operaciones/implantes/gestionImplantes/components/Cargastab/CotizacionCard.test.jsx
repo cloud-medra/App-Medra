@@ -164,3 +164,38 @@ describe('fila SIN CARGO', () => {
     }
   });
 });
+
+describe('CotizacionCard - solicitar actualización de precio', () => {
+  const montar = (props = {}) => render(
+    <CotizacionCard
+      cotizacion={construirCotizacion()} bloqueEmpresa='EMPRESA X' gestionId='123' bloqueFecha='2026-01-01'
+      recargosActivos={[]} periodoAbierto={{ anio: 2026, mes: 'enero' }} defaultOpen
+      onAgregarItem={() => {}} onEliminarItem={() => {}} onEliminarCotizacion={() => {}}
+      onActualizarEstadoItem={() => {}} onEditarItem={() => {}}
+      {...props}
+    />
+  );
+
+  it('aparece en las filas con precio propio (no en el contenido del PAD) y solo avisa con la fila', () => {
+    const onSolicitarPrecio = vi.fn();
+    const onEditarItem = vi.fn();
+    const onActualizarEstadoItem = vi.fn();
+    montar({ onSolicitarPrecio, onEditarItem, onActualizarEstadoItem });
+    const botones = screen.getAllByTitle('Solicitar actualización de precio');
+    expect(botones).toHaveLength(4); // 3 normales + el PAD principal
+    fireEvent.click(botones[0]);
+    expect(onSolicitarPrecio).toHaveBeenCalledWith(expect.objectContaining({ id: 'item_1' }));
+    expect(onEditarItem).not.toHaveBeenCalled();
+    expect(onActualizarEstadoItem).not.toHaveBeenCalled();
+  });
+
+  it('sigue disponible con la gestión bloqueada (no modifica la carga)', () => {
+    montar({ onSolicitarPrecio: vi.fn(), soloLectura: true });
+    expect(screen.getAllByTitle('Solicitar actualización de precio')[0].disabled).toBe(false);
+  });
+
+  it('no aparece en modo lectura (Reporte Info)', () => {
+    montar({ onSolicitarPrecio: vi.fn(), modoLectura: true });
+    expect(screen.queryByTitle('Solicitar actualización de precio')).toBeNull();
+  });
+});

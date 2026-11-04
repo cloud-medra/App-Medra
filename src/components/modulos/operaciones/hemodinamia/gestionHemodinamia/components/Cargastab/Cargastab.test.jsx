@@ -27,6 +27,7 @@ vi.mock('../../../../../../../hooks/useGranularPermission', () => ({
   useGranularPermission: () => ({ hasPermission: () => true, hasAccesoProceso: () => false }),
 }));
 vi.mock('./CotizacionCard', () => ({ CotizacionCard: () => null }));
+vi.mock('../../../../../maestros/shared/solicitudesPrecio/useSolicitarPrecio', () => ({ useSolicitarPrecio: () => vi.fn() }));
 
 const { CargasTab } = await import('./Cargastab');
 

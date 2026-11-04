@@ -5,7 +5,9 @@ import { db } from '../../../../../../firebaseConfig';
 import { useToast } from '../../../../../../context/ToastContext';
 import { useUser } from '../../../../../../context/UserContext';
 import { useGranularPermission } from '../../../../../../hooks/useGranularPermission';
-import { User, Package, UploadCloud, Loader2, AlertCircle, CheckCircle2, Save, Link2, Pencil, Check, X, Lock, Unlock, RefreshCw } from 'lucide-react';
+import { User, Package, UploadCloud, Loader2, AlertCircle, CheckCircle2, Save, Link2, Pencil, Check, X, Lock, Unlock, RefreshCw, ListPlus } from 'lucide-react';
+import { useSolicitarPrecio } from '../../../../maestros/shared/solicitudesPrecio/useSolicitarPrecio';
+import { MODULO_SOLICITUD, puedeSolicitarPrecioConsignacion, solicitudDesdeItemConsignacion } from '../../../../maestros/shared/solicitudesPrecio/solicitudesPrecio';
 import { resolverGuiaCacheada, resolverMaestroCacheado, resolverMaestrosCacheados, normalizarCodigo } from './cacheDelivery';
 import { useAutocompleteReferenciaConsignacion } from './useAutocompleteReferenciaConsignacion';
 import { periodoEstaAbierto } from './verificacionPeriodoConsignacion';
@@ -382,6 +384,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
 
   const { showToast } = useToast();
   const { userData } = useUser();
+  const solicitarPrecio = useSolicitarPrecio(MODULO_SOLICITUD.consignacion);
   const { anchos: anchosGuardados, handleResize, restablecerAnchos, personalizados } =
     useColumnResize(COLUMNAS_ITEMS, { clave: 'cargasConsignacion.itemsRegistrados', usuario: userData?.uid });
   // "Ítems Registrados" se ajusta al ancho disponible (sin barra horizontal
@@ -1412,6 +1415,19 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                                 className="text-blue-600 hover:text-blue-800 transition p-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/30"
                               >
                                 {estaSolicitado ? <Unlock size={12} className="text-emerald-600" /> : <Pencil size={12} />}
+                              </button>
+                            )}
+                            {/* Solo agrega la referencia a Maestro Códigos → Solicitud de precios a TI;
+                                no cambia el ítem, así que también está con el candado cerrado. */}
+                            {puedeSolicitarPrecioConsignacion(it) && (
+                              <button
+                                type="button"
+                                onClick={() => solicitarPrecio(solicitudDesdeItemConsignacion(it, it.venta ?? calcularVenta(it).venta))}
+                                title="Solicitar actualización de precio"
+                                aria-label="Solicitar actualización de precio"
+                                className="ml-1.5 text-amber-600 hover:text-amber-800 transition p-0.5 rounded hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                              >
+                                <ListPlus size={13} />
                               </button>
                             )}
                           </td>

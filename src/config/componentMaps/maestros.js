@@ -563,6 +563,21 @@ export const maestrosComponentMaps = {
           },
         },
       },
+      // Referencias marcadas desde Cargas (Implantes, Hemodinamia y Consignación).
+      '/maestros/codigosMaestros/solicitudPrecios': {
+        label: 'Pestaña: Solicitud de precios a TI (TabSolicitudPreciosV2.jsx)',
+        sections: {
+          tabla_datos: {
+            label: 'Sección: Tabla',
+            elements: {
+              btn_descargar_excel: { label: 'Acción: Descargar Excel (quita las filas descargadas)' },
+              ...columnas([
+                ['seleccion', 'Seleccionar'], ['referencia', 'Referencia'], ['descripcion', 'Descripción'], ['modulo', 'Módulo'], ['costo', 'Costo'], ['venta', 'Venta'], ['fecha', 'Fecha agregada'],
+              ]),
+            },
+          },
+        },
+      },
     },
   },
 };

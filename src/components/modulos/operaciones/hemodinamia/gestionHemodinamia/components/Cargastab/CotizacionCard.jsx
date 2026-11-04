@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useLayoutEffect, useCallback, useRef, useEffect } from 'react';
 // Reparto del ancho sobrante entre columnas de texto (igual que Implantes).
 import { anchosConExtra } from '../../../../implantes/gestionImplantes/components/Cargastab/cargasHelpers';
+import { puedeSolicitarPrecioCargas } from '../../../../../maestros/shared/solicitudesPrecio/solicitudesPrecio';
 import { createPortal } from 'react-dom';
 import {
   FileText,
@@ -18,7 +19,8 @@ import {
   PackagePlus,
   Layers,
   Lock,
-  RotateCcw
+  RotateCcw,
+  ListPlus
 } from 'lucide-react';
 import {
   formatearFechaTabla,
@@ -55,12 +57,13 @@ const COLUMNAS_ITEMS = [
   { key: 'lote', label: 'Lote', ancho: 60, min: 40 },
   { key: 'vencimiento', label: 'Vencimiento', ancho: 79, min: 40, px: 'px-1.5' },
   { key: 'estadoCarga', label: 'Estado Carga', ancho: 95, min: 60 },
-  { key: 'acciones', label: 'Acciones', ancho: 75, min: 60, align: 'center' }
+  { key: 'acciones', label: 'Acciones', ancho: 100, min: 85, align: 'center' }
 ];
 
 // En el celular los botones de Acciones son más grandes (táctiles): la
 // columna parte más ancha para que no se recorten.
-const ANCHO_ACCIONES_CELULAR = 110;
+// Acciones: hasta 4 íconos (contenido PAD, solicitar precio, editar, eliminar).
+const ANCHO_ACCIONES_CELULAR = 140;
 const anchosItemsPorDefecto = () => {
   const anchos = COLUMNAS_ITEMS.reduce((acc, col) => ({ ...acc, [col.key]: col.ancho }), {});
   return esPantallaEscritorio() ? anchos : { ...anchos, acciones: ANCHO_ACCIONES_CELULAR };
@@ -120,7 +123,11 @@ export const CotizacionCard = ({
   defaultOpen = false,
   soloLectura = false,
   // Permiso "Agregar Contenido de PAD" (tabla_cotizaciones.formulario_contenido_pad).
-  puedeAgregarContenidoPad = true
+  puedeAgregarContenidoPad = true,
+  // "Solicitar actualización de precio" (Maestro Códigos → Solicitud de precios a TI):
+  // solo agrega la referencia a esa lista; no cambia la fila, así que no se
+  // bloquea con la gestión ya imputada.
+  onSolicitarPrecio
 }) => {
   const [abierto, setAbierto] = useState(defaultOpen);
   const [anchos, setAnchos] = useState(anchosItemsPorDefecto);
@@ -815,6 +822,17 @@ export const CotizacionCard = ({
                                   className="text-fuchsia-600 hover:text-fuchsia-800 transition p-1 md:p-0.5 rounded hover:bg-fuchsia-50 dark:hover:bg-fuchsia-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                                 >
                                   <PackagePlus size={13} />
+                                </button>
+                              )}
+                              {onSolicitarPrecio && puedeSolicitarPrecioCargas(it) && (
+                                <button
+                                  type="button"
+                                  onClick={() => onSolicitarPrecio(it)}
+                                  title="Solicitar actualización de precio"
+                                  aria-label="Solicitar actualización de precio"
+                                  className="text-amber-600 hover:text-amber-800 transition p-1 md:p-0.5 rounded hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                >
+                                  <ListPlus size={13} />
                                 </button>
                               )}
                               <button

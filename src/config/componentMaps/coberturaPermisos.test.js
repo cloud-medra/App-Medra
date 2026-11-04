@@ -34,6 +34,7 @@ const RUTAS_DINAMICAS = {
   'modulos/maestros/codigosMaestrosV2/tabs/TabPendientesV2.jsx': ['/maestros/codigosMaestros/pendientes', '/implantes/codigosImplantes/pendientes', '/hemodinamia/codigosHemodinamia/pendientes'],
   'modulos/maestros/codigosMaestrosV2/tabs/TabConCodigoV2.jsx': ['/maestros/codigosMaestros/conCodigo', '/implantes/codigosImplantes/conCodigo', '/hemodinamia/codigosHemodinamia/conCodigo'],
   'modulos/maestros/codigosMaestrosV2/tabs/TabVistaGeneralV2.jsx': ['/maestros/codigosMaestros/vistaGeneral', '/implantes/codigosImplantes/vistaGeneral', '/hemodinamia/codigosHemodinamia/vistaGeneral'],
+  'modulos/maestros/codigosMaestrosV2/tabs/TabSolicitudPreciosV2.jsx': ['/maestros/codigosMaestros/solicitudPrecios', '/implantes/codigosImplantes/solicitudPrecios', '/hemodinamia/codigosHemodinamia/solicitudPrecios'],
   'modulos/gestiones/shared/TablaOrdenes.jsx': ['/laboratorio/ordenLaboratorio', '/vacunatorio/ordenVacunatorio'],
   'modulos/gestiones/shared/DetalleOrdenTabla.jsx': ['/laboratorio/ordenLaboratorio', '/vacunatorio/ordenVacunatorio'],
   'modulos/gestiones/shared/TablaXmlDocumentos.jsx': ['/laboratorio/xmlDocLaboratorio', '/vacunatorio/xmlDocVacunatorio'],

@@ -17,7 +17,8 @@ import {
   Layers,
   Lock,
   RotateCcw,
-  Cable
+  Cable,
+  ListPlus
 } from 'lucide-react';
 import {
   formatearFechaTabla,
@@ -44,6 +45,7 @@ import ModalConfirmarCarga from '../../../../shared/ModalConfirmarCarga';
 import { CLASE_SIN_FLECHAS, SIN_CAMBIO_ACCIDENTAL } from '../../../../../../ui/numeroSinFlechas';
 import { esCodigoFibra, textoFibra } from '../../../fibras/fibrasNucleo';
 import { esPantallaEscritorio } from '../../../../shared/gestion/fijarColumnas';
+import { puedeSolicitarPrecioCargas } from '../../../../../maestros/shared/solicitudesPrecio/solicitudesPrecio';
 
 // Etiqueta de una línea de fibra reutilizable: "2/5 FIB-0007" (el mismo
 // número que el uso en Implantes → Fibras → Detalle) o "por registrar" si aún
@@ -86,14 +88,15 @@ const COLUMNAS_ITEMS = [
   { key: 'lote', label: 'Lote', ancho: 60, min: 40 },
   { key: 'vencimiento', label: 'Vencimiento', ancho: 82, min: 40, px: 'px-2' },
   { key: 'estadoCarga', label: 'Estado Carga', ancho: 100, min: 60 },
-  { key: 'acciones', label: 'Acciones', ancho: 80, min: 65, align: 'center' }
+  { key: 'acciones', label: 'Acciones', ancho: 100, min: 85, align: 'center' }
 ];
 // Modo lectura (Reporte Info → detalle de la gestión): sin "Acciones".
 const COLUMNAS_LECTURA = COLUMNAS_ITEMS.filter(col => col.key !== 'acciones');
 
 // En el celular los botones de Acciones son más grandes (táctiles): la
 // columna parte más ancha para que no se recorten.
-const ANCHO_ACCIONES_CELULAR = 110;
+// Acciones: hasta 4 íconos (contenido PAD, solicitar precio, editar, eliminar).
+const ANCHO_ACCIONES_CELULAR = 140;
 const anchosItemsPorDefecto = () => {
   const anchos = COLUMNAS_ITEMS.reduce((acc, col) => ({ ...acc, [col.key]: col.ancho }), {});
   return esPantallaEscritorio() ? anchos : { ...anchos, acciones: ANCHO_ACCIONES_CELULAR };
@@ -161,6 +164,10 @@ export const CotizacionCard = ({
   referenciasDuplicadas,
   hayReferenciaNormal,
   onCodigoDuplicado,
+  // "Solicitar actualización de precio" (Maestro Códigos → Solicitud de precios a TI):
+  // solo agrega la referencia a esa lista; no cambia la fila, así que no se
+  // bloquea con la gestión ya imputada.
+  onSolicitarPrecio,
   // Solo lectura de verdad (Reporte Info): sin acciones ni edición, el estado
   // de carga como etiqueta, el contenido de cada PAD plegable y la tabla con
   // encabezado fijo y scroll interno. No carga el catálogo de códigos.
@@ -980,6 +987,17 @@ export const CotizacionCard = ({
                                   className="text-fuchsia-600 hover:text-fuchsia-800 transition p-1 md:p-0.5 rounded hover:bg-fuchsia-50 dark:hover:bg-fuchsia-950/30 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                                 >
                                   <PackagePlus size={13} />
+                                </button>
+                              )}
+                              {onSolicitarPrecio && puedeSolicitarPrecioCargas(it) && (
+                                <button
+                                  type="button"
+                                  onClick={() => onSolicitarPrecio(it)}
+                                  title="Solicitar actualización de precio"
+                                  aria-label="Solicitar actualización de precio"
+                                  className="text-amber-600 hover:text-amber-800 transition p-1 md:p-0.5 rounded hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                >
+                                  <ListPlus size={13} />
                                 </button>
                               )}
                               <button

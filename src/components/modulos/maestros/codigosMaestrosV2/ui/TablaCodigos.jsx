@@ -49,7 +49,8 @@ export const TablaCodigos = ({
               title={col.label}
               className={`py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 ${ALINEACION[col.align] || ''}`}
             >
-              {col.label}
+              {/* `encabezado`: contenido propio (ej. checkbox de seleccionar todas). */}
+              {col.encabezado ?? col.label}
             </ThRedimensionable>
           ))}
           <ThRelleno className="border-b border-gray-200 dark:border-gray-700" />

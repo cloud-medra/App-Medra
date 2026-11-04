@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { formatearFechaTabla, calcularCamposFinancieros, esClasePad, VALOR_LOTE_VENCIMIENTO_PAD, referenciasDuplicadas, existeReferenciaNormal } from './cargasHelpers';
 import { useToast } from '../../../../../../../context/ToastContext';
+import { useSolicitarPrecio } from '../../../../../maestros/shared/solicitudesPrecio/useSolicitarPrecio';
+import { MODULO_SOLICITUD, solicitudDesdeItemCargas } from '../../../../../maestros/shared/solicitudesPrecio/solicitudesPrecio';
 import { verificarPeriodosBloque } from './verificacionPeriodoBloque';
 import { construirTextoAdmisionNombre } from '../../utils/gestionesImportExport';
 import { useRecargosActivos } from './useRecargosActivos';
@@ -72,6 +74,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
   const bloqueActivo = formData?.bloques?.[bloqueActivoIndex];
   const cotizaciones = bloqueActivo?.cotizaciones || [];
   const { showToast } = useToast();
+  const solicitarPrecio = useSolicitarPrecio(MODULO_SOLICITUD.implantes);
 
   // Códigos repetidos del ingreso normal en todo el bloque (cualquier
   // cotización): sus filas se marcan en rojo y se avisa al ingresarlos.
@@ -1205,6 +1208,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               referenciasDuplicadas={duplicadasBloque}
               hayReferenciaNormal={(referencia, excluirId) => existeReferenciaNormal(itemsBloque, referencia, excluirId)}
               onCodigoDuplicado={avisarCodigoDuplicado}
+              onSolicitarPrecio={(it) => solicitarPrecio(solicitudDesdeItemCargas(it))}
               onAgregarItem={(itemData) => onAgregarItem(bloqueActivoIndex, itemData)}
               onEliminarItem={(itemId) => onEliminarItem(bloqueActivoIndex, cot.id, itemId)}
               onEliminarCotizacion={() => onEliminarCotizacion(bloqueActivoIndex, cot.id)}
