@@ -114,6 +114,17 @@ service cloud.firestore {
     function puedeTocarUsuario(datos) {
       return esDev() || datos.get('rol', '') != 'dev';
     }
+    // Marca y fecha del cambio de contraseña. Solo el propio usuario, y la
+    // fecha debe ser la hora del servidor. passwordChanged solo pasa a true
+    // y siempre junto con la fecha. Las reglas no pueden ver Firebase Auth:
+    // esto no comprueba que la contraseña haya cambiado.
+    function cambioPasswordValido(userId) {
+      let cambios = request.resource.data.diff(resource.data).affectedKeys();
+      return !cambios.hasAny(['passwordChanged', 'passwordCambiadaEl'])
+        || (request.auth.uid == userId
+          && request.resource.data.get('passwordCambiadaEl', null) == request.time
+          && (!cambios.hasAny(['passwordChanged']) || request.resource.data.passwordChanged == true));
+    }
     match /usuarios/{userId} {
       // El propio perfil se lee aunque esté inactivo: así la app ve el cambio
       // y cierra la sesión con el aviso (UserContext).
@@ -123,7 +134,8 @@ service cloud.firestore {
       allow update: if estaActivo()
         && (request.auth.uid == userId
           || (administraUsuarios(rutasAdministrarUsuarios()) && puedeTocarUsuario(resource.data)))
-        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(camposProtegidosUsuario());
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(camposProtegidosUsuario())
+        && cambioPasswordValido(userId);
       // El documento base lo crea la función crearUsuario (Crear Usuario),
       // junto con la cuenta y el índice del nombre de usuario.
       allow create: if false;

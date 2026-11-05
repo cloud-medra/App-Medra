@@ -2,12 +2,13 @@
 // costo). Rol, permisos, permisosGranulares, centroCostoId, excepciones y
 // nombreUsuario (único) solo los escriben las Cloud Functions; desde el
 // navegador cada usuario sigue pudiendo editar lo suyo (tema, contraseña,
-// datos, orden del menú) y un admin los datos de los demás.
+// datos, orden del menú) y un admin los datos de los demás, salvo la marca y la
+// fecha del cambio de contraseña.
 import process from 'node:process';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator, doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 
 const PROYECTO = 'demo-workcraft';
 const FIRESTORE = process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080';
@@ -67,9 +68,29 @@ const usuario = (s, uid = s.uid) => doc(s.db, 'usuarios', uid);
 describe('usuarios: lo que cada uno puede editar de sí mismo', () => {
   it('tema, cambio de contraseña, datos de perfil, privacidad y orden del menú siguen funcionando', async () => {
     await expect(updateDoc(usuario(operador), { modoPantalla: 'oscuro' })).resolves.toBeUndefined();
-    await expect(updateDoc(usuario(operador), { passwordChanged: true })).resolves.toBeUndefined();
+    await expect(updateDoc(usuario(operador), { passwordChanged: true, passwordCambiadaEl: serverTimestamp() })).resolves.toBeUndefined();
+    await expect(updateDoc(usuario(operador), { passwordCambiadaEl: serverTimestamp() })).resolves.toBeUndefined();
     await expect(updateDoc(usuario(operador), { nombreMostrar: 'nombre', ordenModulos: ['laboratorio'] })).resolves.toBeUndefined();
-    await expect(updateDoc(usuario(admin), { modoPantalla: 'oscuro', passwordChanged: true })).resolves.toBeUndefined();
+    await expect(updateDoc(usuario(admin), { modoPantalla: 'oscuro', passwordChanged: true, passwordCambiadaEl: serverTimestamp() })).resolves.toBeUndefined();
+  });
+
+  // Las reglas no ven Firebase Auth: esto no comprueba que la contraseña haya
+  // cambiado, solo quién escribe la marca y que la fecha sea la del servidor.
+  it('passwordChanged y passwordCambiadaEl: solo el propio usuario, con la hora del servidor', async () => {
+    const denegado = { code: 'permission-denied' };
+    const fechaFalsa = Timestamp.fromDate(new Date('2020-01-01T00:00:00Z'));
+    const nuevo = await sesion('sinclave', { rol: 'operador', nombreCompleto: 'Sin Clave', permisos: PERMISOS, permisosGranulares: {}, passwordChanged: false });
+    // Sin fecha, con fecha falsa o escrito por otro (ni administrador ni Desarrollador).
+    await expect(updateDoc(usuario(nuevo), { passwordChanged: true })).rejects.toMatchObject(denegado);
+    await expect(updateDoc(usuario(nuevo), { passwordChanged: true, passwordCambiadaEl: fechaFalsa })).rejects.toMatchObject(denegado);
+    await expect(updateDoc(usuario(nuevo), { passwordCambiadaEl: fechaFalsa })).rejects.toMatchObject(denegado);
+    await expect(updateDoc(usuario(admin, nuevo.uid), { passwordChanged: true, passwordCambiadaEl: serverTimestamp() })).rejects.toMatchObject(denegado);
+    await expect(updateDoc(usuario(dev, nuevo.uid), { passwordChanged: true, passwordCambiadaEl: serverTimestamp() })).rejects.toMatchObject(denegado);
+    await expect(updateDoc(usuario(admin, nuevo.uid), { passwordCambiadaEl: serverTimestamp() })).rejects.toMatchObject(denegado);
+    // El flujo de la app, y después no se puede volver atrás.
+    await expect(updateDoc(usuario(nuevo), { passwordChanged: true, passwordCambiadaEl: serverTimestamp() })).resolves.toBeUndefined();
+    await expect(updateDoc(usuario(nuevo), { passwordChanged: false, passwordCambiadaEl: serverTimestamp() })).rejects.toMatchObject(denegado);
+    await expect(updateDoc(usuario(admin, nuevo.uid), { passwordChanged: false })).rejects.toMatchObject(denegado);
   });
 
   it('nadie puede darse rol, permisos, centro de costo ni excepciones desde el navegador', async () => {
