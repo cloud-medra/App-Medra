@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as XLSX from 'xlsx';
 
-const estado = vi.hoisted(() => ({ snapshot: null, version: null, meta: {}, escrituras: [], invalidaciones: [], indice: {} }));
+const estado = vi.hoisted(() => ({ snapshot: null, version: null, meta: {}, escrituras: [], invalidaciones: [], indice: {}, lecturasEmpresas: 0, empresas: [] }));
 
 vi.mock('../../../../../../firebaseConfig', () => ({ db: {}, storage: {}, auth: {} }));
 vi.mock('firebase/firestore', () => ({
@@ -16,6 +16,8 @@ vi.mock('firebase/firestore', () => ({
     };
   },
   serverTimestamp: () => 'ahora',
+  collection: (_db, c) => c,
+  getDocs: async () => { estado.lecturasEmpresas += 1; return { size: 2, docs: estado.empresas.map(([id, nombre]) => ({ id, data: () => ({ nombre }) })) }; },
   setDoc: async (ref, data) => { estado.meta = { ...estado.meta, ...data }; estado.escrituras.push({ tipo: 'meta', path: ref.path, data }); }
 }));
 vi.mock('./snapshotStorageDetallesOC', () => ({
@@ -52,9 +54,10 @@ const importar = async (filas) => {
   return procesarImportacionDetallesOC(archivo(filas));
 };
 const escriturasDeFilas = () => estado.escrituras.filter(e => e.path?.includes('/detalles/'));
+const escriturasDePortal = () => estado.escrituras.filter(e => e.path?.startsWith('portal_ordenes_compra/'));
 
 describe('procesarImportacionDetallesOC', () => {
-  beforeEach(() => { Object.assign(estado, { snapshot: null, version: null, meta: {}, escrituras: [], invalidaciones: [], indice: {} }); });
+  beforeEach(() => { Object.assign(estado, { snapshot: null, version: null, meta: {}, escrituras: [], invalidaciones: [], indice: {}, lecturasEmpresas: 0, empresas: [['emp1', 'MEDTRONIC'], ['emp2', 'ALCO']] }); });
 
   it('reimportar el mismo archivo sin cambios: 0 escrituras y 1 lectura', async () => {
     const archivoBase = [fila({ oc: '4500001' }), fila({ cod: 510013, oc: '4500001' }), fila()];
@@ -74,7 +77,7 @@ describe('procesarImportacionDetallesOC', () => {
     const filas = escriturasDeFilas();
     expect(filas.every(e => e.tipo === 'merge')).toBe(true);
     expect(filas.map(e => Object.keys(e.data).sort())).toEqual([['actualizadoEn', 'lote', 'numero_guia'], ['actualizadoEn', 'numero_factura']]);
-    expect(estado.escrituras.filter(e => !e.path?.includes('/detalles/') && e.tipo !== 'meta')).toEqual([]); // sin marcadores
+    expect(estado.escrituras.filter(e => !e.path?.includes('/detalles/') && !e.path?.startsWith('portal_') && e.tipo !== 'meta')).toEqual([]); // sin marcadores
     expect(r.noSobrescritos).toEqual([expect.objectContaining({ campo: 'numero_factura', valorGuardado: 'F-1' })]);
     expect(r.camposActualizados).toEqual({ lote: 1, numero_guia: 1, numero_factura: 1 });
   });
@@ -126,7 +129,7 @@ describe('procesarImportacionDetallesOC', () => {
     expect(r.actualizadas).toBe(1);
     expect(r.ocCambiadas).toEqual([expect.objectContaining({ admision: '114584', ocAntes: '4500001', ocDespues: '4500002' })]);
     expect(estado.invalidaciones).toHaveLength(1);
-    expect(r.lecturasFirestore).toBe(2); // meta + gestiones
+    expect(r.lecturasFirestore).toBe(4); // meta + maestro de empresas (2) + gestiones
   });
 
   it('cambio de fecha: crea en el mes nuevo y borra la anterior en el mismo lote', async () => {
@@ -139,6 +142,77 @@ describe('procesarImportacionDetallesOC', () => {
     expect(filas[0].data.numero_factura).toBe('F-1'); // conserva lo guardado
     expect(filas[1].path).toContain('documentos_sistema/2026/meses/09/');
     expect(Object.keys(estado.snapshot)).toEqual(['114584_20261002_medtronic_510012_1']);
+  });
+
+  describe('copia de Portal Proveedores', () => {
+    const PROHIBIDOS = ['paciente', 'medico', 'admision', 'precio_u', 'oc_monto', 'lote', 'atributo'];
+
+    it('fila nueva: copia con la empresa del Maestro, sin datos del paciente ni el ID original', async () => {
+      await importar([fila({ oc: '4500001', pac: 'JUANA PEREZ', med: 'DR SOTO' })]);
+      const [copia] = escriturasDePortal();
+      expect(escriturasDePortal()).toHaveLength(1);
+      expect(copia.tipo).toBe('set');
+      expect(copia.path).toMatch(/^portal_ordenes_compra\/[0-9a-f]{64}$/);
+      expect(copia.data).toMatchObject({ oc: '4500001', empresaId: 'emp1', proveedor: 'MEDTRONIC', anio: '2026', mes: '09', descripcion: 'TORNILLO' });
+      PROHIBIDOS.forEach(c => expect(copia.data).not.toHaveProperty(c));
+      const texto = JSON.stringify(copia);
+      ['JUANA', 'SOTO', '114584'].forEach(v => expect(texto).not.toContain(v));
+    });
+
+    it('proveedor que no está en el Maestro: copia sin empresa, y se informa', async () => {
+      const r = await importar([fila({ prov: 'MEDILAND SPA' })]);
+      expect(escriturasDePortal()[0].data).toMatchObject({ empresaId: null, proveedor: 'MEDILAND SPA' });
+      expect(r.proveedoresSinEmpresa).toEqual([{ proveedor: 'MEDILAND SPA', filas: 1 }]);
+    });
+
+    it('cambio en un campo visible: reescribe la copia completa, sin merge', async () => {
+      await importar([fila({ fact: 'F-1' })]);
+      await importar([fila({ fact: 'F-2' })]);
+      const [copia] = escriturasDePortal();
+      expect(copia.tipo).toBe('set');
+      expect(copia.data).toMatchObject({ numero_factura: 'F-2', empresaId: 'emp1', proveedor: 'MEDTRONIC', anio: '2026', mes: '09', descripcion: 'TORNILLO' });
+      PROHIBIDOS.forEach(c => expect(copia.data).not.toHaveProperty(c));
+    });
+
+    it('cambio solo en campos no visibles (lote, paciente): no escribe la copia', async () => {
+      await importar([fila({ lote: 'L-1', pac: 'A' })]);
+      const r = await importar([fila({ lote: 'L-2', pac: 'B' })]);
+      expect(r.actualizadas).toBe(1);
+      expect(escriturasDeFilas()).toHaveLength(1);
+      expect(escriturasDePortal()).toEqual([]);
+    });
+
+    it('cambio de fecha: crea la copia en el mes nuevo y borra la anterior, en el mismo lote', async () => {
+      await importar([fila({ fact: 'F-1' })]);
+      const antes = estado.escrituras.find(e => e.path?.startsWith('portal_')).path;
+      await importar([fila({ fecha: new Date(2026, 9, 2) })]);
+      const copias = escriturasDePortal();
+      expect(copias.map(e => e.tipo)).toEqual(['set', 'delete']);
+      expect(copias[1].path).toBe(antes);
+      expect(copias[0].path).not.toBe(antes);
+      expect(copias[0].data).toMatchObject({ anio: '2026', mes: '10', numero_factura: 'F-1', empresaId: 'emp1' });
+    });
+
+    it('un nombre repetido en el Maestro queda sin empresa', async () => {
+      estado.empresas = [['a', 'MEDTRONIC'], ['b', 'MEDTRONIC']];
+      await importar([fila()]);
+      expect(escriturasDePortal()[0].data.empresaId).toBeNull();
+    });
+
+    it('si no se puede leer el Maestro no escribe nada', async () => {
+      const original = estado.empresas;
+      estado.empresas = null; // el map del mock falla, como una lectura rechazada
+      await expect(importar([fila()])).rejects.toThrow();
+      expect(estado.escrituras).toEqual([]);
+      estado.empresas = original;
+    });
+
+    it('reimportar sin cambios no lee el Maestro', async () => {
+      await importar([fila()]);
+      estado.lecturasEmpresas = 0;
+      await importar([fila()]);
+      expect(estado.lecturasEmpresas).toBe(0);
+    });
   });
 
   it('archivo general con varios meses: nuevas en su mes, actualizadas y las que faltan solo se informan', async () => {

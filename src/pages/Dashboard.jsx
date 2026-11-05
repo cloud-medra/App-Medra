@@ -132,6 +132,7 @@ import CatalogosBodega from '../components/modulos/bodega/catalogosBodega/Catalo
 // --- DOCUMENTOS ---
 import ReportesInfo from '../components/modulos/operaciones/documentos/reportesInfo/ReportesInfo';
 import ImportarDetallesOC from '../components/modulos/operaciones/documentos/importarDetallesOC/ImportarDetallesOC';
+import OrdenesCompra from '../components/modulos/portalProveedores/ordenesCompra/OrdenesCompra';
 import SeguimientoFacturasGuias from '../components/modulos/operaciones/documentos/seguimientoFacturasGuias/SeguimientoFacturasGuias';
 import IngresoOrdenes from '../components/modulos/operaciones/documentos/ingresoOrdenes/IngresoOrdenes';
 import ArchivoDigital from '../components/modulos/operaciones/documentos/archivoDigital/ArchivoDigital.jsx';
@@ -577,6 +578,7 @@ const Dashboard = () => {
     // ── Documentos ──
     '/documentos/reportesInfo': <ReportesInfo pathVista="/documentos/reportesInfo" onAbrirGestionImplante={abrirGestionImplante} />,
     '/documentos/importarDetallesOC': <ImportarDetallesOC />,
+    '/portalProveedores/ordenesCompra': <OrdenesCompra />,
     '/documentos/seguimientoFacturasGuias': <SeguimientoFacturasGuias />,
     '/documentos/ingresoOrdenes': <IngresoOrdenes />,
     '/documentos/archivoDigital': <ArchivoDigital />,

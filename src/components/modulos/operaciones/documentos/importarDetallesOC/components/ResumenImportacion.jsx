@@ -137,6 +137,13 @@ export const ResumenImportacion = ({ resumen, onCerrar, onReintentar, reintentan
 
       {camposActualizados && <p className="w-full text-[10px] text-slate-500 dark:text-gray-400">Campos actualizados — {camposActualizados}</p>}
 
+      <Seccion
+        titulo="Proveedores sin empresa en el Maestro"
+        items={resumen.proveedoresSinEmpresa}
+        Icono={AlertTriangle}
+        ayuda="Sus filas no le aparecen a ningún proveedor en Portal Proveedores hasta relacionarlas. El nombre debe coincidir con el Maestro de Empresas."
+        render={(it) => `${it.proveedor}: ${it.filas} fila(s)`}
+      />
       {resumen.pendientes > 0 && (
         <div className="w-full flex items-center gap-2 px-2 py-1 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400">
           <AlertTriangle size={12} /> {resumen.pendientes} fila(s) no se guardaron por un error de conexión o permiso. Lo ya guardado se mantiene.

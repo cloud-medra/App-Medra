@@ -25,7 +25,7 @@ import { CentrosAdministrados, AdministradoresAsignados } from './AsignacionAdmi
 import SelectorInstitucionesUsuario from './SelectorInstitucionesUsuario';
 import { TIPOS_SOLICITUD } from '../../../../../functions/solicitudes/tipos.mjs';
 import { CamposTipoEmpresa } from './CamposTipoEmpresa';
-import { TIPO_EXTERNO, ROL_EXTERNO, tipoDeUsuario, esExterno } from '../../../../../functions/permisos/nucleo.mjs';
+import { TIPO_EXTERNO, ROL_EXTERNO, MODULOS_PARA_EXTERNOS, tipoDeUsuario, esExterno } from '../../../../../functions/permisos/nucleo.mjs';
 
 // Edición de un usuario existente desde Listado Usuario, a pantalla completa
 // (reemplaza al listado, igual que las vistas de detalle del sistema).
@@ -231,9 +231,10 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
         nombreCompleto: datosLimpios.nombreCompleto, nombreUsuario: datosLimpios.nombreUsuario, activo: datosLimpios.activo,
         ...(cambioEmail ? { email: datosLimpios.email } : {}),
       };
-      // Externo: solo datos y empresa. La función rechaza rol, centro y lo demás.
+      // Externo: datos, empresa y sus módulos. La función rechaza rol, centro,
+      // módulos internos y lo demás.
       await guardarPermisosUsuario(externo ? {
-        uid: usuario.id, datos: datosGenerales, tipoUsuario: TIPO_EXTERNO, empresaId: datosLimpios.empresaId,
+        uid: usuario.id, datos: datosGenerales, tipoUsuario: TIPO_EXTERNO, empresaId: datosLimpios.empresaId, excepciones,
       } : {
         uid: usuario.id,
         datos: datosGenerales,
@@ -331,8 +332,6 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
             id: 'permisos',
             label: 'Permisos',
             icon: KeyRound,
-            deshabilitada: externo,
-            motivo: 'Un usuario externo no recibe módulos internos',
             badge: pendientes.size > 0 && (
               <span className="ml-1 text-[10px] font-bold px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" title="Vistas pendientes de revisión">
                 {pendientes.size}
@@ -416,7 +415,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
 
               <Tarjeta titulo="Resumen de acceso" descripcion="Según los permisos actuales (incluye cambios sin guardar).">
                 {externo ? (
-                  <p className="text-[12px] text-gray-600 dark:text-gray-300">Usuario externo: sin módulos internos. Solo verá lo que se habilite para su empresa.</p>
+                  <p className="text-[12px] text-gray-600 dark:text-gray-300">Usuario externo: sin módulos internos. En la pestaña Permisos se le asigna lo que verá de su empresa.</p>
                 ) : accesoTotal ? (
                   <p className="text-[12px] text-gray-600 dark:text-gray-300">Este rol tiene acceso total al sistema.</p>
                 ) : (
@@ -446,7 +445,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
           </div>
         ) : (
           <div className="h-full min-h-0 flex flex-col gap-3">
-          <BarraCentroCosto
+          {!externo && <BarraCentroCosto
             centro={combinacion}
             conPlantilla={Boolean(plantillaElegida)}
             sinPlantilla={sinPlantilla}
@@ -454,9 +453,10 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
             excepciones={nExcepciones}
             onRestablecer={restablecerPlantilla}
             onConfigurarCentro={configurarCentro}
-          />
+          />}
           <div className="flex-1 min-h-0">
           <EditorPermisos
+            soloModulos={externo ? MODULOS_PARA_EXTERNOS : undefined}
             estado={permisos}
             onCambiar={onCambiarPermisos}
             onAbrirVista={marcarRevisada}

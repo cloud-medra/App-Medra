@@ -29,6 +29,7 @@ export const CODIGOS_MODULOS = Object.freeze({
   usuarios: 'USR',
   administracion: 'HER',
   dashboard: 'DSH',
+  portalProveedores: 'POR',
   [ENTRADA_AJUSTES]: 'AJU',
 });
 
@@ -169,6 +170,7 @@ export const CODIGOS_ITEMS = Object.freeze({
   '/hemodinamia/sincronizacionImputadas': 'HEMSIN',
   '/hemodinamia/respaldoDocumentos': 'HEMRES',
   '/hemodinamia/codigosHemodinamia': 'HEMCOD',
+  '/portalProveedores/ordenesCompra': 'PORORD',
   // Ajustes Sistema (AJUSTES_ITEMS)
   '/settings/datosUsuarios': 'AJUDAT',
   '/settings/cambiarPasswordAjustes': 'AJUCLA',

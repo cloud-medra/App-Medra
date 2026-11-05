@@ -32,7 +32,7 @@ describe('códigos de módulos', () => {
       implantes: 'IMP', hemodinamia: 'HEM', consignacion: 'CON', documentos: 'DOC',
       laboratorio: 'LAB', vacunatorio: 'VAC', bodega: 'BOD', inventario: 'INV',
       maestros: 'MAE', finanzas: 'FIN', usuarios: 'USR', administracion: 'HER',
-      dashboard: 'DSH', ajustes: 'AJU',
+      dashboard: 'DSH', ajustes: 'AJU', portalProveedores: 'POR',
     });
   });
 });
@@ -177,6 +177,7 @@ const PUBLICADOS = `
   /hemodinamia/sincronizacionImputadas HEMSIN
   /hemodinamia/respaldoDocumentos HEMRES
   /hemodinamia/codigosHemodinamia HEMCOD
+  /portalProveedores/ordenesCompra PORORD
   /settings/datosUsuarios AJUDAT
   /settings/cambiarPasswordAjustes AJUCLA
   /settings/ajusteTema AJUTEM

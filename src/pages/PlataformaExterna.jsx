@@ -1,17 +1,19 @@
 import { useState } from 'react';
-import { AlertTriangle, Building2, KeyRound, LogOut, Moon, Sun, User } from 'lucide-react';
+import { AlertTriangle, Building2, FileText, KeyRound, LogOut, Moon, Sun, User } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
 import { useEmpresaUsuario } from '../hooks/useEmpresaUsuario';
 import { cerrarSesion } from '../utils/cerrarSesion';
 import Perfil from '../components/modulos/general/perfil/Perfil';
 import CambiarPasswordAjustes from '../components/modulos/general/settings/cambiarPassword/CambiarPasswordAjustes';
+import OrdenesCompra from '../components/modulos/portalProveedores/ordenesCompra/OrdenesCompra';
+import { MODULO_PORTAL, RUTA_ORDENES_COMPRA } from '../../functions/portalProveedores/nucleo.mjs';
 import logoMedraClaro from '../assets/logo/medra-logo-claro.svg';
 import logoMedraOscuro from '../assets/logo/medra-logo-oscuro.svg';
 
-// Pantalla de un usuario externo: su empresa, Mi perfil y cambio de contraseña
-// (las mismas de los internos). No lee ningún dato interno. Aquí se colgarán los
-// módulos para externos (MODULOS_PARA_EXTERNOS, consultaDeEmpresa).
+// Pantalla de un usuario externo: su empresa, los ítems de Portal Proveedores que tenga
+// asignados, Mi perfil y cambio de contraseña (las mismas de los internos). No lee ningún
+// dato interno. Un ítem nuevo del portal se agrega aquí (MODULOS_PARA_EXTERNOS).
 const BOTON = 'h-8 px-3 inline-flex items-center gap-1.5 rounded-md text-[12px] font-semibold transition-colors';
 const BOTON_INACTIVO = 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
 const BOTON_ACTIVO = 'bg-[#2383C2]/10 text-[#2383C2]';
@@ -21,6 +23,8 @@ const PlataformaExterna = () => {
   const { oscuro, alternarOscuro } = useTheme();
   const { nombre, activa, cargando } = useEmpresaUsuario();
   const [vista, setVista] = useState('inicio');
+  // Con la empresa desactivada las reglas le niegan los datos: no se ofrece.
+  const verOrdenes = activa && (userData?.permisos?.[MODULO_PORTAL] || []).includes(RUTA_ORDENES_COMPRA);
 
   const salir = async () => {
     try {
@@ -42,6 +46,7 @@ const PlataformaExterna = () => {
         <button type="button" onClick={() => setVista('inicio')} aria-label="Ir al inicio" className="mr-2">
           <img src={oscuro ? logoMedraOscuro : logoMedraClaro} alt="Medra" className="h-6" />
         </button>
+        {verOrdenes && botonVista('ordenes', 'Órdenes de Compra', FileText)}
         {botonVista('perfil', 'Mi perfil', User)}
         {botonVista('password', 'Cambiar contraseña', KeyRound)}
         <div className="ml-auto flex items-center gap-1">
@@ -55,6 +60,7 @@ const PlataformaExterna = () => {
       </header>
 
       <main className="flex-1 p-4 md:p-6">
+        {vista === 'ordenes' && verOrdenes && <div className="h-[calc(100vh-7rem)]"><OrdenesCompra /></div>}
         {vista === 'perfil' && <Perfil userData={userData} onGestionarPassword={() => setVista('password')} />}
         {vista === 'password' && <CambiarPasswordAjustes userData={userData} />}
         {vista === 'inicio' && (
@@ -70,7 +76,7 @@ const PlataformaExterna = () => {
                 Tu empresa está desactivada. Contacta al administrador.
               </p>
             ) : (
-              <p className="mt-4 text-[12.5px] text-gray-500 dark:text-gray-400">Todavía no tienes módulos asignados.</p>
+              <p className="mt-4 text-[12.5px] text-gray-500 dark:text-gray-400">{verOrdenes ? 'Consulta tus órdenes en el menú de arriba.' : 'Todavía no tienes módulos asignados.'}</p>
             )}
           </div>
         )}

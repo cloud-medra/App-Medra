@@ -370,7 +370,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
         )}
         tabs={[
           { id: 'datos', label: 'Datos generales', icon: UserPlus },
-          { id: 'permisos', label: 'Permisos', icon: KeyRound, deshabilitada: !usuarioId || externo, motivo: externo ? 'Un usuario externo no recibe módulos internos' : 'Primero crea la cuenta en Datos generales' },
+          { id: 'permisos', label: 'Permisos', icon: KeyRound, deshabilitada: !usuarioId || externo, motivo: externo ? 'Sus módulos se asignan al editarlo, desde Listado Usuario' : 'Primero crea la cuenta en Datos generales' },
         ]}
         tabActiva={tab}
         onTab={setTab}

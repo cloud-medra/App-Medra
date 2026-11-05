@@ -19,6 +19,7 @@ import { obtenerSnapshotDetallesOC, guardarSnapshotDetallesOC, camposMetaSnapsho
 import { mezclarIndiceOC } from '../../../shared/ocIndex/indiceOC';
 import { leerMetaOC, obtenerIndiceOC, publicarIndiceOC, agregarInvalidacionesPendientes } from '../../../shared/ocIndex/indiceOCRemoto';
 import { invalidarOCGestiones } from '../../../shared/ocIndex/invalidarOCGestiones';
+import { COL_PORTAL_OC, idsPortalOC } from '../../../../../../../functions/portalProveedores/nucleo.mjs';
 
 export const COLECCION_RESPALDO = 'detallesOCEliminados';
 const MAX_OPS_BATCH = 450;
@@ -96,12 +97,13 @@ export const eliminarFilasDetallesOC = async (filas, { liberarOC = true, usuario
   lecturas += 1;
   const snapshot = await obtenerSnapshotDetallesOC(meta);
 
-  // Respaldo + borrado, de a pares en el mismo lote.
+  // Respaldo + borrado de la fila y de su copia de Portal Proveedores, en el mismo lote.
+  const idsPortal = await idsPortalOC(filas.map(f => f.id));
   const confirmados = [];
   const errores = [];
   const sello = Date.now();
-  for (let i = 0; i < filas.length; i += MAX_OPS_BATCH / 2) {
-    const lote = filas.slice(i, i + MAX_OPS_BATCH / 2);
+  for (let i = 0; i < filas.length; i += MAX_OPS_BATCH / 3) {
+    const lote = filas.slice(i, i + MAX_OPS_BATCH / 3);
     const batch = writeBatch(db);
     lote.forEach(({ id, refPath, ...datos }) => {
       // Los valores vienen de Firestore (fechas como Timestamp): se copian tal cual.
@@ -114,10 +116,11 @@ export const eliminarFilasDetallesOC = async (filas, { liberarOC = true, usuario
         eliminadoEn: serverTimestamp()
       });
       batch.delete(doc(db, refPath));
+      batch.delete(doc(db, COL_PORTAL_OC, idsPortal.get(id)));
     });
     try {
       await batch.commit();
-      escrituras += lote.length * 2;
+      escrituras += lote.length * 3;
       confirmados.push(...lote.map(f => f.id));
     } catch (err) {
       console.error('[Eliminar Detalles OC] Falló un lote:', err);

@@ -28,13 +28,18 @@ service cloud.firestore {
       return cuentaActiva() && !esExterno();
     }
     // Externo activo de ESA empresa, y la empresa sigue ACTIVO en el maestro:
-    // si se inactiva o se elimina, pierde el acceso a los datos al instante.
-    function externoDeEmpresa(empresaId) {
-      let ruta = /databases/$(database)/documents/maestros_empresas/$(empresaId);
+    // si se inactiva o se elimina, pierde el acceso a los datos al instante. La
+    // empresa se busca con el dato del USUARIO, no con el del documento: en un
+    // listado Firestore evalúa la regla contra la consulta, no fila por fila.
+    function empresaActivaDelExterno() {
+      let empresa = getUsuario().get('empresaId', '');
+      let ruta = /databases/$(database)/documents/maestros_empresas/$(empresa);
       return cuentaActiva() && esExterno()
-        && empresaId is string && empresaId.size() > 0
-        && empresaId == getUsuario().get('empresaId', '')
+        && empresa is string && empresa.size() > 0
         && exists(ruta) && get(ruta).data.get('estado', '') == 'ACTIVO';
+    }
+    function externoDeEmpresa(empresaId) {
+      return empresaActivaDelExterno() && empresaId == getUsuario().get('empresaId', '');
     }
     // Base de los módulos para externos: el documento lleva `empresaId`.
     //   match /externos_xxx/{id} { allow read: if leeDatoDeEmpresa(resource.data); }
@@ -1021,6 +1026,18 @@ service cloud.firestore {
           }
         }
       }
+    }
+
+    // Portal Proveedores → Órdenes de Compra: copia de los Detalles OC solo con los
+    // campos que puede ver un proveedor (functions/portalProveedores/nucleo.mjs). Las
+    // filas originales traen paciente y médico, y siguen cerradas para externos. Un
+    // listado de un externo debe filtrar por su empresaId. La escriben Importar y
+    // Eliminar Detalles OC, con el mismo permiso que escribe las filas.
+    match /portal_ordenes_compra/{id} {
+      allow read: if (externoDeEmpresa(resource.data.empresaId)
+          && tieneItem('portalProveedores', '/portalProveedores/ordenesCompra'))
+        || (estaActivo() && (esDev() || tienePermiso('portalProveedores')));
+      allow write: if estaActivo() && escribeDetallesOC();
     }
 
     // Resumen Mensual de facturación de Detalles OC: un documento por año

@@ -60,17 +60,19 @@ const Contador = ({ marcados, total, className = '' }) => {
   );
 };
 
-const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVista, accesoTotalPorRol = false, origen }) => {
+// `soloModulos`: claves de los módulos que se ofrecen (un externo, solo los suyos).
+const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVista, accesoTotalPorRol = false, origen, soloModulos }) => {
   const [busqueda, setBusqueda] = useState('');
+  const modulos = useMemo(() => (soloModulos ? MODULOS.filter(([k]) => soloModulos.includes(k)) : MODULOS), [soloModulos]);
   const [moduloSel, setModuloSel] = useState(() => {
-    const conPermisos = MODULOS.find(([k]) => (estado.permisos?.[k] || []).length > 0);
-    return (conPermisos || MODULOS[0])[0];
+    const conPermisos = modulos.find(([k]) => (estado.permisos?.[k] || []).length > 0);
+    return (conPermisos || modulos[0])[0];
   });
   const [abiertas, setAbiertas] = useState(() => new Set());
 
   const modulosFiltrados = useMemo(
-    () => MODULOS.filter(([, m]) => !busqueda.trim() || moduloCoincideBusqueda(m, COMPONENT_MAPS, busqueda)),
-    [busqueda]
+    () => modulos.filter(([, m]) => !busqueda.trim() || moduloCoincideBusqueda(m, COMPONENT_MAPS, busqueda)),
+    [busqueda, modulos]
   );
   const moduloActivo = modulosFiltrados.find(([k]) => k === moduloSel) || modulosFiltrados[0];
 

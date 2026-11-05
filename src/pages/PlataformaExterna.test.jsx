@@ -15,6 +15,7 @@ vi.mock('../utils/cerrarSesion', () => ({ cerrarSesion: () => cerrarSesion() }))
 vi.mock('../components/modulos/general/perfil/Perfil', () => ({ default: () => <p>PANTALLA PERFIL</p> }));
 vi.mock('../components/modulos/general/settings/cambiarPassword/CambiarPasswordAjustes', () => ({ default: () => <p>PANTALLA CLAVE</p> }));
 vi.mock('./Dashboard', () => ({ default: () => <p>DASHBOARD INTERNO</p> }));
+vi.mock('../components/modulos/portalProveedores/ordenesCompra/OrdenesCompra', () => ({ default: () => <p>PANTALLA ORDENES</p> }));
 
 const { default: PlataformaExterna } = await import('./PlataformaExterna');
 const { default: Plataforma } = await import('./Plataforma');
@@ -44,6 +45,31 @@ describe('PlataformaExterna', () => {
     expect(screen.getByText('PANTALLA PERFIL')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /Cerrar sesión/ }));
     expect(cerrarSesion).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('PlataformaExterna: Órdenes de Compra', () => {
+  const RUTA = '/portalProveedores/ordenesCompra';
+  afterEach(() => { usuario = { tipoUsuario: 'externo', empresaId: 'e1', nombreCompleto: 'Beto' }; empresa = { ...empresa, activa: true }; });
+
+  it('sin el permiso no aparece', () => {
+    render(<PlataformaExterna />);
+    expect(screen.queryByRole('button', { name: /Órdenes de Compra/ })).toBeNull();
+    expect(screen.getByText('Todavía no tienes módulos asignados.')).toBeInTheDocument();
+  });
+
+  it('con el permiso se abre', () => {
+    usuario = { ...usuario, permisos: { portalProveedores: [RUTA] } };
+    render(<PlataformaExterna />);
+    fireEvent.click(screen.getByRole('button', { name: /Órdenes de Compra/ }));
+    expect(screen.getByText('PANTALLA ORDENES')).toBeInTheDocument();
+  });
+
+  it('con la empresa desactivada no se ofrece, aunque tenga el permiso', () => {
+    usuario = { ...usuario, permisos: { portalProveedores: [RUTA] } };
+    empresa = { ...empresa, activa: false };
+    render(<PlataformaExterna />);
+    expect(screen.queryByRole('button', { name: /Órdenes de Compra/ })).toBeNull();
   });
 });
 

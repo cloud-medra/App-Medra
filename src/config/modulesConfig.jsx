@@ -335,6 +335,16 @@ export const MODULES = {
       // Misma pantalla y datos que Maestros → Codigos, con permisos propios.
       { label: 'Códigos', path: '/hemodinamia/codigosHemodinamia', icon: <ScanBarcode size={14} />, color: PALETA_MENU.ambar },
     ]
+  },
+  // Lo que ven los usuarios de empresas externas (MODULOS_PARA_EXTERNOS). Un interno
+  // con permiso ve todas las empresas. Sus datos no vienen de las colecciones internas.
+  portalProveedores: {
+    label: 'Portal Proveedores',
+    icon: <Truck size={18} />,
+    color: PALETA_MENU.turquesa,
+    subItems: [
+      { label: 'Órdenes de Compra', path: '/portalProveedores/ordenesCompra', icon: <FileText size={14} />, color: PALETA_MENU.azul },
+    ]
   }
 };
 

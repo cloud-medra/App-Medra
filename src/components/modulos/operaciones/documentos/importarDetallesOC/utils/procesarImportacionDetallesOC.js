@@ -11,7 +11,7 @@
 //   5. Snapshot + índice de OC + ocImport/meta.
 //   6. Resumen Mensual de facturación de los meses tocados (desde el
 //      snapshot nuevo, 0 lecturas).
-import { doc, writeBatch, setDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, writeBatch, setDoc } from 'firebase/firestore';
 import { db } from '../../../../../../firebaseConfig';
 import { normalizarProveedorId } from './normalizarProveedor';
 import { entradaSnapshot } from './planificarImportacion';
@@ -21,6 +21,9 @@ import { mezclarIndiceOC } from '../../../shared/ocIndex/indiceOC';
 import { leerMetaOC, obtenerIndiceOC, publicarIndiceOC, agregarInvalidacionesPendientes } from '../../../shared/ocIndex/indiceOCRemoto';
 import { invalidarOCGestiones } from '../../../shared/ocIndex/invalidarOCGestiones';
 import { actualizarMeses } from '../../resumenFacturacion/resumenFacturacionService';
+import {
+  COL_PORTAL_OC, crearIndiceEmpresas, empresaIdDeProveedor, proyeccionPortalOC, cambioVisibleEnPortal, idsPortalOC,
+} from '../../../../../../../functions/portalProveedores/nucleo.mjs';
 
 export { leerFilasDelExcel } from './leerFilasDelExcel';
 export { SnapshotAntiguoError } from './snapshotStorageDetallesOC';
@@ -77,27 +80,44 @@ const rutasConocidas = (snapshot) => {
 };
 
 // Operaciones de escritura del plan. Cada una sabe cuántas operaciones de
-// batch usa, cómo agregarse al batch y cómo reflejarse en el snapshot.
-const construirOperaciones = (plan, snapshotAnterior) => {
+// batch usa, cómo agregarse al batch y cómo reflejarse en el snapshot. La copia de
+// Portal Proveedores va en el mismo lote que la fila: no pueden quedar distintas.
+const construirOperaciones = (plan, snapshotAnterior, { indiceEmpresas, idsPortal }) => {
   const ops = [];
+  const refPortal = (id) => doc(db, COL_PORTAL_OC, idsPortal.get(id));
+  const copiaPortal = (fila, datos) => {
+    const [anio, mes] = fechaDeFila(fila).split('-');
+    return {
+      ...proyeccionPortalOC({ datos, proveedor: fila.proveedor, empresaId: empresaIdDeProveedor(indiceEmpresas, fila.proveedor), anio, mes }),
+      actualizadoEn: new Date()
+    };
+  };
   const base = (id, fila) => ({ id, filaExcel: fila._filaExcel, ruta: partesRuta(fechaDeFila(fila), fila.admision, fila.proveedor), proveedor: fila.proveedor });
 
   plan.nuevas.forEach(({ id, fila, valores }) => ops.push({
-    ...base(id, fila), tipo: 'nueva', extraOps: 0,
-    escribir: (batch, ref) => batch.set(ref, construirPayloadDetalle(fila)),
+    ...base(id, fila), tipo: 'nueva', extraOps: 1,
+    escribir: (batch, ref) => {
+      const payload = construirPayloadDetalle(fila);
+      batch.set(ref, payload);
+      batch.set(refPortal(id), copiaPortal(fila, payload));
+    },
     aplicar: (snap) => { snap[id] = entradaSnapshot(fila, valores); }
   }));
 
   plan.actualizadas.forEach(({ id, fila, cambios, combinados }) => ops.push({
-    ...base(id, fila), tipo: 'actualizada', extraOps: 0,
+    ...base(id, fila), tipo: 'actualizada', extraOps: cambioVisibleEnPortal(cambios) ? 1 : 0,
     // merge con solo los campos que cambiaron (si el documento no
     // existiera, un update haría fallar el lote entero).
-    escribir: (batch, ref) => batch.set(ref, { ...cambios, actualizadoEn: new Date() }, { merge: true }),
+    escribir: (batch, ref) => {
+      batch.set(ref, { ...cambios, actualizadoEn: new Date() }, { merge: true });
+      // La copia entera: un merge parcial sobre una copia inexistente la dejaría sin empresa.
+      if (cambioVisibleEnPortal(cambios)) batch.set(refPortal(id), copiaPortal(fila, { ...combinados, fecha_cx: fila.fecha_cx }));
+    },
     aplicar: (snap) => { snap[id] = { ...snap[id], v: combinados }; }
   }));
 
   plan.fechasCambiadas.forEach(({ idAntes, idNuevo, fila, combinados }) => ops.push({
-    ...base(idNuevo, fila), tipo: 'movida', idAntes, extraOps: 1,
+    ...base(idNuevo, fila), tipo: 'movida', idAntes, extraOps: 3,
     escribir: (batch, ref) => {
       // Valores del archivo; donde viene vacío se conserva lo guardado.
       const payload = construirPayloadDetalle(fila);
@@ -107,6 +127,8 @@ const construirOperaciones = (plan, snapshotAnterior) => {
       batch.set(ref, payload);
       const anterior = snapshotAnterior[idAntes];
       batch.delete(doc(db, ...rutaDetalle(partesRuta(anterior.f, anterior.a, anterior.p)).empresa, 'detalles', idAntes));
+      batch.set(refPortal(idNuevo), copiaPortal(fila, payload));
+      batch.delete(refPortal(idAntes));
     },
     aplicar: (snap) => { delete snap[idAntes]; snap[idNuevo] = entradaSnapshot(fila, combinados); }
   }));
@@ -135,8 +157,22 @@ export const procesarImportacionDetallesOC = async (file, { onProgreso, usuario 
   console.info(`[Importar Detalles OC] Formato: ${formato} · hoja "${hoja}". Columnas reconocidas:`, mapa, '· Encabezados:', encabezados);
   console.table(primeraFila);
 
-  // 3) Escrituras por lotes.
-  const ops = construirOperaciones(plan, snapshot.filas);
+  // 3) Escrituras por lotes. La empresa de cada proveedor sale del Maestro, leído solo
+  // si hay algo que escribir. Si no se puede leer, la importación no escribe nada.
+  const hayEscrituras = plan.nuevas.length + plan.actualizadas.length + plan.fechasCambiadas.length > 0;
+  let indiceEmpresas = new Map();
+  let idsPortal = new Map();
+  if (hayEscrituras) {
+    const empresas = await getDocs(collection(db, 'maestros_empresas'));
+    lecturas += empresas.size;
+    indiceEmpresas = crearIndiceEmpresas(empresas.docs.map(d => ({ id: d.id, ...d.data() })));
+    idsPortal = await idsPortalOC([
+      ...plan.nuevas.map(n => n.id),
+      ...plan.actualizadas.map(a => a.id),
+      ...plan.fechasCambiadas.flatMap(f => [f.idNuevo, f.idAntes]),
+    ]);
+  }
+  const ops = construirOperaciones(plan, snapshot.filas, { indiceEmpresas, idsPortal });
   const conocidas = rutasConocidas(snapshot.filas);
   const nuevoSnapshot = { ...snapshot.filas };
   const errores = [...invalidas];
@@ -251,12 +287,18 @@ export const procesarImportacionDetallesOC = async (file, { onProgreso, usuario 
     escrituras += resumenFacturacion.escrituras;
   }
 
+  // Proveedores sin empresa en el Maestro: sus filas no le aparecen a ningún externo.
+  const sinEmpresa = {};
+  ops.filter(op => idsConfirmados.has(op.id) && op.tipo !== 'actualizada' && !empresaIdDeProveedor(indiceEmpresas, op.proveedor))
+    .forEach((op) => { sinEmpresa[op.proveedor] = (sinEmpresa[op.proveedor] || 0) + 1; });
+
   const camposActualizados = {};
   plan.actualizadas.filter(a => idsConfirmados.has(a.id))
     .forEach(a => a.campos.forEach((c) => { camposActualizados[c] = (camposActualizados[c] || 0) + 1; }));
 
   return {
     totalFilasExcel: plan.filas.length + invalidas.length,
+    proveedoresSinEmpresa: Object.entries(sinEmpresa).map(([proveedor, filas]) => ({ proveedor, filas })),
     formatoArchivo: formato,
     meses: plan.meses,
     nuevas: confirmadas.nueva,

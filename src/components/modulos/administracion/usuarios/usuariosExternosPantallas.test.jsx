@@ -114,16 +114,23 @@ describe('Editar usuario', () => {
   const INTERNO = { id: 'ana', nombreCompleto: 'Ana', nombreUsuario: 'ana', email: 'a@a.cl', rol: 'encargado', centroCostoId: 'lab', excepciones: { agregados: [], quitados: [] }, permisos: {}, permisosGranulares: {} };
   const guardar = () => fireEvent.click(screen.getByRole('button', { name: /Guardar/ }));
 
-  it('externo: abre en datos, sin rol, centro ni permisos', () => {
+  it('externo: abre en datos, sin rol ni centro', () => {
     render(<EditarUsuario usuario={EXTERNO} onVolver={vi.fn()} />);
     expect(screen.getByLabelText('Tipo de usuario')).toHaveValue('externo');
     expect(screen.getByLabelText('Empresa')).toHaveValue('acme');
     expect(screen.queryByLabelText('Rol')).toBeNull();
     expect(screen.queryByText('Centro de costo')).toBeNull();
-    expect(screen.getByRole('tab', { name: /Permisos/ })).toBeDisabled();
   });
 
-  it('externo: guarda solo datos, tipo y empresa', async () => {
+  it('externo: la pestaña Permisos ofrece solo Portal Proveedores', () => {
+    render(<EditarUsuario usuario={EXTERNO} onVolver={vi.fn()} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Permisos/ }));
+    expect(screen.getAllByText('Portal Proveedores').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Implantes')).toBeNull();
+    expect(screen.queryByText('Bodega')).toBeNull();
+  });
+
+  it('externo: guarda solo datos, tipo, empresa y sus módulos', async () => {
     render(<EditarUsuario usuario={EXTERNO} onVolver={vi.fn()} />);
     fireEvent.change(screen.getByLabelText('Empresa'), { target: { value: '' } });
     guardar();
@@ -134,7 +141,7 @@ describe('Editar usuario', () => {
     guardar();
     await waitFor(() => expect(llamadas).toHaveLength(1));
     expect(llamadas[0].datos).toEqual({
-      uid: 'beto', tipoUsuario: 'externo', empresaId: 'acme',
+      uid: 'beto', tipoUsuario: 'externo', empresaId: 'acme', excepciones: { agregados: [], quitados: [] },
       datos: { nombreCompleto: 'Beto Soto', nombreUsuario: 'beto', activo: true },
     });
   });

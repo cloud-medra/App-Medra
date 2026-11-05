@@ -8,6 +8,7 @@ import { bodegaComponentMaps } from './bodega.js';
 import { documentosComponentMaps } from './documentos.js';
 import { implantesComponentMaps } from './implantes.js';
 import { hemodinamiaComponentMaps } from './hemodinamia.js';
+import { portalProveedoresComponentMaps } from './portalProveedores.js';
 
 export const COMPONENT_MAPS = {
   ...administracionComponentMaps,
@@ -20,4 +21,5 @@ export const COMPONENT_MAPS = {
   ...documentosComponentMaps,
   ...implantesComponentMaps,
   ...hemodinamiaComponentMaps,
+  ...portalProveedoresComponentMaps,
 };

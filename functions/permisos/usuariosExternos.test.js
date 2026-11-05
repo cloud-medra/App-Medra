@@ -48,7 +48,8 @@ describe('errorUsuarioExterno', () => {
 });
 
 describe('excepcionesSoloParaExternos', () => {
-  it('hoy no hay módulos para externos: solo vale sin excepciones', () => {
+  it('con los módulos de hoy, Portal Proveedores sí; cualquier módulo interno no', () => {
+    expect(excepcionesSoloParaExternos({ agregados: ['m|portalProveedores|/portalProveedores/ordenesCompra', 'v|/portalProveedores/ordenesCompra'], quitados: [] })).toBe(true);
     expect(excepcionesSoloParaExternos({ agregados: [], quitados: [] })).toBe(true);
     expect(excepcionesSoloParaExternos({ agregados: ['m|implantes|/implantes/x'], quitados: [] })).toBe(false);
     expect(excepcionesSoloParaExternos({ agregados: ['v|/implantes/x'], quitados: [] })).toBe(false);

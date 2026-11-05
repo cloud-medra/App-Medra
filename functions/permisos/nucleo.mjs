@@ -215,8 +215,8 @@ export const TIPOS_USUARIO = Object.freeze([
   { value: TIPO_EXTERNO, label: 'Externo' },
 ]);
 export const ROL_EXTERNO = 'operador';
-// Módulos que se le pueden asignar a un externo (claves de MODULES). Aún no hay.
-export const MODULOS_PARA_EXTERNOS = Object.freeze([]);
+// Módulos que se le pueden asignar a un externo (claves de MODULES).
+export const MODULOS_PARA_EXTERNOS = Object.freeze(['portalProveedores']);
 export const tipoDeUsuario = (u) => (u?.tipoUsuario === TIPO_EXTERNO ? TIPO_EXTERNO : TIPO_INTERNO);
 export const esExterno = (u) => tipoDeUsuario(u) === TIPO_EXTERNO;
 export const empresaDeUsuario = (u) => (esExterno(u) ? u.empresaId || null : null);

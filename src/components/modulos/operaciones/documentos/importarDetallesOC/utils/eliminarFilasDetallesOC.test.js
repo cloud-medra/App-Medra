@@ -67,7 +67,8 @@ describe('eliminarFilasDetallesOC', () => {
   it('respaldo y borrado en el mismo lote; snapshot, índice y OC actualizados', async () => {
     const r = await eliminarFilasDetallesOC([fila('B_1')], { liberarOC: true, usuario: { nombreCompleto: 'Admin', email: 'a@x' } });
     const [lote] = estado.lotes;
-    expect(lote.map(o => o.tipo)).toEqual(['set', 'delete']);
+    expect(lote.map(o => o.tipo)).toEqual(['set', 'delete', 'delete']);
+    expect(lote[2].path).toMatch(/^portal_ordenes_compra\/[0-9a-f]{64}$/); // su copia de Portal Proveedores
     expect(lote[0].path).toMatch(/^detallesOCEliminados\/B_1_\d+$/);
     expect(lote[0].data).toMatchObject({ idFila: 'B_1', admision: '200', oc: '4500009', eliminadoPor: 'Admin', rutaOriginal: fila('B_1').refPath });
     expect(lote[1].path).toBe(fila('B_1').refPath);
@@ -76,6 +77,14 @@ describe('eliminarFilasDetallesOC', () => {
     expect(estado.meta.snapshotDetallesVersion).toBeUndefined(); // va en el mismo setDoc del índice
     expect(estado.invalidadas).toEqual([expect.objectContaining({ admision: '200', ocAntes: '4500009' })]);
     expect(r).toMatchObject({ eliminadas: 1, marcadoresBorrados: 1, lecturasFirestore: 2 });
+  });
+
+  it('un lote nunca pasa el máximo de Firestore, con 3 operaciones por fila', async () => {
+    estado.snapshot = Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`F_${i}`, entrada('200', '2026-10-02', 'ALCO', '777', '')]));
+    await eliminarFilasDetallesOC(Array.from({ length: 200 }, (_, i) => fila(`F_${i}`)));
+    expect(estado.lotes.length).toBeGreaterThan(1);
+    estado.lotes.forEach(l => expect(l.length).toBeLessThanOrEqual(500));
+    expect(estado.lotes.flat().filter(o => o.path.startsWith('portal_ordenes_compra/'))).toHaveLength(200);
   });
 
   it('sin liberar OC no toca gestiones', async () => {
