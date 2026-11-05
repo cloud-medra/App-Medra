@@ -43,6 +43,33 @@ export const proyeccionPortalOC = ({ datos, proveedor, empresaId, anio, mes }) =
   mes: String(mes),
 });
 
+// Opciones de scripts/sincronizarPortalOC.js. El alcance es obligatorio: comparar todo
+// cuesta unas 31.000 lecturas y no debe pasar por olvidar una opción.
+export const alcanceDeArgumentos = (argv) => {
+  const meses = [];
+  let todo = false;
+  let aplicar = false;
+  let estimar = false;
+  for (let i = 0; i < argv.length; i += 1) {
+    const a = argv[i];
+    if (a === '--todo') todo = true;
+    else if (a === '--aplicar') aplicar = true;
+    else if (a === '--estimar') estimar = true;
+    else if (a === '--mes' || a.startsWith('--mes=')) {
+      const valor = a === '--mes' ? argv[(i += 1)] : a.slice('--mes='.length);
+      if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(valor || '')) return { error: `Mes inválido: ${valor ?? '(vacío)'}. Formato: --mes 2026-10` };
+      meses.push(valor);
+    } else return { error: `Opción desconocida: ${a}` };
+  }
+  if (todo && meses.length) return { error: 'Usa --mes o --todo, no ambos.' };
+  if (!todo && !meses.length) return { error: 'Falta el alcance: indica --mes AAAA-MM (repetible) o --todo.' };
+  if (aplicar && estimar) return { error: 'Usa --estimar o --aplicar, no ambos.' };
+  return {
+    todo, aplicar, estimar,
+    meses: [...new Set(meses)].sort().map((m) => { const [anio, mes] = m.split('-'); return { anio, mes }; }),
+  };
+};
+
 // ¿Este cambio de una fila se ve en el portal? (si no, no hace falta escribir la copia).
 export const cambioVisibleEnPortal = (cambios) => CAMPOS_PORTAL_OC.some((c) => c in (cambios || {}));
 

@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   CAMPOS_PORTAL_OC, crearIndiceEmpresas, empresaIdDeProveedor, normalizarNombreEmpresa, proyeccionPortalOC,
-  cambioVisibleEnPortal, idPortalOC, idsPortalOC, diferenciasCopiaPortal,
+  cambioVisibleEnPortal, idPortalOC, idsPortalOC, diferenciasCopiaPortal, alcanceDeArgumentos,
 } from './nucleo.mjs';
 
 const FILA = {
@@ -75,6 +75,36 @@ describe('cambioVisibleEnPortal', () => {
     ['estado', 'paciente', 'precio_u', 'oc_monto'].forEach((c) => expect(cambioVisibleEnPortal({ [c]: 'x' })).toBe(true));
     expect(cambioVisibleEnPortal({ medico: 'y', admision: '1', lote: 'z' })).toBe(false);
     expect(cambioVisibleEnPortal(undefined)).toBe(false);
+  });
+});
+
+describe('alcanceDeArgumentos', () => {
+  it('sin alcance no corre: leer todo debe ser explícito', () => {
+    expect(alcanceDeArgumentos([]).error).toMatch(/Falta el alcance/);
+    expect(alcanceDeArgumentos(['--aplicar']).error).toMatch(/Falta el alcance/);
+    expect(alcanceDeArgumentos(['--estimar']).error).toMatch(/Falta el alcance/);
+  });
+
+  it('--mes acepta varios, en cualquier forma, sin repetir y en orden', () => {
+    expect(alcanceDeArgumentos(['--mes', '2026-11', '--mes=2026-09', '--mes', '2026-11']).meses)
+      .toEqual([{ anio: '2026', mes: '09' }, { anio: '2026', mes: '11' }]);
+  });
+
+  it('rechaza un mes mal escrito, u otra opción, en vez de leer de más', () => {
+    ['2026-13', '2026-1', '11-2026', '2026', ''].forEach((m) => expect(alcanceDeArgumentos(['--mes', m]).error).toMatch(/Mes inválido/));
+    expect(alcanceDeArgumentos(['--mes']).error).toMatch(/Mes inválido/);
+    expect(alcanceDeArgumentos(['--mes', '2026-11', '--aplicarr']).error).toMatch(/desconocida/);
+  });
+
+  it('no se combinan --mes con --todo, ni --estimar con --aplicar', () => {
+    expect(alcanceDeArgumentos(['--todo', '--mes', '2026-11']).error).toMatch(/no ambos/);
+    expect(alcanceDeArgumentos(['--todo', '--estimar', '--aplicar']).error).toMatch(/no ambos/);
+  });
+
+  it('escribir solo con --aplicar', () => {
+    expect(alcanceDeArgumentos(['--mes', '2026-11'])).toMatchObject({ aplicar: false, estimar: false, todo: false });
+    expect(alcanceDeArgumentos(['--todo', '--aplicar'])).toMatchObject({ aplicar: true, todo: true, meses: [] });
+    expect(alcanceDeArgumentos(['--mes', '2026-11', '--estimar'])).toMatchObject({ estimar: true });
   });
 });
 
