@@ -29,6 +29,15 @@
 - Al terminar: `npm run build` y los tests unitarios que correspondan, commit y push a `main`, y desplegar solo lo que cambió (hosting y/o Functions por tandas, nunca `npm run deploy`).
 - Respuesta final breve: qué cambió, qué se desplegó y qué no se probó.
 
+## Pendientes
+
+Anotados el 05-11-2026. Al cumplirse, hacerlos en modo solo lectura salvo aprobación, avisar el resultado y quitarlos de aquí.
+
+- **Después del próximo cierre de período** (lo hace el usuario): revisar que `estadisticasCierre` y `bodegaPeriodo` se hayan aplicado (estadísticas definitivas y foto en `bodega_periodos`), sin errores en los registros. Será su primera ejecución con los reintentos y la lectura del cierre actual.
+- **Cuando entren Laura y Juan:** comprobar su primer ingreso: `passwordChanged` en `true`, `passwordCambiadaEl` con fecha y `passwordUpdatedAt` de Firebase Auth movido a esa misma hora. Hasta entonces sigue activa la contraseña inicial que recibieron al crear la cuenta.
+- **Al terminar la observación de la cuota de CPU (entre el 19-11-2026 y el 03-12-2026):** revisar los rechazos por capacidad en los registros y decidir si se retoma el plan de arranque (cargar en `functions/index.js` solo el módulo de cada Function según `FUNCTION_TARGET`, probando primero con una sola Function; beneficio estimado de 1 a 2 s por arranque en frío). Mover Functions a otra región quedó descartado por ahora.
+- **Bloqueo a externos en `cerrarPeriodoImputacion`:** probarlo de forma segura; es la única callable sin prueba real con un usuario externo. Valida los datos antes de revisar quién llama, así que una llamada sin datos válidos no demuestra el bloqueo, y una con datos válidos cerraría un período si el bloqueo fallara.
+
 ## Arquitectura
 
 Medra: SPA interna de una clínica para implantes, hemodinamia, consignación, documentos, laboratorio, vacunatorio, bodega e inventario, con imputación mensual por períodos. Proyecto Firebase `workcraft-491b7`.
