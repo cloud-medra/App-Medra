@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Órdenes de Compra del portal. Lo central: un externo solo consulta la copia de su
-// empresa y nunca ve ni pide nombre ni montos; un interno lee las filas originales.
+// empresa y nunca ve médico, admisión ni RUT; un interno lee las filas originales.
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
@@ -8,8 +8,8 @@ import '@testing-library/jest-dom/vitest';
 const consultas = [];
 const FECHA = (d) => ({ toDate: () => new Date(2026, 8, d) });
 const COPIAS = [
-  { id: 'a', oc: '100', codigo: 'C1', descripcion: 'TROCAR', cantidad: 2, estado: 'Facturado', numero_guia: 'G1', numero_factura: 'F1', fecha_cx: FECHA(10), proveedor: 'ARENYS', empresaId: 'e1' },
-  { id: 'b', oc: '200', codigo: 'C2', descripcion: 'PLACA', cantidad: 1, estado: 'Pendiente factura', numero_guia: 'G2', numero_factura: '', fecha_cx: FECHA(20), proveedor: 'ARENYS', empresaId: 'e1' },
+  { id: 'a', paciente: 'JUANA PEREZ', precio_u: 1500, oc_monto: 3000, oc: '100', codigo: 'C1', descripcion: 'TROCAR', cantidad: 2, estado: 'Facturado', numero_guia: 'G1', numero_factura: 'F1', fecha_cx: FECHA(10), proveedor: 'ARENYS', empresaId: 'e1' },
+  { id: 'b', paciente: 'LUIS ROJO', precio_u: 0, oc_monto: 0, oc: '200', codigo: 'C2', descripcion: 'PLACA', cantidad: 1, estado: 'Pendiente factura', numero_guia: 'G2', numero_factura: '', fecha_cx: FECHA(20), proveedor: 'ARENYS', empresaId: 'e1' },
 ];
 const ORIGINALES = [
   { id: 'x_1', paciente: 'JUANA PEREZ', medico: 'DR SOTO', admision: '114584', oc: '100', codigo: 'C1', descripcion: 'TROCAR', cantidad: 2, precio_u: 1500, oc_monto: 3000, estado: 'Facturado', numero_guia: 'G1', numero_factura: 'F1', fecha_cx: FECHA(10), proveedor: 'ARENYS' },
@@ -33,7 +33,7 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('../../../../firebaseConfig', () => ({ db: {} }));
 let usuario;
 vi.mock('../../../../context/UserContext', () => ({ useUser: () => ({ userData: usuario }) }));
-// Un externo con TODAS las columnas marcadas: ni así debe ver las de internos.
+// Con TODAS las columnas marcadas: ni así un externo ve Proveedor.
 let permitir = () => true;
 vi.mock('../../../../hooks/useGranularPermission', () => ({ useGranularPermission: () => ({ hasPermission: (...a) => permitir(...a) }) }));
 const CATALOGO = () => ({ datos: [{ id: 'e2', nombre: 'BETA' }, { id: 'e1', nombre: 'ARENYS' }], cargado: true });
@@ -90,22 +90,36 @@ describe('usuario externo', () => {
     expect(screen.queryByRole('checkbox')).toBeNull();
   });
 
-  it('sus columnas son exactamente las aprobadas, aunque tenga marcadas las de internos', async () => {
+  it('sus columnas son exactamente las aprobadas, aunque tenga marcada Proveedor', async () => {
     render(<OrdenesCompra />);
     periodo();
     await screen.findByText('TROCAR');
-    expect(encabezados()).toEqual(['Fecha Cx', 'OC', 'Código', 'Descripción', 'Cant.', 'Estado', 'N° Guía', 'N° Factura']);
+    expect(encabezados()).toEqual(['Nombre', 'Fecha Cx', 'OC', 'Código', 'Descripción', 'Cant.', 'Precio unitario', 'Total ítems', 'Estado', 'N° Guía', 'N° Factura']);
   });
 
-  it('un dato de paciente o monto colado en la copia tampoco se muestra ni se busca', async () => {
-    respuesta = async () => respuestaDe([{ ...COPIAS[0], paciente: 'JUANA PEREZ', precio_u: 1500, oc_monto: 3000 }]);
+  it('ve el nombre y los montos de su empresa, con "-" si están en 0, y busca por nombre', async () => {
     render(<OrdenesCompra />);
     periodo();
     await screen.findByText('TROCAR');
-    expect(screen.queryByText('JUANA PEREZ')).toBeNull();
-    expect(screen.queryByText(/1\.500|3\.000/)).toBeNull();
-    fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'juana' } });
+    const fila = (texto) => screen.getByText(texto).closest('tr');
+    expect(fila('JUANA PEREZ')).toHaveTextContent('$1.500');
+    expect(fila('JUANA PEREZ')).toHaveTextContent('$3.000');
+    expect(fila('LUIS ROJO')).not.toHaveTextContent('$0');
+    fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: 'luis' } });
+    expect(screen.getByText('PLACA')).toBeInTheDocument();
     expect(screen.queryByText('TROCAR')).toBeNull();
+  });
+
+  it('un médico, admisión o RUT colado en la copia tampoco se muestra ni se busca', async () => {
+    respuesta = async () => respuestaDe([{ ...COPIAS[0], medico: 'DR SOTO', admision: '114584', rut: '11.111.111-1' }]);
+    render(<OrdenesCompra />);
+    periodo();
+    await screen.findByText('TROCAR');
+    ['DR SOTO', '114584', '11.111.111-1'].forEach((v) => expect(screen.queryByText(v)).toBeNull());
+    ['soto', '114584', '11.111.111'].forEach((v) => {
+      fireEvent.change(screen.getByLabelText('Buscar'), { target: { value: v } });
+      expect(screen.queryByText('TROCAR')).toBeNull();
+    });
   });
 
   it('ordena por fecha, de la más reciente, y filtra sin volver a consultar', async () => {

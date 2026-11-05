@@ -74,8 +74,8 @@ export const ordenarOrdenes = (filas) => [...filas].sort((a, b) =>
   || String(a.oc ?? '').localeCompare(String(b.oc ?? ''))
   || String(a.codigo ?? '').localeCompare(String(b.codigo ?? '')));
 
-export const CAMPOS_BUSQUEDA_EXTERNO = ['oc', 'codigo', 'descripcion', 'numero_guia', 'numero_factura', 'estado'];
-export const CAMPOS_BUSQUEDA_INTERNO = [...CAMPOS_BUSQUEDA_EXTERNO, 'proveedor', 'paciente'];
+export const CAMPOS_BUSQUEDA_EXTERNO = ['paciente', 'oc', 'codigo', 'descripcion', 'numero_guia', 'numero_factura', 'estado'];
+export const CAMPOS_BUSQUEDA_INTERNO = [...CAMPOS_BUSQUEDA_EXTERNO, 'proveedor'];
 
 export const filtrarOrdenes = (filas, texto, campos = CAMPOS_BUSQUEDA_EXTERNO) => {
   const t = String(texto ?? '').trim().toLowerCase();

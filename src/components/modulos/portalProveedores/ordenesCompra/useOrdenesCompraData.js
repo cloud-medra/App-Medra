@@ -35,8 +35,8 @@ const usePeriodo = (clave, crearConsulta, limite) => {
 };
 const SIN_DOCS = [];
 
-// Externo: SOLO la copia, que no tiene paciente, médico, admisión ni montos, y siempre
-// filtrando por su empresa. Este es el único camino de datos de un externo.
+// Externo: SOLO la copia, que no tiene médico, admisión ni RUT, y siempre filtrando por
+// su empresa. Este es el único camino de datos de un externo.
 export const useOrdenesExterno = (userData, { anio, mes }) => {
   const clave = anio && mes ? `${userData?.uid}/${userData?.empresaId}/${anio}/${mes}` : '';
   const { docs, ...resto } = usePeriodo(
@@ -48,7 +48,7 @@ export const useOrdenesExterno = (userData, { anio, mes }) => {
   return { filas, ...resto };
 };
 
-// Interno: las filas originales del mes, con nombre y montos. El mes se lee una vez:
+// Interno: las filas originales del mes. El mes se lee una vez:
 // cambiar de empresa no vuelve a consultar. Mientras carga el Maestro no se filtra por
 // empresa, porque todas las filas parecerían "sin empresa".
 export const useOrdenesInterno = ({ anio, mes, empresaId, empresas, empresasCargadas, errorEmpresas }) => {

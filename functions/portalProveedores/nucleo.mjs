@@ -1,6 +1,6 @@
 // Portal Proveedores → Órdenes de Compra: copia de los Detalles OC que puede leer
 // un proveedor. Las reglas no ocultan campos de un documento, y las filas originales
-// (documentos_sistema/…/detalles) traen paciente y médico; por eso el portal lee otra
+// (documentos_sistema/…/detalles) traen médico y admisión; por eso el portal lee otra
 // colección, con SOLO los campos de esta lista blanca. Lo usan la app (importar y
 // eliminar Detalles OC, la pantalla) y scripts/sincronizarPortalOC.js. Sin dependencias.
 
@@ -8,11 +8,12 @@ export const COL_PORTAL_OC = 'portal_ordenes_compra';
 export const MODULO_PORTAL = 'portalProveedores';
 export const RUTA_ORDENES_COMPRA = '/portalProveedores/ordenesCompra';
 
-// Lo que ve el proveedor de cada fila. Nunca paciente, médico ni admisión; los montos
-// (precio_u, oc_monto) quedaron fuera por decisión del usuario. Agregar un campo aquí
-// lo expone a todos los proveedores.
+// Lo que ve el proveedor de cada fila de SU empresa. Nunca médico, admisión ni RUT. El
+// nombre del paciente y los montos van por decisión del usuario: el proveedor ya los
+// recibe con cada orden, porque los necesita para facturar. Agregar un campo aquí lo
+// expone a todos los proveedores.
 export const CAMPOS_PORTAL_OC = Object.freeze([
-  'oc', 'codigo', 'descripcion', 'cantidad', 'estado', 'numero_guia', 'numero_factura', 'fecha_cx',
+  'paciente', 'oc', 'codigo', 'descripcion', 'cantidad', 'precio_u', 'oc_monto', 'estado', 'numero_guia', 'numero_factura', 'fecha_cx',
 ]);
 
 // Nombre del proveedor para compararlo con el Maestro: sin tildes, mayúsculas ni signos.

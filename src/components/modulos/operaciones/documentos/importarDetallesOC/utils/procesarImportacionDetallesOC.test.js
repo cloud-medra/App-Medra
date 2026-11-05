@@ -145,18 +145,20 @@ describe('procesarImportacionDetallesOC', () => {
   });
 
   describe('copia de Portal Proveedores', () => {
-    const PROHIBIDOS = ['paciente', 'medico', 'admision', 'precio_u', 'oc_monto', 'lote', 'atributo'];
+    const PROHIBIDOS = ['medico', 'admision', 'rut', 'lote', 'atributo'];
 
-    it('fila nueva: copia con la empresa del Maestro, sin datos del paciente ni el ID original', async () => {
+    it('fila nueva: copia con la empresa del Maestro, nombre y montos, sin médico, admisión ni el ID original', async () => {
       await importar([fila({ oc: '4500001', pac: 'JUANA PEREZ', med: 'DR SOTO' })]);
       const [copia] = escriturasDePortal();
       expect(escriturasDePortal()).toHaveLength(1);
       expect(copia.tipo).toBe('set');
       expect(copia.path).toMatch(/^portal_ordenes_compra\/[0-9a-f]{64}$/);
-      expect(copia.data).toMatchObject({ oc: '4500001', empresaId: 'emp1', proveedor: 'MEDTRONIC', anio: '2026', mes: '09', descripcion: 'TORNILLO' });
+      expect(copia.data).toMatchObject({ oc: '4500001', empresaId: 'emp1', proveedor: 'MEDTRONIC', anio: '2026', mes: '09', descripcion: 'TORNILLO', paciente: 'JUANA PEREZ' });
+      expect(copia.data).toHaveProperty('precio_u');
+      expect(copia.data).toHaveProperty('oc_monto');
       PROHIBIDOS.forEach(c => expect(copia.data).not.toHaveProperty(c));
       const texto = JSON.stringify(copia);
-      ['JUANA', 'SOTO', '114584'].forEach(v => expect(texto).not.toContain(v));
+      ['SOTO', '114584'].forEach(v => expect(texto).not.toContain(v));
     });
 
     it('proveedor que no está en el Maestro: copia sin empresa, y se informa', async () => {
@@ -174,9 +176,15 @@ describe('procesarImportacionDetallesOC', () => {
       PROHIBIDOS.forEach(c => expect(copia.data).not.toHaveProperty(c));
     });
 
-    it('cambio solo en campos no visibles (lote, paciente): no escribe la copia', async () => {
-      await importar([fila({ lote: 'L-1', pac: 'A' })]);
-      const r = await importar([fila({ lote: 'L-2', pac: 'B' })]);
+    it('cambio de nombre: reescribe la copia con el nombre nuevo', async () => {
+      await importar([fila({ pac: 'ANA' })]);
+      await importar([fila({ pac: 'ANA MARIA' })]);
+      expect(escriturasDePortal()[0].data.paciente).toBe('ANA MARIA');
+    });
+
+    it('cambio solo en campos no visibles (lote, médico): no escribe la copia', async () => {
+      await importar([fila({ lote: 'L-1', med: 'DR A' })]);
+      const r = await importar([fila({ lote: 'L-2', med: 'DR B' })]);
       expect(r.actualizadas).toBe(1);
       expect(escriturasDeFilas()).toHaveLength(1);
       expect(escriturasDePortal()).toEqual([]);

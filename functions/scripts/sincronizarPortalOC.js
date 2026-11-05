@@ -5,8 +5,8 @@
 // los campos autorizados y la empresa del Maestro). Normalmente las mantienen Importar y
 // Eliminar Detalles OC, en el mismo lote que la fila; esto detecta si alguna quedó
 // distinta, y también las copias que no le corresponden a ninguna fila o con campos que
-// no deben tener. Lee las filas pidiendo solo esos campos: paciente y médico nunca llegan
-// al script, y lo que imprime son conteos y nombres de campos, no valores. No dispara
+// no deben tener. Lee las filas pidiendo solo esos campos: médico y admisión nunca llegan
+// al script, y lo que imprime son conteos y nombres de campos, no valores (ni pacientes). No dispara
 // triggers: la colección no tiene ninguno.
 //
 //   cd functions

@@ -1,5 +1,5 @@
-// La copia del portal: nunca lleva datos de pacientes y la relación con la empresa no
-// adivina. Es lo que separa a un proveedor de los datos clínicos.
+// La copia del portal: lleva solo la lista blanca (nunca médico, admisión ni RUT) y la
+// relación con la empresa no adivina. Es lo que separa a un proveedor del resto de los datos.
 import { describe, it, expect } from 'vitest';
 import {
   CAMPOS_PORTAL_OC, crearIndiceEmpresas, empresaIdDeProveedor, normalizarNombreEmpresa, proyeccionPortalOC,
@@ -18,18 +18,19 @@ describe('proyeccionPortalOC', () => {
 
   it('lleva exactamente los campos autorizados', () => {
     expect(Object.keys(copia).sort()).toEqual([
-      'anio', 'cantidad', 'codigo', 'descripcion', 'empresaId', 'estado', 'fecha_cx', 'mes', 'numero_factura', 'numero_guia', 'oc', 'proveedor',
+      'anio', 'cantidad', 'codigo', 'descripcion', 'empresaId', 'estado', 'fecha_cx', 'mes', 'numero_factura', 'numero_guia', 'oc', 'oc_monto', 'paciente', 'precio_u', 'proveedor',
     ]);
-    expect(copia).toMatchObject({ oc: '45001', codigo: '510012', cantidad: 2, empresaId: 'e1', anio: '2026', mes: '09' });
+    expect(copia).toMatchObject({ oc: '45001', codigo: '510012', cantidad: 2, empresaId: 'e1', anio: '2026', mes: '09', paciente: 'JUANA PÉREZ', precio_u: 1000, oc_monto: 2000 });
   });
 
-  it('nunca lleva datos del paciente, del médico, la admisión ni montos', () => {
-    ['paciente', 'medico', 'admision', 'precio_u', 'oc_monto'].forEach((c) => {
-      expect(copia).not.toHaveProperty(c);
+  it('nunca lleva médico, admisión, RUT ni otros datos de la fila', () => {
+    const conRut = proyeccionPortalOC({ datos: { ...FILA, rut: '11.111.111-1' }, proveedor: FILA.proveedor, empresaId: 'e1', anio: '2026', mes: '09' });
+    ['medico', 'admision', 'rut', 'atributo', 'lote', 'fecha_recepcion', 'fecha_cargo', 'fecha_emision', 'fecha_ingreso', 'fecha_vencimiento'].forEach((c) => {
+      expect(conRut).not.toHaveProperty(c);
       expect(CAMPOS_PORTAL_OC).not.toContain(c);
     });
-    const texto = JSON.stringify(copia);
-    ['JUANA', 'PÉREZ', 'SOTO', '114584'].forEach((v) => expect(texto).not.toContain(v));
+    const texto = JSON.stringify(conRut);
+    ['SOTO', '114584', '11.111.111-1'].forEach((v) => expect(texto).not.toContain(v));
   });
 
   it('un campo faltante queda null, no se pierde la forma del documento', () => {
@@ -71,8 +72,8 @@ describe('relación con el Maestro de Empresas', () => {
 
 describe('cambioVisibleEnPortal', () => {
   it('solo los campos autorizados obligan a reescribir la copia', () => {
-    expect(cambioVisibleEnPortal({ estado: 'x' })).toBe(true);
-    expect(cambioVisibleEnPortal({ paciente: 'x', medico: 'y', precio_u: 1, lote: 'z' })).toBe(false);
+    ['estado', 'paciente', 'precio_u', 'oc_monto'].forEach((c) => expect(cambioVisibleEnPortal({ [c]: 'x' })).toBe(true));
+    expect(cambioVisibleEnPortal({ medico: 'y', admision: '1', lote: 'z' })).toBe(false);
     expect(cambioVisibleEnPortal(undefined)).toBe(false);
   });
 });
@@ -106,8 +107,12 @@ describe('diferenciasCopiaPortal', () => {
     expect(diferenciasCopiaPortal(copia({ cantidad: 0 }), copia({ cantidad: null })).desfasados).toEqual(['cantidad']);
   });
 
-  it('avisa si la copia guardada trae un campo que no debe tener, como paciente', () => {
-    expect(diferenciasCopiaPortal(copia(), copia({ paciente: 'JUANA', precio_u: 1 })).noAutorizados).toEqual(['paciente', 'precio_u']);
+  it('avisa si la copia guardada trae un campo que no debe tener, como médico', () => {
+    expect(diferenciasCopiaPortal(copia(), copia({ medico: 'DR', admision: '1', rut: '1-9' })).noAutorizados).toEqual(['medico', 'admision', 'rut']);
+  });
+
+  it('detecta el nombre y los montos desfasados', () => {
+    expect(diferenciasCopiaPortal(copia(), copia({ paciente: 'OTRA', precio_u: 1, oc_monto: 2 })).desfasados).toEqual(['paciente', 'precio_u', 'oc_monto']);
   });
 
   it('una copia inexistente sale con todo desfasado', () => {

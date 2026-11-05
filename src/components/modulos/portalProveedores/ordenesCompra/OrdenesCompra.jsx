@@ -16,26 +16,25 @@ import {
 } from './logicaOrdenesCompra';
 
 // Portal Proveedores → Órdenes de Compra. Solo consulta, con dos caminos de datos:
-//   - Externo: lee portal_ordenes_compra (su empresa), que no tiene paciente, médico,
-//     admisión ni montos.
-//   - Interno con permiso: lee las filas originales del mes y suma Nombre y montos.
+//   - Externo: lee portal_ordenes_compra (su empresa), que no tiene médico, admisión ni RUT.
+//   - Interno con permiso: lee las filas originales del mes, de todas las empresas.
 // Son dos componentes para que la vista de un externo nunca monte la consulta interna.
 const TH = 'px-2 py-1.5 border-b border-r border-slate-200 dark:border-gray-700';
 const TD = 'px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 truncate';
 const SELECT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 disabled:opacity-50';
 
-// `soloInternos`: un externo nunca ve la columna, aunque se le marque en permisos. Su dato
-// tampoco existe en la copia que lee.
+// `soloInternos`: un externo no ve la columna, aunque se le marque en permisos (solo ve su
+// empresa: Proveedor no le dice nada).
 const COLUMNAS = [
-  { key: 'paciente', label: 'Nombre', ancho: 180, min: 60, soloInternos: true, valor: (i) => i.paciente || '-' },
+  { key: 'paciente', label: 'Nombre', ancho: 180, min: 60, valor: (i) => i.paciente || '-' },
   { key: 'fecha_cx', label: 'Fecha Cx', ancho: 85, min: 60, valor: (i) => formatearFecha(i.fecha_cx) },
   { key: 'proveedor', label: 'Proveedor', ancho: 180, min: 60, soloInternos: true, valor: (i) => i.proveedor || '-' },
   { key: 'oc', label: 'OC', ancho: 95, min: 60, valor: (i) => i.oc || '-' },
   { key: 'codigo', label: 'Código', ancho: 90, min: 60, td: 'font-num text-emerald-600 dark:text-emerald-400', valor: (i) => i.codigo || '-' },
   { key: 'descripcion', label: 'Descripción', ancho: 260, min: 80, valor: (i) => i.descripcion || '-' },
   { key: 'cantidad', label: 'Cant.', ancho: 60, min: 50, th: 'text-center', td: 'text-center', valor: (i) => i.cantidad ?? '-' },
-  { key: 'precio_u', label: 'Precio unitario', ancho: 105, min: 70, soloInternos: true, th: 'text-right', td: 'text-right font-num', valor: (i) => formatearMontoOGuion(i.precio_u) },
-  { key: 'oc_monto', label: 'Total ítems', ancho: 105, min: 70, soloInternos: true, th: 'text-right', td: 'text-right font-num', valor: (i) => formatearMontoOGuion(i.oc_monto) },
+  { key: 'precio_u', label: 'Precio unitario', ancho: 105, min: 70, th: 'text-right', td: 'text-right font-num', valor: (i) => formatearMontoOGuion(i.precio_u) },
+  { key: 'oc_monto', label: 'Total ítems', ancho: 105, min: 70, th: 'text-right', td: 'text-right font-num', valor: (i) => formatearMontoOGuion(i.oc_monto) },
   { key: 'estado', label: 'Estado', ancho: 110, min: 60, valor: (i) => i.estado || '-' },
   { key: 'numero_guia', label: 'N° Guía', ancho: 95, min: 60, valor: (i) => i.numero_guia || '-' },
   { key: 'numero_factura', label: 'N° Factura', ancho: 95, min: 60, valor: (i) => i.numero_factura || '-' },
@@ -176,7 +175,7 @@ const VistaExterna = ({ userData }) => {
       periodo={periodo}
       datos={datos}
       camposBusqueda={CAMPOS_BUSQUEDA_EXTERNO}
-      placeholder="Buscar OC, código, descripción, guía o factura..."
+      placeholder="Buscar nombre, OC, código, descripción, guía o factura..."
     />
   );
 };
