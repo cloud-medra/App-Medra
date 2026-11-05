@@ -5,7 +5,7 @@
 ## Reglas
 
 - **No usar los emuladores de Firebase:** ni `npm run emuladores`, `npm run dev:emuladores`, `firebase emulators:*`, `npm run test:emulador` ni los tests de `tests/emulador/`. Verificar con `npm run build`, revisión de código y vitest (`npm test` o `npx vitest run <ruta>`). En la suite completa algunos tests fallan por timeout de 5 s en este equipo: correrlos aparte (`--testTimeout=30000`) antes de darlos por rotos.
-- **Desplegar las Cloud Functions de a 2 o 3 por vez**, esperando que termine cada tanda. La cuota de CPU de Cloud Run en `us-central1` ("Total CPU allocation, per project per region") está al límite y no se pudo aumentar: un deploy completo falla con `Quota exceeded for total allowable CPU per project per region`. Nunca `npm run deploy` (despliega todas juntas).
+- **Desplegar las Cloud Functions de a 2 o 3 por vez**, esperando que termine cada tanda. La cuota de CPU de Cloud Run en `us-central1` ("Total CPU allocation, per project per region") está al límite y Google no permite aumentarla: la consola solo acepta valores de 0 a 20.000 y responde que, según el historial de uso, el proyecto no cumple los requisitos (sugiere contactar a ventas; intentado el 05-11-2026). Un deploy completo falla con `Quota exceeded for total allowable CPU per project per region`. Nunca `npm run deploy` (despliega todas juntas).
 
   ```bash
   FUNCTIONS_DISCOVERY_TIMEOUT=90 npx firebase-tools deploy --only functions:funcionA,functions:funcionB,functions:funcionC --project workcraft-491b7
