@@ -13,8 +13,36 @@ service cloud.firestore {
     // revocan sus sesiones, pero un token ya emitido sigue valiendo hasta una
     // hora: por eso las reglas también lo verifican. Sin perfil o sin el
     // campo `activo`, se considera activo (como antes).
-    function estaActivo() {
+    function cuentaActiva() {
       return request.auth != null && getUsuario().get('activo', true) != false;
+    }
+    // Usuario de una empresa externa (usuarios/{uid}.tipoUsuario; sin el
+    // campo es interno). Solo lo escriben las Cloud Functions.
+    function esExterno() {
+      return getUsuario().get('tipoUsuario', 'interno') == 'externo';
+    }
+    // Usuario INTERNO activo: es lo que exigen las reglas de todos los datos
+    // internos, así que un externo queda fuera de ellos por defecto. Sus
+    // accesos se abren uno a uno (externoDeEmpresa, su perfil, su empresa).
+    function estaActivo() {
+      return cuentaActiva() && !esExterno();
+    }
+    // Externo activo de ESA empresa, y la empresa sigue ACTIVO en el maestro:
+    // si se inactiva o se elimina, pierde el acceso a los datos al instante.
+    function externoDeEmpresa(empresaId) {
+      let ruta = /databases/$(database)/documents/maestros_empresas/$(empresaId);
+      return cuentaActiva() && esExterno()
+        && empresaId is string && empresaId.size() > 0
+        && empresaId == getUsuario().get('empresaId', '')
+        && exists(ruta) && get(ruta).data.get('estado', '') == 'ACTIVO';
+    }
+    // Base de los módulos para externos: el documento lleva `empresaId`.
+    //   match /externos_xxx/{id} { allow read: if leeDatoDeEmpresa(resource.data); }
+    // Un listado de un externo debe filtrar por where('empresaId', '==', el
+    // suyo) (consultaDeEmpresa en src/utils/empresaUsuario.js): sin ese
+    // filtro, Firestore rechaza la consulta completa.
+    function leeDatoDeEmpresa(datos) {
+      return estaActivo() || externoDeEmpresa(datos.get('empresaId', ''));
     }
     // Desarrollador: el único rol con acceso total (mismo criterio que
     // esRolAccesoTotal de functions/permisos/nucleo.mjs). El Administrador se
@@ -105,7 +133,8 @@ service cloud.firestore {
       // solicitud (functions/solicitudes); el administrador, en Editar usuario.
       // instituciones (las del selector del header): solo guardarPermisosUsuario.
       return ['rol', 'permisos', 'permisosGranulares', 'centroCostoId', 'excepciones', 'nombreUsuario', 'bloqueoLoginHasta', 'email', 'activo',
-        'nombreCompleto', 'centrosAdministrados', 'administradoresAsignados', 'todosLosAdministradoresDelCentro', 'instituciones'];
+        'nombreCompleto', 'centrosAdministrados', 'administradoresAsignados', 'todosLosAdministradoresDelCentro', 'instituciones',
+        'tipoUsuario', 'empresaId'];
     }
     function rutasAdministrarUsuarios() {
       return ['/administracion/crearUsuario', '/administracion/listadoUsuario'];
@@ -130,10 +159,11 @@ service cloud.firestore {
       // y cierra la sesión con el aviso (UserContext).
       allow read: if request.auth != null && (request.auth.uid == userId || estaActivo());
       // Otro usuario: solo quien administra usuarios (ej. estadoCreacion de
-      // Crear Usuario). Rol, permisos, estado, etc. van por las funciones.
-      allow update: if estaActivo()
+      // Crear Usuario). Rol, permisos, estado, etc. van por las funciones. Lo
+      // suyo (tema, contraseña) también lo edita un externo.
+      allow update: if cuentaActiva()
         && (request.auth.uid == userId
-          || (administraUsuarios(rutasAdministrarUsuarios()) && puedeTocarUsuario(resource.data)))
+          || (estaActivo() && administraUsuarios(rutasAdministrarUsuarios()) && puedeTocarUsuario(resource.data)))
         && !request.resource.data.diff(resource.data).affectedKeys().hasAny(camposProtegidosUsuario())
         && cambioPasswordValido(userId);
       // El documento base lo crea la función crearUsuario (Crear Usuario),
@@ -587,6 +617,11 @@ service cloud.firestore {
     match /maestros_empresas/{document=**} {
       allow read: if estaActivo();
       allow write: if estaActivo() && (esDev() || tienePermiso('maestros'));
+    }
+    // Un externo solo lee el documento de SU empresa (nombre y estado), también
+    // si está inactiva: así la app le explica por qué no ve datos.
+    match /maestros_empresas/{empresaId} {
+      allow get: if cuentaActiva() && esExterno() && empresaId == getUsuario().get('empresaId', '');
     }
 
     match /maestros_prestadores/{document=**} {

@@ -11,11 +11,13 @@ service firebase.storage {
     }
     // Sesión de un usuario activo (mismo criterio que firestore.rules: un
     // token emitido antes de inactivarlo sigue valiendo hasta una hora).
-    // Sin perfil o sin el campo `activo`, se considera activo.
+    // Sin perfil o sin el campo `activo`, se considera activo. Un usuario
+    // externo (tipoUsuario) no accede a los archivos internos.
     function estaActivo() {
       return request.auth != null
         && (!firestore.exists(/databases/(default)/documents/usuarios/$(request.auth.uid))
-          || getUsuario().get('activo', true) != false);
+          || (getUsuario().get('activo', true) != false
+            && getUsuario().get('tipoUsuario', 'interno') != 'externo'));
     }
     // Desarrollador: único rol con acceso total (igual que firestore.rules).
     function esDev() {
