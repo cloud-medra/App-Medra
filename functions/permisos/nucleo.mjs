@@ -203,13 +203,67 @@ export const origenCasilla = (clave, planoPlantilla, excepciones) => {
   return valorDe(planoPlantilla, clave) ? 'heredado' : null;
 };
 
+// --- Usuarios externos -----------------------------------------------------
+// Personal de una empresa del Maestro de Empresas: tipoUsuario 'externo' +
+// empresaId (sin el campo, interno). Rol fijo Operador, sin centro de costo,
+// y sus permisos solo pueden incluir módulos para externos: los datos internos
+// no separan por empresa (y las reglas se los niegan: estaActivo()).
+export const TIPO_INTERNO = 'interno';
+export const TIPO_EXTERNO = 'externo';
+export const TIPOS_USUARIO = Object.freeze([
+  { value: TIPO_INTERNO, label: 'Interno' },
+  { value: TIPO_EXTERNO, label: 'Externo' },
+]);
+export const ROL_EXTERNO = 'operador';
+// Módulos que se le pueden asignar a un externo (claves de MODULES). Aún no hay.
+export const MODULOS_PARA_EXTERNOS = Object.freeze([]);
+export const tipoDeUsuario = (u) => (u?.tipoUsuario === TIPO_EXTERNO ? TIPO_EXTERNO : TIPO_INTERNO);
+export const esExterno = (u) => tipoDeUsuario(u) === TIPO_EXTERNO;
+export const empresaDeUsuario = (u) => (esExterno(u) ? u.empresaId || null : null);
+export const empresaActiva = (empresa) => empresa?.estado === 'ACTIVO';
+
+// Motivo por el que estos datos no sirven para un externo ('' si sirven).
+export const errorUsuarioExterno = ({
+  empresaId, rol, centroCostoId, centrosAdministrados, administradoresAsignados, instituciones,
+} = {}) => {
+  if (typeof empresaId !== 'string' || !empresaId) return 'La empresa es obligatoria para un usuario externo.';
+  if (rol !== undefined && rol !== ROL_EXTERNO) return 'Un usuario externo solo puede tener el rol Operador.';
+  if (centroCostoId) return 'Un usuario externo no tiene centro de costo.';
+  if (centrosAdministrados?.length || administradoresAsignados?.length) return 'Un usuario externo no administra centros ni tiene administradores asignados.';
+  if (instituciones?.length) return 'Un usuario externo no tiene instituciones.';
+  return '';
+};
+
+// Módulo de una casilla: m|modulo|ruta o, en las demás, el primer tramo de la ruta.
+const moduloDeCasilla = (clave) => {
+  const [tipo, a, b] = String(clave).split('|');
+  return tipo === 'm' && b !== undefined ? a : String(a ?? '').split('/')[1] || '';
+};
+export const excepcionesSoloParaExternos = (exc, modulos = MODULOS_PARA_EXTERNOS) => [...(exc?.agregados || []), ...(exc?.quitados || [])]
+  .every((clave) => modulos.includes(moduloDeCasilla(clave)));
+
+// Lo que queda en usuarios/{uid} al ser (o pasar a ser) externo.
+export const camposUsuarioExterno = (empresaId) => ({
+  tipoUsuario: TIPO_EXTERNO,
+  empresaId,
+  rol: ROL_EXTERNO,
+  centroCostoId: null,
+  centrosAdministrados: [],
+  administradoresAsignados: [],
+  todosLosAdministradoresDelCentro: false,
+  instituciones: [],
+  excepciones: SIN_EXCEPCIONES,
+  permisos: {},
+  permisosGranulares: {},
+});
+
 // --- Protección contra quedarse sin desarrollador --------------------------
 // El Desarrollador es el único rol con acceso total (el que siempre puede
 // entrar a Administración); el rol no viene de plantillas, así que solo lo
 // pueden quitar un cambio de rol o la inactivación.
-export const esDesarrollador = (u) => Boolean(u) && esRolAccesoTotal(u.rol) && u.activo !== false;
+export const esDesarrollador = (u) => Boolean(u) && esRolAccesoTotal(u.rol) && u.activo !== false && !esExterno(u);
 // Usuario activo con rol que administra (Administrador o Desarrollador).
-export const esAdministrador = (u) => Boolean(u) && esRolAdministrador(u.rol) && u.activo !== false;
+export const esAdministrador = (u) => Boolean(u) && esRolAdministrador(u.rol) && u.activo !== false && !esExterno(u);
 // ¿Puede usar una vista de Administración que administra usuarios? El
 // Desarrollador siempre; el Administrador, solo con alguno de esos ítems.
 export const puedeAdministrar = (u, rutas) => esDesarrollador(u)
@@ -230,6 +284,7 @@ export const dejaSinDesarrollador = (usuarios, uid, cambios = {}) => {
 // visible:false o la acción en false, no.
 export const puedeAccion = (u, modulo, ruta, seccion, accion) => {
   if (!u || u.activo === false) return false;
+  if (esExterno(u) && !MODULOS_PARA_EXTERNOS.includes(modulo)) return false;
   if (esRolAccesoTotal(u.rol)) return true;
   if (!(u.permisos?.[modulo] || []).includes(ruta)) return false;
   const vista = u.permisosGranulares?.[ruta];
@@ -242,6 +297,7 @@ export const puedeAccion = (u, modulo, ruta, seccion, accion) => {
 // se lee de permisosGranulares[rutaPestana], como hasPermission(rutaPestana, …).
 export const puedeAccionEnPestana = (u, modulo, rutaVista, rutaPestana, seccion, accion) => {
   if (!u || u.activo === false) return false;
+  if (esExterno(u) && !MODULOS_PARA_EXTERNOS.includes(modulo)) return false;
   if (esRolAccesoTotal(u.rol)) return true;
   if (!(u.permisos?.[modulo] || []).includes(rutaVista)) return false;
   const vista = u.permisosGranulares?.[rutaPestana];

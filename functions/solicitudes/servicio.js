@@ -18,6 +18,7 @@ const { refNombre, prepararNombreUsuario } = require('../usuarios/indiceNombres'
 const { normalizarNombreUsuario, MENSAJE_NOMBRE_EN_USO } = require('../usuarios/nombreUsuario.mjs');
 const { crearAlerta, resolverAlerta, refAlertas } = require('../alertas/servicio');
 const { notificarAlerta } = require('../alertas/correo');
+const { exigirInterno } = require('../permisos/interno');
 
 const MENSAJE_CORREO_EN_USO = 'Ese correo ya está registrado.';
 const refSolicitudes = (db) => db.collection('solicitudes');
@@ -36,6 +37,7 @@ const perfilActivo = async (db, uid) => {
   if (!uid) throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
   const perfil = (await refUsuario(db, uid).get()).data();
   if (!perfil || perfil.activo === false) throw new HttpsError('permission-denied', 'Tu usuario no está activo.');
+  exigirInterno(perfil);
   return perfil;
 };
 

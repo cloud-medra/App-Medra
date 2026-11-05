@@ -10,6 +10,7 @@ const { FieldValue } = require('firebase-admin/firestore');
 const {
   aplanar, desaplanar, combinar, calcularExcepciones, normalizarExcepciones, puedeAdministrar, dejaSinDesarrollador,
   SIN_EXCEPCIONES, ROLES, ROLES_CON_PLANTILLA, esRolSinPlantilla, ROL_POR_DEFECTO, idPlantilla, idPlantillaDeUsuario, labelRol,
+  TIPO_INTERNO, TIPO_EXTERNO, tipoDeUsuario, esExterno, empresaActiva, errorUsuarioExterno, excepcionesSoloParaExternos, camposUsuarioExterno,
 } = require('./nucleo.mjs');
 const { prepararNombreUsuario } = require('../usuarios/indiceNombres');
 const { TIPOS_SOLICITUD } = require('../solicitudes/tipos.mjs');
@@ -97,7 +98,7 @@ const diferenciaListas = (antes = [], despues = []) => {
 const cambiosParaLog = (antes, despues) => {
   const cambios = {};
   ['nombreCompleto', 'nombreUsuario', 'email', 'activo', 'rol', 'centroCostoId',
-    'centrosAdministrados', 'administradoresAsignados', 'todosLosAdministradoresDelCentro', 'instituciones'].forEach((campo) => {
+    'centrosAdministrados', 'administradoresAsignados', 'todosLosAdministradoresDelCentro', 'instituciones', 'tipoUsuario', 'empresaId'].forEach((campo) => {
     if (despues[campo] !== undefined && JSON.stringify(despues[campo]) !== JSON.stringify(antes[campo] ?? null)) {
       cambios[campo] = { antes: antes[campo] ?? null, despues: despues[campo] };
     }
@@ -174,13 +175,21 @@ const cambiarCorreoEnAuth = async (db, auth, uid, nuevo, anterior) => {
 // Datos generales (nombre completo, nombre de usuario, correo) los cambia el
 // administrador directamente; las solicitudes abiertas de esos datos se
 // cancelan y queda en la auditoría.
+// Empresa de un usuario externo: tiene que existir y estar ACTIVO en el maestro.
+const validarEmpresa = async (db, empresaId, transaccion) => {
+  const ref = db.collection('maestros_empresas').doc(empresaId);
+  const snap = transaccion ? await transaccion.get(ref) : await ref.get();
+  if (!snap.exists || !empresaActiva(snap.data())) throw new HttpsError('invalid-argument', 'La empresa no existe o está inactiva en el Maestro de Empresas.');
+};
+
 const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
   const {
     uid, datos = {}, rol, centroCostoId, excepciones, centrosAdministrados, administradoresAsignados, todosLosAdministradoresDelCentro,
-    instituciones,
+    instituciones, tipoUsuario, empresaId,
   } = data || {};
   if (typeof uid !== 'string' || !uid) throw new HttpsError('invalid-argument', 'Usuario inválido.');
   if (rol !== undefined && !VALORES_ROL.includes(rol)) throw new HttpsError('invalid-argument', 'Rol inválido.');
+  if (tipoUsuario !== undefined && ![TIPO_INTERNO, TIPO_EXTERNO].includes(tipoUsuario)) throw new HttpsError('invalid-argument', 'Tipo de usuario inválido.');
   const actualizacion = {};
   if (datos.nombreCompleto !== undefined) {
     const v = String(datos.nombreCompleto).trim();
@@ -213,6 +222,26 @@ const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
     const snap = await t.get(refUsuario(db, uid));
     if (!snap.exists) throw new HttpsError('not-found', 'El usuario no existe.');
     const antes = snap.data();
+    // Interno o externo: si termina siendo externo, no acepta rol, centro ni
+    // nada propio de un interno, venga o no el tipo en esta llamada.
+    const tipoFinal = tipoUsuario ?? tipoDeUsuario(antes);
+    const externoFinal = tipoFinal === TIPO_EXTERNO;
+    const cambiaTipo = tipoFinal !== tipoDeUsuario(antes);
+    const empresaFinal = externoFinal ? (empresaId ?? antes.empresaId ?? null) : null;
+    const cambiaEmpresa = empresaFinal !== (antes.empresaId ?? null);
+    if (externoFinal) {
+      const errorExterno = errorUsuarioExterno({
+        empresaId: empresaFinal, rol, centroCostoId, centrosAdministrados: centros, administradoresAsignados: asignados, instituciones: listaInstituciones,
+      });
+      if (errorExterno) throw new HttpsError('invalid-argument', errorExterno);
+      if (nuevasExcepciones !== undefined && !excepcionesSoloParaExternos(nuevasExcepciones)) {
+        throw new HttpsError('invalid-argument', 'Un usuario externo solo puede tener permisos de módulos para externos.');
+      }
+      if (cambiaEmpresa) await validarEmpresa(db, empresaFinal, t);
+    }
+    if (externoFinal && cambiaTipo) Object.assign(actualizacion, camposUsuarioExterno(empresaFinal));
+    else if (externoFinal && cambiaEmpresa) actualizacion.empresaId = empresaFinal;
+    else if (cambiaTipo) Object.assign(actualizacion, { tipoUsuario: TIPO_INTERNO, empresaId: null });
     if (actualizacion.email !== undefined && actualizacion.email === String(antes.email || '').toLowerCase()) delete actualizacion.email;
     if (actualizacion.email !== undefined) {
       if (!auth) throw new HttpsError('failed-precondition', 'No se puede cambiar el correo aquí.');
@@ -232,7 +261,8 @@ const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
     }
     exigirPuedeModificar(por, uid, antes, {
       rolNuevo: actualizacion.rol,
-      cambiaAcceso: [rol, datos.activo, centroCostoId, excepciones, centrosAdministrados, actualizacion.instituciones].some((v) => v !== undefined),
+      cambiaAcceso: cambiaTipo || cambiaEmpresa
+        || [rol, datos.activo, centroCostoId, excepciones, centrosAdministrados, actualizacion.instituciones].some((v) => v !== undefined),
     });
     const desarrolladores = await leerDesarrolladores(db, t);
     if (dejaSinDesarrollador(desarrolladores, uid, { rol: actualizacion.rol, activo: actualizacion.activo })) {
@@ -249,11 +279,11 @@ const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
     // El Operador necesita centro de costo (sus solicitudes van a los
     // administradores de su centro). Se exige al asignar rol o centro: uno
     // anterior sin centro sigue funcionando hasta que se le asigne.
-    if (rolFinal === 'operador' && !centroFinal && (centroCostoId !== undefined || rol !== undefined)) {
+    if (!externoFinal && rolFinal === 'operador' && !centroFinal && (centroCostoId !== undefined || rol !== undefined || cambiaTipo)) {
       throw new HttpsError('invalid-argument', 'El centro de costo es obligatorio para un Operador.');
     }
     // Centros que administra: solo el rol Administrador.
-    if (centros !== undefined || (rolFinal !== 'admin' && antes.centrosAdministrados?.length)) {
+    if (!externoFinal && (centros !== undefined || (rolFinal !== 'admin' && antes.centrosAdministrados?.length))) {
       const lista = rolFinal === 'admin' ? (centros ?? antes.centrosAdministrados ?? []) : [];
       for (const c of lista) await validarCentro(db, c, t);
       actualizacion.centrosAdministrados = lista;
@@ -262,7 +292,7 @@ const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
     // centro (o de rol a uno sin administradores) se vacían.
     const conAdministradores = ['operador', 'encargado'].includes(rolFinal);
     const cambiaCentro = (centroFinal ?? null) !== (antes.centroCostoId ?? null);
-    if (asignados !== undefined || ((cambiaCentro || !conAdministradores) && antes.administradoresAsignados?.length)) {
+    if (!externoFinal && (asignados !== undefined || ((cambiaCentro || !conAdministradores) && antes.administradoresAsignados?.length))) {
       const lista = conAdministradores ? (asignados ?? (cambiaCentro ? [] : antes.administradoresAsignados)) : [];
       await validarAsignados(db, t, centroFinal, lista);
       actualizacion.administradoresAsignados = lista;
@@ -271,7 +301,10 @@ const guardarPermisosUsuario = async (db, por, data, { auth } = {}) => {
       .filter((c) => actualizacion[c] !== undefined && actualizacion[c] !== antes[c]);
     const cancelarAbiertas = await prepararCancelarAbiertas(t, db, uid, tiposCambiados, por);
     const enModeloPlantillas = antes.excepciones !== undefined || antes.centroCostoId != null;
-    if (centroCostoId !== undefined || nuevasExcepciones !== undefined || enModeloPlantillas) {
+    if (externoFinal) {
+      // Sin plantilla: sus permisos son solo sus excepciones (módulos para externos).
+      if (nuevasExcepciones !== undefined) Object.assign(actualizacion, { excepciones: nuevasExcepciones, ...combinar(null, nuevasExcepciones) });
+    } else if (centroCostoId !== undefined || nuevasExcepciones !== undefined || enModeloPlantillas) {
       const exc = nuevasExcepciones ?? excepcionesDe(antes);
       const efectivo = combinar(await leerPlantilla(db, centroFinal, rolFinal, t), exc);
       Object.assign(actualizacion, { centroCostoId: centroFinal, excepciones: exc, ...efectivo });
@@ -309,6 +342,7 @@ const asignarCentroCostoMasivo = async (db, por, data) => {
     if (!snap.exists) continue;
     const antes = snap.data();
     exigirPuedeModificar(por, uid, antes, { cambiaAcceso: true });
+    if (esExterno(antes)) throw new HttpsError('invalid-argument', `Un usuario externo no tiene centro de costo (${antes.nombreCompleto || uid}).`);
     if (!centroCostoId && rolDe(antes) === 'operador') {
       throw new HttpsError('invalid-argument', `El centro de costo es obligatorio para un Operador (${antes.nombreCompleto || uid}).`);
     }
@@ -343,6 +377,7 @@ const asignarAdministradoresMasivo = async (db, por, data) => {
   return db.runTransaction(async (t) => {
     const snaps = await Promise.all([...new Set(uids)].map((u) => t.get(refUsuario(db, u))));
     const usuarios = snaps.filter((sn) => sn.exists);
+    if (usuarios.some((sn) => esExterno(sn.data()))) throw new HttpsError('invalid-argument', 'Un usuario externo no tiene administradores asignados.');
     const centros = new Set(usuarios.map((sn) => sn.data().centroCostoId || null));
     if (centros.size !== 1 || centros.has(null)) throw new HttpsError('invalid-argument', 'Todos los usuarios deben tener el mismo centro de costo.');
     if (usuarios.some((sn) => !['operador', 'encargado'].includes(rolDe(sn.data())))) {
@@ -395,6 +430,7 @@ const guardarPlantillaCentroCosto = async (db, por, data) => {
 };
 
 module.exports = {
+  validarEmpresa,
   exigirAdministrador, exigirPuedeModificar, guardarPermisosUsuario, asignarCentroCostoMasivo, asignarAdministradoresMasivo,
   guardarPlantillaCentroCosto, RUTAS,
 };

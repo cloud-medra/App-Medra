@@ -11,7 +11,8 @@ const {
   MENSAJE_LOGIN_INCORRECTO, MENSAJE_USUARIO_DESHABILITADO, MENSAJE_NOMBRE_EN_USO,
 } = require('./nombreUsuario.mjs');
 const { refNombre, prepararNombreUsuario } = require('./indiceNombres');
-const { ROLES, ROL_POR_DEFECTO, puedeAccion } = require('../permisos/nucleo.mjs');
+const { ROLES, ROL_POR_DEFECTO, puedeAccion, TIPO_INTERNO, TIPO_EXTERNO, errorUsuarioExterno, camposUsuarioExterno } = require('../permisos/nucleo.mjs');
+const { validarEmpresa } = require('../permisos/servicio');
 const { sincronizarCorreo } = require('../solicitudes/servicio');
 
 const VALORES_ROL = ROLES.map((r) => r.value);
@@ -163,7 +164,9 @@ const ERRORES_AUTH = {
 // Usuario: rol y sin permisos) y su entrada en nombres_usuario. Si el
 // nombre se tomó entre medio, se borra la cuenta recién creada.
 const crearUsuario = async (db, auth, por, data) => {
-  const { nombreCompleto, nombreUsuario, email, password, rol = ROL_POR_DEFECTO } = data || {};
+  const { nombreCompleto, nombreUsuario, email, password, rol = ROL_POR_DEFECTO, tipoUsuario = TIPO_INTERNO, empresaId } = data || {};
+  if (![TIPO_INTERNO, TIPO_EXTERNO].includes(tipoUsuario)) throw new HttpsError('invalid-argument', 'Tipo de usuario inválido.');
+  const externo = tipoUsuario === TIPO_EXTERNO;
   const nombre = String(nombreCompleto ?? '').trim();
   if (!nombre) throw new HttpsError('invalid-argument', 'El nombre completo es obligatorio.');
   const errorNombre = errorNombreUsuario(nombreUsuario);
@@ -172,6 +175,11 @@ const crearUsuario = async (db, auth, por, data) => {
   if (!correo) throw new HttpsError('invalid-argument', 'El correo es obligatorio.');
   if (typeof password !== 'string' || password.length < 6) throw new HttpsError('invalid-argument', 'La contraseña debe tener al menos 6 caracteres.');
   if (!VALORES_ROL.includes(rol)) throw new HttpsError('invalid-argument', 'Rol inválido.');
+  if (externo) {
+    const errorExterno = errorUsuarioExterno({ empresaId, rol });
+    if (errorExterno) throw new HttpsError('invalid-argument', errorExterno);
+    await validarEmpresa(db, empresaId);
+  }
   // Aviso temprano, para no crear la cuenta de Auth en vano.
   if ((await refNombre(db, normalizarNombreUsuario(nombreUsuario)).get()).exists) {
     throw new HttpsError('already-exists', MENSAJE_NOMBRE_EN_USO);
@@ -195,7 +203,11 @@ const crearUsuario = async (db, auth, por, data) => {
         rol,
         permisos: {},
         permisosGranulares: {},
-        estadoCreacion: { paso1: true, paso2: false, itemsFinalizados: {}, completo: false },
+        // Un externo no tiene pasos de permisos: su cuenta queda completa. Igual
+        // que un interno, cambia la contraseña en su primer ingreso.
+        ...(externo
+          ? { ...camposUsuarioExterno(empresaId), estadoCreacion: { paso1: true, paso2: true, itemsFinalizados: {}, completo: true } }
+          : { tipoUsuario: TIPO_INTERNO, estadoCreacion: { paso1: true, paso2: false, itemsFinalizados: {}, completo: false } }),
         passwordChanged: false,
         modoPantalla: 'claro',
         creadoPor: por.uid,

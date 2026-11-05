@@ -2,6 +2,7 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { initializeApp, getApps } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { validarCierreMes } = require('./validarCierreMes');
+const { exigirInterno } = require('./permisos/interno');
 
 if (!getApps().length) initializeApp();
 
@@ -48,6 +49,7 @@ exports.cerrarPeriodoImputacion = onCall(
     if (!perfil) {
       throw new HttpsError('permission-denied', 'Tu usuario no tiene un perfil registrado.');
     }
+    exigirInterno(perfil);
 
     // El Desarrollador cierra siempre; el resto (también el Administrador)
     // necesita el ítem Control Mensual de Administración (misma clave que el

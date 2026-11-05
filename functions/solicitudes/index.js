@@ -19,6 +19,8 @@ const servicio = require('./servicio');
 if (!getApps().length) initializeApp();
 const db = getFirestore();
 
+const { exigirInterno } = require('../permisos/interno');
+
 const REGION = 'us-central1';
 
 exports.crearSolicitud = onCall({ region: REGION }, async (request) => {
@@ -40,5 +42,6 @@ exports.sincronizarMiCorreo = onCall({ region: REGION }, async (request) => {
   if (!uid) return { resultado: null };
   const cuenta = await getAuth().getUser(uid);
   const perfil = (await db.collection('usuarios').doc(uid).get()).data();
+  exigirInterno(perfil);
   return { resultado: await servicio.sincronizarCorreo(db, getAuth(), cuenta, perfil) };
 });

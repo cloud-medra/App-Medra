@@ -22,6 +22,7 @@
 const { HttpsError } = require('firebase-functions/v2/https');
 const { FieldValue } = require('firebase-admin/firestore');
 const { puedeAccion } = require('../permisos/nucleo.mjs');
+const { exigirInterno } = require('../permisos/interno');
 const {
   ACCIONES, COL, TIPOS_CATALOGO, CAMPOS_BLOQUEADOS_CON_MOVIMIENTOS, TIPOS_DOCUMENTO_BODEGA, ESTADOS_DOCUMENTO,
   MAX_LINEAS_DOCUMENTO, MAX_OBSERVACION,
@@ -50,6 +51,7 @@ const perfilActivo = async (db, uid) => {
   if (!uid) throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
   const perfil = (await db.collection('usuarios').doc(uid).get()).data();
   if (!perfil || perfil.activo === false) throw new HttpsError('permission-denied', 'Tu usuario no está activo.');
+  exigirInterno(perfil);
   return perfil;
 };
 const exigir = (perfil, accion) => {

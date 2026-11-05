@@ -17,6 +17,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 const { FUENTES, MESES } = require('./nucleo');
 const { aplicarCambio, aplicarCierre, recalcularAbiertos, recalcularPeriodo } = require('./servicio');
 const { puedeAccion } = require('../permisos/nucleo.mjs');
+const { exigirInterno } = require('../permisos/interno');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
@@ -63,6 +64,7 @@ exports.recalcularEstadisticasPeriodo = onCall(
   async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
     const perfil = (await db.collection('usuarios').doc(request.auth.uid).get()).data() || {};
+    exigirInterno(perfil);
     // Desarrollador, o Administrador con el ítem y la acción "Recalcular"
     // (denegada por defecto).
     if (!(perfil.rol === 'dev' || (perfil.rol === 'admin'

@@ -1,5 +1,10 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
+const { initializeApp, getApps } = require('firebase-admin/app');
+const { getFirestore } = require('firebase-admin/firestore');
+const { exigirInterno } = require('./permisos/interno');
+
+if (!getApps().length) initializeApp();
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
 const MODELO_GEMINI = 'gemini-3.1-flash-lite';
@@ -69,6 +74,8 @@ exports.extraerGuiaDespacho = onCall(
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'Debes iniciar sesión para usar esta función.');
     }
+    // Solo exigía sesión: un externo no debe usarla (consume la API de Gemini).
+    exigirInterno((await getFirestore().collection('usuarios').doc(request.auth.uid).get()).data());
 
     const { imagenBase64, mediaType } = request.data || {};
 

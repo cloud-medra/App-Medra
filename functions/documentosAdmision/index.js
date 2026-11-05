@@ -11,6 +11,7 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getStorage } = require('firebase-admin/storage');
 const { puedeEliminarDocumento } = require('./nucleo.mjs');
 const { eliminarDocumento, ErrorDocumento } = require('./servicio');
+const { exigirInterno } = require('../permisos/interno');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
@@ -20,6 +21,7 @@ exports.eliminarDocumentoAdmision = onCall(
   async (request) => {
     if (!request.auth) throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
     const perfil = (await db.collection('usuarios').doc(request.auth.uid).get()).data() || {};
+    exigirInterno(perfil);
     const datos = request.data || {};
     if (!puedeEliminarDocumento(perfil, datos.modulo)) {
       throw new HttpsError('permission-denied', 'No tienes permiso para eliminar documentos.');
