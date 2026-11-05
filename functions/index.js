@@ -21,7 +21,11 @@ const logger = require("firebase-functions/logger");
 // functions should each use functions.runWith({ maxInstances: 10 }) instead.
 // In the v1 API, each function can only serve one request per container, so
 // this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+// 3 y no 10: la cuota de CPU de us-central1 es de 20 vCPU y cada instancia usa 1.
+// Una carga masiva levantaba hasta 10 instancias de un solo trigger mientras la
+// primera arrancaba, y dejaba sin capacidad a las demás Functions. Con 80 solicitudes
+// por instancia, 3 alcanzan.
+setGlobalOptions({ maxInstances: 3 });
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started

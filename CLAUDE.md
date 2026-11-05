@@ -13,6 +13,10 @@
 
   - Si una tanda falla por cuota: esperar unos minutos y reintentar una vez; si vuelve a fallar, detenerse. De preferencia en horario de poco uso.
   - `FUNCTIONS_DISCOVERY_TIMEOUT=90` va siempre: firebase-tools carga `functions/index.js` antes de desplegar y espera 10 s por defecto, pero aquí tarda unos 25 s. Sin la variable falla con `User code failed to load. Cannot determine backend specification. Timeout after 10000`, que es por el tiempo de carga del código, **no por la cuota de CPU**: no se espera ni cuenta como reintento; basta con usar la variable.
+- **Sin ráfagas ni migraciones masivas en horario de uso.** La cuota de CPU (20 vCPU en `us-central1`, 1 por instancia) también limita el uso normal: al superarla, las Functions responden 503 "Rate exceeded" o 500, el navegador lo informa como error de CORS y los triggers con `retry: false` pierden el evento. Las instancias tardan unos 15 minutos en salir, así que el efecto dura más que la ráfaga.
+  - Las migraciones, reparaciones y escrituras masivas (también disparan triggers) van en horario de poco uso, por lotes espaciados.
+  - No llamar muchas Functions a la vez, ni siquiera sin sesión: cada una arranca una instancia. Para comprobar una, una sola llamada.
+  - Diagnóstico: `logging.googleapis.com/v2/entries:list` sí funciona con las credenciales locales (`textPayload:"cpu_allocation"`), aunque `firebase functions:log` falle.
 - **Verificar una Function desplegada leyendo Firestore, en modo solo lectura.** Aquí `firebase functions:log` falla (`Failed to retrieve log entries from Google Cloud`) y `gcloud` no funciona (falta Python).
   - Usar un script de Node temporal con `firebase-admin` de `functions/node_modules` y las credenciales de `%APPDATA%/gcloud/application_default_credentials.json`, que solo haga `get`/`getAll`/consultas sobre lo que la Function debió escribir (ej. `alertas/pendientes_*`). Correrlo con `NODE_PATH=functions/node_modules` e `initializeApp({ projectId: 'workcraft-491b7' })`.
   - Guardarlo fuera del repo (`$TEMP`) y borrarlo al terminar. Sin escrituras: si hay que corregir datos, avisar antes.

@@ -32,7 +32,7 @@ const db = getFirestore();
 const REGION = 'us-central1';
 const WEB_API_KEY = defineString('WEB_API_KEY');
 
-exports.iniciarSesion = onCall({ region: REGION, maxInstances: 10 }, (request) => servicio.iniciarSesion(
+exports.iniciarSesion = onCall({ region: REGION }, (request) => servicio.iniciarSesion(
   db, getAuth(), request.data, { verificarPassword: servicio.verificarPasswordRest(WEB_API_KEY.value()) },
 ));
 
