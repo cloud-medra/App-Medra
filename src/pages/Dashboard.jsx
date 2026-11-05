@@ -373,6 +373,14 @@ const Dashboard = () => {
     setIsMenuOpen(false);
   };
 
+  // Cambiar Contraseña de Ajustes: la abren el menú del header y Mi perfil.
+  const abrirCambiarPassword = () => {
+    setIsAjustesMode(true);
+    setActiveModule(null);
+    setActiveView('/settings/cambiarPasswordAjustes');
+    setIsMenuOpen(false);
+  };
+
   // Abre una pantalla de un módulo igual que el menú: deja el módulo
   // expandido en el sidebar y el ítem activo. Lo usan los Accesos rápidos.
   const abrirVistaDeModulo = (moduleKey, path) => {
@@ -621,7 +629,7 @@ const Dashboard = () => {
     // '/ajustes/preferenciasGenerales': <PreferenciasGenerales />,
 
     // ── Vistas sin ítem de menú (perfil y legales) ──
-    'perfil': <Perfil userData={userData} />,
+    'perfil': <Perfil userData={userData} onGestionarPassword={abrirCambiarPassword} />,
     'privacidad': <PoliticasPrivacidad />,
     'terminos': <TerminosServicio />,
   };
@@ -884,7 +892,7 @@ const Dashboard = () => {
               </button>
 
               <button
-                onClick={() => { setIsAjustesMode(true); setActiveModule(null); setActiveView('/settings/cambiarPasswordAjustes'); setIsMenuOpen(false); }}
+                onClick={abrirCambiarPassword}
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <Shield size={16} className="text-emerald-500 dark:text-emerald-400" /> Cambiar Contraseña
