@@ -45,6 +45,27 @@ export const proyeccionPortalOC = ({ datos, proveedor, empresaId, anio, mes }) =
 // ¿Este cambio de una fila se ve en el portal? (si no, no hace falta escribir la copia).
 export const cambioVisibleEnPortal = (cambios) => CAMPOS_PORTAL_OC.some((c) => c in (cambios || {}));
 
+// Campos que una copia puede tener (actualizadoEn es solo la fecha de escritura).
+const CAMPOS_COPIA = [...CAMPOS_PORTAL_OC, 'proveedor', 'empresaId', 'anio', 'mes'];
+
+// Valor comparable. Texto: sin espacios de más, porque al actualizar una fila la copia
+// recibe el valor normalizado del snapshot. Vacío y null son lo mismo. Fechas por instante.
+const comparable = (v) => {
+  if (v === null || v === undefined || v === '') return null;
+  if (typeof v?.toMillis === 'function') return v.toMillis();
+  if (typeof v?.toDate === 'function') return v.toDate().getTime();
+  if (v instanceof Date) return v.getTime();
+  if (typeof v === 'string') return v.replace(/\s+/g, ' ').trim() || null;
+  return v;
+};
+
+// ¿En qué se diferencia una copia guardada de la que debería ser? { desfasados: campos con
+// otro valor, noAutorizados: campos que no deberían existir en la copia }.
+export const diferenciasCopiaPortal = (esperada, guardada) => ({
+  desfasados: CAMPOS_COPIA.filter((c) => comparable(esperada?.[c]) !== comparable(guardada?.[c])),
+  noAutorizados: Object.keys(guardada || {}).filter((c) => !CAMPOS_COPIA.includes(c) && c !== 'actualizadoEn'),
+});
+
 // ID de la copia: hash del ID de la fila, porque ese ID contiene admisión y fecha
 // (114584_20260915_medtronic_510012_1) y un proveedor no debe verlas. Determinístico:
 // importar, eliminar y el script llegan al mismo documento.

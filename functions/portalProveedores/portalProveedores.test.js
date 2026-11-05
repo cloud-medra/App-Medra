@@ -3,7 +3,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   CAMPOS_PORTAL_OC, crearIndiceEmpresas, empresaIdDeProveedor, normalizarNombreEmpresa, proyeccionPortalOC,
-  cambioVisibleEnPortal, idPortalOC, idsPortalOC,
+  cambioVisibleEnPortal, idPortalOC, idsPortalOC, diferenciasCopiaPortal,
 } from './nucleo.mjs';
 
 const FILA = {
@@ -43,7 +43,7 @@ describe('relación con el Maestro de Empresas', () => {
     { id: 'a', nombre: 'ARENYS MED S.A.' },
     { id: 'm', nombre: 'MEDILAND S A' },
     { id: 'd1', nombre: 'DOBLE SPA' },
-    { id: 'd2', nombre: 'Doble S.P.A' === 'x' ? '' : 'DOBLE  SPA' },
+    { id: 'd2', nombre: 'DOBLE  SPA' },
     { id: 'v', nombre: '' },
   ]);
 
@@ -74,6 +74,44 @@ describe('cambioVisibleEnPortal', () => {
     expect(cambioVisibleEnPortal({ estado: 'x' })).toBe(true);
     expect(cambioVisibleEnPortal({ paciente: 'x', medico: 'y', precio_u: 1, lote: 'z' })).toBe(false);
     expect(cambioVisibleEnPortal(undefined)).toBe(false);
+  });
+});
+
+describe('diferenciasCopiaPortal', () => {
+  const copia = (o = {}) => ({
+    ...proyeccionPortalOC({ datos: { ...FILA, fecha_cx: new Date(2026, 8, 15) }, proveedor: FILA.proveedor, empresaId: 'e1', anio: '2026', mes: '09' }),
+    ...o,
+  });
+
+  it('una copia al día no tiene diferencias, aunque su fecha de escritura sea otra', () => {
+    expect(diferenciasCopiaPortal(copia(), copia({ actualizadoEn: new Date() }))).toEqual({ desfasados: [], noAutorizados: [] });
+  });
+
+  it('detecta cada campo desfasado', () => {
+    expect(diferenciasCopiaPortal(copia(), copia({ estado: 'Otro', numero_factura: 'F9', empresaId: null })).desfasados)
+      .toEqual(['estado', 'numero_factura', 'empresaId']);
+    expect(diferenciasCopiaPortal(copia(), copia({ cantidad: 3 })).desfasados).toEqual(['cantidad']);
+    expect(diferenciasCopiaPortal(copia(), copia({ mes: '10' })).desfasados).toEqual(['mes']);
+  });
+
+  it('compara las fechas por instante, sea cual sea su tipo', () => {
+    const ms = new Date(2026, 8, 15).getTime();
+    expect(diferenciasCopiaPortal(copia(), copia({ fecha_cx: { toMillis: () => ms } })).desfasados).toEqual([]);
+    expect(diferenciasCopiaPortal(copia(), copia({ fecha_cx: { toMillis: () => ms + 86400000 } })).desfasados).toEqual(['fecha_cx']);
+  });
+
+  it('vacío, null y espacios de más no cuentan como cambio; un 0 sí se distingue de vacío', () => {
+    expect(diferenciasCopiaPortal(copia({ numero_guia: null }), copia({ numero_guia: '' })).desfasados).toEqual([]);
+    expect(diferenciasCopiaPortal(copia({ descripcion: 'A  B ' }), copia({ descripcion: 'A B' })).desfasados).toEqual([]);
+    expect(diferenciasCopiaPortal(copia({ cantidad: 0 }), copia({ cantidad: null })).desfasados).toEqual(['cantidad']);
+  });
+
+  it('avisa si la copia guardada trae un campo que no debe tener, como paciente', () => {
+    expect(diferenciasCopiaPortal(copia(), copia({ paciente: 'JUANA', precio_u: 1 })).noAutorizados).toEqual(['paciente', 'precio_u']);
+  });
+
+  it('una copia inexistente sale con todo desfasado', () => {
+    expect(diferenciasCopiaPortal(copia(), undefined).desfasados.length).toBeGreaterThan(5);
   });
 });
 

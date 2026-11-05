@@ -10,15 +10,12 @@
 // `filas` (ver useDetallesOCFiltros.js) — Firestore no soporta "contiene" ni
 // OR entre campos distintos, y el volumen de UN mes es chico una vez acotado.
 import { useCallback, useEffect, useState } from 'react';
-import { collection, collectionGroup, query, where, orderBy, limit, documentId, getDocs } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../../../../../firebaseConfig';
 import { ordenarMeses } from '../../../../../../utils/ordenarMeses';
+import { COL_BASE, LIMITE_FILAS_PERIODO, consultaDetallesPeriodo } from '../utils/consultaDetallesPeriodo';
 
-export const COL_BASE = 'documentos_sistema';
-// Tope defensivo por período: un mes normal de esta colección debería estar
-// muy por debajo de esto. Si se alcanza, se avisa en la UI (`huboTope`) en
-// vez de truncar en silencio.
-const LIMITE_FILAS_PERIODO = 3000;
+export { COL_BASE };
 
 export const useDetallesOCData = () => {
   const [anio, setAnioState] = useState('');
@@ -90,16 +87,7 @@ export const useDetallesOCData = () => {
     (async () => {
       setCargandoFilas(true);
       try {
-        const min = `${COL_BASE}/${anio}/meses/${mes}`;
-        const max = `${min}`;
-        const q = query(
-          collectionGroup(db, 'detalles'),
-          where(documentId(), '>=', min),
-          where(documentId(), '<', max),
-          orderBy(documentId(), 'desc'),
-          limit(LIMITE_FILAS_PERIODO)
-        );
-        const snap = await getDocs(q);
+        const snap = await getDocs(consultaDetallesPeriodo(anio, mes));
         if (cancelado) return;
         setFilas(snap.docs.map(d => ({ id: d.id, refPath: d.ref.path, ...d.data() })));
         setHuboTope(snap.docs.length === LIMITE_FILAS_PERIODO);

@@ -1,24 +1,27 @@
 // functions/scripts/sincronizarPortalOC.js
 //
-// Carga inicial (y reparación) de Portal Proveedores → Órdenes de Compra: copia cada
-// fila de documentos_sistema/…/detalles a portal_ordenes_compra, solo con los campos
-// autorizados y la empresa del Maestro. Después la mantienen Importar y Eliminar Detalles
-// OC, en el mismo lote que la fila. Lee las filas pidiendo solo esos campos: paciente y
-// médico nunca llegan al script. No dispara triggers: la colección no tiene ninguno.
+// Carga inicial, control y reparación de Portal Proveedores → Órdenes de Compra: compara
+// cada fila de documentos_sistema/…/detalles con su copia en portal_ordenes_compra (solo
+// los campos autorizados y la empresa del Maestro). Normalmente las mantienen Importar y
+// Eliminar Detalles OC, en el mismo lote que la fila; esto detecta si alguna quedó
+// distinta, y también las copias que no le corresponden a ninguna fila o con campos que
+// no deben tener. Lee las filas pidiendo solo esos campos: paciente y médico nunca llegan
+// al script, y lo que imprime son conteos y nombres de campos, no valores. No dispara
+// triggers: la colección no tiene ninguno.
 //
 //   cd functions
-//   node scripts/sincronizarPortalOC.js            # simulación (no escribe)
-//   node scripts/sincronizarPortalOC.js --aplicar  # escribe, en lotes espaciados
+//   node scripts/sincronizarPortalOC.js            # compara e informa (no escribe)
+//   node scripts/sincronizarPortalOC.js --aplicar  # además repara, en lotes espaciados
 //
-// Idempotente: reemplaza cada copia y borra las que ya no tienen fila. Correrlo en
-// horario sin uso. Lecturas: 1 por fila + 1 por copia + el Maestro de Empresas.
+// Idempotente: escribe solo las copias faltantes, desfasadas o con campos de más (siempre
+// completas), y borra las que ya no tienen fila. Correrlo en horario sin uso. Lecturas: 1 por fila + 1 por copia + el Maestro de Empresas.
 // Credenciales: Application Default Credentials. Proyecto: GCLOUD_PROJECT o workcraft-491b7.
 
 const process = require('node:process');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldPath, FieldValue } = require('firebase-admin/firestore');
 const {
-  COL_PORTAL_OC, CAMPOS_PORTAL_OC, crearIndiceEmpresas, empresaIdDeProveedor, proyeccionPortalOC, idsPortalOC,
+  COL_PORTAL_OC, CAMPOS_PORTAL_OC, crearIndiceEmpresas, empresaIdDeProveedor, proyeccionPortalOC, idsPortalOC, diferenciasCopiaPortal,
 } = require('../portalProveedores/nucleo.mjs');
 
 const PROYECTO = process.env.GCLOUD_PROJECT || 'workcraft-491b7';
@@ -51,9 +54,27 @@ const espera = (ms) => new Promise((r) => { setTimeout(r, ms); });
   });
   if (new Set(copias.map((c) => c.id)).size !== copias.length) throw new Error('Hay filas con el mismo ID: no se escribe nada.');
 
-  const existentes = await db.collection(COL_PORTAL_OC).select().get();
+  const existentes = await db.collection(COL_PORTAL_OC).get();
+  const guardadas = new Map(existentes.docs.map((d) => [d.id, d.data()]));
   const vigentes = new Set(copias.map((c) => c.id));
   const sobrantes = existentes.docs.filter((d) => !vigentes.has(d.id));
+
+  // Comparación de cada fila con su copia.
+  const faltantes = [];
+  const distintas = [];
+  const conteoDesfasados = {};
+  const conteoNoAutorizados = {};
+  copias.forEach((copia) => {
+    const guardada = guardadas.get(copia.id);
+    if (!guardada) { faltantes.push(copia); return; }
+    const { desfasados, noAutorizados } = diferenciasCopiaPortal(copia.datos, guardada);
+    if (!desfasados.length && !noAutorizados.length) return;
+    distintas.push({ ...copia, desfasados, noAutorizados });
+    desfasados.forEach((c) => { conteoDesfasados[c] = (conteoDesfasados[c] || 0) + 1; });
+    noAutorizados.forEach((c) => { conteoNoAutorizados[c] = (conteoNoAutorizados[c] || 0) + 1; });
+  });
+  const sobrantesNoAutorizados = sobrantes.filter((d) => diferenciasCopiaPortal({}, d.data()).noAutorizados.length).length;
+  const aEscribir = [...faltantes, ...distintas];
 
   const porEmpresa = new Map();
   const sinEmpresa = new Map();
@@ -65,8 +86,12 @@ const espera = (ms) => new Promise((r) => { setTimeout(r, ms); });
   copias.forEach(({ datos }) => { const k = `${datos.anio}/${datos.mes}`; porPeriodo[k] = (porPeriodo[k] || 0) + 1; });
 
   console.log(`Filas de Detalles OC: ${filas.length}`);
-  console.log(`Copias existentes: ${existentes.size} · a escribir: ${copias.length} · a borrar (sin fila): ${sobrantes.length}`);
-  console.log(`Lotes: ${Math.ceil((copias.length + sobrantes.length) / LOTE)} de ${LOTE}`);
+  console.log(`Copias existentes: ${existentes.size}`);
+  console.log(`Al día: ${copias.length - aEscribir.length} · faltantes: ${faltantes.length} · desfasadas: ${distintas.length} · sin fila: ${sobrantes.length}`);
+  console.log('Campos desfasados:', JSON.stringify(conteoDesfasados));
+  console.log('Campos NO AUTORIZADOS en copias:', JSON.stringify(conteoNoAutorizados), '· en copias sin fila:', sobrantesNoAutorizados);
+  distintas.slice(0, 10).forEach((d) => console.log(`  ${d.id.slice(0, 12)}…  ${d.datos.anio}/${d.datos.mes}  ${[...d.desfasados, ...d.noAutorizados].join(', ')}`));
+  console.log(`Lotes para reparar: ${Math.ceil((aEscribir.length + sobrantes.length) / LOTE)} de ${LOTE}`);
   console.log(`\nCon empresa: ${copias.length - [...sinEmpresa.values()].reduce((a, b) => a + b, 0)} filas de ${porEmpresa.size} empresas`);
   [...porEmpresa].sort((a, b) => b[1] - a[1]).forEach(([id, n]) => console.log(`${String(n).padStart(6)}  ${nombre.get(id)}`));
   console.log(`\nSin empresa (ningún externo las ve): ${[...sinEmpresa.values()].reduce((a, b) => a + b, 0)}`);
@@ -75,10 +100,11 @@ const espera = (ms) => new Promise((r) => { setTimeout(r, ms); });
   const campos = Object.keys(copias[0]?.datos || {}).sort().join(', ');
   console.log('Campos de cada copia:', campos);
 
-  if (!aplicar) { console.log('\nPara aplicar: --aplicar'); return; }
+  if (!aplicar) { console.log(aEscribir.length + sobrantes.length ? '\nPara reparar: --aplicar' : '\nTodo al día.'); return; }
+  if (!aEscribir.length && !sobrantes.length) { console.log('\nTodo al día: nada que escribir.'); return; }
 
   const ops = [
-    ...copias.map(({ id, datos }) => (lote) => lote.set(db.collection(COL_PORTAL_OC).doc(id), { ...datos, actualizadoEn: FieldValue.serverTimestamp() })),
+    ...aEscribir.map(({ id, datos }) => (lote) => lote.set(db.collection(COL_PORTAL_OC).doc(id), { ...datos, actualizadoEn: FieldValue.serverTimestamp() })),
     ...sobrantes.map((d) => (lote) => lote.delete(d.ref)),
   ];
   for (let i = 0; i < ops.length; i += LOTE) {

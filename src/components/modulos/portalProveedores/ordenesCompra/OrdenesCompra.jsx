@@ -9,32 +9,39 @@ import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
 import PaginacionSimple from '../../../ui/PaginacionSimple';
 import { nombreDeMes } from '../../../../utils/ordenarMeses';
 import { esExterno } from '../../../../../functions/permisos/nucleo.mjs';
-import { useOrdenesCompraData } from './useOrdenesCompraData';
-import { MESES, SIN_EMPRESA, TAMANO_PAGINA, aniosDisponibles, filtrarOrdenes, formatearFecha } from './logicaOrdenesCompra';
+import { useOrdenesExterno, useOrdenesInterno } from './useOrdenesCompraData';
+import {
+  CAMPOS_BUSQUEDA_EXTERNO, CAMPOS_BUSQUEDA_INTERNO, MESES, SIN_EMPRESA, TAMANO_PAGINA,
+  aniosDisponibles, filtrarOrdenes, formatearFecha, formatearMontoOGuion,
+} from './logicaOrdenesCompra';
 
-// Portal Proveedores → Órdenes de Compra. Solo consulta: un externo ve las filas de su
-// empresa, un interno con permiso las de todas, con filtro por empresa. Los datos vienen
-// de portal_ordenes_compra, que no tiene paciente, médico ni admisión.
+// Portal Proveedores → Órdenes de Compra. Solo consulta, con dos caminos de datos:
+//   - Externo: lee portal_ordenes_compra (su empresa), que no tiene paciente, médico,
+//     admisión ni montos.
+//   - Interno con permiso: lee las filas originales del mes y suma Nombre y montos.
+// Son dos componentes para que la vista de un externo nunca monte la consulta interna.
 const TH = 'px-2 py-1.5 border-b border-r border-slate-200 dark:border-gray-700';
 const TD = 'px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 truncate';
 const SELECT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 disabled:opacity-50';
 
+// `soloInternos`: un externo nunca ve la columna, aunque se le marque en permisos. Su dato
+// tampoco existe en la copia que lee.
 const COLUMNAS = [
+  { key: 'paciente', label: 'Nombre', ancho: 180, min: 60, soloInternos: true, valor: (i) => i.paciente || '-' },
   { key: 'fecha_cx', label: 'Fecha Cx', ancho: 85, min: 60, valor: (i) => formatearFecha(i.fecha_cx) },
-  { key: 'proveedor', label: 'Proveedor', ancho: 180, min: 60, valor: (i) => i.proveedor || '-' },
+  { key: 'proveedor', label: 'Proveedor', ancho: 180, min: 60, soloInternos: true, valor: (i) => i.proveedor || '-' },
   { key: 'oc', label: 'OC', ancho: 95, min: 60, valor: (i) => i.oc || '-' },
   { key: 'codigo', label: 'Código', ancho: 90, min: 60, td: 'font-num text-emerald-600 dark:text-emerald-400', valor: (i) => i.codigo || '-' },
   { key: 'descripcion', label: 'Descripción', ancho: 260, min: 80, valor: (i) => i.descripcion || '-' },
   { key: 'cantidad', label: 'Cant.', ancho: 60, min: 50, th: 'text-center', td: 'text-center', valor: (i) => i.cantidad ?? '-' },
+  { key: 'precio_u', label: 'Precio unitario', ancho: 105, min: 70, soloInternos: true, th: 'text-right', td: 'text-right font-num', valor: (i) => formatearMontoOGuion(i.precio_u) },
+  { key: 'oc_monto', label: 'Total ítems', ancho: 105, min: 70, soloInternos: true, th: 'text-right', td: 'text-right font-num', valor: (i) => formatearMontoOGuion(i.oc_monto) },
   { key: 'estado', label: 'Estado', ancho: 110, min: 60, valor: (i) => i.estado || '-' },
   { key: 'numero_guia', label: 'N° Guía', ancho: 95, min: 60, valor: (i) => i.numero_guia || '-' },
   { key: 'numero_factura', label: 'N° Factura', ancho: 95, min: 60, valor: (i) => i.numero_factura || '-' },
 ];
 
-// Aparte para no pedir el Maestro de Empresas con la sesión de un externo: se lo niegan
-// las reglas y no le corresponde verlo.
-const FiltroEmpresa = ({ value, onChange }) => {
-  const { datos: empresas } = useCatalogo('empresas');
+const FiltroEmpresa = ({ value, onChange, empresas }) => {
   const opciones = useMemo(() => [...empresas].sort((a, b) => String(a.nombre).localeCompare(String(b.nombre))), [empresas]);
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)} aria-label="Empresa" className={`${SELECT} max-w-64`}>
@@ -45,28 +52,21 @@ const FiltroEmpresa = ({ value, onChange }) => {
   );
 };
 
-const OrdenesCompra = () => {
-  const { userData } = useUser();
-  const externo = esExterno(userData);
-  const [anio, setAnio] = useState('');
-  const [mes, setMes] = useState('');
-  const [empresaId, setEmpresaId] = useState('');
-  const [busqueda, setBusqueda] = useState('');
-  const [pagina, setPagina] = useState(1);
+// Tabla y filtros comunes. No lee datos: los recibe de la vista de cada tipo de usuario.
+const PantallaOrdenes = ({ externo, userData, periodo, datos, camposBusqueda, placeholder, filtroExtra }) => {
+  const { anio, mes, setAnio, setMes, busqueda, setBusqueda, pagina, setPagina } = periodo;
+  const { filas, cargando, error, huboTope } = datos;
 
   const { columnasVisibles } = useColumnasPermitidas('/portalProveedores/ordenesCompra', 'tabla_registros', COLUMNAS);
-  // El proveedor ve solo su empresa: la columna no le dice nada.
-  const columnas = useMemo(() => columnasVisibles.filter((c) => !externo || c.key !== 'proveedor'), [columnasVisibles, externo]);
+  const columnas = useMemo(() => columnasVisibles.filter((c) => !externo || !c.soloInternos), [columnasVisibles, externo]);
   const { anchos, handleResize, restablecerAnchos, anchoTotalTabla, personalizados } =
     useColumnResize(columnas, { clave: 'portalOrdenesCompra', usuario: userData?.uid });
 
-  const { filas, cargando, error, huboTope } = useOrdenesCompraData(userData, { anio, mes, empresaId: externo ? '' : empresaId });
-  const filtradas = useMemo(() => filtrarOrdenes(filas, busqueda), [filas, busqueda]);
+  const filtradas = useMemo(() => filtrarOrdenes(filas, busqueda, camposBusqueda), [filas, busqueda, camposBusqueda]);
   const totalPaginas = Math.max(1, Math.ceil(filtradas.length / TAMANO_PAGINA));
   const paginaSegura = Math.min(pagina, totalPaginas);
   const filasPagina = filtradas.slice((paginaSegura - 1) * TAMANO_PAGINA, paginaSegura * TAMANO_PAGINA);
   const periodoElegido = Boolean(anio && mes);
-  const alCambiar = (fn) => (v) => { fn(v); setPagina(1); };
 
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -76,22 +76,22 @@ const OrdenesCompra = () => {
       </header>
 
       <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-700">
-        <select value={anio} onChange={(e) => { alCambiar(setAnio)(e.target.value); setMes(''); }} aria-label="Año" className={SELECT}>
+        <select value={anio} onChange={(e) => { setAnio(e.target.value); setMes(''); setPagina(1); }} aria-label="Año" className={SELECT}>
           <option value="">Año</option>
           {aniosDisponibles().map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
-        <select value={mes} onChange={(e) => alCambiar(setMes)(e.target.value)} disabled={!anio} aria-label="Mes" className={SELECT}>
+        <select value={mes} onChange={(e) => { setMes(e.target.value); setPagina(1); }} disabled={!anio} aria-label="Mes" className={SELECT}>
           <option value="">Mes</option>
           {MESES.map((m) => <option key={m} value={m}>{nombreDeMes(m)}</option>)}
         </select>
-        {!externo && <FiltroEmpresa value={empresaId} onChange={alCambiar(setEmpresaId)} />}
+        {filtroExtra}
         <div className="relative w-64">
           <Search className="absolute left-2 top-1.5 text-gray-400 dark:text-gray-500" size={13} />
           <input
             value={busqueda}
-            onChange={(e) => alCambiar(setBusqueda)(e.target.value)}
+            onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
             disabled={!periodoElegido}
-            placeholder="Buscar OC, código, descripción, guía o factura..."
+            placeholder={placeholder}
             aria-label="Buscar"
             className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 disabled:opacity-50"
           />
@@ -156,6 +156,52 @@ const OrdenesCompra = () => {
       )}
     </div>
   );
+};
+
+const usePeriodoElegido = () => {
+  const [anio, setAnio] = useState('');
+  const [mes, setMes] = useState('');
+  const [busqueda, setBusqueda] = useState('');
+  const [pagina, setPagina] = useState(1);
+  return { anio, mes, setAnio, setMes, busqueda, setBusqueda, pagina, setPagina };
+};
+
+const VistaExterna = ({ userData }) => {
+  const periodo = usePeriodoElegido();
+  const datos = useOrdenesExterno(userData, { anio: periodo.anio, mes: periodo.mes });
+  return (
+    <PantallaOrdenes
+      externo
+      userData={userData}
+      periodo={periodo}
+      datos={datos}
+      camposBusqueda={CAMPOS_BUSQUEDA_EXTERNO}
+      placeholder="Buscar OC, código, descripción, guía o factura..."
+    />
+  );
+};
+
+const VistaInterna = ({ userData }) => {
+  const periodo = usePeriodoElegido();
+  const [empresaId, setEmpresaId] = useState('');
+  const { datos: empresas, cargado, error: errorEmpresas } = useCatalogo('empresas');
+  const datos = useOrdenesInterno({ anio: periodo.anio, mes: periodo.mes, empresaId, empresas, empresasCargadas: cargado, errorEmpresas });
+  return (
+    <PantallaOrdenes
+      externo={false}
+      userData={userData}
+      periodo={periodo}
+      datos={datos}
+      camposBusqueda={CAMPOS_BUSQUEDA_INTERNO}
+      placeholder="Buscar nombre, OC, código, descripción, guía o factura..."
+      filtroExtra={<FiltroEmpresa value={empresaId} onChange={(v) => { setEmpresaId(v); periodo.setPagina(1); }} empresas={empresas} />}
+    />
+  );
+};
+
+const OrdenesCompra = () => {
+  const { userData } = useUser();
+  return esExterno(userData) ? <VistaExterna userData={userData} /> : <VistaInterna userData={userData} />;
 };
 
 export default OrdenesCompra;
