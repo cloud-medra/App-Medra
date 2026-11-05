@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { auth, limpiarCacheAlCerrarSesion } from '../firebaseConfig';
-import { borrarTodosLosBorradoresCargaMasiva } from '../components/modulos/operaciones/consignacion/cargaMasivaConsignacion/utils/borradorCargaMasiva';
-import { omitirSincronizacionEnProximaCarga } from '../services/sessionSync';
-import { signOut } from 'firebase/auth';
+import { cerrarSesion } from '../utils/cerrarSesion';
 import { useUser } from '../context/UserContext';
 import { useTheme } from '../context/ThemeContext';
 import logoMedraClaro from '../assets/logo/medra-logo-claro.svg';
@@ -730,18 +727,7 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
-      // Borradores de Carga Masiva de Consignación (localStorage): traen
-      // nombres de pacientes.
-      borrarTodosLosBorradoresCargaMasiva();
-      // Primero se cierra Firestore y se borra su caché local (IndexedDB),
-      // para que el próximo usuario no vea datos de esta cuenta.
-      await limpiarCacheAlCerrarSesion();
-      await signOut(auth);
-      sessionStorage.clear();
-      // Recarga completa: descarta también los catálogos y cachés en memoria
-      // de los módulos (y reinicializa Firestore desde cero).
-      omitirSincronizacionEnProximaCarga();
-      window.location.replace('/');
+      await cerrarSesion();
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
     }

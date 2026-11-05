@@ -174,6 +174,8 @@ export const administracionComponentMaps = {
           col_usuario: { label: 'Columna: Nombre de Usuario' },
           col_email: { label: 'Columna: Email' },
           col_rol: { label: 'Columna: Rol' },
+          col_tipo: { label: 'Columna: Tipo (Interno/Externo)' },
+          col_empresa: { label: 'Columna: Empresa (usuarios externos)' },
           col_modulos: { label: 'Columna: Módulos Asignados' },
           col_estado: { label: 'Columna: Estado' },
           btn_activar_inactivar: { label: 'Acción: Activar/Inactivar Usuario' },

@@ -24,6 +24,8 @@ import AvisoCentroSinConfigurar from './AvisoCentroSinConfigurar';
 import { CentrosAdministrados, AdministradoresAsignados } from './AsignacionAdministradores';
 import SelectorInstitucionesUsuario from './SelectorInstitucionesUsuario';
 import { TIPOS_SOLICITUD } from '../../../../../functions/solicitudes/tipos.mjs';
+import { CamposTipoEmpresa } from './CamposTipoEmpresa';
+import { TIPO_EXTERNO, ROL_EXTERNO, tipoDeUsuario, esExterno } from '../../../../../functions/permisos/nucleo.mjs';
 
 // Edición de un usuario existente desde Listado Usuario, a pantalla completa
 // (reemplaza al listado, igual que las vistas de detalle del sistema).
@@ -59,6 +61,8 @@ const estadoInicial = (usuario) => {
   const { permisosGranulares, agregadas } = completarVistasDelMenu(permisos, completarGranulares(clonar(usuario.permisosGranulares)), COMPONENT_MAPS);
   return {
     datos: {
+      tipoUsuario: tipoDeUsuario(usuario),
+      empresaId: usuario.empresaId || '',
       nombreCompleto: usuario.nombreCompleto || '',
       nombreUsuario: usuario.nombreUsuario || '',
       email: usuario.email || '',
@@ -90,7 +94,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
   const [datos, setDatos] = useState(inicial.datos);
   const [excepciones, setExcepciones] = useState(inicial.excepciones);
   const [pendientes, setPendientes] = useState(() => new Set(inicial.agregadas));
-  const [tab, setTab] = useState('permisos');
+  const [tab, setTab] = useState(() => (esExterno(usuario) ? 'datos' : 'permisos'));
   const [guardando, setGuardando] = useState(false);
   const [confirmarSalida, setConfirmarSalida] = useState(false);
   const [errores, setErrores] = useState({});
@@ -114,6 +118,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
   // Desarrollador (sus permisos son solo los propios).
   const accesoTotal = esRolAccesoTotal(datos.rol);
   const sinPlantilla = esRolSinPlantilla(datos.rol);
+  const externo = datos.tipoUsuario === TIPO_EXTERNO;
   const plantillaElegida = plantillaDeUsuario(plantillas, datos.centroCostoId, datos.rol);
   const combinacion = datos.centroCostoId ? `${nombreCentro(datos.centroCostoId)} – ${labelRol(datos.rol)}` : null;
   const plantilla = useMemo(() => completar(plantillaElegida || SIN_PERMISOS), [plantillaElegida]);
@@ -153,6 +158,30 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
     if (datos.centroCostoId) ofrecerLimpiar('Cambiar rol', datos.centroCostoId, rol);
   };
 
+  // Pasar a externo le quita lo interno (lo aplica la función al guardar); volver
+  // a interno exige elegir centro de costo, por ser Operador.
+  const cambiarTipo = (tipoUsuario) => {
+    if (tipoUsuario === datos.tipoUsuario) return;
+    if (tipoUsuario !== TIPO_EXTERNO) {
+      setDatos((d) => ({ ...d, tipoUsuario, empresaId: '' }));
+      setExcepciones(SIN_EXCEPCIONES);
+      return;
+    }
+    confirmAction(
+      'Pasar a usuario externo',
+      `${datos.nombreCompleto || 'El usuario'} quedará como Operador, sin centro de costo, sin instituciones y sin ningún permiso de módulos internos. Se aplica al guardar.`,
+      () => {
+        setDatos((d) => ({
+          ...d, tipoUsuario, rol: ROL_EXTERNO, centroCostoId: null, centrosAdministrados: [], administradoresAsignados: [],
+          todosLosAdministradoresDelCentro: false, instituciones: [],
+        }));
+        setExcepciones(SIN_EXCEPCIONES);
+        setTab('datos');
+      },
+      { confirmText: 'Pasar a externo', type: 'warning' }
+    );
+  };
+
   const restablecerPlantilla = () => confirmAction(
     'Restablecer a la plantilla',
     `Se quitarán sus permisos personalizados (${describirExcepciones(excepciones)}) y quedarán solo los de la plantilla de ${combinacion}. Se aplica al guardar.`,
@@ -179,7 +208,8 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
       const errorEmail = TIPOS_SOLICITUD.email.validar(TIPOS_SOLICITUD.email.normalizar(email));
       if (errorEmail) e.email = errorEmail;
     }
-    if (datos.rol === 'operador' && !datos.centroCostoId) e.centroCostoId = 'El centro de costo es obligatorio para un Operador.';
+    if (externo && !datos.empresaId) e.empresaId = 'La empresa es obligatoria para un usuario externo.';
+    if (!externo && datos.rol === 'operador' && !datos.centroCostoId) e.centroCostoId = 'El centro de costo es obligatorio para un Operador.';
     setErrores(e);
     if (Object.keys(e).length) setTab('datos');
     return Object.keys(e).length === 0;
@@ -188,7 +218,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
   const guardar = async () => {
     if (!validar()) return false;
     // Sin las plantillas cargadas no se pueden calcular las excepciones.
-    if (!plantillasCargadas) {
+    if (!externo && !plantillasCargadas) {
       showToast('Aún se están cargando las plantillas de permisos. Intenta de nuevo en un momento.', 'error');
       return false;
     }
@@ -197,12 +227,17 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
       const datosLimpios = { ...datos, nombreCompleto: datos.nombreCompleto.trim(), nombreUsuario: datos.nombreUsuario.trim(), email: datos.email.trim() };
       const cambioEmail = datosLimpios.email.toLowerCase() !== (inicial.datos.email || '').toLowerCase();
       const conAdministradores = ['operador', 'encargado'].includes(datosLimpios.rol);
-      await guardarPermisosUsuario({
+      const datosGenerales = {
+        nombreCompleto: datosLimpios.nombreCompleto, nombreUsuario: datosLimpios.nombreUsuario, activo: datosLimpios.activo,
+        ...(cambioEmail ? { email: datosLimpios.email } : {}),
+      };
+      // Externo: solo datos y empresa. La función rechaza rol, centro y lo demás.
+      await guardarPermisosUsuario(externo ? {
+        uid: usuario.id, datos: datosGenerales, tipoUsuario: TIPO_EXTERNO, empresaId: datosLimpios.empresaId,
+      } : {
         uid: usuario.id,
-        datos: {
-          nombreCompleto: datosLimpios.nombreCompleto, nombreUsuario: datosLimpios.nombreUsuario, activo: datosLimpios.activo,
-          ...(cambioEmail ? { email: datosLimpios.email } : {}),
-        },
+        datos: datosGenerales,
+        ...(inicial.datos.tipoUsuario === TIPO_EXTERNO ? { tipoUsuario: datosLimpios.tipoUsuario } : {}),
         rol: datosLimpios.rol,
         centroCostoId: datosLimpios.centroCostoId,
         excepciones,
@@ -278,6 +313,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
         detalle={usuario.email}
         chips={(
           <>
+            {externo && <Chip tono="ambar" icon={Building2}>Externo</Chip>}
             <Chip tono="azul" icon={Shield}>{labelRol(datos.rol)}</Chip>
             <Chip tono={datos.activo ? 'verde' : 'gris'}>{datos.activo ? 'Activo' : 'Inactivo'}</Chip>
             {datos.centroCostoId && <Chip icon={Building2}>{nombreCentro(datos.centroCostoId)}</Chip>}
@@ -295,6 +331,8 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
             id: 'permisos',
             label: 'Permisos',
             icon: KeyRound,
+            deshabilitada: externo,
+            motivo: 'Un usuario externo no recibe módulos internos',
             badge: pendientes.size > 0 && (
               <span className="ml-1 text-[10px] font-bold px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" title="Vistas pendientes de revisión">
                 {pendientes.size}
@@ -325,13 +363,15 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
                     onChange={(e) => setDatos((d) => ({ ...d, email: e.target.value }))}
                     ayuda="Es el correo de ingreso. Si lo cambias aquí, cambia al guardar y queda en la auditoría."
                   />
-                  <CampoSelect
+                  <CamposTipoEmpresa tipo={datos.tipoUsuario} empresaId={datos.empresaId} onCambiarTipo={cambiarTipo} errorEmpresa={errores.empresaId}
+                    onCambiarEmpresa={(empresaId) => setDatos((d) => ({ ...d, empresaId }))} />
+                  {!externo && <CampoSelect
                     id="rol" label="Rol" icon={Shield} opciones={rolesAsignables(userData, datos.rol)} value={datos.rol}
                     ayuda={accesoTotal ? 'Acceso total: no se aplican los permisos granulares.' : 'Los permisos se configuran en la pestaña Permisos.'}
                     onChange={(e) => cambiarRol(e.target.value)}
-                  />
+                  />}
                   <CampoEstado activo={datos.activo} onChange={(v) => setDatos((d) => ({ ...d, activo: v }))} />
-                  <Campo id="centroCosto" label="Centro de costo" error={errores.centroCostoId}
+                  {!externo && <Campo id="centroCosto" label="Centro de costo" error={errores.centroCostoId}
                     ayuda={!datos.centroCostoId
                       ? 'Sin centro de costo: el usuario tiene solo sus permisos propios.'
                       : sinPlantilla
@@ -348,34 +388,36 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
                         </button>
                       )}
                     </div>
-                  </Campo>
-                  {centroSinConfigurar && (
+                  </Campo>}
+                  {!externo && centroSinConfigurar && (
                     <div className="md:col-span-2">
                       <AvisoCentroSinConfigurar nombre={combinacion} onConfigurar={configurarCentro} />
                     </div>
                   )}
-                  {datos.rol === 'admin' && (
+                  {!externo && datos.rol === 'admin' && (
                     <div className="md:col-span-2">
                       <CentrosAdministrados centros={centros} seleccionados={datos.centrosAdministrados}
                         onCambiar={(lista) => setDatos((d) => ({ ...d, centrosAdministrados: lista }))} />
                     </div>
                   )}
-                  {['operador', 'encargado'].includes(datos.rol) && (
+                  {!externo && ['operador', 'encargado'].includes(datos.rol) && (
                     <div className="md:col-span-2">
                       <AdministradoresAsignados usuarios={usuarios} centroId={datos.centroCostoId}
                         asignados={datos.administradoresAsignados} todos={datos.todosLosAdministradoresDelCentro}
                         onCambiar={(cambio) => setDatos((d) => ({ ...d, ...cambio }))} />
                     </div>
                   )}
-                  <div className="md:col-span-2">
+                  {!externo && <div className="md:col-span-2">
                     <SelectorInstitucionesUsuario seleccionadas={datos.instituciones}
                       onCambiar={(lista) => setDatos((d) => ({ ...d, instituciones: lista }))} />
-                  </div>
+                  </div>}
                 </div>
               </Tarjeta>
 
               <Tarjeta titulo="Resumen de acceso" descripcion="Según los permisos actuales (incluye cambios sin guardar).">
-                {accesoTotal ? (
+                {externo ? (
+                  <p className="text-[12px] text-gray-600 dark:text-gray-300">Usuario externo: sin módulos internos. Solo verá lo que se habilite para su empresa.</p>
+                ) : accesoTotal ? (
                   <p className="text-[12px] text-gray-600 dark:text-gray-300">Este rol tiene acceso total al sistema.</p>
                 ) : (
                   <dl className="grid grid-cols-2 gap-3">

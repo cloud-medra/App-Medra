@@ -26,6 +26,8 @@ import { motivoReasignar } from '../../../../../functions/solicitudes/destinatar
 import { AdministradoresAsignados } from './AsignacionAdministradores';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { ROLES } from './roles';
+import { datosEmpresa } from './usuariosExternos';
+import { TIPOS_USUARIO, tipoDeUsuario, esExterno } from '../../../../../functions/permisos/nucleo.mjs';
 import {
   excepcionesDe, contarExcepciones, tieneExcepciones, guardarPermisosUsuario, asignarCentroCostoMasivo, asignarAdministradoresMasivo, desbloquearUsuario, mensajeError,
 } from './permisosCentroCosto';
@@ -68,6 +70,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
 
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState('todos');
+  const [filtroTipo, setFiltroTipo] = useState('todos');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   // 'todos' | 'sin' (sin centro de costo) | id del centro.
   const [filtroCentro, setFiltroCentro] = useState('todos');
@@ -77,6 +80,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
   const [asignacionAdmins, setAsignacionAdmins] = useState(null);
   const { datos: centros } = useCatalogo('centros');
   const nombreCentro = (id) => centros.find((c) => c.id === id)?.nombre || 'Centro eliminado';
+  const { datos: empresas } = useCatalogo('empresas');
 
   const [usuarioEditandoId, setUsuarioEditandoId] = useState(null);
 
@@ -150,6 +154,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
         u.email?.toLowerCase().includes(texto);
 
       const coincideRol = filtroRol === 'todos' || u.rol === filtroRol;
+      const coincideTipo = filtroTipo === 'todos' || tipoDeUsuario(u) === filtroTipo;
 
       const coincideEstado =
         filtroEstado === 'todos' ||
@@ -161,9 +166,9 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
         (filtroCentro === 'sin' && !u.centroCostoId) ||
         u.centroCostoId === filtroCentro;
 
-      return coincideTexto && coincideRol && coincideEstado && coincideCentro;
+      return coincideTexto && coincideRol && coincideTipo && coincideEstado && coincideCentro;
     });
-  }, [usuarios, busqueda, filtroRol, filtroEstado, filtroCentro]);
+  }, [usuarios, busqueda, filtroRol, filtroTipo, filtroEstado, filtroCentro]);
 
   // Centros con usuarios (para el filtro), por nombre.
   const centrosConUsuarios = useMemo(
@@ -175,7 +180,8 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
   );
 
   // --- Selección y asignación masiva de centro de costo ---
-  const seleccionables = usuariosFiltrados.filter((u) => !creacionIncompleta(u));
+  // Las asignaciones masivas (centro, administradores) no aplican a un externo.
+  const seleccionables = usuariosFiltrados.filter((u) => !creacionIncompleta(u) && !esExterno(u));
   const todosSeleccionados = seleccionables.length > 0 && seleccionables.every((u) => seleccionados.has(u.id));
   const alternarSeleccion = (id) => setSeleccionados((prev) => {
     const next = new Set(prev);
@@ -356,6 +362,18 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
           </select>
 
           <select
+            value={filtroTipo}
+            onChange={(e) => setFiltroTipo(e.target.value)}
+            aria-label="Filtrar por tipo de usuario"
+            className="text-xs py-1.5 px-2 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200"
+          >
+            <option value="todos">Internos y externos</option>
+            {TIPOS_USUARIO.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+
+          <select
             value={filtroEstado}
             onChange={(e) => setFiltroEstado(e.target.value)}
             className="text-xs py-1.5 px-2 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2]"
@@ -440,6 +458,8 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                   <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Usuario</th>
                   <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Email</th>
                   <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Rol</th>
+                  <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Tipo</th>
+                  <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Empresa</th>
                   <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Centro de costo</th>
                   <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Módulos asignados</th>
                   <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Estado</th>
@@ -455,6 +475,8 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                   const incompleta = creacionIncompleta(usuario);
                   const soloLectura = protegido(usuario);
                   const { cantidad: cantidadModulos, labels: labelsModulos } = modulosAsignados(usuario);
+                  const externo = esExterno(usuario);
+                  const empresa = externo ? datosEmpresa(empresas, usuario.empresaId) : null;
 
                   return (
                     <tr
@@ -469,7 +491,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                       }`}
                     >
                       <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-center" onClick={(e) => e.stopPropagation()}>
-                        {!incompleta && !soloLectura && (
+                        {!incompleta && !soloLectura && !externo && (
                           <input type="checkbox" checked={seleccionados.has(usuario.id)} onChange={() => alternarSeleccion(usuario.id)}
                             aria-label={`Seleccionar ${usuario.nombreCompleto || usuario.email}`} className="accent-[#2383C2]" />
                         )}
@@ -499,13 +521,34 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                           {rolLabel}
                         </span>
                         {(() => {
-                          const motivo = motivoReasignar(usuario, usuarios);
+                          const motivo = externo ? null : motivoReasignar(usuario, usuarios);
                           return motivo && (
                             <span title={motivo} className="mt-0.5 flex items-center gap-1 w-fit text-[9.5px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                               Por reasignar
                             </span>
                           );
                         })()}
+                      </td>
+
+                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70">
+                        <span className={`w-fit text-[10px] font-bold px-1.5 py-0.5 rounded-full ${externo ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>
+                          {externo ? 'Externo' : 'Interno'}
+                        </span>
+                      </td>
+
+                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70">
+                        {empresa ? (
+                          <span className="flex flex-wrap items-center gap-1">
+                            <span className="text-gray-700 dark:text-gray-200">{empresa.nombre}</span>
+                            {empresa.aviso && empresa.aviso !== 'Eliminada' && (
+                              <span title="Sin acceso a datos hasta que se reactive en el Maestro de Empresas" className="w-fit text-[9.5px] font-bold px-1.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                                {empresa.aviso}
+                              </span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 dark:text-gray-500">—</span>
+                        )}
                       </td>
 
                       <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70">
@@ -523,7 +566,7 @@ const ListadoUsuarios = ({ onContinuarCreacion, abrirUsuarioId, onAbrirUsuarioCo
                             })()}
                           </span>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500">Sin centro</span>
+                          <span className="text-gray-400 dark:text-gray-500">{externo ? '—' : 'Sin centro'}</span>
                         )}
                       </td>
 

@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LoginForm from './components/LoginForm';
-import Dashboard from './pages/Dashboard';
+import Plataforma from './pages/Plataforma';
 import CambiarPassword from './pages/auth/CambiarPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import TestPage from './pages/TestPage';
@@ -32,7 +32,7 @@ function App() {
                   path="/plataforma/*"
                   element={
                     <ProtectedRoute>
-                      <Dashboard />
+                      <Plataforma />
                     </ProtectedRoute>
                   }
                 />

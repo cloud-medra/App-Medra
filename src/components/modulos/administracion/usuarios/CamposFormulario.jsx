@@ -38,9 +38,9 @@ export const CampoTexto = ({ label, icon, ayuda, error, id, ...props }) => (
   </Campo>
 );
 
-export const CampoSelect = ({ label, icon, ayuda, id, opciones, ...props }) => (
-  <Campo label={label} icon={icon} ayuda={ayuda} id={id}>
-    <select id={id} {...props} className={`${ESTILO_INPUT} ${icon ? 'pl-9' : 'pl-3'} pr-3 appearance-none`}>
+export const CampoSelect = ({ label, icon, ayuda, error, id, opciones, ...props }) => (
+  <Campo label={label} icon={icon} ayuda={ayuda} error={error} id={id}>
+    <select id={id} {...props} className={`${ESTILO_INPUT} ${icon ? 'pl-9' : 'pl-3'} pr-3 appearance-none ${error ? 'border-red-400' : ''}`}>
       {opciones.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
       ))}

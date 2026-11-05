@@ -9,7 +9,9 @@ import {
   orderBy,
   getDocs,
   writeBatch,
-  serverTimestamp
+  serverTimestamp,
+  where,
+  limit
 } from 'firebase/firestore';
 import { db } from '../../../../firebaseConfig';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
@@ -171,8 +173,23 @@ const EmpresasMaestros = () => {
     }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     const empresaAEliminar = empresas.find(l => l.id === id);
+
+    // Con usuarios externos asignados no se elimina: se puede inactivar (les
+    // corta el acceso a los datos y se revierte). Las reglas también les niegan
+    // el acceso si la empresa ya no existe.
+    try {
+      const asignados = await getDocs(query(collection(db, 'usuarios'), where('empresaId', '==', id), limit(1)));
+      if (!asignados.empty) {
+        showToast('No se puede eliminar: la empresa tiene usuarios externos asignados. Inactívala o reasígnalos primero.', 'error');
+        return;
+      }
+    } catch (error) {
+      console.error('Error al revisar los usuarios de la empresa:', error);
+      showToast('No se pudo verificar si la empresa tiene usuarios asignados.', 'error');
+      return;
+    }
 
     confirmAction(
       "Eliminar Empresa",

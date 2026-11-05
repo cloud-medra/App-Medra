@@ -23,6 +23,8 @@ import { useModal } from '../../../../context/ModalContext';
 import { useUser } from '../../../../context/UserContext';
 import { esRolAccesoTotal, esRolSinPlantilla, labelRol, rolesAsignables } from './roles';
 import { errorNombreUsuario } from '../../../../../functions/usuarios/nombreUsuario.mjs';
+import { CamposTipoEmpresa } from './CamposTipoEmpresa';
+import { TIPO_INTERNO, TIPO_EXTERNO, ROL_EXTERNO } from '../../../../../functions/permisos/nucleo.mjs';
 
 // Crear Usuario, con el mismo marco y el mismo editor de permisos que
 // Editar usuario (Listado Usuario):
@@ -40,6 +42,8 @@ import { errorNombreUsuario } from '../../../../../functions/usuarios/nombreUsua
 // guardarPermisosUsuario (solo las excepciones; ella calcula el efectivo).
 
 const ESTADO_INICIAL = {
+  tipoUsuario: TIPO_INTERNO,
+  empresaId: '',
   nombreCompleto: '',
   nombreUsuario: '',
   email: '',
@@ -81,6 +85,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
   const [cargando, setCargando] = useState(false);
   const [cargandoResume, setCargandoResume] = useState(false);
   const [confirmarDescartar, setConfirmarDescartar] = useState(false);
+  const externo = formData.tipoUsuario === TIPO_EXTERNO;
 
   const resumeConsumidoRef = useRef(false);
 
@@ -170,6 +175,11 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Externo: rol Operador, sin centro ni instituciones (lo vuelve a exigir la función).
+  const cambiarTipo = (tipoUsuario) => setFormData((prev) => (tipoUsuario === TIPO_EXTERNO
+    ? { ...prev, tipoUsuario, rol: ROL_EXTERNO, centroCostoId: null, instituciones: [] }
+    : { ...prev, tipoUsuario, empresaId: '' }));
+
   // Cambios del editor (lógica pura compartida): lo que se quita deja de
   // estar "revisado".
   const onCambiarPermisos = (nuevo, { quitadas = [] } = {}) => {
@@ -201,8 +211,9 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
     const errorNombre = errorNombreUsuario(formData.nombreUsuario);
     if (errorNombre) return errorNombre;
     if (!formData.email.trim()) return 'El correo es obligatorio.';
+    if (externo && !formData.empresaId) return 'La empresa es obligatoria para un usuario externo.';
     // Sus solicitudes van a los administradores de su centro.
-    if (formData.rol === 'operador' && !formData.centroCostoId) return 'El centro de costo es obligatorio para un Operador.';
+    if (!externo && formData.rol === 'operador' && !formData.centroCostoId) return 'El centro de costo es obligatorio para un Operador.';
     if (formData.password.length < 6) return 'La contraseña debe tener al menos 6 caracteres.';
     if (formData.password !== formData.confirmPassword) return 'Las contraseñas no coinciden.';
     return '';
@@ -233,7 +244,14 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
         email: formData.email.trim(),
         password: formData.password,
         rol: formData.rol,
+        ...(externo ? { tipoUsuario: TIPO_EXTERNO, empresaId: formData.empresaId } : {}),
       });
+      // Un externo no tiene pasos de permisos: su cuenta queda lista.
+      if (externo) {
+        showToast(`Usuario externo "${formData.nombreCompleto}" creado. Deberá cambiar su contraseña al entrar.`, 'success');
+        resetWizard();
+        return;
+      }
       const estadoInicial = { ...ESTADO_CREACION_INICIAL, paso1: true };
 
       // Con centro de costo: hereda su plantilla (la función calcula y
@@ -334,7 +352,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
         migas={<><span className="uppercase tracking-wider font-semibold">Usuarios</span><span>/</span><span>Crear usuario</span></>}
         nombre={formData.nombreCompleto}
         detalle={formData.email}
-        chips={<><Chip tono="azul" icon={Shield}>{labelRol(formData.rol)}</Chip>{formData.centroCostoId && <Chip icon={Building2}>{nombreCentro(formData.centroCostoId)}</Chip>}{estadoChip}</>}
+        chips={<>{externo && <Chip tono="ambar" icon={Building2}>Externo</Chip>}<Chip tono="azul" icon={Shield}>{labelRol(formData.rol)}</Chip>{formData.centroCostoId && <Chip icon={Building2}>{nombreCentro(formData.centroCostoId)}</Chip>}{estadoChip}</>}
         hayCambios={hayCambios}
         guardando={cargando}
         onCancelar={cancelar}
@@ -352,7 +370,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
         )}
         tabs={[
           { id: 'datos', label: 'Datos generales', icon: UserPlus },
-          { id: 'permisos', label: 'Permisos', icon: KeyRound, deshabilitada: !usuarioId, motivo: 'Primero crea la cuenta en Datos generales' },
+          { id: 'permisos', label: 'Permisos', icon: KeyRound, deshabilitada: !usuarioId || externo, motivo: externo ? 'Un usuario externo no recibe módulos internos' : 'Primero crea la cuenta en Datos generales' },
         ]}
         tabActiva={tab}
         onTab={setTab}
@@ -370,9 +388,11 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
                   <CampoTexto id="nombreCompleto" name="nombreCompleto" label="Nombre completo" icon={User} value={formData.nombreCompleto} onChange={handleChange} placeholder="Ej: Juana Pérez Soto" />
                   <CampoTexto id="nombreUsuario" name="nombreUsuario" label="Nombre de usuario" icon={AtSign} value={formData.nombreUsuario} onChange={handleChange} placeholder="Ej: jperez" />
                   <CampoTexto id="email" name="email" type="email" label="Correo" icon={Mail} value={formData.email} onChange={handleChange} placeholder="ejemplo@medra.cl" ayuda="Será el correo de ingreso al sistema." />
-                  <CampoSelect id="rol" name="rol" label="Rol" icon={Shield} opciones={rolesAsignables(userData, formData.rol)} value={formData.rol} onChange={handleChange}
-                    ayuda={accesoTotal ? 'Acceso total: no se aplican los permisos granulares.' : 'Los permisos se asignan en la pestaña Permisos.'} />
-                  <Campo id="centroCosto" label="Centro de costo"
+                  <CamposTipoEmpresa tipo={formData.tipoUsuario} empresaId={formData.empresaId} onCambiarTipo={cambiarTipo}
+                    onCambiarEmpresa={(empresaId) => setFormData((prev) => ({ ...prev, empresaId }))} />
+                  {!externo && <CampoSelect id="rol" name="rol" label="Rol" icon={Shield} opciones={rolesAsignables(userData, formData.rol)} value={formData.rol} onChange={handleChange}
+                    ayuda={accesoTotal ? 'Acceso total: no se aplican los permisos granulares.' : 'Los permisos se asignan en la pestaña Permisos.'} />}
+                  {!externo && <Campo id="centroCosto" label="Centro de costo"
                     ayuda={usuarioId
                       ? 'Para cambiarlo, edita el usuario desde Listado Usuario.'
                       : formData.centroCostoId
@@ -384,7 +404,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
                           : 'Opcional. Sin centro de costo, el usuario tendrá solo los permisos que le asignes.'}>
                     <CentroSelect todos value={formData.centroCostoId} onChange={(c) => setFormData((prev) => ({ ...prev, centroCostoId: c.id }))}
                       placeholder="Sin centro de costo" disabled={!!usuarioId || !plantillasCargadas} />
-                  </Campo>
+                  </Campo>}
                   {!usuarioId && (
                     <>
                       <CampoTexto id="password" name="password" type="password" label="Contraseña" icon={Lock} value={formData.password} onChange={handleChange} placeholder="Mínimo 6 caracteres" autoComplete="new-password" />
@@ -392,14 +412,14 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
                     </>
                   )}
                 </fieldset>
-                <div className="mt-4">
+                {!externo && <div className="mt-4">
                   <SelectorInstitucionesUsuario
                     seleccionadas={formData.instituciones}
                     onCambiar={(lista) => setFormData((prev) => ({ ...prev, instituciones: lista }))}
                     disabled={!!usuarioId}
                   />
                   {usuarioId && <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Para cambiarlas, edita el usuario desde Listado Usuario.</p>}
-                </div>
+                </div>}
                 {centroSinConfigurar && (
                   <div className="mt-4">
                     <AvisoCentroSinConfigurar nombre={combinacion} onConfigurar={configurarCentro} />
