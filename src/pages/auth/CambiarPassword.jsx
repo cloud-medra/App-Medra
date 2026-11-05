@@ -6,6 +6,7 @@ import { db, auth } from '../../firebaseConfig';
 import { useToast } from '../../context/ToastContext';
 import { useUser } from '../../context/UserContext';
 import Spinner from '../../components/ui/Spinner';
+import { camposCambioPassword } from '../../components/modulos/general/settings/cambiarPassword/fechaCambioPassword';
 import PoliticasPrivacidad from '../../components/modulos/general/legales/PoliticasPrivacidad';
 import TerminosServicio from '../../components/modulos/general/legales/TerminosServicio';
 import {
@@ -96,7 +97,7 @@ const CambiarPassword = () => {
 
       // Nombre, nombre de usuario y correo no se cambian aquí: se piden en
       // Ajustes → Datos personales (solicitud que aprueba el administrador).
-      await updateDoc(doc(db, 'usuarios', user.uid), { passwordChanged: true });
+      await updateDoc(doc(db, 'usuarios', user.uid), { passwordChanged: true, ...camposCambioPassword() });
 
       // Firestore ya quedó actualizado, pero UserContext guarda userData en
       // memoria y solo se refresca en login/logout (onAuthStateChanged). Si

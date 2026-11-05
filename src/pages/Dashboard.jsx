@@ -884,7 +884,7 @@ const Dashboard = () => {
               </button>
 
               <button
-                onClick={() => { setIsAjustesMode(false); setActiveView('/ajustes/cambiarPassword'); setIsMenuOpen(false); }}
+                onClick={() => { setIsAjustesMode(true); setActiveModule(null); setActiveView('/settings/cambiarPasswordAjustes'); setIsMenuOpen(false); }}
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <Shield size={16} className="text-emerald-500 dark:text-emerald-400" /> Cambiar Contraseña

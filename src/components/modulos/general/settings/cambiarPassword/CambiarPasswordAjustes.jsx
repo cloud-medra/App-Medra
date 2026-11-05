@@ -4,10 +4,12 @@ import {
   reauthenticateWithCredential,
   updatePassword,
 } from 'firebase/auth';
-import { auth } from '../../../../../firebaseConfig';
+import { doc, updateDoc } from 'firebase/firestore';
+import { auth, db } from '../../../../../firebaseConfig';
 import { useToast } from '../../../../../context/ToastContext';
 import Spinner from '../../../../ui/Spinner';
 import { Shield, Lock, CheckCircle2, XCircle, KeyRound } from 'lucide-react';
+import { camposCambioPassword } from './fechaCambioPassword';
 
 const CambiarPasswordAjustes = () => {
   const { showToast } = useToast();
@@ -61,7 +63,14 @@ const CambiarPasswordAjustes = () => {
 
       await updatePassword(user, passwords.new);
 
-      showToast('Contraseña actualizada correctamente', 'success');
+      // La contraseña ya cambió: si falla guardar la fecha, se avisa solo de eso.
+      try {
+        await updateDoc(doc(db, 'usuarios', user.uid), camposCambioPassword());
+        showToast('Contraseña actualizada correctamente', 'success');
+      } catch (errorFecha) {
+        console.error('No se pudo guardar la fecha del cambio de contraseña:', errorFecha);
+        showToast('Contraseña actualizada, pero no se pudo guardar la fecha del cambio.', 'warning');
+      }
       resetForm();
     } catch (error) {
       console.error('Error al cambiar contraseña:', error);

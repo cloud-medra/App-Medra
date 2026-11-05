@@ -1,9 +1,10 @@
 import React from 'react';
 import { User, Mail, Shield, AtSign, Briefcase, CalendarDays, Activity } from 'lucide-react';
 import AvatarUsuario from '../../../ui/AvatarUsuario';
+import { SIN_REGISTRO, textoFechaCambioPassword } from '../settings/cambiarPassword/fechaCambioPassword';
 
 const Perfil = ({ userData }) => {
-  const fechaUnion = userData.fechaCreacion || "15 de Mayo, 2023";
+  const fechaUnion = userData.fechaCreacion || SIN_REGISTRO;
   const esActivo = userData.estado?.toLowerCase() === 'activo';
 
   return (
@@ -84,7 +85,7 @@ const Perfil = ({ userData }) => {
                 </div>
                 <div>
                     <h5 className="text-[14px] font-bold text-blue-900 dark:text-blue-300">Seguridad de la Cuenta</h5>
-                    <p className="text-[12px] text-blue-800/80 dark:text-blue-400/80">Tu cuenta está protegida. Último cambio de contraseña hace 3 meses.</p>
+                    <p className="text-[12px] text-blue-800/80 dark:text-blue-400/80">Tu cuenta está protegida. Último cambio de contraseña: {textoFechaCambioPassword(userData.passwordCambiadaEl)}.</p>
                 </div>
                 <button className="ml-auto text-[12px] px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   Gestionar
