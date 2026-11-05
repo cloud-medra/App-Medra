@@ -21,6 +21,8 @@ const ModalConfirmarCarga = ({
   cantidad,
   detalles = [],
   notaExclusiones,
+  // Consignación: "de esta admisión" (un registro, no una cotización).
+  ambito = 'de esta cotización',
   nota = 'Este paso aún no guarda: los cambios se guardan al presionar Guardar Todo.'
 }) => {
   const [procesando, setProcesando] = useState(false);
@@ -91,7 +93,7 @@ const ModalConfirmarCarga = ({
           <div className="min-w-0 flex-grow pt-0.5">
             <h3 id={idTitulo} className="text-[13px] font-bold text-gray-800 dark:text-gray-100">Confirmar carga</h3>
             <p id={idDescripcion} className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-              Marca como "Cargado" los ítems pendientes de esta cotización.
+              Marca como "Cargado" los ítems pendientes {ambito}.
             </p>
           </div>
           <button

@@ -3,6 +3,7 @@ import { User, Building2, Stethoscope, Calendar as CalendarIcon, DollarSign, Loc
 import CentroSelect from '../../../../../ui/CentroSelect';
 import { useGranularPermission } from '../../../../../../hooks/useGranularPermission';
 import { periodoEstaAbierto } from './verificacionPeriodoConsignacion';
+import { estaImputadoConsignacion } from '../../utils/estadosConsignacion';
 
 // Mismo permiso que el candado de la pestaña Cargas.
 const VIEW_PATH_CARGAS = '/consignacion/cargasConsignacion/cargas';
@@ -20,7 +21,8 @@ const InformacionTab = forwardRef(({ registro, items, formData, onChange }, ref)
   const { hasPermission } = useGranularPermission();
 
   const itemActual = (items || []).find(i => i.id === registro?.id) || registro;
-  const solicitado = (itemActual?.estado || '').toUpperCase() === 'SOLICITADO';
+  // SOLICITADO o FINALIZADO: ya imputado, con candado.
+  const solicitado = estaImputadoConsignacion(itemActual);
   const bloqueado = solicitado && !desbloqueado;
   const claseBloqueado = bloqueado
     ? 'opacity-60 [&_input]:bg-slate-100 [&_select]:bg-slate-100 [&_textarea]:bg-slate-100 dark:[&_input]:bg-gray-800 dark:[&_select]:bg-gray-800 dark:[&_textarea]:bg-gray-800 [&_input]:cursor-not-allowed [&_select]:cursor-not-allowed [&_textarea]:cursor-not-allowed'

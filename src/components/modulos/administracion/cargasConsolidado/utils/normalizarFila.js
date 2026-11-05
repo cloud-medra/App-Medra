@@ -10,6 +10,7 @@
 import { CENTRO_HEMODINAMIA } from '../../../operaciones/hemodinamia/gestionHemodinamia/utils/constantesHemodinamia';
 import { CODIGO_SIN_OC } from '../../../operaciones/implantes/gestionImplantes/components/Cargastab/cargasHelpers';
 import { periodoImputacion } from '../../../operaciones/shared/periodoImputacion';
+import { estaImputadoConsignacion } from '../../../operaciones/consignacion/utils/estadosConsignacion';
 
 export const ORIGEN = {
   IMPLANTES: 'IMPLANTES',
@@ -99,7 +100,8 @@ export const normalizarFilaGestionConsignacion = (item) => ({
   atributo: item.atributo || 'P',
   estado: item.estado || 'INGRESADO',
   costo: Number(item.costo) || 0,
-  solicitud: (item.estado || '').toUpperCase() === 'SOLICITADO' ? 'SOLICITADO' : 'PENDIENTE',
+  // FINALIZADO ya pasó por la solicitud (solo agrega que tiene orden).
+  solicitud: estaImputadoConsignacion(item) ? 'SOLICITADO' : 'PENDIENTE',
   registradoPor: item.registradoPor || '',
   fechaRegistro: item.fechaRegistro || null,
   periodoAnio: item.periodoAnio || '',

@@ -23,6 +23,8 @@ import { useColumnResize } from '../../../../../../hooks/useColumnResize';
 import { useAnchosAjustados } from '../../../../../../hooks/useAnchosAjustados';
 import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../../ui/ThRedimensionable';
 import { BotonRestablecerAnchos } from '../../../../../ui/BotonRestablecerAnchos';
+import { ESTADO_BADGE, estaImputadoConsignacion, esElegibleCargaMasiva } from '../../utils/estadosConsignacion';
+import ModalConfirmarCarga from '../../../shared/ModalConfirmarCarga';
 
 const VIEW_PATH_CARGAS = '/consignacion/cargasConsignacion/cargas';
 
@@ -34,21 +36,24 @@ const formatearFechaTabla = (fechaString) => {
   return `${dd}-${mm}-${yyyy}`;
 };
 
-// Columnas de "Cargas" (redimensionables; ancho y mínimo en px). Es la tabla
-// donde se edita, como Cargas de Implantes: una fila por ítem con las
-// Acciones. Lote y vencimiento no son columnas: se editan en una fila
+// Columnas de "Cargas" (redimensionables; ancho y mínimo en px), en el orden
+// de Cargas de Implantes. Es la tabla donde se edita: una fila por ítem con las
+// Acciones. Sin columna Estado: es el mismo campo que Estado Carga. Lote y vencimiento no son columnas: se editan en una fila
 // expandida debajo de la que está en edición.
 const COLUMNAS_CARGAS = [
-  { key: 'estadoCarga', label: 'Estado Carga', ancho: 110, min: 100 },
-  { key: 'admision', label: 'Admisión', ancho: 80, min: 60 },
-  { key: 'codigo', label: 'Código', ancho: 90, min: 60 },
-  { key: 'referencia', label: 'Referencia', ancho: 150, min: 90 },
-  { key: 'descripcion', label: 'Descripción', ancho: 220, min: 90 },
-  { key: 'cantidad', label: 'Cantidad', ancho: 70, min: 55, extra: 'text-center' },
-  { key: 'costo', label: 'Costo', ancho: 115, min: 70 },
-  { key: 'venta', label: 'Venta', ancho: 125, min: 70 },
-  { key: 'recargo', label: 'Recargo', ancho: 70, min: 55, extra: 'text-center' },
-  { key: 'estado', label: 'Estado', ancho: 135, min: 80 },
+  { key: 'numero', label: 'N°', ancho: 36, min: 30, extra: 'text-center' },
+  { key: 'admision', label: 'ID', ancho: 75, min: 50 },
+  { key: 'fecha', label: 'Fecha', ancho: 82, min: 70 },
+  { key: 'codigo', label: 'Código', ancho: 85, min: 55 },
+  { key: 'cantidad', label: 'Cant.', ancho: 55, min: 45, extra: 'text-center' },
+  { key: 'venta', label: 'Venta', ancho: 115, min: 70 },
+  { key: 'referencia', label: 'Referencia', ancho: 140, min: 90 },
+  { key: 'descripcion', label: 'Descripción', ancho: 200, min: 90 },
+  { key: 'tipo', label: 'Tipo', ancho: 100, min: 55 },
+  { key: 'costo', label: 'Costo', ancho: 110, min: 70 },
+  { key: 'recargo', label: 'Recargo', ancho: 65, min: 55, extra: 'text-center' },
+  { key: 'totalItem', label: 'Total Ítem', ancho: 100, min: 60 },
+  { key: 'estadoCarga', label: 'Estado Carga', ancho: 130, min: 100 },
   { key: 'acciones', label: 'Acciones', ancho: 90, min: 80, extra: 'text-center' }
 ];
 const COLSPAN_CARGAS = COLUMNAS_CARGAS.length + 1;
@@ -74,16 +79,6 @@ const COLUMNAS_ITEMS = [
 const COLSPAN_ITEMS = COLUMNAS_ITEMS.length + 1;
 
 const renderP = (valor) => (valor === '' || valor === undefined || valor === null ? 'P' : valor);
-
-const ESTADO_BADGE = {
-  AGENDADO: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-  PENDIENTE: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-  INGRESADO: 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400',
-  REVISAR: 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400',
-  INCOMPLETO: 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400',
-  'S/COTIZACION': 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-  CARGADO: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400'
-};
 
 // Opciones del selector "Estado Carga" (columna "Cargar"), igual patrón que
 // CargasTab de Implantes: por-ítem, sin checkboxes. Reusa el mismo campo
@@ -564,7 +559,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
 
   const handleActualizarEstadoCarga = async (it, nuevoEstado) => {
     if (!it.ref) return;
-    const estaSolicitado = (it.estado || '').toUpperCase() === 'SOLICITADO';
+    const estaSolicitado = estaImputadoConsignacion(it);
     setActualizandoEstadoId(it.id);
     try {
       if (estaSolicitado) {
@@ -598,6 +593,26 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
       showToast('Error al actualizar el estado del ítem', 'error');
     } finally {
       setActualizandoEstadoId(null);
+    }
+  };
+
+  // "Marcar todos como Cargado", como en Cargas de Implantes. Quedan fuera
+  // los imputados (SOLICITADO/FINALIZADO), los ya CARGADO, los REVISAR (se
+  // marcan uno por uno) y los sin código. Acá no hay "Guardar Todo": se
+  // guarda al confirmar, en un batch que solo cambia `estado` (lo mismo que
+  // escribe el selector de cada fila con un ítem no imputado).
+  const itemsElegiblesCargaMasiva = items.filter(it => it.ref && esElegibleCargaMasiva(it));
+  const [mostrarConfirmCargaMasiva, setMostrarConfirmCargaMasiva] = useState(false);
+
+  const confirmarCargaMasiva = async () => {
+    try {
+      const batch = writeBatch(db);
+      itemsElegiblesCargaMasiva.forEach(it => batch.update(it.ref, { estado: 'CARGADO' }));
+      await batch.commit();
+      setMostrarConfirmCargaMasiva(false);
+    } catch (err) {
+      console.error('Error al marcar todos como Cargado:', err);
+      showToast('No se pudieron marcar los ítems como Cargado', 'error');
     }
   };
 
@@ -663,7 +678,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
   // "Imputado" del bloque en Implantes); el de cada ítem va en Acciones.
   // Desbloquea de una vez los ítems SOLICITADO cuyo período está
   // abierto (1 consulta por período distinto) y avisa de los demás.
-  const itemsImputados = items.filter(it => (it.estado || '').toUpperCase() === 'SOLICITADO');
+  const itemsImputados = items.filter(it => estaImputadoConsignacion(it));
   const imputadosBloqueados = itemsImputados.filter(it => !desbloqueados.has(it.id));
   const admisionBloqueada = imputadosBloqueados.length > 0;
   const [verificandoCandadoAdmision, setVerificandoCandadoAdmision] = useState(false);
@@ -703,7 +718,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
   } = useAutocompleteReferenciaConsignacion(editandoId ? borradorItem.referencia : '');
 
   const iniciarEdicionItem = (it) => {
-    const estaSolicitado = (it.estado || '').toUpperCase() === 'SOLICITADO';
+    const estaSolicitado = estaImputadoConsignacion(it);
     if (estaSolicitado && !desbloqueados.has(it.id)) return;
     setEditandoId(it.id);
     setBorradorItem({
@@ -816,7 +831,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
         borrador = { ...borrador, ...camposMaestroBorrador(item, borrador) };
       }
 
-      const estaSolicitado = (it.estado || '').toUpperCase() === 'SOLICITADO';
+      const estaSolicitado = estaImputadoConsignacion(it);
       // Precio editado: solo en esta carga (nunca en maestros_codigos). Se
       // guarda con el precio del maestro y la marca de precio especial.
       const costoNum = precioANumero(borrador.costo);
@@ -1011,7 +1026,16 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
               <span>{admisionBloqueada ? 'Imputado' : 'Editando'}</span>
             </button>
           )}
-          <BotonRestablecerAnchos onClick={restablecerAnchosCargas} personalizados={personalizadosCargas} className="ml-auto h-6" />
+          <button
+            type="button"
+            onClick={() => itemsElegiblesCargaMasiva.length > 0 && setMostrarConfirmCargaMasiva(true)}
+            disabled={itemsElegiblesCargaMasiva.length === 0}
+            title="Marca como CARGADO todos los ítems de esta admisión (no cambia los imputados, los REVISAR ni los sin código)"
+            className="ml-auto flex items-center gap-1 h-6 px-2 text-[9px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 rounded hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          >
+            <CheckCircle2 size={11} /> Marcar todos como Cargado
+          </button>
+          <BotonRestablecerAnchos onClick={restablecerAnchosCargas} personalizados={personalizadosCargas} className="h-6" />
         </div>
 
         {admisionBloqueada && (
@@ -1056,14 +1080,15 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                   </td>
                 </tr>
               ) : (
-                itemsVista.map((it) => {
+                itemsVista.map((it, indice) => {
                   const estadoKey = (it.estado || 'INGRESADO').toUpperCase();
                   const costo = Number(it.costo) || 0;
                   const { vecesCosto: vecesCostoCalculado, venta: ventaCalculada } = calcularVenta(it);
                   const vecesCosto = it.recargoVecesCosto ?? vecesCostoCalculado;
                   const venta = it.venta ?? ventaCalculada;
+                  const totalItem = costo * (Number(it.cantidad) || 1);
                   const actualizando = actualizandoEstadoId === it.id;
-                  const estaSolicitado = estadoKey === 'SOLICITADO';
+                  const estaSolicitado = estaImputadoConsignacion(it);
                   const candadoBloqueado = estaSolicitado && !desbloqueados.has(it.id);
                   const estadoCargaValor = ESTADO_CARGA_OPTIONS.includes(estadoKey)
                     ? estadoKey
@@ -1082,21 +1107,14 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                         ? 'bg-blue-50/60 dark:bg-blue-950/20'
                         : `border-l-2 border-transparent hover:border-[#2383C2] transition-colors ${ESTADO_CARGA_ROW_STYLE[estadoCargaValor]}`}
                       >
-                        <td className={celda}>
-                          <select
-                            value={estadoCargaValor}
-                            disabled={actualizando || candadoBloqueado}
-                            onChange={(e) => handleActualizarEstadoCarga(guardado, e.target.value)}
-                            title={candadoBloqueado ? 'Bloqueado: ya fue solicitado/imputado — desbloquealo con el candado' : undefined}
-                            className={`h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}
-                          >
-                            {ESTADO_CARGA_OPTIONS.map(op => (
-                              <option key={op} value={op}>{op}</option>
-                            ))}
-                          </select>
+                        <td className={`${celda} text-center text-slate-400 dark:text-gray-500`}>
+                          {indice + 1}
                         </td>
                         <td className={`${celda} font-semibold text-[#2383C2] truncate`}>
                           {registro?.gestionId || 'N/A'}
+                        </td>
+                        <td className={`${celda} text-slate-600 dark:text-gray-300 truncate`}>
+                          {formatearFechaTabla(registro?.fecha)}
                         </td>
                         {enEdicion ? (
                           <td className={`${celda} font-num truncate`}>
@@ -1107,6 +1125,30 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                             {it.codigo || 'S/C'}
                           </td>
                         )}
+                        <td className={`${celda} text-center text-slate-700 dark:text-gray-200 font-semibold truncate`}>
+                          {enEdicion ? (
+                            <input
+                              type="number"
+                              value={borradorItem.cantidad}
+                              onChange={e => setBorradorItem(prev => ({ ...prev, cantidad: e.target.value }))}
+                              aria-label="Cantidad"
+                              className={`w-full max-w-14 text-center ${input}`}
+                            />
+                          ) : (it.cantidad ?? 0)}
+                        </td>
+                        {/* Venta, recargo y total en vivo con el precio y la cantidad del borrador (itemsVista). */}
+                        <td className={`${celda} text-emerald-700 dark:text-emerald-400 font-semibold truncate`}>
+                          {venta != null ? (
+                            <>
+                              ${Number(venta).toLocaleString('es-CL')}
+                              {enEdicion && <span className="ml-1 text-[8px] font-normal text-blue-600 dark:text-blue-400 italic">(en edición)</span>}
+                            </>
+                          ) : costo === 0 ? (
+                            <span className="text-slate-400 dark:text-gray-500 italic font-normal">Sin costo</span>
+                          ) : (
+                            <span className="text-amber-600 dark:text-amber-400 italic font-normal">Sin regla</span>
+                          )}
+                        </td>
                         {enEdicion ? (
                           <td className={`${celda} relative`} ref={containerRefEdicion}>
                             <input
@@ -1160,16 +1202,9 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                         >
                           {(enEdicion ? borradorItem.descripcion : it.descripcion) || '-'}
                         </td>
-                        <td className={`${celda} text-center text-slate-700 dark:text-gray-200 font-semibold truncate`}>
-                          {enEdicion ? (
-                            <input
-                              type="number"
-                              value={borradorItem.cantidad}
-                              onChange={e => setBorradorItem(prev => ({ ...prev, cantidad: e.target.value }))}
-                              aria-label="Cantidad"
-                              className={`w-full max-w-14 text-center ${input}`}
-                            />
-                          ) : (it.cantidad ?? 0)}
+                        {/* Tipo del maestro (atributo del registro), como el Tipo de Implantes. */}
+                        <td className={`${celda} text-slate-600 dark:text-gray-300 truncate`} title={it.atributo || it.tipo || '-'}>
+                          {it.atributo || it.tipo || '-'}
                         </td>
                         {enEdicion ? (
                           // Precio editable (solo esta carga; el maestro no se toca).
@@ -1197,26 +1232,35 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                             {esPrecioEspecial(it) && <BadgePrecioEspecial costoMaestro={it.costoMaestro} />}
                           </td>
                         )}
-                        {/* Venta y recargo en vivo con el precio y la cantidad del borrador (itemsVista). */}
-                        <td className={`${celda} text-emerald-700 dark:text-emerald-400 font-semibold truncate`}>
-                          {venta != null ? (
-                            <>
-                              ${Number(venta).toLocaleString('es-CL')}
-                              {enEdicion && <span className="ml-1 text-[8px] font-normal text-blue-600 dark:text-blue-400 italic">(en edición)</span>}
-                            </>
-                          ) : costo === 0 ? (
-                            <span className="text-slate-400 dark:text-gray-500 italic font-normal">Sin costo</span>
-                          ) : (
-                            <span className="text-amber-600 dark:text-amber-400 italic font-normal">Sin regla</span>
-                          )}
-                        </td>
                         <td className={`${celda} text-center text-slate-700 dark:text-gray-200 truncate`}>
                           {vecesCosto != null ? `${vecesCosto} x` : '-'}
                         </td>
+                        <td className={`${celda} text-emerald-700 dark:text-emerald-400 font-semibold truncate`}>
+                          {totalItem ? `$${Math.round(totalItem).toLocaleString('es-CL')}` : '-'}
+                        </td>
+                        {/* Estado Carga y Estado son el mismo campo `estado`: imputado
+                            (SOLICITADO/FINALIZADO) con candado se muestra como etiqueta. */}
                         <td className={`${celda} whitespace-nowrap overflow-hidden`}>
-                          <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold rounded-full uppercase ${ESTADO_BADGE[estadoKey] || 'bg-slate-100 text-slate-600'}`}>
-                            {estadoKey}
-                          </span>
+                          {candadoBloqueado ? (
+                            <span
+                              title="Bloqueado: ya fue solicitado/imputado — desbloquealo con el candado"
+                              className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${ESTADO_BADGE[estadoKey]}`}
+                            >
+                              <Lock size={9} /> {estadoKey}
+                            </span>
+                          ) : (
+                            <select
+                              value={estadoCargaValor}
+                              disabled={actualizando}
+                              onChange={(e) => handleActualizarEstadoCarga(guardado, e.target.value)}
+                              aria-label="Estado Carga"
+                              className={`h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}
+                            >
+                              {ESTADO_CARGA_OPTIONS.map(op => (
+                                <option key={op} value={op}>{op}</option>
+                              ))}
+                            </select>
+                          )}
                           {/* Editado después de solicitar: se descarga en "Solicitudes de modificaciones". */}
                           {it.modificacionPendiente && (
                             <span
@@ -1391,7 +1435,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                   // itemsVista: el ítem en edición muestra cantidad, costo y total del borrador.
                   return itemsVista.map((it) => {
                     const estadoKey = (it.estado || 'INGRESADO').toUpperCase();
-                    const estaSolicitado = estadoKey === 'SOLICITADO';
+                    const estaSolicitado = estaImputadoConsignacion(it);
                     const candadoBloqueado = estaSolicitado && !desbloqueados.has(it.id);
                     const estadoCargaValor = ESTADO_CARGA_OPTIONS.includes(estadoKey)
                       ? estadoKey
@@ -1451,7 +1495,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                                 title="Bloqueado: ya fue solicitado/imputado"
                                 className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border bg-slate-100 dark:bg-gray-800 border-slate-300 dark:border-gray-700 text-slate-500 dark:text-gray-400"
                               >
-                                <Lock size={9} /> SOLICITADO
+                                <Lock size={9} /> {estadoKey}
                               </span>
                             ) : (
                               <span className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded border ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}>
@@ -1502,6 +1546,19 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
         </div>
       </div>
 
+      <ModalConfirmarCarga
+        abierto={mostrarConfirmCargaMasiva}
+        onCerrar={() => setMostrarConfirmCargaMasiva(false)}
+        onConfirmar={confirmarCargaMasiva}
+        cantidad={itemsElegiblesCargaMasiva.length}
+        detalles={[
+          { etiqueta: 'Admisión', valor: registro?.gestionId || 'N/A' },
+          { etiqueta: 'Fecha', valor: formatearFechaTabla(registro?.fecha) }
+        ]}
+        notaExclusiones="ítems imputados, en REVISAR y sin código"
+        nota="Se guarda al confirmar."
+        ambito="de esta admisión"
+      />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { Trash2, RefreshCw, RotateCcw, Pencil, Lock } from 'lucide-react';
 import { esRegistroEditable, mensajeRegistroNoEditable } from '../../utils/registroConsignacionService';
 import { CeldaOrdenConsignacion } from './CeldaOrdenConsignacion';
+import { ESTADO_BADGE } from '../../utils/estadosConsignacion';
 
 const COLUMNAS = [
   { key: 'numero', label: '#', ancho: 40, min: 28, align: 'center' },
@@ -43,13 +44,14 @@ const calcularEstadoGuia = (guias) => (guias && String(guias).trim() ? 'RECIBIDO
 
 // Paleta fija por cada valor posible de la columna "Estado" del registro
 // (ver ESTADOS_SEMILLA en CargasConsignacion.jsx para el ciclo de vida
-// completo: INGRESADO -> ... -> CARGADO -> SOLICITADO).
+// completo: INGRESADO -> ... -> CARGADO -> SOLICITADO -> FINALIZADO).
 const ESTADO_ESTILOS = {
   INGRESADO: 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400',
   PENDIENTE: 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400',
   REVISAR: 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400',
   CARGADO: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400',
-  SOLICITADO: 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400'
+  SOLICITADO: 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400',
+  FINALIZADO: ESTADO_BADGE.FINALIZADO
 };
 const ESTADO_ESTILO_DEFECTO = 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300';
 

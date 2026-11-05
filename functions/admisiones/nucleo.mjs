@@ -55,13 +55,15 @@ export const resumenGestion = (gestion) => {
 
 // Resumen de UN registro de Consignación (mismos campos que resumenGestion,
 // así agregarAdmision calcula el estado igual). Un registro SOLICITADO ya
-// estuvo cargado: no cuenta como pendiente.
+// estuvo cargado: no cuenta como pendiente. FINALIZADO es un SOLICITADO que ya
+// recibió su orden: sigue imputado.
 export const resumenRegistroConsignacion = (registro) => {
   const estado = String(registro?.estado || '').toUpperCase();
+  const imputada = estado === 'SOLICITADO' || estado === 'FINALIZADO';
   return {
     items: 1,
-    pendientes: estado === 'CARGADO' || estado === 'SOLICITADO' ? 0 : 1,
-    imputada: estado === 'SOLICITADO',
+    pendientes: estado === 'CARGADO' || imputada ? 0 : 1,
+    imputada,
     fecha: registro?.fecha || null,
   };
 };

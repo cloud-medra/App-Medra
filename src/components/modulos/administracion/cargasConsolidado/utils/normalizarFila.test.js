@@ -5,7 +5,8 @@ import {
   filtrarPorBusquedaYOrigen,
   normalizarSolicitudImplantes,
   normalizarSolicitudConsignacion,
-  normalizarSolicitudHemodinamia
+  normalizarSolicitudHemodinamia,
+  normalizarFilaGestionConsignacion
 } from './normalizarFila';
 
 const fila = (gestionId, codigo, origen = ORIGEN.IMPLANTES) => ({ gestionId, codigo, origen });
@@ -264,5 +265,14 @@ describe('normalizarSolicitudImplantes / Hemodinamia / Consignacion (Solicitudes
     expect(filas[0].esFilaGuia).toBe(true);
     expect(filas[0].refPath).toBeNull();
     expect(filas[0].selectId).toBe('guia-DELIVERY1-0');
+  });
+});
+
+describe('normalizarFilaGestionConsignacion', () => {
+  it('FINALIZADO conserva su estado y figura como ya solicitado', () => {
+    const fila = normalizarFilaGestionConsignacion({ id: 'a', estado: 'FINALIZADO' });
+    expect(fila.estado).toBe('FINALIZADO');
+    expect(fila.solicitud).toBe('SOLICITADO');
+    expect(normalizarFilaGestionConsignacion({ id: 'b', estado: 'CARGADO' }).solicitud).toBe('PENDIENTE');
   });
 });

@@ -2,6 +2,7 @@ import { useColumnResize } from '../../../../../hooks/useColumnResize';
 import { ManijaRedimension } from '../../../../ui/ManijaRedimension';
 import { MESES } from '../../controlMensual/constants';
 import { ORIGEN_LABEL, ORIGEN_BADGE_STYLE } from '../utils/normalizarFila';
+import { ESTADO_BADGE, ESTADO_FINALIZADO } from '../../../operaciones/consignacion/utils/estadosConsignacion';
 
 const COLUMNAS = [
   { key: 'origen', label: 'Origen', ancho: 105, min: 90 },
@@ -91,7 +92,9 @@ const GestionUnificadaTable = ({ filas, onAbrirDetalle }) => {
                   {fila.atributo}
                 </td>
                 <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">
-                  {fila.estado}
+                  {fila.estado === ESTADO_FINALIZADO
+                    ? <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${ESTADO_BADGE.FINALIZADO}`}>{fila.estado}</span>
+                    : fila.estado}
                 </td>
                 <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 font-medium">
                   {fila.costo ? `$${Number(fila.costo).toLocaleString('es-CL')}` : '-'}

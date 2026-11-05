@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Trash2, RefreshCw, RotateCcw, Eye, Lock } from 'lucide-react';
 import { textoOCs } from '../../../shared/ocIndex/indiceOC';
 import { ordenesDeRegistro, esOrdenSincronizada } from '../../utils/registroConsignacionService';
+import { ESTADO_PUNTO, ESTADO_BADGE } from '../../utils/estadosConsignacion';
 
 const COLUMNAS = [
   { key: 'colorEstado', label: '', ancho: 28, min: 28, align: 'center', sinResize: true },
@@ -15,7 +16,6 @@ const COLUMNAS = [
   { key: 'atributo', label: 'Atributo', ancho: 110, min: 60 },
   { key: 'estado', label: 'Estado', ancho: 100, min: 60 },
   { key: 'costo', label: 'Costo', ancho: 100, min: 60 },
-  { key: 'solicitud', label: 'Solicitud', ancho: 100, min: 60 },
   { key: 'convenio', label: 'Convenio', ancho: 100, min: 60 },
   { key: 'prevision', label: 'Previsión', ancho: 100, min: 60 },
   { key: 'medico', label: 'Médico', ancho: 130, min: 70 },
@@ -25,29 +25,6 @@ const COLUMNAS = [
 ];
 
 const anchosPorDefecto = () => COLUMNAS.reduce((acc, col) => ({ ...acc, [col.key]: col.ancho }), {});
-
-// Ajustar esta paleta cuando se definan todos los estados reales del flujo.
-const ESTADO_COLOR = {
-  AGENDADO: 'bg-slate-400',
-  PENDIENTE: 'bg-slate-400',
-  INGRESADO: 'bg-blue-500',
-  REVISAR: 'bg-amber-500',
-  INCOMPLETO: 'bg-red-500',
-  'S/COTIZACION': 'bg-slate-400',
-  CARGADO: 'bg-emerald-500',
-  SOLICITADO: 'bg-purple-500'
-};
-
-const ESTADO_BADGE = {
-  AGENDADO: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-  PENDIENTE: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-  INGRESADO: 'bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400',
-  REVISAR: 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400',
-  INCOMPLETO: 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400',
-  'S/COTIZACION': 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-  CARGADO: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400',
-  SOLICITADO: 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400'
-};
 
 const formatearFechaTabla = (fechaString) => {
   if (!fechaString || !fechaString.includes('-')) return fechaString || '-';
@@ -200,7 +177,7 @@ export const CargasConsignacionTable = ({
                 >
                   <td className={`${celdaBase} text-center`}>
                     <span
-                      className={`inline-block w-2.5 h-2.5 rounded-full ${ESTADO_COLOR[estadoKey] || 'bg-slate-400'}`}
+                      className={`inline-block w-2.5 h-2.5 rounded-full ${ESTADO_PUNTO[estadoKey] || 'bg-slate-400'}`}
                       title={estadoKey}
                     />
                   </td>
@@ -224,7 +201,6 @@ export const CargasConsignacionTable = ({
                   <td className={`${celdaBase} text-emerald-700 dark:text-emerald-400 font-semibold`}>
                     {r.costo ? `$${Number(r.costo).toLocaleString('es-CL')}` : '-'}
                   </td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300`}>{renderP(r.solicitud)}</td>
                   <td className={`${celdaBase} text-gray-500 dark:text-gray-400`}>{renderP(r.convenio)}</td>
                   <td className={`${celdaBase} text-gray-500 dark:text-gray-400`}>{renderP(r.prevision)}</td>
                   <td className={`${celdaBase} text-gray-600 dark:text-gray-300`} title={r.medico}>{r.medico || '-'}</td>

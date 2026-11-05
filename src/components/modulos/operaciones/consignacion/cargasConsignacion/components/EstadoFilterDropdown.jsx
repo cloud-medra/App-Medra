@@ -1,13 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ListFilter, ChevronDown, Check } from 'lucide-react';
-
-const ESTADO_COLORS = {
-  INGRESADO: 'bg-blue-500',
-  PENDIENTE: 'bg-slate-400',
-  CARGADO: 'bg-emerald-500',
-  REVISAR: 'bg-amber-500',
-  SOLICITADO: 'bg-violet-500',
-};
+import { ESTADO_PUNTO } from '../../utils/estadosConsignacion';
 
 export const EstadoFilterDropdown = ({
   opcionesEstados,
@@ -67,7 +60,7 @@ export const EstadoFilterDropdown = ({
                 className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <span className="flex items-center gap-1.5">
-                  <span className={`h-2 w-2 rounded-full inline-block ${ESTADO_COLORS[estado] || 'bg-gray-400'}`} />
+                  <span className={`h-2 w-2 rounded-full inline-block ${ESTADO_PUNTO[estado] || 'bg-gray-400'}`} />
                   {estado}
                 </span>
                 {seleccionado && <Check size={13} className="text-[#2383C2]" />}

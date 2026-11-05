@@ -39,9 +39,10 @@ const TAMANO_PAGINA_TABLA = 50;
 
 // Semilla del filtro de Estado: los únicos estados que Consignación escribe en
 // un registro — INGRESADO (alta en Registro), PENDIENTE/CARGADO/REVISAR
-// (selector de CargasTab) y SOLICITADO (export en Solicitud). Los estados
+// (selector de CargasTab), SOLICITADO (export en Solicitud) y FINALIZADO
+// (Sincronizar OC le asigna la orden). Los estados
 // reales encontrados en los datos se suman a esta lista.
-const ESTADOS_SEMILLA = ['INGRESADO', 'PENDIENTE', 'CARGADO', 'REVISAR', 'SOLICITADO'];
+const ESTADOS_SEMILLA = ['INGRESADO', 'PENDIENTE', 'CARGADO', 'REVISAR', 'SOLICITADO', 'FINALIZADO'];
 
 const CargasConsignacion = () => {
   const [registros, setRegistros] = useState([]);

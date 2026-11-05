@@ -51,8 +51,8 @@ describe('Consignación → Cargas: editar precio', () => {
     const precio = editar();
     fireEvent.change(precio, { target: { value: '800' } });
     expect(screen.getByText('Maestro: $1.000')).toBeInTheDocument();
-    // Total del ítem (Ítems Registrados) y de la admisión, en vivo (800 × 2).
-    expect(screen.getAllByText('$1.600')).toHaveLength(2);
+    // Total del ítem (en Cargas y en Ítems Registrados) y de la admisión, en vivo (800 × 2).
+    expect(screen.getAllByText('$1.600')).toHaveLength(3);
     // Venta en la fila de Cargas que se edita: 800 × 1,5 × 2.
     expect(within(precio.closest('tr')).getByText(/\$2\.400/)).toBeInTheDocument();
 
@@ -129,6 +129,58 @@ describe('Consignación → Cargas: edición en la tabla Cargas', () => {
     fireEvent.click(screen.getByTitle('Cancelar edición'));
     expect(screen.queryByLabelText('Precio')).toBeNull();
     expect(updateDoc).not.toHaveBeenCalled();
+  });
+});
+
+describe('Consignación → Cargas: columnas como Cargas de Implantes y FINALIZADO', () => {
+  const montar = (items) => render(<CargasTab registro={{ gestionId: '500', fecha: '2026-10-05' }} items={items} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);
+  const tablaCargas = () => screen.getByText('Cargas', { selector: 'h3' }).closest('div.rounded-lg').querySelector('table');
+
+  it('columnas en el orden de Implantes, con N°, fecha, tipo y total; sin columna Estado', () => {
+    montar([{ ...ITEM, atributo: 'CONSIGNACION' }]);
+    const cargas = tablaCargas();
+    const encabezados = [...cargas.querySelectorAll('thead th')].map((th) => th.textContent.trim()).filter(Boolean);
+    expect(encabezados).toEqual(['N°', 'ID', 'Fecha', 'Código', 'Cant.', 'Venta', 'Referencia', 'Descripción', 'Tipo', 'Costo', 'Recargo', 'Total Ítem', 'Estado Carga', 'Acciones']);
+    const fila = within(cargas).getByText('REF-1').closest('tr');
+    expect(within(fila).getByText('05-10-2026')).toBeInTheDocument();
+    expect(within(fila).getByText('CONSIGNACION')).toBeInTheDocument();
+    expect(within(fila).getByText('$2.000')).toBeInTheDocument(); // 1000 × 2
+  });
+
+  it('un ítem FINALIZADO queda con candado, como uno SOLICITADO', () => {
+    montar([{ ...ITEM, estado: 'FINALIZADO', periodoAnio: 2026, periodoMes: 'octubre' }]);
+    expect(screen.queryByTitle('Editar ítem')).toBeNull();
+    expect(screen.getByTitle('Este ítem ya está imputado — click para desbloquear edición')).toBeInTheDocument();
+    expect(within(tablaCargas()).getByText('FINALIZADO')).toBeInTheDocument();
+    expect(within(tablaCargas()).queryByRole('combobox')).toBeNull();
+    expect(screen.getByRole('button', { name: /Imputado/ })).toBeInTheDocument();
+  });
+});
+
+describe('Consignación → Cargas: marcar todos como Cargado', () => {
+  it('marca solo los pendientes con código, en un batch, tras confirmar', async () => {
+    const actualizaciones = [];
+    const { writeBatch } = await import('firebase/firestore');
+    writeBatch.mockReturnValue({ update: (ref, datos) => actualizaciones.push([ref.path, datos]), commit: vi.fn(async () => {}) });
+    const items = [
+      { ...ITEM, id: 'a', ref: { path: 'r/a' } },
+      { ...ITEM, id: 'b', ref: { path: 'r/b' }, estado: 'REVISAR' },
+      { ...ITEM, id: 'c', ref: { path: 'r/c' }, estado: 'CARGADO' },
+      { ...ITEM, id: 'd', ref: { path: 'r/d' }, estado: 'SOLICITADO' },
+      { ...ITEM, id: 'e', ref: { path: 'r/e' }, codigo: '' },
+      { ...ITEM, id: 'f', ref: { path: 'r/f' }, estado: 'PENDIENTE' },
+    ];
+    render(<CargasTab registro={{ gestionId: '500' }} items={items} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /Marcar todos como Cargado/ }));
+    expect(screen.getByText(/ítems se marcarán/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar carga/ }));
+    await waitFor(() => expect(actualizaciones).toHaveLength(2));
+    expect(actualizaciones).toEqual([['r/a', { estado: 'CARGADO' }], ['r/f', { estado: 'CARGADO' }]]);
+  });
+
+  it('sin ítems elegibles el botón queda deshabilitado', () => {
+    render(<CargasTab registro={{}} items={[{ ...ITEM, estado: 'REVISAR' }]} formData={{}} onChange={vi.fn()} setCargando={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /Marcar todos como Cargado/ }).disabled).toBe(true);
   });
 });
 

@@ -97,6 +97,7 @@ const ConsignacionFiltros = ({
           <option value="REVISAR">REVISAR</option>
           <option value="CARGADO">CARGADO</option>
           <option value="SOLICITADO">SOLICITADO</option>
+          <option value="FINALIZADO">FINALIZADO</option>
         </select>
 
         {hayFiltrosActivos && (

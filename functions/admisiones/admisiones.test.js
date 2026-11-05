@@ -11,6 +11,7 @@ describe('resumenRegistroConsignacion', () => {
     expect(resumenRegistroConsignacion({ estado: 'INGRESADO', fecha: '2026-10-05' })).toEqual({ items: 1, pendientes: 1, imputada: false, fecha: '2026-10-05' });
     expect(resumenRegistroConsignacion({ estado: 'CARGADO' })).toMatchObject({ pendientes: 0, imputada: false });
     expect(resumenRegistroConsignacion({ estado: 'solicitado' })).toMatchObject({ pendientes: 0, imputada: true });
+    expect(resumenRegistroConsignacion({ estado: 'FINALIZADO' })).toMatchObject({ pendientes: 0, imputada: true });
     expect(resumenRegistroConsignacion({})).toMatchObject({ pendientes: 1, imputada: false, fecha: null });
   });
 
@@ -19,6 +20,7 @@ describe('resumenRegistroConsignacion', () => {
     expect(agregarAdmision({ a: r('CARGADO'), b: r('PENDIENTE') }).estado).toBe(ESTADOS_ADMISION.GESTIONADA);
     expect(agregarAdmision({ a: r('CARGADO'), b: r('CARGADO') }).estado).toBe(ESTADOS_ADMISION.CARGADA);
     expect(agregarAdmision({ a: r('CARGADO'), b: r('SOLICITADO') }).estado).toBe(ESTADOS_ADMISION.IMPUTADA);
+    expect(agregarAdmision({ a: r('FINALIZADO') }).estado).toBe(ESTADOS_ADMISION.IMPUTADA);
     expect(agregarAdmision({}).estado).toBe(ESTADOS_ADMISION.PENDIENTE);
   });
 });

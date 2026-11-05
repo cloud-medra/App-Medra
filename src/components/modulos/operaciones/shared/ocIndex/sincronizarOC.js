@@ -14,6 +14,7 @@ import { agruparIndiceOC, cruzarGestionesOC, cruzarRegistrosConsignacionOC } fro
 import { obtenerIndiceOC, registrarSincronizacionOC, limpiarInvalidacionesPendientes } from './indiceOCRemoto';
 import { invalidarOCGestiones } from './invalidarOCGestiones';
 import { moduloGestion } from '../modulosGestion';
+import { estadoAlAsignarOrden } from '../../consignacion/utils/estadosConsignacion';
 
 const PREFIJO_CONSIGNACION = 'consignacion_registros/';
 // 2 operaciones por gestión con OC (update + log): 450 ops = 225 gestiones.
@@ -141,7 +142,8 @@ export const ejecutarSincronizacionOC = async ({ meta, indice }, { userData, mod
 // pero cada registro es un ítem y la OC va en su campo `orden` (la columna
 // ORDEN de Registro). Pendientes = registros con orden == '' dentro del
 // rango de fechas del índice (índice compuesto orden + fecha). Un `orden`
-// escrito a mano no se toca. No registra la versión en ocImport/meta (eso es
+// escrito a mano no se toca (ni cambia el estado). Al recibir la orden, una
+// carga SOLICITADO pasa a FINALIZADO. No registra la versión en ocImport/meta (eso es
 // de Implantes y Consignación no puede escribir ese documento), así que no
 // hay aviso de "sin importaciones nuevas".
 export const ejecutarSincronizacionOCConsignacion = async ({ meta, indice }, { userData } = {}) => {
@@ -157,12 +159,22 @@ export const ejecutarSincronizacionOCConsignacion = async ({ meta, indice }, { u
     .map(d => ({ id: d.id, refPath: d.ref.path, ...d.data() }));
 
   const { asignaciones, detalle, contadores } = cruzarRegistrosConsignacionOC(registros, agruparIndiceOC(indice));
+  const registroPorRuta = new Map(registros.map(r => [r.refPath, r]));
 
   const { escritas, erroresEscritura, escrituras } = await escribirPorLotes(asignaciones, (batch, { refPath, oc }) => {
     const ref = doc(db, refPath);
+    // Con la orden, una carga SOLICITADO pasa a FINALIZADO en la misma
+    // escritura; en otro estado conserva el suyo (estadoAlAsignarOrden).
+    const registro = registroPorRuta.get(refPath);
+    const estadoNuevo = estadoAlAsignarOrden(registro);
+    const cambioEstado = estadoNuevo ? { estado: estadoNuevo } : {};
     // ordenOrigen 'oc' bloquea la orden (Registro y firestore.rules).
-    batch.update(ref, { orden: oc, ordenOrigen: 'oc', ocActualizadoEn: serverTimestamp() });
-    batch.set(doc(collection(ref, 'logs')), logOCAsignada({ orden: oc, origen: 'SINCRONIZAR_OC' }, userData));
+    batch.update(ref, { orden: oc, ordenOrigen: 'oc', ocActualizadoEn: serverTimestamp(), ...cambioEstado });
+    batch.set(doc(collection(ref, 'logs')), logOCAsignada({
+      orden: oc,
+      origen: 'SINCRONIZAR_OC',
+      ...(estadoNuevo ? { estadoAnterior: registro.estado, estadoNuevo } : {})
+    }, userData));
     return 2;
   });
 
