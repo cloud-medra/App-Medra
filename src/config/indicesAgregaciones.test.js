@@ -125,6 +125,10 @@ const CONTEOS = {
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['estado'] },
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['numero_factura'] },
   ],
+  // Filtro de Gestiones: años y meses con datos, solo por rango de documentId().
+  'components/modulos/operaciones/shared/gestion/usePeriodosConDatos.js': [
+    { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: [] },
+  ],
   // Inicio → Pendientes (gestiones de Implantes).
   'components/modulos/dashboard/panelInicio/usePendientesInicioData.js': [
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['solicitud'] },
