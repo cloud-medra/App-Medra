@@ -33,3 +33,6 @@ functions/.env.*
 !functions/.env.demo-workcraft
 # Caché de despliegue de Firebase Hosting
 .firebase/
+
+# Registros de reparaciones de producción (traen admisiones): no se suben
+registros-privados/
