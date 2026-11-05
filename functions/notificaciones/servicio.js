@@ -19,6 +19,7 @@ const { ESTADOS: ESTADOS_ZONA } = require('../bodymap/nucleo.mjs');
 
 const REFRESCAR_DESTINATARIOS_MS = 6 * 60 * 60 * 1000;
 const refAlerta = (db, id) => db.collection('alertas').doc(id);
+const CODIGO_YA_EXISTE = 6; // gRPC ALREADY_EXISTS
 const contar = async (q) => (await q.count().get()).data().count || 0;
 
 // detalles de un módulo (collectionGroup acotado por documentId, como las
@@ -153,16 +154,27 @@ const aplicarCambioTicket = async (db, ticketId, antes, despues) => {
   const eraNuevo = antes?.estado === 'NUEVO';
   const esNuevo = despues?.estado === 'NUEVO';
   const ref = refAlerta(db, idAlertaTicket(ticketId));
+  // Pub/Sub puede repetir o atrasar la entrega: se decide con el ticket ACTUAL.
+  const ticketActual = async () => (await db.collection('tickets').doc(ticketId).get()).data();
   if (!antes && esNuevo) {
-    const destinatarios = destinatariosTicket(despues, await usuariosParaTicket(db, despues));
+    const ticket = await ticketActual();
+    if (ticket?.estado !== 'NUEVO') return { accion: null };
+    const destinatarios = destinatariosTicket(ticket, await usuariosParaTicket(db, ticket));
     if (!destinatarios.length) return { accion: null, destinatarios: 0 };
-    await ref.set({
-      ...alertaTicket(ticketId, despues), destinatarios, noLeidas: destinatarios,
-      estado: 'pendiente', resultado: null, creadoEl: FieldValue.serverTimestamp(), resueltaEl: null,
-    });
+    try {
+      // create y no set: repetir el evento no debe reabrir una alerta ya leída.
+      await ref.create({
+        ...alertaTicket(ticketId, ticket), destinatarios, noLeidas: destinatarios,
+        estado: 'pendiente', resultado: null, creadoEl: FieldValue.serverTimestamp(), resueltaEl: null,
+      });
+    } catch (err) {
+      if (err.code === CODIGO_YA_EXISTE) return { accion: null };
+      throw err;
+    }
     return { accion: 'crear', destinatarios: destinatarios.length };
   }
   if (eraNuevo && !esNuevo) {
+    if ((await ticketActual())?.estado === 'NUEVO') return { accion: null };
     const previa = await ref.get();
     if (!previa.exists || previa.get('estado') !== 'pendiente') return { accion: null };
     await ref.update({

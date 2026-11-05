@@ -14,6 +14,7 @@ const { COLECCION_ADMISIONES } = require('../admisiones/nucleo.mjs');
 const refDescripcion = (db, norm) => db.collection(COLECCION_DESCRIPCIONES).doc(idDescripcionReporte(norm));
 const refMarca = (db, admision) => db.collection(COLECCION_ADMISIONES).doc(admision);
 const LOTE = 400;
+const CODIGO_NO_ENCONTRADO = 5; // gRPC NOT_FOUND
 
 // Suma `delta` filas a la descripción; si no existe la crea visible (sin
 // transacción: una importación crea cientos de filas a la vez). `nueva`: no
@@ -45,23 +46,34 @@ const aplicarCambioFila = async (db, ref, antes, despues) => {
   // Ediciones que no tocan descripción ni admisión (ej. "Revisado"): nada que leer.
   const mismaAdmision = antes && despues && admisionClaveDe(antes['Admisión']) === admisionClaveDe(despues['Admisión']);
   const calcularCampos = Boolean(despues) && !(antes && a === d && mismaAdmision && tieneCampos(despues));
+  // El evento puede llegar atrasado (Pub/Sub reintenta las entregas rechazadas):
+  // los campos se calculan con la fila ACTUAL, y si ya no existe no hay nada que
+  // completar. El contador sí usa el evento: es la diferencia de ESE cambio.
+  const actual = calcularCampos ? await ref.get() : null;
+  const fila = actual?.exists ? actual.data() : null;
+  const normFila = fila ? descripcionNormDe(fila['Descripción']) : null;
+  const admision = fila ? admisionClaveDe(fila['Admisión']) : '';
   // La entrada se lee ANTES de sumar la fila: si no existe, la descripción
-  // es nueva (pendiente). Cuando cambia la descripción siempre se calculan
-  // los campos, así que no es una lectura extra.
-  const admision = calcularCampos ? admisionClaveDe(despues['Admisión']) : '';
-  const [entrada, marca] = calcularCampos
-    ? await Promise.all([refDescripcion(db, d).get(), admision ? refMarca(db, admision).get() : null])
+  // es nueva (pendiente).
+  const [entrada, marca] = fila
+    ? await Promise.all([refDescripcion(db, normFila).get(), admision ? refMarca(db, admision).get() : null])
     : [null, null];
   if (a !== d) {
+    const entradaEvento = !d ? null : d === normFila ? entrada : await refDescripcion(db, d).get();
     if (a) await sumarFilas(db, a, -1);
-    if (d) await sumarFilas(db, d, 1, { nueva: !entrada.exists });
+    if (d) await sumarFilas(db, d, 1, { nueva: !entradaEvento.exists });
     resultado.contador = { resta: a, suma: d };
   }
-  if (!calcularCampos) return resultado;
-  const campos = camposFila(despues, entrada.exists ? entrada.data() : null, Boolean(marca?.exists));
-  if (!camposIguales(despues, campos)) {
-    await ref.update(campos);
-    resultado.campos = campos;
+  if (!fila) return resultado;
+  const campos = camposFila(fila, entrada.exists ? entrada.data() : null, Boolean(marca?.exists));
+  if (!camposIguales(fila, campos)) {
+    try {
+      await ref.update(campos);
+      resultado.campos = campos;
+    } catch (err) {
+      // Se borró entre la lectura y esta escritura: nada que completar.
+      if (err.code !== CODIGO_NO_ENCONTRADO) throw err;
+    }
   }
   return resultado;
 };
@@ -77,11 +89,17 @@ const admisionesGestionadas = async (db, admisiones) => {
   return gestionadas;
 };
 
-// Cambió un switch del Maestro: recalcula las filas de esa descripción.
-const aplicarCambioDescripcion = async (db, antes, despues) => {
-  if (!despues) return { filas: 0, actualizadas: 0 };
-  const cambio = ['ocultaImplantes', 'ocultaDocumentos'].some((k) => (antes?.[k] === true) !== (despues[k] === true));
+// Cambió un switch del Maestro: recalcula las filas de esa descripción. El
+// evento solo dice que cambió; los valores se leen del Maestro ACTUAL (`ref`).
+// Con la foto del evento, dos switches seguidos podían terminar en desorden y
+// el primero pisaba al segundo. Así, repetir o atrasar un evento da lo mismo.
+const aplicarCambioDescripcion = async (db, antes, evento, ref = null) => {
+  if (!evento) return { filas: 0, actualizadas: 0 };
+  const cambio = ['ocultaImplantes', 'ocultaDocumentos'].some((k) => (antes?.[k] === true) !== (evento[k] === true));
   if (!cambio) return { filas: 0, actualizadas: 0 };
+  const actual = ref ? await ref.get() : null;
+  if (ref && !actual.exists) return { filas: 0, actualizadas: 0 };
+  const despues = actual ? actual.data() : evento;
   const snap = await db.collectionGroup('registros').where('descripcionNorm', '==', despues.descripcion).get();
   const filas = snap.docs.filter((f) => esFilaReporte(f.ref.path));
   const gestionadas = await admisionesGestionadas(db, filas.map((f) => admisionClaveDe(f.get('Admisión'))));

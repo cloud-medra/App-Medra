@@ -136,12 +136,24 @@ const generarFotoPeriodo = async (db, { anio, mes, fechaCierre = null }) => {
   return { id, asignados, movimientos: movimientos.length, saldoFinal, diferencia: foto.cuadre.diferencia };
 };
 
-// Cambio de un documento de cierres_periodos (antes / después).
-const alCambiarPeriodo = async (db, antes, despues) => {
-  if (despues?.modulo !== 'bodega' || !despues.anio || !despues.mes) return null;
+// Cambio de un documento de cierres_periodos (antes / después; `ref`: el cierre).
+// Un evento atrasado no se aplica si el período ya está en otro estado: un
+// "cerrado" tras reabrirlo marcaría la foto como cerrada. Repetirlo es seguro: la
+// foto se regenera igual y lo sin período ya no vuelve a asignarse.
+const alCambiarPeriodo = async (db, antes, evento, ref = null) => {
+  if (evento?.modulo !== 'bodega' || !evento.anio || !evento.mes) return null;
   const abierto = (d) => ESTADOS_PERIODO_ABIERTO.includes(d?.estado);
-  const id = idPeriodo(despues.anio, despues.mes);
-  if (abierto(despues) && !abierto(antes)) {
+  const abre = abierto(evento) && !abierto(antes);
+  const cierra = evento.estado === 'CERRADO' && antes?.estado !== 'CERRADO';
+  if (!abre && !cierra) return null;
+  const id = idPeriodo(evento.anio, evento.mes);
+  let despues = evento;
+  if (ref) {
+    const actual = await ref.get();
+    if (actual.data()?.estado !== evento.estado) return { accion: 'evento-atrasado', id };
+    despues = actual.data();
+  }
+  if (abre) {
     const asignados = await asignarSinPeriodo(db, id);
     // Reabierto: la foto queda marcada; se regenera al volver a cerrarlo.
     if (despues.estado === 'REABIERTO') {
@@ -150,7 +162,7 @@ const alCambiarPeriodo = async (db, antes, despues) => {
     }
     return { accion: 'apertura', id, asignados };
   }
-  if (despues.estado === 'CERRADO' && antes?.estado !== 'CERRADO') {
+  if (cierra) {
     return { accion: 'cierre', ...(await generarFotoPeriodo(db, { anio: despues.anio, mes: despues.mes, fechaCierre: despues.fechaCierre || null })) };
   }
   return null;

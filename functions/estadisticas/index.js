@@ -40,11 +40,13 @@ exports.estadisticasImputadaConsignacion = triggerImputada('consignacion');
 exports.estadisticasImputadaHemodinamia = triggerImputada('hemodinamia');
 
 exports.estadisticasCierre = onDocumentWritten(
-  { document: 'cierres_periodos/{cierreId}', region: REGION, retry: false },
+  // Con reintentos: un cierre sin aplicar no lo corrige el recálculo nocturno, que
+  // solo ve los períodos abiertos.
+  { document: 'cierres_periodos/{cierreId}', region: REGION, retry: true },
   async (event) => {
     const antes = event.data?.before?.exists ? event.data.before.data() : null;
     const despues = event.data?.after?.exists ? event.data.after.data() : null;
-    const resultado = await aplicarCierre(db, antes, despues);
+    const resultado = await aplicarCierre(db, antes, despues, event.data?.after?.ref || event.data?.before?.ref);
     if (resultado !== 'sin-cambio' && resultado !== 'otro-modulo') {
       logger.info('estadisticas cierre', { cierre: event.params.cierreId, resultado });
     }

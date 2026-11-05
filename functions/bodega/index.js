@@ -63,11 +63,12 @@ exports.bodegaGuardarConsignacion = callable('guardarConsignacion');
 // la foto fija del periodo en bodega_periodos. Los demás módulos no hacen nada.
 exports.bodegaPeriodo = onDocumentWritten(
   // Memoria por defecto (menos CPU reservada: la cuota de Cloud Run está al límite).
-  { document: 'cierres_periodos/{cierreId}', region: REGION, retry: false, timeoutSeconds: 300 },
+  // Con reintentos: sin este evento el período queda sin su foto. Es seguro repetirlo.
+  { document: 'cierres_periodos/{cierreId}', region: REGION, retry: true, timeoutSeconds: 300 },
   async (event) => {
     const antes = event.data?.before?.exists ? event.data.before.data() : null;
     const despues = event.data?.after?.exists ? event.data.after.data() : null;
-    const resultado = await periodos.alCambiarPeriodo(db, antes, despues);
+    const resultado = await periodos.alCambiarPeriodo(db, antes, despues, event.data?.after?.ref);
     if (resultado) logger.info('bodega.periodo', { cierre: event.params.cierreId, ...resultado });
   }
 );

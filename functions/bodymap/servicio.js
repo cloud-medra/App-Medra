@@ -30,16 +30,22 @@ const nuevaEntrada = (descripcion, gestiones) => {
   };
 };
 
-// Suma `delta` gestiones a la descripción (la crea si no existe). Nunca
-// baja de 0; con 0 la entrada se mantiene, con su zona.
-const sumar = (db, descripcion, delta) => db.runTransaction(async (t) => {
-  const r = ref(db, descripcion);
-  const snap = await t.get(r);
-  if (!snap.exists) {
-    if (delta > 0) t.set(r, nuevaEntrada(descripcion, delta));
-    return;
-  }
-  t.update(r, { gestiones: Math.max(0, (snap.data().gestiones || 0) + delta), gestionesActualizadoEl: FieldValue.serverTimestamp() });
+// Resta una gestión a la descripción anterior y suma una a la nueva, las dos en
+// la misma transacción: si se corta no queda a medias, descuadrando el contador.
+// La nueva se crea si no existe. Nunca baja de 0; con 0 la entrada se mantiene,
+// con su zona. Sigue siendo una diferencia: este trigger no se reintenta.
+const moverContador = (db, resta, suma) => db.runTransaction(async (t) => {
+  const descripciones = [resta, suma].filter(Boolean);
+  const snaps = await t.getAll(...descripciones.map((x) => ref(db, x)));
+  snaps.forEach((snap, i) => {
+    const descripcion = descripciones[i];
+    const delta = descripcion === suma ? 1 : -1;
+    if (!snap.exists) {
+      if (delta > 0) t.set(snap.ref, nuevaEntrada(descripcion, delta));
+      return;
+    }
+    t.update(snap.ref, { gestiones: Math.max(0, (snap.data().gestiones || 0) + delta), gestionesActualizadoEl: FieldValue.serverTimestamp() });
+  });
 });
 
 // Cambio de un documento de gestión (antes/después: datos o null). Solo
@@ -48,8 +54,7 @@ const aplicarCambioGestion = async (db, antes, despues) => {
   const a = antes && esDescripcionValida(antes.descripcion) ? normalizarDescripcion(antes.descripcion) : null;
   const d = despues && esDescripcionValida(despues.descripcion) ? normalizarDescripcion(despues.descripcion) : null;
   if (a === d) return { cambio: false };
-  if (a) await sumar(db, a, -1);
-  if (d) await sumar(db, d, 1);
+  await moverContador(db, a, d);
   return { cambio: true, resta: a, suma: d };
 };
 

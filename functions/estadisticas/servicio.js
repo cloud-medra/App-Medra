@@ -223,7 +223,10 @@ const aplicarCambio = async (db, modulo, anio, mesId, antes, despues) => {
 };
 
 // Cambio de estado de un período (cierres_periodos/{anio}_{mes}_{modulo}).
-const aplicarCierre = async (db, antes, despues) => {
+// `ref`: el cierre. Un evento atrasado no se aplica si el período ya está en otro
+// estado (ej. un "cerrado" que llega tras reabrirlo congelaría un mes abierto): lo
+// resuelve el evento de ese otro cambio. Repetirlo es seguro: recalcula el período.
+const aplicarCierre = async (db, antes, despues, ref = null) => {
   const datos = despues || antes;
   const modulo = datos?.modulo;
   if (!FUENTES[modulo]) return 'otro-modulo';
@@ -231,6 +234,10 @@ const aplicarCierre = async (db, antes, despues) => {
   const estadoAntes = antes?.estado || null;
   const estadoDespues = despues?.estado || null;
   if (estadoAntes === estadoDespues) return 'sin-cambio';
+  if (ref) {
+    const actual = await ref.get();
+    if ((actual.data()?.estado || null) !== estadoDespues) return 'evento-atrasado';
+  }
 
   if (estadoDespues === 'CERRADO') {
     await recalcularPeriodo(db, modulo, anio, mes, { definitivo: true, origen: 'cierre', reiniciarCambios: true });

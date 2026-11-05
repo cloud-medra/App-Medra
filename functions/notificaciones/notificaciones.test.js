@@ -83,6 +83,11 @@ const crearDb = ({ conteos = {}, docs = {}, usuarios = USUARIOS, descripciones =
     path,
     get: async () => ({ exists: datos.has(path), data: () => datos.get(path), get: (k) => datos.get(path)?.[k] }),
     set: async (d) => { escrituras.push({ path, tipo: 'set', datos: d }); datos.set(path, d); },
+    create: async (d) => {
+      if (datos.has(path)) throw Object.assign(new Error('ya existe'), { code: 6 });
+      escrituras.push({ path, tipo: 'create', datos: d });
+      datos.set(path, d);
+    },
     update: async (d) => { escrituras.push({ path, tipo: 'update', datos: d }); datos.set(path, { ...datos.get(path), ...d }); },
   });
   const consulta = (nombre, filtros = []) => ({
@@ -186,10 +191,10 @@ describe('aplicarCambioTicket', () => {
   const ticket = { numero: 'TK-0007', titulo: 'No carga el Excel', estado: 'NUEVO', creadoPor: 'op1', creadoPorNombre: 'Ana', administradores: ['adm3'], tipo: 'ERROR', prioridad: 'ALTA' };
 
   it('ticket nuevo: una alerta para ese caso', async () => {
-    const { db, escrituras } = crearDb();
+    const { db, escrituras } = crearDb({ docs: { 'tickets/t1': ticket } });
     expect(await aplicarCambioTicket(db, 't1', null, ticket)).toEqual({ accion: 'crear', destinatarios: 3 });
     expect(escrituras[0]).toMatchObject({
-      path: 'alertas/ticket_t1', tipo: 'set',
+      path: 'alertas/ticket_t1', tipo: 'create',
       datos: { tipo: 'ticket', titulo: 'Ticket nuevo TK-0007: No carga el Excel', destinatarios: ['adm1', 'adm3', 'dev1'], estado: 'pendiente' },
     });
   });

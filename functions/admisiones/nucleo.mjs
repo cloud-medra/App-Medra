@@ -36,6 +36,23 @@ export const admisionDe = (gestion) => {
   return /^\d+$/.test(id) ? String(Number(id)) : null;
 };
 
+// Admisiones cuyas filas de Reporte Info hay que recalcular tras un evento:
+// [{ admision, gestionada }]. Además de las que ganaron o perdieron la marca en
+// esta ejecución, las de un alta, baja o cambio de admisión: si una entrega
+// anterior se cortó después de escribir la marca, ahora daría "sin cambios" y las
+// filas no se recalcularían nunca. gestionada null = hay que leer la marca.
+export const admisionesARecalcular = (antes, evento, resultado) => {
+  const a = antes ? admisionDe(antes) : null;
+  const d = evento ? admisionDe(evento) : null;
+  const pendientes = new Map();
+  if (a !== d) [a, d].filter(Boolean).forEach((x) => pendientes.set(x, null));
+  Object.entries(resultado).forEach(([admision, r]) => {
+    if (r === 'creada') pendientes.set(admision, true);
+    else if (r === 'borrada') pendientes.set(admision, false);
+  });
+  return [...pendientes].map(([admision, gestionada]) => ({ admision, gestionada }));
+};
+
 // Ítems de carga de una gestión: los de sus cotizaciones, sin el contenido
 // de un PAD (va con estado "PAD", no se carga aparte).
 const itemsDeCarga = (gestion) => (gestion?.cotizaciones || [])

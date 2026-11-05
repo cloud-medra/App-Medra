@@ -39,8 +39,9 @@ describe('estadoDescripcion', () => {
 
 describe('aplicarCambioFila: marca de descripción nueva', () => {
   it('una fila con una descripción que no está en el Maestro la crea pendiente', async () => {
-    const { db, ref, escrituras } = crearDb();
-    await aplicarCambioFila(db, ref(FILA), null, { 'Descripción': 'Artroscopia rodilla', 'Admisión': '' });
+    const fila = { 'Descripción': 'Artroscopia rodilla', 'Admisión': '' };
+    const { db, ref, escrituras } = crearDb({ [FILA]: fila });
+    await aplicarCambioFila(db, ref(FILA), null, fila);
     const [set] = setsDelMaestro(escrituras);
     expect(set.path).toBe(rutaDescripcion('Artroscopia rodilla'));
     expect(set.datos).toHaveProperty('pendienteDesde');
@@ -48,8 +49,9 @@ describe('aplicarCambioFila: marca de descripción nueva', () => {
   });
 
   it('una descripción que ya existe solo suma la fila (no vuelve a quedar pendiente)', async () => {
-    const { db, ref, escrituras } = crearDb({ [rutaDescripcion('ARTROSCOPIA RODILLA')]: { descripcion: 'ARTROSCOPIA RODILLA', filas: 4, ocultaImplantes: true } });
-    await aplicarCambioFila(db, ref(FILA), null, { 'Descripción': 'ARTROSCOPIA RODILLA', 'Admisión': '' });
+    const fila = { 'Descripción': 'ARTROSCOPIA RODILLA', 'Admisión': '' };
+    const { db, ref, escrituras } = crearDb({ [FILA]: fila, [rutaDescripcion('ARTROSCOPIA RODILLA')]: { descripcion: 'ARTROSCOPIA RODILLA', filas: 4, ocultaImplantes: true } });
+    await aplicarCambioFila(db, ref(FILA), null, fila);
     const [set] = setsDelMaestro(escrituras);
     expect(set.datos).not.toHaveProperty('pendienteDesde');
     // Los campos de la fila se calculan con la entrada leída antes de sumar.

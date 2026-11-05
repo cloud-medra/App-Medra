@@ -10,6 +10,12 @@ const { MARCAS_ADMISION, admisionDe, agregarAdmision, claveGestion } = require('
 const ref = (db, coleccion, admision) => db.collection(coleccion).doc(admision);
 const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
+// Datos actuales de un documento (null si ya no existe).
+const leerActual = async (refDoc) => {
+  const snap = await refDoc.get();
+  return snap.exists ? snap.data() : null;
+};
+
 // Pone (resumen) o quita (null) una gestión de su admisión, en una
 // transacción. Sin gestiones, la admisión se borra (vuelve a "Pendiente").
 const actualizar = (db, coleccion, admision, ruta, resumen) => db.runTransaction(async (t) => {
@@ -92,4 +98,4 @@ const recontar = async (db, { aplicar = false, modulo = 'implantes' } = {}) => {
   return { totalGestiones: snap.size, sinAdmision, filas, sobrantes };
 };
 
-module.exports = { aplicarCambioGestion, recontar };
+module.exports = { aplicarCambioGestion, recontar, leerActual };

@@ -28,11 +28,13 @@ exports.descripcionesReporteFila = onDocumentWritten(
 // Cambió "Ocultar en Implantes / Documentos" en el Maestro: recalcula las
 // filas de esa descripción (todos los meses).
 exports.descripcionesReporteMaestro = onDocumentWritten(
-  { document: 'maestros_descripciones_reporte/{descripcionId}', region: 'us-central1', retry: false },
+  // Con reintentos: si falla, las filas quedan distintas al Maestro y nada más las
+  // corrige. Es seguro repetirlo: recalcula desde el Maestro actual.
+  { document: 'maestros_descripciones_reporte/{descripcionId}', region: 'us-central1', retry: true },
   async (event) => {
     const antes = event.data?.before?.exists ? event.data.before.data() : null;
     const despues = event.data?.after?.exists ? event.data.after.data() : null;
-    const resultado = await aplicarCambioDescripcion(db, antes, despues);
+    const resultado = await aplicarCambioDescripcion(db, antes, despues, event.data?.after?.ref);
     if (resultado.actualizadas) logger.info('descripciones reporte: maestro', { descripcion: despues?.descripcion, ...resultado });
   }
 );
