@@ -1,5 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+// Fuente oficial (ver styles/tipografia.css): solo estilos normales, grosores 200 a
+// 800 y font-display: swap. No se descarga hasta que una pantalla la use.
+import '@fontsource-variable/plus-jakarta-sans/wght.css'
 import './index.css'
 import Spinner from './components/ui/Spinner'
 import { listenForSessionRequests, syncSessionFromOtherTabs } from './services/sessionSync'

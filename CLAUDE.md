@@ -47,7 +47,7 @@ Anotados el 05-11-2026. Al cumplirse, hacerlos en modo solo lectura salvo aproba
 Medra: SPA interna de una clínica para implantes, hemodinamia, consignación, documentos, laboratorio, vacunatorio, bodega e inventario, con imputación mensual por períodos. Proyecto Firebase `workcraft-491b7`.
 
 ### Stack
-- **Frontend:** React 19 + Vite 8, Tailwind 4, `lucide-react`. `react-router-dom` solo separa el login (`/`) de `/plataforma/*`; adentro se navega por estado (ver Flujos).
+- **Frontend:** React 19 + Vite 8, Tailwind 4 (tokens de tipografía en `src/styles/tipografia.css`), `lucide-react`. `react-router-dom` solo separa el login (`/`) de `/plataforma/*`; adentro se navega por estado (ver Flujos).
 - **Backend:** Firebase Auth (custom token), Firestore, Storage y Hosting (SPA, todo a `index.html`). Cloud Functions v2 en `us-central1`, Node 24, CommonJS; lógica compartida en `.mjs`.
 - **Librerías:** Excel `xlsx` (SheetJS) y `exceljs`; PDF `jspdf` + `jspdf-autotable` (generar), `pdfjs-dist` + `tesseract.js` (leer guías); `papaparse` (CSV), `@zxing` (códigos de barra), `react-hook-form` + `zod`.
 - **Tests:** vitest + jsdom + Testing Library, cada test junto a su archivo (`*.test.js[x]`).
@@ -136,6 +136,11 @@ Medra: SPA interna de una clínica para implantes, hemodinamia, consignación, d
 
 ### Convenciones
 - **Idioma:** todo en español (identificadores, comentarios, interfaz y commits, con formato `feat(alcance): descripción`). Fechas y montos en `es-CL`, hora de Chile.
+- **Tipografía:** Toda pantalla nueva o modificada usa los tokens de tipografía; no escribir fuentes, tamaños ni grosores a mano. La migración de pantallas existentes se hace solo cuando el usuario lo indique.
+  - Tokens en `src/styles/tipografia.css` (fuente Plus Jakarta Sans alojada en el proyecto, importada en `main.jsx`). Escala: `text-titulo-pagina`, `text-titulo-seccion`, `text-subtitulo`, `text-normal`, `text-secundario`, `text-pequeno`, `text-numero-tabla`; cada una trae tamaño, grosor e interlineado. Color: `text-tinta-principal`, `text-tinta-secundaria`, `text-tinta-atenuada` (claro y oscuro).
+  - `--font-sans` sigue siendo la fuente global: una pantalla migrada lleva `font-jakarta` en su raíz. `font-num` fuerza la fuente del sistema: dentro de una pantalla migrada, reemplazarla por `text-numero-tabla` o `tabular-nums`.
+  - No importar la fuente con `@import` desde un CSS: Tailwind no corrige sus rutas y el build no incluye los `.woff2`.
+  - Pantallas por migrar: `docs/inventario-migracion-tipografia.md`.
 - **Comentarios:** explican el porqué y las decisiones; los archivos importantes llevan cabecera. Mantener esa densidad.
 - **Lecturas de Firestore (crítico):** sin listeners ni consultas nuevas si no son estrictamente necesarios; `collectionGroup` siempre con rango de `documentId()`; usar `onSnapshotVisible` (pausa con la pestaña oculta); escribir solo los campos que cambian, con `writeBatch`; auditar cada cambio relevante en la subcolección `logs`.
 - **Agregaciones:** cada `count()` nuevo se agrega a `CONTEOS` y cada `sum()` a `CONSULTAS` en `src/config/indicesAgregaciones.test.js`, con su índice en `firestore.indexes.json` si lo necesita. Con `filtros: []` el test no comprueba el índice: probar esa consulta una vez contra producción, en solo lectura.

@@ -1,0 +1,87 @@
+/* Tokens de tipografía de Medra. Fuente oficial: Plus Jakarta Sans, alojada en el
+   proyecto (sin Google Fonts). Regla y uso en CLAUDE.md (Convenciones).
+
+   Definir los tokens no cambia ninguna pantalla:
+   - Tailwind genera una clase solo si alguna pantalla la usa.
+   - El navegador descarga la fuente solo si algún elemento la pide.
+   - --font-sans (la fuente global) no se toca: la migración es por archivo, y una
+     pantalla migrada lleva font-jakarta en su raíz.
+
+   Uso:
+     <section className="font-jakarta text-tinta-principal">
+       <h2 className="text-titulo-seccion">Médicos</h2>
+       <p className="text-secundario text-tinta-secundaria">Último uso</p>
+       <td className="text-numero-tabla">1.234</td>
+     </section>
+
+   Cada clase text-* trae junto el tamaño, el grosor y el interlineado: no se les
+   agrega font-semibold ni leading-* a mano. */
+
+/* Los archivos de la fuente se importan en main.jsx, no aquí: en un @import de este
+   CSS, Tailwind copiaría sus rutas sin corregirlas y el build no incluiría los .woff2. */
+
+@theme {
+  --font-jakarta: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* La escala parte de lo más usado hoy (app densa: 10 a 12 px en casi todo). No
+     baja de 10 px: hoy hay textos de 8 y 9 px que al migrar deben pasar a
+     text-pequeno, y Plus Jakarta Sans es más ancha (ver el inventario en docs/). */
+
+  /* 18 px */
+  --text-titulo-pagina: 1.125rem;
+  --text-titulo-pagina--line-height: 1.625rem;
+  --text-titulo-pagina--font-weight: 700;
+
+  /* 14 px */
+  --text-titulo-seccion: 0.875rem;
+  --text-titulo-seccion--line-height: 1.25rem;
+  --text-titulo-seccion--font-weight: 600;
+
+  /* 13 px */
+  --text-subtitulo: 0.8125rem;
+  --text-subtitulo--line-height: 1.125rem;
+  --text-subtitulo--font-weight: 500;
+
+  /* 12 px */
+  --text-normal: 0.75rem;
+  --text-normal--line-height: 1.125rem;
+  --text-normal--font-weight: 400;
+
+  /* 11 px */
+  --text-secundario: 0.6875rem;
+  --text-secundario--line-height: 1rem;
+  --text-secundario--font-weight: 400;
+
+  /* 10 px */
+  --text-pequeno: 0.625rem;
+  --text-pequeno--line-height: 0.875rem;
+  --text-pequeno--font-weight: 500;
+
+  /* Colores de texto: text-tinta-principal, -secundaria y -atenuada. */
+  --color-tinta-principal: var(--tinta-principal);
+  --color-tinta-secundaria: var(--tinta-secundaria);
+  --color-tinta-atenuada: var(--tinta-atenuada);
+}
+
+/* Números en tablas (11 px): con dígitos del mismo ancho para que las columnas
+   alineen. Es una utilidad y no un token del tema porque una entrada --text-* no
+   puede incluir font-variant-numeric. */
+@utility text-numero-tabla {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Los pares más usados hoy en la app. La atenuada queda con poco contraste (a
+   propósito, como hoy): sirve para datos accesorios, no para texto que haya que leer. */
+:root {
+  --tinta-principal: var(--color-slate-800);
+  --tinta-secundaria: var(--color-slate-500);
+  --tinta-atenuada: var(--color-slate-400);
+}
+.dark {
+  --tinta-principal: var(--color-gray-100);
+  --tinta-secundaria: var(--color-gray-400);
+  --tinta-atenuada: var(--color-gray-500);
+}
