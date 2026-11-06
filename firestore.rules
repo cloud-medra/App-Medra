@@ -695,6 +695,12 @@ service cloud.firestore {
     function editaZonasDiagnostico() {
       return accionEnVista('maestros', '/maestros/zonasDiagnostico', 'tabla_datos', 'action_editar');
     }
+    // Historial de uso de las referencias (médicos y descripciones de CX). Lo
+    // escriben solo el trigger y el script (functions/usoCodigos).
+    match /maestros_codigos_uso/{id} {
+      allow read: if estaActivo();
+      allow write: if false;
+    }
     match /maestros_zonas_diagnostico/{descripcionId} {
       allow read: if estaActivo();
       allow create, delete: if false;

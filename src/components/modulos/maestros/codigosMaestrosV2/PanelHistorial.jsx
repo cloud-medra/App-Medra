@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { History, User } from 'lucide-react';
 import PanelLateral from './ui/PanelLateral';
+import HistorialUso from './HistorialUso';
 import { Insignia } from './ui/TablaCodigos';
 import Spinner from '../../../ui/Spinner';
 import { CAMPOS_AUDITABLES_REGISTRO } from '../shared/codigos/camposAuditablesRegistro';
@@ -68,11 +69,22 @@ const DetalleLog = ({ detalles = {} }) => {
   );
 };
 
-// Historial (subcolección logs): se lee solo al abrir el panel.
+const PESTANAS = [
+  { id: 'cambios', texto: 'Historial de cambios' },
+  { id: 'uso', texto: 'Historial de uso' }
+];
+
+// Historial (subcolección logs): se lee solo al abrir el panel. El de uso, solo
+// al abrir su pestaña (ver HistorialUso).
 const PanelHistorial = ({ abierto, registro, onCerrar }) => {
   const [logs, setLogs] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
+  const [pestana, setPestana] = useState('cambios');
+
+  useEffect(() => {
+    if (abierto) setPestana('cambios');
+  }, [abierto, registro?.id]);
 
   useEffect(() => {
     if (!abierto || !registro?.id) return undefined;
@@ -97,7 +109,7 @@ const PanelHistorial = ({ abierto, registro, onCerrar }) => {
   const encabezado = (
     <div>
       <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-gray-500">
-        <History size={12} /> Historial de cambios
+        <History size={12} /> Historial
       </div>
       <h3 className="mt-1.5 text-[17px] font-semibold font-mono text-slate-900 dark:text-gray-50 truncate">{registro?.codigo || 'Sin código'}</h3>
       <p className="mt-0.5 text-[13px] text-slate-500 dark:text-gray-400 truncate">
@@ -108,8 +120,26 @@ const PanelHistorial = ({ abierto, registro, onCerrar }) => {
 
   return (
     <PanelLateral abierto={abierto} onSolicitarCierre={onCerrar} encabezado={encabezado} ancho="max-w-[460px]">
+      <div role="tablist" className="flex gap-4 px-5 border-b border-slate-200 dark:border-gray-700">
+        {PESTANAS.map(({ id, texto }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={pestana === id}
+            onClick={() => setPestana(id)}
+            className={`py-2.5 -mb-px border-b-2 text-[12px] font-medium transition-colors ${pestana === id
+              ? 'border-[#2383C2] text-slate-900 dark:text-gray-50'
+              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+          >
+            {texto}
+          </button>
+        ))}
+      </div>
       <div className="px-5 py-4">
-        {cargando ? (
+        {pestana === 'uso' ? (
+          <HistorialUso referencia={registro?.referencia} />
+        ) : cargando ? (
           <div className="flex flex-col items-center gap-2 py-16 text-[12px] text-slate-400"><Spinner size="sm" color="#2383C2" />Cargando historial…</div>
         ) : error ? (
           <p className="py-16 text-center text-[13px] text-red-600">{error}</p>

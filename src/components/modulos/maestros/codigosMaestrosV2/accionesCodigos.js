@@ -6,10 +6,13 @@ import {
   doc,
   query,
   orderBy,
+  getDoc,
   getDocs,
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../../../../firebaseConfig';
+import { esDescripcionValida } from '../../../../../functions/bodymap/nucleo.mjs';
+import { COLECCION_USO_CODIGOS, idReferenciaUso } from '../../../../../functions/usoCodigos/nucleo.mjs';
 import { construirCambiosRegistro } from '../shared/codigos/camposAuditablesRegistro';
 import { COL_CODIGOS, MODOS_PANEL, camposModificados, valoresParaCrear } from './camposCodigo';
 
@@ -42,6 +45,15 @@ export const registrarLogCodigo = async (id, accion, detalles, userData) => {
 export const cargarLogsCodigo = async (id) => {
   const snap = await getDocs(query(collection(db, COL_CODIGOS, id, 'logs'), orderBy('fecha', 'desc')));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
+
+// Historial de uso de la referencia (mantenido por functions/usoCodigos). Sale de
+// la referencia, no del documento del código: una lectura, solo al abrir la pestaña.
+// → datos del documento, o null si aún no tiene usos.
+export const cargarUsoCodigo = async (referencia) => {
+  if (!esDescripcionValida(referencia)) return null;
+  const snap = await getDoc(doc(db, COLECCION_USO_CODIGOS, await idReferenciaUso(referencia)));
+  return snap.exists() ? snap.data() : null;
 };
 
 /**
