@@ -97,6 +97,8 @@ const TABLAS_PENDIENTES = new Set([
   'modulos/inventario/inventarioCajas/components/ConteoCaja.jsx',
   'modulos/inventario/inventarioCajas/components/ResumenComparacion.jsx',
   'modulos/inventario/unidadInventario/UnidadInventario.jsx',
+  // Tablas de resumen del panel de historial: se ven con action_log, sin columnas propias.
+  'modulos/maestros/codigosMaestrosV2/HistorialUso.jsx',
   'modulos/maestros/actualizacionPreciosMaestros/components/DetalleImportacion.jsx',
   'modulos/maestros/actualizacionPreciosMaestros/components/HistorialImportaciones.jsx',
   'modulos/operaciones/consignacion/cargaMasivaConsignacion/CargaMasivaConsignacion.jsx',

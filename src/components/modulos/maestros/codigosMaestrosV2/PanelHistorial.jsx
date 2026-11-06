@@ -106,20 +106,26 @@ const PanelHistorial = ({ abierto, registro, onCerrar }) => {
     return () => window.removeEventListener('keydown', onKey);
   }, [abierto, onCerrar]);
 
+  // En "uso" el historial es de la referencia, no del registro: se titula con ella.
+  const enUso = pestana === 'uso';
   const encabezado = (
     <div>
       <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-gray-500">
         <History size={12} /> Historial
       </div>
-      <h3 className="mt-1.5 text-[17px] font-semibold font-mono text-slate-900 dark:text-gray-50 truncate">{registro?.codigo || 'Sin código'}</h3>
+      <h3 className={`mt-1.5 text-[17px] font-semibold text-slate-900 dark:text-gray-50 truncate ${enUso ? '' : 'font-mono'}`}>
+        {enUso ? (registro?.referencia || 'Sin referencia') : (registro?.codigo || 'Sin código')}
+      </h3>
       <p className="mt-0.5 text-[13px] text-slate-500 dark:text-gray-400 truncate">
-        {registro?.referencia} · {registro?.empresa}
+        {enUso
+          ? (registro?.descriptorEmpresa || registro?.descriptorAuto || 'Sin descripción')
+          : `${registro?.referencia} · ${registro?.empresa}`}
       </p>
     </div>
   );
 
   return (
-    <PanelLateral abierto={abierto} onSolicitarCierre={onCerrar} encabezado={encabezado} ancho="max-w-[460px]">
+    <PanelLateral abierto={abierto} onSolicitarCierre={onCerrar} encabezado={encabezado} ancho="max-w-[520px]">
       <div role="tablist" className="flex gap-4 px-5 border-b border-slate-200 dark:border-gray-700">
         {PESTANAS.map(({ id, texto }) => (
           <button
