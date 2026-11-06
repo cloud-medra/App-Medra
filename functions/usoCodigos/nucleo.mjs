@@ -120,8 +120,18 @@ const listaDeSeccion = (seccion) => Object.entries(seccion || {})
   })
   .sort((a, b) => b.usos - a.usos || String(a.nombre).localeCompare(String(b.nombre), 'es'));
 
+// Médicos de una descripción: los que comparten alguna de sus gestiones. Sale del
+// mismo documento, sin guardar nada más.
+const medicosDeDescripcion = (entrada, medicos) => Object.values(medicos || {})
+  .filter((medico) => Object.keys(entrada?.gestiones || {}).some((id) => id in (medico.gestiones || {})))
+  .map((medico) => medico.nombre)
+  .sort((a, b) => String(a).localeCompare(String(b), 'es'));
+
 // Para mostrar: listas ordenadas por cantidad de usos.
 export const resumenUso = (documento) => ({
   medicos: listaDeSeccion(documento?.medicos),
-  descripciones: listaDeSeccion(documento?.descripciones),
+  descripciones: listaDeSeccion(documento?.descripciones).map((fila) => ({
+    ...fila,
+    medicos: medicosDeDescripcion(documento.descripciones[fila.clave], documento?.medicos),
+  })),
 });

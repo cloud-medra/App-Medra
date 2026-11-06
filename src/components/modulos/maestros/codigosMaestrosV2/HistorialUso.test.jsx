@@ -43,7 +43,44 @@ describe('PanelHistorial → Historial de uso', () => {
     expect(screen.getByText('Ana Soto')).toBeInTheDocument();
     expect(screen.getByText('ARTROSCOPIA')).toBeInTheDocument();
     expect(screen.getByText('Médicos (2)')).toBeInTheDocument();
-    expect(screen.getByText('Descripciones de CX (1)')).toBeInTheDocument();
+    expect(screen.getByText('Descripción / Nota Operatoria (1)')).toBeInTheDocument();
+  });
+
+  it('cada descripción muestra sus médicos y sus usos, sin fecha', async () => {
+    cargarUsoCodigo.mockResolvedValue({
+      medicos: {
+        k1: { nombre: 'Juan Pérez', gestiones: { g1: '2026-11-05' } },
+        k2: { nombre: 'Ana Soto', gestiones: { g2: '2026-11-06' } },
+        k3: { nombre: 'Luis Rojas', gestiones: { g3: '2026-11-07' } },
+      },
+      descripciones: { k4: { nombre: 'ARTROSCOPIA', gestiones: { g1: '2026-11-05', g2: '2026-11-06' } } },
+    });
+    await abrirUso();
+    const fila = (await screen.findByText('ARTROSCOPIA')).closest('li');
+    expect(fila).toHaveTextContent('Médicos: Ana Soto, Juan Pérez');
+    expect(fila).toHaveTextContent('2 usos');
+    expect(fila).not.toHaveTextContent('Luis Rojas');
+    expect(fila).not.toHaveTextContent('último uso');
+    expect(fila).not.toHaveTextContent('2026');
+  });
+
+  it('una descripción larga se recorta con "Ver más" y una corta no', async () => {
+    const larga = 'A'.repeat(200);
+    cargarUsoCodigo.mockResolvedValue({
+      medicos: {},
+      descripciones: {
+        k1: { nombre: larga, gestiones: { g1: '2026-11-05' } },
+        k2: { nombre: 'CORTA', gestiones: { g2: '2026-11-05' } },
+      },
+    });
+    await abrirUso();
+    await screen.findByText('CORTA');
+    expect(screen.queryByText(larga)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Ver más' })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Ver más' }));
+    expect(screen.getByText(larga)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver menos' }));
+    expect(screen.queryByText(larga)).not.toBeInTheDocument();
   });
 
   it('avisa si el código aún no tiene usos', async () => {

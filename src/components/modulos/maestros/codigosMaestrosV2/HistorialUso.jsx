@@ -8,7 +8,28 @@ import { cargarUsoCodigo } from './accionesCodigos';
 const fechaCorta = (fecha) => (fecha ? fecha.split('-').reverse().join('-') : 'Sin fecha');
 const textoUsos = (usos) => (usos === 1 ? '1 uso' : `${usos} usos`);
 
-const ListaUso = ({ titulo, filas }) => (
+// Más de esto se recorta. Las descripciones son cortas (hoy, 96 caracteres como
+// máximo), pero se pueden editar a mano.
+const MAX_CARACTERES = 120;
+
+const TextoRecortable = ({ texto }) => {
+  const [expandido, setExpandido] = useState(false);
+  const largo = String(texto).length > MAX_CARACTERES;
+  return (
+    <>
+      <p className="text-[13px] font-medium text-slate-700 dark:text-gray-200 whitespace-pre-wrap break-words">
+        {largo && !expandido ? `${String(texto).slice(0, MAX_CARACTERES).trimEnd()}…` : texto}
+      </p>
+      {largo && (
+        <button type="button" onClick={() => setExpandido((v) => !v)} className="mt-0.5 text-[11px] font-semibold text-[#2383C2] hover:underline">
+          {expandido ? 'Ver menos' : 'Ver más'}
+        </button>
+      )}
+    </>
+  );
+};
+
+const ListaUso = ({ titulo, filas, renderFila }) => (
   <section>
     <h4 className="text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-gray-500">
       {titulo} ({filas.length})
@@ -17,20 +38,34 @@ const ListaUso = ({ titulo, filas }) => (
       <p className="mt-2 text-[13px] text-slate-400">Sin registros.</p>
     ) : (
       <ul className="mt-2 divide-y divide-slate-100 dark:divide-gray-800">
-        {filas.map((fila) => (
-          <li key={fila.clave} className="py-2">
-            <p className="text-[13px] font-medium text-slate-700 dark:text-gray-200 break-words">{fila.nombre}</p>
-            <p className="mt-0.5 text-[11px] text-slate-400 tabular-nums">
-              {textoUsos(fila.usos)} · último uso: {fechaCorta(fila.ultimoUso)}
-            </p>
-          </li>
-        ))}
+        {filas.map((fila) => <li key={fila.clave} className="py-2">{renderFila(fila)}</li>)}
       </ul>
     )}
   </section>
 );
 
-// Médicos y descripciones de CX con que se ha usado la referencia en Implantes.
+const FilaMedico = (fila) => (
+  <>
+    <p className="text-[13px] font-medium text-slate-700 dark:text-gray-200 break-words">{fila.nombre}</p>
+    <p className="mt-0.5 text-[11px] text-slate-400 tabular-nums">
+      {textoUsos(fila.usos)} · último uso: {fechaCorta(fila.ultimoUso)}
+    </p>
+  </>
+);
+
+// Sin fecha, por decisión del usuario: el médico sí muestra su último uso.
+const FilaDescripcion = (fila) => (
+  <>
+    <TextoRecortable texto={fila.nombre} />
+    <p className="mt-0.5 text-[11px] text-slate-400 tabular-nums">{textoUsos(fila.usos)}</p>
+    {fila.medicos.length > 0 && (
+      <p className="mt-0.5 text-[11px] text-slate-500 dark:text-gray-400 break-words">Médicos: {fila.medicos.join(', ')}</p>
+    )}
+  </>
+);
+
+// Médicos y descripciones (campo "Descripción / Nota Operatoria" de la gestión)
+// con que se ha usado la referencia en Implantes.
 // Se monta solo al abrir su pestaña: 1 lectura (maestros_codigos_uso).
 const HistorialUso = ({ referencia }) => {
   const [uso, setUso] = useState(null);
@@ -59,8 +94,8 @@ const HistorialUso = ({ referencia }) => {
   return (
     <div className="space-y-5">
       <p className="text-[12px] text-slate-500 dark:text-gray-400">Según las cargas vigentes de Implantes.</p>
-      <ListaUso titulo="Médicos" filas={medicos} />
-      <ListaUso titulo="Descripciones de CX" filas={descripciones} />
+      <ListaUso titulo="Médicos" filas={medicos} renderFila={FilaMedico} />
+      <ListaUso titulo="Descripción / Nota Operatoria" filas={descripciones} renderFila={FilaDescripcion} />
     </div>
   );
 };

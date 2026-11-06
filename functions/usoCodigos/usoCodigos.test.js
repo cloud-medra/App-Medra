@@ -188,6 +188,23 @@ describe('historial de uso', () => {
     expect(await claveDeGestion(RUTA)).toMatch(/^g[0-9a-f]{24}$/);
   });
 
+  it('cada descripción lista solo los médicos de sus gestiones, sin repetirlos', async () => {
+    await guardar(RUTA, null, gestion('Juan Pérez', 'ARTROSCOPIA', ['ABC-123']));
+    await guardar(RUTA_2, null, gestion('Ana Soto', 'ARTROSCOPIA', ['ABC-123'], '2026-11-06'));
+    await guardar('implantes_gestiones/2026/mes/11/dia/07/admision/300/empresa/ACME/detalles/uno', null, gestion('Juan Pérez', 'ARTROSCOPIA', ['ABC-123'], '2026-11-07'));
+    await guardar('implantes_gestiones/2026/mes/11/dia/08/admision/400/empresa/ACME/detalles/uno', null, gestion('Luis Rojas', 'PROTESIS', ['ABC-123'], '2026-11-08'));
+    const { descripciones } = resumenUso(await usoDe('ABC-123'));
+    expect(descripciones).toMatchObject([
+      { nombre: 'ARTROSCOPIA', usos: 3, medicos: ['Ana Soto', 'Juan Pérez'] },
+      { nombre: 'PROTESIS', usos: 1, medicos: ['Luis Rojas'] },
+    ]);
+  });
+
+  it('una descripción sin médico queda con la lista vacía', async () => {
+    await guardar(RUTA, null, gestion('P', 'ARTROSCOPIA', ['ABC-123']));
+    expect(resumenUso(await usoDe('ABC-123')).descripciones[0].medicos).toEqual([]);
+  });
+
   it('sin ID o sin datos: no agrega asociación ni falla', async () => {
     await guardar(RUTA, null, gestion('P', 'P', ['ABC-123']));
     await guardar(RUTA_2, null, gestion('', undefined, ['ABC-123']));
