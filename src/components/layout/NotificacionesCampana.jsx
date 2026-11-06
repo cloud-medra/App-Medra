@@ -41,7 +41,7 @@ export const NotificacionesCampanaVista = ({ notificaciones = [], onElegir }) =>
         {noLeidas > 0 && (
           <span
             data-testid="badge-notificaciones"
-            className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 rounded-full border-2 border-white dark:border-gray-800 text-white text-[10px] font-bold flex items-center justify-center bg-red-600"
+            className="absolute top-0 right-0 min-w-[18px] h-[18px] px-1 rounded-full border-2 border-white dark:border-gray-800 text-white text-pequeno flex items-center justify-center bg-red-600"
           >
             {noLeidas}
           </span>
@@ -51,27 +51,27 @@ export const NotificacionesCampanaVista = ({ notificaciones = [], onElegir }) =>
       {abierto && (
         <section
           aria-label="Notificaciones"
-          className="fixed inset-x-2 top-16 mt-1 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 z-50 sm:w-80 max-h-[60vh] flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl text-[11px] text-slate-800 dark:text-gray-100"
+          className="fixed inset-x-2 top-16 mt-1 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 z-50 sm:w-80 max-h-[60vh] flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl text-secundario text-tinta-principal"
         >
           <div className="px-3 py-2 text-white bg-[#2383C2]">
-            <h2 className="font-bold text-[11.5px] uppercase tracking-wide leading-tight">Notificaciones</h2>
+            <h2 className="text-titulo-seccion uppercase tracking-wide">Notificaciones</h2>
           </div>
           {notificaciones.length === 0 ? (
-            <p className="px-3 py-6 text-center text-slate-500 dark:text-gray-400">No tienes notificaciones</p>
+            <p className="px-3 py-6 text-center text-tinta-secundaria">No tienes notificaciones</p>
           ) : (
             <ul className="overflow-y-auto p-1.5 space-y-1">
               {notificaciones.map((n) => {
                 const contenido = (
                   <>
-                    <p className="leading-snug break-words flex items-start gap-1.5">
+                    <p className="break-words flex items-start gap-1.5">
                       {!n.leida && <span aria-label="No leída" className="mt-1 w-1.5 h-1.5 rounded-full bg-[#2383C2] shrink-0" />}
                       <span>{n.titulo}</span>
                     </p>
-                    {n.detalle && <p className="text-[10px] font-normal text-slate-600 dark:text-gray-300 break-words">{n.detalle}</p>}
+                    {n.detalle && <p className="text-pequeno text-tinta-secundaria break-words">{n.detalle}</p>}
                   </>
                 );
                 return (
-                  <li key={n.id} className={`rounded-lg border border-slate-200 dark:border-gray-700 ${n.leida ? '' : 'font-semibold bg-[#2383C2]/5'}`}>
+                  <li key={n.id} className={`rounded-lg border border-slate-200 dark:border-gray-700 ${n.leida ? '' : 'text-etiqueta bg-[#2383C2]/5'}`}>
                     {n.ruta && onElegir ? (
                       <button type="button" onClick={() => { setAbierto(false); onElegir(n); }}
                         className="w-full text-left px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-700/40">

@@ -42,21 +42,21 @@ const SelectorInstitucion = ({ onAbrirMaestro }) => {
         aria-expanded={abierto}
         aria-label={`Institución: ${institucion?.nombre || nombre}. Cambiar institución`}
         title={institucion?.nombre || 'Cambiar institución'}
-        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60"
+        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-tinta-principal hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-w-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60"
       >
         <Building2 size={18} className="shrink-0 text-[#2383C2] dark:text-sky-400" aria-hidden="true" />
-        <span className="hidden md:block min-w-0 leading-tight">
-          <span className={`block max-w-48 truncate text-[13px] font-bold ${institucion ? '' : 'text-gray-500 dark:text-gray-400'}`}>{nombre}</span>
+        <span className="hidden md:block min-w-0">
+          <span className={`block max-w-48 truncate text-subtitulo ${institucion ? '' : 'text-tinta-secundaria'}`}>{nombre}</span>
           {institucion?.ciudad && (
-            <span className="block max-w-48 truncate text-[11px] text-gray-500 dark:text-gray-400">{institucion.ciudad}</span>
+            <span className="block max-w-48 truncate text-secundario text-tinta-secundaria">{institucion.ciudad}</span>
           )}
         </span>
         <ChevronDown size={16} className={`hidden md:block shrink-0 text-gray-400 dark:text-gray-500 transition-transform ${abierto ? 'rotate-180' : ''}`} aria-hidden="true" />
       </button>
 
       {abierto && (
-        <div className="fixed inset-x-2 top-16 mt-1 max-h-[70vh] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2 shadow-xl text-gray-700 dark:text-gray-200 sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:w-72 z-50">
-          <p className="px-4 pt-1 pb-2 text-[10px] font-bold tracking-wide uppercase text-gray-500 dark:text-gray-400">
+        <div className="fixed inset-x-2 top-16 mt-1 max-h-[70vh] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2 shadow-xl text-tinta-principal sm:absolute sm:inset-x-auto sm:top-full sm:left-0 sm:w-72 z-50">
+          <p className="px-4 pt-1 pb-2 text-pequeno tracking-wide uppercase text-tinta-secundaria">
             Institución
           </p>
 
@@ -72,11 +72,11 @@ const SelectorInstitucion = ({ onAbrirMaestro }) => {
                       type="button"
                       onClick={() => elegir(i.id)}
                       title={i.nombre}
-                      className={`w-full flex items-center gap-2 px-4 py-1.5 text-left text-[13px] hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus-visible:bg-gray-50 dark:focus-visible:bg-gray-700 ${activa ? 'text-[#1b6a9e] dark:text-sky-300' : ''}`}
+                      className={`w-full flex items-center gap-2 px-4 py-1.5 text-left text-subtitulo hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus-visible:bg-gray-50 dark:focus-visible:bg-gray-700 ${activa ? 'text-[#1b6a9e] dark:text-sky-300' : ''}`}
                     >
-                      <span className="min-w-0 flex-1 leading-tight">
-                        <span className="block truncate font-bold">{corto}</span>
-                        {detalle && <span className="block truncate text-[11px] font-normal text-gray-500 dark:text-gray-400">{detalle}</span>}
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate">{corto}</span>
+                        {detalle && <span className="block truncate text-secundario text-tinta-secundaria">{detalle}</span>}
                       </span>
                       {activa && <Check size={15} className="shrink-0" aria-hidden="true" />}
                     </button>
@@ -85,13 +85,13 @@ const SelectorInstitucion = ({ onAbrirMaestro }) => {
               })}
             </ul>
           ) : (
-            <div className="px-4 pb-1 text-[12px] text-gray-500 dark:text-gray-400">
+            <div className="px-4 pb-1 text-normal text-tinta-secundaria">
               <p>{cargando ? 'Cargando instituciones…' : 'No hay instituciones activas.'}</p>
               {!cargando && onAbrirMaestro && (
                 <button
                   type="button"
                   onClick={() => { setAbierto(false); onAbrirMaestro(); }}
-                  className="mt-2 font-semibold text-[#2383C2] hover:text-[#1b6a9e] dark:text-sky-400 dark:hover:text-sky-300"
+                  className="mt-2 text-etiqueta text-[#2383C2] hover:text-[#1b6a9e] dark:text-sky-400 dark:hover:text-sky-300"
                 >
                   Registrar instituciones
                 </button>

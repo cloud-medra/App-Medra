@@ -1,14 +1,15 @@
-/* Tokens de tipografía de Medra. Fuente oficial: Plus Jakarta Sans, alojada en el
-   proyecto (sin Google Fonts). Regla y uso en CLAUDE.md (Convenciones).
+/* Tokens de tipografía de Medra. Fuente oficial: Inter, alojada en el proyecto (sin
+   Google Fonts; ver fuenteApp.css). Regla y uso en CLAUDE.md (Convenciones);
+   procedimiento en docs/procedimiento-migracion-tipografia.md.
 
    Definir los tokens no cambia ninguna pantalla:
    - Tailwind genera una clase solo si alguna pantalla la usa.
    - El navegador descarga la fuente solo si algún elemento la pide.
    - --font-sans (la fuente global) no se toca: la migración es por archivo, y una
-     pantalla migrada lleva font-jakarta en su raíz.
+     pantalla migrada lleva font-app en su raíz.
 
    Uso:
-     <section className="font-jakarta text-tinta-principal">
+     <section className="font-app text-tinta-principal">
        <h2 className="text-titulo-seccion">Médicos</h2>
        <p className="text-secundario text-tinta-secundaria">Último uso</p>
        <td className="text-numero-tabla">1.234</td>
@@ -17,15 +18,12 @@
    Cada clase text-* trae junto el tamaño, el grosor y el interlineado: no se les
    agrega font-semibold ni leading-* a mano. */
 
-/* Los archivos de la fuente se importan en main.jsx, no aquí: en un @import de este
-   CSS, Tailwind copiaría sus rutas sin corregirlas y el build no incluiría los .woff2. */
-
 @theme {
-  --font-jakarta: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-app: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   /* La escala parte de lo más usado hoy (app densa: 10 a 12 px en casi todo). No
      baja de 10 px: hoy hay textos de 8 y 9 px que al migrar deben pasar a
-     text-pequeno, y Plus Jakarta Sans es más ancha (ver el inventario en docs/). */
+     text-pequeno, e Inter es más ancha que la fuente del sistema (ver el inventario en docs/). */
 
   /* 18 px */
   --text-titulo-pagina: 1.125rem;
@@ -57,6 +55,12 @@
   --text-pequeno--line-height: 0.875rem;
   --text-pequeno--font-weight: 500;
 
+  /* 11 px con énfasis: etiquetas cortas y nombres que deben destacar entre texto
+     secundario (no hay otra forma de dar peso sin escribir un grosor a mano). */
+  --text-etiqueta: 0.6875rem;
+  --text-etiqueta--line-height: 1rem;
+  --text-etiqueta--font-weight: 600;
+
   /* Colores de texto: text-tinta-principal, -secundaria y -atenuada. */
   --color-tinta-principal: var(--tinta-principal);
   --color-tinta-secundaria: var(--tinta-secundaria);
@@ -70,6 +74,15 @@
   font-size: 0.6875rem;
   line-height: 1rem;
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Valores destacados en tarjetas de indicadores (13 px): más grandes que un número
+   de tabla, porque son lo primero que se lee en la tarjeta. */
+@utility text-numero-indicador {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 

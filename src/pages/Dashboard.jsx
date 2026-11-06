@@ -173,7 +173,7 @@ import TerminosServicio from '../components/modulos/general/legales/TerminosServ
 // Contador del menú lateral (alertas sin leer, tickets sin revisar).
 // `tope`: con n >= tope se muestra "(tope-1)+" (consultas con limit).
 const Contador = ({ n, etiqueta = 'alertas sin leer', tope = 99 }) => (n > 0 ? (
-  <span className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold inline-flex items-center justify-center" aria-label={`${n} ${etiqueta}`}>
+  <span className="ml-auto shrink-0 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-pequeno inline-flex items-center justify-center" aria-label={`${n} ${etiqueta}`}>
     {n >= tope ? `${tope - 1}+` : n}
   </span>
 ) : null);
@@ -183,11 +183,11 @@ const PuntoAviso = ({ className = '' }) => <span aria-hidden="true" className={`
 
 // Estilos del sidebar (blanco; gris 800 en oscuro). Activo: tinte azul,
 // texto e ícono de marca y barra vertical a la izquierda.
-const ITEM_SIDEBAR = 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60';
-const ITEM_SIDEBAR_ACTIVO = 'bg-[#2383C2]/10 dark:bg-[#2383C2]/20 text-[#1b6a9e] dark:text-sky-300 font-semibold shadow-[inset_3px_0_0_#2383C2] dark:shadow-[inset_3px_0_0_#38bdf8]';
+const ITEM_SIDEBAR = 'text-tinta-principal hover:bg-gray-100 dark:hover:bg-gray-700/60';
+const ITEM_SIDEBAR_ACTIVO = 'bg-[#2383C2]/10 dark:bg-[#2383C2]/20 text-[#1b6a9e] dark:text-sky-300 shadow-[inset_3px_0_0_#2383C2] dark:shadow-[inset_3px_0_0_#38bdf8]';
 const ICONO_SIDEBAR = 'text-gray-500 dark:text-gray-400';
 const ICONO_SIDEBAR_ACTIVO = 'text-[#2383C2] dark:text-sky-300';
-const TITULO_SECCION_SIDEBAR = 'font-bold uppercase text-[9px] tracking-wider text-gray-500 dark:text-gray-400';
+const TITULO_SECCION_SIDEBAR = 'text-pequeno uppercase tracking-wider text-tinta-secundaria';
 
 // Íconos de módulos e ítems: cuadrito con el color de la configuración
 // (PALETA_MENU en config/modulesConfig.jsx, ui/CuadritoIcono.jsx).
@@ -205,7 +205,7 @@ const VolverSidebar = ({ texto, onClick, colapsado }) => (
     onClick={onClick}
     title={texto}
     aria-label={texto}
-    className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${colapsado ? 'justify-center' : ''}`}
+    className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-normal text-tinta-principal hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${colapsado ? 'justify-center' : ''}`}
   >
     <ArrowLeft size={16} className="flex-shrink-0 text-gray-500 dark:text-gray-400" />
     {!colapsado && <span className="truncate">{texto}</span>}
@@ -216,7 +216,7 @@ const VolverSidebar = ({ texto, onClick, colapsado }) => (
 // rápido del módulo; `activo` lo resalta mientras se ve esa vista.
 const TituloSidebar = ({ cuadrito, texto, colapsado, onClick, activo = false }) => {
   const clases = `flex items-center gap-2.5 px-2 pt-2 pb-2.5 mb-2 border-b border-gray-200 dark:border-gray-700 ${colapsado ? 'justify-center' : ''}`;
-  const titulo = <h2 className={colapsado ? 'sr-only' : `text-sm font-bold truncate ${activo ? 'text-[#1b6a9e] dark:text-sky-300' : 'text-gray-800 dark:text-gray-100'}`}>{texto}</h2>;
+  const titulo = <h2 className={colapsado ? 'sr-only' : `text-titulo-seccion truncate ${activo ? 'text-[#1b6a9e] dark:text-sky-300' : 'text-tinta-principal'}`}>{texto}</h2>;
   if (!onClick) {
     return (
       <div title={colapsado ? texto : undefined} className={clases}>
@@ -744,7 +744,7 @@ const Dashboard = () => {
       {/* HEADER (todo el ancho): ☰, logo, institución, saludo, fecha,
           breadcrumbs, campana y avatar. El saludo se oculta < lg y la fecha
           < xl para que no empujen los breadcrumbs. */}
-      <header className="relative z-50 h-16 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 flex-shrink-0">
+      <header className="font-app relative z-50 h-16 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 flex-shrink-0">
 
         <button
           type="button"
@@ -764,7 +764,7 @@ const Dashboard = () => {
           className="flex items-center gap-1.5 flex-shrink-0 select-none cursor-pointer rounded-lg px-1 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60"
         >
           <img src={oscuro ? logoMedraOscuro : logoMedraClaro} alt="" className="h-7 w-auto" />
-          <span aria-hidden="true" className="hidden sm:inline text-[15px] font-normal text-gray-500 dark:text-gray-400">ERP</span>
+          <span aria-hidden="true" className="hidden sm:inline text-titulo-seccion text-tinta-secundaria">ERP</span>
         </button>
 
         <div className="hidden md:block h-6 w-px bg-gray-200 dark:bg-gray-700 flex-shrink-0"></div>
@@ -773,22 +773,22 @@ const Dashboard = () => {
 
         <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
 
-          <h2 className="hidden lg:flex text-sm font-bold text-gray-700 dark:text-gray-100 items-center gap-2 flex-shrink-0">
+          <h2 className="hidden lg:flex text-subtitulo text-tinta-principal items-center gap-2 flex-shrink-0">
             <span className="w-2 h-2 rounded-full bg-green-500"></span>
             ¡Bienvenido {nombreSaludo}!
           </h2>
 
           <div className="hidden lg:block h-4 w-[1px] bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
 
-          <p className="hidden xl:flex text-xs text-gray-500 dark:text-gray-400 items-center gap-2 flex-shrink-0">
+          <p className="hidden xl:flex text-secundario text-tinta-secundaria items-center gap-2 flex-shrink-0">
             <Calendar size={14} /> {fechaActual}
           </p>
           <div className="hidden xl:block h-4 w-[1px] bg-gray-300 dark:bg-gray-600 flex-shrink-0"></div>
 
-          <nav className="flex items-center gap-1.5 min-w-0 text-[12px] font-medium text-gray-700 dark:text-gray-200 truncate">
+          <nav className="flex items-center gap-1.5 min-w-0 text-normal text-tinta-principal truncate">
             <button
               onClick={salirDeAjustes}
-              className="flex items-center gap-1 text-[#2383C2] hover:text-[#1a6aa0] dark:text-blue-400 dark:hover:text-blue-300 transition-colors font-semibold flex-shrink-0"
+              className="flex items-center gap-1 text-[#2383C2] hover:text-[#1a6aa0] dark:text-blue-400 dark:hover:text-blue-300 transition-colors flex-shrink-0"
             >
               <Home size={13} />
               <span>Inicio</span>
@@ -804,13 +804,13 @@ const Dashboard = () => {
                     onClick={() => abrirAccesoModulo(breadcrumb.entrada)}
                     title={`Ver todas las pantallas de ${breadcrumb.moduloLabel}`}
                     aria-current={entradaAccesoRapido ? 'page' : undefined}
-                    className={`flex items-center gap-1 flex-shrink-0 rounded px-0.5 transition-colors hover:text-[#2383C2] dark:hover:text-sky-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${entradaAccesoRapido ? 'text-gray-800 dark:text-gray-100 font-semibold' : 'text-gray-500 dark:text-gray-400'}`}
+                    className={`flex items-center gap-1 flex-shrink-0 rounded px-0.5 transition-colors hover:text-[#2383C2] dark:hover:text-sky-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]/60 ${entradaAccesoRapido ? 'text-tinta-principal' : 'text-tinta-secundaria'}`}
                   >
                     {breadcrumb.moduloIcon && <span className="opacity-70">{breadcrumb.moduloIcon}</span>}
                     {breadcrumb.moduloLabel}
                   </button>
                 ) : (
-                  <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1 flex-shrink-0">
+                  <span className="text-tinta-secundaria flex items-center gap-1 flex-shrink-0">
                     {breadcrumb.moduloIcon && <span className="opacity-70">{breadcrumb.moduloIcon}</span>}
                     {breadcrumb.moduloLabel}
                   </span>
@@ -821,7 +821,7 @@ const Dashboard = () => {
             {activeView !== 'dashboard' && breadcrumb.vistaLabel && (
               <>
                 <ChevronRight size={13} className="text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                <span className="text-gray-800 dark:text-gray-100 font-semibold flex items-center gap-1 truncate">
+                <span className="text-tinta-principal flex items-center gap-1 truncate">
                   {breadcrumb.vistaIcon && <span className="opacity-80">{breadcrumb.vistaIcon}</span>}
                   {breadcrumb.vistaLabel}
                 </span>
@@ -848,7 +848,7 @@ const Dashboard = () => {
               nombre={userData.nombreCompleto}
               fotoUrl={userData.fotoPerfilUrl}
               porDefecto="U"
-              className="w-9 h-9 bg-[#2383C2] text-white font-bold text-sm"
+              className="w-9 h-9 bg-[#2383C2] text-white text-titulo-seccion"
             />
             {(novedadesTickets || pendientesTickets > 0) && (
               <span
@@ -859,7 +859,7 @@ const Dashboard = () => {
           </button>
 
           {isMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-2 z-50 text-gray-700 dark:text-gray-200">
+            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-2 z-50 text-tinta-principal">
               {/* En móvil no hay sidebar: el período abierto va acá. */}
               <div className="md:hidden px-3 pb-2 mb-1 border-b border-gray-100 dark:border-gray-700">
                 <PeriodoAbiertoBloque variante="menu" onAbrir={abrirControlMensual && (() => { abrirControlMensual(); setIsMenuOpen(false); })} />
@@ -867,28 +867,28 @@ const Dashboard = () => {
 
               <button
                 onClick={() => { setIsAjustesMode(false); setActiveView('perfil'); setIsMenuOpen(false); }}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-subtitulo hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <UserCircle size={16} className="text-blue-500 dark:text-blue-400" /> Mi Perfil
               </button>
 
               <button
                 onClick={() => { setFotoPerfilAbierta(true); setIsMenuOpen(false); }}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-subtitulo hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <Camera size={16} className="text-violet-500 dark:text-violet-400" /> Foto de perfil
               </button>
 
               <button
                 onClick={abrirCambiarPassword}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-subtitulo hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <Shield size={16} className="text-emerald-500 dark:text-emerald-400" /> Cambiar Contraseña
               </button>
 
               <button
                 onClick={alternarOscuro}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-subtitulo hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 {oscuro ? (
                   <Sun size={16} className="text-amber-400" />
@@ -900,7 +900,7 @@ const Dashboard = () => {
 
               <button
                 onClick={abrirAyudaSoporte}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-subtitulo hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 <LifeBuoy size={16} className="text-teal-600 dark:text-teal-400" /> Ayuda y soporte
                 {novedadesTickets && <PuntoAviso className="ml-auto" />}
@@ -909,7 +909,7 @@ const Dashboard = () => {
               {gestionaTickets && (
                 <button
                   onClick={() => { abrirVistaDeModulo('administracion', RUTA_GESTION_TICKETS); setIsMenuOpen(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-2 text-subtitulo hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <LifeBuoy size={16} className="text-slate-500 dark:text-slate-400" /> Gestionar tickets
                   <Contador n={pendientesTickets} etiqueta="tickets sin revisar" tope={LIMITE_PENDIENTES_GESTOR} />
@@ -918,7 +918,7 @@ const Dashboard = () => {
 
               <button
                 onClick={abrirAjustesGenerales}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-subtitulo hover:bg-gray-50 dark:hover:bg-gray-700 text-tinta-principal transition-colors"
               >
                 <Settings size={16} className="text-[#2383C2]" /> Ajustes Generales
               </button>
@@ -927,7 +927,7 @@ const Dashboard = () => {
 
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors"
+                className="w-full flex items-center gap-3 px-4 py-2 text-subtitulo text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <LogOut size={16} className="text-red-500" /> Cerrar Sesión
               </button>
@@ -947,11 +947,11 @@ const Dashboard = () => {
       />
 
       {/* SIDEBAR LATERAL (bajo el header; en móvil, drawer) */}
-      <aside className={`fixed top-16 bottom-0 left-0 z-40 w-64 max-w-[85vw] md:static md:z-auto md:translate-x-0 md:visible ${menuMovilAbierto ? 'translate-x-0' : '-translate-x-full invisible'} ${colapsado ? 'md:w-16 md:min-w-[64px] md:max-w-[64px]' : 'md:w-56 md:min-w-[190px] md:max-w-[190px]'
-        } bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 transition-all duration-300 ease-in-out flex flex-col shadow-xl md:shadow-none flex-shrink-0 select-none overflow-x-hidden`}>
+      <aside className={`font-app fixed top-16 bottom-0 left-0 z-40 w-64 max-w-[85vw] md:static md:z-auto md:translate-x-0 md:visible ${menuMovilAbierto ? 'translate-x-0' : '-translate-x-full invisible'} ${colapsado ? 'md:w-16 md:min-w-[64px] md:max-w-[64px]' : 'md:w-56 md:min-w-[190px] md:max-w-[190px]'
+        } bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 text-tinta-principal transition-all duration-300 ease-in-out flex flex-col shadow-xl md:shadow-none flex-shrink-0 select-none overflow-x-hidden`}>
 
         {/* NAV PRINCIPAL DE LA BARRA LATERAL */}
-        <nav className="flex-1 p-2 text-xs overflow-y-auto overflow-x-hidden relative">
+        <nav className="flex-1 p-2 text-normal overflow-y-auto overflow-x-hidden relative">
 
           {/* MODO AJUSTES */}
           {isAjustesMode ? (
@@ -996,7 +996,7 @@ const Dashboard = () => {
                     <button
                       key={key}
                       onClick={() => setActiveModule(key)}
-                      className={`w-full flex items-center rounded-lg ${ITEM_SIDEBAR} font-medium transition-all px-2 py-1.5 ${colapsado ? 'justify-center' : 'justify-between'}`}
+                      className={`w-full flex items-center rounded-lg ${ITEM_SIDEBAR} transition-all px-2 py-1.5 ${colapsado ? 'justify-center' : 'justify-between'}`}
                       title={colapsado ? etiquetaEntrada(key) : ""}
                     >
                       <div className="flex items-center gap-3 overflow-hidden min-w-0">
@@ -1058,7 +1058,7 @@ const Dashboard = () => {
         </div>
 
         {/* PIE DE PÁGINA LATERAL */}
-        <div className="p-2 m-2 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-200 dark:border-gray-700 text-[10px] text-gray-500 dark:text-gray-400 flex flex-col gap-2 overflow-hidden flex-shrink-0 transition-all duration-300">
+        <div className="p-2 m-2 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-gray-200 dark:border-gray-700 text-pequeno text-tinta-secundaria flex flex-col gap-2 overflow-hidden flex-shrink-0 transition-all duration-300">
           {!colapsado ? (
             <div className="transition-all duration-300 opacity-100 flex flex-col gap-2">
               <div className="flex flex-col gap-1.5 border-b border-gray-200 dark:border-gray-700 pb-1.5">
@@ -1077,14 +1077,14 @@ const Dashboard = () => {
                   <span className="truncate">Términos de Servicio</span>
                 </button>
               </div>
-              <div className="flex justify-between items-center text-[9px] text-gray-500 dark:text-gray-400 font-num px-0.5">
+              <div className="flex justify-between items-center text-pequeno tabular-nums text-tinta-secundaria px-0.5">
                 <span>Versión</span>
                 <span>v{VERSION_APP}</span>
               </div>
             </div>
           ) : (
             <div
-              className="flex justify-center items-center text-[9px] text-gray-500 dark:text-gray-400 font-num py-1 cursor-help opacity-100 transition-all duration-300"
+              className="flex justify-center items-center text-pequeno tabular-nums text-tinta-secundaria py-1 cursor-help opacity-100 transition-all duration-300"
               title="Versión 1.0.0 — Políticas disponibles en menú expandido"
             >
               <span>v1.0</span>

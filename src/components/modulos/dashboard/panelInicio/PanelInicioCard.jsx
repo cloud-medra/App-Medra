@@ -50,7 +50,7 @@ const PanelInicioCard = ({ userData, onAbrir }) => {
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 shadow-sm flex flex-col gap-2 flex-shrink-0">
-      <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 flex items-center gap-1.5 uppercase tracking-wide border-b border-gray-100 dark:border-gray-700 pb-1.5">
+      <span className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5 uppercase tracking-wide border-b border-gray-100 dark:border-gray-700 pb-1.5">
         <BarChart3 size={13} className="text-[#2383C2]" /> Resumen del mes
       </span>
       {visibles.map(({ id, Componente, propsSeccion }) => (

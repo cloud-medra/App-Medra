@@ -48,6 +48,6 @@ describe('Dashboard — Accesos rápidos y Notas', () => {
     expect(screen.getByText('Con estilo').parentElement).toHaveStyle({ backgroundColor: '#FEF3C7' });
     const sinEstilo = screen.getByText('Sin estilo');
     expect(sinEstilo.getAttribute('style')).toBeNull();
-    expect(sinEstilo.className).toMatch(/text-gray-600/);
+    expect(sinEstilo.className).toMatch(/text-tinta-secundaria/);
   });
 });

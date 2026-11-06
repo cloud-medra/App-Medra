@@ -29,10 +29,10 @@ const NuevoModuloCard = () => {
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm flex flex-col gap-2 h-full min-h-0 overflow-hidden">
       <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-2 flex-shrink-0">
-        <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 flex items-center gap-1.5 uppercase tracking-wide">
+        <span className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5 uppercase tracking-wide">
           <StickyNote size={13} className="text-[#2383C2]" /> Notas del Panel
         </span>
-        <span className="text-[9px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded font-bold uppercase">
+        <span className="text-pequeno bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded uppercase">
           {notas.length} {notas.length === 1 ? 'Nota' : 'Notas'}
         </span>
       </div>
@@ -40,13 +40,13 @@ const NuevoModuloCard = () => {
       {/* Este contenedor absorbe todo el scroll interno de las notas */}
       <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto pr-1 h-full">
         {notas.length === 0 ? (
-          <p className="text-[10.5px] text-gray-400 dark:text-gray-500 italic py-3 text-center">
+          <p className="text-secundario text-tinta-atenuada italic py-3 text-center">
             No hay notas ingresadas aún.
           </p>
         ) : (
           notas.map((nota) => {
             const visual = estiloVisualNota(nota);
-            const claseTexto = visual.textoPropio ? '' : 'text-gray-600 dark:text-gray-300';
+            const claseTexto = visual.textoPropio ? '' : 'text-tinta-secundaria';
             return (
             <div
               key={nota.id}
@@ -66,7 +66,7 @@ const NuevoModuloCard = () => {
                 {nota.titulo && (
                   <h4
                     style={visual.textoPropio ? { color: visual.texto.color } : undefined}
-                    className={`text-[11px] font-bold truncate ${visual.textoPropio ? '' : 'text-gray-800 dark:text-gray-200'}`}
+                    className={`text-etiqueta truncate ${visual.textoPropio ? '' : 'text-tinta-principal'}`}
                   >
                     {nota.titulo}
                   </h4>
@@ -93,9 +93,9 @@ const NuevoModuloCard = () => {
                       </span>
                       <span
                         style={visual.texto}
-                        className={`text-[10.5px] leading-tight [overflow-wrap:anywhere] ${
+                        className={`text-secundario [overflow-wrap:anywhere] ${
                           item.completado
-                            ? `line-through ${visual.textoPropio ? 'opacity-60' : 'text-gray-400 dark:text-gray-500'}`
+                            ? `line-through ${visual.textoPropio ? 'opacity-60' : 'text-tinta-atenuada'}`
                             : claseTexto
                         }`}
                       >
@@ -105,17 +105,17 @@ const NuevoModuloCard = () => {
                   ))}
                 </div>
               ) : (
-                <p style={visual.texto} className={`text-[10.5px] leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] ${claseTexto}`}>
+                <p style={visual.texto} className={`text-secundario whitespace-pre-wrap [overflow-wrap:anywhere] ${claseTexto}`}>
                   {nota.contenido}
                 </p>
               )}
 
               <div
                 style={visual.textoPropio ? { color: visual.texto.color } : undefined}
-                className={`flex items-center justify-between border-t pt-1 mt-0.5 text-[8.5px] font-num ${
+                className={`flex items-center justify-between border-t pt-1 mt-0.5 text-pequeno tabular-nums ${
                   visual.fondoPropio
                     ? 'border-current/20 opacity-75'
-                    : 'border-gray-200/40 dark:border-gray-700/40 text-gray-400 dark:text-gray-500'
+                    : 'border-gray-200/40 dark:border-gray-700/40 text-tinta-atenuada'
                 }`}
               >
                 {nota.fecha?.seconds && (

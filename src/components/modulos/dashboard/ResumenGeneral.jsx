@@ -26,13 +26,13 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
   // En pantallas anchas cabe sin scroll; en angostas las tarjetas se apilan y
   // desplaza el contenedor de la vista.
   return (
-    <div className="w-full min-w-0 lg:h-full flex flex-col gap-3 lg:overflow-hidden lg:pr-1">
+    <div className="font-app w-full min-w-0 lg:h-full flex flex-col gap-3 lg:overflow-hidden lg:pr-1">
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex flex-wrap items-center justify-between gap-2 p-2.5 flex-shrink-0">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-2 uppercase tracking-wider">
+        <h2 className="text-titulo-pagina text-tinta-principal flex items-center gap-2 uppercase tracking-wider">
           <LayoutDashboard size={14} className="text-[#2383C2]" /> Panel de Control General
         </h2>
-        <span className="text-[9px] bg-blue-50 dark:bg-blue-900/30 text-[#2383C2] font-bold px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 uppercase tracking-wide">
+        <span className="text-pequeno bg-blue-50 dark:bg-blue-900/30 text-[#2383C2] px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 uppercase tracking-wide">
           Entorno Activo
         </span>
       </div>
@@ -58,9 +58,9 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
           </div>
 
           <div className="border-t border-gray-100 dark:border-gray-700 pt-3 bg-gray-50/30 dark:bg-black/10 -mx-3 -mb-3 sm:-mx-4 sm:-mb-4 p-3 sm:p-4 rounded-b-lg mt-3 flex-shrink-0">
-            <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase block mb-0.5 tracking-wider">Seguridad y Permisos</span>
-            <p className="text-[11.5px] text-gray-500 dark:text-gray-400">
-              Tu perfil <span className="font-semibold text-gray-700 dark:text-gray-200 uppercase">{userData?.rol || 'Operador'}</span> registra acceso a <strong className="text-gray-700 dark:text-gray-200">{Object.keys(userData?.permisos || {}).length} secciones</strong> configuradas.
+            <span className="text-pequeno text-tinta-atenuada uppercase block mb-0.5 tracking-wider">Seguridad y Permisos</span>
+            <p className="text-normal text-tinta-secundaria">
+              Tu perfil <strong className="text-tinta-principal uppercase">{userData?.rol || 'Operador'}</strong> registra acceso a <strong className="text-tinta-principal">{Object.keys(userData?.permisos || {}).length} secciones</strong> configuradas.
             </p>
           </div>
         </div>

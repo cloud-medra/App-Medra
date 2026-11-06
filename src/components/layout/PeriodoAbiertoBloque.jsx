@@ -16,16 +16,16 @@ const ESTILOS = {
     etiqueta: 'text-[#1b6a9e] dark:text-sky-300',
     valor: 'text-[#1b6a9e] dark:text-sky-200',
     aviso: 'text-amber-700 dark:text-amber-300',
-    suave: 'text-gray-500 dark:text-gray-400',
+    suave: 'text-tinta-secundaria',
     placeholder: 'bg-[#2383C2]/15',
     hover: 'hover:bg-[#2383C2]/[0.12] dark:hover:bg-[#2383C2]/25',
   },
   menu: {
-    caja: 'rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 text-gray-700 dark:text-gray-200',
-    etiqueta: 'text-gray-500 dark:text-gray-400',
-    valor: 'text-gray-800 dark:text-gray-100',
+    caja: 'rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 text-tinta-principal',
+    etiqueta: 'text-tinta-secundaria',
+    valor: 'text-tinta-principal',
     aviso: 'text-amber-700 dark:text-amber-400',
-    suave: 'text-gray-400',
+    suave: 'text-tinta-atenuada',
     placeholder: 'bg-gray-200 dark:bg-gray-700',
     hover: 'hover:bg-gray-100 dark:hover:bg-gray-800',
   },
@@ -64,15 +64,15 @@ const PeriodoAbiertoBloque = ({ colapsado = false, variante = 'sidebar', onAbrir
     >
       <Icono size={14} aria-hidden="true" className={`shrink-0 ${sinPeriodo ? e.aviso : 'opacity-80'}`} />
       {!colapsado && (
-        <span className="min-w-0 flex-1 leading-tight">
-          <span className={`block text-[9px] font-semibold uppercase tracking-wider ${e.etiqueta}`}>Período abierto</span>
+        <span className="min-w-0 flex-1">
+          <span className={`block text-pequeno uppercase tracking-wider ${e.etiqueta}`}>Período abierto</span>
           {cargando ? (
             // Mismo alto que el texto: sin saltos al cargar.
-            <span className={`block h-[14px] mt-0.5 w-20 rounded animate-pulse ${e.placeholder}`} />
+            <span className={`block h-4 w-20 rounded animate-pulse ${e.placeholder}`} />
           ) : (
-            <span className={`block text-[11.5px] font-semibold truncate ${sinPeriodo ? e.aviso : error ? e.suave : e.valor}`}>
+            <span className={`block text-etiqueta truncate ${sinPeriodo ? e.aviso : error ? e.suave : e.valor}`}>
               {texto}
-              {resumen?.variaPorModulo && <span className={`font-normal text-[9.5px] ${e.etiqueta}`}> · varía por módulo</span>}
+              {resumen?.variaPorModulo && <span className={`text-pequeno ${e.etiqueta}`}> · varía por módulo</span>}
             </span>
           )}
         </span>

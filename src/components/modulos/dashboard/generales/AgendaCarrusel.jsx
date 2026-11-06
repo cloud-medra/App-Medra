@@ -37,7 +37,7 @@ const AgendaCarrusel = (props) => {
           type="button"
           onClick={irAnterior}
           disabled={hoja === 0}
-          className="flex items-center gap-0.5 text-[9.5px] font-bold text-gray-400 dark:text-gray-500 hover:text-[#2383C2] disabled:opacity-30 disabled:hover:text-gray-400 dark:disabled:hover:text-gray-500 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-0.5 text-pequeno text-tinta-atenuada hover:text-[#2383C2] disabled:opacity-30 disabled:hover:text-tinta-atenuada disabled:cursor-not-allowed transition-colors"
         >
           <ChevronLeft size={12} /> Anterior
         </button>
@@ -60,7 +60,7 @@ const AgendaCarrusel = (props) => {
           type="button"
           onClick={irSiguiente}
           disabled={hoja === TOTAL_HOJAS - 1}
-          className="flex items-center gap-0.5 text-[9.5px] font-bold text-gray-400 dark:text-gray-500 hover:text-[#2383C2] disabled:opacity-30 disabled:hover:text-gray-400 dark:disabled:hover:text-gray-500 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center gap-0.5 text-pequeno text-tinta-atenuada hover:text-[#2383C2] disabled:opacity-30 disabled:hover:text-tinta-atenuada disabled:cursor-not-allowed transition-colors"
         >
           Siguiente <ChevronRight size={12} />
         </button>

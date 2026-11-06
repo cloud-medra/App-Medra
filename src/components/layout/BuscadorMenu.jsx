@@ -62,18 +62,18 @@ const BuscadorMenu = forwardRef(({ indice, onElegir, onCerrar, autoFocus = false
           aria-controls={idLista}
           aria-autocomplete="list"
           aria-activedescendant={buscando && resultados.length ? idOpcion(marcado) : undefined}
-          className="w-full h-7 pl-7 pr-12 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:border-[#2383C2]"
+          className="w-full h-7 pl-7 pr-12 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal placeholder:text-tinta-atenuada focus:outline-none focus:border-[#2383C2]"
         />
         {buscando ? (
           <button type="button" onClick={() => cambiarTexto('')} aria-label="Limpiar búsqueda" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#2383C2]"><X size={12} /></button>
         ) : (
-          <kbd className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-semibold text-gray-400 border border-gray-200 dark:border-gray-600 rounded px-1 pointer-events-none">Ctrl K</kbd>
+          <kbd className="absolute right-1.5 top-1/2 -translate-y-1/2 text-pequeno text-tinta-atenuada border border-gray-200 dark:border-gray-600 rounded px-1 pointer-events-none">Ctrl K</kbd>
         )}
       </div>
 
       {buscando ? (
         resultados.length === 0 ? (
-          <p className="px-2 py-3 text-[11px] text-gray-400">Sin resultados en tu menú.</p>
+          <p className="px-2 py-3 text-secundario text-tinta-atenuada">Sin resultados en tu menú.</p>
         ) : (
           <ul id={idLista} role="listbox" aria-label="Resultados del menú" className="space-y-0.5 overflow-y-auto">
             {resultados.map((r, i) => (
@@ -88,10 +88,10 @@ const BuscadorMenu = forwardRef(({ indice, onElegir, onCerrar, autoFocus = false
                 className={`px-2 py-1.5 rounded-md cursor-pointer ${i === marcado ? 'bg-[#2383C2]/10 dark:bg-[#2383C2]/20' : 'hover:bg-gray-100 dark:hover:bg-gray-700/60'}`}
               >
                 <div className="flex items-baseline gap-1.5 min-w-0">
-                  <span className="shrink-0 font-mono text-[10px] font-semibold text-gray-500 dark:text-gray-400">{r.codigo}</span>
-                  <span className="truncate text-gray-800 dark:text-gray-100 font-medium">{r.nombre}</span>
+                  <span className="shrink-0 text-pequeno tabular-nums text-tinta-secundaria">{r.codigo}</span>
+                  <span className="truncate text-tinta-principal">{r.nombre}</span>
                 </div>
-                <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">{r.tipo === 'modulo' ? 'Módulo' : r.modulo}</div>
+                <div className="text-pequeno text-tinta-atenuada truncate">{r.tipo === 'modulo' ? 'Módulo' : r.modulo}</div>
               </li>
             ))}
           </ul>
@@ -109,9 +109,9 @@ BuscadorMenu.displayName = 'BuscadorMenu';
 export const BuscadorMenuModal = ({ indice, onElegir, onCerrar }) => (
   <div className="fixed inset-0 z-[95] flex items-start justify-center p-4 pt-[12vh]" role="dialog" aria-modal="true" aria-label="Buscar en el menú">
     <button type="button" className="absolute inset-0 bg-black/30 cursor-default" aria-label="Cerrar buscador" onClick={onCerrar} />
-    <div className="relative w-full max-w-md max-h-[70vh] flex flex-col rounded-xl bg-white dark:bg-gray-800 shadow-2xl p-3 text-xs">
+    <div className="font-app relative w-full max-w-md max-h-[70vh] flex flex-col rounded-xl bg-white dark:bg-gray-800 shadow-2xl p-3 text-normal">
       <BuscadorMenu indice={indice} onElegir={(r) => { onCerrar(); onElegir(r); }} onCerrar={onCerrar} autoFocus>
-        <p className="px-2 py-2 text-[11px] text-gray-400">Escribe un nombre o un código (ej. LAB o LABFOL) y presiona Enter.</p>
+        <p className="px-2 py-2 text-secundario text-tinta-atenuada">Escribe un nombre o un código (ej. LAB o LABFOL) y presiona Enter.</p>
       </BuscadorMenu>
     </div>
   </div>

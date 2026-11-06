@@ -25,17 +25,17 @@ const AtajosCard = ({ permisos, onAbrir }) => {
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm flex flex-col gap-2 min-h-0 overflow-hidden">
       <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-1.5 flex-shrink-0">
-        <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 flex items-center gap-1.5 uppercase tracking-wide">
+        <span className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5 uppercase tracking-wide">
           <Zap size={13} className="text-[#2383C2]" /> Accesos rápidos
         </span>
       </div>
 
       {!configurados || !modulosActivos ? (
-        <div className="py-3 flex items-center justify-center text-[10px] text-gray-400 dark:text-gray-500">
+        <div className="py-3 flex items-center justify-center text-pequeno text-tinta-atenuada">
           Cargando accesos rápidos...
         </div>
       ) : atajos.length === 0 ? (
-        <div className="py-3 flex items-center justify-center text-center text-[10px] text-gray-400 dark:text-gray-500 px-2">
+        <div className="py-3 flex items-center justify-center text-center text-pequeno text-tinta-atenuada px-2">
           No tienes accesos rápidos disponibles con tus permisos actuales.
         </div>
       ) : (
@@ -52,10 +52,10 @@ const AtajosCard = ({ permisos, onAbrir }) => {
               <CuadritoIcono icon={a.icon} color={a.color} />
 
               <span className="flex flex-col min-w-0">
-                <span className="text-[11px] leading-tight font-bold text-gray-800 dark:text-gray-100 truncate group-hover:text-[#1b6a9e] dark:group-hover:text-sky-300">
+                <span className="text-etiqueta text-tinta-principal truncate group-hover:text-[#1b6a9e] dark:group-hover:text-sky-300">
                   {a.label}
                 </span>
-                <span className="text-[8.5px] leading-tight text-gray-600 dark:text-gray-400 uppercase tracking-wide truncate">
+                <span className="text-pequeno text-tinta-secundaria uppercase tracking-wide truncate">
                   {a.moduloLabel}
                 </span>
               </span>

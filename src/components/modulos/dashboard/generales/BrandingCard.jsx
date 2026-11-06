@@ -19,8 +19,8 @@ const BrandingCard = () => {
         <img src={simboloEmeDigitalBlanco} alt="" className="w-7 h-7 object-contain hidden dark:block" />
       </a>
       <div className="flex flex-col">
-        <span className="text-[9px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Desarrollado por:</span>
-        <h3 className="text-[13px] font-extrabold text-gray-800 dark:text-gray-100 tracking-wide">
+        <span className="text-pequeno text-tinta-atenuada uppercase tracking-wider">Desarrollado por:</span>
+        <h3 className="text-subtitulo text-tinta-principal tracking-wide">
           <a
             href={URL_EMEDIGITAL}
             target="_blank"

@@ -53,7 +53,7 @@ export const RecordatoriosAlarmaVista = ({ pendientes, onRealizado, marcando = n
         {total > 0 && (
           <span
             data-testid="badge-recordatorios"
-            className={`absolute top-0 right-0 min-w-[18px] h-[18px] px-1 rounded-full border-2 border-white dark:border-gray-800 text-white text-[10px] font-bold flex items-center justify-center ${atrasadas ? 'bg-red-700' : 'bg-amber-500'}`}
+            className={`absolute top-0 right-0 min-w-[18px] h-[18px] px-1 rounded-full border-2 border-white dark:border-gray-800 text-white text-pequeno flex items-center justify-center ${atrasadas ? 'bg-red-700' : 'bg-amber-500'}`}
           >
             {total}
           </span>
@@ -63,16 +63,16 @@ export const RecordatoriosAlarmaVista = ({ pendientes, onRealizado, marcando = n
       {abierto && (
         <section
           aria-label="Recordatorios pendientes"
-          className="fixed inset-x-2 top-16 mt-1 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 z-50 sm:w-80 max-h-[60vh] flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl text-[11px] text-slate-800 dark:text-gray-100"
+          className="fixed inset-x-2 top-16 mt-1 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 z-50 sm:w-80 max-h-[60vh] flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl text-secundario text-tinta-principal"
         >
           <div className={`px-3 py-2 text-white ${atrasadas ? 'bg-red-600' : 'bg-[#2383C2]'}`}>
-            <h2 className="font-bold text-[11.5px] uppercase tracking-wide leading-tight">{textoPendientes}</h2>
+            <h2 className="text-titulo-seccion uppercase tracking-wide">{textoPendientes}</h2>
             {atrasadas > 0 && (
-              <p className="text-[10px] font-semibold leading-tight">{plural(atrasadas, 'atrasada', 'atrasadas')}: márcalas como realizadas</p>
+              <p className="text-pequeno">{plural(atrasadas, 'atrasada', 'atrasadas')}: márcalas como realizadas</p>
             )}
           </div>
           {total === 0 ? (
-            <p className="px-3 py-4 text-center text-slate-400 dark:text-gray-500">Sin tareas pendientes</p>
+            <p className="px-3 py-4 text-center text-tinta-atenuada">Sin tareas pendientes</p>
           ) : (
             <ul className="overflow-y-auto p-1.5 space-y-1">
               {pendientes.map(({ tarea, fecha, hora, atrasada }) => {
@@ -86,19 +86,19 @@ export const RecordatoriosAlarmaVista = ({ pendientes, onRealizado, marcando = n
                       : 'bg-white dark:bg-gray-800 border-slate-200 dark:border-gray-700'}`}
                   >
                     <div className="min-w-0 flex-grow">
-                      <p className="font-semibold leading-snug break-words">
+                      <p className="text-etiqueta break-words">
                         {hora && (
-                          <span className={`mr-1 inline-flex items-center gap-0.5 font-num text-[10px] font-bold ${atrasada ? '' : 'text-[#2383C2]'}`}>
+                          <span className={`mr-1 inline-flex items-center gap-0.5 text-numero-tabla ${atrasada ? '' : 'text-[#2383C2]'}`}>
                             <Clock size={10} /> {hora}
                           </span>
                         )}
                         {tarea.titulo}
                       </p>
                       {tarea.descripcion && (
-                        <p className={`text-[10px] break-words whitespace-pre-wrap ${atrasada ? 'text-red-600/90 dark:text-red-300/90' : 'text-slate-600 dark:text-gray-300'}`}>{tarea.descripcion}</p>
+                        <p className={`text-pequeno break-words whitespace-pre-wrap ${atrasada ? 'text-red-600/90 dark:text-red-300/90' : 'text-tinta-secundaria'}`}>{tarea.descripcion}</p>
                       )}
                       {atrasada && (
-                        <p className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold text-red-600 dark:text-red-400">
+                        <p className="mt-0.5 inline-flex items-center gap-1 text-pequeno text-red-600 dark:text-red-400">
                           <AlertTriangle size={10} /> {textoAtrasada(fecha)}
                         </p>
                       )}
@@ -108,7 +108,7 @@ export const RecordatoriosAlarmaVista = ({ pendientes, onRealizado, marcando = n
                       onClick={() => onRealizado({ tarea, fecha })}
                       disabled={marcando === clave}
                       aria-label={`Marcar "${tarea.titulo}"${atrasada ? ` del ${fecha.split('-').reverse().join('-')}` : ''} como realizado`}
-                      className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-600/90 hover:bg-emerald-600 text-white font-semibold text-[10px] disabled:opacity-60"
+                      className="shrink-0 flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-600/90 hover:bg-emerald-600 text-white text-pequeno disabled:opacity-60"
                     >
                       {marcando === clave ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} Realizado
                     </button>

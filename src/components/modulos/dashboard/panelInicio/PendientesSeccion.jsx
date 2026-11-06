@@ -12,31 +12,32 @@ import {
 // leer, "No disponible" (nunca 0).
 const LINEA = 'flex items-center justify-between gap-2 rounded-md border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 px-2 py-1 min-w-0 text-left';
 const LINEA_BOTON = `${LINEA} hover:border-[#2383C2] hover:bg-[#2383C2]/[0.06] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]`;
-const ETIQUETA = 'text-[10px] font-semibold text-gray-600 dark:text-gray-300 truncate';
+// Sin truncate: si no cabe pasa a otra línea (ningún dato queda con "…").
+const ETIQUETA = 'text-pequeno text-tinta-principal min-w-0 break-words';
 const TONOS = {
   ambar: 'text-amber-700 dark:text-amber-300',
   rojo: 'text-red-700 dark:text-red-300',
-  normal: 'text-gray-800 dark:text-gray-100',
+  normal: 'text-tinta-principal',
 };
 
 const NoDisponible = () => (
-  <span className="text-[10.5px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1 shrink-0" title="No se pudo leer este dato">
+  <span className="text-etiqueta text-amber-700 dark:text-amber-300 flex items-center gap-1 shrink-0" title="No se pudo leer este dato">
     <AlertTriangle size={11} className="shrink-0" /> No disponible
   </span>
 );
 
 const Cantidad = ({ resultado, alDia = true }) => {
   const valor = valorIndicador(resultado);
-  if (valor.estado === 'cargando') return <span className="text-[12px] font-bold text-gray-400 shrink-0">…</span>;
+  if (valor.estado === 'cargando') return <span className="text-etiqueta text-tinta-atenuada shrink-0">…</span>;
   if (valor.estado === 'noDisponible') return <NoDisponible />;
   if (valor.estado === 'alDia' && alDia) {
     return (
-      <span className="text-[10.5px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1 shrink-0">
+      <span className="text-etiqueta text-emerald-700 dark:text-emerald-300 flex items-center gap-1 shrink-0">
         <CheckCircle2 size={11} className="shrink-0" /> Al día
       </span>
     );
   }
-  return <span className="text-[13px] font-extrabold font-num text-gray-800 dark:text-gray-100 shrink-0">{valor.n.toLocaleString('es-CL')}</span>;
+  return <span className="text-numero-indicador text-tinta-principal shrink-0">{valor.n.toLocaleString('es-CL')}</span>;
 };
 
 // Una línea "etiqueta … valor": botón si abre algo y ya cargó.
@@ -46,7 +47,7 @@ const Linea = ({ onClick, titulo, cargando, children }) => (onClick && !cargando
 
 const Bloque = ({ titulo, children }) => (
   <div className="flex flex-col gap-1 min-w-0">
-    <span className="text-[9.5px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">{titulo}</span>
+    <span className="text-pequeno text-tinta-atenuada uppercase tracking-wider">{titulo}</span>
     {children}
   </div>
 );
@@ -61,7 +62,7 @@ const PendientesSeccion = ({ bloques, onAbrir }) => {
 
   return (
     <section aria-label="Pendientes" className="flex flex-col gap-2 min-w-0">
-      <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pendientes</span>
+      <span className="text-etiqueta text-tinta-secundaria uppercase tracking-wider">Pendientes</span>
 
       {bloques.implantes && (
         <Bloque titulo="Implantes">
@@ -103,20 +104,20 @@ const PendientesSeccion = ({ bloques, onAbrir }) => {
       {bloques.fibras && (
         <Bloque titulo="Fibras">
           {!r.fibras ? (
-            <div className={LINEA}><span className="text-[12px] font-bold text-gray-400">…</span></div>
+            <div className={LINEA}><span className="text-etiqueta text-tinta-atenuada">…</span></div>
           ) : r.fibras.error ? (
             <div className={LINEA}><span className={ETIQUETA}>Uso de fibras</span><NoDisponible /></div>
           ) : r.fibras.referencias.length === 0 ? (
-            <div className={LINEA}><span className="text-[10px] text-gray-400 dark:text-gray-500">No hay referencias marcadas como fibra.</span></div>
+            <div className={LINEA}><span className="text-pequeno text-tinta-atenuada">No hay referencias marcadas como fibra.</span></div>
           ) : (
             <div className="grid grid-cols-1 min-[400px]:grid-cols-2 xl:grid-cols-3 gap-1">
               {r.fibras.referencias.map(({ referencia, uso }) => (
                 <Linea key={referencia} onClick={() => onAbrir?.('implantes', RUTA_FIBRAS, { texto: referencia })} titulo={`Abrir Fibras con ${referencia}`}>
-                  <span className={`${ETIQUETA} font-num`}>{referencia}</span>
+                  <span className={`${ETIQUETA} tabular-nums`}>{referencia}</span>
                   {uso ? (
-                    <span className={`text-[12px] font-extrabold font-num shrink-0 ${TONOS[uso.alerta] || TONOS.normal}`}>{uso.consumidos}/{uso.totales}</span>
+                    <span className={`text-numero-indicador shrink-0 ${TONOS[uso.alerta] || TONOS.normal}`}>{uso.consumidos}/{uso.totales}</span>
                   ) : (
-                    <span className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 shrink-0">Sin fibra en uso</span>
+                    <span className="text-pequeno text-tinta-atenuada shrink-0">Sin fibra en uso</span>
                   )}
                 </Linea>
               ))}
@@ -126,7 +127,7 @@ const PendientesSeccion = ({ bloques, onAbrir }) => {
       )}
 
       {hayNoDisponible && (
-        <p role="alert" className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md px-2 py-1 flex items-center gap-1.5">
+        <p role="alert" className="text-pequeno text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md px-2 py-1 flex items-center gap-1.5">
           <AlertTriangle size={12} className="shrink-0" />
           No se pudo leer parte de los pendientes. Actualiza la página o revisa la pantalla correspondiente.
         </p>

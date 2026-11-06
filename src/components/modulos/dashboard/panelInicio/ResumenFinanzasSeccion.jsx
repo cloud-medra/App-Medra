@@ -20,32 +20,32 @@ const ResumenFinanzasSeccion = ({ totales }) => {
   return (
     <section aria-label="Resumen de Finanzas" className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Finanzas</span>
-        <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400">{nombreMes} {anio}</span>
+        <span className="text-etiqueta text-tinta-secundaria uppercase tracking-wider">Finanzas</span>
+        <span className="text-pequeno text-tinta-secundaria">{nombreMes} {anio}</span>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
         {valores.map(({ id, etiqueta, valor }) => (
           <div key={id} className="rounded-md border border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 px-2 py-1.5 min-w-0">
-            <p className="text-[9.5px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate" title={etiqueta}>{etiqueta}</p>
+            <p className="text-pequeno text-tinta-secundaria uppercase tracking-wide break-words" title={etiqueta}>{etiqueta}</p>
             {valor.estado === 'noDisponible' ? (
-              <p className="text-[12px] font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1" title="No se pudo leer este total">
+              <p className="text-etiqueta text-amber-700 dark:text-amber-300 flex items-center gap-1" title="No se pudo leer este total">
                 <AlertTriangle size={12} className="shrink-0" /> No disponible
               </p>
             ) : (
-              <p className="text-[13px] font-extrabold text-gray-800 dark:text-gray-100 font-num truncate">
+              <p className="text-numero-indicador text-tinta-principal [overflow-wrap:anywhere]">
                 {valor.estado === 'cargando' ? '…' : pesos(valor.monto)}
               </p>
             )}
             {valor.estado === 'sinAbrir' && (
-              <p className="text-[9px] text-gray-400 dark:text-gray-500">Mes sin abrir</p>
+              <p className="text-pequeno text-tinta-atenuada">Mes sin abrir</p>
             )}
           </div>
         ))}
       </div>
 
       {hayNoDisponible && (
-        <p role="alert" className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md px-2 py-1 flex items-center gap-1.5">
+        <p role="alert" className="text-pequeno text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md px-2 py-1 flex items-center gap-1.5">
           <AlertTriangle size={12} className="shrink-0" />
           No se pudo leer parte de los totales. Actualiza la página o revisa la pantalla de Finanzas.
         </p>

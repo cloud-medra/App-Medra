@@ -1,8 +1,49 @@
 # Inventario para migrar a los tokens de tipografía
 
-Foto del 06-11-2026: las cifras cambian a medida que se editan las pantallas. La migración de cada pantalla se hace solo cuando el usuario lo indica; ver `src/styles/tipografia.css` y CLAUDE.md.
+Foto del 06-11-2026: las cifras cambian a medida que se editan las pantallas. Cada módulo se migra solo cuando el usuario lo indica, siguiendo [procedimiento-migracion-tipografia.md](procedimiento-migracion-tipografia.md).
 
-Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores y familias escritos a mano; **<10 px** = textos de 8 a 9,5 px, que al migrar suben a `text-pequeno` (10 px); **`font-num`** = clase que fuerza la fuente del sistema (ver CLAUDE.md); **cortes** = `truncate` o `whitespace-nowrap`, donde un texto más ancho se corta en vez de pasar a otra línea.
+## Migrado
+
+| Parte | Archivos | Fecha |
+|---|---|---|
+| **Header** | `pages/Dashboard.jsx` (zona `<header>`), `layout/SelectorInstitucion.jsx`, `layout/NotificacionesCampana.jsx`, `recordatorios/RecordatoriosAlarma.jsx` | 06-11-2026 |
+| **Sidebar** | `pages/Dashboard.jsx` (zona `<aside>`), `layout/BuscadorMenu.jsx`, `layout/PeriodoAbiertoBloque.jsx` | 06-11-2026 |
+| **Dashboard: Generales** | `dashboard/ResumenGeneral.jsx`, `generales/` (`AgendaCalendar`, `AgendaCarrusel`, `AtajosCard`, `BienvenidaCard`, `BrandingCard`, `InformacionDelDia`, `NuevoModuloCard`) | 06-11-2026 |
+| **Dashboard: Panel de inicio** | `panelInicio/` (`PanelInicioCard`, `PendientesSeccion`, `ResumenFinanzasSeccion`) | 06-11-2026 |
+
+En `pages/Dashboard.jsx`, lo que no es header ni sidebar queda sin migrar: `<main>` no lleva `font-app`, y cada pantalla lo agrega en su propia raíz.
+
+`generales/AvanceInventario.jsx` no se migró porque está fuera de circulación (comentado en `ResumenGeneral.jsx`). Migrarlo solo si vuelve a usarse.
+
+## Riesgos de espacio con Inter
+
+Medido en Edge contra Segoe UI, la fuente del sistema en Windows.
+
+| Grosor | Más ancha que Segoe UI, en promedio |
+|---|---:|
+| 400 | 8,4% |
+| 500 | 7,4% |
+| 600 | 8,7% |
+| 700 | 5,1% |
+
+Las fechas y los montos crecen más, porque los números tabulares de Inter son anchos:
+
+| Texto | Inter | Segoe UI |
+|---|---:|---:|
+| `05-11-2026`, 15 px / 600 | 97 px | 79 px |
+| `05-11-2026`, 12 px / 500 | 78 px | 63 px |
+| `$ 123.456.789`, 13 px / 700 | 95 px | 85 px |
+| `$ 123.456.789`, 11 px / 500 | 80 px | 69 px |
+
+Por revisar al migrar cada uno:
+
+- **Tarjetas de indicadores:** `codigosMaestrosV2/HistorialUso.jsx` no cabe tal como está: "Último uso" a 15 px / 600 mide 97 px y la tarjeta tiene unos 92 px útiles; usar `text-numero-indicador` (13 px). También `estadisticas/components/TarjetaIndicador.jsx` (Herramientas → Estadísticas).
+- **Tablas angostas:** `shared/gestion/GestionesTable.jsx` (columnas con mínimos de 60 px), `cargasConsignacion/components/CargasTab.jsx` (60 cortes de texto), `ResumenConsignacion`, `SolicitudesUnificadasTable`, `SolicitudGestiones`, `DetalleVinculacionOC`.
+- **Controles bajos, de 20 a 28 px:** `Cargastab.jsx`, `EditorDocumentos.jsx`, `Informaciontab.jsx`.
+- **Textos de menos de 10 px:** suben a 10 px. Los que más tienen: `PadMaestros.jsx`, `Cargastab.jsx`, `CotizacionCard.jsx`.
+- **`font-num`:** Bodega concentra la mayor parte.
+
+Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores y familias escritos a mano; **<10 px** = textos de 8 a 9,5 px, que al migrar suben a `text-pequeno` (10 px); **`font-num`** = clase que fuerza la fuente del sistema y se reemplaza por `text-numero-tabla`; **cortes** = `truncate` o `whitespace-nowrap`, donde un texto más ancho se corta en vez de pasar a otra línea.
 
 ## operaciones
 
@@ -447,7 +488,7 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 
 ## administracion
 
-46 archivos, 775 clases.
+45 archivos, 759 clases.
 
 ### usuarios (13 archivos, 177 clases)
 
@@ -517,13 +558,6 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 | `administracion/notasAdmin/NotasAdmin.jsx` | 43 | 3 | 0 | 0 |
 | `administracion/notasAdmin/SelectorEstiloNota.jsx` | 15 | 1 | 0 | 1 |
 
-### recordatorios (2 archivos, 52 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/recordatorios/Recordatorios.jsx` | 36 | 2 | 1 | 0 |
-| `administracion/recordatorios/RecordatoriosAlarma.jsx` | 16 | 0 | 1 | 0 |
-
 ### totalesFinanzas (2 archivos, 45 clases)
 
 | Archivo | Clases | <10 px | `font-num` | Cortes |
@@ -543,6 +577,12 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 |---|---:|---:|---:|---:|
 | `administracion/permisosCentro/ConfigurarCentro.jsx` | 19 | 0 | 0 | 0 |
 | `administracion/permisosCentro/PermisosPorCentro.jsx` | 17 | 1 | 0 | 4 |
+
+### recordatorios (1 archivos, 36 clases)
+
+| Archivo | Clases | <10 px | `font-num` | Cortes |
+|---|---:|---:|---:|---:|
+| `administracion/recordatorios/Recordatorios.jsx` | 36 | 2 | 1 | 0 |
 
 ### gestionModulos (1 archivos, 12 clases)
 
@@ -778,62 +818,18 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 |---|---:|---:|---:|---:|
 | `general/accesoModulo/AccesoRapidoModulo.jsx` | 8 | 0 | 0 | 2 |
 
-## dashboard
-
-12 archivos, 125 clases.
-
-### generales (8 archivos, 75 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `dashboard/generales/AgendaCalendar.jsx` | 17 | 2 | 2 | 0 |
-| `dashboard/generales/InformacionDelDia.jsx` | 15 | 4 | 1 | 0 |
-| `dashboard/generales/AvanceInventario.jsx` | 13 | 3 | 1 | 1 |
-| `dashboard/generales/NuevoModuloCard.jsx` | 11 | 2 | 1 | 1 |
-| `dashboard/generales/AtajosCard.jsx` | 7 | 1 | 0 | 2 |
-| `dashboard/generales/AgendaCarrusel.jsx` | 4 | 2 | 0 | 0 |
-| `dashboard/generales/BienvenidaCard.jsx` | 4 | 0 | 0 | 0 |
-| `dashboard/generales/BrandingCard.jsx` | 4 | 1 | 0 | 0 |
-
-### panelInicio (3 archivos, 42 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `dashboard/panelInicio/PendientesSeccion.jsx` | 26 | 1 | 3 | 1 |
-| `dashboard/panelInicio/ResumenFinanzasSeccion.jsx` | 14 | 2 | 1 | 2 |
-| `dashboard/panelInicio/PanelInicioCard.jsx` | 2 | 0 | 0 | 0 |
-
-### (raíz) (1 archivos, 8 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `modulos/dashboard/ResumenGeneral.jsx` | 8 | 2 | 0 | 0 |
-
 ## comunes: pages
 
-4 archivos, 75 clases.
+4 archivos, 38 clases.
 
-### (raíz) (4 archivos, 75 clases)
+### (raíz) (4 archivos, 38 clases)
 
 | Archivo | Clases | <10 px | `font-num` | Cortes |
 |---|---:|---:|---:|---:|
-| `pages/Dashboard.jsx` | 38 | 3 | 2 | 12 |
 | `pages/auth/CambiarPassword.jsx` | 21 | 0 | 0 | 1 |
 | `pages/PlataformaExterna.jsx` | 8 | 0 | 0 | 0 |
 | `pages/TestPage.jsx` | 8 | 0 | 0 | 0 |
-
-## comunes: layout
-
-4 archivos, 36 clases.
-
-### (raíz) (4 archivos, 36 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `components/layout/BuscadorMenu.jsx` | 11 | 1 | 0 | 2 |
-| `components/layout/SelectorInstitucion.jsx` | 11 | 0 | 0 | 4 |
-| `components/layout/NotificacionesCampana.jsx` | 8 | 0 | 0 | 0 |
-| `components/layout/PeriodoAbiertoBloque.jsx` | 6 | 2 | 0 | 1 |
+| `pages/Dashboard.jsx` | 1 | 0 | 0 | 12 |
 
 ## comunes: ui
 
@@ -878,3 +874,13 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 | Archivo | Clases | <10 px | `font-num` | Cortes |
 |---|---:|---:|---:|---:|
 | `portalProveedores/ordenesCompra/OrdenesCompra.jsx` | 15 | 0 | 3 | 1 |
+
+## dashboard
+
+1 archivos, 13 clases.
+
+### generales (1 archivos, 13 clases)
+
+| Archivo | Clases | <10 px | `font-num` | Cortes |
+|---|---:|---:|---:|---:|
+| `dashboard/generales/AvanceInventario.jsx` | 13 | 3 | 1 | 1 |

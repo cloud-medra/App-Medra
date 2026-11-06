@@ -30,27 +30,27 @@ const InformacionDelDia = ({ fecha }) => {
   return (
     <div className="h-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-3 flex flex-col justify-between">
       <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-2 mb-2">
-        <span className="text-[11px] font-bold text-gray-700 dark:text-gray-200 flex items-center gap-1 uppercase tracking-wide">
+        <span className="text-titulo-seccion text-tinta-principal flex items-center gap-1 uppercase tracking-wide">
           <Info size={13} className="text-[#2383C2]" /> Información del Día
         </span>
       </div>
 
       <div className="flex flex-col gap-2.5 flex-1 min-h-0">
         <div className="text-center">
-          <p className="text-[13px] font-bold text-gray-700 dark:text-gray-100">{obtenerFechaCompleta(fecha)}</p>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">{obtenerDiaSemana(fecha)}</p>
+          <p className="text-subtitulo text-tinta-principal">{obtenerFechaCompleta(fecha)}</p>
+          <p className="text-pequeno text-tinta-atenuada">{obtenerDiaSemana(fecha)}</p>
         </div>
 
         {feriado && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-[9.5px] font-bold">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-pequeno">
             <PartyPopper size={12} className="shrink-0" /> Feriado: {feriado}
           </div>
         )}
 
         <div>
-          <div className="flex items-center justify-between text-[9.5px] text-gray-500 dark:text-gray-400 mb-1">
+          <div className="flex items-center justify-between text-pequeno text-tinta-secundaria mb-1">
             <span>Día {diaDelAnio} de {totalDias}</span>
-            <span className="font-num font-bold text-gray-600 dark:text-gray-300">{porcentaje.toFixed(1)}%</span>
+            <span className="tabular-nums text-tinta-principal">{porcentaje.toFixed(1)}%</span>
           </div>
           <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div
@@ -58,14 +58,14 @@ const InformacionDelDia = ({ fecha }) => {
               style={{ width: `${Math.min(100, porcentaje)}%` }}
             />
           </div>
-          <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-1">Semana {semana} de {totalSemanas}</p>
+          <p className="text-pequeno text-tinta-atenuada mt-1">Semana {semana} de {totalSemanas}</p>
         </div>
 
         <div className="flex items-center gap-2 px-2 py-1.5 rounded bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700">
           <IconoEstacion size={16} className={`shrink-0 ${COLOR_ESTACION[estacion.nombre]}`} />
           <div className="min-w-0">
-            <p className="text-[10.5px] font-bold text-gray-700 dark:text-gray-200">{estacion.nombre}</p>
-            <p className="text-[9px] text-gray-400 dark:text-gray-500">
+            <p className="text-etiqueta text-tinta-principal">{estacion.nombre}</p>
+            <p className="text-pequeno text-tinta-atenuada">
               {estacion.diasRestantes === 0
                 ? `Cambia a ${estacion.proximaEstacion} mañana`
                 : `${estacion.diasRestantes} día${estacion.diasRestantes === 1 ? '' : 's'} para ${estacion.proximaEstacion}`}
