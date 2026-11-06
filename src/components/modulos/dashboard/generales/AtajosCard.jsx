@@ -25,7 +25,7 @@ const AtajosCard = ({ permisos, onAbrir }) => {
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm flex flex-col gap-2 min-h-0 overflow-hidden">
       <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-1.5 flex-shrink-0">
-        <span className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5 uppercase tracking-wide">
+        <span className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <Zap size={13} className="text-[#2383C2]" /> Accesos rápidos
         </span>
       </div>

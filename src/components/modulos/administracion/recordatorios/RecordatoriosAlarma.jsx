@@ -66,7 +66,7 @@ export const RecordatoriosAlarmaVista = ({ pendientes, onRealizado, marcando = n
           className="fixed inset-x-2 top-16 mt-1 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 z-50 sm:w-80 max-h-[60vh] flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl text-secundario text-tinta-principal"
         >
           <div className={`px-3 py-2 text-white ${atrasadas ? 'bg-red-600' : 'bg-[#2383C2]'}`}>
-            <h2 className="text-titulo-seccion uppercase tracking-wide">{textoPendientes}</h2>
+            <h2 className="text-titulo-seccion">{textoPendientes}</h2>
             {atrasadas > 0 && (
               <p className="text-pequeno">{plural(atrasadas, 'atrasada', 'atrasadas')}: márcalas como realizadas</p>
             )}

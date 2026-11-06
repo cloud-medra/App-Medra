@@ -29,8 +29,8 @@ const NuevoModuloCard = () => {
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm flex flex-col gap-2 h-full min-h-0 overflow-hidden">
       <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-2 flex-shrink-0">
-        <span className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5 uppercase tracking-wide">
-          <StickyNote size={13} className="text-[#2383C2]" /> Notas del Panel
+        <span className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
+          <StickyNote size={13} className="text-[#2383C2]" /> Notas del panel
         </span>
         <span className="text-pequeno bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded uppercase">
           {notas.length} {notas.length === 1 ? 'Nota' : 'Notas'}

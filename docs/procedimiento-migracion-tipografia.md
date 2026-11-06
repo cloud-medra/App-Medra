@@ -57,9 +57,15 @@ Cada clase trae tamaño, grosor e interlineado: no se le agrega `font-*` ni `lea
 - **No se tocan:** colores con significado (`red`, `amber`, `emerald`), de marca (`#2383C2`, `sky`), blanco sobre fondo de color, ni los colores que ya define el dato (por ejemplo, notas con color propio).
 - **Íconos:** su color queda igual, aunque sea gris. Incluye los botones de solo ícono.
 
-### Lo que se conserva
+### Títulos en tipo oración
 
-`uppercase` y `tracking-*` se mantienen, porque no forman parte de los tokens.
+- Los títulos de página y de tarjetas (`text-titulo-pagina`, `text-titulo-seccion`), también los de desplegables, van en tipo oración: solo la primera letra en mayúscula, además de nombres propios y siglas. Ejemplo: "Panel de control general", no "PANEL DE CONTROL GENERAL" ni "Panel de Control General".
+- Se quita `uppercase` junto con su `tracking-*`, y se corrige el texto si venía con mayúscula en cada palabra.
+- Si un test busca ese texto, se actualiza.
+
+### Mayúsculas en etiquetas pequeñas
+
+Una etiqueta pequeña (`text-pequeno`, `text-etiqueta`) que ya estaba en mayúsculas puede quedarse así, con su `uppercase` y su `tracking-*`, si se ve bien.
 
 ### Casos fuera de la escala
 

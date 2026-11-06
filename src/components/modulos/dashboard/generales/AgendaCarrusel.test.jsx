@@ -34,7 +34,7 @@ describe('AgendaCarrusel', () => {
   it('arranca en la Hoja 1 (calendario) intacta', () => {
     render(<ArnesResumenGeneral fechaInicial={new Date(2026, 8, 15)} />);
     expect(screen.getByText('Agenda')).toBeInTheDocument();
-    expect(screen.queryByText('Información del Día')).not.toBeInTheDocument();
+    expect(screen.queryByText('Información del día')).not.toBeInTheDocument();
   });
 
   it('"Siguiente" lleva a la Hoja 2 con los datos de la fecha seleccionada', async () => {
@@ -42,7 +42,7 @@ describe('AgendaCarrusel', () => {
 
     fireEvent.click(screen.getByText('Siguiente'));
 
-    const info = await screen.findByText('Información del Día');
+    const info = await screen.findByText('Información del día');
     const card = info.closest('div').parentElement;
 
     expect(within(card).getByText('22 de Septiembre de 2026')).toBeInTheDocument();
@@ -55,12 +55,12 @@ describe('AgendaCarrusel', () => {
   it('"Anterior" desde la Hoja 2 vuelve a mostrar el calendario', async () => {
     render(<ArnesResumenGeneral fechaInicial={new Date(2026, 8, 15)} />);
     fireEvent.click(screen.getByText('Siguiente'));
-    await screen.findByText('Información del Día');
+    await screen.findByText('Información del día');
 
     fireEvent.click(screen.getByText('Anterior'));
 
     await screen.findByText('Agenda');
-    expect(screen.queryByText('Información del Día')).not.toBeInTheDocument();
+    expect(screen.queryByText('Información del día')).not.toBeInTheDocument();
   });
 
   it('cambiar el día seleccionado en la Hoja 1 actualiza la Hoja 2 a esa fecha', async () => {
@@ -71,7 +71,7 @@ describe('AgendaCarrusel', () => {
 
     fireEvent.click(screen.getByText('Siguiente'));
 
-    const info = await screen.findByText('Información del Día');
+    const info = await screen.findByText('Información del día');
     const card = info.closest('div').parentElement;
     expect(within(card).getByText('25 de Septiembre de 2026')).toBeInTheDocument();
   });
@@ -83,7 +83,7 @@ describe('AgendaCarrusel', () => {
     expect(dots).toHaveLength(2);
 
     fireEvent.click(dots[1]);
-    await screen.findByText('Información del Día');
+    await screen.findByText('Información del día');
 
     fireEvent.click(dots[0]);
     await screen.findByText('Agenda');

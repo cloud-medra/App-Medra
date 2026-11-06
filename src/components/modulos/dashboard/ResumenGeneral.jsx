@@ -29,8 +29,8 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
     <div className="font-app w-full min-w-0 lg:h-full flex flex-col gap-3 lg:overflow-hidden lg:pr-1">
 
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex flex-wrap items-center justify-between gap-2 p-2.5 flex-shrink-0">
-        <h2 className="text-titulo-pagina text-tinta-principal flex items-center gap-2 uppercase tracking-wider">
-          <LayoutDashboard size={14} className="text-[#2383C2]" /> Panel de Control General
+        <h2 className="text-titulo-pagina text-tinta-principal flex items-center gap-2">
+          <LayoutDashboard size={14} className="text-[#2383C2]" /> Panel de control general
         </h2>
         <span className="text-pequeno bg-blue-50 dark:bg-blue-900/30 text-[#2383C2] px-1.5 py-0.5 rounded border border-blue-100 dark:border-blue-800 uppercase tracking-wide">
           Entorno Activo

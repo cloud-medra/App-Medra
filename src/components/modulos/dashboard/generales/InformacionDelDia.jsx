@@ -30,8 +30,8 @@ const InformacionDelDia = ({ fecha }) => {
   return (
     <div className="h-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm p-3 flex flex-col justify-between">
       <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-2 mb-2">
-        <span className="text-titulo-seccion text-tinta-principal flex items-center gap-1 uppercase tracking-wide">
-          <Info size={13} className="text-[#2383C2]" /> Información del Día
+        <span className="text-titulo-seccion text-tinta-principal flex items-center gap-1">
+          <Info size={13} className="text-[#2383C2]" /> Información del día
         </span>
       </div>
 

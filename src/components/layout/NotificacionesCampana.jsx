@@ -54,7 +54,7 @@ export const NotificacionesCampanaVista = ({ notificaciones = [], onElegir }) =>
           className="fixed inset-x-2 top-16 mt-1 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-2 z-50 sm:w-80 max-h-[60vh] flex flex-col rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl text-secundario text-tinta-principal"
         >
           <div className="px-3 py-2 text-white bg-[#2383C2]">
-            <h2 className="text-titulo-seccion uppercase tracking-wide">Notificaciones</h2>
+            <h2 className="text-titulo-seccion">Notificaciones</h2>
           </div>
           {notificaciones.length === 0 ? (
             <p className="px-3 py-6 text-center text-tinta-secundaria">No tienes notificaciones</p>

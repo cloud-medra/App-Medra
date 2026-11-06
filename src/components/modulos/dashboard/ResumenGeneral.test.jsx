@@ -23,7 +23,7 @@ describe('Dashboard — Accesos rápidos y Notas', () => {
   it('Accesos rápidos va en la columna izquierda y antes que Notas en el orden del documento', () => {
     render(<ResumenGeneral userData={{ rol: 'operador' }} />);
     const accesos = screen.getByText('Accesos rápidos');
-    const notasCard = screen.getByText('Notas del Panel');
+    const notasCard = screen.getByText('Notas del panel');
     expect(accesos.compareDocumentPosition(notasCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(accesos.closest('.lg\\:col-span-2')).not.toBeNull();
     expect(notasCard.closest('.lg\\:col-span-2')).toBeNull();
@@ -34,7 +34,7 @@ describe('Dashboard — Accesos rápidos y Notas', () => {
     render(<ResumenGeneral userData={{ rol: 'operador' }} />);
     const branding = screen.getByText('Desarrollado por');
     expect(branding.closest('.lg\\:col-span-2')).toBeNull();
-    expect(screen.getByText('Notas del Panel').compareDocumentPosition(branding) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText('Notas del panel').compareDocumentPosition(branding) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('aplica el estilo de la nota (y el de siempre si no tiene)', () => {
