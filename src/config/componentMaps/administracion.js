@@ -252,6 +252,30 @@ export const administracionComponentMaps = {
       },
     },
   },
+  // Cada pestaña es un permiso. General consulta solo los tipos cuya pestaña
+  // tenga asignada el usuario: asignar General sin ningún tipo no la muestra.
+  '/administracion/historialImputaciones': {
+    label: 'Historial de imputaciones (HistorialImputaciones.jsx) — lo imputado de Implantes, Consignación y Hemodinamia',
+    sections: {},
+    procesos: {
+      '/administracion/historialImputaciones/general': {
+        label: 'Pestaña: General — los tipos asignados al usuario (requiere al menos una pestaña de tipo)',
+        sections: {},
+      },
+      '/administracion/historialImputaciones/implantes': {
+        label: 'Pestaña: Implantes — implantes_imputadas',
+        sections: {},
+      },
+      '/administracion/historialImputaciones/consignacion': {
+        label: 'Pestaña: Consignación — consignacion_imputadas',
+        sections: {},
+      },
+      '/administracion/historialImputaciones/hemodinamia': {
+        label: 'Pestaña: Hemodinamia — hemodinamia_imputadas',
+        sections: {},
+      },
+    },
+  },
   // Permiso "Gestionar tickets" (Ayuda y soporte): el ítem habilita la
   // bandeja completa y, en firestore.rules (gestionaTickets), leer y
   // actualizar todos los tickets. Siempre activo para el Desarrollador;

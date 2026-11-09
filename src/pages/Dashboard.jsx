@@ -61,6 +61,7 @@ import CrearUsuario from '../components/modulos/administracion/usuarios/CrearUsu
 import ListadoUsuario from '../components/modulos/administracion/usuarios/ListadoUsuario';
 import PermisosPorCentro from '../components/modulos/administracion/permisosCentro/PermisosPorCentro';
 import CargasConsolidado from '../components/modulos/administracion/cargasConsolidado/CargasConsolidado';
+import HistorialImputaciones from '../components/modulos/administracion/historialImputaciones/HistorialImputaciones';
 import Estadisticas from '../components/modulos/administracion/estadisticas/Estadisticas';
 import GestionModulos from '../components/modulos/administracion/gestionModulos/GestionModulos';
 
@@ -506,6 +507,7 @@ const Dashboard = () => {
       />
     ),
     '/administracion/cargasConsolidado': <CargasConsolidado />,
+    '/administracion/historialImputaciones': <HistorialImputaciones />,
     '/administracion/estadisticas': <Estadisticas />,
     // `key`: cada total con su propio estado (mes elegido) al pasar de uno a otro.
     ...Object.fromEntries(Object.entries(TOTALES_FINANZAS).map(([tipo, t]) => [t.ruta, <TotalFinanzas key={tipo} tipo={tipo} />])),

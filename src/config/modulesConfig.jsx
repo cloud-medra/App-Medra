@@ -164,6 +164,7 @@ export const MODULES = {
       { label: 'Permisos por centro', path: '/administracion/permisosCentro', icon: <KeyRound size={14} />, color: PALETA_MENU.pasto, grupo: 'usuarios' },
       // En el grupo Finanzas; la ruta y el permiso siguen siendo de administracion.
       { label: 'Cargas consolidadas', path: '/administracion/cargasConsolidado', icon: <GitMerge size={14} />, color: PALETA_MENU.indigo, grupo: 'finanzas' },
+      { label: 'Historial de imputaciones', path: '/administracion/historialImputaciones', icon: <History size={14} />, color: PALETA_MENU.turquesa, grupo: 'finanzas' },
       { label: 'Estadísticas del período', path: '/administracion/estadisticas', icon: <BarChart3 size={14} />, color: PALETA_MENU.rojo, grupo: 'finanzas' },
       // Totales de Finanzas (administracion/totalesFinanzas): ítems normales,
       // así que solo los ve el Desarrollador hasta que se asignen.

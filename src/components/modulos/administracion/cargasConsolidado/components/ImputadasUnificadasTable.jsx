@@ -27,7 +27,9 @@ const formatearFechaTabla = (fechaString) => {
   return `${dd}-${mm}-${yyyy}`;
 };
 
-const ImputadasUnificadasTable = ({ filas }) => {
+// `encabezado` (opcional) reemplaza el contenido de la franja superior; sin él
+// se muestra el resumen de las filas recibidas (pestaña Imputadas).
+const ImputadasUnificadasTable = ({ filas, encabezado }) => {
   const { anchos, handleResize } = useColumnResize(COLUMNAS);
 
   const totalVenta = filas.reduce((acc, f) => acc + (Number(f.venta) || 0), 0);
@@ -35,8 +37,10 @@ const ImputadasUnificadasTable = ({ filas }) => {
   return (
     <div className="flex-grow flex flex-col overflow-hidden">
       <div className="px-3 py-1.5 flex items-center justify-between border-b border-slate-200 dark:border-gray-700 bg-slate-50/60 dark:bg-gray-900/30 text-[10px]">
+        {encabezado ?? (<>
         <span className="text-slate-500 dark:text-gray-400">{filas.length} registro{filas.length === 1 ? '' : 's'}</span>
         <span className="font-bold text-emerald-700 dark:text-emerald-400">Total venta: ${totalVenta.toLocaleString('es-CL')}</span>
+        </>)}
       </div>
       <div className="flex-grow overflow-auto">
         <table className="text-left text-[10.5px] border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>

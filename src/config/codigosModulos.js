@@ -55,6 +55,7 @@ export const CODIGOS_ITEMS = Object.freeze({
   '/administracion/controlMensual': 'FINCIE',
   '/administracion/ResumenPeriodoAbierto': 'FINACT',
   '/administracion/cargasConsolidado': 'FINCAR',
+  '/administracion/historialImputaciones': 'FINHIS',
   '/administracion/estadisticas': 'FINEST',
   '/administracion/consumos': 'FINCSM',
   '/administracion/facturas': 'FINFAC',

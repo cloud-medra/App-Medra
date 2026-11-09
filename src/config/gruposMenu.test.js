@@ -39,13 +39,13 @@ describe('gruposMenu: Administración repartida en el sidebar', () => {
     const repartidos = ['finanzas', 'usuarios', 'administracion'].flatMap((e) => rutas(itemsDeEntrada(e, admin)));
     expect([...repartidos].sort()).toEqual(rutas(admin).sort());
     expect(rutas(itemsDeEntrada('finanzas', admin))).toEqual([
-      '/administracion/controlMensual', '/administracion/ResumenPeriodoAbierto', '/administracion/cargasConsolidado', '/administracion/estadisticas',
+      '/administracion/controlMensual', '/administracion/ResumenPeriodoAbierto', '/administracion/cargasConsolidado', '/administracion/historialImputaciones', '/administracion/estadisticas',
       '/administracion/consumos', '/administracion/facturas', '/administracion/valorizacionBodega', '/administracion/comparativoMes',
     ]);
     // Respeta el orden recibido (ordenSubItems del usuario).
     const invertidos = [...admin].reverse();
     expect(rutas(itemsDeEntrada('finanzas', invertidos))).toEqual([
-      '/administracion/comparativoMes', '/administracion/valorizacionBodega', '/administracion/facturas', '/administracion/consumos', '/administracion/estadisticas', '/administracion/cargasConsolidado', '/administracion/ResumenPeriodoAbierto', '/administracion/controlMensual',
+      '/administracion/comparativoMes', '/administracion/valorizacionBodega', '/administracion/facturas', '/administracion/consumos', '/administracion/estadisticas', '/administracion/historialImputaciones', '/administracion/cargasConsolidado', '/administracion/ResumenPeriodoAbierto', '/administracion/controlMensual',
     ]);
   });
 

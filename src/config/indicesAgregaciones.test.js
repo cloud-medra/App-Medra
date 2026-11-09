@@ -32,6 +32,12 @@ const CONSULTAS = {
     { coleccion: 'documentos', filtros: ['fecha'], sumas: ['total'] },
     { coleccion: 'documentos', filtros: ['fchEmis'], sumas: ['total'] },
   ],
+  // Historial de Imputaciones: mes completo y sum('venta') filtrando esa misma
+  // columna, que usa su índice automático (filtros: [] porque este test exige
+  // un compuesto; comprobado contra producción el 09-11-2026).
+  'components/modulos/administracion/historialImputaciones/historialImputacionesStore.js': [
+    { coleccion: 'documentos', filtros: [], sumas: ['total', 'venta'] },
+  ],
   // Herramienta de medición (solo desarrollo): toda la subcolección, sin filtros.
   'dev/firestoreMeter.js': [
     { coleccion: 'documentos', filtros: [], sumas: ['total'] },
@@ -136,6 +142,14 @@ const CONTEOS = {
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['estado', 'fecha'] },
     // getDocs de las cirugías del día (fecha == día).
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['fecha'] },
+  ],
+  // Historial de Imputaciones: mes completo, venta numérica y búsquedas por prefijo.
+  'components/modulos/administracion/historialImputaciones/historialImputacionesStore.js': [
+    { coleccion: 'documentos', alcance: 'COLLECTION', filtros: [] },
+    { coleccion: 'documentos', alcance: 'COLLECTION', filtros: ['venta'] },
+    { coleccion: 'documentos', alcance: 'COLLECTION', filtros: ['gestionId'] },
+    { coleccion: 'documentos', alcance: 'COLLECTION', filtros: ['paciente'] },
+    { coleccion: 'documentos', alcance: 'COLLECTION', filtros: ['nombre'] },
   ],
   // Herramienta de medición (solo desarrollo): colecciones completas.
   'dev/firestoreMeter.js': [
