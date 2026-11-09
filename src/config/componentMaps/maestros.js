@@ -414,6 +414,22 @@ export const maestrosComponentMaps = {
     },
   },
 
+  '/maestros/codigosBarra': {
+    label: 'Códigos de barras de Bodega (CodigosBarra.jsx)',
+    sections: {
+      codigos: {
+        label: 'Sección: Códigos vinculados',
+        elements: {
+          btn_agregar: { label: 'Acción: Agregar un código a una referencia' },
+          btn_editar: { label: 'Acción: Editar el valor de un código' },
+          btn_mover: { label: 'Acción: Mover un código a otra referencia' },
+          btn_eliminar: { label: 'Acción: Eliminar el vínculo de un código' },
+          ...columnas([['referencia', 'Referencia'], ['nombre', 'Nombre'], ['codigo', 'Código de barras'], ['usuario', 'Usuario'], ['fecha', 'Fecha de vinculación']]),
+        },
+      },
+    },
+  },
+
   '/maestros/padMaestros': {
     label: 'Gestión de PADs (PadMaestros.jsx)',
     sections: {

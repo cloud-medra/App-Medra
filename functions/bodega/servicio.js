@@ -35,7 +35,7 @@ const {
   validarCaja, validarOrdenCaja, idsOrdenadosCaja, validarDuplicadoCaja, productosDuplicados, totalesCaja, resultadoInventarioCaja, repartirFEFO, planReposicionCaja,
   saldoDe, fotoSaldo, datosPropietario, movimientoDeAccion, DESDE, ACCIONES_SOBRE_TRANSITO, lotesPropios,
   validarConsignacion,
-  costoDe, valorizarMovimiento, camposCosto, costoEnCentro, periodoVigente, MODULO_PERIODO, ESTADOS_PERIODO_ABIERTO,
+  costoDe, valorizarMovimiento, camposCosto, costoEnCentro, periodoVigente, MODULO_PERIODO, ESTADOS_PERIODO_ABIERTO, referenciaDeProducto,
 } = require('./nucleo.mjs');
 const { interpretarLectura, idVinculo, MAX_CODIGO_LEIDO } = require('./gs1.mjs');
 
@@ -156,9 +156,50 @@ const datosVinculo = ({ clave, codigoLeido }, productoId, por, reasignadoDe = nu
 
 const errorVinculadoAOtro = (codigo, otro) => new HttpsError(
   'failed-precondition',
-  `El código ${codigo} ya está vinculado a ${otro?.codigoMaestro || ''} ${otro?.nombre || 'otro producto'}.`.replace(/\s+/g, ' '),
-  { motivo: 'vinculado-a-otro', productoId: otro?.id || null, codigoMaestro: otro?.codigoMaestro || '', nombre: otro?.nombre || '' }
+  `El código ${codigo} ya está vinculado a ${referenciaDeProducto(otro) ? `la referencia ${referenciaDeProducto(otro)} · ` : ''}${otro?.codigoMaestro || ''} ${otro?.nombre || 'otro producto'}.`.replace(/\s+/g, ' '),
+  { motivo: 'vinculado-a-otro', productoId: otro?.id || null, codigoMaestro: otro?.codigoMaestro || '', nombre: otro?.nombre || '', referencia: referenciaDeProducto(otro) }
 );
+
+// --- Reasignar y corregir códigos -------------------------------------------
+//
+// Lo comparten "Reasignar" (aquí) y Maestros → Códigos de barras
+// (codigosBarra.js): misma validación y misma auditoría.
+
+const resumenProductoCodigo = (id, p) => ({ id, referencia: referenciaDeProducto(p), codigoMaestro: p?.codigoMaestro || '', nombre: p?.nombre || '' });
+const valorCodigo = (v) => ({ clave: v.clave, codigoLeido: v.codigoLeido || '' });
+
+// El código ya no está donde el usuario lo vio. `otro`: el producto en que
+// está ahora (null si fue eliminado o su producto no existe).
+const errorCodigoCambio = (codigo, otro) => {
+  const donde = otro ? `ahora está en ${referenciaDeProducto(otro) ? `la referencia ${referenciaDeProducto(otro)} · ` : ''}${otro.nombre || 'otro producto'}` : 'ya no está vinculado a ninguna referencia';
+  return new HttpsError('failed-precondition', `El código ${codigo} ${donde}. Actualiza la página e inténtalo de nuevo.`, {
+    motivo: 'cambio-concurrente', productoId: otro?.id || null, referencia: referenciaDeProducto(otro), nombre: otro?.nombre || '',
+  });
+};
+
+// Una solicitud sin el producto visto (p. ej. una página antigua aún abierta)
+// no puede quitarle el código a nadie.
+const errorSinProductoVisto = () => new HttpsError('failed-precondition', 'No se pudo comprobar a qué producto pertenecía el código. Actualiza la página e inténtalo de nuevo.', { motivo: 'cambio-concurrente' });
+
+// Comprueba, dentro de la transacción, que el código siga en el producto visto.
+const validarVinculoVisto = async (t, db, codigo, actual, esperadoProductoId) => {
+  if (actual?.productoId === esperadoProductoId) return;
+  const dueno = actual ? await t.get(db.collection(COL.productos).doc(actual.productoId)) : null;
+  throw errorCodigoCambio(codigo, dueno?.exists ? { id: dueno.id, ...dueno.data() } : null);
+};
+
+// Cambia el dueño del vínculo conservando quién lo creó y cuándo.
+const vinculoReasignado = (actual, productoId, por) => ({ ...actual, productoId, reasignadoDe: actual.productoId, modificadoPor: por, modificadoEn: ahora() });
+
+// Misma auditoría en las dos referencias. `origen` y `destino`: { ref, id, datos }.
+const auditarCambioDeDueno = (t, accion, por, vinculo, origen, destino) => {
+  const detalle = {
+    valorAnterior: valorCodigo(vinculo), valorNuevo: valorCodigo(vinculo),
+    productoOrigen: resumenProductoCodigo(origen.id, origen.datos), productoDestino: resumenProductoCodigo(destino.id, destino.datos),
+  };
+  registrarLog(t, origen.ref, accion, por, detalle);
+  registrarLog(t, destino.ref, accion, por, detalle);
+};
 
 // --- Productos --------------------------------------------------------------
 
@@ -185,7 +226,8 @@ const copiaMaestro = (m) => ({
 
 // Crea o edita un producto. `datos`: { id?, producto, codigos? }. Al crear
 // se pueden vincular códigos ([{ clave, codigoLeido }]); un código
-// vinculado a otro producto solo se reasigna con `reasignar: true`.
+// vinculado a otro producto solo se reasigna con `reasignar: true` y
+// `esperados` ({ [clave]: producto que el usuario vio }).
 // Devuelve { id, producto } (sin fechas) para reflejarlo en pantalla.
 const guardarProductoComo = (db, por, datos = {}) => {
   const id = datos.id ? String(datos.id) : null;
@@ -195,6 +237,8 @@ const guardarProductoComo = (db, por, datos = {}) => {
   if (id && codigos.length) throw new HttpsError('invalid-argument', 'Los códigos de un producto existente se vinculan desde su ficha.');
   if (codigos.length > MAX_CODIGOS_POR_PRODUCTO) throw new HttpsError('invalid-argument', `Máximo ${MAX_CODIGOS_POR_PRODUCTO} códigos por producto.`);
   const claves = [...new Set(codigos.map((c) => c.clave))];
+  const esperados = datos.esperados && typeof datos.esperados === 'object' ? datos.esperados : {};
+  if (datos.reasignar && claves.some((c) => !esperados[c])) throw errorSinProductoVisto();
 
   return db.runTransaction(async (t) => {
     const ref = id ? db.collection(COL.productos).doc(id) : db.collection(COL.productos).doc();
@@ -229,6 +273,11 @@ const guardarProductoComo = (db, por, datos = {}) => {
     }
     if (antes && antes.activo !== false && !producto.activo && ((antes.disponible || 0) > 0 || (antes.transito || 0) > 0 || (antes.enCentro || 0) > 0)) {
       throw new HttpsError('failed-precondition', 'No se puede inactivar un producto con stock disponible, en tránsito o dejado en centros.');
+    }
+    if (datos.reasignar) {
+      for (let i = 0; i < claves.length; i += 1) {
+        await validarVinculoVisto(t, db, claves[i], snapsVinculos[i].exists ? snapsVinculos[i].data() : null, esperados[claves[i]]);
+      }
     }
     const vinculosOtros = snapsVinculos.filter((s) => s.exists && s.data().productoId !== ref.id);
     if (vinculosOtros.length && !datos.reasignar) {
@@ -284,14 +333,13 @@ const guardarProductoComo = (db, por, datos = {}) => {
 
     codigos.forEach((c) => {
       const previo = snapsVinculos[claves.indexOf(c.clave)];
-      const reasignadoDe = previo?.exists && previo.data().productoId !== ref.id ? previo.data().productoId : null;
-      t.set(refVinculo(db, c.clave), datosVinculo(c, ref.id, por, reasignadoDe));
+      const deOtro = previo?.exists && previo.data().productoId !== ref.id;
+      t.set(refVinculo(db, c.clave), deOtro ? vinculoReasignado(previo.data(), ref.id, por) : datosVinculo(c, ref.id, por));
     });
     otros.forEach((snapOtro, i) => {
-      if (!snapOtro.exists) return;
-      const clave = vinculosOtros[i].data().clave;
-      t.update(snapOtro.ref, { codigosBarra: FieldValue.arrayRemove(clave), actualizadoPor: por, actualizadoEn: ahora() });
-      registrarLog(t, snapOtro.ref, 'CODIGO_REASIGNADO', por, { clave, a: ref.id });
+      const vinculo = vinculosOtros[i].data();
+      if (snapOtro.exists) t.update(snapOtro.ref, { codigosBarra: FieldValue.arrayRemove(vinculo.clave), actualizadoPor: por, actualizadoEn: ahora() });
+      auditarCambioDeDueno(t, 'CODIGO_REASIGNADO', por, vinculo, { ref: snapOtro.ref, id: snapOtro.id, datos: snapOtro.data() }, { ref, id: ref.id, datos: plano });
     });
 
     const cambios = antes
@@ -319,34 +367,39 @@ const guardarProducto = async (db, uid, datos = {}) => {
 };
 
 // Vincula un código leído a un producto. Si ya está vinculado a otro, lo
-// reasigna solo con `reasignar: true` (requiere además poder desvincular).
+// reasigna solo con `reasignar: true` (requiere además poder desvincular) y
+// el producto que el usuario vio en el aviso (`esperadoProductoId`): si el
+// código ya no está ahí, se rechaza sin escribir nada.
 // `lectura`: { clave, codigoLeido } (lecturaParaVincular).
-const vincularCodigoComo = (db, por, { productoId, lectura, reasignar = false }) => {
+const vincularCodigoComo = (db, por, { productoId, lectura, reasignar = false, esperadoProductoId = null }) => {
   if (!productoId) throw new HttpsError('invalid-argument', 'Falta el producto.');
+  if (reasignar && !esperadoProductoId) throw errorSinProductoVisto();
   return db.runTransaction(async (t) => {
     const ref = db.collection(COL.productos).doc(productoId);
     const [snap, snapVinculo] = await Promise.all([t.get(ref), t.get(refVinculo(db, lectura.clave))]);
     if (!snap.exists) throw new HttpsError('not-found', 'El producto ya no existe.');
     if (snap.data().activo === false) throw new HttpsError('failed-precondition', 'El producto está inactivo.');
     const actual = snapVinculo.exists ? snapVinculo.data() : null;
+    if (reasignar) await validarVinculoVisto(t, db, lectura.codigoLeido, actual, esperadoProductoId);
     if (actual?.productoId === productoId) return { clave: lectura.clave, productoId, yaVinculado: true };
 
-    let refOtro = null;
-    if (actual) {
-      refOtro = db.collection(COL.productos).doc(actual.productoId);
-      const otro = await t.get(refOtro);
-      if (!reasignar) throw errorVinculadoAOtro(lectura.codigoLeido, otro.exists ? { id: otro.id, ...otro.data() } : null);
-      if (!otro.exists) refOtro = null;
+    if (!actual) {
+      t.set(refVinculo(db, lectura.clave), datosVinculo(lectura, productoId, por));
+      t.update(ref, { codigosBarra: FieldValue.arrayUnion(lectura.clave), actualizadoPor: por, actualizadoEn: ahora() });
+      registrarLog(t, ref, 'CODIGO_VINCULADO', por, { clave: lectura.clave, codigoLeido: lectura.codigoLeido, reasignadoDe: null });
+      return { clave: lectura.clave, productoId, reasignadoDe: null };
     }
 
-    t.set(refVinculo(db, lectura.clave), datosVinculo(lectura, productoId, por, actual?.productoId || null));
+    const refOtro = db.collection(COL.productos).doc(actual.productoId);
+    const otro = await t.get(refOtro);
+    // Con el id aunque el producto ya no exista: así el aviso puede reasignarlo.
+    if (!reasignar) throw errorVinculadoAOtro(lectura.codigoLeido, otro.exists ? { id: otro.id, ...otro.data() } : { id: actual.productoId });
+
+    t.set(refVinculo(db, lectura.clave), vinculoReasignado(actual, productoId, por));
     t.update(ref, { codigosBarra: FieldValue.arrayUnion(lectura.clave), actualizadoPor: por, actualizadoEn: ahora() });
-    registrarLog(t, ref, 'CODIGO_VINCULADO', por, { clave: lectura.clave, codigoLeido: lectura.codigoLeido, reasignadoDe: actual?.productoId || null });
-    if (refOtro) {
-      t.update(refOtro, { codigosBarra: FieldValue.arrayRemove(lectura.clave), actualizadoPor: por, actualizadoEn: ahora() });
-      registrarLog(t, refOtro, 'CODIGO_REASIGNADO', por, { clave: lectura.clave, a: productoId });
-    }
-    return { clave: lectura.clave, productoId, reasignadoDe: actual?.productoId || null };
+    if (otro.exists) t.update(refOtro, { codigosBarra: FieldValue.arrayRemove(lectura.clave), actualizadoPor: por, actualizadoEn: ahora() });
+    auditarCambioDeDueno(t, 'CODIGO_REASIGNADO', por, actual, { ref: refOtro, id: actual.productoId, datos: otro.data() }, { ref, id: productoId, datos: snap.data() });
+    return { clave: lectura.clave, productoId, reasignadoDe: actual.productoId };
   });
 };
 
@@ -358,6 +411,7 @@ const vincularCodigo = async (db, uid, datos = {}) => {
     productoId: String(datos.productoId || ''),
     lectura: lecturaParaVincular(datos.codigoLeido),
     reasignar: Boolean(datos.reasignar),
+    esperadoProductoId: datos.esperadoProductoId ? String(datos.esperadoProductoId) : null,
   });
 };
 
@@ -1630,5 +1684,5 @@ module.exports = {
   lecturaParaVincular,
   // Piezas de las transacciones de stock que reutiliza Armado de Kits
   // (functions/armadoKits): mismos permisos, período, costos y bloqueo por inventario.
-  internos: { perfilActivo, exigir, datosPor, exigirSinErrores, registrarLog, leerPeriodo, costosDe, valorizar, conErrorStock, exigirSinInventario, refEstado, ahora },
+  internos: { perfilActivo, exigir, datosPor, exigirSinErrores, registrarLog, leerPeriodo, costosDe, valorizar, conErrorStock, exigirSinInventario, refEstado, ahora, datosVinculo, errorVinculadoAOtro, refVinculo, resumenProductoCodigo, valorCodigo, vinculoReasignado, auditarCambioDeDueno },
 };

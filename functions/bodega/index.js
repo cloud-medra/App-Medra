@@ -21,6 +21,7 @@ const { initializeApp, getApps } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const servicio = require('./servicio');
 const periodos = require('./periodos');
+const codigosBarra = require('./codigosBarra');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
@@ -37,6 +38,12 @@ exports.bodegaGuardarCatalogo = callable('guardarCatalogo');
 exports.bodegaGuardarProducto = callable('guardarProducto');
 exports.bodegaVincularCodigo = callable('vincularCodigo');
 exports.bodegaDesvincularCodigo = callable('desvincularCodigo');
+// Maestros → Códigos de barras: agregar, editar, mover y eliminar vínculos.
+exports.bodegaGestionarCodigoBarra = onCall({ region: REGION }, async (request) => {
+  const resultado = await codigosBarra.gestionarCodigoBarra(db, request.auth?.uid, request.data);
+  logger.info('bodega.gestionarCodigoBarra', { por: request.auth?.uid, accion: request.data?.accion, clave: resultado?.clave || null });
+  return resultado;
+});
 exports.bodegaGuardarBorrador = callable('guardarBorrador');
 exports.bodegaEliminarBorrador = callable('eliminarBorrador');
 exports.bodegaConfirmarDocumento = callable('confirmarDocumento');

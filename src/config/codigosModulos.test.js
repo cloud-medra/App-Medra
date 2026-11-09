@@ -122,6 +122,7 @@ const PUBLICADOS = `
   /maestros/recargosMaestros MAEREC
   /maestros/calculadorMaestros MAECAL
   /maestros/codigosMaestros MAECOD
+  /maestros/codigosBarra MAECBR
   /maestros/padMaestros MAEPAD
   /maestros/actualizacionPreciosMaestros MAEACT
   /consignacion/ingresarGuiaDespacho CONING

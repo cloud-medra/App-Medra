@@ -232,6 +232,8 @@ export const MODULES = {
       { label: 'Recargos', path: '/maestros/recargosMaestros', icon: <Percent size={14} />, color: PALETA_MENU.pasto },
       { label: 'Calculador', path: '/maestros/calculadorMaestros', icon: <Calculator size={14} />, color: PALETA_MENU.indigo },
       { label: 'Codigos', path: '/maestros/codigosMaestros', icon: <ScanBarcode size={14} />, color: PALETA_MENU.rojo },
+      // Vínculos de códigos de barra de Bodega (functions/bodega/codigosBarra.js).
+      { label: 'Códigos de barras', path: '/maestros/codigosBarra', icon: <ScanBarcode size={14} />, color: PALETA_MENU.azul },
       { label: 'Pad', path: '/maestros/padMaestros', icon: <SlidersHorizontal size={14} />, color: PALETA_MENU.cafe },
       { label: 'Actualización Precios', path: '/maestros/actualizacionPreciosMaestros', icon: <BadgeDollarSign size={14} />, color: PALETA_MENU.pizarra },
     ]

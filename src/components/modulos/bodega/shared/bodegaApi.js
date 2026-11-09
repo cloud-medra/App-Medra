@@ -87,8 +87,9 @@ export const guardarProducto = async (datos) => {
   return r;
 };
 
-export const vincularCodigo = async ({ productoId, codigoLeido, reasignar = false }) => {
-  const r = await llamar('bodegaVincularCodigo')({ productoId, codigoLeido, reasignar });
+// `esperadoProductoId`: el producto que el usuario vio en el aviso (obligatorio al reasignar).
+export const vincularCodigo = async ({ productoId, codigoLeido, reasignar = false, esperadoProductoId = null }) => {
+  const r = await llamar('bodegaVincularCodigo')({ productoId, codigoLeido, reasignar, esperadoProductoId });
   if (r.reasignadoDe) actualizarCodigosLocal(r.reasignadoDe, (c) => c.filter((x) => x !== r.clave));
   actualizarCodigosLocal(productoId, (c) => (c.includes(r.clave) ? c : [...c, r.clave]));
   return r;

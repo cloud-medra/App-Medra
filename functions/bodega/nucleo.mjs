@@ -70,6 +70,17 @@ export const ACCIONES = Object.freeze({
   guardarConsignacion: [MODULO, RUTAS.consignaciones, 'consignacion', 'btn_guardar'],
 });
 
+// Maestros → Códigos de barras: corrige los vínculos del registro de Bodega
+// (bodega_codigos_barra), con permisos propios del ítem.
+export const RUTA_CODIGOS_BARRA = '/maestros/codigosBarra';
+const accionCodigoBarra = (boton) => ['maestros', RUTA_CODIGOS_BARRA, 'codigos', boton];
+export const ACCIONES_CODIGO_BARRA = Object.freeze({
+  AGREGAR: accionCodigoBarra('btn_agregar'),
+  EDITAR: accionCodigoBarra('btn_editar'),
+  MOVER: accionCodigoBarra('btn_mover'),
+  ELIMINAR: accionCodigoBarra('btn_eliminar'),
+});
+
 // Acciones sobre un tránsito: desde la vista Tránsito o desde Tránsito por
 // centro (cada una con su propio permiso).
 export const ACCIONES_TRANSITO = Object.freeze({
@@ -219,6 +230,9 @@ export const CAMPOS_BLOQUEADOS_CON_MOVIMIENTOS = Object.freeze(['manejaLote', 'm
 export const textoBusquedaProducto = (p) => normalizarClave([
   p?.nombre, p?.codigoMaestro, p?.referencia, p?.ubicacion, p?.maestroCodigo?.codigo, ...(p?.codigosBarra || []),
 ].filter(Boolean).join(' '));
+
+// Referencia propia del producto o, si no tiene, la del maestro clínico.
+export const referenciaDeProducto = (p) => p?.referencia || p?.maestroCodigo?.referencia || '';
 
 export const stockTotal = (p) => (Number(p?.disponible) || 0) + (Number(p?.transito) || 0) + (Number(p?.enCentro) || 0);
 export const bajoMinimo = (p) => p?.stockMinimo !== null && p?.stockMinimo !== undefined

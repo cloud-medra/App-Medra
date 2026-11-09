@@ -9,6 +9,7 @@ import { guardarProducto, vincularCodigo, mensajeError, detalleError } from './b
 import FormProducto from './FormProducto';
 import { PRODUCTO_VACIO } from './productoFormulario';
 import { datosLoteEnTexto, esTeclaFinEscaneo } from './escaneo/identificarLectura';
+import CorregirCodigoModal, { usePuedeCorregirCodigo } from '../../maestros/codigosBarra/CorregirCodigoModal';
 
 const MAX_RESULTADOS = 30;
 
@@ -31,6 +32,8 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
   const puedeVincular = hasPermission(RUTAS.maestro, 'codigos', 'btn_vincular');
   const puedeCrear = hasPermission(RUTAS.maestro, 'productos', 'btn_crear') && puedeVincular;
   const puedeReasignar = hasPermission(RUTAS.maestro, 'codigos', 'btn_desvincular');
+  const puedeCorregir = usePuedeCorregirCodigo();
+  const [conflicto, setConflicto] = useState(null);
   const { datos: productos } = useCatalogo('bodegaProductos');
   const [modo, setModo] = useState('buscar');
   const [texto, setTexto] = useState('');
@@ -59,16 +62,18 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
 
   // Vincula; si el código pasó a estar vinculado a otro producto, ofrece
   // reasignarlo (requiere el permiso de quitar códigos).
-  const vincular = async (producto, reasignar = false) => {
+  const vincular = async (producto, reasignar = false, esperadoProductoId = null) => {
     setGuardando(true);
     try {
-      await vincularCodigo({ productoId: producto.id, codigoLeido: lectura.codigo, reasignar });
+      await vincularCodigo({ productoId: producto.id, codigoLeido: lectura.codigo, reasignar, esperadoProductoId });
       showToast(`Código vinculado a ${producto.nombre}.`, 'success');
       onVinculado({ ...producto, codigosBarra: [...new Set([...(producto.codigosBarra || []), lectura.clave])] });
     } catch (error) {
       const detalle = detalleError(error);
-      if (detalle?.motivo === 'vinculado-a-otro' && puedeReasignar && !reasignar) {
-        confirmAction('Código vinculado a otro producto', `${mensajeError(error)} ¿Reasignarlo a ${producto.nombre}?`, () => vincular(producto, true), { type: 'warning', confirmText: 'Reasignar' });
+      if (detalle?.motivo === 'vinculado-a-otro' && puedeCorregir && !reasignar) {
+        setConflicto({ producto, mensaje: mensajeError(error), esperadoProductoId: detalle.productoId });
+      } else if (detalle?.motivo === 'vinculado-a-otro' && puedeReasignar && !reasignar) {
+        confirmAction('Código vinculado a otro producto', `${mensajeError(error)} ¿Reasignarlo a ${producto.nombre}?`, () => vincular(producto, true, detalle.productoId), { type: 'warning', confirmText: 'Reasignar' });
       } else {
         showToast(mensajeError(error), 'error');
       }
@@ -84,10 +89,17 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
       showToast(`Producto ${r.producto.codigoMaestro} creado y código vinculado.`, 'success');
       onVinculado({ id: r.id, ...r.producto }, extra);
     } catch (error) {
-      showToast(mensajeError(error), 'error');
+      if (detalleError(error)?.motivo === 'vinculado-a-otro' && puedeCorregir) setConflicto({ producto: null, mensaje: mensajeError(error) });
+      else showToast(mensajeError(error), 'error');
     } finally {
       setGuardando(false);
     }
+  };
+
+  const reasignarConflicto = () => {
+    const { producto, mensaje, esperadoProductoId } = conflicto;
+    setConflicto(null);
+    confirmAction('Código vinculado a otro producto', `${mensaje} ¿Reasignarlo a ${producto.nombre}?`, () => vincular(producto, true, esperadoProductoId), { type: 'warning', confirmText: 'Reasignar' });
   };
 
   const gs1 = lectura?.gs1;
@@ -114,6 +126,14 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
           </button>
         </div>
 
+        {conflicto && (
+          <CorregirCodigoModal
+            clave={lectura.clave} aviso={conflicto.mensaje}
+            onReasignar={puedeReasignar && conflicto.producto ? reasignarConflicto : null}
+            onCerrar={() => setConflicto(null)}
+            onCorregido={() => { setConflicto(null); showToast('Código corregido. Ya puedes vincularlo.', 'success'); }}
+          />
+        )}
         {!puedeVincular ? (
           <p className="p-4 text-gray-600 dark:text-gray-300">No tienes permiso para vincular códigos de barra. Pide a un administrador que lo vincule desde el Maestro de Bodega.</p>
         ) : (

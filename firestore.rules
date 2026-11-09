@@ -890,11 +890,16 @@ service cloud.firestore {
     match /kits_armados/{document=**} {
       allow read: if leeArmadoKits();
     }
+    // Maestros → Códigos de barras: exige ese ítem en particular, para no
+    // abrir los datos de Bodega a todo el que tenga el módulo Maestros.
+    function leeCodigosBarras() {
+      return estaActivo() && (esDev() || getUsuario().get('permisos', {}).get('maestros', []).hasAny(['/maestros/codigosBarra']));
+    }
     match /bodega_productos/{document=**} {
-      allow read: if leeBodega() || leeArmadoKits();
+      allow read: if leeBodega() || leeArmadoKits() || leeCodigosBarras();
     }
     match /bodega_codigos_barra/{document=**} {
-      allow read: if leeBodega();
+      allow read: if leeBodega() || leeCodigosBarras();
     }
     match /bodega_catalogos/{document=**} {
       allow read: if leeBodega();

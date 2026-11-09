@@ -110,6 +110,7 @@ export const CODIGOS_ITEMS = Object.freeze({
   '/maestros/recargosMaestros': 'MAEREC',
   '/maestros/calculadorMaestros': 'MAECAL',
   '/maestros/codigosMaestros': 'MAECOD',
+  '/maestros/codigosBarra': 'MAECBR',
   '/maestros/padMaestros': 'MAEPAD',
   '/maestros/actualizacionPreciosMaestros': 'MAEACT',
   // Consignación

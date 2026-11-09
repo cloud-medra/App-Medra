@@ -95,6 +95,7 @@ import RecargosMaestros from '../components/modulos/maestros/recargosMaestros/Re
 import CalculadorMaestros from '../components/modulos/maestros/calculadorMaestros/CalculadorMaestros';
 import CodigosMaestrosV2 from '../components/modulos/maestros/codigosMaestrosV2/CodigosMaestrosV2';
 import PadMaestros from '../components/modulos/maestros/padMaestros/PadMaestros';
+import CodigosBarra from '../components/modulos/maestros/codigosBarra/CodigosBarra';
 import ActualizacionPreciosMaestros from '../components/modulos/maestros/actualizacionPreciosMaestros/ActualizacionPreciosMaestros';
 
 // --- CONSIGNACIÓN ---
@@ -542,6 +543,7 @@ const Dashboard = () => {
     // Misma pantalla en Maestros, Implantes y Hemodinamia; la key separa su estado.
     '/maestros/codigosMaestros': <CodigosMaestrosV2 key="maestros" />,
     '/maestros/padMaestros': <PadMaestros />,
+    '/maestros/codigosBarra': <CodigosBarra />,
     '/maestros/actualizacionPreciosMaestros': <ActualizacionPreciosMaestros />,
 
     // ── Consignación ──

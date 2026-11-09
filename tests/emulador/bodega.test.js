@@ -214,7 +214,7 @@ describe('códigos de barra', () => {
     await expect(bodega.vincularCodigo(db, 'op', { productoId: b.id, codigoLeido: '7801234567893', reasignar: true })).rejects.toEqual(rechazo('permission-denied'));
 
     await db.collection('usuarios').doc('sensible').set({ permisos: { bodega: [MAESTRO] } }, { merge: true });
-    await bodega.vincularCodigo(db, 'sensible', { productoId: b.id, codigoLeido: '7801234567893', reasignar: true });
+    await bodega.vincularCodigo(db, 'sensible', { productoId: b.id, codigoLeido: '7801234567893', reasignar: true, esperadoProductoId: a.id });
     expect(await leer('bodega_codigos_barra', '7801234567893')).toMatchObject({ productoId: b.id, reasignadoDe: a.id });
     expect((await leer('bodega_productos', a.id)).codigosBarra).toEqual([]);
     expect((await leer('bodega_productos', b.id)).codigosBarra).toEqual(['7801234567893']);

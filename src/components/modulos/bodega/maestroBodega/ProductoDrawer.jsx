@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import CorregirCodigoModal, { usePuedeCorregirCodigo } from '../../maestros/codigosBarra/CorregirCodigoModal';
 import { X, Package, Layers, Barcode, FileText, Trash2, RefreshCw, Truck, ListOrdered } from 'lucide-react';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { useToast } from '../../../../context/ToastContext';
@@ -153,6 +154,8 @@ const PestanaCodigos = ({ producto }) => {
   const { hasPermission } = useGranularPermission();
   const puedeVincular = hasPermission(RUTAS.maestro, 'codigos', 'btn_vincular') && producto.activo !== false;
   const puedeQuitar = hasPermission(RUTAS.maestro, 'codigos', 'btn_desvincular');
+  const puedeCorregir = usePuedeCorregirCodigo();
+  const [conflicto, setConflicto] = useState(null);
   const [codigos, setCodigos] = useState(null);
   const [senal, setSenal] = useState({ tipo: null, mensaje: '' });
   const [ocupado, setOcupado] = useState(false);
@@ -163,16 +166,18 @@ const PestanaCodigos = ({ producto }) => {
   }, [producto.id, showToast]);
   useEffect(() => { cargar(); }, [cargar]);
 
-  const vincular = async (codigoLeido, reasignar = false) => {
+  const vincular = async (codigoLeido, reasignar = false, esperadoProductoId = null) => {
     setOcupado(true);
     try {
-      const r = await vincularCodigo({ productoId: producto.id, codigoLeido, reasignar });
+      const r = await vincularCodigo({ productoId: producto.id, codigoLeido, reasignar, esperadoProductoId });
       setSenal(r.yaVinculado ? { tipo: 'aviso', mensaje: 'Ese código ya estaba vinculado a este producto.' } : { tipo: 'ok', mensaje: `Código ${r.clave} vinculado.` });
       cargar();
     } catch (error) {
       const detalle = detalleError(error);
-      if (detalle?.motivo === 'vinculado-a-otro' && puedeQuitar && !reasignar) {
-        confirmAction('Código vinculado a otro producto', `${mensajeError(error)} ¿Reasignarlo a este producto?`, () => vincular(codigoLeido, true), { type: 'warning', confirmText: 'Reasignar' });
+      if (detalle?.motivo === 'vinculado-a-otro' && puedeCorregir && !reasignar) {
+        setConflicto({ codigoLeido, clave: interpretarLectura(codigoLeido)?.clave, mensaje: mensajeError(error), esperadoProductoId: detalle.productoId });
+      } else if (detalle?.motivo === 'vinculado-a-otro' && puedeQuitar && !reasignar) {
+        confirmAction('Código vinculado a otro producto', `${mensajeError(error)} ¿Reasignarlo a este producto?`, () => vincular(codigoLeido, true, detalle.productoId), { type: 'warning', confirmText: 'Reasignar' });
       }
       setSenal({ tipo: 'error', mensaje: mensajeError(error) });
     } finally {
@@ -201,8 +206,22 @@ const PestanaCodigos = ({ producto }) => {
     }
   }, { type: 'danger', confirmText: 'Quitar' });
 
+  const reasignarConflicto = () => {
+    const { codigoLeido, mensaje, esperadoProductoId } = conflicto;
+    setConflicto(null);
+    confirmAction('Código vinculado a otro producto', `${mensaje} ¿Reasignarlo a este producto?`, () => vincular(codigoLeido, true, esperadoProductoId), { type: 'warning', confirmText: 'Reasignar' });
+  };
+
   return (
     <div className="flex flex-col gap-2">
+      {conflicto && (
+        <CorregirCodigoModal
+          clave={conflicto.clave} aviso={conflicto.mensaje}
+          onReasignar={puedeQuitar ? reasignarConflicto : null}
+          onCerrar={() => setConflicto(null)}
+          onCorregido={() => { setConflicto(null); setSenal({ tipo: 'ok', mensaje: 'Código corregido. Ya puedes volver a escanearlo.' }); cargar(); }}
+        />
+      )}
       {puedeVincular && (
         <CampoEscaneoBodega ref={campoRef} autoFocus onLectura={onLectura} deshabilitado={ocupado} senal={senal.tipo} mensaje={senal.mensaje}
           placeholder="Escanea un código para vincularlo a este producto" />
