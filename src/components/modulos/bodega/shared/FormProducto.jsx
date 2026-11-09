@@ -5,13 +5,15 @@ import { validarProducto, normalizarPrecioUnitario, MAX } from '../../../../../f
 import { opcionesCatalogo, buscarEnMaestroClinico, descriptorMaestroClinico } from './catalogosBodega';
 import { PRODUCTO_VACIO, productoAFormulario } from './productoFormulario';
 import { precioMaestroClinico } from './documentos/lineasDocumento';
+import { datosProductoEnlazado, etiquetaProductoEnlazado, maestrosConProducto } from './productoEnlazado';
 
 const INPUT = 'w-full h-8 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-60';
 const LABEL = 'block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5';
 
 // Buscador en el maestro clínico (maestros_codigos) para crear el producto
-// a partir de él: completa nombre y referencia y deja el vínculo.
-const SelectorMaestroClinico = ({ onElegir }) => {
+// a partir de él: completa nombre y referencia y deja el vínculo. Marca los
+// ítems que ya tienen producto en Bodega (`conProducto`, de la copia en memoria).
+const SelectorMaestroClinico = ({ onElegir, conProducto }) => {
   const [texto, setTexto] = useState('');
   const { datos: codigos, cargando } = useCatalogo('codigos');
   const resultados = useMemo(() => buscarEnMaestroClinico(codigos, texto), [codigos, texto]);
@@ -36,6 +38,11 @@ const SelectorMaestroClinico = ({ onElegir }) => {
                 <span className="font-num font-bold text-[#2383C2]">{c.codigo || 'S/C'}</span>
                 <span className="text-gray-500"> · {c.referencia || 'sin ref.'}</span>
                 <div className="text-gray-700 dark:text-gray-200">{descriptorMaestroClinico(c)}</div>
+                {conProducto.has(c.id) && (
+                  <span className="inline-block mt-0.5 px-1 rounded text-pequeno bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                    Ya tiene producto en Bodega: {etiquetaProductoEnlazado(datosProductoEnlazado(conProducto.get(c.id)))}
+                  </span>
+                )}
               </button>
             </li>
           ))}
@@ -55,12 +62,15 @@ const SelectorMaestroClinico = ({ onElegir }) => {
 //   conPrecioNeto (crear desde Carga inicial): pide "Precio neto" en vez de
 //     "Código maestro" (queda automático). El precio no se guarda en el
 //     producto: se entrega aparte para la línea de la carga.
-const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, conPrecioNeto = false, onGuardar, onCancelar, guardando = false, puedeEditar = true, puedeInactivar = false, textoGuardar }) => {
+//   onMaestroConProducto(aviso): se eligió un ítem que ya tiene producto.
+const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, conPrecioNeto = false, onGuardar, onCancelar, guardando = false, puedeEditar = true, puedeInactivar = false, textoGuardar, onMaestroConProducto }) => {
   const [form, setForm] = useState(() => productoAFormulario(inicial));
   const [precioNeto, setPrecioNeto] = useState('');
   const [errores, setErrores] = useState([]);
   const [buscandoMaestro, setBuscandoMaestro] = useState(false);
   const { datos: catalogos } = useCatalogo('bodegaCatalogos');
+  const { datos: productos } = useCatalogo('bodegaProductos');
+  const conProducto = useMemo(() => maestrosConProducto(productos, inicial.id), [productos, inicial.id]);
   const unidades = useMemo(() => opcionesCatalogo(catalogos, 'UNIDAD', inicial.unidadId), [catalogos, inicial.unidadId]);
   const categorias = useMemo(() => opcionesCatalogo(catalogos, 'CATEGORIA', inicial.categoriaId), [catalogos, inicial.categoriaId]);
   const bloqueado = !puedeEditar || guardando;
@@ -72,6 +82,10 @@ const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, conPrecioNeto = false
   };
 
   const elegirMaestro = (c) => {
+    if (conProducto.has(c.id) && onMaestroConProducto) {
+      onMaestroConProducto({ ...datosProductoEnlazado(conProducto.get(c.id)), extra: conPrecioNeto ? { precioNeto } : undefined });
+      return;
+    }
     setForm((f) => ({
       ...f,
       maestroCodigoId: c.id,
@@ -111,7 +125,7 @@ const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, conPrecioNeto = false
             )}
           </div>
         ) : buscandoMaestro ? (
-          <SelectorMaestroClinico onElegir={elegirMaestro} />
+          <SelectorMaestroClinico onElegir={elegirMaestro} conProducto={conProducto} />
         ) : (
           !bloqueado && (
             <button type="button" onClick={() => setBuscandoMaestro(true)} className="h-8 px-2.5 rounded border border-dashed border-[#2383C2]/60 text-[#2383C2] text-[11px] font-semibold hover:bg-blue-50 dark:hover:bg-gray-800">

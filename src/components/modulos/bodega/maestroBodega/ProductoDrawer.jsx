@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CorregirCodigoModal, { usePuedeCorregirCodigo } from '../../maestros/codigosBarra/CorregirCodigoModal';
+import AvisoMaestroConProducto from '../shared/AvisoMaestroConProducto';
+import { avisoDesdeError } from '../shared/productoEnlazado';
 import { X, Package, Layers, Barcode, FileText, Trash2, RefreshCw, Truck, ListOrdered } from 'lucide-react';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { useToast } from '../../../../context/ToastContext';
@@ -254,10 +256,11 @@ const PestanaCodigos = ({ producto }) => {
 };
 
 // --- Pestaña Datos: editar ---
-const PestanaDatos = ({ producto }) => {
+const PestanaDatos = ({ producto, onAbrirProducto }) => {
   const { showToast } = useToast();
   const { hasPermission } = useGranularPermission();
   const [guardando, setGuardando] = useState(false);
+  const [avisoMaestro, setAvisoMaestro] = useState(null);
 
   const guardar = async (form) => {
     setGuardando(true);
@@ -265,28 +268,34 @@ const PestanaDatos = ({ producto }) => {
       await guardarProducto({ id: producto.id, producto: form });
       showToast('Producto actualizado.', 'success');
     } catch (error) {
-      showToast(mensajeError(error), 'error');
+      const aviso = avisoDesdeError(error);
+      if (aviso) setAvisoMaestro(aviso);
+      else showToast(mensajeError(error), 'error');
     } finally {
       setGuardando(false);
     }
   };
 
   return (
-    <FormProducto
-      key={producto.id}
-      inicial={producto}
-      esNuevo={false}
-      onGuardar={guardar}
-      guardando={guardando}
-      puedeEditar={hasPermission(RUTAS.maestro, 'productos', 'btn_editar')}
-      puedeInactivar={hasPermission(RUTAS.maestro, 'productos', 'btn_inactivar')}
-    />
+    <>
+      <FormProducto
+        key={producto.id}
+        inicial={producto}
+        esNuevo={false}
+        onGuardar={guardar}
+        guardando={guardando}
+        puedeEditar={hasPermission(RUTAS.maestro, 'productos', 'btn_editar')}
+        puedeInactivar={hasPermission(RUTAS.maestro, 'productos', 'btn_inactivar')}
+        onMaestroConProducto={setAvisoMaestro}
+      />
+      {avisoMaestro && <AvisoMaestroConProducto aviso={avisoMaestro} onAbrir={onAbrirProducto} onCerrar={() => setAvisoMaestro(null)} />}
+    </>
   );
 };
 
 // Ficha del producto (panel lateral): stock por lote y por centro,
 // kardex, códigos de barra vinculados y datos.
-const ProductoDrawer = ({ productoId, pestanaInicial = 'stock', onCerrar }) => {
+const ProductoDrawer = ({ productoId, pestanaInicial = 'stock', onCerrar, onAbrirProducto }) => {
   const { datos: productos } = useCatalogo('bodegaProductos');
   const { datos: catalogos } = useCatalogo('bodegaCatalogos');
   const { datos: centros } = useCatalogo('centros');
@@ -344,7 +353,7 @@ const ProductoDrawer = ({ productoId, pestanaInicial = 'stock', onCerrar }) => {
           {pestana === 'stock' && <PestanaStock producto={producto} nombreCentro={nombreCentro} />}
           {pestana === 'kardex' && <KardexProducto producto={producto} />}
           {pestana === 'codigos' && <PestanaCodigos producto={producto} />}
-          {pestana === 'datos' && <PestanaDatos producto={producto} />}
+          {pestana === 'datos' && <PestanaDatos producto={producto} onAbrirProducto={onAbrirProducto} />}
         </div>
       </div>
     </div>

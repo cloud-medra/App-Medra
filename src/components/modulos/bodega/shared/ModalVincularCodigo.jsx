@@ -5,11 +5,13 @@ import { useToast } from '../../../../context/ToastContext';
 import { useModal } from '../../../../context/ModalContext';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import { RUTAS, textoBusquedaProducto, normalizarClave } from '../../../../../functions/bodega/nucleo.mjs';
-import { guardarProducto, vincularCodigo, mensajeError, detalleError } from './bodegaApi';
+import { guardarProducto, vincularCodigo, mensajeError, detalleError, obtenerProducto } from './bodegaApi';
 import FormProducto from './FormProducto';
 import { PRODUCTO_VACIO } from './productoFormulario';
 import { datosLoteEnTexto, esTeclaFinEscaneo } from './escaneo/identificarLectura';
 import CorregirCodigoModal, { usePuedeCorregirCodigo } from '../../maestros/codigosBarra/CorregirCodigoModal';
+import AvisoMaestroConProducto from './AvisoMaestroConProducto';
+import { avisoDesdeError } from './productoEnlazado';
 
 const MAX_RESULTADOS = 30;
 
@@ -34,6 +36,9 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
   const puedeReasignar = hasPermission(RUTAS.maestro, 'codigos', 'btn_desvincular');
   const puedeCorregir = usePuedeCorregirCodigo();
   const [conflicto, setConflicto] = useState(null);
+  // Ítem del maestro clínico que ya tiene producto: el aviso va encima del
+  // modal, así no se pierde lo ingresado aquí ni el documento en curso.
+  const [avisoMaestro, setAvisoMaestro] = useState(null);
   const { datos: productos } = useCatalogo('bodegaProductos');
   const [modo, setModo] = useState('buscar');
   const [texto, setTexto] = useState('');
@@ -62,12 +67,12 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
 
   // Vincula; si el código pasó a estar vinculado a otro producto, ofrece
   // reasignarlo (requiere el permiso de quitar códigos).
-  const vincular = async (producto, reasignar = false, esperadoProductoId = null) => {
+  const vincular = async (producto, reasignar = false, esperadoProductoId = null, extra) => {
     setGuardando(true);
     try {
       await vincularCodigo({ productoId: producto.id, codigoLeido: lectura.codigo, reasignar, esperadoProductoId });
       showToast(`Código vinculado a ${producto.nombre}.`, 'success');
-      onVinculado({ ...producto, codigosBarra: [...new Set([...(producto.codigosBarra || []), lectura.clave])] });
+      onVinculado({ ...producto, codigosBarra: [...new Set([...(producto.codigosBarra || []), lectura.clave])] }, extra);
     } catch (error) {
       const detalle = detalleError(error);
       if (detalle?.motivo === 'vinculado-a-otro' && puedeCorregir && !reasignar) {
@@ -89,7 +94,9 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
       showToast(`Producto ${r.producto.codigoMaestro} creado y código vinculado.`, 'success');
       onVinculado({ id: r.id, ...r.producto }, extra);
     } catch (error) {
-      if (detalleError(error)?.motivo === 'vinculado-a-otro' && puedeCorregir) setConflicto({ producto: null, mensaje: mensajeError(error) });
+      const aviso = avisoDesdeError(error, { extra });
+      if (aviso) setAvisoMaestro(aviso);
+      else if (detalleError(error)?.motivo === 'vinculado-a-otro' && puedeCorregir) setConflicto({ producto: null, mensaje: mensajeError(error) });
       else showToast(mensajeError(error), 'error');
     } finally {
       setGuardando(false);
@@ -100,6 +107,20 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
     const { producto, mensaje, esperadoProductoId } = conflicto;
     setConflicto(null);
     confirmAction('Código vinculado a otro producto', `${mensaje} ¿Reasignarlo a ${producto.nombre}?`, () => vincular(producto, true, esperadoProductoId), { type: 'warning', confirmText: 'Reasignar' });
+  };
+
+  // Usa el vínculo normal (misma validación y auditoría). Si el código ya es de
+  // otro producto, sigue el camino de siempre.
+  const agregarAlProductoEnlazado = async () => {
+    const { productoId, extra } = avisoMaestro;
+    setAvisoMaestro(null);
+    try {
+      const producto = await obtenerProducto(productoId);
+      if (!producto) { showToast('Ese producto ya no existe. Actualiza la página.', 'error'); return; }
+      await vincular(producto, false, null, extra);
+    } catch (error) {
+      showToast(mensajeError(error), 'error');
+    }
   };
 
   const gs1 = lectura?.gs1;
@@ -126,6 +147,9 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
           </button>
         </div>
 
+        {avisoMaestro && (
+          <AvisoMaestroConProducto aviso={avisoMaestro} codigo={lectura.codigo} onAgregar={agregarAlProductoEnlazado} onCerrar={() => setAvisoMaestro(null)} />
+        )}
         {conflicto && (
           <CorregirCodigoModal
             clave={lectura.clave} aviso={conflicto.mensaje}
@@ -206,7 +230,7 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
                   </ul>
                 </div>
               ) : (
-                <FormProducto esNuevo conPrecioNeto={conPrecioNeto} inicial={PRODUCTO_VACIO} guardando={guardando} onGuardar={crear} onCancelar={() => setModo('buscar')} textoGuardar="Crear y vincular código" />
+                <FormProducto esNuevo conPrecioNeto={conPrecioNeto} inicial={PRODUCTO_VACIO} guardando={guardando} onGuardar={crear} onCancelar={() => setModo('buscar')} textoGuardar="Crear y vincular código" onMaestroConProducto={setAvisoMaestro} />
               )}
             </div>
           </>

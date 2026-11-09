@@ -160,6 +160,16 @@ const errorVinculadoAOtro = (codigo, otro) => new HttpsError(
   { motivo: 'vinculado-a-otro', productoId: otro?.id || null, codigoMaestro: otro?.codigoMaestro || '', nombre: otro?.nombre || '', referencia: referenciaDeProducto(otro) }
 );
 
+// Un ítem del maestro clínico admite un solo producto de Bodega. El error dice
+// cuál lo tiene, para ofrecer usar ese producto en vez de crear otro.
+const errorMaestroConProducto = (otro) => new HttpsError(
+  'already-exists',
+  otro
+    ? `Ese producto del maestro clínico ya tiene producto en Bodega: ${referenciaDeProducto(otro) || otro.codigoMaestro || ''} · ${otro.nombre || ''}.`
+    : 'Ese producto del maestro clínico ya está vinculado a otro producto de Bodega.',
+  { motivo: 'maestro-con-producto', productoId: otro?.id || null, referencia: referenciaDeProducto(otro), codigoMaestro: otro?.codigoMaestro || '', nombre: otro?.nombre || '', activo: otro ? otro.activo !== false : false },
+);
+
 // --- Reasignar y corregir códigos -------------------------------------------
 //
 // Lo comparten "Reasignar" (aquí) y Maestros → Códigos de barras
@@ -265,7 +275,8 @@ const guardarProductoComo = (db, por, datos = {}) => {
       throw new HttpsError('already-exists', `El código maestro ${codigoMaestroNuevo} ya está en uso.`);
     }
     if (snapUnicoMaestro?.exists && snapUnicoMaestro.data().refId !== ref.id) {
-      throw new HttpsError('already-exists', 'Ese producto del maestro clínico ya está vinculado a otro producto de Bodega.');
+      const snapDueno = await t.get(db.collection(COL.productos).doc(snapUnicoMaestro.data().refId));
+      throw errorMaestroConProducto(snapDueno.exists ? { id: snapDueno.id, ...snapDueno.data() } : null);
     }
     if (antes?.conMovimientos) {
       const bloqueado = CAMPOS_BLOQUEADOS_CON_MOVIMIENTOS.find((c) => Boolean(antes[c]) !== producto[c]);

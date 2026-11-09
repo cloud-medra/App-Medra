@@ -26,6 +26,8 @@ import FormProducto from '../shared/FormProducto';
 import { PRODUCTO_VACIO } from '../shared/productoFormulario';
 import ModalVincularCodigo from '../shared/ModalVincularCodigo';
 import ProductoDrawer from './ProductoDrawer';
+import AvisoMaestroConProducto from '../shared/AvisoMaestroConProducto';
+import { avisoDesdeError } from '../shared/productoEnlazado';
 
 // Literal (no RUTAS.maestro) para que coberturaPermisos.test.js la verifique.
 const PATH_VISTA = '/bodega/maestroBodega';
@@ -49,9 +51,10 @@ const COLUMNAS = [
 const SELECT = 'h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
 
 // Modal simple para crear un producto desde el Maestro.
-const ModalNuevoProducto = ({ onCerrar, onCreado }) => {
+const ModalNuevoProducto = ({ onCerrar, onCreado, onAbrirProducto }) => {
   const { showToast } = useToast();
   const [guardando, setGuardando] = useState(false);
+  const [avisoMaestro, setAvisoMaestro] = useState(null);
   const crear = async (form) => {
     setGuardando(true);
     try {
@@ -59,7 +62,9 @@ const ModalNuevoProducto = ({ onCerrar, onCreado }) => {
       showToast(`Producto ${r.producto.codigoMaestro} creado.`, 'success');
       onCreado(r.id);
     } catch (error) {
-      showToast(mensajeError(error), 'error');
+      const aviso = avisoDesdeError(error);
+      if (aviso) setAvisoMaestro(aviso);
+      else showToast(mensajeError(error), 'error');
     } finally {
       setGuardando(false);
     }
@@ -72,9 +77,10 @@ const ModalNuevoProducto = ({ onCerrar, onCreado }) => {
           <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
         </div>
         <div className="p-4">
-          <FormProducto esNuevo inicial={PRODUCTO_VACIO} guardando={guardando} onGuardar={crear} onCancelar={onCerrar} />
+          <FormProducto esNuevo inicial={PRODUCTO_VACIO} guardando={guardando} onGuardar={crear} onCancelar={onCerrar} onMaestroConProducto={setAvisoMaestro} />
         </div>
       </div>
+      {avisoMaestro && <AvisoMaestroConProducto aviso={avisoMaestro} onAbrir={onAbrirProducto} onCerrar={() => setAvisoMaestro(null)} />}
     </div>
   );
 };
@@ -391,8 +397,8 @@ const MaestroBodega = () => {
         )}
       </div>
 
-      {abierto && <ProductoDrawer key={abierto.id} productoId={abierto.id} pestanaInicial={abierto.pestana} onCerrar={() => setAbierto(null)} />}
-      {creando && <ModalNuevoProducto onCerrar={() => setCreando(false)} onCreado={(id) => { setCreando(false); setAbierto({ id, pestana: 'codigos' }); }} />}
+      {abierto && <ProductoDrawer key={abierto.id} productoId={abierto.id} pestanaInicial={abierto.pestana} onCerrar={() => setAbierto(null)} onAbrirProducto={(id) => setAbierto({ id, pestana: 'stock' })} />}
+      {creando && <ModalNuevoProducto onCerrar={() => setCreando(false)} onCreado={(id) => { setCreando(false); setAbierto({ id, pestana: 'codigos' }); }} onAbrirProducto={(id) => { setCreando(false); setAbierto({ id, pestana: 'stock' }); }} />}
       {lecturaSinVincular && (
         <ModalVincularCodigo
           lectura={lecturaSinVincular}
