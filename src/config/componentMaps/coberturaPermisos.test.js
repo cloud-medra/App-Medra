@@ -47,6 +47,9 @@ const RUTAS_DINAMICAS = {
   // Pantallas compartidas por Implantes y Hemodinamia (shared/modulosGestion.js).
   'modulos/operaciones/shared/respaldoDocumentos/RespaldoDocumentos.jsx': ['/implantes/respaldoDocumentos', '/hemodinamia/respaldoDocumentos'],
   'modulos/operaciones/shared/sincronizacionImputadas/SincronizacionImputadas.jsx': ['/implantes/sincronizacionImputadas', '/hemodinamia/sincronizacionImputadas'],
+  // Armado de Kits: misma pantalla para cada familia de kits (FAMILIAS_KIT; prop familia).
+  'modulos/armadoKits/shared/PantallaKits.jsx': ['/armadoKits/flexibles'],
+  'modulos/armadoKits/shared/DetalleKit.jsx': ['/armadoKits/flexibles'],
   // Bodega: pantalla común de Ingreso y Carga inicial (prop ruta).
   'modulos/bodega/shared/documentos/PantallaDocumento.jsx': ['/bodega/ingresoBodega', '/bodega/cargaInicialBodega'],
   // Carga inicial usa sus propias columnas (columnasCarga.js).

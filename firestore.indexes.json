@@ -1,6 +1,52 @@
 {
   "indexes": [
     {
+      "collectionGroup": "kits_armados",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "familia",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "kits_armados",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "familia",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tipo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "kits_armados",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "familia",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "codigoNormalizado",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "detalles",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

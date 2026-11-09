@@ -77,6 +77,10 @@ Object.assign(exports, require("./notificaciones"));
 // lote, tránsito por centro e inventario. Ver functions/bodega/index.js.
 Object.assign(exports, require("./bodega"));
 
+// Armado de Kits: kits armados con stock de Bodega (por lote, en orden FEFO).
+// Ver functions/armadoKits/index.js.
+Object.assign(exports, require("./armadoKits"));
+
 // Pestaña Documentos de Gestión (Implantes y Hemodinamia): eliminar un PDF
 // de la admisión (papelera de Storage + auditoría). Ver
 // functions/documentosAdmision/index.js.

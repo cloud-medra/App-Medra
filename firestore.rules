@@ -882,8 +882,16 @@ service cloud.firestore {
     function leeBodega() {
       return estaActivo() && (esDev() || tienePermiso('bodega'));
     }
+    // Armado de Kits: lee sus kits y, para armarlos, los productos y lotes de
+    // Bodega. Toda escritura pasa por las Functions kitsGuardar y kitsEliminar.
+    function leeArmadoKits() {
+      return estaActivo() && (esDev() || tienePermiso('armadoKits'));
+    }
+    match /kits_armados/{document=**} {
+      allow read: if leeArmadoKits();
+    }
     match /bodega_productos/{document=**} {
-      allow read: if leeBodega();
+      allow read: if leeBodega() || leeArmadoKits();
     }
     match /bodega_codigos_barra/{document=**} {
       allow read: if leeBodega();
@@ -892,7 +900,7 @@ service cloud.firestore {
       allow read: if leeBodega();
     }
     match /bodega_lotes/{document=**} {
-      allow read: if leeBodega();
+      allow read: if leeBodega() || leeArmadoKits();
     }
     // Control Mensual, Período Actual y Finanzas → Valorización de bodega
     // suman los movimientos del periodo abierto (sum() de su valor) para el

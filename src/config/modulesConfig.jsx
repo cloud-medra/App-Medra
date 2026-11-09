@@ -43,6 +43,7 @@ import {
   LayoutDashboard,
   Percent,
   PackageCheck,
+  Layers,
   PackagePlus,
   PackageMinus,
   PackageSearch,
@@ -282,6 +283,16 @@ export const MODULES = {
       { label: 'Cajas', path: '/bodega/cajasBodega', icon: <Package size={14} />, color: PALETA_MENU.verde },
       { label: 'Stock consignado', path: '/bodega/consignacionesBodega', icon: <Handshake size={14} />, color: PALETA_MENU.frambuesa },
       { label: 'Categorías y unidades', path: '/bodega/catalogosBodega', icon: <Tags size={14} />, color: PALETA_MENU.violeta },
+    ]
+  },
+  // Kits armados con el stock de Bodega. Cada tipo nuevo es un ítem más
+  // (FAMILIAS_KIT en functions/armadoKits/nucleo.mjs).
+  armadoKits: {
+    label: 'Armado de Kits',
+    icon: <Layers size={18} />,
+    color: PALETA_MENU.turquesa,
+    subItems: [
+      { label: 'Flexibles', path: '/armadoKits/flexibles', icon: <Package size={14} />, color: PALETA_MENU.verde },
     ]
   },
   documentos: {

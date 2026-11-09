@@ -23,6 +23,7 @@ export const CODIGOS_MODULOS = Object.freeze({
   laboratorio: 'LAB',
   vacunatorio: 'VAC',
   bodega: 'BOD',
+  armadoKits: 'KIT',
   inventario: 'INV',
   maestros: 'MAE',
   finanzas: 'FIN',
@@ -142,6 +143,8 @@ export const CODIGOS_ITEMS = Object.freeze({
   '/bodega/cajasBodega': 'BODCAJ',
   '/bodega/consignacionesBodega': 'BODCNS',
   '/bodega/catalogosBodega': 'BODCAT',
+  // Armado de Kits
+  '/armadoKits/flexibles': 'KITFLX',
   // Documentos
   '/documentos/reportesInfo': 'DOCREP',
   '/documentos/importarDetallesOC': 'DOCIOC',

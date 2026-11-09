@@ -32,7 +32,7 @@ describe('códigos de módulos', () => {
       implantes: 'IMP', hemodinamia: 'HEM', consignacion: 'CON', documentos: 'DOC',
       laboratorio: 'LAB', vacunatorio: 'VAC', bodega: 'BOD', inventario: 'INV',
       maestros: 'MAE', finanzas: 'FIN', usuarios: 'USR', administracion: 'HER',
-      dashboard: 'DSH', ajustes: 'AJU', portalProveedores: 'POR',
+      dashboard: 'DSH', ajustes: 'AJU', portalProveedores: 'POR', armadoKits: 'KIT',
     });
   });
 });
@@ -152,6 +152,7 @@ const PUBLICADOS = `
   /bodega/cajasBodega BODCAJ
   /bodega/consignacionesBodega BODCNS
   /bodega/catalogosBodega BODCAT
+  /armadoKits/flexibles KITFLX
   /documentos/reportesInfo DOCREP
   /documentos/importarDetallesOC DOCIOC
   /documentos/seguimientoFacturasGuias DOCSEG

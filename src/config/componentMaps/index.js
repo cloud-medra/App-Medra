@@ -5,6 +5,7 @@ import { maestrosComponentMaps } from './maestros.js';
 import { consignacionComponentMaps } from './consignacion.js';
 import { inventarioComponentMaps } from './inventario.js';
 import { bodegaComponentMaps } from './bodega.js';
+import { armadoKitsComponentMaps } from './armadoKits.js';
 import { documentosComponentMaps } from './documentos.js';
 import { implantesComponentMaps } from './implantes.js';
 import { hemodinamiaComponentMaps } from './hemodinamia.js';
@@ -18,6 +19,7 @@ export const COMPONENT_MAPS = {
   ...consignacionComponentMaps,
   ...inventarioComponentMaps,
   ...bodegaComponentMaps,
+  ...armadoKitsComponentMaps,
   ...documentosComponentMaps,
   ...implantesComponentMaps,
   ...hemodinamiaComponentMaps,

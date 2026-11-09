@@ -112,6 +112,10 @@ export const TIPOS_MOVIMIENTO = Object.freeze({
   AJUSTE_NEGATIVO: { etiqueta: 'Ajuste negativo', disponible: -1, transito: 0 },
   // Sale de la Bodega General hacia una caja (kit); no pasa por tránsito.
   REPOSICION_CAJA: { etiqueta: 'Reposición caja', disponible: -1, transito: 0 },
+  // Armado de Kits (functions/armadoKits): sale de la Bodega General hacia un
+  // kit y vuelve al disponible al editarlo o eliminarlo.
+  ASIGNACION_KIT: { etiqueta: 'Asignación a kit', disponible: -1, transito: 0 },
+  RETORNO_KIT: { etiqueta: 'Retorno desde kit', disponible: 1, transito: 0 },
   // Lo no usado queda en el centro (sigue siendo stock) y desde ahí se
   // entrega o se devuelve.
   DEJADO_EN_CENTRO: { etiqueta: 'Dejado en centro', disponible: 0, transito: -1, enCentro: 1, centro: true },
@@ -883,6 +887,8 @@ export const LINEAS_PERIODO = Object.freeze({
   consumo: { etiqueta: 'Consumo', signo: -1 },
   salidaCentros: { etiqueta: 'Salida a centros', signo: -1 },
   salidaCajas: { etiqueta: 'Salida a cajas', signo: -1 },
+  salidaKits: { etiqueta: 'Salida a kits', signo: -1 },
+  retornoKits: { etiqueta: 'Retorno desde kits', signo: 1 },
   ajustePositivo: { etiqueta: 'Ajustes positivos', signo: 1 },
   ajusteNegativo: { etiqueta: 'Ajustes negativos', signo: -1 },
 });
@@ -897,6 +903,8 @@ export const LINEA_DE_MOVIMIENTO = Object.freeze({
   ENTREGA: 'consumo',
   DEJADO_EN_CENTRO: 'salidaCentros',
   REPOSICION_CAJA: 'salidaCajas',
+  ASIGNACION_KIT: 'salidaKits',
+  RETORNO_KIT: 'retornoKits',
   AJUSTE_POSITIVO: 'ajustePositivo',
   AJUSTE_NEGATIVO: 'ajusteNegativo',
 });
@@ -968,6 +976,22 @@ export const valorizarMovimiento = (costo, saldoAntes, producto, { tipo, cantida
   const linea = lineaDeMovimiento(tipo);
   const costoUnitario = linea && LINEAS_PERIODO[linea].signo > 0 ? costoEntrada(tipo, { producto, costo, ...datos }) : null;
   return aplicarCosto(costo, saldoAntes, { tipo, cantidad, costoUnitario });
+};
+
+// Retorno desde un kit. Exclusivo de RETORNO_KIT: no pasa por aplicarCosto,
+// así no cambia el cálculo de ningún otro movimiento. Devuelve exactamente el
+// `valor` con que salieron esas unidades. Si el promedio sigue siendo el de la
+// salida (`costoSalida`) se conserva tal cual: recalcularlo con el valor en
+// pesos enteros lo movería en decimales. Si cambió entre medio (un ingreso), el
+// promedio se recalcula con lo que hay más lo que vuelve.
+export const aplicarRetornoKit = (costo, saldoAntes, { cantidad, valor, costoSalida = null }) => {
+  const promedio = Number(costo?.costoPromedio) || 0;
+  const unidadesAntes = unidadesValorizadas(saldoAntes);
+  const valorAntes = unidadesAntes > 0 ? Number(costo?.valorStock) || 0 : 0;
+  const devuelto = pesos(valor);
+  const valorStock = valorAntes + devuelto;
+  const costoPromedio = costoSalida !== null && costoSalida === promedio ? promedio : valorStock / (unidadesAntes + cantidad);
+  return { costo: { costoPromedio, valorStock }, valorizado: { linea: LINEA_DE_MOVIMIENTO.RETORNO_KIT, costoUnitario: devuelto / cantidad, valor: devuelto } };
 };
 
 // Campos de costo que se guardan en el producto.

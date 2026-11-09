@@ -1628,4 +1628,7 @@ module.exports = {
   vincularCodigoComo,
   desvincularCodigo,
   lecturaParaVincular,
+  // Piezas de las transacciones de stock que reutiliza Armado de Kits
+  // (functions/armadoKits): mismos permisos, período, costos y bloqueo por inventario.
+  internos: { perfilActivo, exigir, datosPor, exigirSinErrores, registrarLog, leerPeriodo, costosDe, valorizar, conErrorStock, exigirSinInventario, refEstado, ahora },
 };
