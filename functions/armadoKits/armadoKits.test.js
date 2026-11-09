@@ -41,7 +41,8 @@ const producto = () => datos.get(`bodega_productos/${P}`);
 const kit = (id) => datos.get(`kits_armados/${id}`);
 const movimientos = () => [...datos.entries()].filter(([r]) => r.startsWith('bodega_movimientos/')).map(([, v]) => v);
 const logs = (id) => [...datos.entries()].filter(([r]) => r.startsWith(`kits_armados/${id}/logs/`)).map(([, v]) => v);
-const base = (lineas, extra = {}) => ({ familia: 'FLEXIBLE', tipo: 'FLEXIBLE_HOMBRE', codigo: 'KIT-1', lineas, ...extra });
+const base = (lineas, extra = {}) => ({ familia: 'FLEXIBLE', referencia: 'KFH', lineas, ...extra });
+const contador = () => datos.get('bodega_control/kits_correlativos');
 const linea = (loteId, cantidad, extra = {}) => ({ productoId: P, loteId, cantidad, ...extra });
 
 beforeEach(() => {
@@ -72,9 +73,12 @@ describe('reglas puras', () => {
     expect(repartoDesde(e, ID.tarde, 11).partes.map((p) => [p.lote.lote, p.cantidad])).toEqual([['TARDE', 10], ['PRONTO', 1]]);
     expect(repartoDesde(e, ID.pronto, 100).faltante).toBe(81);
   });
-  it('valida código, tipo y cantidades', () => {
-    expect(validarCabeceraKit({ familia: 'FLEXIBLE', tipo: 'OTRO', codigo: 'A' }).errores[0]).toMatch(/tipo/);
-    expect(validarCabeceraKit({ familia: 'FLEXIBLE', tipo: 'FLEXIBLE_MUJER', codigo: ' ' }).errores[0]).toMatch(/código/);
+  it('valida referencia y cantidades', () => {
+    expect(validarCabeceraKit({ familia: 'FLEXIBLE', referencia: 'OTRA' }).errores[0]).toMatch(/referencia/);
+    expect(validarCabeceraKit({ familia: 'FLEXIBLE' }).errores[0]).toMatch(/referencia/);
+    expect(validarCabeceraKit({ familia: 'FLEXIBLE', referencia: 'constructor' }).errores[0]).toMatch(/referencia/);
+    expect(validarCabeceraKit({ familia: 'NO', referencia: 'KFH' }).errores[0]).toMatch(/no existe/);
+    expect(validarCabeceraKit({ familia: 'FLEXIBLE', referencia: 'KFM' }).cabecera).toEqual({ familia: 'FLEXIBLE', referencia: 'KFM', tipo: 'FLEXIBLE_MUJER' });
     expect(validarLineasKit([]).errores[0]).toMatch(/insumos/);
     expect(validarLineasKit([linea('a', 1.5)]).errores[0]).toMatch(/entero/);
     expect(validarLineasKit([linea('a', 1), linea('a', 2)]).lineas).toHaveLength(1);
@@ -108,17 +112,17 @@ describe('crear un kit', () => {
     expect(lote(ID.medio).disponible).toBe(3);
     expect(producto().disponible).toBe(29);
     const k = kit(r.id);
-    expect(k).toMatchObject({ codigo: 'KIT-1', tipo: 'FLEXIBLE_HOMBRE', cantidadLineas: 2, totalUnidades: 4, lineasSinVencimiento: 0 });
+    expect(k).toMatchObject({ codigo: 'F001', referencia: 'KFH', tipo: 'FLEXIBLE_HOMBRE', cantidadLineas: 2, totalUnidades: 4, lineasSinVencimiento: 0 });
     expect(k.lineas[0]).toMatchObject({ referencia: 'REF-1', productoNombre: 'Insumo', lote: 'PRONTO', vencimiento: '2029-01-01', cantidad: 3, fueraDeFEFO: false });
     const movs = movimientos();
     expect(movs).toHaveLength(2);
-    expect(movs[0]).toMatchObject({ tipo: 'ASIGNACION_KIT', linea: 'salidaKits', kitId: r.id, documentoRef: { tipo: 'KIT', numero: 'KIT-1' } });
+    expect(movs[0]).toMatchObject({ tipo: 'ASIGNACION_KIT', linea: 'salidaKits', kitId: r.id, documentoRef: { tipo: 'KIT', numero: 'F001' } });
     expect(logs(r.id)[0].accion).toBe('CREADO');
   });
 
   it('no permite exceder el lote y entonces no guarda ni descuenta nada', async () => {
     await expect(guardarKitComo(db, POR, base([linea(ID.pronto, 4)]))).rejects.toThrow(/PRONTO.*insuficiente/);
-    expect(kit(idKit('KIT-1'))).toBeUndefined();
+    expect(kit('F001')).toBeUndefined();
     expect(lote(ID.pronto).disponible).toBe(3);
     expect(producto().disponible).toBe(33);
     expect(movimientos()).toHaveLength(0);
@@ -130,11 +134,9 @@ describe('crear un kit', () => {
     expect(movimientos()).toHaveLength(0);
   });
 
-  it('rechaza vencidos, consignados y un código repetido', async () => {
+  it('rechaza vencidos y consignados', async () => {
     await expect(guardarKitComo(db, POR, base([linea(ID.viejo, 1, { confirmarFueraFEFO: true })]))).rejects.toThrow(/vencido/);
     await expect(guardarKitComo(db, POR, base([linea(ID.consig, 1, { confirmarFueraFEFO: true })]))).rejects.toThrow(/consignado/);
-    await guardarKitComo(db, POR, base([linea(ID.pronto, 1)]));
-    await expect(guardarKitComo(db, POR, base([linea(ID.pronto, 1)], { codigo: 'kit-1' }))).rejects.toThrow(/Ya existe/);
   });
 
   it('fuera de FEFO: exige confirmación y deja la marca', async () => {
@@ -154,8 +156,8 @@ describe('crear un kit', () => {
 
   it('dos usuarios a la vez: solo uno se lleva el stock', async () => {
     const res = await Promise.allSettled([
-      guardarKitComo(db, POR, base([linea(ID.pronto, 3)], { codigo: 'A' })),
-      guardarKitComo(db, { ...POR, uid: 'u2' }, base([linea(ID.pronto, 3)], { codigo: 'B' })),
+      guardarKitComo(db, POR, base([linea(ID.pronto, 3)])),
+      guardarKitComo(db, { ...POR, uid: 'u2' }, base([linea(ID.pronto, 3)])),
     ]);
     expect(res.map((x) => x.status).sort()).toEqual(['fulfilled', 'rejected']);
     expect(lote(ID.pronto).disponible).toBe(0);
@@ -163,19 +165,94 @@ describe('crear un kit', () => {
     expect(movimientos()).toHaveLength(1);
   });
 
-  it('dos usuarios con el mismo código: solo uno lo crea', async () => {
-    const res = await Promise.allSettled([
-      guardarKitComo(db, POR, base([linea(ID.pronto, 1)])),
-      guardarKitComo(db, POR, base([linea(ID.pronto, 1)])),
-    ]);
-    expect(res.map((x) => x.status).sort()).toEqual(['fulfilled', 'rejected']);
-    expect(producto().disponible).toBe(32);
-  });
-
   it('bloquea si hay un inventario abierto que incluye el producto', async () => {
     datos.set('bodega_control/estado', { inventarioAbierto: { id: 'i', categorias: [] } });
     await expect(guardarKitComo(db, POR, base([linea(ID.pronto, 1)]))).rejects.toThrow(/inventario abierto/);
     expect(movimientos()).toHaveLength(0);
+  });
+});
+
+describe('referencia e ID automático', () => {
+  const crearUno = (extra = {}) => guardarKitComo(db, POR, base([linea(ID.pronto, 1)], extra));
+
+  it('KFH y KFM guardan su referencia y el tipo correcto', async () => {
+    const h = await crearUno({ referencia: 'KFH' });
+    const m = await crearUno({ referencia: 'KFM' });
+    expect(kit(h.id)).toMatchObject({ referencia: 'KFH', tipo: 'FLEXIBLE_HOMBRE' });
+    expect(kit(m.id)).toMatchObject({ referencia: 'KFM', tipo: 'FLEXIBLE_MUJER' });
+    expect(h.referencia).toBe('KFH');
+  });
+
+  it('el tipo y el código que envíe la pantalla se ignoran', async () => {
+    const r = await crearUno({ referencia: 'KFM', tipo: 'FLEXIBLE_HOMBRE', codigo: 'PRUEBA-001', codigoNormalizado: 'X', numero: 500 });
+    expect(r.codigo).toBe('F001');
+    expect(kit('F001')).toMatchObject({ tipo: 'FLEXIBLE_MUJER', codigo: 'F001', codigoNormalizado: 'F001', numero: 1 });
+    expect(kit('PRUEBA-001')).toBeUndefined();
+  });
+
+  it('una referencia inválida se rechaza sin consumir número ni stock', async () => {
+    await expect(Promise.resolve().then(() => crearUno({ referencia: 'KFX' }))).rejects.toThrow(/referencia/);
+    await expect(Promise.resolve().then(() => crearUno({ referencia: undefined, tipo: 'FLEXIBLE_HOMBRE' }))).rejects.toThrow(/referencia/);
+    expect(contador()).toBeUndefined();
+    expect(producto().disponible).toBe(33);
+    expect(movimientos()).toHaveLength(0);
+  });
+
+  it('correlativo único para la familia, sin importar la referencia', async () => {
+    expect((await crearUno({ referencia: 'KFH' })).codigo).toBe('F001');
+    expect((await crearUno({ referencia: 'KFM' })).codigo).toBe('F002');
+    expect((await crearUno({ referencia: 'KFH' })).codigo).toBe('F003');
+    expect(contador()).toEqual({ FLEXIBLE: 3 });
+  });
+
+  it('después de F999 sigue F1000', async () => {
+    datos.set('bodega_control/kits_correlativos', { FLEXIBLE: 998 });
+    expect((await crearUno()).codigo).toBe('F999');
+    expect((await crearUno()).codigo).toBe('F1000');
+    expect(kit('F1000')).toMatchObject({ numero: 1000, codigoNormalizado: 'F1000' });
+  });
+
+  it('dos usuarios creando a la vez: no se repite el ID', async () => {
+    const res = await Promise.all([
+      guardarKitComo(db, POR, base([linea(ID.pronto, 1)])),
+      guardarKitComo(db, { ...POR, uid: 'u2' }, base([linea(ID.pronto, 1)], { referencia: 'KFM' })),
+      guardarKitComo(db, { ...POR, uid: 'u3' }, base([linea(ID.pronto, 1)])),
+    ]);
+    expect(res.map((r) => r.codigo).sort()).toEqual(['F001', 'F002', 'F003']);
+    expect(contador()).toEqual({ FLEXIBLE: 3 });
+    expect(lote(ID.pronto).disponible).toBe(0);
+  });
+
+  it('un guardado fallido no consume número y no deja stock descontado', async () => {
+    await expect(guardarKitComo(db, POR, base([linea(ID.pronto, 99)]))).rejects.toThrow(/insuficiente/);
+    await expect(guardarKitComo(db, POR, base([linea(ID.medio, 1)]))).rejects.toMatchObject({ details: { motivo: 'fuera-fefo' } });
+    expect(contador()).toBeUndefined();
+    expect(lote(ID.pronto).disponible).toBe(3);
+    expect(producto().disponible).toBe(33);
+    expect(movimientos()).toHaveLength(0);
+    expect((await crearUno()).codigo).toBe('F001');
+  });
+
+  it('un kit eliminado no libera su número', async () => {
+    const { id } = await crearUno();
+    await eliminarKitComo(db, POR, { familia: 'FLEXIBLE', kitId: id });
+    expect(kit('F001')).toBeUndefined();
+    expect((await crearUno()).codigo).toBe('F002');
+  });
+
+  it('editar el contenido no cambia el ID ni la referencia, aunque se envíen otros', async () => {
+    const { id } = await crearUno({ referencia: 'KFM' });
+    const r = await guardarKitComo(db, POR, { familia: 'FLEXIBLE', kitId: id, referencia: 'KFH', tipo: 'FLEXIBLE_HOMBRE', codigo: 'F777', lineas: [linea(ID.pronto, 2)] });
+    expect(r).toMatchObject({ id: 'F001', codigo: 'F001', referencia: 'KFM' });
+    expect(kit('F001')).toMatchObject({ codigo: 'F001', referencia: 'KFM', tipo: 'FLEXIBLE_MUJER', numero: 1, totalUnidades: 2 });
+    expect(contador()).toEqual({ FLEXIBLE: 1 });
+  });
+
+  it('si el documento del número ya existiera, no lo sobrescribe', async () => {
+    datos.set('kits_armados/F001', { familia: 'FLEXIBLE', codigo: 'F001', lineas: [] });
+    await expect(crearUno()).rejects.toThrow(/ya existe/);
+    expect(producto().disponible).toBe(33);
+    expect(contador()).toBeUndefined();
   });
 });
 
@@ -292,8 +369,8 @@ describe('completar vencimiento', () => {
   });
 
   it('una segunda línea de otro kit ve la fecha ya completada', async () => {
-    const { id: a } = await guardarKitComo(db, POR, base([linea(ID.pronto, 3), linea(ID.medio, 4), linea(ID.tarde, 10), linea(ID.sinFecha, 1, { confirmarSinVencimiento: true })], { codigo: 'A' }));
-    const { id: b } = await guardarKitComo(db, POR, base([linea(ID.sinFecha, 1, { confirmarSinVencimiento: true })], { codigo: 'B' }));
+    const { id: a } = await guardarKitComo(db, POR, base([linea(ID.pronto, 3), linea(ID.medio, 4), linea(ID.tarde, 10), linea(ID.sinFecha, 1, { confirmarSinVencimiento: true })]));
+    const { id: b } = await guardarKitComo(db, POR, base([linea(ID.sinFecha, 1, { confirmarSinVencimiento: true })]));
     await completar(a);
     await expect(completarVencimientoComo(db, POR, { familia: 'FLEXIBLE', kitId: b, loteId: ID.sinFecha, vencimiento: '2032-01-01' }))
       .rejects.toMatchObject({ details: { motivo: 'fecha-distinta', fechasExistentes: [FECHA] } });

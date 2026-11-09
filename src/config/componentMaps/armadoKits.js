@@ -10,7 +10,7 @@ export const armadoKitsComponentMaps = {
         label: 'Sección: Listado de kits',
         elements: {
           btn_crear: { label: 'Acción: Crear kit (descuenta stock de Bodega)' },
-          ...columnas([['tipo', 'Tipo'], ['insumos', 'Insumos'], ['unidades', 'Unidades'], ['fecha', 'Fecha de creación'], ['avisos', 'Avisos']]),
+          ...columnas([['referencia', 'Referencia'], ['insumos', 'Insumos'], ['unidades', 'Unidades'], ['fecha', 'Fecha de creación'], ['avisos', 'Avisos']]),
         },
       },
       kit: {

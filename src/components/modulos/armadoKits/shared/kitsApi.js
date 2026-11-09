@@ -41,7 +41,7 @@ export const leerKit = async (id) => {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };
 
-// { familia, kitId?, tipo?, codigo?, lineas: [{ productoId, loteId, cantidad, confirmarFueraFEFO?, confirmarSinVencimiento? }] }
+// { familia, kitId?, referencia?, lineas: [{ productoId, loteId, cantidad, confirmarFueraFEFO?, confirmarSinVencimiento? }] }
 export const guardarKit = llamar('kitsGuardar');
 export const eliminarKit = llamar('kitsEliminar');
 export const completarVencimiento = (datos) => guardarKit({ ...datos, operacion: OPERACION_COMPLETAR });

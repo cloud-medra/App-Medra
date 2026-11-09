@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Layers, Plus, Trash2, X } from 'lucide-react';
 import { useToast } from '../../../../context/ToastContext';
 import { useModal } from '../../../../context/ModalContext';
-import { FAMILIAS_KIT, MAX_CODIGO_KIT, hoyChile, referenciaDe } from '../../../../../functions/armadoKits/nucleo.mjs';
+import { FAMILIAS_KIT, hoyChile, referenciaDe } from '../../../../../functions/armadoKits/nucleo.mjs';
 import { detalleError, leerLotesDeProducto, mensajeError } from '../../bodega/shared/bodegaApi';
 import BuscadorProducto from '../../bodega/shared/BuscadorProducto';
 import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../../bodega/shared/TablaBodega';
@@ -37,8 +37,7 @@ const FormKitModal = ({ familia, kit = null, onCerrar, onGuardado }) => {
   const { showToast } = useToast();
   const { confirmAction } = useModal();
   const originales = useMemo(() => kit?.lineas || [], [kit]);
-  const [tipo, setTipo] = useState(kit?.tipo || '');
-  const [codigo, setCodigo] = useState(kit?.codigo || '');
+  const [referencia, setReferencia] = useState(kit?.referencia || '');
   const [lineas, setLineas] = useState(originales);
   const [producto, setProducto] = useState(null);
   const [lotes, setLotes] = useState(null);
@@ -85,13 +84,13 @@ const FormKitModal = ({ familia, kit = null, onCerrar, onGuardado }) => {
 
   const guardar = async (lista = lineas) => {
     setError('');
-    if (!kit && !tipo) { setError('Selecciona el tipo de kit.'); return; }
-    if (!codigo.trim()) { setError('Ingresa el código del kit.'); return; }
+    if (!kit && !referencia) { setError('Selecciona la referencia del kit.'); return; }
     if (!lista.length) { setError('Agrega al menos un insumo.'); return; }
     setGuardando(true);
     try {
-      const r = await guardarKit({ familia, ...(kit ? { kitId: kit.id } : { tipo, codigo }), lineas: lineasParaGuardar(lista) });
-      showToast(r.sinCambios ? 'El kit no tuvo cambios.' : `Kit ${r.codigo} guardado.`, 'success');
+      const r = await guardarKit({ familia, ...(kit ? { kitId: kit.id } : { referencia }), lineas: lineasParaGuardar(lista) });
+      const aviso = kit ? `Kit ${r.codigo} guardado.` : `Kit creado con ID ${r.codigo}.`;
+      showToast(r.sinCambios ? 'El kit no tuvo cambios.' : aviso, 'success');
       onGuardado(r.id);
     } catch (e) {
       // El servidor detecta lo que cambió desde que se agregó la línea.
@@ -122,18 +121,17 @@ const FormKitModal = ({ familia, kit = null, onCerrar, onGuardado }) => {
         </div>
         <div className="p-4 overflow-auto flex flex-col gap-3">
           <div className="flex flex-wrap gap-4">
-            <fieldset className="flex flex-col gap-1">
-              <legend className="text-etiqueta">Tipo</legend>
-              <div className="flex items-center gap-3 h-8">
-                {Object.entries(config.tipos).map(([k, etiqueta]) => (
-                  <label key={k} className="flex items-center gap-1"><input type="radio" name="tipoKit" checked={tipo === k} disabled={Boolean(kit)} onChange={() => setTipo(k)} /> {etiqueta}</label>
-                ))}
-              </div>
-            </fieldset>
             <label className="flex flex-col gap-1">
-              <span className="text-etiqueta">Código o ID del kit</span>
-              <input value={codigo} maxLength={MAX_CODIGO_KIT} disabled={Boolean(kit)} onChange={(e) => setCodigo(e.target.value)} className={`${claseCampo} w-56`} />
+              <span className="text-etiqueta">Referencia *</span>
+              <select value={referencia} disabled={Boolean(kit)} onChange={(e) => setReferencia(e.target.value)} className={`${claseCampo} w-64`}>
+                <option value="">Seleccionar…</option>
+                {Object.entries(config.referencias).map(([k, r]) => <option key={k} value={k}>{r.etiqueta}</option>)}
+              </select>
             </label>
+            <div className="flex flex-col gap-1">
+              <span className="text-etiqueta">ID del kit</span>
+              <span className="h-8 flex items-center text-tinta-secundaria">{kit ? kit.codigo : 'Se asignará al guardar'}</span>
+            </div>
           </div>
 
           <div className="flex flex-col gap-1">

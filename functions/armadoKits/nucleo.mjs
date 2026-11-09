@@ -4,7 +4,8 @@
 // a un documento de bodega_lotes y sus unidades salen del disponible.
 //
 // Para agregar otro tipo de kit basta una entrada en FAMILIAS_KIT (etiqueta,
-// ruta del menú y tipos) y una pantalla que monte PantallaKits con esa familia.
+// ruta del menú, prefijo del ID y referencias) y una pantalla que monte
+// PantallaKits con esa familia.
 
 import { idVinculo } from '../bodega/gs1.mjs';
 import { normalizarClave, normalizarLote, lotesFEFO, lotesPropios, fechaValida } from '../bodega/nucleo.mjs';
@@ -16,7 +17,12 @@ export const FAMILIAS_KIT = Object.freeze({
   FLEXIBLE: Object.freeze({
     etiqueta: 'Flexibles',
     ruta: '/armadoKits/flexibles',
-    tipos: Object.freeze({ FLEXIBLE_HOMBRE: 'Flexible hombre', FLEXIBLE_MUJER: 'Flexible mujer' }),
+    prefijoId: 'F',
+    // La referencia define el tipo: así no hay combinaciones inconsistentes.
+    referencias: Object.freeze({
+      KFH: Object.freeze({ etiqueta: 'KFH - Kit Flexible Hombre', tipo: 'FLEXIBLE_HOMBRE' }),
+      KFM: Object.freeze({ etiqueta: 'KFM - Kit Flexible Mujer', tipo: 'FLEXIBLE_MUJER' }),
+    }),
   }),
 });
 
@@ -29,7 +35,12 @@ const ACCIONES = Object.freeze({
 // [modulo, ruta, seccion, accion] para puedeAccion.
 export const accionKit = (familia, accion) => [MODULO, FAMILIAS_KIT[familia].ruta, ...ACCIONES[accion]];
 
-export const MAX_CODIGO_KIT = 40;
+// Documento de bodega_control con el último número de cada familia. Solo lo
+// escriben las Functions, en la misma transacción que crea el kit.
+export const ID_CONTADOR_KITS = 'kits_correlativos';
+// F001, F002… F999, F1000: el relleno es de 3 dígitos y luego sigue creciendo.
+export const codigoCorrelativoKit = (familia, numero) => `${FAMILIAS_KIT[familia].prefijoId}${String(numero).padStart(3, '0')}`;
+
 export const MAX_LINEAS_KIT = 60;
 export const OPERACION_COMPLETAR = 'COMPLETAR_VENCIMIENTO';
 
@@ -42,15 +53,14 @@ export const idKit = (codigo) => idVinculo(normalizarClave(codigo));
 // Misma referencia que muestra Bodega (propia o del maestro clínico).
 export const referenciaDe = (p) => p?.referencia || p?.maestroCodigo?.referencia || '';
 
+// Valida la referencia y deriva el tipo. No toma nada más de lo que envía la
+// pantalla: el tipo sale de la referencia y el ID del correlativo.
 export const validarCabeceraKit = (datos = {}) => {
-  const errores = [];
   const familia = FAMILIAS_KIT[datos.familia];
-  if (!familia) errores.push('El tipo de kit no existe.');
-  else if (!familia.tipos[datos.tipo]) errores.push('Selecciona un tipo de kit válido.');
-  const codigo = String(datos.codigo ?? '').trim().replace(/\s+/g, ' ');
-  if (!codigo) errores.push('Ingresa el código del kit.');
-  else if (codigo.length > MAX_CODIGO_KIT) errores.push(`El código no puede superar ${MAX_CODIGO_KIT} caracteres.`);
-  return { errores, cabecera: { familia: datos.familia, tipo: datos.tipo, codigo, codigoNormalizado: normalizarClave(codigo) } };
+  if (!familia) return { errores: ['El tipo de kit no existe.'], cabecera: null };
+  const referencia = Object.hasOwn(familia.referencias, String(datos.referencia)) ? String(datos.referencia) : null;
+  if (!referencia) return { errores: ['Selecciona una referencia válida. Si no aparece, actualiza la página.'], cabecera: null };
+  return { errores: [], cabecera: { familia: datos.familia, referencia, tipo: familia.referencias[referencia].tipo } };
 };
 
 // Une las líneas repetidas del mismo lote (suma la cantidad; una confirmación

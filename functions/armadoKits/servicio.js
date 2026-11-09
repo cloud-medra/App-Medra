@@ -1,12 +1,17 @@
 // Lógica de las Cloud Functions de Armado de Kits (ver index.js).
 //
-//   kits_armados/{idKit(codigo)} = { familia, tipo, codigo, codigoNormalizado,
+//   kits_armados/{idKit(codigo)} = { familia, referencia, tipo, numero, codigo, codigoNormalizado,
 //     lineas: [{ productoId, productoNombre, codigoMaestro, referencia, loteId,
 //       lote, vencimiento, cantidad, valor, costoUnitario, fueraDeFEFO,
 //       sinVencimiento, vencimientoCompletado? }],
 //     cantidadLineas, totalUnidades, lineasSinVencimiento, creadoPor/En,
 //     actualizadoPor/En }
 //     /logs/{id}: auditoría (creado, editado, eliminado, fecha completada).
+//   bodega_control/kits_correlativos = { [familia]: último número usado }
+//
+// El ID (F001, F002…) se asigna aquí, en la misma transacción que guarda el kit
+// y descuenta el stock: si algo falla no se consume el número. El contador
+// nunca baja, así que el número de un kit eliminado no se reutiliza.
 //
 // El navegador solo lee. Todo cambio de stock ocurre en UNA transacción junto
 // con el kit, con los mismos pasos que las salidas de Bodega: si algo falla no
@@ -14,10 +19,10 @@
 // usuarios compiten por el mismo lote, de modo que el segundo ve el saldo real.
 
 const { HttpsError } = require('firebase-functions/v2/https');
-const { COL, aplicarMovimiento, saldoDe, fotoSaldo, datosPropietario, camposCosto, aplicarRetornoKit, idLote } = require('../bodega/nucleo.mjs');
+const { COL, aplicarMovimiento, saldoDe, fotoSaldo, datosPropietario, camposCosto, aplicarRetornoKit, idLote, normalizarClave } = require('../bodega/nucleo.mjs');
 const { internos } = require('../bodega/servicio');
 const {
-  COL_KITS, FAMILIAS_KIT, OPERACION_COMPLETAR, accionKit, idKit, referenciaDe, validarCabeceraKit, validarLineasKit, planCambiosKit,
+  COL_KITS, FAMILIAS_KIT, OPERACION_COMPLETAR, ID_CONTADOR_KITS, codigoCorrelativoKit, accionKit, idKit, referenciaDe, validarCabeceraKit, validarLineasKit, planCambiosKit,
   hoyChile, loteVencido, lotesParaKit, lotesFueraDeFEFO, valorRetiro, totalesKit, fechaValida, fechasDistintasDelLote, lineasConFecha,
 } = require('./nucleo.mjs');
 
@@ -178,8 +183,9 @@ const prepararCambioStock = async (t, db, por, { kitId, codigo, anteriores, entr
   return { lineas, retiros, asignaciones, escribir };
 };
 
-// Crea un kit (sin `kitId`) o cambia el contenido de uno existente. El código
-// y el tipo no se editan: identifican el kit.
+// Crea un kit (sin `kitId`) o cambia el contenido de uno existente. El ID y la
+// referencia no se editan: si la referencia estaba mal, se elimina el kit y se
+// crea otro.
 const guardarKitComo = (db, por, datos = {}) => {
   const kitId = datos.kitId ? String(datos.kitId) : null;
   const { errores, lineas: entrada } = validarLineasKit(datos.lineas);
@@ -187,13 +193,17 @@ const guardarKitComo = (db, por, datos = {}) => {
   exigirSinErrores([...new Set([...(kitId ? [] : erroresCabecera), ...errores])]);
 
   return db.runTransaction(async (t) => {
-    const ref = db.collection(COL_KITS).doc(kitId || idKit(cabecera.codigo));
+    const refContador = db.collection(COL.control).doc(ID_CONTADOR_KITS);
+    const numero = kitId ? null : ((await t.get(refContador)).data()?.[cabecera.familia] || 0) + 1;
+    const codigoNuevo = kitId ? null : codigoCorrelativoKit(cabecera.familia, numero);
+    const ref = db.collection(COL_KITS).doc(kitId || idKit(codigoNuevo));
     const snapKit = await t.get(ref);
     if (kitId && !snapKit.exists) throw new HttpsError('not-found', 'El kit ya no existe.');
-    if (!kitId && snapKit.exists) throw new HttpsError('already-exists', `Ya existe un kit con el código ${snapKit.data().codigo}.`);
+    // No debería ocurrir (el contador nunca baja), pero un set lo sobrescribiría.
+    if (!kitId && snapKit.exists) throw new HttpsError('failed-precondition', `El ID ${codigoNuevo} ya existe. Avisa a un administrador.`);
     const kit = snapKit.exists ? snapKit.data() : null;
     if (kit && kit.familia !== datos.familia) throw new HttpsError('invalid-argument', 'El kit no pertenece a esta pantalla.');
-    const codigo = kit?.codigo || cabecera.codigo;
+    const codigo = kit?.codigo || codigoNuevo;
 
     const cambio = await prepararCambioStock(t, db, por, { kitId: ref.id, codigo, anteriores: kit?.lineas || [], entrada });
     if (!cambio) return { id: ref.id, codigo, sinCambios: true, productos: [] };
@@ -207,10 +217,11 @@ const guardarKitComo = (db, por, datos = {}) => {
         agregado: cambio.asignaciones.map((a) => { const l = cambio.lineas.find((x) => x.loteId === a.entrada.loteId); return resumenLinea(l, a.cantidad); }),
       });
     } else {
-      t.set(ref, { ...cabecera, ...contenido, creadoPor: por, creadoEn: ahora(), actualizadoPor: por, actualizadoEn: ahora() });
+      t.set(refContador, { [cabecera.familia]: numero }, { merge: true });
+      t.set(ref, { ...cabecera, numero, codigo, codigoNormalizado: normalizarClave(codigo), ...contenido, creadoPor: por, creadoEn: ahora(), actualizadoPor: por, actualizadoEn: ahora() });
       registrarLog(t, ref, 'CREADO', por, { lineas: cambio.lineas.map((l) => resumenLinea(l)) });
     }
-    return { id: ref.id, codigo, ...totalesKit(cambio.lineas), productos };
+    return { id: ref.id, codigo, referencia: kit?.referencia || cabecera.referencia, ...totalesKit(cambio.lineas), productos };
   });
 };
 

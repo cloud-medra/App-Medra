@@ -67,7 +67,7 @@ const DetalleKit = ({ kit, familia, onVolver, onCambio, onEliminado }) => {
           <button type="button" onClick={onVolver} className="text-etiqueta text-[#2383C2] flex items-center gap-1"><ArrowLeft size={12} /> Volver al listado</button>
           <h3 className="text-titulo-seccion mt-1">{kit.codigo}</h3>
           <p className="text-secundario text-tinta-secundaria">
-            {config.tipos[kit.tipo] || kit.tipo} · {kit.cantidadLineas} insumos · {kit.totalUnidades} unidades · Creado {fechaHora(kit.creadoEn)} por {kit.creadoPor?.nombre || '—'}
+            {config.referencias[kit.referencia]?.etiqueta || kit.referencia} · {kit.cantidadLineas} insumos · {kit.totalUnidades} unidades · Creado {fechaHora(kit.creadoEn)} por {kit.creadoPor?.nombre || '—'}
           </p>
           {kit.lineasSinVencimiento > 0 && (
             <p className="mt-1"><Insignia color="ambar">Este kit contiene {kit.lineasSinVencimiento} insumo(s) sin vencimiento</Insignia></p>

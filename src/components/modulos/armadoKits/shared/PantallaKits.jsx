@@ -16,8 +16,8 @@ import DetalleKit from './DetalleKit';
 import FormKitModal from './FormKitModal';
 
 const COLUMNAS = [
-  { key: 'codigo', label: 'Código', fija: true, ancho: 190, min: 90 },
-  { key: 'tipo', label: 'Tipo', ancho: 150, min: 90 },
+  { key: 'codigo', label: 'ID', fija: true, ancho: 110, min: 70 },
+  { key: 'referencia', label: 'Referencia', ancho: 210, min: 90 },
   { key: 'insumos', label: 'Insumos', alinear: 'text-right', ancho: 80, min: 55 },
   { key: 'unidades', label: 'Unidades', alinear: 'text-right', ancho: 80, min: 55 },
   { key: 'fecha', label: 'Fecha de creación', ancho: 140, min: 90 },
@@ -26,7 +26,7 @@ const COLUMNAS = [
 
 const ESPERA_BUSQUEDA_MS = 350;
 
-// Listado de kits de una familia: filtro por tipo, búsqueda por código y
+// Listado de kits de una familia: filtro por referencia, búsqueda por ID y
 // detalle. Lee de a una página; cada tipo de kit monta esta misma pantalla.
 const PantallaKits = ({ familia }) => {
   const config = FAMILIAS_KIT[familia];
@@ -38,11 +38,13 @@ const PantallaKits = ({ familia }) => {
   const [kits, setKits] = useState(null);
   const [pagina, setPagina] = useState({ cursor: null, hayMas: false });
   const [cargandoMas, setCargandoMas] = useState(false);
-  const [tipo, setTipo] = useState('');
+  const [referencia, setReferencia] = useState('');
   const [texto, setTexto] = useState('');
   const [codigo, setCodigo] = useState('');
   const [version, setVersion] = useState(0);
   const [abierto, setAbierto] = useState(null);
+  // Cada referencia equivale a un tipo: el filtro usa el índice de tipo.
+  const tipo = config.referencias[referencia]?.tipo || '';
   const [creando, setCreando] = useState(false);
 
   // Espera a que se termine de escribir: cada búsqueda es una consulta.
@@ -93,11 +95,11 @@ const PantallaKits = ({ familia }) => {
           <div className="flex flex-wrap items-center gap-1.5">
             <div className="relative">
               <Search className="absolute left-1.5 top-1.5 text-gray-400" size={13} />
-              <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar por código…" aria-label="Buscar por código" className="h-7 pl-6 pr-2 w-44 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 outline-none focus:border-[#2383C2]" />
+              <input value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar por ID…" aria-label="Buscar por ID" className="h-7 pl-6 pr-2 w-44 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 outline-none focus:border-[#2383C2]" />
             </div>
-            <select value={tipo} onChange={(e) => setTipo(e.target.value)} aria-label="Filtrar por tipo" className="h-7 px-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900">
-              <option value="">Todos los tipos</option>
-              {Object.entries(config.tipos).map(([k, etiqueta]) => <option key={k} value={k}>{etiqueta}</option>)}
+            <select value={referencia} onChange={(e) => setReferencia(e.target.value)} aria-label="Filtrar por referencia" className="h-7 px-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900">
+              <option value="">Todas las referencias</option>
+              {Object.entries(config.referencias).map(([k, r]) => <option key={k} value={k}>{r.etiqueta}</option>)}
             </select>
             <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1 text-tinta-secundaria"><RefreshCw size={12} /> Actualizar</button>
             {hasPermission(ruta, 'kits', 'btn_crear') && (
@@ -124,7 +126,7 @@ const PantallaKits = ({ familia }) => {
                 {kits.map((k) => (
                   <FilaBodega key={k.id} columnas={columnasVisibles} className="cursor-pointer" onClick={() => setAbierto(k)} celdas={{
                     codigo: <td className={`${TD} text-etiqueta text-[#2383C2] underline-offset-2 group-hover:underline`} title={k.codigo}>{k.codigo}</td>,
-                    tipo: <td className={`${TD} text-secundario`}>{config.tipos[k.tipo] || k.tipo}</td>,
+                    referencia: <td className={`${TD} text-secundario`}>{config.referencias[k.referencia]?.etiqueta || k.referencia}</td>,
                     insumos: <td className={`${TD} text-right text-numero-tabla`}>{k.cantidadLineas || 0}</td>,
                     unidades: <td className={`${TD} text-right text-numero-tabla`}>{k.totalUnidades || 0}</td>,
                     fecha: <td className={`${TD} text-numero-tabla`}>{fechaHora(k.creadoEn)}</td>,
