@@ -4,7 +4,7 @@ import { db } from '../../../../../firebaseConfig';
 import { useToast } from '../../../../../context/ToastContext';
 import { useUser } from '../../../../../context/UserContext';
 import { fechaISOEnChile } from '../../shared/gestion/rangoFechaGestiones';
-import { textoUsoRegistrado, textoFibra } from './fibrasNucleo';
+import { textoPerdidaRegistrada, textoFibra } from './fibrasNucleo';
 import {
   leerTodasLasFibras, leerUsosDeFibra, registrarFibras, editarFibra, registrarPerdida, anularPerdida,
   ponerEnUso, devolverABodega, leerMovimientosUbicacion,
@@ -65,13 +65,13 @@ export const useFibrasReutilizablesData = () => {
       () => editarFibra(fibraId, valores, userData),
       (hubo) => (hubo ? `Fibra ${fibraId} corregida` : 'No hay cambios para guardar')
     ),
-    registrarPerdida: (fibraId, motivo) => ejecutar(
-      () => registrarPerdida(fibraId, { motivo, fecha: fechaISOEnChile() }, userData),
-      (r) => textoUsoRegistrado(r)
+    registrarPerdida: (fibraId, { motivo, observacion }) => ejecutar(
+      () => registrarPerdida(fibraId, { motivo, observacion, fecha: fechaISOEnChile() }, userData),
+      (r) => textoPerdidaRegistrada(r)
     ),
     anularPerdida: (fibraId, usoId, motivo) => ejecutar(
       () => anularPerdida(fibraId, usoId, motivo, userData),
-      'Pérdida anulada: el uso volvió a quedar disponible'
+      'Pérdida anulada: la fibra recuperó sus usos y quedó en bodega'
     ),
     ponerEnUso: (fibra) => ejecutar(
       () => ponerEnUso(fibra.id, userData),

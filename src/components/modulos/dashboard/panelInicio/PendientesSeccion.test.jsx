@@ -24,9 +24,9 @@ const todos = { implantes: true, abreSolicitud: true, cirugias: true, fibras: tr
 const linea = (texto) => screen.getByText(texto).closest('button, div');
 const FIBRAS_OK = {
   referencias: [
-    { referencia: 'FL-1000', uso: { consumidos: 8, totales: 10, alerta: null } },
-    { referencia: 'FL-365', uso: { consumidos: 4, totales: 5, alerta: 'ambar' } },
-    { referencia: 'FL-600', uso: { consumidos: 2, totales: 10, alerta: 'rojo' } },
+    { referencia: 'FL-1000', uso: { consumidos: 8, totales: 10, color: 'naranjo', vencimiento: null } },
+    { referencia: 'FL-365', uso: { consumidos: 5, totales: 5, color: 'rojo', vencimiento: 'proxima' } },
+    { referencia: 'FL-600', uso: { consumidos: 2, totales: 10, color: 'verde', vencimiento: 'vencida' } },
     { referencia: 'FL-200', uso: null },
   ],
 };
@@ -70,12 +70,16 @@ describe('Inicio — Pendientes', () => {
     expect(document.querySelectorAll('li')).toHaveLength(0);
   });
 
-  it('fibras: una línea por referencia con su uso, el color de la alerta y "Sin fibra en uso"', async () => {
+  it('fibras: una línea por referencia con su uso, el color por usos, el vencimiento aparte y "Sin fibra en uso"', async () => {
     render(<PendientesSeccion bloques={todos} onAbrir={vi.fn()} />);
     await waitFor(() => expect(linea('FL-1000').textContent).toBe('FL-10008/10'));
-    expect(screen.getByText('4/5').className).toMatch(/amber/);
-    expect(screen.getByText('2/10').className).toMatch(/red/);
-    expect(screen.getByText('8/10').className).not.toMatch(/amber|red/);
+    expect(screen.getByText('8/10').className).toMatch(/orange/);
+    expect(screen.getByText('5/5').className).toMatch(/red/);
+    expect(screen.getByText('2/10').className).toMatch(/emerald/);
+    // El vencimiento se ve como etiqueta propia, sin cambiar el color de los usos.
+    expect(linea('FL-600').textContent).toBe('FL-600Vencida2/10');
+    expect(linea('FL-365').textContent).toBe('FL-365Vence pronto5/5');
+    expect(screen.getByText('Vencida').className).toMatch(/red/);
     expect(linea('FL-200').textContent).toContain('Sin fibra en uso');
     expect(screen.queryByText(/último uso|Vencidas|Por comprar/)).toBeNull();
   });

@@ -7,8 +7,11 @@
 //     usosTotales      5 o 10
 //     usosPrevios      usos consumidos antes del sistema (sin detalle); ocupan
 //                      los números 1..usosPrevios
-//     numerosOcupados  números de los usos y pérdidas VIGENTES registrados
-//     usosConsumidos   usosPrevios + numerosOcupados.length
+//     numerosOcupados  números de los usos VIGENTES registrados (y de las
+//                      pérdidas antiguas de un número, si queda alguna)
+//     numerosPerdidos  números que se perdieron de una vez al quebrarse o
+//                      cortarse la fibra (todos los restantes); vacío si no hay
+//     usosConsumidos   usosPrevios + numerosOcupados.length + numerosPerdidos.length
 //     fechasUso        { '<número>': 'AAAA-MM-DD' } de cada uso o pérdida
 //                      vigente: las reglas validan con él que el vencimiento
 //                      corregido no quede antes de ningún uso (sin leer usos)
@@ -53,6 +56,8 @@ export const MOTIVO_ANULACION = Object.freeze({
   REFERENCIA_CAMBIADA: 'REFERENCIA_CAMBIADA',
   FIBRA_CAMBIADA: 'FIBRA_CAMBIADA',
   PERDIDA_ANULADA: 'PERDIDA_ANULADA',
+  // Pérdidas antiguas de un número agrupadas en una pérdida nueva (migración).
+  MIGRADA_A_PERDIDA_TOTAL: 'MIGRADA_A_PERDIDA_TOTAL',
 });
 export const TEXTO_MOTIVO_ANULACION = Object.freeze({
   LINEA_ELIMINADA: 'Línea eliminada de la gestión',
@@ -60,6 +65,7 @@ export const TEXTO_MOTIVO_ANULACION = Object.freeze({
   REFERENCIA_CAMBIADA: 'Se cambió la referencia de la línea',
   FIBRA_CAMBIADA: 'Se eligió otra fibra en la línea',
   PERDIDA_ANULADA: 'Pérdida anulada',
+  MIGRADA_A_PERDIDA_TOTAL: 'Agrupada en una pérdida (migración)',
 });
 
 // Error de negocio de las fibras: su mensaje se muestra tal cual y el detalle
@@ -83,15 +89,53 @@ export const codigoInterno = (n) => `FIB-${String(n).padStart(4, '0')}`;
 // ¿El código maestro es una fibra reutilizable? (check en Códigos Maestros).
 export const esCodigoFibra = (codigoMaestro) => codigoMaestro?.fibraReutilizable === true;
 
-export const usosConsumidosDe = (fibra) =>
-  (Number(fibra?.usosPrevios) || 0) + (fibra?.numerosOcupados || []).length;
+export const numerosPerdidosDe = (fibra) => fibra?.numerosPerdidos || [];
+// Una fibra con pérdida queda inutilizable, aunque después se libere un número.
+export const tienePerdida = (fibra) => numerosPerdidosDe(fibra).length > 0;
+// Usos reales: previos + registrados (sin los perdidos).
+export const usosRealizadosDe = (fibra) => (Number(fibra?.usosPrevios) || 0) + (fibra?.numerosOcupados || []).length;
 
-export const usosRestantes = (fibra) => Math.max(0, (Number(fibra?.usosTotales) || 0) - usosConsumidosDe(fibra));
+export const usosConsumidosDe = (fibra) => usosRealizadosDe(fibra) + numerosPerdidosDe(fibra).length;
 
-export const estadoGuardado = (usosConsumidos, usosTotales) =>
-  usosConsumidos >= usosTotales ? ESTADO_FIBRA.AGOTADA : ESTADO_FIBRA.ACTIVA;
+export const usosRestantes = (fibra) => (tienePerdida(fibra) ? 0 : Math.max(0, (Number(fibra?.usosTotales) || 0) - usosConsumidosDe(fibra)));
 
-// Estado que se muestra: AGOTADA manda; si no, VENCIDA con el vencimiento ya
+// --- Colores por usos (pantalla Fibras y panel de Inicio) -----------------------
+// Hasta el primer límite, verde; hasta el segundo, naranjo; sobre él, rojo. Solo
+// existen fibras de 5 y 10 usos (USOS_PERMITIDOS): otra cantidad no tiene color.
+export const LIMITES_COLOR_USOS = Object.freeze({ 5: Object.freeze([2, 4]), 10: Object.freeze([5, 8]) });
+export const COLOR_USOS = Object.freeze({ VERDE: 'verde', NARANJO: 'naranjo', ROJO: 'rojo' });
+export const LEYENDA_COLOR_USOS = Object.freeze([
+  { color: 'verde', texto: 'Verde: 0 a 2 usos (de 5) · 0 a 5 (de 10)' },
+  { color: 'naranjo', texto: 'Naranjo: 3 a 4 usos (de 5) · 6 a 8 (de 10)' },
+  { color: 'rojo', texto: 'Rojo: 5 usos (de 5) · 9 a 10 (de 10): gestionarla' },
+]);
+// Cuenta los usos consumidos (también los perdidos): una fibra con pérdida es roja.
+export const colorUsos = (fibra) => {
+  const limites = LIMITES_COLOR_USOS[Number(fibra?.usosTotales)];
+  if (!limites) return null;
+  if (tienePerdida(fibra)) return COLOR_USOS.ROJO;
+  const n = usosConsumidosDe(fibra);
+  if (n <= limites[0]) return COLOR_USOS.VERDE;
+  return n <= limites[1] ? COLOR_USOS.NARANJO : COLOR_USOS.ROJO;
+};
+// "3/5", o "2/5 · 3 perdidos" con pérdida: los perdidos aparte de los usos reales.
+export const textoUsos = (fibra) => {
+  const total = Number(fibra?.usosTotales) || 0;
+  const perdidos = numerosPerdidosDe(fibra).length;
+  return perdidos ? `${usosRealizadosDe(fibra)}/${total} · ${perdidos} perdido${perdidos === 1 ? '' : 's'}` : `${usosConsumidosDe(fibra)}/${total}`;
+};
+// "3/5, 4/5 y 5/5".
+export const textoNumeros = (numeros = [], total) => {
+  const partes = numeros.map((n) => `${n}/${total}`);
+  return partes.length > 1 ? `${partes.slice(0, -1).join(', ')} y ${partes[partes.length - 1]}` : (partes[0] || '');
+};
+
+// Con pérdida, AGOTADA aunque después se libere un número (anular un uso de
+// la fibra): sigue inutilizable hasta anular la pérdida. Lo exigen las reglas.
+export const estadoGuardado = (usosConsumidos, usosTotales, conPerdida = false) =>
+  conPerdida || usosConsumidos >= usosTotales ? ESTADO_FIBRA.AGOTADA : ESTADO_FIBRA.ACTIVA;
+
+// Estado que se muestra: AGOTADA manda (también con pérdida); si no, VENCIDA con el vencimiento ya
 // pasado respecto de hoy (AAAA-MM-DD en Chile).
 export const estadoVisible = (fibra, hoyISO) => {
   if (usosRestantes(fibra) === 0) return ESTADO_FIBRA.AGOTADA;
@@ -99,8 +143,20 @@ export const estadoVisible = (fibra, hoyISO) => {
   return ESTADO_FIBRA.ACTIVA;
 };
 
-// Menor número libre entre usosPrevios+1 y usosTotales; null si no queda.
+// Números libres entre usosPrevios+1 y usosTotales (sin ocupados ni perdidos).
+export const numerosLibres = (fibra) => {
+  const ocupados = new Set([...(fibra?.numerosOcupados || []), ...numerosPerdidosDe(fibra)]);
+  const libres = [];
+  for (let n = (Number(fibra?.usosPrevios) || 0) + 1; n <= (Number(fibra?.usosTotales) || 0); n++) {
+    if (!ocupados.has(n)) libres.push(n);
+  }
+  return libres;
+};
+
+// Menor número libre entre usosPrevios+1 y usosTotales; null si no queda o si
+// la fibra tiene una pérdida (no se usa más).
 export const siguienteNumeroUso = (fibra) => {
+  if (tienePerdida(fibra)) return null;
   const ocupados = new Set(fibra?.numerosOcupados || []);
   for (let n = (Number(fibra?.usosPrevios) || 0) + 1; n <= (Number(fibra?.usosTotales) || 0); n++) {
     if (!ocupados.has(n)) return n;
@@ -125,6 +181,7 @@ export const etiquetaFibra = (fibra) => `${textoFibra(fibra)} · lote ${fibra?.l
 // cirugía de fecha `fechaCirugia` (AAAA-MM-DD); null si se puede.
 export const motivoNoUsable = (fibra, fechaCirugia) => {
   if (!fibra) return 'La fibra ya no existe.';
+  if (tienePerdida(fibra)) return `La fibra ${etiquetaFibra(fibra)} tiene una pérdida registrada: no se puede usar.`;
   if (usosRestantes(fibra) === 0 || siguienteNumeroUso(fibra) === null) {
     return `La fibra ${etiquetaFibra(fibra)} está agotada.`;
   }
@@ -136,12 +193,16 @@ export const motivoNoUsable = (fibra, fechaCirugia) => {
   return null;
 };
 
-// Pérdida: solo exige usos restantes (no importa el vencimiento).
+// Pérdida: solo exige usos restantes (no importa el vencimiento). Se pierden
+// todos de una vez.
 export const motivoNoPerdible = (fibra) => {
   if (!fibra) return 'La fibra ya no existe.';
-  if (usosRestantes(fibra) === 0 || siguienteNumeroUso(fibra) === null) return `La fibra ${etiquetaFibra(fibra)} está agotada.`;
+  if (tienePerdida(fibra)) return `La fibra ${etiquetaFibra(fibra)} ya tiene una pérdida registrada.`;
+  if (numerosLibres(fibra).length === 0) return `La fibra ${etiquetaFibra(fibra)} está agotada: no le quedan usos que perder.`;
   return null;
 };
+
+export const MOTIVOS_PERDIDA = Object.freeze(['Quebrada', 'Cortada', 'Dañada', 'Otro']);
 
 // --- Ubicación --------------------------------------------------------------
 
@@ -161,6 +222,7 @@ export const ubicacionTrasEstado = (ubicacion, estado) => {
 // vencida respecto de hoy (AAAA-MM-DD en Chile).
 export const motivoNoPonerEnUso = (fibra, hoyISO) => {
   if (!fibra) return 'La fibra ya no existe.';
+  if (tienePerdida(fibra)) return `La fibra ${etiquetaFibra(fibra)} tiene una pérdida registrada.`;
   if (usosRestantes(fibra) === 0) return `La fibra ${etiquetaFibra(fibra)} está agotada.`;
   if (esISO(hoyISO) && fibra.vencimiento < hoyISO) return `La fibra ${etiquetaFibra(fibra)} está vencida (${fibra.vencimiento}).`;
   if (ubicacionDe(fibra) === UBICACION.EN_USO) return `La fibra ${etiquetaFibra(fibra)} ya está en uso.`;
@@ -181,7 +243,7 @@ export const siguienteEnBodega = (fibras = [], referencia, hoyISO, excluirId) =>
 // escritura (Cargas, fibra elegida de bodega).
 export const fibraConAlta = (fibra, numero, usoId, fecha, ubicacionBase = ubicacionDe(fibra)) => {
   const numerosOcupados = [...(fibra.numerosOcupados || []), numero].sort((a, b) => a - b);
-  const usosConsumidos = (Number(fibra.usosPrevios) || 0) + numerosOcupados.length;
+  const usosConsumidos = (Number(fibra.usosPrevios) || 0) + numerosOcupados.length + numerosPerdidosDe(fibra).length;
   const estado = estadoGuardado(usosConsumidos, fibra.usosTotales);
   return {
     numerosOcupados,
@@ -195,10 +257,10 @@ export const fibraConAlta = (fibra, numero, usoId, fecha, ubicacionBase = ubicac
 
 export const fibraConBaja = (fibra, numero, usoId) => {
   const numerosOcupados = (fibra.numerosOcupados || []).filter((n) => n !== numero);
-  const usosConsumidos = (Number(fibra.usosPrevios) || 0) + numerosOcupados.length;
+  const usosConsumidos = (Number(fibra.usosPrevios) || 0) + numerosOcupados.length + numerosPerdidosDe(fibra).length;
   const fechasUso = { ...(fibra.fechasUso || {}) };
   delete fechasUso[String(numero)];
-  const estado = estadoGuardado(usosConsumidos, fibra.usosTotales);
+  const estado = estadoGuardado(usosConsumidos, fibra.usosTotales, tienePerdida(fibra));
   return {
     numerosOcupados,
     usosConsumidos,
@@ -209,6 +271,22 @@ export const fibraConBaja = (fibra, numero, usoId) => {
   };
 };
 
+// Pérdida: todos los números libres pasan a perdidos y la fibra queda agotada
+// (sale de uso). Su anulación los libera y la fibra vuelve a quedar activa, en
+// bodega (como cualquier agotada que recupera usos).
+export const fibraConPerdida = (fibra, usoId) => {
+  const numerosPerdidos = numerosLibres(fibra);
+  const usosConsumidos = usosRealizadosDe(fibra) + numerosPerdidos.length;
+  const estado = estadoGuardado(usosConsumidos, fibra.usosTotales, true);
+  return { numerosPerdidos, usosConsumidos, estado, ubicacion: ubicacionTrasEstado(ubicacionDe(fibra), estado), ultimoCambio: { tipo: 'PERDIDA', usoId } };
+};
+
+export const fibraSinPerdida = (fibra, usoId) => {
+  const usosConsumidos = usosRealizadosDe(fibra);
+  const estado = estadoGuardado(usosConsumidos, fibra.usosTotales);
+  return { numerosPerdidos: [], usosConsumidos, estado, ubicacion: ubicacionTrasEstado(ubicacionDe(fibra), estado), ultimoCambio: { tipo: 'BAJA_PERDIDA', usoId } };
+};
+
 export const fibraConFecha = (fibra, numero, usoId, fecha) => ({
   fechasUso: { ...(fibra.fechasUso || {}), [String(numero)]: fecha },
   ultimoCambio: { tipo: 'FECHA', numero, usoId },
@@ -217,6 +295,10 @@ export const fibraConFecha = (fibra, numero, usoId, fecha) => ({
 // Fecha más tardía entre los usos y pérdidas vigentes ('' si no hay).
 export const fechaUltimoUsoVigente = (fibra) =>
   Object.values(fibra?.fechasUso || {}).reduce((max, f) => (f > max ? f : max), '');
+
+// Aviso tras registrar una pérdida.
+export const textoPerdidaRegistrada = ({ referencia, codigoInterno, numerosPerdidos = [], usosRealizados, usosTotales }) =>
+  `Fibra ${textoFibra({ referencia, codigoInterno })}: pérdida registrada con ${usosRealizados}/${usosTotales} usos realizados. Se perdieron ${numerosPerdidos.length} (${textoNumeros(numerosPerdidos, usosTotales)}). La fibra quedó inutilizable.`;
 
 // Aviso tras registrar un uso o pérdida.
 export const textoUsoRegistrado = ({ referencia, lote, codigoInterno, numeroUso, usosTotales, restantes, tipo }) => {
@@ -251,6 +333,9 @@ export const validarEdicionFibra = (fibra, { lote, vencimiento, usosTotales, uso
   const errores = {};
   const cambios = {};
   const sinUsos = (fibra.numerosOcupados || []).length === 0;
+  if (tienePerdida(fibra) && (Number(usosTotales) !== Number(fibra.usosTotales) || Number(usosPrevios) !== (Number(fibra.usosPrevios) || 0))) {
+    errores.usosTotales = 'La fibra tiene una pérdida registrada: anúlala antes de corregir sus usos';
+  }
   const loteN = normalizarLote(lote);
   if (loteN !== fibra.lote) {
     if (!sinUsos) errores.lote = 'No se puede cambiar: la fibra ya tiene usos registrados';
@@ -272,7 +357,7 @@ export const validarEdicionFibra = (fibra, { lote, vencimiento, usosTotales, uso
     else cambios.usosPrevios = previos;
   }
   const previosFinal = cambios.usosPrevios ?? (Number(fibra.usosPrevios) || 0);
-  const consumidos = previosFinal + ocupados.length;
+  const consumidos = previosFinal + ocupados.length + numerosPerdidosDe(fibra).length;
   const total = Number(usosTotales);
   if (total !== Number(fibra.usosTotales)) {
     const maxOcupado = Math.max(previosFinal, ...ocupados);
@@ -286,7 +371,7 @@ export const validarEdicionFibra = (fibra, { lote, vencimiento, usosTotales, uso
   }
   if ('usosPrevios' in cambios) cambios.usosConsumidos = consumidos;
   if ('usosPrevios' in cambios || 'usosTotales' in cambios) {
-    const estado = estadoGuardado(consumidos, cambios.usosTotales ?? Number(fibra.usosTotales));
+    const estado = estadoGuardado(consumidos, cambios.usosTotales ?? Number(fibra.usosTotales), tienePerdida(fibra));
     if (estado !== fibra.estado) cambios.estado = estado;
   }
   return { errores, cambios };
@@ -384,7 +469,7 @@ export const planFibrasEliminacion = (items = []) => ({
 export const MAX_ACCESOS_REGLAS = 20;
 export const LIMITE_ACCESOS_REGLAS = 16;
 const ACCESOS_PERFIL = 2;
-const accesosDe = (op) => (op.tipo === 'registrar' ? (op.cambiaUbicacion ? 6 : 4) : op.tipo === 'anular' || op.tipo === 'actualizar' ? 3 : 0);
+const accesosDe = (op) => (op.tipo === 'registrar' ? (op.cambiaUbicacion ? 6 : 4) : op.tipo === 'perder' ? 6 : op.tipo === 'anular' || op.tipo === 'actualizar' ? 3 : 0);
 export const accesosReglas = (operaciones) => ACCESOS_PERFIL + operaciones.reduce((n, op) => n + accesosDe(op), 0);
 export const validarLecturasReglas = (operaciones) => (accesosReglas(operaciones) > LIMITE_ACCESOS_REGLAS
   ? 'Hay demasiados cambios de fibras en un solo guardado: guarda en partes (hasta 3 líneas de fibra, o 2 si alguna pone en uso una fibra de bodega o agota la fibra en uso).'
@@ -448,3 +533,46 @@ export const opcionesSelectorFibra = (fibras = [], fechaCirugia, excluir = new S
 const ms = (t) => (t?.toMillis ? t.toMillis() : t instanceof Date ? t.getTime() : Number(t) || 0);
 export const ordenarUsos = (usos = []) =>
   [...usos].sort((a, b) => (a.numeroUso - b.numeroUso) || (ms(a.registradoEl) - ms(b.registradoEl)));
+
+// --- Migración de pérdidas antiguas ----------------------------------------------
+//
+// Antes, cada pérdida ocupaba un solo número (un registro por número). Si las
+// pérdidas vigentes de una fibra son exactamente sus últimos números (los que
+// quedarían libres sin ellas), se agrupan en una pérdida nueva con
+// numerosPerdidos, conservando fecha, usuario, motivo y observación originales.
+// Los registros antiguos no se borran: quedan anulados con el motivo
+// MIGRADA_A_PERDIDA_TOTAL y la referencia a la nueva. Devuelve
+// { aplica: false, motivo } o { aplica: true, numeros, cambiosFibra, perdida, anulaciones, log }.
+export const planMigracionPerdidas = (fibra, usos = [], { nuevoUsoId, ahora, por }) => {
+  const antiguas = usos.filter((u) => u.tipo === TIPO_USO.PERDIDA && u.estado === ESTADO_USO.VIGENTE && !u.numerosPerdidos)
+    .sort((a, b) => a.numeroUso - b.numeroUso);
+  if (!antiguas.length) return { aplica: false, motivo: 'Sin pérdidas antiguas vigentes.' };
+  if (tienePerdida(fibra)) return { aplica: false, motivo: 'Ya tiene una pérdida con el formato nuevo.' };
+  const numeros = antiguas.map((u) => u.numeroUso);
+  const ocupados = (fibra.numerosOcupados || []).filter((n) => !numeros.includes(n));
+  const sinAntiguas = { ...fibra, numerosOcupados: ocupados };
+  const libres = numerosLibres(sinAntiguas);
+  // Deben ser los números libres y estar después de todos los usos reales
+  // (una pérdida con usos posteriores no es una pérdida de la fibra).
+  if (libres.join(',') !== numeros.join(',') || ocupados.some((n) => n > numeros[0])) {
+    return { aplica: false, motivo: `Sus pérdidas (${numeros.join(', ')}) no son sus últimos usos (${libres.join(', ') || 'ninguno'}): se dejan como están.` };
+  }
+  const primera = antiguas[0];
+  const unicos = (campo) => [...new Set(antiguas.map((u) => u[campo]).filter(Boolean))];
+  const fechasUso = { ...(fibra.fechasUso || {}) };
+  numeros.forEach((n) => delete fechasUso[String(n)]);
+  return {
+    aplica: true,
+    numeros,
+    cambiosFibra: { numerosOcupados: ocupados, fechasUso, numerosPerdidos: numeros, usosConsumidos: usosConsumidosDe({ ...sinAntiguas, numerosPerdidos: numeros }), ultimoCambio: { tipo: 'PERDIDA', usoId: nuevoUsoId }, actualizadoEl: ahora },
+    perdida: {
+      tipo: TIPO_USO.PERDIDA, estado: ESTADO_USO.VIGENTE, numerosPerdidos: numeros, numeroUso: numeros[0], usosTotales: fibra.usosTotales,
+      usosRealizados: usosRealizadosDe(sinAntiguas), fibraId: fibra.id,
+      fecha: primera.fecha, motivo: unicos('motivo').join(' / '), observacion: unicos('observacion').join(' / '),
+      registradoEl: primera.registradoEl, registradoPor: primera.registradoPor,
+      migracion: { migradoEl: ahora, por, desde: antiguas.map((u) => ({ usoId: u.id, numeroUso: u.numeroUso, fecha: u.fecha, motivo: u.motivo || '', registradoEl: u.registradoEl || null, registradoPor: u.registradoPor || null })) },
+    },
+    anulaciones: antiguas.map((u) => ({ usoId: u.id, cambios: { estado: ESTADO_USO.ANULADO, motivoAnulacion: MOTIVO_ANULACION.MIGRADA_A_PERDIDA_TOTAL, detalleAnulacion: `Agrupada en la pérdida ${nuevoUsoId}`, anuladoEl: ahora, anuladoPor: por, migradaA: nuevoUsoId } })),
+    log: { accion: 'PERDIDA_MIGRADA', detalles: { de: antiguas.map((u) => u.id), a: nuevoUsoId, numerosPerdidos: numeros, motivo: unicos('motivo').join(' / ') }, usuario: por.nombre, uid: por.uid, timestamp: ahora },
+  };
+};

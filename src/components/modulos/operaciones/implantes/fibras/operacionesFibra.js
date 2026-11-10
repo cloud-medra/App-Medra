@@ -13,14 +13,16 @@
 // referencia (firestore.rules, implantes_fibras).
 //
 // Operaciones:
-//   { tipo: 'registrar', fibraId, usoId, item?, datosGestion?, perdida?: { motivo, fecha },
-//     ponerEnUso?, devolver? }
+//   { tipo: 'registrar', fibraId, usoId, item, datosGestion, ponerEnUso?, devolver? }
+//   { tipo: 'perder', fibraId, usoId, perdida: { motivo, observacion, fecha } }: se
+//     pierden todos los usos restantes de una vez (fibraConPerdida)
 //   { tipo: 'anular', fibraId, usoId, motivo, detalle?, soloPerdida? }
 //   { tipo: 'actualizar', fibraId, usoId, datosGestion }
 
 import {
   ErrorFibra, ESTADO_USO, TIPO_USO, MOTIVO_ANULACION, UBICACION,
   motivoNoUsable, motivoNoPerdible, motivoNoPonerEnUso, siguienteNumeroUso, fibraConAlta, fibraConBaja, fibraConFecha,
+  fibraConPerdida, fibraSinPerdida, usosRealizadosDe,
   usosRestantes, validarUnCambioPorFibra, validarLecturasReglas, etiquetaFibra, ubicacionDe, idControlEnUso, normalizarReferencia,
 } from './fibrasNucleo';
 
@@ -76,7 +78,7 @@ export const aplicarOperacionesFibra = async (t, operaciones, ctx) => {
   const ids = [...new Set(operaciones.map((op) => op.fibraId))];
   const snapsFibra = await Promise.all(ids.map((id) => t.get(refs.fibra(id))));
   const fibras = new Map(snapsFibra.map((s, i) => [ids[i], s.exists() ? { id: ids[i], ...s.data() } : null]));
-  const conUso = operaciones.filter((op) => op.tipo !== 'registrar');
+  const conUso = operaciones.filter((op) => op.tipo !== 'registrar' && op.tipo !== 'perder');
   const snapsUso = await Promise.all(conUso.map((op) => t.get(refs.uso(op.fibraId, op.usoId))));
   const usos = new Map(snapsUso.map((s, i) => [conUso[i].usoId, s.exists() ? s.data() : null]));
 
@@ -115,9 +117,39 @@ export const aplicarOperacionesFibra = async (t, operaciones, ctx) => {
     const refFibra = refs.fibra(op.fibraId);
     const refUso = refs.uso(op.fibraId, op.usoId);
 
+    if (op.tipo === 'perder') {
+      const noSePuede = motivoNoPerdible(fibra);
+      if (noSePuede) throw new ErrorFibra(noSePuede);
+      const ubicacionAntes = ubicacionDe(fibra);
+      const cambios = fibraConPerdida(fibra, op.usoId);
+      const usosRealizados = usosRealizadosDe(fibra);
+      const datosPerdida = { motivo: op.perdida.motivo, observacion: op.perdida.observacion || '' };
+      t.update(refFibra, { ...cambios, ...camposUbicacion(ubicacionAntes, cambios.ubicacion, ctx), actualizadoEl: ahora });
+      t.set(refUso, {
+        tipo: TIPO_USO.PERDIDA, estado: ESTADO_USO.VIGENTE,
+        numerosPerdidos: cambios.numerosPerdidos, numeroUso: cambios.numerosPerdidos[0], usosTotales: fibra.usosTotales, usosRealizados,
+        fibraId: op.fibraId, registradoEl: ahora, registradoPor: usuario, fecha: op.perdida.fecha, ...datosPerdida,
+      });
+      t.set(refs.log(op.fibraId), {
+        accion: 'PERDIDA_REGISTRADA',
+        detalles: { usoId: op.usoId, numerosPerdidos: cambios.numerosPerdidos, usosRealizados, usosTotales: fibra.usosTotales, ...datosPerdida },
+        usuario: usuario.nombre, uid: usuario.uid, timestamp: ahora,
+      });
+      logUbicacion(t, op.fibraId, ubicacionAntes, cambios.ubicacion, 'Pérdida registrada', ctx);
+      if (ubicacionAntes === UBICACION.EN_USO) escribirControlEnUso(t, fibra.referencia, null, op.fibraId, ctx);
+      fibras.set(op.fibraId, { ...fibra, ...cambios });
+      resultados.push({
+        tipo: TIPO_USO.PERDIDA, fibraId: op.fibraId, referencia: fibra.referencia, codigoInterno: fibra.codigoInterno, lote: fibra.lote,
+        numerosPerdidos: cambios.numerosPerdidos, usosRealizados, usosTotales: fibra.usosTotales, restantes: 0,
+      });
+      continue;
+    }
+
     if (op.tipo === 'registrar') {
-      const perdida = Boolean(op.perdida);
-      const motivo = perdida ? motivoNoPerdible(fibra) : motivoNoUsable(fibra, op.datosGestion?.fecha);
+      // El formato antiguo (una pérdida de un número) ya no existe.
+      if (op.perdida) throw new ErrorFibra('Esta pantalla está desactualizada: actualiza la página para registrar la pérdida.');
+      const perdida = false;
+      const motivo = motivoNoUsable(fibra, op.datosGestion?.fecha);
       if (motivo) throw new ErrorFibra(motivo);
       const ponerEnUso = enUsoPorOp.has(op);
       if (ponerEnUso) {
@@ -193,7 +225,9 @@ export const aplicarOperacionesFibra = async (t, operaciones, ctx) => {
       if (op.soloPerdida && uso?.tipo !== TIPO_USO.PERDIDA) throw new ErrorFibra('Solo se pueden anular pérdidas desde aquí.');
       // Ya anulado (o inexistente): nada que revertir. Así anular es idempotente.
       if (!uso || uso.estado !== ESTADO_USO.VIGENTE || !fibra) continue;
-      const cambios = fibraConBaja(fibra, uso.numeroUso, op.usoId);
+      // Pérdida nueva (varios números): los libera todos; un uso o una pérdida
+      // antigua (un número): libera ese.
+      const cambios = uso.numerosPerdidos ? fibraSinPerdida(fibra, op.usoId) : fibraConBaja(fibra, uso.numeroUso, op.usoId);
       const ubicacionAntes = ubicacionDe(fibra);
       t.update(refFibra, { ...cambios, ...camposUbicacion(ubicacionAntes, cambios.ubicacion, ctx), actualizadoEl: ahora });
       t.update(refUso, {
@@ -204,7 +238,7 @@ export const aplicarOperacionesFibra = async (t, operaciones, ctx) => {
         ...(op.detalle ? { detalleAnulacion: op.detalle } : {}),
       });
       if (op.motivo === MOTIVO_ANULACION.PERDIDA_ANULADA) {
-        t.set(refs.log(op.fibraId), { accion: 'PERDIDA_ANULADA', detalles: { usoId: op.usoId, numeroUso: uso.numeroUso, motivo: op.detalle || '' }, usuario: usuario.nombre, uid: usuario.uid, timestamp: ahora });
+        t.set(refs.log(op.fibraId), { accion: 'PERDIDA_ANULADA', detalles: { usoId: op.usoId, numeroUso: uso.numeroUso, numerosPerdidos: uso.numerosPerdidos || [uso.numeroUso], motivo: op.detalle || '' }, usuario: usuario.nombre, uid: usuario.uid, timestamp: ahora });
       }
       // Una agotada que recupera un uso queda EN BODEGA.
       logUbicacion(t, op.fibraId, ubicacionAntes, cambios.ubicacion, 'Se anuló un uso: vuelve a tener usos', ctx);

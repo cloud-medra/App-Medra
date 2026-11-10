@@ -16,11 +16,12 @@
 //     pacientes (admisiones) distintos; una cirugía con dos empresas son dos
 //     gestiones. Hemodinamia no va: sus procedimientos no se agendan.
 //   - Fibras (con la pantalla Fibras): una línea por referencia con el uso
-//     de su fibra en uso (consumidos/totales) y el color de alertaFibra.
+//     de su fibra en uso (consumidos/totales), el color por usos (colorUsos,
+//     el mismo de la pantalla Fibras) y el vencimiento como etiqueta aparte.
 import { subItemsVisibles } from '../../../../config/accesoMenu';
 import { moduloGestion } from '../../operaciones/shared/modulosGestion';
-import { UBICACION, RUTA_FIBRAS, ubicacionDe, usosConsumidosDe, normalizarReferencia } from '../../operaciones/implantes/fibras/fibrasNucleo';
-import { alertaFibra } from '../../operaciones/implantes/fibras/seccionesFibras';
+import { UBICACION, RUTA_FIBRAS, ubicacionDe, usosConsumidosDe, normalizarReferencia, colorUsos } from '../../operaciones/implantes/fibras/fibrasNucleo';
+import { alertaVencimiento } from '../../operaciones/implantes/fibras/seccionesFibras';
 
 export { RUTA_FIBRAS };
 export const ESTADOS_EN_REVISION = Object.freeze(['REVISAR', 'S/COTIZACION', 'SIN COTIZACION']);
@@ -59,9 +60,10 @@ export const contarCirugias = (gestiones = []) => new Set(gestiones.map((g) => {
 })).size;
 
 // Fibras + códigos marcados como fibra -> una línea por referencia, en orden:
-// { referencia, uso: { consumidos, totales, alerta } | null }. `uso` es el de
-// la fibra EN USO (null si la referencia no tiene ninguna); `alerta` es la de
-// la pantalla Fibras ('ambar' | 'rojo' | null).
+// { referencia, uso: { consumidos, totales, color, vencimiento } | null }. `uso`
+// es el de la fibra EN USO (null si la referencia no tiene ninguna); `color`
+// ('verde' | 'naranjo' | 'rojo') y `vencimiento` ('vencida' | 'proxima' |
+// null) son los de la pantalla Fibras.
 export const usoFibrasPorReferencia = (fibras = [], codigos = [], hoy) => {
   const lineas = new Map();
   const agregar = (referencia) => {
@@ -72,7 +74,7 @@ export const usoFibrasPorReferencia = (fibras = [], codigos = [], hoy) => {
   fibras.filter((f) => ubicacionDe(f) !== UBICACION.AGOTADA).forEach((f) => agregar(f.referencia));
   fibras.filter((f) => ubicacionDe(f) === UBICACION.EN_USO).forEach((f) => {
     const linea = lineas.get(normalizarReferencia(f.referencia));
-    if (linea) linea.uso = { consumidos: usosConsumidosDe(f), totales: Number(f.usosTotales) || 0, alerta: alertaFibra(f, hoy) };
+    if (linea) linea.uso = { consumidos: usosConsumidosDe(f), totales: Number(f.usosTotales) || 0, color: colorUsos(f), vencimiento: alertaVencimiento(f, hoy) };
   });
   return [...lineas.values()].sort((a, b) => normalizarReferencia(a.referencia).localeCompare(normalizarReferencia(b.referencia)));
 };

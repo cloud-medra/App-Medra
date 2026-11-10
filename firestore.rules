@@ -1156,9 +1156,11 @@ service cloud.firestore {
         && d.usosPrevios is int && d.usosPrevios >= 0
         && d.numerosOcupados is list
         && d.numerosOcupados.toSet().size() == d.numerosOcupados.size()
-        && d.usosConsumidos == d.usosPrevios + d.numerosOcupados.size()
+        // numerosPerdidos: los usos perdidos de una vez (quiebre, corte…);
+        // con pérdida la fibra queda AGOTADA hasta anularla.
+        && d.usosConsumidos == d.usosPrevios + d.numerosOcupados.size() + d.get('numerosPerdidos', []).size()
         && d.usosConsumidos <= d.usosTotales
-        && d.estado == (d.usosConsumidos == d.usosTotales ? 'AGOTADA' : 'ACTIVA')
+        && d.estado == ((d.usosConsumidos == d.usosTotales || d.get('numerosPerdidos', []).size() > 0) ? 'AGOTADA' : 'ACTIVA')
         && (d.usosTotales == 10 || !d.numerosOcupados.hasAny([6, 7, 8, 9, 10]))
         && d.fechasUso is map && d.fechasUso.size() == d.numerosOcupados.size()
         && d.ubicacion in ['EN BODEGA', 'EN USO', 'AGOTADA']
@@ -1194,6 +1196,7 @@ service cloud.firestore {
         let c = d.ultimoCambio;
         let n = string(c.numero);
         return c.tipo == 'ALTA'
+          && antes.get('numerosPerdidos', []).size() == 0
           && c.numero is int && c.numero > d.usosPrevios && c.numero <= d.usosTotales
           && !(c.numero in antes.numerosOcupados)
           && c.numero in d.numerosOcupados
@@ -1239,14 +1242,56 @@ service cloud.firestore {
           && getAfter(refUso(c.usoId)).data.estado == 'VIGENTE'
           && getAfter(refUso(c.usoId)).data.fecha == d.fechasUso[n];
       }
+      // Pérdida: todos los números libres (entre los previos y el total, sin
+      // los ocupados) pasan a perdidos de una vez, y la pérdida con esa misma
+      // lista se crea en la misma escritura. Solo una pérdida por fibra.
+      // El corte [previos:total] con previos == total no tiene números: la
+      // fibra ya está agotada y no hay nada que perder (el error = rechazo).
+      function esPerdidaTotal() {
+        let antes = resource.data;
+        let d = request.resource.data;
+        let c = d.ultimoCambio;
+        let p = d.numerosPerdidos;
+        let uso = getAfter(refUso(c.usoId)).data;
+        return c.tipo == 'PERDIDA'
+          && antes.get('numerosPerdidos', []).size() == 0
+          && p is list && p.size() > 0
+          && p.toSet().size() == p.size()
+          && d.numerosOcupados == antes.numerosOcupados
+          && d.fechasUso == antes.fechasUso
+          && !p.hasAny(d.numerosOcupados)
+          && p.toSet().difference([1, 2, 3, 4, 5, 6, 7, 8, 9, 10][d.usosPrevios:d.usosTotales].toSet()).size() == 0
+          && d.usosConsumidos == d.usosTotales
+          && !exists(refUso(c.usoId))
+          && uso.tipo == 'PERDIDA' && uso.estado == 'VIGENTE' && uso.numerosPerdidos == p;
+      }
+      // Anular la pérdida: sus números vuelven a quedar libres y esa pérdida
+      // (vigente, con la misma lista) queda anulada en la misma escritura.
+      function esBajaPerdida() {
+        let antes = resource.data;
+        let d = request.resource.data;
+        let c = d.ultimoCambio;
+        let uso = get(refUso(c.usoId)).data;
+        return c.tipo == 'BAJA_PERDIDA'
+          && antes.get('numerosPerdidos', []).size() > 0
+          && d.numerosPerdidos == []
+          && d.numerosOcupados == antes.numerosOcupados
+          && d.fechasUso == antes.fechasUso
+          && uso.tipo == 'PERDIDA' && uso.estado == 'VIGENTE'
+          && uso.numerosPerdidos == antes.numerosPerdidos
+          && getAfter(refUso(c.usoId)).data.estado == 'ANULADO';
+      }
       // Las reglas tienen un tope de 1000 expresiones evaluadas por pedido:
       // cada tipo de cambio se descarta primero con una comprobación barata
       // (qué campos cambian) y lo común (coherencia y ubicación) se evalúa una
-      // sola vez, en actualizacionValida.
+      // sola vez, en actualizacionValida. Si cambian los perdidos, solo puede
+      // ser una pérdida o su anulación; si no, un alta, baja o cambio de fecha.
       function cambiaUso(cambia) {
         return cambia.hasAny(['ultimoCambio'])
-          && cambia.hasOnly(['usosConsumidos', 'numerosOcupados', 'fechasUso', 'estado', 'ubicacion', 'ubicacionDesde', 'ultimoCambio', 'actualizadoEl'])
-          && (esAlta() || esBaja() || esCambioFecha());
+          && cambia.hasOnly(['usosConsumidos', 'numerosOcupados', 'numerosPerdidos', 'fechasUso', 'estado', 'ubicacion', 'ubicacionDesde', 'ultimoCambio', 'actualizadoEl'])
+          && (cambia.hasAny(['numerosPerdidos'])
+            ? (esPerdidaTotal() || esBajaPerdida())
+            : (esAlta() || esBaja() || esCambioFecha()));
       }
       // --- Ubicación ---
       function controlEnUso() {
@@ -1298,6 +1343,8 @@ service cloud.firestore {
         return cambia.hasAny(['ultimaCorreccion'])
           && cambia.hasOnly(['lote', 'vencimiento', 'usosTotales', 'usosPrevios', 'usosConsumidos', 'estado', 'ubicacion', 'ubicacionDesde', 'ultimaCorreccion', 'actualizadoEl', 'actualizadoPor'])
           && (!cambia.hasAny(['lote']) || antes.numerosOcupados.size() == 0)
+          // Con pérdida, los usos no se corrigen: primero se anula la pérdida.
+          && (!cambia.hasAny(['usosTotales', 'usosPrevios']) || antes.get('numerosPerdidos', []).size() == 0)
           // Con 0 previos no hay número que choque, y el corte [0:0] da un
           // error de índice en las reglas (= rechazo): se descarta antes.
           && (!cambia.hasAny(['usosPrevios']) || d.usosPrevios == 0
@@ -1347,7 +1394,11 @@ service cloud.firestore {
           return d.diff(resource.data).affectedKeys().hasOnly(['estado', 'anuladoEl', 'anuladoPor', 'motivoAnulacion', 'detalleAnulacion'])
             && d.estado == 'ANULADO'
             && d.anuladoPor.uid == request.auth.uid
-            && c != null && c.tipo == 'BAJA' && c.usoId == usoId && c.numero == resource.data.numeroUso
+            && c != null && c.usoId == usoId
+            // Un uso o una pérdida antigua (un número): BAJA de ese número. Una
+            // pérdida nueva (numerosPerdidos): BAJA_PERDIDA de la fibra.
+            && ((c.tipo == 'BAJA' && c.numero == resource.data.numeroUso)
+              || (c.tipo == 'BAJA_PERDIDA' && resource.data.tipo == 'PERDIDA'))
             && (resource.data.tipo == 'USO'
               ? d.motivoAnulacion in ['LINEA_ELIMINADA', 'GESTION_ELIMINADA', 'REFERENCIA_CAMBIADA', 'FIBRA_CAMBIADA']
               : (d.motivoAnulacion == 'PERDIDA_ANULADA' && d.detalleAnulacion is string
@@ -1372,11 +1423,17 @@ service cloud.firestore {
           && request.resource.data.usosTotales == fibraAntes().usosTotales
           && request.resource.data.registradoPor.uid == request.auth.uid
           && esFechaISO(request.resource.data.fecha)
-          && cambioFibra() != null && cambioFibra().tipo == 'ALTA' && cambioFibra().usoId == usoId
-          && cambioFibra().numero == request.resource.data.numeroUso
-          && ((request.resource.data.tipo == 'USO' && request.resource.data.fecha <= fibraAntes().vencimiento)
-            || (request.resource.data.tipo == 'PERDIDA' && request.resource.data.motivo is string
-              && request.resource.data.motivo.size() > 0 && accionFibras('tabla_fibras', 'action_registrar_perdida')));
+          && cambioFibra() != null && cambioFibra().usoId == usoId
+          // Un uso: con el ALTA de su número. Una pérdida: con la PERDIDA de la
+          // fibra y la misma lista de números. Una página antigua que intente la
+          // pérdida de un número (ALTA + PERDIDA) se rechaza sin escribir nada.
+          && ((request.resource.data.tipo == 'USO' && cambioFibra().tipo == 'ALTA'
+              && cambioFibra().numero == request.resource.data.numeroUso
+              && request.resource.data.fecha <= fibraAntes().vencimiento)
+            || (request.resource.data.tipo == 'PERDIDA' && cambioFibra().tipo == 'PERDIDA'
+              && request.resource.data.numerosPerdidos == getAfter(/databases/$(database)/documents/implantes_fibras/$(fibraId)).data.numerosPerdidos
+              && request.resource.data.motivo is string && request.resource.data.motivo.size() > 0
+              && accionFibras('tabla_fibras', 'action_registrar_perdida')));
         allow update: if estaActivo() && (esDev() || tienePermiso('implantes'))
           && resource.data.estado == 'VIGENTE'
           && (anulacion() || actualizacionGestion());

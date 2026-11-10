@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seccionesFibras, alertaFibra, coincideBusqueda } from './seccionesFibras';
+import { seccionesFibras, alertaVencimiento, coincideBusqueda, coincideColor } from './seccionesFibras';
 
 const HOY = '2026-10-28';
 const fibra = (id, extra = {}) => ({
@@ -7,12 +7,37 @@ const fibra = (id, extra = {}) => ({
   usosTotales: 5, usosPrevios: 0, numerosOcupados: [], fechasUso: {}, usosConsumidos: 0, estado: 'ACTIVA', ubicacion: 'EN BODEGA', ...extra,
 });
 
-describe('alertaFibra', () => {
-  it('rojo si está vencida; ámbar con 1 uso o si vence en 30 días; nada si no', () => {
-    expect(alertaFibra(fibra('A', { vencimiento: '2026-10-27' }), HOY)).toBe('rojo');
-    expect(alertaFibra(fibra('A', { usosPrevios: 4, usosConsumidos: 4 }), HOY)).toBe('ambar');
-    expect(alertaFibra(fibra('A', { vencimiento: '2026-11-27' }), HOY)).toBe('ambar');
-    expect(alertaFibra(fibra('A', { vencimiento: '2026-11-28' }), HOY)).toBeNull();
+describe('alertaVencimiento (etiqueta aparte del color por usos)', () => {
+  it('vencida, por vencer en 30 días o nada; los usos no influyen', () => {
+    expect(alertaVencimiento(fibra('A', { vencimiento: '2026-10-27' }), HOY)).toBe('vencida');
+    expect(alertaVencimiento(fibra('A', { vencimiento: '2026-11-27' }), HOY)).toBe('proxima');
+    expect(alertaVencimiento(fibra('A', { vencimiento: '2026-11-28' }), HOY)).toBeNull();
+    expect(alertaVencimiento(fibra('A', { usosPrevios: 4, usosConsumidos: 4 }), HOY)).toBeNull();
+  });
+});
+
+describe('filtro y orden por color', () => {
+  const lista = [
+    fibra('V', { usosPrevios: 1, usosConsumidos: 1 }),
+    fibra('N', { usosPrevios: 3, usosConsumidos: 3 }),
+    fibra('R', { usosPrevios: 4, numerosOcupados: [5], fechasUso: { 5: '2026-10-01' }, usosConsumidos: 5, estado: 'AGOTADA', ubicacion: 'AGOTADA' }),
+    fibra('P', { usosPrevios: 1, numerosPerdidos: [2, 3, 4, 5], usosConsumidos: 5, estado: 'AGOTADA', ubicacion: 'AGOTADA' }),
+    fibra('N2', { referencia: 'FL-1000', usosTotales: 10, usosPrevios: 7, usosConsumidos: 7 }),
+    fibra('V0', { referencia: 'FL-100' }),
+  ];
+  it('filtra por verde, naranjo, rojo o pérdida en las tres secciones', () => {
+    const ids = (r) => [...r.bodega, ...r.agotadas].map((f) => f.id).sort();
+    expect(ids(seccionesFibras(lista, HOY, '', { color: 'verde' }))).toEqual(['V', 'V0']);
+    expect(ids(seccionesFibras(lista, HOY, '', { color: 'naranjo' }))).toEqual(['N', 'N2']);
+    expect(ids(seccionesFibras(lista, HOY, '', { color: 'rojo' }))).toEqual(['P', 'R']);
+    expect(ids(seccionesFibras(lista, HOY, '', { color: 'perdida' }))).toEqual(['P']);
+    expect(ids(seccionesFibras(lista, HOY, '', { color: 'todas' }))).toHaveLength(6);
+    expect(coincideColor(lista[3], 'perdida')).toBe(true);
+    expect(coincideColor(lista[2], 'perdida')).toBe(false);
+  });
+  it('orden por color: rojo, naranjo y verde; dentro de cada color, por referencia', () => {
+    expect(seccionesFibras(lista, HOY, '', { orden: 'referencia' }).bodega.map((f) => f.id)).toEqual(['V0', 'N2', 'N', 'V']);
+    expect(seccionesFibras(lista, HOY, '', { orden: 'color' }).bodega.map((f) => f.id)).toEqual(['N2', 'N', 'V0', 'V']);
   });
 });
 

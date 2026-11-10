@@ -2,7 +2,8 @@
 // fibras por referencia (con las alertas de la pantalla Fibras) y los
 // valores Al día / No disponible.
 import { describe, it, expect } from 'vitest';
-import { alertaFibra } from '../../operaciones/implantes/fibras/seccionesFibras';
+import { alertaVencimiento } from '../../operaciones/implantes/fibras/seccionesFibras';
+import { colorUsos } from '../../operaciones/implantes/fibras/fibrasNucleo';
 import {
   bloquesPendientes, hayBloques, contarCirugias, usoFibrasPorReferencia, filtroGestion, tipoPorRevisar,
   valorIndicador, sumarResultados, diaSiguienteISO,
@@ -109,12 +110,16 @@ describe('Pendientes — fibras', () => {
     ]);
   });
 
-  it('el color es el de la pantalla Fibras: ámbar con 1 uso restante o por vencer, rojo vencida', () => {
-    const porRef = Object.fromEntries(usoFibrasPorReferencia(fibras, codigos, hoy).map((l) => [l.referencia, l.uso?.alerta ?? null]));
-    expect(porRef).toMatchObject({ 'FL-550': 'ambar', 'FL-600': 'rojo', 'fl-1000': null, 'FL-365': null });
+  it('el color por usos y el vencimiento (aparte) son los de la pantalla Fibras', () => {
+    const lineas = usoFibrasPorReferencia(fibras, codigos, hoy);
+    const color = Object.fromEntries(lineas.map((l) => [l.referencia, l.uso?.color ?? null]));
+    const vence = Object.fromEntries(lineas.map((l) => [l.referencia, l.uso?.vencimiento ?? null]));
+    expect(color).toMatchObject({ 'fl-1000': 'naranjo', 'FL-365': 'verde', 'FL-550': 'rojo', 'FL-600': 'verde' });
+    expect(vence).toMatchObject({ 'FL-600': 'vencida', 'FL-550': null, 'fl-1000': null });
     fibras.filter((x) => x.ubicacion === 'EN USO').forEach((x) => {
       const linea = usoFibrasPorReferencia([x], [], hoy)[0];
-      expect(linea.uso.alerta).toBe(alertaFibra(x, hoy));
+      expect(linea.uso.color).toBe(colorUsos(x));
+      expect(linea.uso.vencimiento).toBe(alertaVencimiento(x, hoy));
     });
   });
 

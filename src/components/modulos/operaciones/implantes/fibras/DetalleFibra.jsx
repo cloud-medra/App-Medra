@@ -4,7 +4,9 @@ import { useGranularPermission } from '../../../../../hooks/useGranularPermissio
 import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitidas';
 import { useColumnResize } from '../../../../../hooks/useColumnResize';
 import { ThRedimensionable, ColgroupRedimensionable, ThRelleno, TdRelleno } from '../../../../ui/ThRedimensionable';
-import { ordenarUsos, TIPO_USO, ESTADO_USO, TEXTO_MOTIVO_ANULACION, usosConsumidosDe, ubicacionDe, textoFibra } from './fibrasNucleo';
+import {
+  ordenarUsos, TIPO_USO, ESTADO_USO, TEXTO_MOTIVO_ANULACION, ubicacionDe, textoFibra, usosRealizadosDe, numerosPerdidosDe, textoNumeros,
+} from './fibrasNucleo';
 import NombreFibra from './NombreFibra';
 import { formatearFechaTabla } from '../gestionImplantes/components/Cargastab/cargasHelpers';
 
@@ -28,7 +30,7 @@ const TD = 'px-2 py-1.5 border-b border-slate-100 dark:border-gray-700/60 trunca
 const TEXTO_MOVIMIENTO = {
   PUESTA_EN_USO: 'Puesta en uso',
   DEVUELTA_A_BODEGA: 'Devuelta a bodega',
-  SALIDA_DE_USO: 'Fuera de uso (agotada)',
+  SALIDA_DE_USO: 'Fuera de uso (agotada o perdida)',
   UBICACION_INICIAL: 'Ubicación inicial',
 };
 const fechaCorta = (t) => {
@@ -73,10 +75,16 @@ const DetalleFibra = ({ fibra, leerUsos, leerMovimientos, version, onAnularPerdi
   const celda = (u, key) => {
     const anulado = u.estado === ESTADO_USO.ANULADO;
     const perdida = u.tipo === TIPO_USO.PERDIDA;
+    // Pérdida nueva: todos los números perdidos en una fila; antigua: uno.
+    const numeros = u.numerosPerdidos || [u.numeroUso];
     switch (key) {
-      case 'numero': return <span className={`font-num font-bold ${anulado ? 'line-through text-slate-400' : ''}`}>{u.numeroUso}/{u.usosTotales}</span>;
+      case 'numero': return <span className={`font-num font-bold ${anulado ? 'line-through text-slate-400' : ''}`} title={textoNumeros(numeros, u.usosTotales)}>{numeros.length > 1 ? `${numeros[0]}–${numeros[numeros.length - 1]}` : numeros[0]}/{u.usosTotales}</span>;
       case 'tipo': return perdida
-        ? <span className="text-red-700 dark:text-red-400 font-semibold" title={u.motivo}>Pérdida: {u.motivo}</span>
+        ? (
+          <span className="text-red-700 dark:text-red-400 font-semibold" title={[u.motivo, u.observacion].filter(Boolean).join(' · ')}>
+            {u.numerosPerdidos ? `Pérdida de ${numeros.length} uso${numeros.length === 1 ? '' : 's'}` : 'Pérdida'}: {u.motivo}{u.observacion ? ` · ${u.observacion}` : ''}
+          </span>
+        )
         : <span>Uso en gestión</span>;
       case 'fecha': return formatearFechaTabla(u.fecha);
       case 'gestionId': return perdida ? '—' : u.gestionId;
@@ -100,7 +108,17 @@ const DetalleFibra = ({ fibra, leerUsos, leerMovimientos, version, onAnularPerdi
           <div>
             <h3 className="text-[14px]"><NombreFibra fibra={fibra} claseReferencia="font-bold text-slate-800 dark:text-gray-100" /></h3>
             <p className="text-slate-500 dark:text-gray-400">
-              Lote {fibra.lote} · vence {formatearFechaTabla(fibra.vencimiento)} · {usosConsumidosDe(fibra)} de {fibra.usosTotales} usos consumidos · {ubicacionDe(fibra).toLowerCase()}
+              Lote {fibra.lote} · vence {formatearFechaTabla(fibra.vencimiento)} · {ubicacionDe(fibra).toLowerCase()}
+            </p>
+            {/* Usos reales y perdidos por separado. */}
+            <p className="text-slate-700 dark:text-gray-200 font-semibold">
+              {usosRealizadosDe(fibra)} uso{usosRealizadosDe(fibra) === 1 ? '' : 's'} realizado{usosRealizadosDe(fibra) === 1 ? '' : 's'} de {fibra.usosTotales}
+              {numerosPerdidosDe(fibra).length > 0 && (
+                <span className="text-red-700 dark:text-red-400">
+                  {' · '}{numerosPerdidosDe(fibra).length} perdido{numerosPerdidosDe(fibra).length === 1 ? '' : 's'} ({textoNumeros(numerosPerdidosDe(fibra), fibra.usosTotales)})
+                  {' '}<span className="px-1 rounded text-[9px] font-bold bg-red-600 text-white">Pérdida</span>
+                </span>
+              )}
             </p>
             {movimientos.length > 0 && (
               <ul className="mt-1.5 text-[10px] text-slate-500 dark:text-gray-400 space-y-0.5" aria-label="Movimientos de ubicación">

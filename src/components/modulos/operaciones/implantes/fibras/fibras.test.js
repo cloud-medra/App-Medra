@@ -6,6 +6,7 @@ import {
   fibrasElegibles, fibrasUsadasEnBloques, ordenarUsos, MOTIVO_ANULACION, ESTADO_USO, TIPO_USO,
   accesosReglas, validarLecturasReglas, fechaUltimoUsoVigente, UBICACION, ubicacionTrasEstado, motivoNoPonerEnUso, siguienteEnBodega,
   opcionesSelectorFibra, idControlEnUso, textoFibra, etiquetaFibra,
+  colorUsos, textoUsos, textoNumeros, tienePerdida, usosRealizadosDe, numerosLibres, planMigracionPerdidas, textoPerdidaRegistrada,
 } from './fibrasNucleo';
 import { aplicarOperacionesFibra, cambiarUbicacionFibra } from './operacionesFibra';
 
@@ -301,13 +302,6 @@ describe('transacción de usos (Firestore simulado)', () => {
     await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U1')], ctx(refs)))).rejects.toThrow(/vence/);
   });
 
-  it('pérdida: descuenta un uso, queda con motivo y log', async () => {
-    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra({ numerosOcupados: [1] }) });
-    const [r] = await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [{ tipo: 'registrar', fibraId: 'FIB-0001', usoId: 'P1', perdida: { motivo: 'Se dañó', fecha: '2026-10-28' } }], ctx(refs)));
-    expect(r).toMatchObject({ tipo: TIPO_USO.PERDIDA, numeroUso: 2, restantes: 3 });
-    expect(datos.get('fibras/FIB-0001/usos/P1')).toMatchObject({ tipo: 'PERDIDA', motivo: 'Se dañó', fecha: '2026-10-28', numeroUso: 2 });
-    expect([...datos.keys()].some((k) => k.startsWith('fibras/FIB-0001/logs/'))).toBe(true);
-  });
 
   it('anular un uso intermedio: libera su número, queda en el historial y el siguiente uso lo toma (sin números repetidos)', async () => {
     const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra() });
@@ -334,16 +328,6 @@ describe('transacción de usos (Firestore simulado)', () => {
     expect(datos.get('fibras/FIB-0001').usosConsumidos).toBe(0);
   });
 
-  it('anular una pérdida devuelve el uso; solo pérdidas por esa vía', async () => {
-    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra() });
-    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U1')], ctx(refs)));
-    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [{ tipo: 'registrar', fibraId: 'FIB-0001', usoId: 'P1', perdida: { motivo: 'x', fecha: '2026-10-28' } }], ctx(refs)));
-    const anularPerdida = (usoId) => ({ tipo: 'anular', fibraId: 'FIB-0001', usoId, motivo: MOTIVO_ANULACION.PERDIDA_ANULADA, detalle: 'error', soloPerdida: true });
-    await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [anularPerdida('U1')], ctx(refs)))).rejects.toThrow(/Solo se pueden anular pérdidas/);
-    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [anularPerdida('P1')], ctx(refs)));
-    expect(datos.get('fibras/FIB-0001/usos/P1')).toMatchObject({ estado: 'ANULADO', detalleAnulacion: 'error' });
-    expect(datos.get('fibras/FIB-0001').usosConsumidos).toBe(1);
-  });
 
   it('actualizar copia los datos nuevos de la gestión y rechaza una fecha posterior al vencimiento', async () => {
     const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra() });
@@ -542,5 +526,226 @@ describe('detalle', () => {
       { id: 'b', numeroUso: 2, registradoEl: 20, estado: 'ANULADO' },
     ];
     expect(ordenarUsos(usos).map((u) => u.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+// --- Colores por usos y pérdida total ----------------------------------------
+const perder = (usoId = 'P1', perdida = { motivo: 'Quebrada', observacion: 'al retirarla', fecha: '2026-10-28' }) => ({ tipo: 'perder', fibraId: 'FIB-0001', usoId, perdida });
+const anularPerdidaOp = (usoId) => ({ tipo: 'anular', fibraId: 'FIB-0001', usoId, motivo: MOTIVO_ANULACION.PERDIDA_ANULADA, detalle: 'error', soloPerdida: true });
+const ocupados = (n) => ({ numerosOcupados: Array.from({ length: n }, (_, i) => i + 1), usosConsumidos: n, fechasUso: Object.fromEntries(Array.from({ length: n }, (_, i) => [String(i + 1), '2026-10-20'])) });
+const logs = (datos) => [...datos].filter(([k]) => k.includes('/logs/')).map(([, v]) => v);
+
+describe('color por usos', () => {
+  it('fibras de 5 usos: verde hasta 2, naranjo 3 y 4, rojo 5', () => {
+    expect(colorUsos(fibra(ocupados(2)))).toBe('verde');
+    expect(colorUsos(fibra(ocupados(3)))).toBe('naranjo');
+    expect(colorUsos(fibra(ocupados(4)))).toBe('naranjo');
+    expect(colorUsos(fibra(ocupados(5)))).toBe('rojo');
+    expect(colorUsos(fibra())).toBe('verde');
+  });
+  it('fibras de 10 usos: verde hasta 5, naranjo 6 a 8, rojo 9 y 10', () => {
+    const f10 = (n) => fibra({ usosTotales: 10, ...ocupados(n) });
+    expect(colorUsos(f10(5))).toBe('verde');
+    expect(colorUsos(f10(6))).toBe('naranjo');
+    expect(colorUsos(f10(8))).toBe('naranjo');
+    expect(colorUsos(f10(9))).toBe('rojo');
+    expect(colorUsos(f10(10))).toBe('rojo');
+  });
+  it('los usos previos cuentan; una fibra con pérdida es roja; otro total no tiene color', () => {
+    expect(colorUsos(fibra({ usosPrevios: 3 }))).toBe('naranjo');
+    expect(colorUsos(fibra({ numerosPerdidos: [2, 3, 4, 5], ...ocupados(1), usosConsumidos: 5 }))).toBe('rojo');
+    expect(colorUsos(fibra({ usosTotales: 7 }))).toBeNull();
+  });
+  it('texto: "3/5" sin pérdida; con pérdida, los realizados y los perdidos aparte', () => {
+    expect(textoUsos(fibra(ocupados(3)))).toBe('3/5');
+    expect(textoUsos(fibra({ ...ocupados(3), numerosPerdidos: [4, 5], usosConsumidos: 5 }))).toBe('3/5 · 2 perdidos');
+    expect(textoNumeros([3, 4, 5], 5)).toBe('3/5, 4/5 y 5/5');
+    expect(textoNumeros([5], 5)).toBe('5/5');
+  });
+});
+
+describe('pérdida: se pierden todos los usos restantes', () => {
+  it('con 2 de 5 usos registra 3 perdidos (3/5, 4/5 y 5/5), agota la fibra y la saca de uso', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra(ocupados(2)) });
+    const [r] = await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [perder()], ctx(refs)));
+    expect(r).toMatchObject({ tipo: TIPO_USO.PERDIDA, numerosPerdidos: [3, 4, 5], usosRealizados: 2, usosTotales: 5, restantes: 0 });
+    const f = datos.get('fibras/FIB-0001');
+    expect(f).toMatchObject({ numerosOcupados: [1, 2], numerosPerdidos: [3, 4, 5], usosConsumidos: 5, estado: 'AGOTADA', ubicacion: 'AGOTADA', ultimoCambio: { tipo: 'PERDIDA', usoId: 'P1' } });
+    expect(usosRealizadosDe(f)).toBe(2);
+    expect(datos.get('fibras/FIB-0001/usos/P1')).toMatchObject({
+      tipo: 'PERDIDA', estado: 'VIGENTE', numerosPerdidos: [3, 4, 5], numeroUso: 3, usosRealizados: 2, usosTotales: 5,
+      motivo: 'Quebrada', observacion: 'al retirarla', fecha: '2026-10-28', registradoPor: { uid: 'u1', nombre: 'Ana' }, registradoEl: 'TS',
+    });
+    // Auditoría: usuario, fecha, usos perdidos y motivo.
+    expect(logs(datos).find((l) => l.accion === 'PERDIDA_REGISTRADA')).toMatchObject({
+      usuario: 'Ana', uid: 'u1', timestamp: 'TS', detalles: { usoId: 'P1', numerosPerdidos: [3, 4, 5], usosRealizados: 2, usosTotales: 5, motivo: 'Quebrada', observacion: 'al retirarla' },
+    });
+    // Estaba EN USO: el control de la referencia queda sin fibra.
+    expect(datos.get(`control/${idControlEnUso('FL-365')}`)).toMatchObject({ fibraId: null, origen: 'FIB-0001' });
+    expect(textoPerdidaRegistrada(r)).toMatch(/2\/5 usos realizados\. Se perdieron 3 \(3\/5, 4\/5 y 5\/5\)/);
+  });
+
+  it('sin usos: se pierden los 5', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra({ ubicacion: 'EN BODEGA' }) });
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [perder()], ctx(refs)));
+    expect(datos.get('fibras/FIB-0001')).toMatchObject({ numerosPerdidos: [1, 2, 3, 4, 5], usosConsumidos: 5, estado: 'AGOTADA' });
+  });
+
+  it('con usos previos, solo pierde los números después de ellos', () => {
+    expect(numerosLibres(fibra({ usosPrevios: 2, numerosOcupados: [3] }))).toEqual([4, 5]);
+  });
+
+  it('una fibra agotada no tiene usos que perder: se rechaza sin escribir', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra({ ...ocupados(5), estado: 'AGOTADA', ubicacion: 'AGOTADA' }) });
+    await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [perder()], ctx(refs)))).rejects.toThrow(/agotada: no le quedan usos que perder/);
+    expect(datos.has('fibras/FIB-0001/usos/P1')).toBe(false);
+    expect(logs(datos)).toHaveLength(0);
+  });
+
+  it('una segunda pérdida se rechaza', async () => {
+    const { refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra(ocupados(1)) });
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [perder('P1')], ctx(refs)));
+    await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [perder('P2')], ctx(refs)))).rejects.toThrow(/ya tiene una pérdida/);
+  });
+
+  it('después de una pérdida no se registran usos nuevos, ni aunque se anule un uso suyo', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra() });
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U1')], ctx(refs)));
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [perder()], ctx(refs)));
+    await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U2')], ctx(refs)))).rejects.toThrow(/pérdida registrada/);
+    // Se elimina la línea del uso 1: el número se libera, pero la fibra sigue agotada e inutilizable.
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [{ tipo: 'anular', fibraId: 'FIB-0001', usoId: 'U1', motivo: MOTIVO_ANULACION.LINEA_ELIMINADA }], ctx(refs)));
+    const f = datos.get('fibras/FIB-0001');
+    expect(f).toMatchObject({ numerosOcupados: [], numerosPerdidos: [2, 3, 4, 5], usosConsumidos: 4, estado: 'AGOTADA', ubicacion: 'AGOTADA' });
+    expect(tienePerdida(f)).toBe(true);
+    expect(siguienteNumeroUso(f)).toBeNull();
+    expect(usosRestantes(f)).toBe(0);
+    expect(motivoNoUsable(f, '2026-10-20')).toMatch(/pérdida registrada/);
+    expect(motivoNoPonerEnUso(f, '2026-10-28')).toMatch(/pérdida registrada/);
+    await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U3')], ctx(refs)))).rejects.toThrow(/pérdida registrada/);
+  });
+
+  it('un uso y una pérdida a la vez: el uso que confirmó primero queda y la pérdida se recalcula sin él', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra(ocupados(1)) });
+    // La pérdida lee la fibra (1 uso); antes de confirmar, otra persona registra el uso 2.
+    await ejecutarTransaccion(
+      (t) => aplicarOperacionesFibra(t, [perder()], ctx(refs)),
+      { antesDeConfirmar: () => ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U2')], ctx(refs))) }
+    );
+    expect(datos.get('fibras/FIB-0001/usos/U2').numeroUso).toBe(2);
+    expect(datos.get('fibras/FIB-0001/usos/P1').numerosPerdidos).toEqual([3, 4, 5]);
+    expect(datos.get('fibras/FIB-0001')).toMatchObject({ numerosOcupados: [1, 2], numerosPerdidos: [3, 4, 5], usosConsumidos: 5 });
+  });
+
+  it('una pérdida y un uso a la vez: si la pérdida confirmó primero, el uso se rechaza sin escribir', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra(ocupados(1)) });
+    const uso = ejecutarTransaccion(
+      (t) => aplicarOperacionesFibra(t, [registrar('U2')], ctx(refs)),
+      { antesDeConfirmar: () => ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [perder()], ctx(refs))) }
+    );
+    await expect(uso).rejects.toThrow(/pérdida registrada/);
+    expect(datos.has('fibras/FIB-0001/usos/U2')).toBe(false);
+    expect(datos.get('fibras/FIB-0001').numerosPerdidos).toEqual([2, 3, 4, 5]);
+  });
+
+  it('una página antigua que intenta la pérdida de un número recibe el aviso de actualizar, sin escribir nada', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra(ocupados(1)) });
+    const antes = structuredClone(datos.get('fibras/FIB-0001'));
+    const viejo = { tipo: 'registrar', fibraId: 'FIB-0001', usoId: 'P1', perdida: { motivo: 'Se dañó', fecha: '2026-10-28' } };
+    await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [viejo], ctx(refs)))).rejects.toThrow(/actualiza la página/);
+    expect(datos.get('fibras/FIB-0001')).toEqual(antes);
+    expect([...datos.keys()]).toEqual(['fibras/FIB-0001']);
+  });
+});
+
+describe('anular pérdida', () => {
+  it('pérdida nueva: libera todos sus números y la fibra vuelve a bodega, activa', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({ 'fibras/FIB-0001': fibra(ocupados(2)) });
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [perder()], ctx(refs)));
+    await expect(ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [anularPerdidaOp('NO')], ctx(refs)))).rejects.toThrow(/Solo se pueden anular pérdidas/);
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [anularPerdidaOp('P1')], ctx(refs)));
+    expect(datos.get('fibras/FIB-0001')).toMatchObject({ numerosOcupados: [1, 2], numerosPerdidos: [], usosConsumidos: 2, estado: 'ACTIVA', ubicacion: 'EN BODEGA', ultimoCambio: { tipo: 'BAJA_PERDIDA', usoId: 'P1' } });
+    expect(datos.get('fibras/FIB-0001/usos/P1')).toMatchObject({ estado: 'ANULADO', motivoAnulacion: 'PERDIDA_ANULADA', detalleAnulacion: 'error', numerosPerdidos: [3, 4, 5] });
+    expect(logs(datos).find((l) => l.accion === 'PERDIDA_ANULADA').detalles).toMatchObject({ usoId: 'P1', numerosPerdidos: [3, 4, 5] });
+    // Ya se puede usar de nuevo: toma el número 3.
+    const [r] = await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [registrar('U3')], ctx(refs)));
+    expect(r.numeroUso).toBe(3);
+  });
+
+  it('pérdida antigua de un número: libera ese número, como antes', async () => {
+    const { datos, refs, ejecutarTransaccion } = crearBase({
+      'fibras/FIB-0001': fibra({ ...ocupados(5), estado: 'AGOTADA', ubicacion: 'AGOTADA' }),
+      'fibras/FIB-0001/usos/P5': { tipo: 'PERDIDA', estado: 'VIGENTE', numeroUso: 5, usosTotales: 5, motivo: 'Fibra se quebro', fecha: '2026-11-10' },
+    });
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [anularPerdidaOp('P5')], ctx(refs)));
+    expect(datos.get('fibras/FIB-0001')).toMatchObject({ numerosOcupados: [1, 2, 3, 4], usosConsumidos: 4, estado: 'ACTIVA', ubicacion: 'EN BODEGA', ultimoCambio: { tipo: 'BAJA', numero: 5, usoId: 'P5' } });
+    expect(datos.get('fibras/FIB-0001/usos/P5')).toMatchObject({ estado: 'ANULADO', motivoAnulacion: 'PERDIDA_ANULADA' });
+    expect(logs(datos).find((l) => l.accion === 'PERDIDA_ANULADA').detalles).toMatchObject({ numerosPerdidos: [5] });
+  });
+});
+
+describe('migración de pérdidas antiguas (FIB-0003)', () => {
+  const POR = { uid: 'script', nombre: 'Migración (script)' };
+  const reg = { uid: 'u9', nombre: 'Quien la registró' };
+  const fib3 = () => ({
+    ...fibra({ id: 'FIB-0003', codigoInterno: 'FIB-0003', ...ocupados(5), estado: 'AGOTADA', ubicacion: 'AGOTADA' }),
+    fechasUso: { 1: '2026-10-01', 2: '2026-10-05', 3: '2026-10-09', 4: '2026-11-10', 5: '2026-11-10' },
+  });
+  const usos = () => [
+    { id: 'U1', tipo: 'USO', estado: 'VIGENTE', numeroUso: 1 },
+    { id: 'U2', tipo: 'USO', estado: 'VIGENTE', numeroUso: 2 },
+    { id: 'U3', tipo: 'USO', estado: 'VIGENTE', numeroUso: 3 },
+    { id: 'P5', tipo: 'PERDIDA', estado: 'VIGENTE', numeroUso: 5, motivo: 'Fibra se quebro', observacion: 'obs', fecha: '2026-11-10', registradoEl: 'T1', registradoPor: reg },
+    { id: 'P4', tipo: 'PERDIDA', estado: 'VIGENTE', numeroUso: 4, motivo: 'Fibra se quebro', observacion: 'obs', fecha: '2026-11-10', registradoEl: 'T1', registradoPor: reg },
+  ];
+
+  it('agrupa las pérdidas 4 y 5 en una, con fecha, usuario, motivo y observación originales', () => {
+    const plan = planMigracionPerdidas(fib3(), usos(), { nuevoUsoId: 'PM', ahora: 'T2', por: POR });
+    expect(plan.aplica).toBe(true);
+    expect(plan.numeros).toEqual([4, 5]);
+    expect(plan.cambiosFibra).toMatchObject({ numerosOcupados: [1, 2, 3], numerosPerdidos: [4, 5], usosConsumidos: 5, fechasUso: { 1: '2026-10-01', 2: '2026-10-05', 3: '2026-10-09' }, ultimoCambio: { tipo: 'PERDIDA', usoId: 'PM' } });
+    expect(Object.keys(plan.cambiosFibra.fechasUso)).toEqual(['1', '2', '3']);
+    expect(plan.perdida).toMatchObject({
+      tipo: 'PERDIDA', estado: 'VIGENTE', numerosPerdidos: [4, 5], numeroUso: 4, usosRealizados: 3, usosTotales: 5,
+      fecha: '2026-11-10', motivo: 'Fibra se quebro', observacion: 'obs', registradoEl: 'T1', registradoPor: reg,
+    });
+    expect(plan.perdida.migracion).toMatchObject({ migradoEl: 'T2', por: POR, desde: [{ usoId: 'P4', numeroUso: 4 }, { usoId: 'P5', numeroUso: 5 }] });
+    // Los antiguos no se borran: quedan anulados con la referencia a la nueva.
+    expect(plan.anulaciones).toEqual([
+      { usoId: 'P4', cambios: expect.objectContaining({ estado: 'ANULADO', motivoAnulacion: 'MIGRADA_A_PERDIDA_TOTAL', migradaA: 'PM', anuladoPor: POR }) },
+      { usoId: 'P5', cambios: expect.objectContaining({ estado: 'ANULADO', motivoAnulacion: 'MIGRADA_A_PERDIDA_TOTAL', migradaA: 'PM', anuladoPor: POR }) },
+    ]);
+    expect(plan.log).toMatchObject({ accion: 'PERDIDA_MIGRADA', detalles: { de: ['P4', 'P5'], a: 'PM', numerosPerdidos: [4, 5] }, timestamp: 'T2' });
+  });
+
+  it('después de migrar: 3 usos realizados y 2 perdidos (4/5 y 5/5), con pérdida y en rojo', () => {
+    const plan = planMigracionPerdidas(fib3(), usos(), { nuevoUsoId: 'PM', ahora: 'T2', por: POR });
+    const f = { ...fib3(), ...plan.cambiosFibra };
+    expect(usosRealizadosDe(f)).toBe(3);
+    expect(textoUsos(f)).toBe('3/5 · 2 perdidos');
+    expect(textoNumeros(f.numerosPerdidos, f.usosTotales)).toBe('4/5 y 5/5');
+    expect(tienePerdida(f)).toBe(true);
+    expect(colorUsos(f)).toBe('rojo');
+    expect(motivoNoPerdible(f)).toMatch(/ya tiene una pérdida/);
+  });
+
+  it('se puede anular la pérdida migrada: la fibra vuelve a bodega con 3/5', async () => {
+    const plan = planMigracionPerdidas(fib3(), usos(), { nuevoUsoId: 'PM', ahora: 'T2', por: POR });
+    const { datos, refs, ejecutarTransaccion } = crearBase({
+      'fibras/FIB-0001': { ...fib3(), id: 'FIB-0001', ...plan.cambiosFibra, estado: 'AGOTADA', ubicacion: 'AGOTADA' },
+      'fibras/FIB-0001/usos/PM': plan.perdida,
+    });
+    await ejecutarTransaccion((t) => aplicarOperacionesFibra(t, [anularPerdidaOp('PM')], ctx(refs)));
+    expect(datos.get('fibras/FIB-0001')).toMatchObject({ numerosOcupados: [1, 2, 3], numerosPerdidos: [], usosConsumidos: 3, estado: 'ACTIVA', ubicacion: 'EN BODEGA' });
+  });
+
+  it('no aplica si ya se migró, si no hay pérdidas antiguas o si no son los últimos números', () => {
+    const plan = planMigracionPerdidas(fib3(), usos(), { nuevoUsoId: 'PM', ahora: 'T2', por: POR });
+    const migrados = usos().map((u) => (u.tipo === 'PERDIDA' ? { ...u, estado: 'ANULADO' } : u)).concat({ ...plan.perdida, id: 'PM' });
+    expect(planMigracionPerdidas({ ...fib3(), ...plan.cambiosFibra }, migrados, { nuevoUsoId: 'X', ahora: 'T3', por: POR })).toMatchObject({ aplica: false });
+    expect(planMigracionPerdidas(fib3(), usos().slice(0, 3), { nuevoUsoId: 'X', ahora: 'T3', por: POR })).toMatchObject({ aplica: false, motivo: /Sin pérdidas antiguas/ });
+    // Pérdida en el número 2 con usos 3, 4 y 5 vigentes: no son los últimos.
+    const intermedia = [{ id: 'P2', tipo: 'PERDIDA', estado: 'VIGENTE', numeroUso: 2 }];
+    expect(planMigracionPerdidas(fib3(), intermedia, { nuevoUsoId: 'X', ahora: 'T3', por: POR })).toMatchObject({ aplica: false, motivo: /no son sus últimos usos/ });
   });
 });

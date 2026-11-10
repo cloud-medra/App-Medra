@@ -14,10 +14,17 @@ const LINEA = 'flex items-center justify-between gap-2 rounded-md border border-
 const LINEA_BOTON = `${LINEA} hover:border-[#2383C2] hover:bg-[#2383C2]/[0.06] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2383C2]`;
 // Sin truncate: si no cabe pasa a otra línea (ningún dato queda con "…").
 const ETIQUETA = 'text-pequeno text-tinta-principal min-w-0 break-words';
+// Color por usos de la fibra (el mismo de la pantalla Fibras).
 const TONOS = {
-  ambar: 'text-amber-700 dark:text-amber-300',
+  verde: 'text-emerald-700 dark:text-emerald-300',
+  naranjo: 'text-orange-600 dark:text-orange-300',
   rojo: 'text-red-700 dark:text-red-300',
   normal: 'text-tinta-principal',
+};
+// Vencimiento: etiqueta aparte del número, para que no se confunda con los usos.
+const ETIQUETA_VENCE = {
+  vencida: { texto: 'Vencida', clase: 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300' },
+  proxima: { texto: 'Vence pronto', clase: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300' },
 };
 
 const NoDisponible = () => (
@@ -115,7 +122,12 @@ const PendientesSeccion = ({ bloques, onAbrir }) => {
                 <Linea key={referencia} onClick={() => onAbrir?.('implantes', RUTA_FIBRAS, { texto: referencia })} titulo={`Abrir Fibras con ${referencia}`}>
                   <span className={`${ETIQUETA} tabular-nums`}>{referencia}</span>
                   {uso ? (
-                    <span className={`text-numero-indicador shrink-0 ${TONOS[uso.alerta] || TONOS.normal}`}>{uso.consumidos}/{uso.totales}</span>
+                    <span className="flex items-center gap-1 shrink-0">
+                      {ETIQUETA_VENCE[uso.vencimiento] && (
+                        <span className={`text-etiqueta px-1 rounded ${ETIQUETA_VENCE[uso.vencimiento].clase}`}>{ETIQUETA_VENCE[uso.vencimiento].texto}</span>
+                      )}
+                      <span className={`text-numero-indicador ${TONOS[uso.color] || TONOS.normal}`}>{uso.consumidos}/{uso.totales}</span>
+                    </span>
                   ) : (
                     <span className="text-pequeno text-tinta-atenuada shrink-0">Sin fibra en uso</span>
                   )}

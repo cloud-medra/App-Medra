@@ -196,11 +196,12 @@ export const editarFibra = async (fibraId, valores, userData) => {
   });
 };
 
-export const registrarPerdida = async (fibraId, { motivo, fecha }, userData) => {
+// Pérdida: todos los usos restantes de una vez (operacionesFibra, tipo 'perder').
+export const registrarPerdida = async (fibraId, { motivo, observacion, fecha }, userData) => {
   if (!String(motivo || '').trim()) throw new ErrorFibra('Ingresa el motivo de la pérdida.');
   return runTransaction(db, async (t) => {
     const [resultado] = await aplicarOperacionesFibra(t, [{
-      tipo: 'registrar', fibraId, usoId: nuevoUsoId(fibraId), perdida: { motivo: String(motivo).trim(), fecha },
+      tipo: 'perder', fibraId, usoId: nuevoUsoId(fibraId), perdida: { motivo: String(motivo).trim(), observacion: String(observacion || '').trim(), fecha },
     }], contexto(userData));
     return resultado;
   });

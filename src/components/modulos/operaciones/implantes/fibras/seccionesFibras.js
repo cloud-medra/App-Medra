@@ -1,7 +1,7 @@
 // Implantes → Fibras: reparte las fibras en las tres secciones de la
 // pantalla (En uso, En bodega, Agotadas). Lógica pura, sin Firestore.
 import {
-  UBICACION, ubicacionDe, usosRestantes, normalizarReferencia, fechaUltimoUsoVigente, siguienteEnBodega,
+  UBICACION, ubicacionDe, normalizarReferencia, fechaUltimoUsoVigente, siguienteEnBodega, colorUsos, tienePerdida, COLOR_USOS,
 } from './fibrasNucleo';
 
 export const DIAS_AVISO_VENCE = 30;
@@ -18,13 +18,31 @@ export const estaVencida = (fibra, hoy) => Boolean(fibra?.vencimiento) && fibra.
 export const venceProximamente = (fibra, hoy) => !estaVencida(fibra, hoy)
   && Boolean(fibra?.vencimiento) && fibra.vencimiento <= sumarDias(hoy, DIAS_AVISO_VENCE);
 
-// Alerta de una fibra en uso: 'rojo' vencida; 'ambar' si le queda 1 uso o
-// vence en los próximos 30 días; null si no.
-export const alertaFibra = (fibra, hoy) => {
-  if (estaVencida(fibra, hoy)) return 'rojo';
-  if (usosRestantes(fibra) === 1 || venceProximamente(fibra, hoy)) return 'ambar';
-  return null;
+// Vencimiento, como etiqueta aparte del color por usos (colorUsos):
+// 'vencida', 'proxima' (vence en los próximos 30 días) o null.
+export const ALERTA_VENCIMIENTO = Object.freeze({ VENCIDA: 'vencida', PROXIMA: 'proxima' });
+export const alertaVencimiento = (fibra, hoy) => {
+  if (estaVencida(fibra, hoy)) return ALERTA_VENCIMIENTO.VENCIDA;
+  return venceProximamente(fibra, hoy) ? ALERTA_VENCIMIENTO.PROXIMA : null;
 };
+
+// Filtro por color de la pantalla: 'todas', un color de COLOR_USOS o 'perdida'.
+export const FILTROS_COLOR = Object.freeze([
+  { valor: 'todas', texto: 'Todas' },
+  { valor: COLOR_USOS.VERDE, texto: 'Verde' },
+  { valor: COLOR_USOS.NARANJO, texto: 'Naranjo' },
+  { valor: COLOR_USOS.ROJO, texto: 'Rojo' },
+  { valor: 'perdida', texto: 'Pérdida' },
+]);
+export const coincideColor = (fibra, filtro) => {
+  if (!filtro || filtro === 'todas') return true;
+  if (filtro === 'perdida') return tienePerdida(fibra);
+  return colorUsos(fibra) === filtro;
+};
+// Orden "por color": rojo, naranjo, verde (lo que hay que gestionar primero).
+const RANGO_COLOR = { [COLOR_USOS.ROJO]: 0, [COLOR_USOS.NARANJO]: 1, [COLOR_USOS.VERDE]: 2 };
+export const ORDENES = Object.freeze([{ valor: 'referencia', texto: 'Referencia' }, { valor: 'color', texto: 'Color (rojo primero)' }]);
+const porColor = (a, b) => (RANGO_COLOR[colorUsos(a)] ?? 3) - (RANGO_COLOR[colorUsos(b)] ?? 3);
 
 // Búsqueda por código, referencia, lote o descripción (sin mayúsculas).
 export const coincideBusqueda = (fibra, texto) => {
@@ -44,13 +62,16 @@ const porReferenciaYVencimiento = (a, b) => normalizarReferencia(a.referencia).l
  *             bodega que se pondría en uso: vigente, vencimiento más próximo).
  *   bodega:   EN BODEGA, por referencia y vencimiento.
  *   agotadas: por último uso, de la más reciente a la más antigua.
+ * Opciones: `color` (FILTROS_COLOR) filtra las tres; `orden` 'color' pone
+ * primero las rojas en bodega y agotadas (las tarjetas siguen por referencia).
  */
-export const seccionesFibras = (fibras = [], hoy, texto = '') => {
-  const visibles = fibras.filter((f) => coincideBusqueda(f, texto));
-  const bodega = visibles.filter((f) => ubicacionDe(f) === UBICACION.EN_BODEGA).sort(porReferenciaYVencimiento);
+export const seccionesFibras = (fibras = [], hoy, texto = '', { color = 'todas', orden = 'referencia' } = {}) => {
+  const visibles = fibras.filter((f) => coincideBusqueda(f, texto) && coincideColor(f, color));
+  const conOrden = (comparar) => (orden === 'color' ? (a, b) => porColor(a, b) || comparar(a, b) : comparar);
+  const bodega = visibles.filter((f) => ubicacionDe(f) === UBICACION.EN_BODEGA).sort(conOrden(porReferenciaYVencimiento));
   const agotadas = visibles.filter((f) => ubicacionDe(f) === UBICACION.AGOTADA)
     .map((f) => ({ ...f, ultimoUso: fechaUltimoUsoVigente(f) }))
-    .sort((a, b) => b.ultimoUso.localeCompare(a.ultimoUso) || (b.codigoInterno || '').localeCompare(a.codigoInterno || ''));
+    .sort(conOrden((a, b) => b.ultimoUso.localeCompare(a.ultimoUso) || (b.codigoInterno || '').localeCompare(a.codigoInterno || '')));
 
   const referencias = new Map();
   visibles.filter((f) => ubicacionDe(f) !== UBICACION.AGOTADA).forEach((f) => {

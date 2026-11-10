@@ -11,10 +11,11 @@ import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../../../bodega/shar
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../../../bodega/shared/anchosTablaBodega';
 import { formatearFechaTabla } from '../gestionImplantes/components/Cargastab/cargasHelpers';
 import {
-  UBICACION, RUTA_FIBRAS, usosConsumidosDe, usosRestantes, ubicacionDe, motivoNoPonerEnUso, normalizarReferencia, textoFibra,
+  UBICACION, RUTA_FIBRAS, usosConsumidosDe, usosRestantes, ubicacionDe, motivoNoPonerEnUso, motivoNoPerdible, normalizarReferencia, textoFibra,
+  colorUsos, textoUsos, tienePerdida, LEYENDA_COLOR_USOS,
 } from './fibrasNucleo';
 import NombreFibra from './NombreFibra';
-import { seccionesFibras, alertaFibra, estaVencida } from './seccionesFibras';
+import { seccionesFibras, alertaVencimiento, ALERTA_VENCIMIENTO, FILTROS_COLOR, ORDENES } from './seccionesFibras';
 import { useFibrasReutilizablesData } from './useFibrasReutilizablesData';
 import { RegistrarFibraDialogo, EditarFibraDialogo, PerdidaDialogo, AnularPerdidaDialogo } from './DialogosFibra';
 import DetalleFibra from './DetalleFibra';
@@ -51,26 +52,49 @@ const COLUMNAS_AGOTADAS = [
   { key: 'acciones', label: 'Acciones', fija: true, ancho: 120, min: 100 },
 ];
 
+// Color por usos (colorUsos): borde de la tarjeta, número y barra. El
+// vencimiento va en una etiqueta aparte (ETIQUETA_VENCE).
 const ESTILO_TARJETA = {
+  verde: 'border-emerald-300 bg-white dark:border-emerald-800 dark:bg-gray-800',
+  naranjo: 'border-orange-300 bg-orange-50/60 dark:border-orange-800 dark:bg-orange-950/20',
   rojo: 'border-red-300 bg-red-50/60 dark:border-red-800 dark:bg-red-950/20',
-  ambar: 'border-amber-300 bg-amber-50/60 dark:border-amber-800 dark:bg-amber-950/20',
   normal: 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800',
 };
-const ETIQUETA_VENCIDA = 'px-1 rounded text-[9px] font-bold bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300';
+const COLOR_TEXTO = { verde: 'text-emerald-700 dark:text-emerald-400', naranjo: 'text-orange-600 dark:text-orange-400', rojo: 'text-red-700 dark:text-red-400' };
+const COLOR_BARRA = { verde: 'bg-emerald-500', naranjo: 'bg-orange-500', rojo: 'bg-red-600' };
+const ETIQUETA = 'px-1 rounded text-[9px] font-bold whitespace-nowrap';
+const ETIQUETA_VENCE = {
+  [ALERTA_VENCIMIENTO.VENCIDA]: { texto: 'VENCIDA', clase: `${ETIQUETA} bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300` },
+  [ALERTA_VENCIMIENTO.PROXIMA]: { texto: 'VENCE PRONTO', clase: `${ETIQUETA} bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300` },
+};
+// Distingue una fibra perdida (quebrada, cortada…) de una agotada por uso.
+const EtiquetaPerdida = ({ fibra }) => (tienePerdida(fibra)
+  ? <span className={`${ETIQUETA} bg-red-600 text-white`} title="Se perdieron sus usos restantes: no se puede usar">Pérdida</span>
+  : null);
 
-// Barra de usos consumidos (grande en las tarjetas).
+// Barra de usos consumidos (grande en las tarjetas), con el color por usos.
 const BarraUsos = ({ fibra, grande = false }) => {
   const consumidos = usosConsumidosDe(fibra);
   const pct = Math.round((consumidos / fibra.usosTotales) * 100);
+  const color = colorUsos(fibra);
   return (
     <span className="flex items-center gap-1.5 w-full">
-      <span className={`font-num font-bold ${grande ? 'text-[15px]' : ''}`}>{consumidos}/{fibra.usosTotales}</span>
-      <span className={`flex-1 ${grande ? 'h-2.5' : 'h-1.5'} rounded bg-gray-200 dark:bg-gray-700 overflow-hidden`} aria-hidden>
-        <span className={`block h-full ${usosRestantes(fibra) <= 1 ? 'bg-amber-500' : 'bg-teal-600'}`} style={{ width: `${pct}%` }} />
+      <span className={`font-num font-bold whitespace-nowrap ${grande ? 'text-[15px]' : ''} ${COLOR_TEXTO[color] || ''}`}>{textoUsos(fibra)}</span>
+      <span className={`flex-1 min-w-[24px] ${grande ? 'h-2.5' : 'h-1.5'} rounded bg-gray-200 dark:bg-gray-700 overflow-hidden`} aria-hidden>
+        <span className={`block h-full ${COLOR_BARRA[color] || 'bg-teal-600'}`} style={{ width: `${pct}%` }} />
       </span>
     </span>
   );
 };
+
+const Leyenda = () => (
+  <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-gray-500 dark:text-gray-400">
+    {LEYENDA_COLOR_USOS.map(({ color, texto }) => (
+      <span key={color} className="flex items-center gap-1"><span className={`inline-block w-2.5 h-2.5 rounded-sm ${COLOR_BARRA[color]}`} aria-hidden />{texto}</span>
+    ))}
+    <span className="flex items-center gap-1"><span className={`${ETIQUETA} bg-red-600 text-white`}>Pérdida</span> sin usos disponibles por quiebre o daño</span>
+  </p>
+);
 
 // Encabezado de sección con su contador (plegable si recibe onAlternar).
 const TituloSeccion = ({ titulo, cantidad, abierta = true, onAlternar }) => {
@@ -101,12 +125,15 @@ const FibrasReutilizables = () => {
   const filtroInicial = useFiltroInicial(RUTA_FIBRAS);
   const [texto, setTexto] = useState(filtroInicial?.texto || '');
   const [agotadasAbiertas, setAgotadasAbiertas] = useState(false);
+  const [filtroColor, setFiltroColor] = useState('todas');
+  const [orden, setOrden] = useState('referencia');
   const [dialogo, setDialogo] = useState(null); // { tipo, fibra?, uso? }
   const [detalle, setDetalle] = useState(null);
   const [versionDetalle, setVersionDetalle] = useState(0);
 
   const puede = (seccion, accion) => hasPermission(PATH_VISTA, seccion, accion);
-  const secciones = useMemo(() => seccionesFibras(fibras || [], hoy, texto), [fibras, hoy, texto]);
+  const secciones = useMemo(() => seccionesFibras(fibras || [], hoy, texto, { color: filtroColor, orden }), [fibras, hoy, texto, filtroColor, orden]);
+  const filtrando = Boolean(texto) || filtroColor !== 'todas';
 
   // Poner en uso: si otra fibra de la referencia está en uso, se pregunta si
   // vuelve a bodega (solo puede haber una EN USO por referencia); cancelar no
@@ -151,39 +178,42 @@ const FibrasReutilizables = () => {
         {puede('tabla_fibras', 'action_cambiar_ubicacion') && ubicacionDe(f) === UBICACION.EN_USO && (
           <button type="button" onClick={() => pedirDevolver(f)} title="Devolver a bodega" aria-label={`Devolver a bodega ${nombre}`} className="p-0.5 text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/30 rounded"><Warehouse size={13} /></button>
         )}
-        {puede('tabla_fibras', 'action_registrar_perdida') && usosRestantes(f) > 0 && (
-          <button type="button" onClick={() => setDialogo({ tipo: 'perdida', fibra: f })} title="Registrar pérdida de un uso" aria-label={`Registrar pérdida ${nombre}`} className="p-0.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"><MinusCircle size={13} /></button>
+        {puede('tabla_fibras', 'action_registrar_perdida') && motivoNoPerdible(f) === null && (
+          <button type="button" onClick={() => setDialogo({ tipo: 'perdida', fibra: f })} title="Registrar pérdida (se pierden los usos restantes)" aria-label={`Registrar pérdida ${nombre}`} className="p-0.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"><MinusCircle size={13} /></button>
         )}
       </span>
     );
   };
 
   const celdas = (f) => ({
-    referencia: <td className={`${TD} font-bold text-gray-800 dark:text-gray-100`}>{f.referencia}</td>,
+    referencia: <td className={`${TD} font-bold text-gray-800 dark:text-gray-100`}><span className="flex items-center gap-1">{f.referencia} <EtiquetaPerdida fibra={f} /></span></td>,
     codigo: <td className={`${TD} font-mono text-[10px] text-gray-400 dark:text-gray-500`}>{f.codigoInterno}</td>,
     descriptor: <td className={TD} title={f.descriptor}>{f.descriptor}</td>,
     lote: <td className={`${TD} font-num`}>{f.lote}</td>,
     vencimiento: (
       <td className={`${TD} font-num`}>
-        {formatearFechaTabla(f.vencimiento)} {estaVencida(f, hoy) && ubicacionDe(f) !== UBICACION.AGOTADA && <span className={ETIQUETA_VENCIDA}>VENCIDA</span>}
+        {formatearFechaTabla(f.vencimiento)} {ubicacionDe(f) !== UBICACION.AGOTADA && ETIQUETA_VENCE[alertaVencimiento(f, hoy)] && (
+          <span className={ETIQUETA_VENCE[alertaVencimiento(f, hoy)].clase}>{ETIQUETA_VENCE[alertaVencimiento(f, hoy)].texto}</span>
+        )}
       </td>
     ),
     usos: <td className={TD}><BarraUsos fibra={f} /></td>,
-    restantes: <td className={`${TD} font-num font-bold ${usosRestantes(f) === 1 ? 'text-amber-600' : ''}`}>{usosRestantes(f)}</td>,
+    restantes: <td className={`${TD} font-num font-bold ${COLOR_TEXTO[colorUsos(f)] || ''}`}>{usosRestantes(f)}</td>,
     ultimoUso: <td className={`${TD} font-num`}>{f.ultimoUso ? formatearFechaTabla(f.ultimoUso) : '—'}</td>,
     acciones: <td className={TD}>{acciones(f)}</td>,
   });
 
   const tarjetaEnUso = (tarjeta) => {
     const f = tarjeta.fibra;
-    const alerta = alertaFibra(f, hoy);
+    const vence = ETIQUETA_VENCE[alertaVencimiento(f, hoy)];
+    const color = colorUsos(f);
     return (
-      <div key={tarjeta.referencia} className={`rounded-lg border-2 p-3 flex flex-col gap-2 ${ESTILO_TARJETA[alerta || 'normal']}`}>
+      <div key={tarjeta.referencia} className={`rounded-lg border-2 p-3 flex flex-col gap-2 ${ESTILO_TARJETA[color || 'normal']}`}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
               <NombreFibra fibra={f} claseReferencia="font-bold text-[13px] text-gray-800 dark:text-gray-100" />
-              {alerta === 'rojo' && <span className={ETIQUETA_VENCIDA}>VENCIDA</span>}
+              {vence && <span className={vence.clase}>{vence.texto}</span>}
             </div>
             {ver('descriptor') && <p className="text-gray-500 dark:text-gray-400 truncate" title={f.descriptor}>{f.descriptor}</p>}
           </div>
@@ -193,13 +223,13 @@ const FibrasReutilizables = () => {
           <p className="text-gray-600 dark:text-gray-300 font-num">
             {ver('lote') && <>Lote <strong>{f.lote}</strong></>}
             {ver('lote') && ver('vencimiento') && ' · '}
-            {ver('vencimiento') && <>Vence <strong className={alerta ? (alerta === 'rojo' ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400') : ''}>{formatearFechaTabla(f.vencimiento)}</strong></>}
+            {ver('vencimiento') && <>Vence <strong className={vence ? (alertaVencimiento(f, hoy) === ALERTA_VENCIMIENTO.VENCIDA ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400') : ''}>{formatearFechaTabla(f.vencimiento)}</strong></>}
           </p>
         )}
         {ver('usos') && <BarraUsos fibra={f} grande />}
         <div className="flex items-center justify-between text-gray-600 dark:text-gray-300">
           {ver('restantes') && (
-            <span className={usosRestantes(f) === 1 ? 'font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1' : ''}>
+            <span className={usosRestantes(f) === 1 ? `font-bold flex items-center gap-1 ${COLOR_TEXTO[color] || ''}` : ''}>
               {usosRestantes(f) === 1 && <AlertTriangle size={11} />}
               {usosRestantes(f) === 1 ? 'Queda 1 uso' : `Quedan ${usosRestantes(f)} usos`}
             </span>
@@ -235,6 +265,12 @@ const FibrasReutilizables = () => {
         <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase"><Cable size={14} className="text-[#2383C2]" /> Fibras reutilizables</h2>
         <div className="flex flex-wrap items-center gap-1.5">
           <BuscadorConLimpiar value={texto} onChange={setTexto} className="w-56" placeholder="Buscar referencia, lote, código…" />
+          <select value={filtroColor} onChange={(e) => setFiltroColor(e.target.value)} aria-label="Filtrar por color" className="h-7 px-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200">
+            {FILTROS_COLOR.map((o) => <option key={o.valor} value={o.valor}>{o.valor === 'todas' ? 'Color: todas' : o.texto}</option>)}
+          </select>
+          <select value={orden} onChange={(e) => setOrden(e.target.value)} aria-label="Ordenar" className="h-7 px-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200">
+            {ORDENES.map((o) => <option key={o.valor} value={o.valor}>Orden: {o.texto}</option>)}
+          </select>
           <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1 text-gray-600 dark:text-gray-300"><RefreshCw size={12} /> Actualizar</button>
           {puede('encabezado', 'btn_registrar_fibra') && (
             <button type="button" onClick={() => setDialogo({ tipo: 'registrar' })} className="h-7 px-2.5 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white font-semibold flex items-center gap-1"><Plus size={13} /> Registrar fibra</button>
@@ -243,6 +279,7 @@ const FibrasReutilizables = () => {
       </div>
 
       <div className="flex-1 overflow-auto p-3 flex flex-col gap-4">
+        <Leyenda />
         {cargando ? (
           <p className="text-gray-400 italic">Cargando…</p>
         ) : (
@@ -251,7 +288,7 @@ const FibrasReutilizables = () => {
             <section className="flex flex-col gap-2">
               <TituloSeccion titulo="En uso" cantidad={secciones.totalEnUso} />
               {secciones.enUso.length === 0 ? (
-                <p className="text-gray-400 italic">{texto ? 'Ninguna fibra en uso coincide con la búsqueda.' : 'No hay fibras en uso ni en bodega.'}</p>
+                <p className="text-gray-400 italic">{filtrando ? 'Ninguna fibra en uso coincide con la búsqueda o el filtro.' : 'No hay fibras en uso ni en bodega.'}</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-2">
                   {secciones.enUso.map((t) => (t.fibra ? tarjetaEnUso(t) : tarjetaVacia(t)))}
@@ -267,7 +304,7 @@ const FibrasReutilizables = () => {
               </div>
               <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
                 <TablaBodega columnas={columnasVisibles} anchos={anchosBodega.anchos} onResize={anchosBodega.handleResize}>
-                  {secciones.bodega.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>No hay fibras en bodega{texto ? ' que coincidan con la búsqueda' : ''}.</FilaAnchoCompleto>}
+                  {secciones.bodega.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>No hay fibras en bodega{filtrando ? ' que coincidan con la búsqueda o el filtro' : ''}.</FilaAnchoCompleto>}
                   {secciones.bodega.map((f) => <FilaBodega key={f.id} columnas={columnasVisibles} celdas={celdas(f)} />)}
                 </TablaBodega>
               </div>
@@ -276,13 +313,13 @@ const FibrasReutilizables = () => {
             {/* 3. Agotadas: plegada por defecto, por último uso (más reciente primero). */}
             <section className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
-                <TituloSeccion titulo="Agotadas" cantidad={secciones.agotadas.length} abierta={agotadasAbiertas} onAlternar={() => setAgotadasAbiertas((v) => !v)} />
-                {agotadasAbiertas && <BotonRestablecerAnchos onClick={anchosAgotadas.restablecerAnchos} personalizados={anchosAgotadas.personalizados} />}
+                <TituloSeccion titulo="Agotadas y con pérdida" cantidad={secciones.agotadas.length} abierta={agotadasAbiertas || filtroColor === 'perdida'} onAlternar={() => setAgotadasAbiertas((v) => !v)} />
+                {(agotadasAbiertas || filtroColor === 'perdida') && <BotonRestablecerAnchos onClick={anchosAgotadas.restablecerAnchos} personalizados={anchosAgotadas.personalizados} />}
               </div>
-              {agotadasAbiertas && (
+              {(agotadasAbiertas || filtroColor === 'perdida') && (
                 <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
                   <TablaBodega columnas={columnasAgotadas} anchos={anchosAgotadas.anchos} onResize={anchosAgotadas.handleResize}>
-                    {secciones.agotadas.length === 0 && <FilaAnchoCompleto columnas={columnasAgotadas}>No hay fibras agotadas{texto ? ' que coincidan con la búsqueda' : ''}.</FilaAnchoCompleto>}
+                    {secciones.agotadas.length === 0 && <FilaAnchoCompleto columnas={columnasAgotadas}>No hay fibras agotadas{filtrando ? ' que coincidan con la búsqueda o el filtro' : ''}.</FilaAnchoCompleto>}
                     {secciones.agotadas.map((f) => <FilaBodega key={f.id} columnas={columnasAgotadas} celdas={celdas(f)} />)}
                   </TablaBodega>
                 </div>
@@ -308,7 +345,7 @@ const FibrasReutilizables = () => {
         <EditarFibraDialogo fibra={dialogo.fibra} onGuardar={(valores) => editar(dialogo.fibra.id, valores)} onCerrar={() => setDialogo(null)} />
       )}
       {dialogo?.tipo === 'perdida' && (
-        <PerdidaDialogo fibra={dialogo.fibra} onGuardar={async (motivo) => despuesDeAccion(await registrarPerdida(dialogo.fibra.id, motivo))} onCerrar={() => setDialogo(null)} />
+        <PerdidaDialogo fibra={dialogo.fibra} onGuardar={async (datos) => despuesDeAccion(await registrarPerdida(dialogo.fibra.id, datos))} onCerrar={() => setDialogo(null)} />
       )}
       {dialogo?.tipo === 'anular' && (
         <AnularPerdidaDialogo fibra={dialogo.fibra} uso={dialogo.uso} onGuardar={async (motivo) => despuesDeAccion(await anularPerdida(dialogo.fibra.id, dialogo.uso.id, motivo))} onCerrar={() => setDialogo(null)} />

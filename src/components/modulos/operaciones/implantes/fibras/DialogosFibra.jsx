@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import {
   USOS_PERMITIDOS, MAX_FIBRAS_POR_REGISTRO, validarNuevaFibra, validarEdicionFibra,
-  usosConsumidosDe, usosRestantes, siguienteNumeroUso, fechaUltimoUsoVigente, textoFibra,
+  usosConsumidosDe, fechaUltimoUsoVigente, textoFibra, numerosLibres, usosRealizadosDe, textoNumeros, MOTIVOS_PERDIDA,
 } from './fibrasNucleo';
 import { leerCodigosFibra } from './useFibrasReutilizablesData';
 
@@ -170,47 +170,81 @@ export const EditarFibraDialogo = ({ fibra, onGuardar, onCerrar }) => {
   );
 };
 
+// Pérdida: se pierden todos los usos restantes de una vez y la fibra queda
+// inutilizable. Dos pasos: datos (motivo y observación) y confirmación.
 export const PerdidaDialogo = ({ fibra, onGuardar, onCerrar }) => {
   const [motivo, setMotivo] = useState('');
+  const [otro, setOtro] = useState('');
+  const [observacion, setObservacion] = useState('');
   const [intento, setIntento] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
   const [guardando, guardar] = useGuardar(onGuardar, onCerrar);
-  const numero = siguienteNumeroUso(fibra);
-  const ultimo = usosRestantes(fibra) === 1;
+  const perdidos = numerosLibres(fibra);
+  const realizados = usosRealizadosDe(fibra);
+  const motivoFinal = motivo === 'Otro' ? otro.trim() : motivo;
+  const enviar = () => {
+    setIntento(true);
+    if (!motivoFinal) return;
+    if (!confirmando) { setConfirmando(true); return; }
+    guardar({ motivo: motivoFinal, observacion: observacion.trim() });
+  };
   return (
     <Dialogo
       titulo={`Registrar pérdida · ${textoFibra(fibra)}`}
-      subtitulo={`Lote ${fibra.lote}: descuenta un uso igual que uno normal.`}
+      subtitulo={`Lote ${fibra.lote}: se pierden todos los usos restantes y la fibra queda inutilizable.`}
       onCerrar={onCerrar}
-      onGuardar={() => { setIntento(true); if (motivo.trim()) guardar(motivo.trim()); }}
-      textoGuardar="Registrar pérdida"
+      onGuardar={enviar}
+      textoGuardar={confirmando ? 'Confirmar pérdida' : 'Continuar'}
       tono="peligro"
       guardando={guardando}
     >
-      <p className={`text-[11px] font-semibold ${ultimo ? 'text-amber-700 dark:text-amber-400' : 'text-slate-600 dark:text-gray-300'}`}>
-        Se registrará como uso {numero}/{fibra.usosTotales}{ultimo ? ': es el último, la fibra quedará agotada.' : `; quedarán ${usosRestantes(fibra) - 1}.`}
-      </p>
-      <Campo etiqueta="Motivo" error={intento && !motivo.trim() ? 'Ingresa el motivo' : undefined} htmlFor="fp-motivo">
-        <input id="fp-motivo" autoFocus className={INPUT} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ej: se dañó al conectarla" />
-      </Campo>
+      <div className="rounded border border-slate-200 dark:border-gray-700 p-2 space-y-0.5">
+        <p className="text-slate-700 dark:text-gray-200">Usos realizados: <strong>{realizados}/{fibra.usosTotales}</strong></p>
+        <p className="text-red-700 dark:text-red-400">Usos perdidos: <strong>{perdidos.length}</strong> ({textoNumeros(perdidos, fibra.usosTotales)})</p>
+      </div>
+      {!confirmando ? (
+        <>
+          <Campo etiqueta="Motivo" error={intento && !motivoFinal ? 'Elige el motivo' : undefined} htmlFor="fp-motivo">
+            <select id="fp-motivo" autoFocus className={INPUT} value={motivo} onChange={(e) => setMotivo(e.target.value)}>
+              <option value="">Elige el motivo…</option>
+              {MOTIVOS_PERDIDA.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </Campo>
+          {motivo === 'Otro' && (
+            <Campo etiqueta="¿Cuál?" htmlFor="fp-otro">
+              <input id="fp-otro" className={INPUT} value={otro} onChange={(e) => setOtro(e.target.value)} placeholder="Describe el motivo" />
+            </Campo>
+          )}
+          <Campo etiqueta="Observación (opcional)" htmlFor="fp-obs">
+            <input id="fp-obs" className={INPUT} value={observacion} onChange={(e) => setObservacion(e.target.value)} placeholder="Ej: se quebró al retirarla" />
+          </Campo>
+        </>
+      ) : (
+        <p className="font-semibold text-red-700 dark:text-red-400">
+          ¿Confirmas la pérdida por "{motivoFinal}"{observacion.trim() ? ` (${observacion.trim()})` : ''}? La fibra {textoFibra(fibra)} no se podrá volver a usar.
+        </p>
+      )}
     </Dialogo>
   );
 };
 
+// Sirve para la pérdida nueva (varios números) y la antigua (uno solo).
 export const AnularPerdidaDialogo = ({ fibra, uso, onGuardar, onCerrar }) => {
   const [motivo, setMotivo] = useState('');
   const [intento, setIntento] = useState(false);
   const [guardando, guardar] = useGuardar(onGuardar, onCerrar);
+  const numeros = uso.numerosPerdidos || [uso.numeroUso];
   return (
     <Dialogo
-      titulo={`Anular pérdida ${uso.numeroUso}/${uso.usosTotales}`}
-      subtitulo={`${textoFibra(fibra)} · lote ${fibra.lote}: el uso vuelve a quedar disponible.`}
+      titulo={`Anular pérdida ${textoNumeros(numeros, uso.usosTotales)}`}
+      subtitulo={`${textoFibra(fibra)} · lote ${fibra.lote}: ${numeros.length === 1 ? 'el uso vuelve' : 'los usos vuelven'} a quedar disponibles y la fibra queda en bodega.`}
       onCerrar={onCerrar}
       onGuardar={() => { setIntento(true); if (motivo.trim()) guardar(motivo.trim()); }}
       textoGuardar="Anular pérdida"
       tono="peligro"
       guardando={guardando}
     >
-      <p className="text-[11px] text-slate-600 dark:text-gray-300">Pérdida registrada: {uso.motivo}</p>
+      <p className="text-[11px] text-slate-600 dark:text-gray-300">Pérdida registrada: {uso.motivo}{uso.observacion ? ` · ${uso.observacion}` : ''}</p>
       <Campo etiqueta="Motivo de la anulación" error={intento && !motivo.trim() ? 'Ingresa el motivo' : undefined} htmlFor="fa-motivo">
         <input id="fa-motivo" autoFocus className={INPUT} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ej: se registró por error" />
       </Campo>
