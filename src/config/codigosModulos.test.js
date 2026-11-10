@@ -154,6 +154,7 @@ const PUBLICADOS = `
   /bodega/consignacionesBodega BODCNS
   /bodega/catalogosBodega BODCAT
   /armadoKits/flexibles KITFLX
+  /armadoKits/configuracionFlexibles KITCFG
   /documentos/reportesInfo DOCREP
   /documentos/importarDetallesOC DOCIOC
   /documentos/seguimientoFacturasGuias DOCSEG

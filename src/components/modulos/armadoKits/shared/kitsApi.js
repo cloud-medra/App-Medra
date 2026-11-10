@@ -3,6 +3,7 @@ import { collection, doc, endAt, getDoc, getDocs, limit, orderBy, query, startAf
 import { db, functions } from '../../../../firebaseConfig';
 import { upsertLocal } from '../../../../stores/catalogosStore';
 import { COL_KITS, OPERACION_COMPLETAR, ESTADOS_KIT } from '../../../../../functions/armadoKits/nucleo.mjs';
+import { COL_CONFIGURACION_KITS } from '../../../../../functions/armadoKits/receta.mjs';
 import { normalizarClave } from '../../../../../functions/bodega/nucleo.mjs';
 
 // Acceso a datos de Armado de Kits: las lecturas van directo a Firestore y las
@@ -41,10 +42,23 @@ export const leerKit = async (id) => {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 };
 
-// { familia, kitId?, referencia?, lineas: [{ productoId, loteId, cantidad, confirmarFueraFEFO?, confirmarSinVencimiento? }] }
+// { familia, kitId? | genero, vaina, referencia?, lineas: [{ productoId, loteId, cantidad, confirmarFueraFEFO?, confirmarSinVencimiento? }] }
 export const guardarKit = llamar('kitsGuardar');
 export const eliminarKit = llamar('kitsEliminar');
 export const completarVencimiento = (datos) => guardarKit({ ...datos, operacion: OPERACION_COMPLETAR });
+
+// Receta y modelos de una familia (null si aún no se configura). 1 lectura.
+export const leerConfiguracionKits = async (familia) => {
+  const snap = await getDoc(doc(db, COL_CONFIGURACION_KITS, familia));
+  return snap.exists() ? snap.data() : null;
+};
+// { familia, versionEsperada, componentes, modelos } -> { version, cambios, sinCambios? }
+export const guardarConfiguracionKits = llamar('kitsConfiguracion');
+// Últimos cambios de la configuración (auditoría), solo al pedirlos.
+export const leerHistorialConfiguracion = async (familia) => {
+  const snap = await getDocs(query(collection(db, COL_CONFIGURACION_KITS, familia, 'logs'), orderBy('fecha', 'desc'), limit(30)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+};
 
 // { accion: DESPACHAR|RECIBIR|RECHAZAR|ANULAR, kitId, ... } (no mueve stock).
 export const gestionarTransitoKit = llamar('kitsTransito');

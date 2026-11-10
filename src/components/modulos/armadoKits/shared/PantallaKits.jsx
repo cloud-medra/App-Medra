@@ -10,6 +10,8 @@ import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
 import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../../bodega/shared/TablaBodega';
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../../bodega/shared/anchosTablaBodega';
 import { leerKit, leerKits } from './kitsApi';
+import { useConfiguracionKits } from './useConfiguracionKits';
+import { claveVariante, etiquetaModeloKit, modelosDisponibles, modeloDeReferencia } from '../../../../../functions/armadoKits/receta.mjs';
 import { unirPagina } from './lineasKit';
 import { Insignia, InsigniaEstado } from './comunes';
 import DetalleKit from './DetalleKit';
@@ -44,8 +46,11 @@ const PantallaKits = ({ familia }) => {
   const [codigo, setCodigo] = useState('');
   const [version, setVersion] = useState(0);
   const [abierto, setAbierto] = useState(null);
-  // Cada referencia equivale a un tipo: el filtro usa el índice de tipo.
-  const tipo = config.referencias[referencia]?.tipo || '';
+  // Cada referencia de kit es un modelo con su propio tipo (género + vaina): el filtro usa el índice de tipo.
+  const { config: receta } = useConfiguracionKits(familia);
+  const modeloFiltro = modeloDeReferencia(receta, referencia);
+  const tipo = modeloFiltro ? claveVariante(modeloFiltro.genero, modeloFiltro.vaina) : '';
+  const hayModelos = modelosDisponibles(receta).length > 0;
   const [creando, setCreando] = useState(false);
   // Kit recién creado: su detalle ofrece la hoja con el código de barras.
   const [pdfAlAbrir, setPdfAlAbrir] = useState(null);
@@ -102,11 +107,11 @@ const PantallaKits = ({ familia }) => {
             </div>
             <select value={referencia} onChange={(e) => setReferencia(e.target.value)} aria-label="Filtrar por referencia" className="h-7 px-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900">
               <option value="">Todas las referencias</option>
-              {Object.entries(config.referencias).map(([k, r]) => <option key={k} value={k}>{r.etiqueta}</option>)}
+              {(receta?.modelos || []).map((m) => <option key={m.referencia} value={m.referencia}>{m.referencia} - {m.nombre}</option>)}
             </select>
             <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1 text-tinta-secundaria"><RefreshCw size={12} /> Actualizar</button>
             {hasPermission(ruta, 'kits', 'btn_crear') && (
-              <button type="button" onClick={() => setCreando(true)} className="h-7 px-2 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1"><Plus size={12} /> Nuevo kit</button>
+              <button type="button" onClick={() => setCreando(true)} disabled={!hayModelos} title={hayModelos ? '' : 'No hay modelos activos y completos: revisa Configuración Flexibles'} className="disabled:opacity-50 h-7 px-2 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1"><Plus size={12} /> Nuevo kit</button>
             )}
           </div>
         )}
@@ -129,7 +134,7 @@ const PantallaKits = ({ familia }) => {
                 {kits.map((k) => (
                   <FilaBodega key={k.id} columnas={columnasVisibles} className="cursor-pointer" onClick={() => setAbierto(k)} celdas={{
                     codigo: <td className={`${TD} text-etiqueta text-[#2383C2] underline-offset-2 group-hover:underline`} title={k.codigo}>{k.codigo}</td>,
-                    referencia: <td className={`${TD} text-secundario`}>{config.referencias[k.referencia]?.etiqueta || k.referencia}</td>,
+                    referencia: <td className={`${TD} text-secundario`}>{etiquetaModeloKit(k)}</td>,
                     insumos: <td className={`${TD} text-right text-numero-tabla`}>{k.cantidadLineas || 0}</td>,
                     unidades: <td className={`${TD} text-right text-numero-tabla`}>{k.totalUnidades || 0}</td>,
                     fecha: <td className={`${TD} text-numero-tabla`}>{fechaHora(k.creadoEn)}</td>,

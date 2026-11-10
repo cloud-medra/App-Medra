@@ -3,11 +3,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createRequire } from 'node:module';
 import { crearDb } from '../testutils/firestoreMemoria.mjs';
+import { conRecetaQueCalza } from '../testutils/recetaQueCalza.mjs';
 import { idLote, sumarLineas, TIPOS_ENTREGA } from '../bodega/nucleo.mjs';
 import { codigoBarrasKit, leerCodigoKit, esCodigoKit } from './codigoKit.mjs';
 
 const require = createRequire(import.meta.url);
-const { guardarKitComo, eliminarKitComo, completarVencimientoComo } = require('./servicio');
+const servicio = require('./servicio');
+const { eliminarKitComo, completarVencimientoComo } = servicio;
+const guardarKitComo = conRecetaQueCalza(servicio.guardarKitComo, () => datos);
 const { gestionarTransitoKit, despacharKitComo, recibirKitComo, devolverKitComo } = require('./transito');
 const bodega = require('../bodega/servicio');
 const { gestionarCodigoBarraComo } = require('../bodega/codigosBarra');

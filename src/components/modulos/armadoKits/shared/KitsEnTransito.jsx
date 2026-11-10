@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Layers, X } from 'lucide-react';
 import { useToast } from '../../../../context/ToastContext';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
-import { ACCIONES_TRANSITO_KIT, FAMILIAS_KIT } from '../../../../../functions/armadoKits/nucleo.mjs';
+import { ACCIONES_TRANSITO_KIT } from '../../../../../functions/armadoKits/nucleo.mjs';
+import { etiquetaModeloKit } from '../../../../../functions/armadoKits/receta.mjs';
 import { mensajeError } from '../../bodega/shared/bodegaApi';
 import { fechaHora } from '../../bodega/shared/transito/transitos';
 import { gestionarTransitoKit, leerKitsEnTransito } from './kitsApi';
@@ -13,7 +14,7 @@ const ACCIONES = {
   ANULAR: { titulo: 'Anular despacho', boton: 'Anular', motivo: true, texto: 'El despacho fue un error: el kit vuelve a estar armado, con su mismo contenido.' },
 };
 const permisoDe = (accion) => ACCIONES_TRANSITO_KIT[accion].slice(1);
-const referenciaDeKit = (kit) => Object.values(FAMILIAS_KIT).map((f) => f.referencias[kit.referencia]).find(Boolean)?.etiqueta || kit.referencia || '—';
+const referenciaDeKit = etiquetaModeloKit;
 
 const AccionKitModal = ({ accion, kit, onCerrar, onHecho }) => {
   const def = ACCIONES[accion];

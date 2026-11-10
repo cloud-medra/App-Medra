@@ -3,8 +3,9 @@ import { Truck, X } from 'lucide-react';
 import { useCatalogo } from '../../../../hooks/useCatalogo';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
 import {
-  ACCIONES_TRANSITO_KIT, ESTADOS_KIT, ETIQUETAS_ESTADO_KIT, FAMILIAS_KIT, advertenciasKit, estadoKit, hoyChile, idKit, versionKit,
+  ACCIONES_TRANSITO_KIT, ESTADOS_KIT, ETIQUETAS_ESTADO_KIT, advertenciasKit, estadoKit, hoyChile, idKit, versionKit,
 } from '../../../../../functions/armadoKits/nucleo.mjs';
+import { etiquetaModeloKit } from '../../../../../functions/armadoKits/receta.mjs';
 import { detalleError, mensajeError } from '../../bodega/shared/bodegaApi';
 import { TablaBodega, FilaBodega } from '../../bodega/shared/TablaBodega';
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../../bodega/shared/anchosTablaBodega';
@@ -21,7 +22,7 @@ const COLUMNAS = [
 ];
 const [, RUTA_EGRESO, SECCION_EGRESO, BOTON_DESPACHAR] = ACCIONES_TRANSITO_KIT.DESPACHAR;
 
-const referenciaDeKit = (kit) => Object.values(FAMILIAS_KIT).map((f) => f.referencias[kit.referencia]).find(Boolean)?.etiqueta || kit.referencia || '—';
+const referenciaDeKit = etiquetaModeloKit;
 
 // Kit escaneado en Egreso: muestra ID, referencia y contenido actual y pide
 // confirmar el despacho del kit completo. Se bloquea si la hoja escaneada es

@@ -3,19 +3,18 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import JsBarcode from 'jsbarcode';
 import { BitArray, Code128Reader } from '@zxing/library';
-import { construirPdfKit, modulosCodigoBarras, nombreArchivoKit, textoVencimiento } from './pdfKit';
+import { construirPdfKit, filasPorComponente, modulosCodigoBarras, nombreArchivoKit, textoVencimiento } from './pdfKit';
 
 const libs = { jsPDF, autoTable, JsBarcode };
 const KIT = {
-  codigo: 'F001', referencia: 'KFH', tipo: 'FLEXIBLE_HOMBRE', version: 2, totalUnidades: 6,
+  codigo: 'F001', referencia: 'KFH', modeloNombre: 'Kit Flexible Hombre', genero: 'HOMBRE', vaina: 'NORMAL', tipo: 'HOMBRE_NORMAL', version: 2, totalUnidades: 6,
   lineas: [
-    { referencia: 'REF-A', productoNombre: 'Insumo A', lote: 'A1', vencimiento: '2029-01-01', cantidad: 3 },
-    { referencia: 'REF-B', productoNombre: 'Insumo B', lote: 'B1', vencimiento: null, cantidad: 2 },
-    { referencia: 'REF-C', productoNombre: 'Insumo C', lote: null, vencimiento: '2025-01-01', cantidad: 1 },
+    { componenteId: 'vaina', componenteNombre: 'Vaina', componenteOrden: 2, referencia: 'REF-C', productoNombre: 'Insumo C', lote: null, vencimiento: '2025-01-01', cantidad: 1 },
+    { componenteId: 'guia', componenteNombre: 'Guía', componenteOrden: 1, referencia: 'REF-A', productoNombre: 'Insumo A', lote: 'A1', vencimiento: '2029-01-01', cantidad: 3 },
+    { componenteId: 'guia', componenteNombre: 'Guía', componenteOrden: 1, referencia: 'REF-B', productoNombre: 'Insumo B', lote: 'B1', vencimiento: null, cantidad: 2 },
   ],
 };
-const REFERENCIA = { etiqueta: 'KFH - Kit Flexible Hombre', tipoEtiqueta: 'Flexible hombre' };
-const generar = () => construirPdfKit(libs, { kit: KIT, referencia: REFERENCIA, hoy: '2026-11-10', generado: '10-11-2026 09:00' });
+const generar = () => construirPdfKit(libs, { kit: KIT, hoy: '2026-11-10', generado: '10-11-2026 09:00' });
 
 // Lee los módulos como lo haría el lector: una fila de barras con su zona de silencio.
 const leer = (modulos) => {
@@ -38,7 +37,7 @@ describe('PDF del kit', () => {
 
   it('trae ID, referencia, tipo, fecha, código, contenido y total', () => {
     const t = texto();
-    ['Kit F001', 'KFH - Kit Flexible Hombre', 'Flexible hombre', 'Generado el 10-11-2026 09:00', 'KITF001V2', 'Contenido versión 2',
+    ['Kit F001', 'KFH - Kit Flexible Hombre', 'Hombre · vaina normal', 'Generado el 10-11-2026 09:00', 'KITF001V2', 'Contenido versión 2',
       'REF-A', 'Insumo A', 'A1', '01-01-2029', 'Total de unidades', 'S/L'].forEach((s) => expect(t).toContain(s));
   });
 
@@ -57,7 +56,20 @@ describe('PDF del kit', () => {
   });
 
   it('un kit sin versión guardada usa la versión 1', () => {
-    const t = construirPdfKit(libs, { kit: { ...KIT, version: undefined }, referencia: REFERENCIA, hoy: '2026-11-10', generado: 'x' }).output();
+    const t = construirPdfKit(libs, { kit: { ...KIT, version: undefined }, hoy: '2026-11-10', generado: 'x' }).output();
     expect(t).toContain('KITF001V1');
+  });
+
+  it('agrupa por componente, en el orden de la receta y con su total', () => {
+    expect(filasPorComponente(KIT.lineas).map((g) => [g.nombre, g.lineas.map((l) => l.referencia)])).toEqual([['Guía', ['REF-A', 'REF-B']], ['Vaina', ['REF-C']]]);
+    // Dentro del PDF los paréntesis van escapados.
+    const t = generar().output();
+    expect(t).toContain('Guía \\(5\\)');
+    expect(t).toContain('Vaina \\(1\\)');
+    expect(t.indexOf('Guía \\(5\\)')).toBeLessThan(t.indexOf('Vaina \\(1\\)'));
+  });
+
+  it('un kit sin componentes va en un solo grupo', () => {
+    expect(filasPorComponente([{ referencia: 'X', cantidad: 1 }]).map((g) => g.nombre)).toEqual(['Contenido']);
   });
 });

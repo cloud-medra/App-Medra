@@ -19,7 +19,18 @@ export const armadoKitsComponentMaps = {
           btn_editar: { label: 'Acción: Editar contenido (mueve stock de Bodega)' },
           btn_eliminar: { label: 'Acción: Eliminar kit (devuelve el stock a Bodega)' },
           btn_completar_vencimiento: { label: 'Acción: Completar vencimiento de insumos sin fecha' },
-          ...columnas([['referencia', 'Referencia'], ['nombre', 'Nombre'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad'], ['marcas', 'Marcas']]),
+          ...columnas([['componente', 'Componente'], ['referencia', 'Referencia'], ['nombre', 'Nombre'], ['lote', 'Lote'], ['vencimiento', 'Vencimiento'], ['cantidad', 'Cantidad'], ['marcas', 'Marcas']]),
+        },
+      },
+    },
+  },
+  '/armadoKits/configuracionFlexibles': {
+    label: 'Configuración de los kits flexibles: receta y modelos (ConfiguracionFlexibles.jsx)',
+    sections: {
+      configuracion: {
+        label: 'Sección: Componentes, referencias permitidas y modelos',
+        elements: {
+          btn_guardar: { label: 'Acción: Guardar la configuración (no cambia los kits ya armados)' },
         },
       },
     },

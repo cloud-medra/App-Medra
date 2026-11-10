@@ -22,9 +22,12 @@ const { HttpsError } = require('firebase-functions/v2/https');
 const { COL, aplicarMovimiento, saldoDe, fotoSaldo, datosPropietario, camposCosto, aplicarRetornoKit, idLote, normalizarClave } = require('../bodega/nucleo.mjs');
 const { internos } = require('../bodega/servicio');
 const {
-  COL_KITS, FAMILIAS_KIT, OPERACION_COMPLETAR, ID_CONTADOR_KITS, codigoCorrelativoKit, accionKit, ESTADOS_KIT, kitEditable, versionKit, mensajeKitNoEditable, idKit, referenciaDe, validarCabeceraKit, validarLineasKit, planCambiosKit,
+  COL_KITS, FAMILIAS_KIT, OPERACION_COMPLETAR, ID_CONTADOR_KITS, codigoCorrelativoKit, accionKit, ESTADOS_KIT, kitEditable, versionKit, mensajeKitNoEditable, idKit, referenciaDe, validarLineasKit, planCambiosKit,
   hoyChile, loteVencido, lotesParaKit, lotesFueraDeFEFO, valorRetiro, totalesKit, fechaValida, fechasDistintasDelLote, lineasConFecha,
 } = require('./nucleo.mjs');
+const {
+  COL_CONFIGURACION_KITS, validarModeloKit, recetaDelModelo, validarContenidoKit, buscarModelo, claveVariante,
+} = require('./receta.mjs');
 
 const {
   perfilActivo, exigir, datosPor, exigirSinErrores, registrarLog, leerPeriodo, costosDe, valorizar, conErrorStock, exigirSinInventario, refEstado, ahora,
@@ -39,13 +42,20 @@ const resumenLinea = (l, cantidad = l.cantidad) => ({ producto: l.productoNombre
 // líneas finales y una función que escribe (Firestore exige terminar las
 // lecturas antes de la primera escritura de la transacción). `entrada`: las
 // líneas pedidas ([] al eliminar). Devuelve null si no hay nada que mover.
-const prepararCambioStock = async (t, db, por, { kitId, codigo, anteriores, entrada }) => {
+// `grupos` (productoId -> componente) y `productosPorGrupo`: FEFO se evalúa
+// por componente, mezclando los lotes de todas sus referencias. Sin ellos,
+// cada producto es su propio grupo.
+const prepararCambioStock = async (t, db, por, { kitId, codigo, anteriores, entrada, grupos = null, productosPorGrupo = null }) => {
   const { retiros, asignaciones } = planCambiosKit(anteriores, entrada);
   if (!retiros.length && !asignaciones.length) return null;
   const hoy = hoyChile();
 
   const productoIds = [...new Set([...retiros.map((r) => r.linea.productoId), ...asignaciones.map((a) => a.entrada.productoId)])];
-  const conAsignacion = [...new Set(asignaciones.map((a) => a.entrada.productoId))];
+  const grupoDe = (pid) => grupos?.get(pid) || pid;
+  const gruposConAsignacion = [...new Set(asignaciones.map((a) => grupoDe(a.entrada.productoId)))];
+  const productosDe = (grupo) => productosPorGrupo?.get(grupo) || [grupo];
+  // Lotes de todas las referencias del componente, aunque no se usen: FEFO los compara.
+  const conAsignacion = [...new Set(gruposConAsignacion.flatMap(productosDe))];
   const [snapEstado, periodoId, snapsProductos, consultas, snapsRetiro] = await Promise.all([
     t.get(refEstado(db)),
     leerPeriodo(t, db),
@@ -95,7 +105,7 @@ const prepararCambioStock = async (t, db, por, { kitId, codigo, anteriores, entr
     .map((l) => ({ ...l, disponible: saldoLote.has(l.id) ? saldoLote.get(l.id).disponible : l.disponible }));
   const fuera = new Set();
   const asignadoPorLote = Object.fromEntries(asignaciones.map((a) => [a.entrada.loteId, a.cantidad]));
-  conAsignacion.forEach((id) => lotesFueraDeFEFO(lotesParaKit(lotesDe(id), hoy), asignadoPorLote).forEach((x) => fuera.add(x)));
+  gruposConAsignacion.forEach((g) => lotesFueraDeFEFO(lotesParaKit(productosDe(g).flatMap(lotesDe), hoy), asignadoPorLote).forEach((x) => fuera.add(x)));
 
   const pendientesFEFO = [];
   const pendientesSinFecha = [];
@@ -186,43 +196,83 @@ const prepararCambioStock = async (t, db, por, { kitId, codigo, anteriores, entr
 // Crea un kit (sin `kitId`) o cambia el contenido de uno existente. El ID y la
 // referencia no se editan: si la referencia estaba mal, se elimina el kit y se
 // crea otro.
+//
+// La receta se lee de kits_configuracion dentro de la transacción y no se
+// confía en la pantalla: el modelo sale del género y la vaina, cada línea va
+// al componente de su producto y cada componente debe quedar exacto. Al
+// editar, la receta vigente manda, pero una línea que se conserva sin aumentar
+// mantiene su componente aunque su referencia ya no esté permitida.
 const guardarKitComo = (db, por, datos = {}) => {
   const kitId = datos.kitId ? String(datos.kitId) : null;
+  const familia = String(datos.familia || '');
+  if (!FAMILIAS_KIT[familia]) throw new HttpsError('invalid-argument', 'El tipo de kit no existe.');
   const { errores, lineas: entrada } = validarLineasKit(datos.lineas);
-  const { errores: erroresCabecera, cabecera } = validarCabeceraKit(datos);
-  exigirSinErrores([...new Set([...(kitId ? [] : erroresCabecera), ...errores])]);
+  exigirSinErrores(errores);
 
   return db.runTransaction(async (t) => {
+    const snapConfig = await t.get(db.collection(COL_CONFIGURACION_KITS).doc(familia));
+    const config = snapConfig.exists ? snapConfig.data() : null;
+    if (!config) throw new HttpsError('failed-precondition', 'Falta configurar la receta de los kits (Configuración Flexibles).');
+    let modelo = null;
+    if (!kitId) {
+      const r = validarModeloKit(config, datos);
+      exigirSinErrores(r.errores);
+      modelo = r.modelo;
+    }
     const refContador = db.collection(COL.control).doc(ID_CONTADOR_KITS);
-    const numero = kitId ? null : ((await t.get(refContador)).data()?.[cabecera.familia] || 0) + 1;
-    const codigoNuevo = kitId ? null : codigoCorrelativoKit(cabecera.familia, numero);
+    const numero = kitId ? null : ((await t.get(refContador)).data()?.[familia] || 0) + 1;
+    const codigoNuevo = kitId ? null : codigoCorrelativoKit(familia, numero);
     const ref = db.collection(COL_KITS).doc(kitId || idKit(codigoNuevo));
     const snapKit = await t.get(ref);
     if (kitId && !snapKit.exists) throw new HttpsError('not-found', 'El kit ya no existe.');
     // No debería ocurrir (el contador nunca baja), pero un set lo sobrescribiría.
     if (!kitId && snapKit.exists) throw new HttpsError('failed-precondition', `El ID ${codigoNuevo} ya existe. Avisa a un administrador.`);
     const kit = snapKit.exists ? snapKit.data() : null;
-    if (kit && kit.familia !== datos.familia) throw new HttpsError('invalid-argument', 'El kit no pertenece a esta pantalla.');
+    if (kit && kit.familia !== familia) throw new HttpsError('invalid-argument', 'El kit no pertenece a esta pantalla.');
     if (kit && !kitEditable(kit)) throw new HttpsError('failed-precondition', mensajeKitNoEditable(kit), { motivo: 'estado' });
+    if (kit) {
+      modelo = buscarModelo(config, kit.genero, kit.vaina);
+      if (!modelo) throw new HttpsError('failed-precondition', `El modelo ${kit.referencia} ya no está en la configuración.`);
+    }
     const codigo = kit?.codigo || codigoNuevo;
 
-    const cambio = await prepararCambioStock(t, db, por, { kitId: ref.id, codigo, anteriores: kit?.lineas || [], entrada });
+    const receta = recetaDelModelo(config, modelo);
+    const nombres = new Map(receta.flatMap((c) => c.referencias.map((r) => [r.productoId, `${r.referencia} ${r.nombre}`.trim()])));
+    const { errores: erroresReceta, componentePorLote } = validarContenidoKit(receta, entrada, kit?.lineas || [], (pid) => nombres.get(pid));
+    exigirSinErrores(erroresReceta);
+    const grupos = new Map();
+    const productosPorGrupo = new Map(receta.map((c) => [c.id, c.referencias.map((r) => r.productoId)]));
+    receta.forEach((c) => c.referencias.forEach((r) => grupos.set(r.productoId, c.id)));
+    entrada.forEach((e) => {
+      const c = componentePorLote.get(e.loteId);
+      if (!grupos.has(e.productoId)) { grupos.set(e.productoId, c.id); productosPorGrupo.get(c.id).push(e.productoId); }
+    });
+
+    const cambio = await prepararCambioStock(t, db, por, { kitId: ref.id, codigo, anteriores: kit?.lineas || [], entrada, grupos, productosPorGrupo });
     if (!cambio) return { id: ref.id, codigo, sinCambios: true, version: versionKit(kit), productos: [] };
 
     const productos = cambio.escribir();
-    const contenido = { lineas: cambio.lineas, ...totalesKit(cambio.lineas) };
+    const lineas = cambio.lineas
+      .map((l) => { const c = componentePorLote.get(l.loteId); return { ...l, componenteId: c.id, componenteNombre: c.nombre, componenteOrden: c.orden }; })
+      .sort((a, b) => a.componenteOrden - b.componenteOrden);
+    const contenido = { lineas, ...totalesKit(lineas) };
     if (kit) {
       t.update(ref, { ...contenido, version: versionKit(kit) + 1, actualizadoPor: por, actualizadoEn: ahora() });
       registrarLog(t, ref, 'EDITADO', por, {
         retirado: cambio.retiros.map((r) => resumenLinea(r.linea, r.cantidad)),
-        agregado: cambio.asignaciones.map((a) => { const l = cambio.lineas.find((x) => x.loteId === a.entrada.loteId); return resumenLinea(l, a.cantidad); }),
+        agregado: cambio.asignaciones.map((a) => { const l = lineas.find((x) => x.loteId === a.entrada.loteId); return resumenLinea(l, a.cantidad); }),
       });
     } else {
-      t.set(refContador, { [cabecera.familia]: numero }, { merge: true });
-      t.set(ref, { ...cabecera, numero, codigo, codigoNormalizado: normalizarClave(codigo), estado: ESTADOS_KIT.ARMADO, version: 1, ...contenido, creadoPor: por, creadoEn: ahora(), actualizadoPor: por, actualizadoEn: ahora() });
-      registrarLog(t, ref, 'CREADO', por, { lineas: cambio.lineas.map((l) => resumenLinea(l)) });
+      t.set(refContador, { [familia]: numero }, { merge: true });
+      t.set(ref, {
+        familia, referencia: modelo.referencia, modeloNombre: modelo.nombre, genero: modelo.genero, vaina: modelo.vaina,
+        tipo: claveVariante(modelo.genero, modelo.vaina), versionReceta: Number(config.version) || 0,
+        numero, codigo, codigoNormalizado: normalizarClave(codigo), estado: ESTADOS_KIT.ARMADO, version: 1,
+        ...contenido, creadoPor: por, creadoEn: ahora(), actualizadoPor: por, actualizadoEn: ahora(),
+      });
+      registrarLog(t, ref, 'CREADO', por, { referencia: modelo.referencia, lineas: lineas.map((l) => resumenLinea(l)) });
     }
-    return { id: ref.id, codigo, referencia: kit?.referencia || cabecera.referencia, version: kit ? versionKit(kit) + 1 : 1, ...totalesKit(cambio.lineas), productos };
+    return { id: ref.id, codigo, referencia: kit?.referencia || modelo.referencia, version: kit ? versionKit(kit) + 1 : 1, ...totalesKit(lineas), productos };
   });
 };
 

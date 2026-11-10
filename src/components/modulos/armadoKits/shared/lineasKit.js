@@ -34,6 +34,8 @@ export const propuestaAgregar = (visibles, loteId, cantidad) => {
 };
 
 // Agrega las partes a la lista; si el lote ya está, suma la cantidad.
+// `producto`: el producto, o una función (lote) -> producto cuando las partes
+// son de varias referencias. `confirmaciones.extra`: datos que lleva cada línea nueva (componente).
 export const agregarPartes = (lineas, producto, partes, confirmaciones = {}) => partes.reduce((lista, { lote, cantidad }) => {
   const i = lista.findIndex((l) => l.loteId === lote.id);
   const confirmar = {
@@ -49,9 +51,10 @@ export const agregarPartes = (lineas, producto, partes, confirmaciones = {}) => 
     };
     return copia;
   }
+  const p = typeof producto === 'function' ? producto(lote) : producto;
   return [...lista, {
-    productoId: producto.id, productoNombre: producto.nombre, referencia: referenciaDe(producto),
-    loteId: lote.id, lote: lote.lote || null, vencimiento: lote.vencimiento || null, cantidad, ...confirmar,
+    productoId: p.id, productoNombre: p.nombre, referencia: referenciaDe(p),
+    loteId: lote.id, lote: lote.lote || null, vencimiento: lote.vencimiento || null, cantidad, ...confirmar, ...(confirmaciones.extra || {}),
   }];
 }, lineas);
 

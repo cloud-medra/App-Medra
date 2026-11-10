@@ -892,6 +892,11 @@ service cloud.firestore {
     match /kits_armados/{document=**} {
       allow read: if leeArmadoKits() || leeBodega();
     }
+    // Receta y modelos de cada familia de kits (y su auditoría). Solo la
+    // escribe la Function kitsConfiguracion.
+    match /kits_configuracion/{document=**} {
+      allow read: if leeArmadoKits();
+    }
     // Maestros → Códigos de barras: exige ese ítem en particular, para no
     // abrir los datos de Bodega a todo el que tenga el módulo Maestros.
     function leeCodigosBarras() {

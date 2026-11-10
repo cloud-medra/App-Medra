@@ -146,6 +146,7 @@ export const CODIGOS_ITEMS = Object.freeze({
   '/bodega/catalogosBodega': 'BODCAT',
   // Armado de Kits
   '/armadoKits/flexibles': 'KITFLX',
+  '/armadoKits/configuracionFlexibles': 'KITCFG',
   // Documentos
   '/documentos/reportesInfo': 'DOCREP',
   '/documentos/importarDetallesOC': 'DOCIOC',

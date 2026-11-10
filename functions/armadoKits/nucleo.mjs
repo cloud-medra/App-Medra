@@ -4,8 +4,8 @@
 // a un documento de bodega_lotes y sus unidades salen del disponible.
 //
 // Para agregar otro tipo de kit basta una entrada en FAMILIAS_KIT (etiqueta,
-// ruta del menú, prefijo del ID y referencias) y una pantalla que monte
-// PantallaKits con esa familia.
+// rutas del menú y prefijo del ID), pantallas que monten PantallaKits y
+// PantallaConfiguracionKits con esa familia, y su receta (receta.mjs).
 
 import { idVinculo } from '../bodega/gs1.mjs';
 import { normalizarClave, normalizarLote, lotesFEFO, lotesPropios, fechaValida } from '../bodega/nucleo.mjs';
@@ -17,12 +17,9 @@ export const FAMILIAS_KIT = Object.freeze({
   FLEXIBLE: Object.freeze({
     etiqueta: 'Flexibles',
     ruta: '/armadoKits/flexibles',
+    rutaConfiguracion: '/armadoKits/configuracionFlexibles',
     prefijoId: 'F',
-    // La referencia define el tipo: así no hay combinaciones inconsistentes.
-    referencias: Object.freeze({
-      KFH: Object.freeze({ etiqueta: 'KFH - Kit Flexible Hombre', tipo: 'FLEXIBLE_HOMBRE', tipoEtiqueta: 'Flexible hombre' }),
-      KFM: Object.freeze({ etiqueta: 'KFM - Kit Flexible Mujer', tipo: 'FLEXIBLE_MUJER', tipoEtiqueta: 'Flexible mujer' }),
-    }),
+    // Los modelos (KFH, KFM…) y la receta están en kits_configuracion/FLEXIBLE.
   }),
 });
 
@@ -34,6 +31,7 @@ const ACCIONES = Object.freeze({
 });
 // [modulo, ruta, seccion, accion] para puedeAccion.
 export const accionKit = (familia, accion) => [MODULO, FAMILIAS_KIT[familia].ruta, ...ACCIONES[accion]];
+export const accionConfiguracionKits = (familia) => [MODULO, FAMILIAS_KIT[familia].rutaConfiguracion, 'configuracion', 'btn_guardar'];
 
 // Documento de bodega_control con el último número de cada familia. Solo lo
 // escriben las Functions, en la misma transacción que crea el kit.
@@ -77,16 +75,6 @@ export const idKit = (codigo) => idVinculo(normalizarClave(codigo));
 
 // Misma referencia que muestra Bodega (propia o del maestro clínico).
 export const referenciaDe = (p) => p?.referencia || p?.maestroCodigo?.referencia || '';
-
-// Valida la referencia y deriva el tipo. No toma nada más de lo que envía la
-// pantalla: el tipo sale de la referencia y el ID del correlativo.
-export const validarCabeceraKit = (datos = {}) => {
-  const familia = FAMILIAS_KIT[datos.familia];
-  if (!familia) return { errores: ['El tipo de kit no existe.'], cabecera: null };
-  const referencia = Object.hasOwn(familia.referencias, String(datos.referencia)) ? String(datos.referencia) : null;
-  if (!referencia) return { errores: ['Selecciona una referencia válida. Si no aparece, actualiza la página.'], cabecera: null };
-  return { errores: [], cabecera: { familia: datos.familia, referencia, tipo: familia.referencias[referencia].tipo } };
-};
 
 // Une las líneas repetidas del mismo lote (suma la cantidad; una confirmación
 // dada en cualquiera de ellas vale para el lote).

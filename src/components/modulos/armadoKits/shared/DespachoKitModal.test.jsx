@@ -14,7 +14,7 @@ import DespachoKitModal from './DespachoKitModal';
 import { leerCodigoKit } from '../../../../../functions/armadoKits/codigoKit.mjs';
 
 const KIT = {
-  id: 'F001', codigo: 'F001', referencia: 'KFH', estado: 'ARMADO', version: 1, cantidadLineas: 2, totalUnidades: 4,
+  id: 'F001', codigo: 'F001', referencia: 'KFH', modeloNombre: 'Kit Flexible Hombre', estado: 'ARMADO', version: 1, cantidadLineas: 2, totalUnidades: 4,
   lineas: [
     { productoId: 'a', loteId: 'la', referencia: 'REF-A', productoNombre: 'Insumo A', lote: 'A1', vencimiento: '2030-01-01', cantidad: 3 },
     { productoId: 'b', loteId: 'lb', referencia: 'REF-B', productoNombre: 'Insumo B', lote: 'B1', vencimiento: '2031-01-01', cantidad: 1 },

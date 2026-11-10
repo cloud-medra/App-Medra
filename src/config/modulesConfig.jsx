@@ -295,6 +295,8 @@ export const MODULES = {
     color: PALETA_MENU.turquesa,
     subItems: [
       { label: 'Flexibles', path: '/armadoKits/flexibles', icon: <Package size={14} />, color: PALETA_MENU.verde },
+      // Receta y modelos de los flexibles (solo dev hasta asignarlo).
+      { label: 'Configuración Flexibles', path: '/armadoKits/configuracionFlexibles', icon: <SlidersHorizontal size={14} />, color: PALETA_MENU.indigo },
     ]
   },
   documentos: {

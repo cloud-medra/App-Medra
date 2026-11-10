@@ -14,10 +14,12 @@ import { eliminarKit } from './kitsApi';
 import { etiquetaLote } from './lineasKit';
 import { CeldaVencimiento, Insignia, InsigniaEstado } from './comunes';
 import { generarPdfKit } from './pdfKit';
+import { etiquetaModeloKit } from '../../../../../functions/armadoKits/receta.mjs';
 import FormKitModal from './FormKitModal';
 import CompletarVencimientoModal from './CompletarVencimientoModal';
 
 const COLUMNAS_DETALLE = [
+  { key: 'componente', label: 'Componente', ancho: 120, min: 70 },
   { key: 'referencia', label: 'Referencia', ancho: 130, min: 70 },
   { key: 'nombre', label: 'Nombre', ancho: 300, min: 120 },
   { key: 'lote', label: 'Lote', ancho: 120, min: 60 },
@@ -48,9 +50,8 @@ const DetalleKit = ({ kit, familia, onVolver, onCambio, onEliminado, ofrecerPdf 
   // Hoja por imprimir: al crear el kit o al cambiar su contenido (la hoja
   // anterior queda desactualizada). Se espera a tener la versión nueva.
   const [avisoPdf, setAvisoPdf] = useState(() => (ofrecerPdf ? { tipo: 'creado', versionMinima: 1 } : null));
-  const referencia = config.referencias[kit.referencia];
   const abrirPdf = () => {
-    generarPdfKit({ kit, referencia, hoy, generado: new Date().toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' }) })
+    generarPdfKit({ kit, hoy, generado: new Date().toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' }) })
       .catch((e) => showToast(mensajeError(e, 'No se pudo generar el PDF.'), 'error'));
   };
   const cerrarAvisoPdf = () => { setAvisoPdf(null); onPdfOfrecido?.(); };
@@ -84,7 +85,7 @@ const DetalleKit = ({ kit, familia, onVolver, onCambio, onEliminado, ofrecerPdf 
           <button type="button" onClick={onVolver} className="text-etiqueta text-[#2383C2] flex items-center gap-1"><ArrowLeft size={12} /> Volver al listado</button>
           <h3 className="text-titulo-seccion mt-1">{kit.codigo}</h3>
           <p className="text-secundario text-tinta-secundaria">
-            {config.referencias[kit.referencia]?.etiqueta || kit.referencia} · {kit.cantidadLineas} insumos · {kit.totalUnidades} unidades · Creado {fechaHora(kit.creadoEn)} por {kit.creadoPor?.nombre || '—'}
+            {etiquetaModeloKit(kit)} · {kit.cantidadLineas} insumos · {kit.totalUnidades} unidades · Creado {fechaHora(kit.creadoEn)} por {kit.creadoPor?.nombre || '—'}
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-1.5">
             <InsigniaEstado estado={estado} etiqueta={ETIQUETAS_ESTADO_KIT[estado]} />
@@ -112,6 +113,7 @@ const DetalleKit = ({ kit, familia, onVolver, onCambio, onEliminado, ofrecerPdf 
         <TablaBodega columnas={columnasVisibles} anchos={anchos} onResize={handleResize}>
           {kit.lineas.map((l) => (
             <FilaBodega key={l.loteId} columnas={columnasVisibles} celdas={{
+              componente: <td className={`${TD} text-secundario`}>{l.componenteNombre || '—'}</td>,
               referencia: <td className={`${TD} text-numero-tabla`} title={l.referencia}>{l.referencia || '—'}</td>,
               nombre: <td className={`${TD} text-etiqueta`} title={l.productoNombre}>{l.productoNombre}</td>,
               lote: <td className={`${TD} text-numero-tabla`}>{etiquetaLote(l.lote)}</td>,

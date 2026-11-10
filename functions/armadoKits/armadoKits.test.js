@@ -5,15 +5,19 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createRequire } from 'node:module';
 import {
-  lotesParaKit, lotesFueraDeFEFO, repartoDesde, planCambiosKit, validarCabeceraKit, validarLineasKit, valorRetiro,
+  lotesParaKit, lotesFueraDeFEFO, repartoDesde, planCambiosKit, validarLineasKit, valorRetiro,
   fechasDistintasDelLote, idKit, hoyChile,
 } from './nucleo.mjs';
 import { aplicarRetornoKit, valorizarMovimiento, sumarLineas, saldoFinalPeriodo, idLote, LINEAS_PERIODO, lineaDeMovimiento } from '../bodega/nucleo.mjs';
 
 import { crearDb } from '../testutils/firestoreMemoria.mjs';
+import { conRecetaQueCalza } from '../testutils/recetaQueCalza.mjs';
 
 const require = createRequire(import.meta.url);
-const { guardarKitComo, eliminarKitComo, completarVencimientoComo } = require('./servicio');
+const servicio = require('./servicio');
+const { eliminarKitComo, completarVencimientoComo } = servicio;
+// Estos tests prueban stock, FEFO y costos: la receta se ajusta a lo pedido (ver receta.test.js).
+const guardarKitComo = conRecetaQueCalza(servicio.guardarKitComo, () => datos);
 
 const POR = { uid: 'u1', nombre: 'Prueba', email: '' };
 const P = 'prod1';
@@ -73,12 +77,7 @@ describe('reglas puras', () => {
     expect(repartoDesde(e, ID.tarde, 11).partes.map((p) => [p.lote.lote, p.cantidad])).toEqual([['TARDE', 10], ['PRONTO', 1]]);
     expect(repartoDesde(e, ID.pronto, 100).faltante).toBe(81);
   });
-  it('valida referencia y cantidades', () => {
-    expect(validarCabeceraKit({ familia: 'FLEXIBLE', referencia: 'OTRA' }).errores[0]).toMatch(/referencia/);
-    expect(validarCabeceraKit({ familia: 'FLEXIBLE' }).errores[0]).toMatch(/referencia/);
-    expect(validarCabeceraKit({ familia: 'FLEXIBLE', referencia: 'constructor' }).errores[0]).toMatch(/referencia/);
-    expect(validarCabeceraKit({ familia: 'NO', referencia: 'KFH' }).errores[0]).toMatch(/no existe/);
-    expect(validarCabeceraKit({ familia: 'FLEXIBLE', referencia: 'KFM' }).cabecera).toEqual({ familia: 'FLEXIBLE', referencia: 'KFM', tipo: 'FLEXIBLE_MUJER' });
+  it('valida las cantidades de las líneas', () => {
     expect(validarLineasKit([]).errores[0]).toMatch(/insumos/);
     expect(validarLineasKit([linea('a', 1.5)]).errores[0]).toMatch(/entero/);
     expect(validarLineasKit([linea('a', 1), linea('a', 2)]).lineas).toHaveLength(1);
@@ -112,7 +111,7 @@ describe('crear un kit', () => {
     expect(lote(ID.medio).disponible).toBe(3);
     expect(producto().disponible).toBe(29);
     const k = kit(r.id);
-    expect(k).toMatchObject({ codigo: 'F001', referencia: 'KFH', tipo: 'FLEXIBLE_HOMBRE', cantidadLineas: 2, totalUnidades: 4, lineasSinVencimiento: 0 });
+    expect(k).toMatchObject({ codigo: 'F001', referencia: 'KFH', tipo: 'HOMBRE_NORMAL', cantidadLineas: 2, totalUnidades: 4, lineasSinVencimiento: 0 });
     expect(k.lineas[0]).toMatchObject({ referencia: 'REF-1', productoNombre: 'Insumo', lote: 'PRONTO', vencimiento: '2029-01-01', cantidad: 3, fueraDeFEFO: false });
     const movs = movimientos();
     expect(movs).toHaveLength(2);
@@ -178,21 +177,21 @@ describe('referencia e ID automático', () => {
   it('KFH y KFM guardan su referencia y el tipo correcto', async () => {
     const h = await crearUno({ referencia: 'KFH' });
     const m = await crearUno({ referencia: 'KFM' });
-    expect(kit(h.id)).toMatchObject({ referencia: 'KFH', tipo: 'FLEXIBLE_HOMBRE' });
-    expect(kit(m.id)).toMatchObject({ referencia: 'KFM', tipo: 'FLEXIBLE_MUJER' });
+    expect(kit(h.id)).toMatchObject({ referencia: 'KFH', tipo: 'HOMBRE_NORMAL' });
+    expect(kit(m.id)).toMatchObject({ referencia: 'KFM', tipo: 'MUJER_NORMAL' });
     expect(h.referencia).toBe('KFH');
   });
 
   it('el tipo y el código que envíe la pantalla se ignoran', async () => {
-    const r = await crearUno({ referencia: 'KFM', tipo: 'FLEXIBLE_HOMBRE', codigo: 'PRUEBA-001', codigoNormalizado: 'X', numero: 500 });
+    const r = await crearUno({ referencia: 'KFM', tipo: 'HOMBRE_NORMAL', codigo: 'PRUEBA-001', codigoNormalizado: 'X', numero: 500 });
     expect(r.codigo).toBe('F001');
-    expect(kit('F001')).toMatchObject({ tipo: 'FLEXIBLE_MUJER', codigo: 'F001', codigoNormalizado: 'F001', numero: 1 });
+    expect(kit('F001')).toMatchObject({ tipo: 'MUJER_NORMAL', codigo: 'F001', codigoNormalizado: 'F001', numero: 1 });
     expect(kit('PRUEBA-001')).toBeUndefined();
   });
 
   it('una referencia inválida se rechaza sin consumir número ni stock', async () => {
-    await expect(Promise.resolve().then(() => crearUno({ referencia: 'KFX' }))).rejects.toThrow(/referencia/);
-    await expect(Promise.resolve().then(() => crearUno({ referencia: undefined, tipo: 'FLEXIBLE_HOMBRE' }))).rejects.toThrow(/referencia/);
+    await expect(crearUno({ referencia: 'KFX' })).rejects.toThrow(/género/);
+    await expect(crearUno({ referencia: undefined, tipo: 'HOMBRE_NORMAL' })).rejects.toThrow(/género/);
     expect(contador()).toBeUndefined();
     expect(producto().disponible).toBe(33);
     expect(movimientos()).toHaveLength(0);
@@ -242,9 +241,9 @@ describe('referencia e ID automático', () => {
 
   it('editar el contenido no cambia el ID ni la referencia, aunque se envíen otros', async () => {
     const { id } = await crearUno({ referencia: 'KFM' });
-    const r = await guardarKitComo(db, POR, { familia: 'FLEXIBLE', kitId: id, referencia: 'KFH', tipo: 'FLEXIBLE_HOMBRE', codigo: 'F777', lineas: [linea(ID.pronto, 2)] });
+    const r = await guardarKitComo(db, POR, { familia: 'FLEXIBLE', kitId: id, referencia: 'KFH', tipo: 'HOMBRE_NORMAL', codigo: 'F777', lineas: [linea(ID.pronto, 2)] });
     expect(r).toMatchObject({ id: 'F001', codigo: 'F001', referencia: 'KFM' });
-    expect(kit('F001')).toMatchObject({ codigo: 'F001', referencia: 'KFM', tipo: 'FLEXIBLE_MUJER', numero: 1, totalUnidades: 2 });
+    expect(kit('F001')).toMatchObject({ codigo: 'F001', referencia: 'KFM', tipo: 'MUJER_NORMAL', numero: 1, totalUnidades: 2 });
     expect(contador()).toEqual({ FLEXIBLE: 1 });
   });
 

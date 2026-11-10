@@ -12,6 +12,7 @@ import { abrirVisorPdf } from '../../bodega/shared/abrirPdf';
 import { nombreArchivo } from '../../bodega/shared/exportar';
 import { codigoBarrasKit } from '../../../../../functions/armadoKits/codigoKit.mjs';
 import { advertenciasKit, versionKit } from '../../../../../functions/armadoKits/nucleo.mjs';
+import { etiquetaModeloKit, etiquetaTipoKit } from '../../../../../functions/armadoKits/receta.mjs';
 import { fechaCorta, etiquetaLote } from './lineasKit';
 
 const AZUL = [35, 131, 194];
@@ -38,8 +39,21 @@ export const textoVencimiento = (vencimiento, hoy) => {
 
 export const nombreArchivoKit = (kit) => nombreArchivo(`Kit_${kit.codigo}`, 'pdf');
 
-// opciones: { kit, referencia: { etiqueta, tipoEtiqueta }, hoy: 'AAAA-MM-DD', generado: 'dd-mm-aaaa hh:mm' }
-export const construirPdfKit = ({ jsPDF, autoTable, JsBarcode }, { kit, referencia, hoy, generado }) => {
+// Filas de la tabla agrupadas por componente (en el orden de la receta), con
+// una fila de título por componente. Un kit sin componentes va en un solo grupo.
+export const filasPorComponente = (lineas = []) => {
+  const grupos = new Map();
+  [...lineas].sort((a, b) => (a.componenteOrden ?? 999) - (b.componenteOrden ?? 999)).forEach((l) => {
+    const clave = l.componenteId || '';
+    const g = grupos.get(clave) || { nombre: l.componenteNombre || 'Contenido', lineas: [] };
+    g.lineas.push(l);
+    grupos.set(clave, g);
+  });
+  return [...grupos.values()];
+};
+
+// opciones: { kit, hoy: 'AAAA-MM-DD', generado: 'dd-mm-aaaa hh:mm' }
+export const construirPdfKit = ({ jsPDF, autoTable, JsBarcode }, { kit, hoy, generado }) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const ancho = doc.internal.pageSize.getWidth();
   const alto = doc.internal.pageSize.getHeight();
@@ -89,8 +103,8 @@ export const construirPdfKit = ({ jsPDF, autoTable, JsBarcode }, { kit, referenc
   doc.text(titulo, MARGEN, 30);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
-  doc.text(`Referencia: ${referencia?.etiqueta || kit.referencia || '—'}`, MARGEN, 37);
-  doc.text(`Tipo: ${referencia?.tipoEtiqueta || kit.tipo || '—'}`, MARGEN, 42);
+  doc.text(`Referencia: ${etiquetaModeloKit(kit)}`, MARGEN, 37);
+  doc.text(`Tipo: ${etiquetaTipoKit(kit)}`, MARGEN, 42);
   doc.setTextColor(...GRIS);
   doc.setFontSize(8.5);
   doc.text(`Contenido versión ${version}`, MARGEN, 47);
@@ -110,7 +124,10 @@ export const construirPdfKit = ({ jsPDF, autoTable, JsBarcode }, { kit, referenc
     startY: y,
     margin: { top: 22, bottom: 18, left: MARGEN, right: MARGEN },
     head: [['Referencia', 'Nombre', 'Lote', 'Vencimiento', 'Cantidad']],
-    body: kit.lineas.map((l) => [l.referencia || '—', l.productoNombre, etiquetaLote(l.lote), textoVencimiento(l.vencimiento, hoy), String(l.cantidad)]),
+    body: filasPorComponente(kit.lineas).flatMap((g) => [
+      [{ content: `${g.nombre} (${g.lineas.reduce((n, l) => n + l.cantidad, 0)})`, colSpan: 5, styles: { fillColor: [235, 242, 250], fontStyle: 'bold' } }],
+      ...g.lineas.map((l) => [l.referencia || '—', l.productoNombre, etiquetaLote(l.lote), textoVencimiento(l.vencimiento, hoy), String(l.cantidad)]),
+    ]),
     foot: [[{ content: 'Total de unidades', colSpan: 4, styles: { halign: 'right' } }, String(kit.totalUnidades)]],
     theme: 'grid',
     styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.8, textColor: TEXTO, lineColor: [226, 232, 240], lineWidth: 0.2 },

@@ -127,6 +127,7 @@ import TransitoBodega from '../components/modulos/bodega/transitoBodega/Transito
 import CentrosBodega from '../components/modulos/bodega/centrosBodega/CentrosBodega';
 import CajasBodega from '../components/modulos/bodega/cajasBodega/CajasBodega';
 import Flexibles from '../components/modulos/armadoKits/flexibles/Flexibles';
+import ConfiguracionFlexibles from '../components/modulos/armadoKits/configuracionFlexibles/ConfiguracionFlexibles';
 import ConsignacionesBodega from '../components/modulos/bodega/consignacionesBodega/ConsignacionesBodega';
 import ConsumoBodega from '../components/modulos/bodega/consumoBodega/ConsumoBodega';
 import InventarioBodega from '../components/modulos/bodega/inventarioBodega/InventarioBodega';
@@ -580,6 +581,7 @@ const Dashboard = () => {
     '/bodega/inventarioBodega': <InventarioBodega />,
     '/bodega/catalogosBodega': <CatalogosBodega />,
     '/armadoKits/flexibles': <Flexibles />,
+    '/armadoKits/configuracionFlexibles': <ConfiguracionFlexibles />,
 
     // ── Documentos ──
     '/documentos/reportesInfo': <ReportesInfo pathVista="/documentos/reportesInfo" onAbrirGestionImplante={abrirGestionImplante} />,
