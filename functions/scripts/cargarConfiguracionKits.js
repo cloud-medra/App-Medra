@@ -20,15 +20,14 @@ const { getFirestore } = require('firebase-admin/firestore');
 const APLICAR = process.argv.includes('--aplicar');
 const POR = { uid: 'script', nombre: 'Carga inicial (script)', email: '' };
 
-// Datos confirmados por el usuario (10-11-2026). Las Dormia son productos
-// nuevos: se omiten mientras no existan en Bodega. Después se mantienen
-// desde la pantalla.
+// Datos confirmados por el usuario (10-11-2026). Después se mantienen desde
+// la pantalla (Configuración Flexibles).
 const PROPUESTA = {
   familia: 'FLEXIBLE',
   componentes: [
     { nombre: 'Guía', cantidad: 2, referencias: ['HW-035150'] },
     { nombre: 'Vaina', cantidad: 1, porVariante: true, referenciasPorVariante: { HOMBRE_NORMAL: ['FUS-107045', 'FUS-120045'], MUJER_NORMAL: ['FUS-107035'] } },
-    { nombre: 'Dormia', cantidad: 1, referencias: ['NGE-07115', 'NTSE-033115-UDH', 'NTSED-025115-UDH'] },
+    { nombre: 'Dormia', cantidad: 1, referencias: ['NGE-017115', 'NTSE-022115-UDH', 'NTSED-024115-UDH'] },
     { nombre: 'Catéter doble J', cantidad: 1, referencias: ['UFH-626-R', 'USH-626', 'USI-526-R', 'USI-600', 'USI-626-R'] },
     { nombre: 'Uretero', cantidad: 1, referencias: ['PU3033A'] },
   ],
