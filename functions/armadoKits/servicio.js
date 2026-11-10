@@ -19,11 +19,14 @@
 // usuarios compiten por el mismo lote, de modo que el segundo ve el saldo real.
 
 const { HttpsError } = require('firebase-functions/v2/https');
-const { COL, aplicarMovimiento, saldoDe, fotoSaldo, datosPropietario, camposCosto, aplicarRetornoKit, idLote, normalizarClave } = require('../bodega/nucleo.mjs');
+const {
+  COL, aplicarMovimiento, saldoDe, fotoSaldo, datosPropietario, camposCosto, aplicarRetornoKit, aplicarReposicionKit, idLote, normalizarClave, MAX_OBSERVACION,
+} = require('../bodega/nucleo.mjs');
 const { internos } = require('../bodega/servicio');
 const {
-  COL_KITS, FAMILIAS_KIT, OPERACION_COMPLETAR, ID_CONTADOR_KITS, codigoCorrelativoKit, accionKit, ESTADOS_KIT, kitEditable, versionKit, mensajeKitNoEditable, idKit, referenciaDe, validarLineasKit, planCambiosKit,
+  COL_KITS, FAMILIAS_KIT, OPERACION_COMPLETAR, OPERACION_REPONER, ID_CONTADOR_KITS, codigoCorrelativoKit, accionKit, ESTADOS_KIT, ETIQUETAS_ESTADO_KIT, kitEditable, kitCerrado, estadoKit, versionKit, mensajeKitNoEditable, idKit, referenciaDe, validarLineasKit, planCambiosKit,
   hoyChile, loteVencido, lotesParaKit, lotesFueraDeFEFO, valorRetiro, totalesKit, fechaValida, fechasDistintasDelLote, lineasConFecha,
+  planReposicion, consumoKit,
 } = require('./nucleo.mjs');
 const {
   COL_CONFIGURACION_KITS, validarModeloKit, recetaDelModelo, validarContenidoKit, buscarModelo, claveVariante,
@@ -228,6 +231,19 @@ const guardarKitComo = (db, por, datos = {}) => {
     // No debería ocurrir (el contador nunca baja), pero un set lo sobrescribiría.
     if (!kitId && snapKit.exists) throw new HttpsError('failed-precondition', `El ID ${codigoNuevo} ya existe. Avisa a un administrador.`);
     const kit = snapKit.exists ? snapKit.data() : null;
+    // Rearmar: kit nuevo del mismo modelo que uno cerrado. El vínculo es solo
+    // referencia (no mueve nada del kit original) y se guarda en ambos.
+    const rearmadoDeId = !kitId && datos.rearmadoDe ? String(datos.rearmadoDe) : null;
+    let original = null;
+    if (rearmadoDeId) {
+      const snapOriginal = await t.get(db.collection(COL_KITS).doc(rearmadoDeId));
+      if (!snapOriginal.exists) throw new HttpsError('not-found', 'El kit que se rearma ya no existe.');
+      original = snapOriginal.data();
+      if (original.familia !== familia) throw new HttpsError('invalid-argument', 'El kit que se rearma no pertenece a esta pantalla.');
+      if (!kitCerrado(original)) throw new HttpsError('failed-precondition', `El kit ${original.codigo} está ${ETIQUETAS_ESTADO_KIT[estadoKit(original)].toLowerCase()}: solo se rearma un kit entregado.`, { motivo: 'estado' });
+      if (original.rearmadoEn) throw new HttpsError('failed-precondition', `El kit ${original.codigo} ya se rearmó en ${original.rearmadoEn.codigo}.`, { motivo: 'ya-rearmado' });
+      if (modelo.referencia !== original.referencia) throw new HttpsError('invalid-argument', `Al rearmar ${original.codigo} el kit nuevo debe ser ${original.referencia}.`);
+    }
     if (kit && kit.familia !== familia) throw new HttpsError('invalid-argument', 'El kit no pertenece a esta pantalla.');
     if (kit && !kitEditable(kit)) throw new HttpsError('failed-precondition', mensajeKitNoEditable(kit), { motivo: 'estado' });
     if (kit) {
@@ -268,9 +284,15 @@ const guardarKitComo = (db, por, datos = {}) => {
         familia, referencia: modelo.referencia, modeloNombre: modelo.nombre, genero: modelo.genero, vaina: modelo.vaina,
         tipo: claveVariante(modelo.genero, modelo.vaina), versionReceta: Number(config.version) || 0,
         numero, codigo, codigoNormalizado: normalizarClave(codigo), estado: ESTADOS_KIT.ARMADO, version: 1,
+        ...(original ? { rearmadoDe: { id: rearmadoDeId, codigo: original.codigo } } : {}),
         ...contenido, creadoPor: por, creadoEn: ahora(), actualizadoPor: por, actualizadoEn: ahora(),
       });
-      registrarLog(t, ref, 'CREADO', por, { referencia: modelo.referencia, lineas: lineas.map((l) => resumenLinea(l)) });
+      registrarLog(t, ref, 'CREADO', por, { referencia: modelo.referencia, lineas: lineas.map((l) => resumenLinea(l)), ...(original ? { rearmadoDe: original.codigo } : {}) });
+      if (original) {
+        const refOriginal = db.collection(COL_KITS).doc(rearmadoDeId);
+        t.update(refOriginal, { rearmadoEn: { id: ref.id, codigo }, actualizadoPor: por, actualizadoEn: ahora() });
+        registrarLog(t, refOriginal, 'REARMADO', por, { kitNuevo: codigo });
+      }
     }
     return { id: ref.id, codigo, referencia: kit?.referencia || modelo.referencia, version: kit ? versionKit(kit) + 1 : 1, ...totalesKit(lineas), productos };
   });
@@ -348,6 +370,116 @@ const completarVencimientoComo = (db, por, datos = {}) => {
   });
 };
 
+// Reposición del centro: repone, con stock suyo y otro lote, lo que usó de un
+// kit cerrado. `items` = [{ componenteId, productoId, lote, vencimiento,
+// cantidad }]. La referencia debe estar permitida para ese componente en la
+// receta vigente y no se repone más de lo usado (planReposicion). Entra como
+// stock nuevo (REPOSICION_KIT, línea "Reposición desde centros") al valor con
+// que salió lo usado de ese kit, vinculado al kit y al centro, en UNA
+// transacción con el kit. Puede haber varias hasta completar lo usado.
+const reponerKitComo = (db, por, datos = {}) => {
+  const kitId = String(datos.kitId || '');
+  const familia = String(datos.familia || '');
+  const observacion = String(datos.observacion ?? '').trim().replace(/\s+/g, ' ').slice(0, MAX_OBSERVACION);
+  if (!kitId) throw new HttpsError('invalid-argument', 'Falta el kit.');
+
+  return db.runTransaction(async (t) => {
+    const ref = db.collection(COL_KITS).doc(kitId);
+    const [snap, snapConfig] = await Promise.all([t.get(ref), t.get(db.collection(COL_CONFIGURACION_KITS).doc(familia))]);
+    if (!snap.exists) throw new HttpsError('not-found', 'El kit ya no existe.');
+    const kit = snap.data();
+    if (kit.familia !== familia) throw new HttpsError('invalid-argument', 'El kit no pertenece a esta pantalla.');
+    if (!kitCerrado(kit)) throw new HttpsError('failed-precondition', `El kit ${kit.codigo} está ${ETIQUETAS_ESTADO_KIT[estadoKit(kit)].toLowerCase()}: solo se repone lo usado de un kit entregado.`, { motivo: 'estado' });
+    const config = snapConfig.exists ? snapConfig.data() : null;
+    const modelo = config ? buscarModelo(config, kit.genero, kit.vaina) : null;
+    if (!modelo) throw new HttpsError('failed-precondition', `El modelo ${kit.referencia} ya no está en la configuración.`);
+    const plan = planReposicion(kit.lineas || [], datos.items, recetaDelModelo(config, modelo));
+    exigirSinErrores(plan.errores);
+
+    // Lecturas: productos, lotes de cada producto (fecha distinta) y destinos.
+    const productoIds = [...new Set(plan.items.map((i) => i.productoId))];
+    const items = plan.items.map((i) => ({ ...i, loteId: idLote(i.productoId, i.lote, i.vencimiento) }));
+    const loteIds = [...new Set(items.map((i) => i.loteId))];
+    const [periodoId, snapEstado, snapsProductos, consultas, snapsLotes] = await Promise.all([
+      leerPeriodo(t, db), t.get(refEstado(db)),
+      Promise.all(productoIds.map((id) => t.get(refProducto(db, id)))),
+      Promise.all(productoIds.map((id) => t.get(db.collection(COL.lotes).where('productoId', '==', id).limit(300)))),
+      Promise.all(loteIds.map((id) => t.get(refLote(db, id)))),
+    ]);
+    const productos = new Map();
+    snapsProductos.forEach((s) => {
+      if (!s.exists) throw new HttpsError('not-found', 'Un producto repuesto ya no existe en el maestro de Bodega.');
+      productos.set(s.id, { id: s.id, ...s.data() });
+    });
+    exigirSinInventario(snapEstado, [...productos.values()], 'registrar reposiciones');
+    const fechasDistintas = items.flatMap((i) => {
+      const lotesDelProducto = consultas[productoIds.indexOf(i.productoId)].docs.map((d) => d.data());
+      return fechasDistintasDelLote(lotesDelProducto, i.lote, i.vencimiento).map((f) => `${i.referencia} lote ${i.lote}: ya existe con vencimiento ${f}`);
+    });
+    if (fechasDistintas.length && datos.confirmarFechaDistinta !== true) {
+      throw new HttpsError('failed-precondition', `${[...new Set(fechasDistintas)].join('; ')}. Confirma si es correcto.`, { motivo: 'fecha-distinta', fechasExistentes: [...new Set(fechasDistintas)] });
+    }
+    const lotes = new Map(snapsLotes.map((s) => [s.id, s.exists ? s.data() : null]));
+
+    const costos = costosDe(productos);
+    const saldoProducto = new Map([...productos].map(([id, p]) => [id, saldoDe(p)]));
+    const saldoLote = new Map();
+    const pasos = items.map((i) => {
+      const mov = { tipo: 'REPOSICION_KIT', cantidad: i.cantidad };
+      const antesProducto = saldoProducto.get(i.productoId);
+      const { costo, valorizado } = aplicarReposicionKit(costos.get(i.productoId), antesProducto, { cantidad: i.cantidad, valor: i.valor });
+      costos.set(i.productoId, costo);
+      const sl = aplicarMovimiento(saldoLote.get(i.loteId) || saldoDe(lotes.get(i.loteId)), mov);
+      const sp = aplicarMovimiento(antesProducto, mov);
+      saldoLote.set(i.loteId, sl);
+      saldoProducto.set(i.productoId, sp);
+      return { i, sl, sp, valorizado: { periodoId, ...valorizado } };
+    });
+
+    // --- Escrituras
+    const centro = { id: kit.despacho?.centroId || null, nombre: kit.despacho?.centroNombre || '' };
+    const numero = (kit.reposiciones || []).length + 1;
+    saldoLote.forEach((s, loteId) => {
+      const actual = lotes.get(loteId);
+      const i = items.find((x) => x.loteId === loteId);
+      const base = actual || { productoId: i.productoId, lote: i.lote, vencimiento: i.vencimiento, ...datosPropietario(null), creadoEn: ahora(), creadoDesdeKit: kitId };
+      t.set(refLote(db, loteId), { ...base, ...s, soloCargaInicial: false, ultimoMovimiento: ahora(), ultimoMovimientoTipo: 'REPOSICION_KIT' });
+    });
+    const productosActualizados = productoIds.map((id) => {
+      const costo = camposCosto(costos.get(id));
+      t.update(refProducto(db, id), { ...saldoProducto.get(id), ...costo, conMovimientos: true, actualizadoEn: ahora() });
+      return { id, ...saldoProducto.get(id), ...costo, conMovimientos: true };
+    });
+    pasos.forEach(({ i, sl, sp, valorizado }, orden) => {
+      const p = productos.get(i.productoId);
+      t.set(db.collection(COL.movimientos).doc(), {
+        tipo: 'REPOSICION_KIT', fecha: ahora(), orden, usuario: por,
+        productoId: i.productoId, productoNombre: p.nombre, codigoMaestro: p.codigoMaestro || '', categoriaId: p.categoriaId || null,
+        loteId: i.loteId, lote: i.lote, vencimiento: i.vencimiento, ...datosPropietario(null), cantidad: i.cantidad,
+        saldoLote: fotoSaldo(sl), saldoProducto: fotoSaldo(sp),
+        centroId: centro.id, centroNombre: centro.nombre, kitId, kitCodigo: kit.codigo,
+        documentoRef: { id: kitId, tipo: 'KIT', numero: kit.codigo }, idEntrega: '',
+        observacion: `Reposición ${numero} del kit ${kit.codigo} (${i.componenteNombre})${observacion ? `: ${observacion}` : ''}`,
+        ...valorizado,
+      });
+    });
+    const consumo = consumoKit(plan.lineas);
+    const reposicion = {
+      numero, fecha: ahora(), usuario: por, observacion,
+      items: items.map((i) => ({ componenteId: i.componenteId, componenteNombre: i.componenteNombre, productoId: i.productoId, referencia: i.referencia, productoNombre: i.productoNombre, loteId: i.loteId, lote: i.lote, vencimiento: i.vencimiento, cantidad: i.cantidad, valor: i.valor })),
+    };
+    t.update(ref, {
+      lineas: plan.lineas, consumo, reposicionPendiente: consumo.pendiente > 0,
+      reposiciones: [...(kit.reposiciones || []), reposicion], actualizadoPor: por, actualizadoEn: ahora(),
+    });
+    registrarLog(t, ref, 'REPOSICION_REGISTRADA', por, {
+      numero, centro: centro.nombre, observacion, pendienteDespues: consumo.pendiente,
+      items: reposicion.items.map((i) => ({ componente: i.componenteNombre, referencia: i.referencia, lote: i.lote, vencimiento: i.vencimiento, cantidad: i.cantidad, valor: i.valor })),
+    });
+    return { id: kitId, codigo: kit.codigo, numero, pendiente: consumo.pendiente, repuesto: items.reduce((s, i) => s + i.cantidad, 0), productos: productosActualizados };
+  });
+};
+
 const exigirFamilia = (familia) => {
   if (!FAMILIAS_KIT[familia]) throw new HttpsError('invalid-argument', 'El tipo de kit no existe.');
 };
@@ -361,7 +493,12 @@ const guardarKit = async (db, uid, datos = {}) => {
     exigir(perfil, accionKit(datos.familia, 'completarVencimiento'));
     return completarVencimientoComo(db, por, datos);
   }
+  if (datos.operacion === OPERACION_REPONER) {
+    exigir(perfil, accionKit(datos.familia, 'reponer'));
+    return reponerKitComo(db, por, datos);
+  }
   exigir(perfil, accionKit(datos.familia, datos.kitId ? 'editar' : 'crear'));
+  if (!datos.kitId && datos.rearmadoDe) exigir(perfil, accionKit(datos.familia, 'rearmar'));
   return guardarKitComo(db, por, datos);
 };
 
@@ -372,4 +509,4 @@ const eliminarKit = async (db, uid, datos = {}) => {
   return eliminarKitComo(db, datosPor(uid, perfil), datos);
 };
 
-module.exports = { guardarKit, guardarKitComo, eliminarKit, eliminarKitComo, completarVencimientoComo };
+module.exports = { guardarKit, guardarKitComo, eliminarKit, eliminarKitComo, completarVencimientoComo, reponerKitComo };

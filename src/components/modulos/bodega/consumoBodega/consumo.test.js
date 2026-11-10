@@ -22,5 +22,14 @@ describe('consumo por centro', () => {
     expect(r[0]).toMatchObject({ unidades: 6, valor: 5150 });
     expect(r[0].productos.map((p) => [p.productoNombre, p.unidades, p.valor, p.entregas])).toEqual([['Gasa', 5, 5150, 2], ['Sonda', 1, 0, 1]]);
   });
+  it('usado, repuesto y neto: la reposición del centro resta del consumo y no cuenta como entrega', () => {
+    const r = agruparConsumo([
+      { centroId: 'pab', centroNombre: 'PAB', productoId: 'g', productoNombre: 'Guía', cantidad: 2, valor: 20000, tipo: 'ENTREGA_KIT', kitCodigo: 'F001' },
+      { centroId: 'pab', centroNombre: 'PAB', productoId: 'g', productoNombre: 'Guía', cantidad: 2, valor: 20000, tipo: 'REPOSICION_KIT', kitCodigo: 'F001' },
+      { centroId: 'pab', centroNombre: 'PAB', productoId: 'd', productoNombre: 'Dormia', cantidad: 1, valor: 80000, tipo: 'ENTREGA_KIT', kitCodigo: 'F001' },
+    ]);
+    expect(r[0]).toMatchObject({ unidades: 3, valor: 100000, repuesto: 2, valorRepuesto: 20000, neto: 1, valorNeto: 80000 });
+    expect(r[0].productos.map((p) => [p.productoNombre, p.unidades, p.repuesto, p.neto, p.valorNeto, p.entregas])).toEqual([['Guía', 2, 2, 0, 0, 1], ['Dormia', 1, 0, 1, 80000, 1]]);
+  });
   it('primer día del mes', () => expect(primerDiaDelMes('2026-10-14')).toBe('2026-10-01'));
 });

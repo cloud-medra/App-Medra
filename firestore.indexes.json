@@ -47,6 +47,86 @@
       ]
     },
     {
+      "collectionGroup": "kits_armados",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "familia",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "kits_armados",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "familia",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tipo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "estado",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "kits_armados",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "familia",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "reposicionPendiente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "kits_armados",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "familia",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "tipo",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "reposicionPendiente",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "creadoEn",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "detalles",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

@@ -7,11 +7,12 @@ export const Insignia = ({ color = 'gris', children, title }) => {
     ambar: 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300',
     verde: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300',
     rojo: 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300',
+    azul: 'bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300',
   };
   return <span title={title} className={`inline-block px-1 rounded text-pequeno ${colores[color]}`}>{children}</span>;
 };
 
-const COLOR_ESTADO = { ARMADO: 'gris', EN_TRANSITO: 'ambar', ENTREGADO: 'verde' };
+const COLOR_ESTADO = { ARMADO: 'gris', EN_TRANSITO: 'ambar', ENTREGADO: 'verde', ENTREGADO_PARCIAL: 'azul' };
 export const InsigniaEstado = ({ estado, etiqueta }) => <Insignia color={COLOR_ESTADO[estado] || 'gris'}>{etiqueta}</Insignia>;
 
 // Fecha de vencimiento con su estado (vencido, próximo o sin fecha).

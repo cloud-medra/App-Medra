@@ -2,7 +2,7 @@ import { httpsCallable } from 'firebase/functions';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
 import { db, functions } from '../../../../firebaseConfig';
 import { leerCatalogo, upsertLocal, refrescarCatalogo } from '../../../../stores/catalogosStore';
-import { COL, TIPOS_ENTREGA } from '../../../../../functions/bodega/nucleo.mjs';
+import { COL, TIPOS_CONSUMO_CENTRO } from '../../../../../functions/bodega/nucleo.mjs';
 import { idVinculo } from '../../../../../functions/bodega/gs1.mjs';
 
 // Acceso a datos de Bodega desde la pantalla.
@@ -240,9 +240,11 @@ export const leerLotesSinVencimiento = async () => {
 };
 
 // Entregas (consumo) en un rango, opcionalmente de un centro y/o producto.
-// Incluye lo entregado desde lo dejado en el centro.
+// Incluye lo entregado desde lo dejado en el centro y las reposiciones del
+// centro de lo usado en un kit (REPOSICION_KIT, se restan en el reporte).
+// Mismos campos que antes: usa los índices existentes.
 export const leerEntregas = async ({ desde, hasta, centroId, productoId, max = 5000 }) => {
-  const restricciones = [where('tipo', 'in', TIPOS_ENTREGA)];
+  const restricciones = [where('tipo', 'in', TIPOS_CONSUMO_CENTRO)];
   if (centroId) restricciones.push(where('centroId', '==', centroId));
   if (productoId) restricciones.push(where('productoId', '==', productoId));
   restricciones.push(

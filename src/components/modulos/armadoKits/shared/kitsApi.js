@@ -2,7 +2,7 @@ import { httpsCallable } from 'firebase/functions';
 import { collection, doc, endAt, getDoc, getDocs, limit, orderBy, query, startAfter, startAt, where } from 'firebase/firestore';
 import { db, functions } from '../../../../firebaseConfig';
 import { upsertLocal } from '../../../../stores/catalogosStore';
-import { COL_KITS, OPERACION_COMPLETAR, ESTADOS_KIT } from '../../../../../functions/armadoKits/nucleo.mjs';
+import { COL_KITS, OPERACION_COMPLETAR, OPERACION_REPONER, ESTADOS_KIT, ESTADOS_KIT_POR_DEFECTO, consultaKits } from '../../../../../functions/armadoKits/nucleo.mjs';
 import { COL_CONFIGURACION_KITS } from '../../../../../functions/armadoKits/receta.mjs';
 import { normalizarClave } from '../../../../../functions/bodega/nucleo.mjs';
 
@@ -21,17 +21,21 @@ const llamar = (nombre) => {
   };
 };
 
-// Una página del listado. Con `codigo` busca por el inicio del código y el tipo
-// se filtra en memoria (combinar ambos exigiría otro índice).
-export const leerKits = async ({ familia, tipo = '', codigo = '', cursor = null }) => {
+// Una página del listado (filtros en consultaKits de functions/armadoKits/nucleo.mjs).
+// Con `codigo` busca por el inicio del código y el resto (tipo, estados,
+// reposición pendiente) se filtra en memoria. Sin código: estado `in` o
+// reposicionPendiente, con sus índices compuestos (firestore.indexes.json).
+export const leerKits = async ({ familia, tipo = '', codigo = '', estados = ESTADOS_KIT_POR_DEFECTO, pendiente = false, cursor = null }) => {
   const texto = normalizarClave(codigo);
-  const restricciones = texto
-    ? [where('familia', '==', familia), orderBy('codigoNormalizado'), startAt(texto), endAt(`${texto}`)]
-    : [where('familia', '==', familia), ...(tipo ? [where('tipo', '==', tipo)] : []), orderBy('creadoEn', 'desc')];
+  const { donde, orden, enMemoria } = consultaKits({ familia, tipo, codigo: texto, estados, pendiente });
+  const restricciones = [
+    ...donde.map(([campo, op, valor]) => where(campo, op, valor)),
+    ...(orden === 'codigoNormalizado' ? [orderBy('codigoNormalizado'), startAt(texto), endAt(`${texto}`)] : [orderBy('creadoEn', 'desc')]),
+  ];
   const snap = await getDocs(query(collection(db, COL_KITS), ...restricciones, ...(cursor ? [startAfter(cursor)] : []), limit(TAMANO_PAGINA)));
   const kits = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
   return {
-    kits: texto && tipo ? kits.filter((k) => k.tipo === tipo) : kits,
+    kits: texto ? kits.filter(enMemoria) : kits,
     cursor: snap.docs[snap.docs.length - 1] || null,
     hayMas: snap.size === TAMANO_PAGINA,
   };
@@ -46,6 +50,8 @@ export const leerKit = async (id) => {
 export const guardarKit = llamar('kitsGuardar');
 export const eliminarKit = llamar('kitsEliminar');
 export const completarVencimiento = (datos) => guardarKit({ ...datos, operacion: OPERACION_COMPLETAR });
+// { familia, kitId, items: [{ componenteId, productoId, lote, vencimiento, cantidad }], observacion, confirmarFechaDistinta? }
+export const reponerKit = (datos) => guardarKit({ ...datos, operacion: OPERACION_REPONER });
 
 // Receta y modelos de una familia (null si aún no se configura). 1 lectura.
 export const leerConfiguracionKits = async (familia) => {
@@ -60,7 +66,8 @@ export const leerHistorialConfiguracion = async (familia) => {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 };
 
-// { accion: DESPACHAR|RECIBIR|RECHAZAR|ANULAR, kitId, ... } (no mueve stock).
+// { accion: DESPACHAR|RECIBIR|RECHAZAR|ANULAR, kitId, ... } (no mueve stock) y
+// { accion: REVISAR_DEVOLUCION, kitId, devueltos: [{ loteId, devuelto }], observacion }.
 export const gestionarTransitoKit = llamar('kitsTransito');
 
 // Kits despachados y aún no recibidos (Bodega > Tránsito). Igualdad en un

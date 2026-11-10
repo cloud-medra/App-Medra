@@ -143,6 +143,7 @@ export const bodegaComponentMaps = {
           btn_kit_recibir: { label: 'Acción: Recibir un kit (queda entregado; no mueve stock)' },
           btn_kit_rechazar: { label: 'Acción: Rechazar un kit (vuelve a armado; exige motivo)' },
           btn_kit_anular: { label: 'Acción: Anular el despacho de un kit (vuelve a armado; exige motivo)' },
+          btn_kit_revisar_devolucion: { label: 'Acción: Revisar la devolución de un kit (lo devuelto vuelve al stock; lo usado queda como consumo del centro)' },
         },
       },
     },
@@ -211,7 +212,7 @@ export const bodegaComponentMaps = {
         label: 'Sección: Reporte de entregas por centro y producto',
         elements: {
           btn_exportar: { label: 'Acción: Exportar a Excel' },
-          ...columnas([['referencia', 'Referencia'], ['entregas', 'Entregas'], ['unidades', 'Unidades'], ['valor', 'Valor']]),
+          ...columnas([['referencia', 'Referencia'], ['entregas', 'Entregas'], ['unidades', 'Usado'], ['valor', 'Valor usado'], ['repuesto', 'Repuesto'], ['valorRepuesto', 'Valor repuesto'], ['neto', 'Neto'], ['valorNeto', 'Valor neto']]),
         },
       },
     },

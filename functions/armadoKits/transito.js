@@ -11,17 +11,37 @@
 // `transito` del lote, y las unidades del kit nunca estuvieron ahí. Tiene su
 // propio estado:
 //   ARMADO --despachar--> EN_TRANSITO --recibir--> ENTREGADO (final)
+//                           |--revisar devolución parcial--> ENTREGADO_PARCIAL (final)
 //                           \--rechazar / anular--> ARMADO
 // Solo un kit ARMADO se edita o elimina (servicio.js lo exige).
+//
+// Revisar devolución (el centro no usó todo el kit): lo devuelto vuelve al
+// disponible, al mismo lote y con el mismo valor con que salió (RETORNO_KIT,
+// "Retorno desde kits"); lo usado queda como ENTREGA_KIT (Consumo por centro)
+// solo por lo usado. Si vuelve todo equivale a rechazar y si no vuelve nada,
+// a recibir: se usan esas mismas operaciones. Un kit cerrado guarda en cada
+// línea lo usado y lo devuelto, y en `consumo` y `reposicionPendiente` el
+// resumen (para la reposición del centro, servicio.js).
 
 const { HttpsError } = require('firebase-functions/v2/https');
-const { COL, saldoDe, fotoSaldo, datosPropietario, MAX_OBSERVACION } = require('../bodega/nucleo.mjs');
+const {
+  COL, saldoDe, fotoSaldo, datosPropietario, MAX_OBSERVACION, aplicarMovimiento, aplicarRetornoKit, camposCosto,
+} = require('../bodega/nucleo.mjs');
 const { internos } = require('../bodega/servicio');
 const {
   COL_KITS, ESTADOS_KIT, ETIQUETAS_ESTADO_KIT, ACCIONES_TRANSITO_KIT, estadoKit, versionKit, advertenciasKit, hoyChile,
+  planDevolucion, RESULTADO_DEVOLUCION, lineasTodoUsado, consumoKit,
 } = require('./nucleo.mjs');
 
-const { perfilActivo, exigir, datosPor, registrarLog, leerPeriodo, ahora } = internos;
+const {
+  perfilActivo, exigir, datosPor, registrarLog, leerPeriodo, ahora, exigirSinErrores, costosDe, conErrorStock, exigirSinInventario, refEstado,
+} = internos;
+
+// Campos de un kit cerrado: líneas con lo usado/devuelto y el resumen.
+const camposCierre = (lineas) => {
+  const consumo = consumoKit(lineas);
+  return { lineas, consumo, reposicionPendiente: consumo.pendiente > 0 };
+};
 
 const texto = (v) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, MAX_OBSERVACION);
 const refContadores = (db) => db.collection(COL.control).doc('contadores');
@@ -54,9 +74,11 @@ const leerSaldos = async (t, db, lineas) => {
   };
 };
 
-// Un movimiento por línea, sin efecto en saldos ni en el cierre.
-const escribirMovimientos = (t, db, por, { kitId, kit, tipo, centro, documentoRef, periodoId, saldos, conValor, observacion }) => {
-  kit.lineas.forEach((l, orden) => {
+// Un movimiento por línea, sin efecto en saldos ni en el cierre. `lineas`
+// (opcional): [{ ...linea, cantidad, valor }] a registrar en vez de las del kit
+// (en la devolución parcial, solo lo usado).
+const escribirMovimientos = (t, db, por, { kitId, kit, tipo, centro, documentoRef, periodoId, saldos, conValor, observacion, lineas = kit.lineas }) => {
+  lineas.forEach((l, orden) => {
     const p = saldos.productos.get(l.productoId);
     const valor = conValor ? Number(l.valor) || 0 : 0;
     t.set(db.collection(COL.movimientos).doc(), {
@@ -129,8 +151,12 @@ const recibirKitComo = (db, por, datos = {}) => {
     const saldos = await leerSaldos(t, db, kit.lineas);
     const centro = { id: kit.despacho.centroId, nombre: kit.despacho.centroNombre };
     escribirMovimientos(t, db, por, { kitId: ref.id, kit, tipo: 'ENTREGA_KIT', centro, documentoRef: { id: ref.id, tipo: 'KIT', numero: kit.codigo }, periodoId, saldos, conValor: true, observacion });
-    t.update(ref, { estado: ESTADOS_KIT.ENTREGADO, recepcion: { fecha: ahora(), usuario: por, observacion }, actualizadoPor: por, actualizadoEn: ahora() });
-    registrarLog(t, ref, 'RECIBIDO', por, { salidaNumero: kit.despacho.salidaNumero, centro: centro.nombre, observacion });
+    // Todo usado: queda registrado por línea para la reposición del centro.
+    t.update(ref, {
+      estado: ESTADOS_KIT.ENTREGADO, recepcion: { fecha: ahora(), usuario: por, observacion, ...(datos.desdeRevision ? { desdeRevision: true } : {}) },
+      ...camposCierre(lineasTodoUsado(kit.lineas)), actualizadoPor: por, actualizadoEn: ahora(),
+    });
+    registrarLog(t, ref, 'RECIBIDO', por, { salidaNumero: kit.despacho.salidaNumero, centro: centro.nombre, observacion, ...(datos.desdeRevision ? { desdeRevision: true } : {}) });
     return { id: ref.id, codigo: kit.codigo, estado: ESTADOS_KIT.ENTREGADO };
   });
 };
@@ -158,11 +184,111 @@ const devolverKitComo = (db, por, datos = {}) => {
   });
 };
 
+// Revisión de la devolución: `devueltos` = [{ loteId, devuelto }]. Sin nada
+// devuelto es Recibir y con todo devuelto es Rechazar (las mismas
+// operaciones, con su propia transacción y control de estado). Lo parcial,
+// en UNA transacción: retorno al stock de lo devuelto, entrega de lo usado y
+// cierre del kit como ENTREGADO_PARCIAL.
+const revisarDevolucionComo = async (db, por, datos = {}) => {
+  const kitId = String(datos.kitId || '');
+  const observacion = texto(datos.observacion);
+  // Lectura previa solo para decidir el camino: cada operación vuelve a leer
+  // y a exigir EN_TRANSITO dentro de su transacción.
+  const previo = await db.collection(COL_KITS).doc(kitId || '-').get();
+  if (!kitId || !previo.exists) throw new HttpsError('not-found', 'El kit no existe.');
+  exigirEstado(previo.data(), ESTADOS_KIT.EN_TRANSITO);
+  const prevista = planDevolucion(previo.data().lineas || [], datos.devueltos);
+  exigirSinErrores(prevista.errores);
+  if (prevista.resultado === RESULTADO_DEVOLUCION.NADA) {
+    const r = await recibirKitComo(db, por, { kitId, observacion, desdeRevision: true });
+    return { ...r, resultado: prevista.resultado };
+  }
+  if (prevista.resultado === RESULTADO_DEVOLUCION.TODO) {
+    const r = await devolverKitComo(db, por, { kitId, accion: 'RECHAZAR', motivo: `Revisión de devolución: volvió todo el kit${observacion ? ` (${observacion})` : ''}` });
+    return { ...r, resultado: prevista.resultado };
+  }
+
+  return db.runTransaction(async (t) => {
+    const { ref, kit } = await leerKit(t, db, kitId);
+    exigirEstado(kit, ESTADOS_KIT.EN_TRANSITO);
+    const plan = planDevolucion(kit.lineas || [], datos.devueltos);
+    exigirSinErrores(plan.errores);
+    if (plan.resultado !== RESULTADO_DEVOLUCION.PARCIAL) throw new HttpsError('aborted', 'El kit cambió mientras se revisaba. Vuelve a intentarlo.');
+    const devueltas = plan.lineas.filter((l) => l.devuelto > 0);
+    const usadas = plan.lineas.filter((l) => l.usado > 0);
+    const [periodoId, snapEstado, saldos] = await Promise.all([leerPeriodo(t, db), t.get(refEstado(db)), leerSaldos(t, db, kit.lineas)]);
+    const productos = new Map([...saldos.productos].filter(([, p]) => p).map(([id, p]) => [id, { id, ...p }]));
+    devueltas.forEach((l) => { if (!productos.has(l.productoId)) throw new HttpsError('not-found', `El producto ${l.productoNombre} ya no existe en el maestro.`); });
+    exigirSinInventario(snapEstado, devueltas.map((l) => productos.get(l.productoId)), 'recibir devoluciones de kits');
+
+    // Retorno de lo devuelto: mismo lote y el valor con que salió.
+    const costos = costosDe(productos);
+    const saldoProducto = new Map([...productos].map(([id, p]) => [id, saldoDe(p)]));
+    const saldoLote = new Map();
+    const retornos = devueltas.map((l) => {
+      const mov = { tipo: 'RETORNO_KIT', cantidad: l.devuelto };
+      const antesProducto = saldoProducto.get(l.productoId);
+      const { costo, valorizado } = aplicarRetornoKit(costos.get(l.productoId), antesProducto, { cantidad: l.devuelto, valor: l.valorDevuelto, costoSalida: l.costoUnitario ?? null });
+      costos.set(l.productoId, costo);
+      const sl = conErrorStock(() => aplicarMovimiento(saldoLote.get(l.loteId) || saldoDe(saldos.lotes.get(l.loteId)), mov));
+      const sp = conErrorStock(() => aplicarMovimiento(antesProducto, mov));
+      saldoLote.set(l.loteId, sl);
+      saldoProducto.set(l.productoId, sp);
+      return { l, sl, sp, valorizado: { periodoId, ...valorizado } };
+    });
+
+    // --- Escrituras
+    const centro = { id: kit.despacho.centroId, nombre: kit.despacho.centroNombre };
+    const documentoRef = { id: ref.id, tipo: 'KIT', numero: kit.codigo };
+    saldoLote.forEach((s, loteId) => {
+      const actual = saldos.lotes.get(loteId);
+      const l = devueltas.find((x) => x.loteId === loteId);
+      const base = actual || { productoId: l.productoId, lote: l.lote || null, vencimiento: l.vencimiento || null, ...datosPropietario(null), creadoEn: ahora() };
+      t.set(db.collection(COL.lotes).doc(loteId), { ...base, ...s, soloCargaInicial: false, ultimoMovimiento: ahora(), ultimoMovimientoTipo: 'RETORNO_KIT' });
+    });
+    const productosActualizados = [...new Set(devueltas.map((l) => l.productoId))].map((id) => {
+      const costo = camposCosto(costos.get(id));
+      t.update(db.collection(COL.productos).doc(id), { ...saldoProducto.get(id), ...costo, conMovimientos: true, actualizadoEn: ahora() });
+      return { id, ...saldoProducto.get(id), ...costo, conMovimientos: true };
+    });
+    retornos.forEach(({ l, sl, sp, valorizado }, orden) => {
+      const p = productos.get(l.productoId);
+      t.set(db.collection(COL.movimientos).doc(), {
+        tipo: 'RETORNO_KIT', fecha: ahora(), orden, usuario: por,
+        productoId: l.productoId, productoNombre: l.productoNombre, codigoMaestro: l.codigoMaestro || p.codigoMaestro || '', categoriaId: p.categoriaId || null,
+        loteId: l.loteId, lote: l.lote || null, vencimiento: l.vencimiento || null, ...datosPropietario(null), cantidad: l.devuelto,
+        saldoLote: fotoSaldo(sl), saldoProducto: fotoSaldo(sp),
+        centroId: null, kitId: ref.id, kitCodigo: kit.codigo, documentoRef, idEntrega: '',
+        observacion: `Devolución del kit ${kit.codigo} desde ${centro.nombre}${observacion ? `: ${observacion}` : ''}`,
+        ...valorizado,
+      });
+    });
+    // Lo usado: consumo del centro, solo esas unidades y su valor.
+    escribirMovimientos(t, db, por, {
+      kitId: ref.id, kit, tipo: 'ENTREGA_KIT', centro, documentoRef, periodoId, saldos, conValor: true,
+      observacion: `Entrega parcial del kit ${kit.codigo}${observacion ? `: ${observacion}` : ''}`,
+      lineas: usadas.map((l) => ({ ...l, cantidad: l.usado, valor: l.valorUsado })),
+    });
+    const resumen = { ...plan.totales, fecha: ahora(), usuario: por, observacion };
+    t.update(db.collection(COL.salidas).doc(kit.despacho.salidaId), { kitDevolucionParcial: { devuelto: plan.totales.devuelto, usado: plan.totales.usado, fecha: ahora(), usuario: por } });
+    t.update(ref, {
+      estado: ESTADOS_KIT.ENTREGADO_PARCIAL, devolucion: resumen, recepcion: { fecha: ahora(), usuario: por, observacion, parcial: true },
+      ...camposCierre(plan.lineas), actualizadoPor: por, actualizadoEn: ahora(),
+    });
+    registrarLog(t, ref, 'DEVOLUCION_REVISADA', por, {
+      salidaNumero: kit.despacho.salidaNumero, centro: centro.nombre, observacion, ...plan.totales,
+      lineas: plan.lineas.map((l) => ({ componente: l.componenteNombre || null, producto: l.productoNombre, lote: l.lote || null, vencimiento: l.vencimiento || null, cantidad: l.cantidad, devuelto: l.devuelto, usado: l.usado, valorDevuelto: l.valorDevuelto, valorUsado: l.valorUsado })),
+    });
+    return { id: ref.id, codigo: kit.codigo, estado: ESTADOS_KIT.ENTREGADO_PARCIAL, resultado: plan.resultado, ...plan.totales, productos: productosActualizados };
+  });
+};
+
 const OPERACIONES = {
   DESPACHAR: despacharKitComo,
   RECIBIR: recibirKitComo,
   RECHAZAR: (db, por, datos) => devolverKitComo(db, por, { ...datos, accion: 'RECHAZAR' }),
   ANULAR: (db, por, datos) => devolverKitComo(db, por, { ...datos, accion: 'ANULAR' }),
+  REVISAR_DEVOLUCION: revisarDevolucionComo,
 };
 
 const gestionarTransitoKit = async (db, uid, datos = {}) => {
@@ -173,4 +299,4 @@ const gestionarTransitoKit = async (db, uid, datos = {}) => {
   return operacion(db, datosPor(uid, perfil), datos);
 };
 
-module.exports = { gestionarTransitoKit, despacharKitComo, recibirKitComo, devolverKitComo };
+module.exports = { gestionarTransitoKit, despacharKitComo, recibirKitComo, devolverKitComo, revisarDevolucionComo };

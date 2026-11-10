@@ -39,7 +39,9 @@ const suma = (lineas) => lineas.reduce((n, l) => n + l.cantidad, 0);
 // deja seguir hasta completar su cantidad exacta. Las confirmaciones (otro
 // lote, fuera de FEFO, sin vencimiento) se piden al agregar. El servidor
 // vuelve a validar la receta y el stock al guardar.
-const FormKitModal = ({ familia, kit = null, onCerrar, onGuardado }) => {
+// `rearmarDe`: kit cerrado que se rearma. El nuevo usa su mismo modelo (género
+// y vaina fijos) y el flujo normal por FEFO; solo guarda el vínculo.
+const FormKitModal = ({ familia, kit = null, rearmarDe = null, onCerrar, onGuardado }) => {
   const familiaConfig = FAMILIAS_KIT[familia];
   const hoy = hoyChile();
   const { showToast } = useToast();
@@ -47,8 +49,8 @@ const FormKitModal = ({ familia, kit = null, onCerrar, onGuardado }) => {
   const { config, cargando: cargandoConfig } = useConfiguracionKits(familia);
   const { datos: productos } = useCatalogo('bodegaProductos');
   const originales = useMemo(() => kit?.lineas || [], [kit]);
-  const [genero, setGenero] = useState(kit?.genero || '');
-  const [vaina, setVaina] = useState(kit?.vaina || '');
+  const [genero, setGenero] = useState(kit?.genero || rearmarDe?.genero || '');
+  const [vaina, setVaina] = useState(kit?.vaina || rearmarDe?.vaina || '');
   const [paso, setPaso] = useState(kit ? 1 : 0);
   const [lineas, setLineas] = useState(originales);
   const [lotesPorProducto, setLotesPorProducto] = useState({});
@@ -120,7 +122,7 @@ const FormKitModal = ({ familia, kit = null, onCerrar, onGuardado }) => {
     if (incompletos.length) { setError(`Faltan componentes por completar: ${incompletos.map((c) => c.nombre).join(', ')}.`); return; }
     setGuardando(true);
     try {
-      const r = await guardarKit({ familia, ...(kit ? { kitId: kit.id } : { genero, vaina, referencia: modelo.referencia }), lineas: lineasParaGuardar(lista) });
+      const r = await guardarKit({ familia, ...(kit ? { kitId: kit.id } : { genero, vaina, referencia: modelo.referencia, ...(rearmarDe ? { rearmadoDe: rearmarDe.id } : {}) }), lineas: lineasParaGuardar(lista) });
       showToast(r.sinCambios ? 'El kit no tuvo cambios.' : (kit ? `Kit ${r.codigo} guardado.` : `Kit creado con ID ${r.codigo}.`), 'success');
       onGuardado(r.id, r);
     } catch (e) {
@@ -155,12 +157,12 @@ const FormKitModal = ({ familia, kit = null, onCerrar, onGuardado }) => {
   ));
 
   return (
-    <div className="font-app text-tinta-principal fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={kit ? 'Editar kit' : 'Nuevo kit'}>
+    <div className="font-app text-tinta-principal fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={kit ? 'Editar kit' : rearmarDe ? 'Rearmar kit' : 'Nuevo kit'}>
       <div className="w-full max-w-4xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-secundario">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between">
           <div>
-            <h3 className="text-subtitulo flex items-center gap-1.5"><Layers size={15} /> {kit ? `Editar kit ${kit.codigo}` : `Nuevo kit · ${familiaConfig.etiqueta}`}</h3>
-            {modelo && modeloUsable && <p className="text-tinta-secundaria">{modelo.referencia} - {modelo.nombre} · ID: {kit ? kit.codigo : 'se asignará al guardar'}</p>}
+            <h3 className="text-subtitulo flex items-center gap-1.5"><Layers size={15} /> {kit ? `Editar kit ${kit.codigo}` : rearmarDe ? `Rearmar ${rearmarDe.codigo} · kit nuevo` : `Nuevo kit · ${familiaConfig.etiqueta}`}</h3>
+            {modelo && modeloUsable && <p className="text-tinta-secundaria">{modelo.referencia} - {modelo.nombre} · ID: {kit ? kit.codigo : 'se asignará al guardar'}{rearmarDe ? ` · rearmado de ${rearmarDe.codigo} (solo referencia)` : ''}</p>}
           </div>
           <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
         </div>
@@ -183,13 +185,13 @@ const FormKitModal = ({ familia, kit = null, onCerrar, onGuardado }) => {
             <>
               <div className="flex flex-wrap gap-4">
                 <label className="flex flex-col gap-1"><span className="text-etiqueta">Género *</span>
-                  <select value={genero} onChange={(e) => setGenero(e.target.value)} className={`${claseCampo} w-40`}>
+                  <select value={genero} onChange={(e) => setGenero(e.target.value)} disabled={Boolean(rearmarDe)} className={`${claseCampo} w-40`}>
                     <option value="">Seleccionar…</option>
                     {Object.entries(GENEROS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>
                 </label>
                 <label className="flex flex-col gap-1"><span className="text-etiqueta">Tipo de vaina *</span>
-                  <select value={vaina} onChange={(e) => setVaina(e.target.value)} className={`${claseCampo} w-40`}>
+                  <select value={vaina} onChange={(e) => setVaina(e.target.value)} disabled={Boolean(rearmarDe)} className={`${claseCampo} w-40`}>
                     <option value="">Seleccionar…</option>
                     {Object.entries(VAINAS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                   </select>

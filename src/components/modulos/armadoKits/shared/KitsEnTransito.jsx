@@ -7,6 +7,7 @@ import { etiquetaModeloKit } from '../../../../../functions/armadoKits/receta.mj
 import { mensajeError } from '../../bodega/shared/bodegaApi';
 import { fechaHora } from '../../bodega/shared/transito/transitos';
 import { gestionarTransitoKit, leerKitsEnTransito } from './kitsApi';
+import RevisarDevolucionKitModal from './RevisarDevolucionKitModal';
 
 const ACCIONES = {
   RECIBIR: { titulo: 'Recibir kit', boton: 'Recibir', motivo: false, texto: 'El kit queda entregado en el centro. No mueve stock: ya salió de Bodega al armarlo.' },
@@ -66,6 +67,8 @@ const KitsEnTransito = ({ version = 0 }) => {
   const { hasPermission } = useGranularPermission();
   const [kits, setKits] = useState(null);
   const [accion, setAccion] = useState(null);
+  const [revisando, setRevisando] = useState(null);
+  const puedeRevisar = hasPermission(...permisoDe('REVISAR_DEVOLUCION'));
 
   const cargar = useCallback(() => {
     leerKitsEnTransito()
@@ -88,11 +91,15 @@ const KitsEnTransito = ({ version = 0 }) => {
               {Object.entries(ACCIONES).filter(([a]) => hasPermission(...permisoDe(a))).map(([a, def]) => (
                 <button key={a} type="button" onClick={() => setAccion({ accion: a, kit: k })} className={`h-7 px-2 rounded text-etiqueta ${a === 'RECIBIR' ? 'bg-[#2383C2] text-white' : 'border border-gray-300 dark:border-gray-600'}`}>{def.boton}</button>
               ))}
+              {puedeRevisar && (
+                <button type="button" onClick={() => setRevisando(k)} className="h-7 px-2 rounded text-etiqueta border border-[#2383C2] text-[#2383C2]">Revisar devolución</button>
+              )}
             </span>
           </li>
         ))}
       </ul>
       {accion && <AccionKitModal {...accion} onCerrar={() => setAccion(null)} onHecho={(m) => { setAccion(null); showToast(m, 'success'); cargar(); }} />}
+      {revisando && <RevisarDevolucionKitModal kit={revisando} onCerrar={() => setRevisando(null)} onHecho={(m) => { setRevisando(null); showToast(m, 'success'); cargar(); }} />}
     </div>
   );
 };

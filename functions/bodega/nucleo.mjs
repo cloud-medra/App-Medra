@@ -133,6 +133,10 @@ export const TIPOS_MOVIMIENTO = Object.freeze({
   KIT_DESPACHO: { etiqueta: 'Kit despachado', disponible: 0, transito: 0 },
   ENTREGA_KIT: { etiqueta: 'Kit entregado', disponible: 0, transito: 0 },
   KIT_DEVUELTO: { etiqueta: 'Kit devuelto a armado', disponible: 0, transito: 0 },
+  // El centro repone, con stock suyo y otro lote, lo que usó de un kit
+  // (functions/armadoKits/reposicion.js): entra como stock nuevo al costo con
+  // que salió lo usado de ese kit.
+  REPOSICION_KIT: { etiqueta: 'Reposición del centro (kit)', disponible: 1, transito: 0 },
   // Lo no usado queda en el centro (sigue siendo stock) y desde ahí se
   // entrega o se devuelve.
   DEJADO_EN_CENTRO: { etiqueta: 'Dejado en centro', disponible: 0, transito: -1, enCentro: 1, centro: true },
@@ -143,6 +147,10 @@ export const TIPOS_MOVIMIENTO = Object.freeze({
 // Movimientos que son consumo (lo usado): reportes de consumo por centro.
 // ENTREGA_KIT: kit recibido en el centro, con el valor con que salió de Bodega.
 export const TIPOS_ENTREGA = Object.freeze(['ENTREGA', 'ENTREGA_DESDE_CENTRO', 'ENTREGA_KIT']);
+// Consumo por centro: lo usado (TIPOS_ENTREGA) y lo que el centro repuso de
+// lo usado en un kit (REPOSICION_KIT), que se resta para el neto.
+export const TIPOS_REPOSICION_CENTRO = Object.freeze(['REPOSICION_KIT']);
+export const TIPOS_CONSUMO_CENTRO = Object.freeze([...TIPOS_ENTREGA, ...TIPOS_REPOSICION_CENTRO]);
 
 export const MAX = Object.freeze({
   nombre: 150, codigoMaestro: 40, referencia: 80, ubicacion: 60, catalogo: 60, stockMinimo: 1e9,
@@ -910,6 +918,7 @@ export const LINEAS_PERIODO = Object.freeze({
   salidaCajas: { etiqueta: 'Salida a cajas', signo: -1 },
   salidaKits: { etiqueta: 'Salida a kits', signo: -1 },
   retornoKits: { etiqueta: 'Retorno desde kits', signo: 1 },
+  reposicionCentros: { etiqueta: 'Reposición desde centros', signo: 1 },
   ajustePositivo: { etiqueta: 'Ajustes positivos', signo: 1 },
   ajusteNegativo: { etiqueta: 'Ajustes negativos', signo: -1 },
 });
@@ -926,6 +935,7 @@ export const LINEA_DE_MOVIMIENTO = Object.freeze({
   REPOSICION_CAJA: 'salidaCajas',
   ASIGNACION_KIT: 'salidaKits',
   RETORNO_KIT: 'retornoKits',
+  REPOSICION_KIT: 'reposicionCentros',
   AJUSTE_POSITIVO: 'ajustePositivo',
   AJUSTE_NEGATIVO: 'ajusteNegativo',
 });
@@ -1005,15 +1015,21 @@ export const valorizarMovimiento = (costo, saldoAntes, producto, { tipo, cantida
 // salida (`costoSalida`) se conserva tal cual: recalcularlo con el valor en
 // pesos enteros lo movería en decimales. Si cambió entre medio (un ingreso), el
 // promedio se recalcula con lo que hay más lo que vuelve.
-export const aplicarRetornoKit = (costo, saldoAntes, { cantidad, valor, costoSalida = null }) => {
+const entradaConValor = (linea) => (costo, saldoAntes, { cantidad, valor, costoSalida = null }) => {
   const promedio = Number(costo?.costoPromedio) || 0;
   const unidadesAntes = unidadesValorizadas(saldoAntes);
   const valorAntes = unidadesAntes > 0 ? Number(costo?.valorStock) || 0 : 0;
   const devuelto = pesos(valor);
   const valorStock = valorAntes + devuelto;
   const costoPromedio = costoSalida !== null && costoSalida === promedio ? promedio : valorStock / (unidadesAntes + cantidad);
-  return { costo: { costoPromedio, valorStock }, valorizado: { linea: LINEA_DE_MOVIMIENTO.RETORNO_KIT, costoUnitario: devuelto / cantidad, valor: devuelto } };
+  return { costo: { costoPromedio, valorStock }, valorizado: { linea, costoUnitario: devuelto / cantidad, valor: devuelto } };
 };
+export const aplicarRetornoKit = entradaConValor(LINEA_DE_MOVIMIENTO.RETORNO_KIT);
+// Reposición del centro (REPOSICION_KIT): igual que el retorno, entra con el
+// valor exacto con que salió lo usado de ese kit (decisión del 10-11-2026),
+// así el valor de la bodega se recupera y el neto del centro queda en 0. El
+// promedio se recalcula con ese valor (no cambia si coincide con el actual).
+export const aplicarReposicionKit = entradaConValor(LINEA_DE_MOVIMIENTO.REPOSICION_KIT);
 
 // Campos de costo que se guardan en el producto.
 export const camposCosto = (costo) => ({ costoPromedio: Number(costo.costoPromedio) || 0, valorStock: Number(costo.valorStock) || 0 });

@@ -10,7 +10,7 @@ import { exportarExcel } from '../shared/exportar';
 import { formatoCantidad } from '../shared/catalogosBodega';
 import { hoyISO } from '../shared/documentos/lineasDocumento';
 import { fechaHora } from '../shared/transito/transitos';
-import { agruparConsumo, primerDiaDelMes } from './consumo';
+import { agruparConsumo, primerDiaDelMes, esReposicion } from './consumo';
 import { referenciaProducto } from '../shared/documentos/lineasDocumento';
 import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
 import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../shared/TablaBodega';
@@ -21,14 +21,20 @@ const COLUMNAS = [
   { key: 'producto', label: 'Centro / producto', fija: true, ancho: 320, min: 140 },
   { key: 'referencia', label: 'Referencia', ancho: 140, min: 70 },
   { key: 'entregas', label: 'Entregas', alinear: 'text-right', ancho: 90, min: 60 },
-  { key: 'unidades', label: 'Unidades', alinear: 'text-right', ancho: 100, min: 60 },
-  { key: 'valor', label: 'Valor', alinear: 'text-right', ancho: 120, min: 70 },
+  // unidades/valor: lo usado (claves de siempre; solo cambió la etiqueta).
+  { key: 'unidades', label: 'Usado', alinear: 'text-right', ancho: 90, min: 60 },
+  { key: 'valor', label: 'Valor usado', alinear: 'text-right', ancho: 120, min: 70 },
+  { key: 'repuesto', label: 'Repuesto', alinear: 'text-right', ancho: 90, min: 60 },
+  { key: 'valorRepuesto', label: 'Valor repuesto', alinear: 'text-right', ancho: 120, min: 70 },
+  { key: 'neto', label: 'Neto', alinear: 'text-right', ancho: 80, min: 55 },
+  { key: 'valorNeto', label: 'Valor neto', alinear: 'text-right', ancho: 120, min: 70 },
 ];
 const pesos = (n) => `$${Math.round(Number(n) || 0).toLocaleString('es-CL')}`;
 const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] bg-white dark:bg-gray-900';
 
-// Consumo por centro: entregas (movimientos ENTREGA, y los kits recibidos en
-// el centro: ENTREGA_KIT) en un rango de fechas,
+// Consumo por centro: entregas (movimientos ENTREGA, y lo usado de los kits
+// recibidos en el centro: ENTREGA_KIT) y lo que el centro repuso de lo usado
+// en un kit (REPOSICION_KIT), con usado, repuesto y neto, en un rango de fechas,
 // opcionalmente de un centro y/o un producto, agrupadas por centro y
 // producto, con el detalle de cada entrega. Exportable a Excel.
 const ConsumoBodega = () => {
@@ -49,6 +55,16 @@ const ConsumoBodega = () => {
   const [abiertos, setAbiertos] = useState(() => new Set());
   const grupos = useMemo(() => agruparConsumo(resultado?.entregas || []), [resultado]);
   const total = grupos.reduce((n, c) => n + c.unidades, 0);
+  const totalRepuesto = grupos.reduce((n, c) => n + c.repuesto, 0);
+  // Celdas de usado, repuesto y neto (centro o producto).
+  const celdasCantidades = (x, fuerte = false) => ({
+    unidades: <td className={`${TD} text-right font-num ${fuerte ? 'font-bold' : ''}`}>{formatoCantidad(x.unidades)}</td>,
+    valor: <td className={`${TD} text-right font-num`}>{pesos(x.valor)}</td>,
+    repuesto: <td className={`${TD} text-right font-num`}>{x.repuesto ? formatoCantidad(x.repuesto) : '—'}</td>,
+    valorRepuesto: <td className={`${TD} text-right font-num`}>{x.repuesto ? pesos(x.valorRepuesto) : '—'}</td>,
+    neto: <td className={`${TD} text-right font-num`}>{formatoCantidad(x.neto)}</td>,
+    valorNeto: <td className={`${TD} text-right font-num`}>{pesos(x.valorNeto)}</td>,
+  });
 
   const consultar = async () => {
     if (!filtros.desde || !filtros.hasta || filtros.desde > filtros.hasta) { setError('Elige un rango de fechas válido.'); return; }
@@ -73,15 +89,23 @@ const ConsumoBodega = () => {
         { titulo: 'Referencia', valor: (f) => f.referencia },
         { titulo: 'Producto', valor: (f) => f.producto },
         { titulo: 'Entregas', valor: (f) => f.entregas },
-        { titulo: 'Unidades', valor: (f) => f.unidades },
-        { titulo: 'Valor', valor: (f) => f.valor },
+        { titulo: 'Usado', valor: (f) => f.unidades },
+        { titulo: 'Valor usado', valor: (f) => f.valor },
+        { titulo: 'Repuesto', valor: (f) => f.repuesto },
+        { titulo: 'Valor repuesto', valor: (f) => f.valorRepuesto },
+        { titulo: 'Neto', valor: (f) => f.neto },
+        { titulo: 'Valor neto', valor: (f) => f.valorNeto },
       ],
-      filas: grupos.flatMap((c) => c.productos.map((p) => ({ centro: c.centroNombre, referencia: referenciaDe(p.productoId), producto: p.productoNombre, entregas: p.entregas, unidades: p.unidades, valor: Math.round(p.valor) }))),
+      filas: grupos.flatMap((c) => c.productos.map((p) => ({
+        centro: c.centroNombre, referencia: referenciaDe(p.productoId), producto: p.productoNombre, entregas: p.entregas,
+        unidades: p.unidades, valor: Math.round(p.valor), repuesto: p.repuesto, valorRepuesto: Math.round(p.valorRepuesto), neto: p.neto, valorNeto: Math.round(p.valorNeto),
+      }))),
     },
     {
       nombre: 'Detalle',
       columnas: [
         { titulo: 'Fecha', valor: (m) => fechaHora(m.fecha) },
+        { titulo: 'Tipo', valor: (m) => (esReposicion(m) ? 'Repuesto' : 'Usado') },
         { titulo: 'Centro', valor: (m) => m.centroNombre },
         { titulo: 'Referencia', valor: (m) => referenciaDe(m.productoId) },
         { titulo: 'Producto', valor: (m) => m.productoNombre },
@@ -140,8 +164,7 @@ const ConsumoBodega = () => {
                     <FilaBodega columnas={columnasVisibles} className="bg-amber-50 dark:bg-amber-950/20 font-bold" celdas={{
                       producto: <td className={TD} title={c.centroNombre}>{c.centroNombre}</td>,
                       entregas: <td className={`${TD} text-right font-num`}>{c.productos.reduce((n, p) => n + p.entregas, 0)}</td>,
-                      unidades: <td className={`${TD} text-right font-num`}>{formatoCantidad(c.unidades)}</td>,
-                      valor: <td className={`${TD} text-right font-num`}>{pesos(c.valor)}</td>,
+                      ...celdasCantidades(c),
                     }} />
                     {c.productos.map((p) => {
                       const clave = `${c.centroId}|${p.productoId}`;
@@ -152,12 +175,11 @@ const ConsumoBodega = () => {
                             producto: <td className={`${TD} pl-5`} title={p.productoNombre}>{abiertos.has(clave) ? <ChevronDown size={11} className="inline" /> : <ChevronRight size={11} className="inline" />} {p.productoNombre}</td>,
                             referencia: <td className={`${TD} font-num`} title={`${referenciaDe(p.productoId)} · ${p.codigoMaestro}`}>{referenciaDe(p.productoId) || '—'}</td>,
                             entregas: <td className={`${TD} text-right font-num`}>{p.entregas}</td>,
-                            unidades: <td className={`${TD} text-right font-num font-bold`}>{formatoCantidad(p.unidades)}</td>,
-                            valor: <td className={`${TD} text-right font-num`}>{pesos(p.valor)}</td>,
+                            ...celdasCantidades(p, true),
                           }} />
                           {detalle.map((m) => (
                             <FilaAnchoCompleto key={m.id} columnas={columnasVisibles} className="text-[11px] text-gray-600 dark:text-gray-300" celdaClassName="px-2 py-0.5 pl-10 border-b border-gray-100 dark:border-gray-700/70">
-                              {fechaHora(m.fecha)} · lote {m.lote || 'S/L'} · <strong>{m.cantidad} u.</strong> · {m.kitCodigo ? `Kit ${m.kitCodigo}` : `${ETIQUETA_ID_ENTREGA} ${m.idEntrega || '—'}`} · {pesos(m.valor)} · {m.observacion} · {m.usuario?.nombre || ''}
+                              {esReposicion(m) ? 'Repuesto · ' : ''}{fechaHora(m.fecha)} · lote {m.lote || 'S/L'} · <strong>{m.cantidad} u.</strong> · {m.kitCodigo ? `Kit ${m.kitCodigo}` : `${ETIQUETA_ID_ENTREGA} ${m.idEntrega || '—'}`} · {pesos(m.valor)} · {m.observacion} · {m.usuario?.nombre || ''}
                             </FilaAnchoCompleto>
                           ))}
                         </Fragment>
@@ -167,7 +189,7 @@ const ConsumoBodega = () => {
                 ))}
                 {grupos.length > 0 && (
                   <FilaAnchoCompleto columnas={columnasVisibles} className="bg-gray-100 dark:bg-gray-900 font-bold" celdaClassName="px-2 py-1 text-right">
-                    Total: {formatoCantidad(total)} unidad(es) en {resultado.entregas.length} entrega(s)
+                    Total usado: {formatoCantidad(total)} unidad(es){totalRepuesto ? ` · repuesto: ${formatoCantidad(totalRepuesto)} · neto: ${formatoCantidad(total - totalRepuesto)}` : ''} en {resultado.entregas.length} movimiento(s)
                   </FilaAnchoCompleto>
                 )}
               </TablaBodega>
