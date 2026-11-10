@@ -1,7 +1,8 @@
-// Hoja del kit (PDF): ID, referencia, tipo, fecha de generación, código de
-// barras Code 128 y el contenido con lote, vencimiento y cantidad. Sin logo
-// ni nombre del sistema en ninguna parte (encabezado, pie, metadatos ni
-// nombre del archivo).
+// Hoja del kit (PDF): ID, referencia, tipo y código de barras Code 128;
+// campos en blanco (Admisión, Nombre, Fecha) para completar a mano; el
+// contenido con componente, lote, vencimiento y cantidad; y la tabla "Fibras
+// láser" con su uso en blanco. Sin logo ni nombre del sistema en ninguna
+// parte (encabezado, pie, metadatos ni nombre del archivo).
 //
 // El código de barras lo codifica JsBarcode y se dibuja con rectángulos (vector):
 // queda nítido a cualquier escala de impresión. Módulo de 0,33 mm, alto de
@@ -39,21 +40,24 @@ export const textoVencimiento = (vencimiento, hoy) => {
 
 export const nombreArchivoKit = (kit) => nombreArchivo(`Kit_${kit.codigo}`, 'pdf');
 
-// Filas de la tabla agrupadas por componente (en el orden de la receta), con
-// una fila de título por componente. Un kit sin componentes va en un solo grupo.
-export const filasPorComponente = (lineas = []) => {
-  const grupos = new Map();
-  [...lineas].sort((a, b) => (a.componenteOrden ?? 999) - (b.componenteOrden ?? 999)).forEach((l) => {
-    const clave = l.componenteId || '';
-    const g = grupos.get(clave) || { nombre: l.componenteNombre || 'Contenido', lineas: [] };
-    g.lineas.push(l);
-    grupos.set(clave, g);
-  });
-  return [...grupos.values()];
-};
+// Columnas de la tabla principal: cada línea en una sola fila, con su componente.
+export const COLUMNAS_PDF = Object.freeze(['Componente', 'Referencia', 'Nombre', 'Lote', 'Vencimiento', 'Cantidad']);
 
-// opciones: { kit, hoy: 'AAAA-MM-DD', generado: 'dd-mm-aaaa hh:mm' }
-export const construirPdfKit = ({ jsPDF, autoTable, JsBarcode }, { kit, hoy, generado }) => {
+// Filas en el orden de la receta (componenteOrden); dentro de un componente,
+// en el orden guardado. Un kit sin componentes los deja en blanco.
+export const filasContenido = (lineas = [], hoy) => [...lineas]
+  .map((l, i) => ({ l, i }))
+  .sort((a, b) => (a.l.componenteOrden ?? 999) - (b.l.componenteOrden ?? 999) || a.i - b.i)
+  .map(({ l }) => [l.componenteNombre || '', l.referencia || '—', l.productoNombre || '', etiquetaLote(l.lote), textoVencimiento(l.vencimiento, hoy), String(l.cantidad)]);
+
+// Fibras láser: medidas fijas, con el uso en blanco para completar a mano.
+export const FIBRAS_LASER = Object.freeze(['272 µm', '365 µm', '550 µm', '1000 µm']);
+export const CAMPOS_A_MANO = Object.freeze(['Admisión', 'Nombre', 'Fecha']);
+
+const ALTO_FILA_ESCRITURA = 9;
+
+// opciones: { kit, hoy: 'AAAA-MM-DD' }
+export const construirPdfKit = ({ jsPDF, autoTable, JsBarcode }, { kit, hoy }) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const ancho = doc.internal.pageSize.getWidth();
   const alto = doc.internal.pageSize.getHeight();
@@ -69,10 +73,6 @@ export const construirPdfKit = ({ jsPDF, autoTable, JsBarcode }, { kit, hoy, gen
   doc.setFontSize(9);
   doc.setTextColor(...AZUL);
   doc.text('HOJA DE KIT', MARGEN, 15);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...GRIS);
-  doc.text(`Generado el ${generado}`, derecha, 15, { align: 'right' });
   doc.setDrawColor(...AZUL);
   doc.setLineWidth(0.6);
   doc.line(MARGEN, 19, derecha, 19);
@@ -109,9 +109,27 @@ export const construirPdfKit = ({ jsPDF, autoTable, JsBarcode }, { kit, hoy, gen
   doc.setFontSize(8.5);
   doc.text(`Contenido versión ${version}`, MARGEN, 47);
 
+  // Campos para completar a mano (siempre en la primera página).
+  let y = 58;
+  const anchosCampos = [52, 82, 38];
+  const separacion = (derecha - MARGEN - anchosCampos.reduce((n, a) => n + a, 0)) / (anchosCampos.length - 1);
+  let x = MARGEN;
+  doc.setFontSize(10);
+  doc.setTextColor(...TEXTO);
+  doc.setDrawColor(...TEXTO);
+  doc.setLineWidth(0.3);
+  CAMPOS_A_MANO.forEach((campo, k) => {
+    doc.setFont('helvetica', 'bold');
+    const etiqueta = `${campo}:`;
+    doc.text(etiqueta, x, y);
+    const inicioLinea = x + doc.getTextWidth(etiqueta) + 2;
+    doc.line(inicioLinea, y + 0.8, x + anchosCampos[k], y + 0.8);
+    x += anchosCampos[k] + separacion;
+  });
+  y += 9;
+
   // Contenido.
   const { vencidas, sinVencimiento } = advertenciasKit(kit.lineas, hoy);
-  let y = 54;
   if (vencidas.length || sinVencimiento.length) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(9);
@@ -123,23 +141,45 @@ export const construirPdfKit = ({ jsPDF, autoTable, JsBarcode }, { kit, hoy, gen
   autoTable(doc, {
     startY: y,
     margin: { top: 22, bottom: 18, left: MARGEN, right: MARGEN },
-    head: [['Referencia', 'Nombre', 'Lote', 'Vencimiento', 'Cantidad']],
-    body: filasPorComponente(kit.lineas).flatMap((g) => [
-      [{ content: `${g.nombre} (${g.lineas.reduce((n, l) => n + l.cantidad, 0)})`, colSpan: 5, styles: { fillColor: [235, 242, 250], fontStyle: 'bold' } }],
-      ...g.lineas.map((l) => [l.referencia || '—', l.productoNombre, etiquetaLote(l.lote), textoVencimiento(l.vencimiento, hoy), String(l.cantidad)]),
-    ]),
-    foot: [[{ content: 'Total de unidades', colSpan: 4, styles: { halign: 'right' } }, String(kit.totalUnidades)]],
+    head: [[...COLUMNAS_PDF]],
+    body: filasContenido(kit.lineas, hoy),
+    foot: [[{ content: 'Total de unidades', colSpan: 5, styles: { halign: 'right' } }, String(kit.totalUnidades)]],
     theme: 'grid',
-    styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.8, textColor: TEXTO, lineColor: [226, 232, 240], lineWidth: 0.2 },
+    // Anchos fijos (182 mm) salvo Nombre, que toma el resto; un texto que no
+    // cabe pasa a otra línea dentro de su celda en vez de cortarse.
+    styles: { font: 'helvetica', fontSize: 8, cellPadding: 1.6, overflow: 'linebreak', valign: 'middle', textColor: TEXTO, lineColor: [226, 232, 240], lineWidth: 0.2 },
     headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold' },
     footStyles: { fillColor: [245, 248, 252], textColor: TEXTO, fontStyle: 'bold' },
-    columnStyles: { 0: { cellWidth: 30 }, 2: { cellWidth: 26 }, 3: { cellWidth: 38 }, 4: { cellWidth: 20, halign: 'right' } },
+    columnStyles: { 0: { cellWidth: 27 }, 1: { cellWidth: 31 }, 2: { cellWidth: 'auto' }, 3: { cellWidth: 24 }, 4: { cellWidth: 31 }, 5: { cellWidth: 15, halign: 'right' } },
+    rowPageBreak: 'avoid',
     didParseCell: (data) => {
-      if (data.section !== 'body' || data.column.index !== 3) return;
+      if (data.section !== 'body' || data.column.index !== 4) return;
       const texto = String(data.cell.raw);
       if (texto.includes('Vencido')) data.cell.styles.textColor = ROJO;
       else if (texto === 'Sin vencimiento') data.cell.styles.textColor = AMBAR;
     },
+  });
+
+  // Fibras láser: título y tabla juntos; si no caben en lo que queda de la
+  // página, pasan completos a la siguiente.
+  const altoFibras = 8 + 7 + FIBRAS_LASER.length * ALTO_FILA_ESCRITURA + 4;
+  let yFibras = doc.lastAutoTable.finalY + 10;
+  if (yFibras + altoFibras > alto - 18) { doc.addPage(); yFibras = 22; }
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5);
+  doc.setTextColor(...TEXTO);
+  doc.text('Fibras láser', MARGEN, yFibras);
+  autoTable(doc, {
+    startY: yFibras + 3,
+    margin: { top: 22, bottom: 18, left: MARGEN, right: MARGEN },
+    tableWidth: 110,
+    head: [['Referencia', 'Uso']],
+    body: FIBRAS_LASER.map((f) => [f, '']),
+    theme: 'grid',
+    pageBreak: 'avoid',
+    styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.8, valign: 'middle', textColor: TEXTO, lineColor: [180, 190, 200], lineWidth: 0.2, minCellHeight: ALTO_FILA_ESCRITURA },
+    headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold', minCellHeight: 7 },
+    columnStyles: { 0: { cellWidth: 35 } },
   });
 
   const paginas = doc.getNumberOfPages();

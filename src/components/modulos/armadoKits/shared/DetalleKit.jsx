@@ -51,7 +51,7 @@ const DetalleKit = ({ kit, familia, onVolver, onCambio, onEliminado, ofrecerPdf 
   // anterior queda desactualizada). Se espera a tener la versión nueva.
   const [avisoPdf, setAvisoPdf] = useState(() => (ofrecerPdf ? { tipo: 'creado', versionMinima: 1 } : null));
   const abrirPdf = () => {
-    generarPdfKit({ kit, hoy, generado: new Date().toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' }) })
+    generarPdfKit({ kit, hoy })
       .catch((e) => showToast(mensajeError(e, 'No se pudo generar el PDF.'), 'error'));
   };
   const cerrarAvisoPdf = () => { setAvisoPdf(null); onPdfOfrecido?.(); };
