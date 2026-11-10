@@ -887,8 +887,10 @@ service cloud.firestore {
     function leeArmadoKits() {
       return estaActivo() && (esDev() || tienePermiso('armadoKits'));
     }
+    // Bodega también los lee: Egreso escanea el kit para despacharlo y
+    // Tránsito lista los kits en camino.
     match /kits_armados/{document=**} {
-      allow read: if leeArmadoKits();
+      allow read: if leeArmadoKits() || leeBodega();
     }
     // Maestros → Códigos de barras: exige ese ítem en particular, para no
     // abrir los datos de Bodega a todo el que tenga el módulo Maestros.

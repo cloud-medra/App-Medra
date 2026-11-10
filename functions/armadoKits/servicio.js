@@ -22,7 +22,7 @@ const { HttpsError } = require('firebase-functions/v2/https');
 const { COL, aplicarMovimiento, saldoDe, fotoSaldo, datosPropietario, camposCosto, aplicarRetornoKit, idLote, normalizarClave } = require('../bodega/nucleo.mjs');
 const { internos } = require('../bodega/servicio');
 const {
-  COL_KITS, FAMILIAS_KIT, OPERACION_COMPLETAR, ID_CONTADOR_KITS, codigoCorrelativoKit, accionKit, idKit, referenciaDe, validarCabeceraKit, validarLineasKit, planCambiosKit,
+  COL_KITS, FAMILIAS_KIT, OPERACION_COMPLETAR, ID_CONTADOR_KITS, codigoCorrelativoKit, accionKit, ESTADOS_KIT, kitEditable, versionKit, mensajeKitNoEditable, idKit, referenciaDe, validarCabeceraKit, validarLineasKit, planCambiosKit,
   hoyChile, loteVencido, lotesParaKit, lotesFueraDeFEFO, valorRetiro, totalesKit, fechaValida, fechasDistintasDelLote, lineasConFecha,
 } = require('./nucleo.mjs');
 
@@ -203,25 +203,26 @@ const guardarKitComo = (db, por, datos = {}) => {
     if (!kitId && snapKit.exists) throw new HttpsError('failed-precondition', `El ID ${codigoNuevo} ya existe. Avisa a un administrador.`);
     const kit = snapKit.exists ? snapKit.data() : null;
     if (kit && kit.familia !== datos.familia) throw new HttpsError('invalid-argument', 'El kit no pertenece a esta pantalla.');
+    if (kit && !kitEditable(kit)) throw new HttpsError('failed-precondition', mensajeKitNoEditable(kit), { motivo: 'estado' });
     const codigo = kit?.codigo || codigoNuevo;
 
     const cambio = await prepararCambioStock(t, db, por, { kitId: ref.id, codigo, anteriores: kit?.lineas || [], entrada });
-    if (!cambio) return { id: ref.id, codigo, sinCambios: true, productos: [] };
+    if (!cambio) return { id: ref.id, codigo, sinCambios: true, version: versionKit(kit), productos: [] };
 
     const productos = cambio.escribir();
     const contenido = { lineas: cambio.lineas, ...totalesKit(cambio.lineas) };
     if (kit) {
-      t.update(ref, { ...contenido, actualizadoPor: por, actualizadoEn: ahora() });
+      t.update(ref, { ...contenido, version: versionKit(kit) + 1, actualizadoPor: por, actualizadoEn: ahora() });
       registrarLog(t, ref, 'EDITADO', por, {
         retirado: cambio.retiros.map((r) => resumenLinea(r.linea, r.cantidad)),
         agregado: cambio.asignaciones.map((a) => { const l = cambio.lineas.find((x) => x.loteId === a.entrada.loteId); return resumenLinea(l, a.cantidad); }),
       });
     } else {
       t.set(refContador, { [cabecera.familia]: numero }, { merge: true });
-      t.set(ref, { ...cabecera, numero, codigo, codigoNormalizado: normalizarClave(codigo), ...contenido, creadoPor: por, creadoEn: ahora(), actualizadoPor: por, actualizadoEn: ahora() });
+      t.set(ref, { ...cabecera, numero, codigo, codigoNormalizado: normalizarClave(codigo), estado: ESTADOS_KIT.ARMADO, version: 1, ...contenido, creadoPor: por, creadoEn: ahora(), actualizadoPor: por, actualizadoEn: ahora() });
       registrarLog(t, ref, 'CREADO', por, { lineas: cambio.lineas.map((l) => resumenLinea(l)) });
     }
-    return { id: ref.id, codigo, referencia: kit?.referencia || cabecera.referencia, ...totalesKit(cambio.lineas), productos };
+    return { id: ref.id, codigo, referencia: kit?.referencia || cabecera.referencia, version: kit ? versionKit(kit) + 1 : 1, ...totalesKit(cambio.lineas), productos };
   });
 };
 
@@ -236,6 +237,7 @@ const eliminarKitComo = (db, por, datos = {}) => {
     if (!snap.exists) throw new HttpsError('not-found', 'El kit ya no existe.');
     const kit = snap.data();
     if (kit.familia !== datos.familia) throw new HttpsError('invalid-argument', 'El kit no pertenece a esta pantalla.');
+    if (!kitEditable(kit)) throw new HttpsError('failed-precondition', mensajeKitNoEditable(kit), { motivo: 'estado' });
     const cambio = await prepararCambioStock(t, db, por, { kitId, codigo: kit.codigo, anteriores: kit.lineas || [], entrada: [] });
     const productos = cambio ? cambio.escribir() : [];
     registrarLog(t, ref, 'ELIMINADO', por, { codigo: kit.codigo, tipo: kit.tipo, lineas: (kit.lineas || []).map((l) => resumenLinea(l)) });
@@ -262,6 +264,7 @@ const completarVencimientoComo = (db, por, datos = {}) => {
     if (!snap.exists) throw new HttpsError('not-found', 'El kit ya no existe.');
     const kit = snap.data();
     if (kit.familia !== datos.familia) throw new HttpsError('invalid-argument', 'El kit no pertenece a esta pantalla.');
+    if (!kitEditable(kit)) throw new HttpsError('failed-precondition', mensajeKitNoEditable(kit), { motivo: 'estado' });
     const linea = (kit.lineas || []).find((l) => l.loteId === loteId);
     if (!linea) throw new HttpsError('not-found', 'La línea ya no está en el kit.');
     if (linea.vencimiento) throw new HttpsError('failed-precondition', `La línea ya tiene fecha de vencimiento (${linea.vencimiento}).`);
@@ -284,14 +287,14 @@ const completarVencimientoComo = (db, por, datos = {}) => {
       });
     }
     const lineas = lineasConFecha(kit.lineas, loteId, loteIdNuevo, vencimiento);
-    t.update(ref, { lineas, ...totalesKit(lineas), actualizadoPor: por, actualizadoEn: ahora() });
+    t.update(ref, { lineas, ...totalesKit(lineas), version: versionKit(kit) + 1, actualizadoPor: por, actualizadoEn: ahora() });
     registrarLog(t, ref, 'COMPLETAR_VENCIMIENTO', por, {
       producto: linea.productoNombre, lote: linea.lote || null, cantidad: linea.cantidad,
       vencimientoAnterior: linea.vencimiento || null, vencimientoNuevo: vencimiento,
       loteIdAnterior: loteId, loteIdNuevo,
       fechasExistentes, confirmoFechaDistinta: fechasExistentes.length > 0,
     });
-    return { id: kitId, loteId: loteIdNuevo, vencimiento, productos: [] };
+    return { id: kitId, loteId: loteIdNuevo, vencimiento, version: versionKit(kit) + 1, productos: [] };
   });
 };
 

@@ -127,6 +127,12 @@ export const TIPOS_MOVIMIENTO = Object.freeze({
   // kit y vuelve al disponible al editarlo o eliminarlo.
   ASIGNACION_KIT: { etiqueta: 'Asignación a kit', disponible: -1, transito: 0 },
   RETORNO_KIT: { etiqueta: 'Retorno desde kit', disponible: 1, transito: 0 },
+  // Despacho y tránsito de kits (functions/armadoKits/transito.js): solo
+  // trazabilidad. No cambian saldos ni tienen línea de cierre, porque el
+  // stock y el valor del kit ya salieron con ASIGNACION_KIT.
+  KIT_DESPACHO: { etiqueta: 'Kit despachado', disponible: 0, transito: 0 },
+  ENTREGA_KIT: { etiqueta: 'Kit entregado', disponible: 0, transito: 0 },
+  KIT_DEVUELTO: { etiqueta: 'Kit devuelto a armado', disponible: 0, transito: 0 },
   // Lo no usado queda en el centro (sigue siendo stock) y desde ahí se
   // entrega o se devuelve.
   DEJADO_EN_CENTRO: { etiqueta: 'Dejado en centro', disponible: 0, transito: -1, enCentro: 1, centro: true },
@@ -135,7 +141,8 @@ export const TIPOS_MOVIMIENTO = Object.freeze({
 });
 
 // Movimientos que son consumo (lo usado): reportes de consumo por centro.
-export const TIPOS_ENTREGA = Object.freeze(['ENTREGA', 'ENTREGA_DESDE_CENTRO']);
+// ENTREGA_KIT: kit recibido en el centro, con el valor con que salió de Bodega.
+export const TIPOS_ENTREGA = Object.freeze(['ENTREGA', 'ENTREGA_DESDE_CENTRO', 'ENTREGA_KIT']);
 
 export const MAX = Object.freeze({
   nombre: 150, codigoMaestro: 40, referencia: 80, ubicacion: 60, catalogo: 60, stockMinimo: 1e9,

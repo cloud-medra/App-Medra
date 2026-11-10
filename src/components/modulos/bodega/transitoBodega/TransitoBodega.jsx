@@ -8,6 +8,7 @@ import { leerTransitosAbiertos, mensajeError } from '../shared/bodegaApi';
 import { formatoCantidad } from '../shared/catalogosBodega';
 import TablaTransitos from '../shared/transito/TablaTransitos';
 import { conReferencia, filtrarTransitos } from '../shared/transito/transitos';
+import KitsEnTransito from '../../armadoKits/shared/KitsEnTransito';
 
 const PATH_VISTA = '/bodega/transitoBodega';
 
@@ -58,6 +59,7 @@ const TransitoBodega = () => {
         <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1 text-gray-600 dark:text-gray-300"><RefreshCw size={12} /> Actualizar</button>
       </div>
       <div className="flex-1 overflow-auto p-3">
+        <KitsEnTransito version={version} />
         {transitos === null
           ? <p className="text-gray-400 italic">Cargando…</p>
           : <TablaTransitos transitos={filtrados} rutaVista={PATH_VISTA} origen="transito" onCambio={alCambiar} />}

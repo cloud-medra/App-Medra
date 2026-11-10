@@ -2,12 +2,15 @@
 // lee). Lógica en servicio.js y reglas puras en nucleo.mjs.
 //   - kitsGuardar: crear o editar un kit, y completar el vencimiento de una línea.
 //   - kitsEliminar: eliminar un kit y devolver sus unidades al stock.
+//   - kitsTransito: despachar un kit (Egreso), recibirlo, rechazarlo o anular
+//     el despacho (Tránsito). No mueve stock: ver transito.js.
 
 const { onCall } = require('firebase-functions/v2/https');
 const logger = require('firebase-functions/logger');
 const { initializeApp, getApps } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const servicio = require('./servicio');
+const transito = require('./transito');
 
 if (!getApps().length) initializeApp();
 const db = getFirestore();
@@ -20,3 +23,8 @@ const callable = (nombre) => onCall({ region: 'us-central1' }, async (request) =
 
 exports.kitsGuardar = callable('guardarKit');
 exports.kitsEliminar = callable('eliminarKit');
+exports.kitsTransito = onCall({ region: 'us-central1' }, async (request) => {
+  const resultado = await transito.gestionarTransitoKit(db, request.auth?.uid, request.data);
+  logger.info('armadoKits.transito', { por: request.auth?.uid, accion: request.data?.accion, id: resultado?.id || null });
+  return resultado;
+});

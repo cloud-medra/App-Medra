@@ -3,7 +3,7 @@ import { Layers, Plus, RefreshCw, Search } from 'lucide-react';
 import { useToast } from '../../../../context/ToastContext';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
-import { FAMILIAS_KIT } from '../../../../../functions/armadoKits/nucleo.mjs';
+import { FAMILIAS_KIT, ETIQUETAS_ESTADO_KIT, estadoKit } from '../../../../../functions/armadoKits/nucleo.mjs';
 import { mensajeError } from '../../bodega/shared/bodegaApi';
 import { fechaHora } from '../../bodega/shared/transito/transitos';
 import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
@@ -11,7 +11,7 @@ import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../../bodega/shared/
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../../bodega/shared/anchosTablaBodega';
 import { leerKit, leerKits } from './kitsApi';
 import { unirPagina } from './lineasKit';
-import { Insignia } from './comunes';
+import { Insignia, InsigniaEstado } from './comunes';
 import DetalleKit from './DetalleKit';
 import FormKitModal from './FormKitModal';
 
@@ -21,6 +21,7 @@ const COLUMNAS = [
   { key: 'insumos', label: 'Insumos', alinear: 'text-right', ancho: 80, min: 55 },
   { key: 'unidades', label: 'Unidades', alinear: 'text-right', ancho: 80, min: 55 },
   { key: 'fecha', label: 'Fecha de creación', ancho: 140, min: 90 },
+  { key: 'estado', label: 'Estado', ancho: 110, min: 70 },
   { key: 'avisos', label: 'Avisos', ancho: 190, min: 90 },
 ];
 
@@ -46,6 +47,8 @@ const PantallaKits = ({ familia }) => {
   // Cada referencia equivale a un tipo: el filtro usa el índice de tipo.
   const tipo = config.referencias[referencia]?.tipo || '';
   const [creando, setCreando] = useState(false);
+  // Kit recién creado: su detalle ofrece la hoja con el código de barras.
+  const [pdfAlAbrir, setPdfAlAbrir] = useState(null);
 
   // Espera a que se termine de escribir: cada búsqueda es una consulta.
   useEffect(() => {
@@ -111,7 +114,7 @@ const PantallaKits = ({ familia }) => {
       <div className="flex-1 overflow-auto p-3">
         {abierto ? (
           <DetalleKit
-            key={abierto.id} kit={abierto} familia={familia}
+            key={abierto.id} kit={abierto} familia={familia} ofrecerPdf={pdfAlAbrir === abierto.id} onPdfOfrecido={() => setPdfAlAbrir(null)}
             onVolver={() => setAbierto(null)} onCambio={() => refrescarAbierto()}
             onEliminado={() => { setAbierto(null); recargar(); }}
           />
@@ -130,6 +133,7 @@ const PantallaKits = ({ familia }) => {
                     insumos: <td className={`${TD} text-right text-numero-tabla`}>{k.cantidadLineas || 0}</td>,
                     unidades: <td className={`${TD} text-right text-numero-tabla`}>{k.totalUnidades || 0}</td>,
                     fecha: <td className={`${TD} text-numero-tabla`}>{fechaHora(k.creadoEn)}</td>,
+                    estado: <td className={TD}><InsigniaEstado estado={estadoKit(k)} etiqueta={ETIQUETAS_ESTADO_KIT[estadoKit(k)]} /></td>,
                     avisos: <td className={TD}>{k.lineasSinVencimiento > 0 && <Insignia color="ambar">Con insumos sin vencimiento ({k.lineasSinVencimiento})</Insignia>}</td>,
                   }} />
                 ))}
@@ -143,7 +147,7 @@ const PantallaKits = ({ familia }) => {
           </div>
         )}
       </div>
-      {creando && <FormKitModal familia={familia} onCerrar={() => setCreando(false)} onGuardado={(id) => { setCreando(false); recargar(); refrescarAbierto(id); }} />}
+      {creando && <FormKitModal familia={familia} onCerrar={() => setCreando(false)} onGuardado={(id) => { setCreando(false); setPdfAlAbrir(id); recargar(); refrescarAbierto(id); }} />}
     </div>
   );
 };

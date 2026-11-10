@@ -10,6 +10,8 @@ import { lotesFEFO, normalizarLote, MAX_LINEAS_EGRESO, MAX_OBSERVACION } from '.
 import CampoEscaneoBodega from '../shared/escaneo/CampoEscaneoBodega';
 import { identificarLectura, datosLoteDeLectura, datosLoteEnEspera, combinarDatosLote } from '../shared/escaneo/identificarLectura';
 import ModalVincularCodigo from '../shared/ModalVincularCodigo';
+import DespachoKitModal from '../../armadoKits/shared/DespachoKitModal';
+import { leerCodigoKit } from '../../../../../functions/armadoKits/codigoKit.mjs';
 import BuscadorProducto from '../shared/BuscadorProducto';
 import { egresar, leerLotesDeProducto, mensajeError } from '../shared/bodegaApi';
 import { formatoCantidad } from '../shared/catalogosBodega';
@@ -55,6 +57,8 @@ const EgresoBodega = () => {
   // Segundo código (lote/vencimiento) escaneado antes que el producto.
   const [espera, setEspera] = useState(null);
   const [centro, setCentro] = useState(leerUltimoCentro);
+  // Código de un kit escaneado: se despacha completo, aparte de las líneas.
+  const [kitEscaneado, setKitEscaneado] = useState(null);
   const [lineas, setLineas] = useState([]);
   const [agrupar, setAgrupar] = useState(false);
   const [solicitante, setSolicitante] = useState('');
@@ -122,6 +126,8 @@ const EgresoBodega = () => {
   };
 
   const onLectura = async (texto) => {
+    const codigoKit = leerCodigoKit(texto);
+    if (codigoKit) { setKitEscaneado(codigoKit); return; }
     try {
       // Con un producto elegido que maneja lote, un código con solo lote
       // ("10" + lote, sin vencimiento) elige ese lote (segundo código).
@@ -315,6 +321,14 @@ const EgresoBodega = () => {
         )}
       </div>
 
+      {kitEscaneado && (
+        <DespachoKitModal
+          lectura={kitEscaneado}
+          centroInicial={centro}
+          onCerrar={() => { setKitEscaneado(null); enfocar(); }}
+          onDespachado={(r) => { setKitEscaneado(null); setSenal({ tipo: 'ok', mensaje: `Kit ${r.codigo} despachado a ${r.centroNombre}: salida N° ${r.salidaNumero}.` }); enfocar(); }}
+        />
+      )}
       {lecturaSinVincular && (
         <ModalVincularCodigo
           lectura={lecturaSinVincular}

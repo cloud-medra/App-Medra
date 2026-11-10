@@ -11,6 +11,9 @@ export const Insignia = ({ color = 'gris', children, title }) => {
   return <span title={title} className={`inline-block px-1 rounded text-pequeno ${colores[color]}`}>{children}</span>;
 };
 
+const COLOR_ESTADO = { ARMADO: 'gris', EN_TRANSITO: 'ambar', ENTREGADO: 'verde' };
+export const InsigniaEstado = ({ estado, etiqueta }) => <Insignia color={COLOR_ESTADO[estado] || 'gris'}>{etiqueta}</Insignia>;
+
 // Fecha de vencimiento con su estado (vencido, próximo o sin fecha).
 export const CeldaVencimiento = ({ fecha, hoy }) => {
   if (!fecha) return <Insignia color="ambar">Sin vencimiento</Insignia>;

@@ -2,7 +2,7 @@ import { httpsCallable } from 'firebase/functions';
 import { collection, doc, endAt, getDoc, getDocs, limit, orderBy, query, startAfter, startAt, where } from 'firebase/firestore';
 import { db, functions } from '../../../../firebaseConfig';
 import { upsertLocal } from '../../../../stores/catalogosStore';
-import { COL_KITS, OPERACION_COMPLETAR } from '../../../../../functions/armadoKits/nucleo.mjs';
+import { COL_KITS, OPERACION_COMPLETAR, ESTADOS_KIT } from '../../../../../functions/armadoKits/nucleo.mjs';
 import { normalizarClave } from '../../../../../functions/bodega/nucleo.mjs';
 
 // Acceso a datos de Armado de Kits: las lecturas van directo a Firestore y las
@@ -45,3 +45,14 @@ export const leerKit = async (id) => {
 export const guardarKit = llamar('kitsGuardar');
 export const eliminarKit = llamar('kitsEliminar');
 export const completarVencimiento = (datos) => guardarKit({ ...datos, operacion: OPERACION_COMPLETAR });
+
+// { accion: DESPACHAR|RECIBIR|RECHAZAR|ANULAR, kitId, ... } (no mueve stock).
+export const gestionarTransitoKit = llamar('kitsTransito');
+
+// Kits despachados y aún no recibidos (Bodega > Tránsito). Igualdad en un
+// solo campo: índice automático. Son pocos a la vez; el tope protege.
+export const leerKitsEnTransito = async () => {
+  const snap = await getDocs(query(collection(db, COL_KITS), where('estado', '==', ESTADOS_KIT.EN_TRANSITO), limit(200)));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.despacho?.fecha?.toMillis?.() || 0) - (b.despacho?.fecha?.toMillis?.() || 0));
+};

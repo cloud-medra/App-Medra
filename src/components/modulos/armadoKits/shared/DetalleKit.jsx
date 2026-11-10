@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { ArrowLeft, CalendarPlus, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarPlus, FileText, Pencil, Trash2 } from 'lucide-react';
 import { useToast } from '../../../../context/ToastContext';
 import { useModal } from '../../../../context/ModalContext';
 import { useColumnasPermitidas } from '../../../../hooks/useColumnasPermitidas';
 import { useGranularPermission } from '../../../../hooks/useGranularPermission';
-import { FAMILIAS_KIT, hoyChile } from '../../../../../functions/armadoKits/nucleo.mjs';
+import { FAMILIAS_KIT, ETIQUETAS_ESTADO_KIT, estadoKit, hoyChile, kitEditable, versionKit } from '../../../../../functions/armadoKits/nucleo.mjs';
 import { mensajeError } from '../../bodega/shared/bodegaApi';
 import { fechaHora } from '../../bodega/shared/transito/transitos';
 import { BotonRestablecerAnchos } from '../../../ui/BotonRestablecerAnchos';
@@ -12,7 +12,8 @@ import { TablaBodega, FilaBodega } from '../../bodega/shared/TablaBodega';
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../../bodega/shared/anchosTablaBodega';
 import { eliminarKit } from './kitsApi';
 import { etiquetaLote } from './lineasKit';
-import { CeldaVencimiento, Insignia } from './comunes';
+import { CeldaVencimiento, Insignia, InsigniaEstado } from './comunes';
+import { generarPdfKit } from './pdfKit';
 import FormKitModal from './FormKitModal';
 import CompletarVencimientoModal from './CompletarVencimientoModal';
 
@@ -28,7 +29,7 @@ const COLUMNAS_DETALLE = [
 
 // Contenido de un kit, con sus acciones. Muestra lo guardado en el kit (no
 // vuelve a leer Bodega).
-const DetalleKit = ({ kit, familia, onVolver, onCambio, onEliminado }) => {
+const DetalleKit = ({ kit, familia, onVolver, onCambio, onEliminado, ofrecerPdf = false, onPdfOfrecido }) => {
   const config = FAMILIAS_KIT[familia];
   const ruta = config.ruta;
   const hoy = hoyChile();
@@ -40,7 +41,23 @@ const DetalleKit = ({ kit, familia, onVolver, onCambio, onEliminado }) => {
   const [editando, setEditando] = useState(false);
   const [completando, setCompletando] = useState(null);
   const [eliminando, setEliminando] = useState(false);
-  const puedeCompletar = hasPermission(ruta, 'kit', 'btn_completar_vencimiento');
+  const editable = kitEditable(kit);
+  const estado = estadoKit(kit);
+  const version = versionKit(kit);
+  const puedeCompletar = editable && hasPermission(ruta, 'kit', 'btn_completar_vencimiento');
+  // Hoja por imprimir: al crear el kit o al cambiar su contenido (la hoja
+  // anterior queda desactualizada). Se espera a tener la versión nueva.
+  const [avisoPdf, setAvisoPdf] = useState(() => (ofrecerPdf ? { tipo: 'creado', versionMinima: 1 } : null));
+  const referencia = config.referencias[kit.referencia];
+  const abrirPdf = () => {
+    generarPdfKit({ kit, referencia, hoy, generado: new Date().toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' }) })
+      .catch((e) => showToast(mensajeError(e, 'No se pudo generar el PDF.'), 'error'));
+  };
+  const cerrarAvisoPdf = () => { setAvisoPdf(null); onPdfOfrecido?.(); };
+  const alCambiarContenido = (r) => {
+    onCambio();
+    if (r && !r.sinCambios) setAvisoPdf({ tipo: 'editado', versionMinima: r.version || version + 1 });
+  };
 
   const eliminar = () => confirmAction(
     'Eliminar kit',
@@ -69,15 +86,23 @@ const DetalleKit = ({ kit, familia, onVolver, onCambio, onEliminado }) => {
           <p className="text-secundario text-tinta-secundaria">
             {config.referencias[kit.referencia]?.etiqueta || kit.referencia} · {kit.cantidadLineas} insumos · {kit.totalUnidades} unidades · Creado {fechaHora(kit.creadoEn)} por {kit.creadoPor?.nombre || '—'}
           </p>
+          <p className="mt-1 flex flex-wrap items-center gap-1.5">
+            <InsigniaEstado estado={estado} etiqueta={ETIQUETAS_ESTADO_KIT[estado]} />
+            <span className="text-tinta-secundaria">Contenido versión {version}</span>
+            {kit.despacho && <span className="text-tinta-secundaria">· Despachado a {kit.despacho.centroNombre}, salida N° {kit.despacho.salidaNumero}, {fechaHora(kit.despacho.fecha)} por {kit.despacho.usuario?.nombre}</span>}
+            {kit.recepcion && <span className="text-tinta-secundaria">· Recibido {fechaHora(kit.recepcion.fecha)} por {kit.recepcion.usuario?.nombre}</span>}
+          </p>
+          {!editable && <p className="mt-1 text-tinta-secundaria">Un kit en tránsito o entregado no se edita ni se elimina.</p>}
           {kit.lineasSinVencimiento > 0 && (
             <p className="mt-1"><Insignia color="ambar">Este kit contiene {kit.lineasSinVencimiento} insumo(s) sin vencimiento</Insignia></p>
           )}
         </div>
         <div className="flex items-center gap-1.5">
-          {hasPermission(ruta, 'kit', 'btn_editar') && (
+          <button type="button" onClick={abrirPdf} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1 text-tinta-secundaria"><FileText size={12} /> PDF</button>
+          {editable && hasPermission(ruta, 'kit', 'btn_editar') && (
             <button type="button" onClick={() => setEditando(true)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1 text-tinta-secundaria"><Pencil size={12} /> Editar</button>
           )}
-          {hasPermission(ruta, 'kit', 'btn_eliminar') && (
+          {editable && hasPermission(ruta, 'kit', 'btn_eliminar') && (
             <button type="button" onClick={eliminar} disabled={eliminando} className="h-7 px-2 rounded bg-red-600 text-white text-etiqueta flex items-center gap-1 disabled:opacity-50"><Trash2 size={12} /> {eliminando ? 'Eliminando…' : 'Eliminar'}</button>
           )}
         </div>
@@ -111,8 +136,24 @@ const DetalleKit = ({ kit, familia, onVolver, onCambio, onEliminado }) => {
           ))}
         </TablaBodega>
       </div>
-      {editando && <FormKitModal familia={familia} kit={kit} onCerrar={() => setEditando(false)} onGuardado={() => { setEditando(false); onCambio(); }} />}
-      {completando && <CompletarVencimientoModal familia={familia} kit={kit} linea={completando} onCerrar={() => setCompletando(null)} onHecho={() => { setCompletando(null); onCambio(); }} />}
+      {editando && <FormKitModal familia={familia} kit={kit} onCerrar={() => setEditando(false)} onGuardado={(_id, r) => { setEditando(false); alCambiarContenido(r); }} />}
+      {completando && <CompletarVencimientoModal familia={familia} kit={kit} linea={completando} onCerrar={() => setCompletando(null)} onHecho={() => { setCompletando(null); alCambiarContenido({ version: version + 1 }); }} />}
+      {avisoPdf && (
+        <div className="font-app text-tinta-principal fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Hoja del kit">
+          <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-secundario">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700"><h3 className="text-subtitulo flex items-center gap-1.5"><FileText size={15} /> Hoja del kit {kit.codigo}</h3></div>
+            <div className="p-4 flex flex-col gap-2">
+              {avisoPdf.tipo === 'creado'
+                ? <p>Kit guardado. Imprime su hoja con el código de barras: se escanea en Bodega &gt; Egreso para despacharlo.</p>
+                : <p className="p-2 rounded bg-amber-50 dark:bg-amber-950/30">El contenido cambió: la hoja impresa quedó desactualizada y no servirá para despachar. Imprime la versión {avisoPdf.versionMinima} y descarta la anterior.</p>}
+            </div>
+            <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+              <button type="button" onClick={cerrarAvisoPdf} className="h-8 px-3 rounded bg-gray-200 dark:bg-gray-700 text-etiqueta">Más tarde</button>
+              <button type="button" onClick={() => { abrirPdf(); cerrarAvisoPdf(); }} disabled={version < avisoPdf.versionMinima} className="h-8 px-3 rounded bg-[#2383C2] text-white text-etiqueta disabled:opacity-50">{version < avisoPdf.versionMinima ? 'Actualizando…' : 'Abrir PDF'}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

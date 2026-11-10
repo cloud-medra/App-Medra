@@ -12,6 +12,7 @@ import { datosLoteEnTexto, esTeclaFinEscaneo } from './escaneo/identificarLectur
 import CorregirCodigoModal, { usePuedeCorregirCodigo } from '../../maestros/codigosBarra/CorregirCodigoModal';
 import AvisoMaestroConProducto from './AvisoMaestroConProducto';
 import { avisoDesdeError } from './productoEnlazado';
+import { esCodigoKit } from '../../../../../functions/armadoKits/codigoKit.mjs';
 
 const MAX_RESULTADOS = 30;
 
@@ -158,7 +159,9 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
             onCorregido={() => { setConflicto(null); showToast('Código corregido. Ya puedes vincularlo.', 'success'); }}
           />
         )}
-        {!puedeVincular ? (
+        {esCodigoKit(lectura.codigo) ? (
+          <p className="p-4 text-gray-600 dark:text-gray-300">Este es el código de barras de un kit: no se vincula a productos. Despáchalo desde Bodega &gt; Egreso.</p>
+        ) : !puedeVincular ? (
           <p className="p-4 text-gray-600 dark:text-gray-300">No tienes permiso para vincular códigos de barra. Pide a un administrador que lo vincule desde el Maestro de Bodega.</p>
         ) : (
           <>

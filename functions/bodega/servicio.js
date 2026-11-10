@@ -38,6 +38,7 @@ const {
   costoDe, valorizarMovimiento, camposCosto, costoEnCentro, periodoVigente, MODULO_PERIODO, ESTADOS_PERIODO_ABIERTO, referenciaDeProducto,
 } = require('./nucleo.mjs');
 const { interpretarLectura, idVinculo, MAX_CODIGO_LEIDO } = require('./gs1.mjs');
+const { esCodigoKit } = require('../armadoKits/codigoKit.mjs');
 
 const MAX_CODIGOS_POR_PRODUCTO = 20;
 const ahora = () => FieldValue.serverTimestamp();
@@ -137,6 +138,7 @@ const guardarCatalogo = async (db, uid, datos) => {
 const lecturaParaVincular = (codigoLeido) => {
   const texto = String(codigoLeido ?? '');
   if (texto.length > MAX_CODIGO_LEIDO) throw new HttpsError('invalid-argument', 'El código leído es demasiado largo.');
+  if (esCodigoKit(texto)) throw new HttpsError('invalid-argument', 'Ese es el código de barras de un kit: no se vincula a productos. Despáchalo desde Bodega > Egreso.');
   const lectura = interpretarLectura(texto);
   if (!lectura) throw new HttpsError('invalid-argument', 'El código de barra está vacío.');
   if (lectura.soloDatosLote) {

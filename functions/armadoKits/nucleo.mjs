@@ -20,8 +20,8 @@ export const FAMILIAS_KIT = Object.freeze({
     prefijoId: 'F',
     // La referencia define el tipo: así no hay combinaciones inconsistentes.
     referencias: Object.freeze({
-      KFH: Object.freeze({ etiqueta: 'KFH - Kit Flexible Hombre', tipo: 'FLEXIBLE_HOMBRE' }),
-      KFM: Object.freeze({ etiqueta: 'KFM - Kit Flexible Mujer', tipo: 'FLEXIBLE_MUJER' }),
+      KFH: Object.freeze({ etiqueta: 'KFH - Kit Flexible Hombre', tipo: 'FLEXIBLE_HOMBRE', tipoEtiqueta: 'Flexible hombre' }),
+      KFM: Object.freeze({ etiqueta: 'KFM - Kit Flexible Mujer', tipo: 'FLEXIBLE_MUJER', tipoEtiqueta: 'Flexible mujer' }),
     }),
   }),
 });
@@ -42,6 +42,31 @@ export const ID_CONTADOR_KITS = 'kits_correlativos';
 export const codigoCorrelativoKit = (familia, numero) => `${FAMILIAS_KIT[familia].prefijoId}${String(numero).padStart(3, '0')}`;
 
 export const MAX_LINEAS_KIT = 60;
+
+// Estados del kit (ver functions/armadoKits/transito.js). Un kit sin estado
+// es ARMADO y uno sin versión es la versión 1.
+export const ESTADOS_KIT = Object.freeze({ ARMADO: 'ARMADO', EN_TRANSITO: 'EN_TRANSITO', ENTREGADO: 'ENTREGADO' });
+export const ETIQUETAS_ESTADO_KIT = Object.freeze({ ARMADO: 'Armado', EN_TRANSITO: 'En tránsito', ENTREGADO: 'Entregado' });
+export const estadoKit = (kit) => kit?.estado || ESTADOS_KIT.ARMADO;
+export const kitEditable = (kit) => estadoKit(kit) === ESTADOS_KIT.ARMADO;
+// Sube con cada cambio de contenido: el código de barras la lleva, así una
+// hoja impresa antes de editar se detecta al escanearla.
+export const versionKit = (kit) => Number(kit?.version) || 1;
+export const mensajeKitNoEditable = (kit) => `El kit ${kit.codigo} está ${ETIQUETAS_ESTADO_KIT[estadoKit(kit)].toLowerCase()}: no se puede editar ni eliminar.`;
+
+// Líneas que piden confirmación al despachar.
+export const advertenciasKit = (lineas = [], hoy) => ({
+  vencidas: lineas.filter((l) => l.vencimiento && l.vencimiento < hoy),
+  sinVencimiento: lineas.filter((l) => !l.vencimiento),
+});
+
+// Acciones de despacho y tránsito: en las vistas de Bodega donde se hacen.
+export const ACCIONES_TRANSITO_KIT = Object.freeze({
+  DESPACHAR: ['bodega', '/bodega/egresoBodega', 'egreso', 'btn_despachar_kit'],
+  RECIBIR: ['bodega', '/bodega/transitoBodega', 'acciones', 'btn_kit_recibir'],
+  RECHAZAR: ['bodega', '/bodega/transitoBodega', 'acciones', 'btn_kit_rechazar'],
+  ANULAR: ['bodega', '/bodega/transitoBodega', 'acciones', 'btn_kit_anular'],
+});
 export const OPERACION_COMPLETAR = 'COMPLETAR_VENCIMIENTO';
 
 // Sin hora: el vencimiento es una fecha de Chile, sea cual sea la zona del servidor.

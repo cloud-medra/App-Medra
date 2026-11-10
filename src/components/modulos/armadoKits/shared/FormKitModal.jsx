@@ -91,7 +91,7 @@ const FormKitModal = ({ familia, kit = null, onCerrar, onGuardado }) => {
       const r = await guardarKit({ familia, ...(kit ? { kitId: kit.id } : { referencia }), lineas: lineasParaGuardar(lista) });
       const aviso = kit ? `Kit ${r.codigo} guardado.` : `Kit creado con ID ${r.codigo}.`;
       showToast(r.sinCambios ? 'El kit no tuvo cambios.' : aviso, 'success');
-      onGuardado(r.id);
+      onGuardado(r.id, r);
     } catch (e) {
       // El servidor detecta lo que cambió desde que se agregó la línea.
       const detalle = detalleError(e);

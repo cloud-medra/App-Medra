@@ -22,10 +22,13 @@ const COLUMNAS = [
   { key: 'referencia', label: 'Referencia', ancho: 140, min: 70 },
   { key: 'entregas', label: 'Entregas', alinear: 'text-right', ancho: 90, min: 60 },
   { key: 'unidades', label: 'Unidades', alinear: 'text-right', ancho: 100, min: 60 },
+  { key: 'valor', label: 'Valor', alinear: 'text-right', ancho: 120, min: 70 },
 ];
+const pesos = (n) => `$${Math.round(Number(n) || 0).toLocaleString('es-CL')}`;
 const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] bg-white dark:bg-gray-900';
 
-// Consumo por centro: entregas (movimientos ENTREGA) en un rango de fechas,
+// Consumo por centro: entregas (movimientos ENTREGA, y los kits recibidos en
+// el centro: ENTREGA_KIT) en un rango de fechas,
 // opcionalmente de un centro y/o un producto, agrupadas por centro y
 // producto, con el detalle de cada entrega. Exportable a Excel.
 const ConsumoBodega = () => {
@@ -71,8 +74,9 @@ const ConsumoBodega = () => {
         { titulo: 'Producto', valor: (f) => f.producto },
         { titulo: 'Entregas', valor: (f) => f.entregas },
         { titulo: 'Unidades', valor: (f) => f.unidades },
+        { titulo: 'Valor', valor: (f) => f.valor },
       ],
-      filas: grupos.flatMap((c) => c.productos.map((p) => ({ centro: c.centroNombre, referencia: referenciaDe(p.productoId), producto: p.productoNombre, entregas: p.entregas, unidades: p.unidades }))),
+      filas: grupos.flatMap((c) => c.productos.map((p) => ({ centro: c.centroNombre, referencia: referenciaDe(p.productoId), producto: p.productoNombre, entregas: p.entregas, unidades: p.unidades, valor: Math.round(p.valor) }))),
     },
     {
       nombre: 'Detalle',
@@ -87,7 +91,9 @@ const ConsumoBodega = () => {
         { titulo: ETIQUETA_ID_ENTREGA, valor: (m) => m.idEntrega },
         { titulo: 'Observación', valor: (m) => m.observacion },
         { titulo: 'Usuario', valor: (m) => m.usuario?.nombre || '' },
-        { titulo: 'N° salida', valor: (m) => m.documentoRef?.numero || '' },
+        { titulo: 'N° salida', valor: (m) => (m.kitCodigo ? '' : m.documentoRef?.numero || '') },
+        { titulo: 'Kit', valor: (m) => m.kitCodigo || '' },
+        { titulo: 'Valor', valor: (m) => Math.round(Number(m.valor) || 0) },
       ],
       filas: resultado?.entregas || [],
     },
@@ -135,6 +141,7 @@ const ConsumoBodega = () => {
                       producto: <td className={TD} title={c.centroNombre}>{c.centroNombre}</td>,
                       entregas: <td className={`${TD} text-right font-num`}>{c.productos.reduce((n, p) => n + p.entregas, 0)}</td>,
                       unidades: <td className={`${TD} text-right font-num`}>{formatoCantidad(c.unidades)}</td>,
+                      valor: <td className={`${TD} text-right font-num`}>{pesos(c.valor)}</td>,
                     }} />
                     {c.productos.map((p) => {
                       const clave = `${c.centroId}|${p.productoId}`;
@@ -146,10 +153,11 @@ const ConsumoBodega = () => {
                             referencia: <td className={`${TD} font-num`} title={`${referenciaDe(p.productoId)} · ${p.codigoMaestro}`}>{referenciaDe(p.productoId) || '—'}</td>,
                             entregas: <td className={`${TD} text-right font-num`}>{p.entregas}</td>,
                             unidades: <td className={`${TD} text-right font-num font-bold`}>{formatoCantidad(p.unidades)}</td>,
+                            valor: <td className={`${TD} text-right font-num`}>{pesos(p.valor)}</td>,
                           }} />
                           {detalle.map((m) => (
                             <FilaAnchoCompleto key={m.id} columnas={columnasVisibles} className="text-[11px] text-gray-600 dark:text-gray-300" celdaClassName="px-2 py-0.5 pl-10 border-b border-gray-100 dark:border-gray-700/70">
-                              {fechaHora(m.fecha)} · lote {m.lote || 'S/L'} · <strong>{m.cantidad} u.</strong> · {ETIQUETA_ID_ENTREGA} {m.idEntrega || '—'} · {m.observacion} · {m.usuario?.nombre || ''}
+                              {fechaHora(m.fecha)} · lote {m.lote || 'S/L'} · <strong>{m.cantidad} u.</strong> · {m.kitCodigo ? `Kit ${m.kitCodigo}` : `${ETIQUETA_ID_ENTREGA} ${m.idEntrega || '—'}`} · {pesos(m.valor)} · {m.observacion} · {m.usuario?.nombre || ''}
                             </FilaAnchoCompleto>
                           ))}
                         </Fragment>

@@ -115,6 +115,7 @@ export const bodegaComponentMaps = {
         label: 'Sección: Salida (producto, lote FEFO, cantidad, centro)',
         elements: {
           btn_confirmar: { label: 'Acción: Confirmar salida a tránsito' },
+          btn_despachar_kit: { label: 'Acción: Despachar un kit escaneado (no descuenta stock: ya salió al armarlo)' },
         },
       },
       lineas: {
@@ -137,7 +138,12 @@ export const bodegaComponentMaps = {
       },
       acciones: {
         label: 'Sección: Acciones sobre el tránsito',
-        elements: ACCIONES_TRANSITO,
+        elements: {
+          ...ACCIONES_TRANSITO,
+          btn_kit_recibir: { label: 'Acción: Recibir un kit (queda entregado; no mueve stock)' },
+          btn_kit_rechazar: { label: 'Acción: Rechazar un kit (vuelve a armado; exige motivo)' },
+          btn_kit_anular: { label: 'Acción: Anular el despacho de un kit (vuelve a armado; exige motivo)' },
+        },
       },
     },
   },
@@ -205,7 +211,7 @@ export const bodegaComponentMaps = {
         label: 'Sección: Reporte de entregas por centro y producto',
         elements: {
           btn_exportar: { label: 'Acción: Exportar a Excel' },
-          ...columnas([['referencia', 'Referencia'], ['entregas', 'Entregas'], ['unidades', 'Unidades']]),
+          ...columnas([['referencia', 'Referencia'], ['entregas', 'Entregas'], ['unidades', 'Unidades'], ['valor', 'Valor']]),
         },
       },
     },
