@@ -3,7 +3,7 @@ import { Hash, X, CheckCircle2, SearchX, Building2, Scale, GitFork, UserCheck, A
 import { formatearFechaTabla } from '../../implantes/gestionImplantes/components/Cargastab/cargasHelpers';
 
 const TIPOS = {
-  SIN_COINCIDENCIA: { label: 'Sin coincidencia', clase: 'text-slate-600 dark:text-gray-300' },
+  SIN_COINCIDENCIA: { label: 'Sin coincidencia', clase: 'text-tinta-secundaria' },
   EMPRESA_NO_RECONOCIDA: { label: 'Empresa no reconocida', clase: 'text-amber-700 dark:text-amber-400' },
   CANTIDAD_DISTINTA: { label: 'Cantidad distinta', clase: 'text-rose-700 dark:text-rose-400' },
   AMBIGUA: { label: 'Ambigua', clase: 'text-purple-700 dark:text-purple-400' },
@@ -21,8 +21,8 @@ const observacion = (fila, modulo) => {
 const Contador = ({ Icon, valor, label, clase }) => (
   <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded border border-slate-200 dark:border-gray-700 ${clase}`}>
     <Icon size={13} className="shrink-0" />
-    <span className="font-bold text-[12px]">{valor}</span>
-    <span className="text-[10px]">{label}</span>
+    <span className="text-etiqueta">{valor}</span>
+    <span className="text-pequeno">{label}</span>
   </div>
 );
 
@@ -38,14 +38,14 @@ export const SincronizarOCResumenModal = ({ resumen, onClose, modulo = 'Implante
       <div className="bg-white dark:bg-gray-800 w-full max-w-4xl max-h-[85vh] flex flex-col rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 bg-gray-50/60 dark:bg-gray-900/40">
           <Hash size={16} className="text-[#2383C2] shrink-0" />
-          <h3 className="text-[12px] font-bold text-gray-800 dark:text-gray-100">Resultado de Sincronizar OC</h3>
-          <button onClick={onClose} className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition" aria-label="Cerrar">
+          <h3 className="text-subtitulo text-tinta-principal">Resultado de Sincronizar OC</h3>
+          <button onClick={onClose} className="ml-auto text-tinta-atenuada hover:text-tinta-secundaria transition" aria-label="Cerrar">
             <X size={15} />
           </button>
         </div>
 
-        <div className="px-4 py-3 flex flex-col gap-3 overflow-auto text-[11px]">
-          <p className="text-gray-600 dark:text-gray-300">
+        <div className="px-4 py-3 flex flex-col gap-3 overflow-auto text-secundario">
+          <p className="text-tinta-secundaria">
             Se revisaron <strong>{resumen.gestionesRevisadas}</strong> {unidad} con OC pendiente;
             se guardaron OC en <strong>{resumen.gestionesActualizadas}</strong>.
           </p>
@@ -71,7 +71,7 @@ export const SincronizarOCResumenModal = ({ resumen, onClose, modulo = 'Implante
 
           <div className="flex flex-wrap gap-2">
             <Contador Icon={CheckCircle2} valor={resumen.itemsActualizados} label="filas actualizadas" clase="text-emerald-700 dark:text-emerald-400" />
-            <Contador Icon={SearchX} valor={contadores.sinCoincidencia} label="sin coincidencia" clase="text-slate-600 dark:text-gray-300" />
+            <Contador Icon={SearchX} valor={contadores.sinCoincidencia} label="sin coincidencia" clase="text-tinta-secundaria" />
             <Contador Icon={Building2} valor={contadores.empresaNoReconocida} label="empresa no reconocida" clase="text-amber-700 dark:text-amber-400" />
             <Contador Icon={Scale} valor={contadores.cantidadDistinta} label="cantidad distinta" clase="text-rose-700 dark:text-rose-400" />
             <Contador Icon={GitFork} valor={contadores.ambiguas} label="ambiguas" clase="text-purple-700 dark:text-purple-400" />
@@ -87,7 +87,7 @@ export const SincronizarOCResumenModal = ({ resumen, onClose, modulo = 'Implante
             </div>
           )}
 
-          <div className="text-[10px] text-gray-400 dark:text-gray-500">
+          <div className="text-pequeno text-tinta-atenuada">
             Firestore: ~{resumen.lecturasFirestore} lectura(s) · ~{resumen.escriturasFirestore} escritura(s)
           </div>
 
@@ -96,16 +96,16 @@ export const SincronizarOCResumenModal = ({ resumen, onClose, modulo = 'Implante
               <button
                 type="button"
                 onClick={() => setVerDetalle(v => !v)}
-                className="w-full flex items-center gap-1.5 px-2.5 py-1.5 font-semibold text-[#2383C2] hover:bg-slate-50 dark:hover:bg-gray-700/40 transition"
+                className="w-full flex items-center gap-1.5 px-2.5 py-1.5 text-etiqueta text-[#2383C2] hover:bg-slate-50 dark:hover:bg-gray-700/40 transition"
               >
                 {verDetalle ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                 {verDetalle ? 'Ocultar' : 'Ver'} detalle de filas no asignadas o por revisar ({detalle.length})
               </button>
               {verDetalle && (
                 <div className="overflow-auto max-h-[45vh]">
-                  <table className="w-full text-left text-[10px] border-collapse">
+                  <table className="w-full text-left text-pequeno border-collapse">
                     <thead className="bg-slate-50 dark:bg-gray-900/60 sticky top-0">
-                      <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+                      <tr className="text-tinta-secundaria uppercase text-pequeno">
                         <th className="px-2 py-1.5 border-b border-slate-200 dark:border-gray-700">Admisión</th>
                         <th className="px-2 py-1.5 border-b border-slate-200 dark:border-gray-700">Paciente</th>
                         <th className="px-2 py-1.5 border-b border-slate-200 dark:border-gray-700">Fecha</th>
@@ -119,14 +119,14 @@ export const SincronizarOCResumenModal = ({ resumen, onClose, modulo = 'Implante
                     <tbody>
                       {detalle.map((fila, i) => (
                         <tr key={`${fila.refPath}_${fila.codigo}_${i}`} className="hover:bg-gray-50/80 dark:hover:bg-gray-700/40">
-                          <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 font-num">{fila.admision}</td>
+                          <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 text-numero-tabla">{fila.admision}</td>
                           <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60">{fila.nombre}</td>
                           <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60">{formatearFechaTabla(fila.fecha)}</td>
                           <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60">{fila.empresa}</td>
-                          <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 font-num">{fila.codigo}</td>
+                          <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 text-numero-tabla">{fila.codigo}</td>
                           <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 text-center">{fila.cantidad}</td>
-                          <td className={`px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 font-semibold ${TIPOS[fila.tipo]?.clase || ''}`}>{TIPOS[fila.tipo]?.label || fila.tipo}</td>
-                          <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 text-slate-500 dark:text-gray-400">{observacion(fila, modulo)}</td>
+                          <td className={`px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 text-etiqueta ${TIPOS[fila.tipo]?.clase || ''}`}>{TIPOS[fila.tipo]?.label || fila.tipo}</td>
+                          <td className="px-2 py-1 border-b border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">{observacion(fila, modulo)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -140,7 +140,7 @@ export const SincronizarOCResumenModal = ({ resumen, onClose, modulo = 'Implante
         <div className="px-4 py-2.5 bg-gray-50/60 dark:bg-gray-900/40 border-t border-gray-100 dark:border-gray-700 flex justify-end">
           <button
             onClick={onClose}
-            className="h-7 px-4 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold transition text-[11px]"
+            className="h-7 px-4 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded transition text-etiqueta"
           >
             Cerrar
           </button>

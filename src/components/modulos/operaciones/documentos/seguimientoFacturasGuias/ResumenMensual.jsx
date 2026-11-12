@@ -15,7 +15,7 @@ import { formatearMonedaCLP } from './utils/columnasSeguimiento';
 
 const TH = 'px-3 py-1.5 border-b border-r border-slate-200 dark:border-gray-700';
 const TD = 'px-3 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70';
-const NUM = 'text-right font-num';
+const NUM = 'text-right text-numero-tabla';
 
 const formatearFechaHora = (valor) => {
   const fecha = valor?.toDate ? valor.toDate() : valor;
@@ -73,7 +73,7 @@ const ResumenMensual = () => {
           onChange={(e) => setAnio(e.target.value)}
           disabled={cargando || recalculando}
           aria-label="Año"
-          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {anios.map((yyyy) => (
             <option key={yyyy} value={yyyy}>{yyyy}</option>
@@ -81,7 +81,7 @@ const ResumenMensual = () => {
         </select>
 
         {actualizado && (
-          <span className="text-[10.5px] text-slate-400 dark:text-gray-500">Actualizado: {actualizado}</span>
+          <span className="text-pequeno text-tinta-atenuada">Actualizado: {actualizado}</span>
         )}
 
         {esAdministrador(userData) && (
@@ -90,7 +90,7 @@ const ResumenMensual = () => {
             onClick={handleRecalcular}
             disabled={cargando || recalculando}
             title="Rearma el resumen del año leyendo todas sus filas (por si algo quedó descuadrado)"
-            className="ml-auto h-7 px-2.5 flex items-center gap-1.5 rounded border border-gray-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 bg-white dark:bg-gray-900 hover:bg-slate-50 dark:hover:bg-gray-700/50 text-[11px] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="ml-auto h-7 px-2.5 flex items-center gap-1.5 rounded border border-gray-300 dark:border-gray-600 text-tinta-secundaria bg-white dark:bg-gray-900 hover:bg-slate-50 dark:hover:bg-gray-700/50 text-secundario disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {recalculando ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Recalcular
           </button>
@@ -98,23 +98,23 @@ const ResumenMensual = () => {
       </div>
 
       {cargando ? (
-        <div className="flex-grow flex items-center justify-center gap-2 text-slate-400 dark:text-gray-500 text-[11px]">
+        <div className="flex-grow flex items-center justify-center gap-2 text-tinta-atenuada text-secundario">
           <Loader2 size={14} className="animate-spin" /> Cargando resumen...
         </div>
       ) : error ? (
-        <div className="flex-grow flex items-center justify-center gap-1.5 text-red-600 dark:text-red-400 text-[11px]">
+        <div className="flex-grow flex items-center justify-center gap-1.5 text-red-600 dark:text-red-400 text-secundario">
           <AlertTriangle size={13} /> {error}
         </div>
       ) : (
         <div className="flex-grow min-h-0 overflow-auto">
           {!resumen && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-3 py-1 text-[10.5px] text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-3 py-1 text-pequeno text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
               <AlertTriangle size={11} /> {anio} todavía no tiene resumen guardado. Se arma solo al importar o eliminar filas de ese año, o con &quot;Recalcular&quot;.
             </div>
           )}
-          <table className="w-full text-left text-[11px] border-collapse">
+          <table className="w-full text-left text-secundario border-collapse">
             <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-              <tr className="text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider">
+              <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider">
                 <th className={TH}>Mes</th>
                 <th className={`${TH} text-right`}>Total</th>
                 <th className={`${TH} text-right`}>Facturado</th>
@@ -123,9 +123,9 @@ const ResumenMensual = () => {
                 <th className={`${TH} text-right`}>% Pendiente</th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 text-slate-700 dark:text-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 text-tinta-principal">
               {filas.map((f) => filaTabla(f, 'hover:bg-slate-50 dark:hover:bg-gray-700/40 transition-all duration-150'))}
-              {filaTabla(totales, 'font-bold bg-slate-50 dark:bg-gray-900/60 text-slate-800 dark:text-gray-100')}
+              {filaTabla(totales, 'text-etiqueta bg-slate-50 dark:bg-gray-900/60 text-tinta-principal')}
             </tbody>
           </table>
         </div>

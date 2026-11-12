@@ -307,20 +307,20 @@ const CargasConsignacion = () => {
   }, [registrosFiltrados, paginaSegura]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {cargando && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">Procesando...</h3>
+            <h3 className="text-[#2383C2] text-subtitulo">Procesando...</h3>
           </div>
         </div>
       )}
 
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <PackageSearch size={15} className="text-[#2383C2]" />
-          CARGAS DE CONSIGNACIÓN
+          Cargas de consignación
         </h2>
         {!registroSeleccionado && (
           <div className="flex items-center gap-1">
@@ -330,7 +330,7 @@ const CargasConsignacion = () => {
               disabled={sincronizandoOC}
               title={sincronizandoOC ? 'Sincronizando OC...' : 'Sincronizar OC desde Importar Detalles OC'}
               aria-label="Sincronizar OC"
-              className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-wait"
+              className="p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-wait"
             >
               {sincronizandoOC ? <Loader2 size={14} className="animate-spin" /> : <Hash size={14} />}
             </button>
@@ -339,7 +339,7 @@ const CargasConsignacion = () => {
               onClick={cargarPrimeraPagina}
               disabled={cargandoLista}
               title="Actualizar lista"
-              className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40"
+              className="p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40"
             >
               <RefreshCw size={14} className={cargandoLista ? 'animate-spin' : ''} />
             </button>
@@ -376,7 +376,7 @@ const CargasConsignacion = () => {
           />
 
           {cargandoLista ? (
-            <div className="flex-grow flex items-center justify-center gap-2 text-gray-400 dark:text-gray-500 text-[11px]">
+            <div className="flex-grow flex items-center justify-center gap-2 text-tinta-atenuada text-secundario">
               <Loader2 size={14} className="animate-spin" /> Cargando registros...
             </div>
           ) : (
@@ -390,8 +390,8 @@ const CargasConsignacion = () => {
               />
 
               {registrosFiltrados.length > 0 && (
-                <div className="flex items-center justify-between px-3 py-1.5 border-t border-gray-200 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-800/40 text-[10.5px]">
-                  <span className="text-gray-400 dark:text-gray-500 font-medium">
+                <div className="flex items-center justify-between px-3 py-1.5 border-t border-gray-200 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-800/40 text-pequeno">
+                  <span className="text-tinta-atenuada">
                     {registrosFiltrados.length} registro{registrosFiltrados.length === 1 ? '' : 's'} · Página {paginaSegura} de {totalPaginas}
                   </span>
                   <div className="flex items-center gap-1">
@@ -399,7 +399,7 @@ const CargasConsignacion = () => {
                       type="button"
                       onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
                       disabled={paginaSegura <= 1}
-                      className="flex items-center gap-1 px-2 py-1 rounded font-bold text-gray-500 dark:text-gray-400 hover:text-[#2383C2] hover:bg-white dark:hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex items-center gap-1 px-2 py-1 rounded text-etiqueta text-tinta-secundaria hover:text-[#2383C2] hover:bg-white dark:hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <ChevronLeft size={12} /> Anterior
                     </button>
@@ -407,7 +407,7 @@ const CargasConsignacion = () => {
                       type="button"
                       onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
                       disabled={paginaSegura >= totalPaginas}
-                      className="flex items-center gap-1 px-2 py-1 rounded font-bold text-gray-500 dark:text-gray-400 hover:text-[#2383C2] hover:bg-white dark:hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex items-center gap-1 px-2 py-1 rounded text-etiqueta text-tinta-secundaria hover:text-[#2383C2] hover:bg-white dark:hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       Siguiente <ChevronRight size={12} />
                     </button>
@@ -421,7 +421,7 @@ const CargasConsignacion = () => {
                     type="button"
                     onClick={cargarMas}
                     disabled={cargandoMas}
-                    className="flex items-center gap-1.5 text-[10.5px] font-bold text-[#2383C2] hover:underline disabled:opacity-50"
+                    className="flex items-center gap-1.5 text-pequeno text-[#2383C2] hover:underline disabled:opacity-50"
                   >
                     {cargandoMas ? <Loader2 size={12} className="animate-spin" /> : <ChevronDown size={12} />}
                     Cargar más registros

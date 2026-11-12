@@ -40,7 +40,7 @@ const getAtributoEstilo = (atributo) => {
     CONSIGNACION: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400',
     COTIZACION: 'bg-sky-50 dark:bg-sky-950/30 text-sky-700 dark:text-sky-400'
   };
-  return estilos[atributo] || 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+  return estilos[atributo] || 'bg-slate-100 dark:bg-slate-800 text-tinta-secundaria';
 };
 
 const CELDA = 'py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 whitespace-nowrap overflow-hidden text-ellipsis';
@@ -48,7 +48,7 @@ const CELDA = 'py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 whit
 // Fila "No lleva OC" (producto de la guía del delivery), con el mismo
 // criterio que en Solicitud: sin costo y con el N° de guía de su producto.
 const FilaGuiaResumen = ({ d, f }) => (
-  <tr className="border-b border-gray-200 dark:border-gray-700/70 bg-slate-50/60 dark:bg-gray-900/30 text-gray-500 dark:text-gray-400">
+  <tr className="border-b border-gray-200 dark:border-gray-700/70 bg-slate-50/60 dark:bg-gray-900/30 text-tinta-secundaria">
     <td className={CELDA}>{d.gestionId}</td>
     <td className={CELDA}>{d.nombre}</td>
     <td className={CELDA}>{d.medico}</td>
@@ -88,21 +88,21 @@ const ResumenConsignacion = () => {
   const { anchos, handleResize, restablecerAnchos, anchoTotalTabla } = useColumnResize(COLUMNAS);
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {cargando && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">Cargando resumen...</h3>
+            <h3 className="text-[#2383C2] text-subtitulo">Cargando resumen...</h3>
           </div>
         </div>
       )}
 
       {/* HEADER PRINCIPAL */}
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <FileBarChart size={15} className="text-[#2383C2]" />
-          IMPUTADOS DE CONSIGNACIÓN
+          Imputados de consignación
         </h2>
       </div>
 
@@ -113,7 +113,7 @@ const ResumenConsignacion = () => {
           <input
             value={busqueda}
             onChange={e => setBusqueda(e.target.value)}
-            className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]"
+            className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
             placeholder="Buscar por ID, paciente, médico, empresa o código..."
           />
         </div>
@@ -124,7 +124,7 @@ const ResumenConsignacion = () => {
             value={anio}
             onChange={e => setAnio(e.target.value)}
             disabled={aniosDisponibles.length === 0}
-            className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50"
+            className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50"
           >
             <option value="">
               {aniosDisponibles.length === 0 ? 'Sin datos' : 'Seleccionar año'}
@@ -138,7 +138,7 @@ const ResumenConsignacion = () => {
             value={mes}
             onChange={e => setMes(e.target.value)}
             disabled={!anio}
-            className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50"
+            className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50"
           >
             <option value="">Seleccionar mes</option>
             <option value={TODOS_LOS_MESES}>Todos los meses</option>
@@ -150,7 +150,7 @@ const ResumenConsignacion = () => {
           <select
             value={filtroAtributo}
             onChange={e => setFiltroAtributo(e.target.value)}
-            className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+            className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
           >
             <option value="">Atributo (Todos)</option>
             {ATRIBUTO_OPTIONS.map(op => (
@@ -161,7 +161,7 @@ const ResumenConsignacion = () => {
           {(busqueda || filtroAtributo) && (
             <button
               onClick={() => { setBusqueda(''); setFiltroAtributo(''); }}
-              className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded font-medium flex items-center gap-1 transition"
+              className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-tinta-secundaria rounded flex items-center gap-1 transition"
               title="Limpiar filtros"
             >
               <FilterX size={12} /> Limpiar
@@ -171,7 +171,7 @@ const ResumenConsignacion = () => {
           <button
             onClick={actualizar}
             disabled={cargando}
-            className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded font-medium flex items-center gap-1 transition disabled:opacity-50"
+            className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-tinta-secundaria rounded flex items-center gap-1 transition disabled:opacity-50"
             title="Volver a leer los períodos y los datos del mes"
           >
             <RefreshCw size={12} /> Actualizar
@@ -180,7 +180,7 @@ const ResumenConsignacion = () => {
       </div>
 
       {/* BARRA DE TOTALES */}
-      <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 text-[10px] text-gray-500 dark:text-gray-400">
+      <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 text-pequeno text-tinta-secundaria">
         <span>
           {!anio
             ? 'Selecciona un año para comenzar'
@@ -202,14 +202,14 @@ const ResumenConsignacion = () => {
             type="button"
             onClick={restablecerAnchos}
             title="Restablecer ancho de columnas"
-            className="flex items-center gap-1 text-[9px] font-medium text-gray-400 hover:text-[#2383C2] dark:text-gray-500 dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
+            className="flex items-center gap-1 text-pequeno text-tinta-atenuada hover:text-[#2383C2] dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
           >
             <RotateCcw size={10} /> Restablecer columnas
           </button>
         </div>
 
         <table
-          className="text-left text-[11px] border-collapse"
+          className="text-left text-secundario border-collapse"
           style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: anchoTotalTabla }}
         >
           <colgroup>
@@ -219,7 +219,7 @@ const ResumenConsignacion = () => {
           </colgroup>
 
           <thead className="bg-gray-100 dark:bg-gray-900 sticky top-[22px] z-10">
-            <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+            <tr className="text-tinta-secundaria uppercase text-pequeno">
               <th className="relative py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 overflow-hidden">
                 ID
                 <ManijaRedimension colKey="id" anchoActual={anchos.id} anchoMin={COLUMNAS[0].min} onResize={handleResize} />
@@ -289,7 +289,7 @@ const ResumenConsignacion = () => {
           <tbody>
             {documentosFiltrados.length === 0 ? (
               <tr>
-                <td colSpan={16} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500 text-xs">
+                <td colSpan={16} className="px-4 py-8 text-center text-tinta-atenuada text-normal">
                   {!anio || !mes
                     ? 'Elige un año y un mes para ver los registros imputados.'
                     : 'No hay registros imputados para el período seleccionado.'}
@@ -311,28 +311,28 @@ const ResumenConsignacion = () => {
                   <tr
                     className="border-b border-gray-200 dark:border-gray-700/70 hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors"
                   >
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 font-semibold text-[#2383C2] whitespace-nowrap overflow-hidden text-ellipsis">{d.gestionId}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-700 dark:text-gray-200 font-medium whitespace-nowrap overflow-hidden text-ellipsis">{d.nombre}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">{d.medico}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">{d.empresa}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">{formatearFechaTabla(d.fecha)}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 font-num text-emerald-600 dark:text-emerald-400 whitespace-nowrap overflow-hidden text-ellipsis">{d.codigo || 'S/C'}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 truncate max-w-[180px]" title={d.descripcion}>{d.descripcion}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-center text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">{d.cantidad}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">${Number(d.costo || 0).toLocaleString('es-CL')}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-center text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-etiqueta text-[#2383C2] whitespace-nowrap overflow-hidden text-ellipsis">{d.gestionId}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-principal whitespace-nowrap overflow-hidden text-ellipsis">{d.nombre}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">{d.medico}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">{d.empresa}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">{formatearFechaTabla(d.fecha)}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-numero-tabla text-emerald-600 dark:text-emerald-400 whitespace-nowrap overflow-hidden text-ellipsis">{d.codigo || 'S/C'}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria truncate max-w-[180px]" title={d.descripcion}>{d.descripcion}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-center text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">{d.cantidad}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">${Number(d.costo || 0).toLocaleString('es-CL')}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-center text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {d.recargoVecesCosto != null ? `${d.recargoVecesCosto} x` : '-'}
                     </td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">${Number(d.venta || 0).toLocaleString('es-CL')}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">{lote}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">{vencimiento}</td>
-                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">{d.numeroGuia ?? 0}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-emerald-700 dark:text-emerald-400 text-etiqueta whitespace-nowrap overflow-hidden text-ellipsis">${Number(d.venta || 0).toLocaleString('es-CL')}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">{lote}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">{vencimiento}</td>
+                    <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">{d.numeroGuia ?? 0}</td>
                     <td className="py-1.5 px-2 border-r border-gray-200 dark:border-gray-700/70 overflow-hidden">
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full uppercase font-semibold ${getAtributoEstilo(d.atributo)}`}>
+                      <span className={`text-pequeno px-1.5 py-0.5 rounded-full uppercase ${getAtributoEstilo(d.atributo)}`}>
                         {d.atributo || '-'}
                       </span>
                     </td>
-                    <td className="py-1.5 px-2 text-gray-500 dark:text-gray-400 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="py-1.5 px-2 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {(NOMBRES_MESES[d.periodoMes] || d.periodoMes)} {d.periodoAnio}
                     </td>
                   </tr>

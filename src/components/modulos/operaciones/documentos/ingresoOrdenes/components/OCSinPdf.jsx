@@ -30,9 +30,9 @@ const fechaCorta = (yyyyMmDd) => {
 
 // Varios valores en una celda: el primero y "+n" (todos en el title).
 const Multi = ({ valores, mono = false }) => (
-  <span className={mono ? 'font-num' : ''} title={valores.join(' · ')}>
+  <span className={mono ? 'text-numero-tabla' : ''} title={valores.join(' · ')}>
     {valores[0] || '-'}
-    {valores.length > 1 && <span className="ml-1 text-[9.5px] text-slate-400 dark:text-gray-500">+{valores.length - 1}</span>}
+    {valores.length > 1 && <span className="ml-1 text-pequeno text-tinta-atenuada">+{valores.length - 1}</span>}
   </span>
 );
 
@@ -53,7 +53,7 @@ const FilaOC = ({ fila, subiendo, deshabilitado, onArchivos }) => {
       className={`transition ${isDragActive ? 'bg-[#2383C2]/10' : 'hover:bg-slate-50 dark:hover:bg-gray-700/40'}`}
       title={`Suelta aquí el PDF de la OC ${fila.oc}`}
     >
-      <td className={`${celda} font-num font-semibold text-[#2383C2]`} title={fila.oc}>
+      <td className={`${celda} text-numero-tabla text-[#2383C2]`} title={fila.oc}>
         <input {...getInputProps()} />
         {fila.oc}
       </td>
@@ -63,13 +63,13 @@ const FilaOC = ({ fila, subiendo, deshabilitado, onArchivos }) => {
       <td className={celda} title={fila.fechas.map(fechaCorta).join(' · ')}><Multi valores={fila.fechas.map(fechaCorta)} /></td>
       <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center">
         {subiendo ? (
-          <span className="inline-flex items-center gap-1 text-[#2383C2] text-[10px]"><Loader2 size={11} className="animate-spin" /> {subiendo.porcentaje}%</span>
+          <span className="inline-flex items-center gap-1 text-[#2383C2] text-pequeno"><Loader2 size={11} className="animate-spin" /> {subiendo.porcentaje}%</span>
         ) : (
           <button
             type="button"
             onClick={open}
             disabled={deshabilitado}
-            className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 disabled:cursor-not-allowed text-[10px]"
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 dark:border-gray-600 text-tinta-secundaria hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 disabled:cursor-not-allowed text-pequeno"
           >
             <Upload size={11} /> Subir
           </button>
@@ -89,7 +89,7 @@ const SeccionResumen = ({ titulo, items, tono, Icono }) => {
   };
   return (
     <details className={`px-3 py-1.5 border rounded-lg ${tonos[tono]}`} open={tono !== 'ok'}>
-      <summary className="cursor-pointer font-semibold inline-flex items-center gap-1.5">
+      <summary className="cursor-pointer text-etiqueta inline-flex items-center gap-1.5">
         <Icono size={12} /> {titulo} ({items.length})
       </summary>
       <ul className="mt-1 pl-5 list-disc space-y-0.5 max-h-32 overflow-auto">
@@ -103,7 +103,7 @@ const SeccionResumen = ({ titulo, items, tono, Icono }) => {
   );
 };
 
-const selectClase = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+const selectClase = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 
 // Pestaña "OC sin PDF" de Ingreso de Órdenes.
 const OCSinPdf = () => {
@@ -128,10 +128,10 @@ const OCSinPdf = () => {
             : 'Subida masiva (no necesita mes): arrastra aquí los PDF de OC (OC_12345.pdf) o haz clic para elegirlos'}
         />
         {r && (
-          <div className="space-y-1 text-[10px]">
+          <div className="space-y-1 text-pequeno">
             <div className="flex items-center justify-between">
-              <span className="font-semibold text-slate-600 dark:text-gray-300">Resumen de la subida</span>
-              <button type="button" onClick={d.cerrarResumen} title="Cerrar resumen" className="p-0.5 rounded text-slate-400 hover:text-slate-600"><X size={12} /></button>
+              <span className="text-etiqueta text-tinta-secundaria">Resumen de la subida</span>
+              <button type="button" onClick={d.cerrarResumen} title="Cerrar resumen" className="p-0.5 rounded text-tinta-atenuada hover:text-tinta-secundaria"><X size={12} /></button>
             </div>
             <SeccionResumen titulo="Subidos" items={r.subidos} tono="ok" Icono={CheckCircle2} />
             <SeccionResumen titulo="Ya tenían PDF (omitidos)" items={r.yaTenian} tono="aviso" Icono={FileWarning} />
@@ -145,11 +145,11 @@ const OCSinPdf = () => {
 
       <div className="shrink-0 bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-700">
         {d.cargandoPeriodos ? (
-          <span className="flex items-center gap-1.5 h-7 text-[11px] text-slate-400 dark:text-gray-500">
+          <span className="flex items-center gap-1.5 h-7 text-secundario text-tinta-atenuada">
             <Loader2 size={12} className="animate-spin" /> Cargando períodos...
           </span>
         ) : d.sinPeriodos ? (
-          <span className={`flex items-center gap-1.5 h-7 text-[11px] ${d.errorPeriodos ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-gray-400'}`}>
+          <span className={`flex items-center gap-1.5 h-7 text-secundario ${d.errorPeriodos ? 'text-red-600 dark:text-red-400' : 'text-tinta-secundaria'}`}>
             <AlertCircle size={12} /> {d.errorPeriodos || 'No hay órdenes importadas.'}
           </span>
         ) : (
@@ -172,11 +172,11 @@ const OCSinPdf = () => {
             onChange={(e) => d.setBusqueda(e.target.value)}
             disabled={!d.infoCarga}
             placeholder="Buscar en el mes: OC, admisión, paciente o empresa"
-            className="h-7 pl-6 pr-2 w-72 disabled:opacity-50 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2]"
+            className="h-7 pl-6 pr-2 w-72 disabled:opacity-50 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2]"
           />
         </label>
         {d.infoCarga && (
-          <span className="ml-auto flex items-center gap-2 text-[10px] text-slate-500 dark:text-gray-400">
+          <span className="ml-auto flex items-center gap-2 text-pequeno text-tinta-secundaria">
             <span>{d.totalSinPdf} OC sin PDF · {d.infoCarga.gestiones} gestión(es) con OC en el mes</span>
             <span
               className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-gray-700/60"
@@ -203,12 +203,12 @@ const OCSinPdf = () => {
           respecto del body y estiran la página principal. */}
       <div className="flex-grow min-h-0 overflow-auto relative">
         <table
-          className="text-left text-[11px] border-collapse"
+          className="text-left text-secundario border-collapse"
           style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: '100%' }}
         >
           <ColgroupRedimensionable columnas={COLUMNAS} anchos={anchos} relleno />
           <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-            <tr className="text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider">
+            <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider">
               {COLUMNAS.map(col => (
                 <ThRedimensionable key={col.key} col={col} anchos={anchos} onResize={handleResize} className={`${TH} ${col.th || ''}`} title={col.label}>
                   {col.label}
@@ -217,10 +217,10 @@ const OCSinPdf = () => {
               <ThRelleno className="border-b border-slate-200 dark:border-gray-700" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200/60 dark:divide-gray-700/50 bg-white dark:bg-gray-800 text-slate-700 dark:text-gray-200">
+          <tbody className="divide-y divide-slate-200/60 dark:divide-gray-700/50 bg-white dark:bg-gray-800 text-tinta-principal">
             {!d.mesSeleccionado || d.cargando || d.error || d.filasPagina.length === 0 ? (
               <tr>
-                <td colSpan={COLUMNAS.length + 1} className="px-4 py-8 text-center text-slate-400 dark:text-gray-500 text-xs">
+                <td colSpan={COLUMNAS.length + 1} className="px-4 py-8 text-center text-tinta-atenuada text-normal">
                   {!d.mesSeleccionado ? (
                     <span className="inline-flex flex-col items-center gap-1.5">
                       <CalendarSearch size={22} className="text-slate-300 dark:text-gray-600" />
@@ -231,7 +231,7 @@ const OCSinPdf = () => {
                   ) : d.error ? (
                     <span className="inline-flex items-center gap-2 text-red-600 dark:text-red-400">
                       <AlertCircle size={13} /> {d.error}
-                      <button type="button" onClick={d.actualizarMes} className="flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300">
+                      <button type="button" onClick={d.actualizarMes} className="flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 dark:border-gray-600 text-tinta-secundaria">
                         <RefreshCw size={10} /> Reintentar
                       </button>
                     </span>

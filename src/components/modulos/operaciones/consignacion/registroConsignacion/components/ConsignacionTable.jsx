@@ -53,7 +53,7 @@ const ESTADO_ESTILOS = {
   SOLICITADO: 'bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400',
   FINALIZADO: ESTADO_BADGE.FINALIZADO
 };
-const ESTADO_ESTILO_DEFECTO = 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300';
+const ESTADO_ESTILO_DEFECTO = 'bg-gray-100 dark:bg-gray-800 text-tinta-secundaria';
 
 const formatearFechaTabla = (fechaString) => {
   if (!fechaString || !fechaString.includes('-')) return fechaString || '-';
@@ -120,7 +120,7 @@ const CeldaTextoEditable = ({ valorInicial, onGuardar, placeholder, soloNumeros 
         if (valor !== (valorInicial || '')) onGuardar(valor);
       }}
       placeholder={placeholder}
-      className="w-full h-6 px-1.5 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-[#2383C2] rounded text-[10px] outline-none bg-transparent focus:bg-white dark:focus:bg-gray-900 text-gray-700 dark:text-gray-200 transition"
+      className="w-full h-6 px-1.5 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-[#2383C2] rounded text-pequeno outline-none bg-transparent focus:bg-white dark:focus:bg-gray-900 text-tinta-principal transition"
     />
   );
 };
@@ -159,14 +159,14 @@ export const ConsignacionTable = ({ registros, numeroInicial = 0, onEliminar, on
           type="button"
           onClick={restablecerAnchos}
           title="Restablecer ancho de columnas"
-          className="flex items-center gap-1 text-[9px] font-medium text-gray-400 hover:text-[#2383C2] dark:text-gray-500 dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
+          className="flex items-center gap-1 text-pequeno text-tinta-atenuada hover:text-[#2383C2] dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
         >
           <RotateCcw size={10} /> Restablecer columnas
         </button>
       </div>
 
       <table
-        className="text-left text-[11px] border-collapse"
+        className="text-left text-secundario border-collapse"
         style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: anchoTotalTabla }}
       >
         <colgroup>
@@ -176,7 +176,7 @@ export const ConsignacionTable = ({ registros, numeroInicial = 0, onEliminar, on
         </colgroup>
 
         <thead className="bg-gray-100 dark:bg-gray-900 sticky top-[22px] z-10">
-          <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+          <tr className="text-tinta-secundaria uppercase text-pequeno">
             {COLUMNAS.map(col => (
               <th
                 key={col.key}
@@ -199,7 +199,7 @@ export const ConsignacionTable = ({ registros, numeroInicial = 0, onEliminar, on
         <tbody>
           {registros.length === 0 ? (
             <tr>
-              <td colSpan={COLUMNAS.length} className="text-center py-12 text-gray-400 dark:text-gray-500 text-[11px]">
+              <td colSpan={COLUMNAS.length} className="text-center py-12 text-tinta-atenuada text-secundario">
                 No hay registros de consignación.
               </td>
             </tr>
@@ -214,19 +214,19 @@ export const ConsignacionTable = ({ registros, numeroInicial = 0, onEliminar, on
                   key={r.id}
                   className="border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors"
                 >
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400 font-bold text-center`}>{numeroInicial + index + 1}</td>
-                  <td className={`${celdaBase} font-semibold text-[#2383C2]`} title={r.gestionId}>{r.gestionId || '-'}</td>
-                  <td className={`${celdaBase} text-gray-700 dark:text-gray-200 font-medium`} title={r.nombre}>{r.nombre || '-'}</td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300`} title={r.medico}>{r.medico || '-'}</td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300`}>{formatearFechaTabla(r.fecha)}</td>
-                  <td className={`${celdaBase} font-num text-emerald-600 dark:text-emerald-400`} title={r.codigo}>{r.codigo || 'S/C'}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={r.descripcion}>{r.descripcion || '-'}</td>
-                  <td className={`${celdaBase} text-center font-semibold text-gray-700 dark:text-gray-200`}>{r.cantidad ?? 0}</td>
-                  <td className={`${celdaBase} text-emerald-700 dark:text-emerald-400 font-semibold`}>
+                  <td className={`${celdaBase} text-tinta-secundaria text-etiqueta text-center`}>{numeroInicial + index + 1}</td>
+                  <td className={`${celdaBase} text-etiqueta text-[#2383C2]`} title={r.gestionId}>{r.gestionId || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-principal`} title={r.nombre}>{r.nombre || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={r.medico}>{r.medico || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{formatearFechaTabla(r.fecha)}</td>
+                  <td className={`${celdaBase} text-numero-tabla text-emerald-600 dark:text-emerald-400`} title={r.codigo}>{r.codigo || 'S/C'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={r.descripcion}>{r.descripcion || '-'}</td>
+                  <td className={`${celdaBase} text-center text-etiqueta text-tinta-principal`}>{r.cantidad ?? 0}</td>
+                  <td className={`${celdaBase} text-emerald-700 dark:text-emerald-400 text-etiqueta`}>
                     {r.costo ? `$${Number(r.costo).toLocaleString('es-CL')}` : '-'}
                   </td>
                   <td className={celdaBase}>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${ESTADO_ESTILOS[estadoKey] || ESTADO_ESTILO_DEFECTO}`}>
+                    <span className={`text-pequeno px-1.5 py-0.5 rounded-full uppercase ${ESTADO_ESTILOS[estadoKey] || ESTADO_ESTILO_DEFECTO}`}>
                       {estadoKey}
                     </span>
                   </td>
@@ -249,19 +249,19 @@ export const ConsignacionTable = ({ registros, numeroInicial = 0, onEliminar, on
                   <td className="py-1 px-1 border-b border-r border-gray-200 dark:border-gray-700/70 overflow-hidden">
                     <span
                       title="Se actualiza automáticamente al ingresar/quitar el N° de Guía"
-                      className={`flex items-center justify-center w-full h-6 px-1 rounded text-[9px] font-bold uppercase ${ESTADO_GUIA_ESTILOS[estadoGuiaKey]}`}
+                      className={`flex items-center justify-center w-full h-6 px-1 rounded text-pequeno uppercase ${ESTADO_GUIA_ESTILOS[estadoGuiaKey]}`}
                     >
                       {estadoGuiaKey}
                     </span>
                   </td>
 
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={r.delivery}>{r.delivery || '-'}</td>
-                  <td className={`${celdaBase} text-gray-700 dark:text-gray-200 font-medium`} title={r.referencia}>{r.referencia || '-'}</td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300 font-medium`}>{r.centro || 'PABELLON'}</td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300 font-medium`}>{r.atributo || '-'}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`}>{r.convenio || '-'}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`}>{r.prevision || '-'}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={r.descripcionPabellon}>{r.descripcionPabellon || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={r.delivery}>{r.delivery || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-principal`} title={r.referencia}>{r.referencia || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{r.centro || 'PABELLON'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{r.atributo || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{r.convenio || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{r.prevision || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={r.descripcionPabellon}>{r.descripcionPabellon || '-'}</td>
 
                   <td className="py-1 px-2 border-b border-gray-200 dark:border-gray-700 text-center overflow-hidden">
                     <div className="flex items-center justify-center gap-1.5" onClick={e => e.stopPropagation()}>
@@ -270,7 +270,7 @@ export const ConsignacionTable = ({ registros, numeroInicial = 0, onEliminar, on
                         disabled={!editable}
                         title={editable ? 'Editar registro' : mensajeRegistroNoEditable(r)}
                         className={`p-0.5 rounded transition ${!editable
-                          ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                          ? 'text-tinta-atenuada cursor-not-allowed'
                           : 'text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30'
                           }`}
                       >
@@ -280,7 +280,7 @@ export const ConsignacionTable = ({ registros, numeroInicial = 0, onEliminar, on
                         onClick={() => handleClickActualizarVinculados(r)}
                         disabled={actualizandoId === r.id}
                         title="Actualizar Previsión / Convenio / Descripción Pabellón desde Reportes"
-                        className="text-gray-500 hover:text-[#2383C2] transition p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-tinta-secundaria hover:text-[#2383C2] transition p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <RefreshCw size={13} className={actualizandoId === r.id ? 'animate-spin' : ''} />
                       </button>

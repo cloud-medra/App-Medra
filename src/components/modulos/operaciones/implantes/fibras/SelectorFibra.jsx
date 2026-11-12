@@ -49,24 +49,24 @@ export const SelectorFibra = ({ referencia, fechaCirugia, fibras, cargando, erro
 
   return (
     <div className="border border-teal-200 dark:border-teal-900 bg-teal-50/40 dark:bg-teal-950/10 rounded-lg p-2.5 space-y-2">
-      <span className="text-[10px] font-bold text-teal-700 dark:text-teal-400 uppercase flex items-center gap-1">
+      <span className="text-pequeno text-teal-700 dark:text-teal-400 uppercase flex items-center gap-1">
         <Cable size={12} /> Fibra usada <span className="text-red-500">*</span>
-        <span className="text-[9px] font-normal normal-case text-teal-600 dark:text-teal-500">(fibra reutilizable: se registra un uso al guardar)</span>
+        <span className="text-pequeno normal-case text-teal-600 dark:text-teal-500">(fibra reutilizable: se registra un uso al guardar)</span>
       </span>
 
       {cargando ? (
-        <div className="text-[10px] text-slate-500 flex items-center gap-1.5"><Loader2 size={11} className="animate-spin" /> Buscando fibras de {referencia}…</div>
+        <div className="text-pequeno text-tinta-secundaria flex items-center gap-1.5"><Loader2 size={11} className="animate-spin" /> Buscando fibras de {referencia}…</div>
       ) : error ? (
-        <div className="text-[10px] text-red-600 dark:text-red-400 flex items-center gap-1"><AlertTriangle size={11} /> {error}</div>
+        <div className="text-pequeno text-red-600 dark:text-red-400 flex items-center gap-1"><AlertTriangle size={11} /> {error}</div>
       ) : opciones.length === 0 ? (
-        <div className="text-[10px] text-red-600 dark:text-red-400 flex items-center gap-1">
+        <div className="text-pequeno text-red-600 dark:text-red-400 flex items-center gap-1">
           <AlertTriangle size={11} className="shrink-0" />
           No hay fibras de {referencia} activas y vigentes para la fecha de la cirugía{fechaCirugia ? ` (${fechaCirugia})` : ''}, ni en uso ni en bodega. Regístrala en Implantes → Fibras.
         </div>
       ) : (
         <>
           {desdeBodega && (
-            <div className="text-[10px] text-amber-700 dark:text-amber-400 flex items-center gap-1">
+            <div className="text-pequeno text-amber-700 dark:text-amber-400 flex items-center gap-1">
               <Warehouse size={11} className="shrink-0" />
               {enUsoActual
                 ? `La fibra en uso (${textoFibra(enUsoActual)}) no sirve para esta cirugía.`
@@ -80,7 +80,7 @@ export const SelectorFibra = ({ referencia, fechaCirugia, fibras, cargando, erro
               value={seleccionadaId || ''}
               disabled={deshabilitado}
               onChange={(e) => elegir(e.target.value)}
-              className="h-7 px-2 text-[10px] border border-teal-300 dark:border-teal-800 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-teal-500 min-w-[260px]"
+              className="h-7 px-2 text-pequeno border border-teal-300 dark:border-teal-800 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:ring-1 focus:ring-teal-500 min-w-[260px]"
             >
               {(opciones.length > 1 || desdeBodega) && <option value="">Elige la fibra…</option>}
               {/* <option> no admite estilos: referencia primero y el código entre paréntesis. */}
@@ -91,7 +91,7 @@ export const SelectorFibra = ({ referencia, fechaCirugia, fibras, cargando, erro
               ))}
             </select>
             {seleccionada && (
-              <span className={`text-[10px] font-semibold flex items-center gap-1 ${esUltimo ? 'text-amber-700 dark:text-amber-400' : 'text-teal-700 dark:text-teal-400'}`}>
+              <span className={`text-pequeno flex items-center gap-1 ${esUltimo ? 'text-amber-700 dark:text-amber-400' : 'text-teal-700 dark:text-teal-400'}`}>
                 {esUltimo && <AlertTriangle size={11} />}
                 Será el uso {numero}/{seleccionada.usosTotales}{esUltimo ? ': ÚLTIMO USO, la fibra quedará agotada' : `, quedarán ${usosRestantes(seleccionada) - 1}`}
               </span>

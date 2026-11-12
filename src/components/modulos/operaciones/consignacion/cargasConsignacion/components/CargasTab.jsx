@@ -86,7 +86,7 @@ const renderP = (valor) => (valor === '' || valor === undefined || valor === nul
 // esto amplía ese mismo campo a un tercer valor (REVISAR) vía selector.
 const ESTADO_CARGA_OPTIONS = ['PENDIENTE', 'CARGADO', 'REVISAR'];
 const ESTADO_CARGA_SELECT_STYLE = {
-  PENDIENTE: 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300',
+  PENDIENTE: 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-tinta-principal',
   CARGADO: 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400',
   REVISAR: 'bg-amber-50 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400'
 };
@@ -107,7 +107,7 @@ const NumeroGuiaCell = ({ it, pendiente }) => {
   if (pendiente) {
     return (
       <span className="text-amber-600 dark:text-amber-400" title="Pendiente de guardar">
-        {pendiente.numeroGuiaVinculada || '-'} <span className="text-[8px] font-bold uppercase">(sin guardar)</span>
+        {pendiente.numeroGuiaVinculada || '-'} <span className="text-pequeno uppercase">(sin guardar)</span>
       </span>
     );
   }
@@ -116,7 +116,7 @@ const NumeroGuiaCell = ({ it, pendiente }) => {
   if (!deliveryValor) return <span>-</span>;
   if (it.deliveryVinculado) return <span>-</span>;
 
-  return <span className="text-slate-400 dark:text-gray-500 italic">Resolviendo...</span>;
+  return <span className="text-tinta-atenuada italic">Resolviendo...</span>;
 };
 
 const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, productosGuardados, productosPendientes }) => {
@@ -198,7 +198,7 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
       <>
         {esPreview && (
           <tr>
-            <td colSpan={colSpanTotal} className="px-2.5 py-1 text-[9px] font-bold uppercase text-amber-700 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/10 border-b border-slate-100 dark:border-gray-700/60">
+            <td colSpan={colSpanTotal} className="px-2.5 py-1 text-pequeno uppercase text-amber-700 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/10 border-b border-slate-100 dark:border-gray-700/60">
               Vínculo resuelto — pendiente de guardar
             </td>
           </tr>
@@ -208,45 +208,45 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
           return (
             <tr
               key={`${p.codigo || 'sc'}-${idx}`}
-              className={`text-[10px] ${esCoincidente ? 'bg-blue-100/60 dark:bg-blue-900/30' : 'bg-blue-50/30 dark:bg-blue-950/10'}`}
+              className={`text-pequeno ${esCoincidente ? 'bg-blue-100/60 dark:bg-blue-900/30' : 'bg-blue-50/30 dark:bg-blue-950/10'}`}
               title={esCoincidente ? 'Este es el producto que corresponde a este ítem' : ''}
             >
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 font-normal text-slate-500 dark:text-gray-400 truncate" title="No lleva OC">
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate" title="No lleva OC">
                 No lleva OC
               </td>
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 font-num text-emerald-600 dark:text-emerald-400 truncate" title={p.codigo || 'N/A'}>
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-numero-tabla text-emerald-600 dark:text-emerald-400 truncate" title={p.codigo || 'N/A'}>
                 <span className="flex items-center gap-1 min-w-0">
                   {esCoincidente && <CheckCircle2 size={10} className="text-blue-600 dark:text-blue-400 shrink-0" />}
                   <span className="truncate">{p.codigo || 'N/A'}</span>
                 </span>
               </td>
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate" title={p.descripcion || '-'}>
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={p.descripcion || '-'}>
                 {p.descripcion || '-'}
               </td>
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate" title={p.empresa || '-'}>
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={p.empresa || '-'}>
                 {p.empresa || '-'}
               </td>
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-slate-700 dark:text-gray-200 font-semibold truncate" title={p.cantidad ?? 'N/A'}>
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-tinta-principal text-etiqueta truncate" title={p.cantidad ?? 'N/A'}>
                 {p.cantidad ?? 'N/A'}
               </td>
               <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 truncate">
                 $0
               </td>
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate" title={p.lote || 'N/A'}>
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={p.lote || 'N/A'}>
                 {p.lote || 'N/A'}
               </td>
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate" title={p.vencimiento || 'N/A'}>
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={p.vencimiento || 'N/A'}>
                 {p.vencimiento || 'N/A'}
               </td>
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate" />
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate" />
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate">
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-atenuada truncate" />
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-atenuada truncate" />
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-atenuada truncate">
                 0
               </td>
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate" title={p.tipo || '-'}>
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={p.tipo || '-'}>
                 {p.tipo || '-'}
               </td>
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate" />
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-atenuada truncate" />
               <TdRelleno className="border-b border-slate-100 dark:border-gray-700/60" />
             </tr>
           );
@@ -258,7 +258,7 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
   if (cargandoGuia) {
     return (
       <tr>
-        <td colSpan={colSpanTotal} className="px-3 py-2 text-[9px] text-slate-500 dark:text-gray-400 bg-slate-50/60 dark:bg-gray-900/30 border-b border-slate-100 dark:border-gray-700/60">
+        <td colSpan={colSpanTotal} className="px-3 py-2 text-pequeno text-tinta-secundaria bg-slate-50/60 dark:bg-gray-900/30 border-b border-slate-100 dark:border-gray-700/60">
           <span className="flex items-center gap-1.5"><Loader2 size={11} className="animate-spin" /> Buscando guía con N° Documento {deliveryValor}...</span>
         </td>
       </tr>
@@ -268,7 +268,7 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
   if (error) {
     return (
       <tr>
-        <td colSpan={colSpanTotal} className="px-3 py-2 text-[9px] text-red-600 dark:text-red-400 bg-red-50/60 dark:bg-red-950/10 border-b border-slate-100 dark:border-gray-700/60">
+        <td colSpan={colSpanTotal} className="px-3 py-2 text-pequeno text-red-600 dark:text-red-400 bg-red-50/60 dark:bg-red-950/10 border-b border-slate-100 dark:border-gray-700/60">
           <span className="flex items-center gap-1.5"><AlertCircle size={11} /> {error}</span>
         </td>
       </tr>
@@ -278,7 +278,7 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
   if (!guiaEncontrada) {
     return (
       <tr>
-        <td colSpan={colSpanTotal} className="px-3 py-2 text-[9px] text-amber-700 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/10 border-b border-slate-100 dark:border-gray-700/60">
+        <td colSpan={colSpanTotal} className="px-3 py-2 text-pequeno text-amber-700 dark:text-amber-400 bg-amber-50/60 dark:bg-amber-950/10 border-b border-slate-100 dark:border-gray-700/60">
           <span className="flex items-center gap-1.5"><AlertCircle size={11} /> No se encontró ninguna guía con N° Documento{' '}<strong>{deliveryValor}</strong>.</span>
         </td>
       </tr>
@@ -288,7 +288,7 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
   if (productosVisibles.length === 0) {
     return (
       <tr>
-        <td colSpan={colSpanTotal} className="px-3 py-2 text-[9px] text-slate-400 dark:text-gray-500 bg-blue-50/30 dark:bg-blue-950/10 border-b border-slate-100 dark:border-gray-700/60">
+        <td colSpan={colSpanTotal} className="px-3 py-2 text-pequeno text-tinta-atenuada bg-blue-50/30 dark:bg-blue-950/10 border-b border-slate-100 dark:border-gray-700/60">
           Sin productos visibles en esta guía.
         </td>
       </tr>
@@ -303,45 +303,45 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
         return (
           <tr
             key={p.id}
-            className={`text-[10px] ${esCoincidente ? 'bg-blue-100/60 dark:bg-blue-900/30' : 'bg-blue-50/30 dark:bg-blue-950/10'}`}
+            className={`text-pequeno ${esCoincidente ? 'bg-blue-100/60 dark:bg-blue-900/30' : 'bg-blue-50/30 dark:bg-blue-950/10'}`}
             title={esCoincidente ? 'Este es el producto que corresponde a este ítem' : ''}
           >
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 font-normal text-slate-500 dark:text-gray-400 truncate" title="No lleva OC">
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate" title="No lleva OC">
               No lleva OC
             </td>
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 font-num text-emerald-600 dark:text-emerald-400 truncate" title={p.codigo || 'N/A'}>
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-numero-tabla text-emerald-600 dark:text-emerald-400 truncate" title={p.codigo || 'N/A'}>
               <span className="flex items-center gap-1 min-w-0">
                 {esCoincidente && <CheckCircle2 size={10} className="text-blue-600 dark:text-blue-400 shrink-0" />}
                 <span className="truncate">{p.codigo || 'N/A'}</span>
               </span>
             </td>
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate" title={cargandoVinculos ? undefined : (vinculo?.descripcion || '-')}>
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={cargandoVinculos ? undefined : (vinculo?.descripcion || '-')}>
               {cargandoVinculos ? '...' : (vinculo?.descripcion || '-')}
             </td>
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate" title={cargandoVinculos ? undefined : (vinculo?.empresa || '-')}>
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={cargandoVinculos ? undefined : (vinculo?.empresa || '-')}>
               {cargandoVinculos ? '...' : (vinculo?.empresa || '-')}
             </td>
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-slate-700 dark:text-gray-200 font-semibold truncate" title={p.cantidad ?? 'N/A'}>
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-tinta-principal text-etiqueta truncate" title={p.cantidad ?? 'N/A'}>
               {p.cantidad ?? 'N/A'}
             </td>
             <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 truncate">
               $0
             </td>
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate" title={p.lote || 'N/A'}>
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={p.lote || 'N/A'}>
               {p.lote || 'N/A'}
             </td>
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate" title={p.vencimiento || 'N/A'}>
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={p.vencimiento || 'N/A'}>
               {p.vencimiento || 'N/A'}
             </td>
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate" />
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate" />
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate">
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-atenuada truncate" />
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-atenuada truncate" />
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-atenuada truncate">
               0
             </td>
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate" title={cargandoVinculos ? undefined : (vinculo?.tipo || '-')}>
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={cargandoVinculos ? undefined : (vinculo?.tipo || '-')}>
               {cargandoVinculos ? '...' : (vinculo?.tipo || '-')}
             </td>
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-400 dark:text-gray-500 truncate" />
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-atenuada truncate" />
             <TdRelleno className="border-b border-slate-100 dark:border-gray-700/60" />
           </tr>
         );
@@ -930,7 +930,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
       {/* Barra de guardado de vinculaciones pendientes de Delivery */}
       {cantidadPendientes > 0 && (
         <div className="flex items-center justify-between gap-2 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 rounded-lg px-3 py-2">
-          <span className="flex items-center gap-1.5 text-[11px] text-amber-800 dark:text-amber-300 font-medium">
+          <span className="flex items-center gap-1.5 text-secundario text-amber-800 dark:text-amber-300">
             <Link2 size={13} />
             {cantidadPendientes} ítem{cantidadPendientes !== 1 ? 's' : ''} con vínculo de Delivery resuelto, pendiente de guardar.
           </span>
@@ -938,7 +938,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
             type="button"
             onClick={handleGuardarPendientes}
             disabled={guardandoPendientes}
-            className="h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center gap-1.5 transition text-[11px] disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            className="h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center gap-1.5 transition text-etiqueta disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             {guardandoPendientes ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             Guardar Vinculaciones de Delivery ({cantidadPendientes})
@@ -950,49 +950,49 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
           <User size={13} className="text-[#2383C2]" />
-          <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+          <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">
             Información General — Admisión #{registro?.gestionId || 'N/A'}
           </h3>
         </div>
 
-        <div className="p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2.5 text-[10px]">
+        <div className="p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-2.5 text-pequeno">
           <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Paciente</span>
-            <span className="text-slate-700 dark:text-gray-200 font-medium">{renderP(registro?.nombre)}</span>
+            <span className="text-tinta-atenuada text-pequeno uppercase">Paciente</span>
+            <span className="text-tinta-principal">{renderP(registro?.nombre)}</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Médico</span>
-            <span className="text-slate-700 dark:text-gray-200">{renderP(registro?.medico)}</span>
+            <span className="text-tinta-atenuada text-pequeno uppercase">Médico</span>
+            <span className="text-tinta-principal">{renderP(registro?.medico)}</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Fecha</span>
-            <span className="text-slate-700 dark:text-gray-200">{formatearFechaTabla(registro?.fecha)}</span>
+            <span className="text-tinta-atenuada text-pequeno uppercase">Fecha</span>
+            <span className="text-tinta-principal">{formatearFechaTabla(registro?.fecha)}</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Centro</span>
-            <span className="text-slate-700 dark:text-gray-200">{renderP(registro?.centro)}</span>
+            <span className="text-tinta-atenuada text-pequeno uppercase">Centro</span>
+            <span className="text-tinta-principal">{renderP(registro?.centro)}</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Convenio</span>
-            <span className="text-slate-700 dark:text-gray-200">{renderP(registro?.convenio)}</span>
+            <span className="text-tinta-atenuada text-pequeno uppercase">Convenio</span>
+            <span className="text-tinta-principal">{renderP(registro?.convenio)}</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Previsión</span>
-            <span className="text-slate-700 dark:text-gray-200">{renderP(registro?.prevision)}</span>
+            <span className="text-tinta-atenuada text-pequeno uppercase">Previsión</span>
+            <span className="text-tinta-principal">{renderP(registro?.prevision)}</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Registrado Por</span>
-            <span className="text-slate-700 dark:text-gray-200">{renderP(registro?.registradoPor)}</span>
+            <span className="text-tinta-atenuada text-pequeno uppercase">Registrado Por</span>
+            <span className="text-tinta-principal">{renderP(registro?.registradoPor)}</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">N° de Ítems</span>
-            <span className="text-slate-700 dark:text-gray-200 font-semibold">{totalItems}</span>
+            <span className="text-tinta-atenuada text-pequeno uppercase">N° de Ítems</span>
+            <span className="text-tinta-principal text-etiqueta">{totalItems}</span>
           </div>
 
           {registro?.descripcionPabellon && (
             <div className="flex flex-col gap-0.5 col-span-2 md:col-span-3 lg:col-span-4">
-              <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Descripción Pabellón</span>
-              <span className="text-slate-700 dark:text-gray-200">{registro.descripcionPabellon}</span>
+              <span className="text-tinta-atenuada text-pequeno uppercase">Descripción Pabellón</span>
+              <span className="text-tinta-principal">{registro.descripcionPabellon}</span>
             </div>
           )}
         </div>
@@ -1003,7 +1003,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
           <UploadCloud size={13} className="text-[#2383C2]" />
-          <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+          <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">
             Cargas
           </h3>
           {itemsImputados.length > 0 && puedeDesbloquearCandado && (
@@ -1016,7 +1016,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                   ? 'Hay ítems ya imputados — click para desbloquear su edición'
                   : 'Desbloqueado — editá y guardá cada ítem para volver a bloquearlo'
               }
-              className={`flex items-center gap-1 h-6 px-2 rounded text-[9px] font-bold transition shrink-0 ${
+              className={`flex items-center gap-1 h-6 px-2 rounded text-pequeno transition shrink-0 ${
                 admisionBloqueada
                   ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 cursor-pointer'
                   : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 cursor-default'
@@ -1031,7 +1031,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
             onClick={() => itemsElegiblesCargaMasiva.length > 0 && setMostrarConfirmCargaMasiva(true)}
             disabled={itemsElegiblesCargaMasiva.length === 0}
             title="Marca como CARGADO todos los ítems de esta admisión (no cambia los imputados, los REVISAR ni los sin código)"
-            className="ml-auto flex items-center gap-1 h-6 px-2 text-[9px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 rounded hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="ml-auto flex items-center gap-1 h-6 px-2 text-pequeno text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 rounded hover:bg-emerald-100 dark:hover:bg-emerald-950/50 transition disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
             <CheckCircle2 size={11} /> Marcar todos como Cargado
           </button>
@@ -1039,7 +1039,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
         </div>
 
         {admisionBloqueada && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 text-[11px] text-amber-700 dark:text-amber-400">
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 text-secundario text-amber-700 dark:text-amber-400">
             <Lock size={14} className="shrink-0" />
             <span>
               {imputadosBloqueados.length === items.length
@@ -1052,12 +1052,12 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
 
         <div className="overflow-auto" ref={setContenedorCargas}>
           <table
-            className="text-left text-[10px] border-collapse"
+            className="text-left text-pequeno border-collapse"
             style={{ tableLayout: 'fixed', width: anchoTotalCargas, minWidth: '100%' }}
           >
             <ColgroupRedimensionable columnas={COLUMNAS_CARGAS} anchos={anchosCargas} relleno />
             <thead className="bg-slate-50 dark:bg-gray-900/60">
-              <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+              <tr className="text-tinta-secundaria uppercase text-pequeno">
                 {COLUMNAS_CARGAS.map((col) => (
                   <ThRedimensionable
                     key={col.key}
@@ -1075,7 +1075,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={COLSPAN_CARGAS} className="px-3 py-4 text-center text-slate-400 dark:text-gray-500">
+                  <td colSpan={COLSPAN_CARGAS} className="px-3 py-4 text-center text-tinta-atenuada">
                     Sin ítems registrados para esta admisión
                   </td>
                 </tr>
@@ -1100,32 +1100,32 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                   // base: el de itemsVista trae la vista previa del borrador.
                   const guardado = enEdicion ? items.find((i) => i.id === it.id) : it;
                   const celda = 'px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60';
-                  const input = 'h-6.5 px-1 text-[10px] border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none';
+                  const input = 'h-6.5 px-1 text-pequeno border border-blue-300 dark:border-blue-700 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none';
                   return (
                     <React.Fragment key={it.id}>
                       <tr className={enEdicion
                         ? 'bg-blue-50/60 dark:bg-blue-950/20'
                         : `border-l-2 border-transparent hover:border-[#2383C2] transition-colors ${ESTADO_CARGA_ROW_STYLE[estadoCargaValor]}`}
                       >
-                        <td className={`${celda} text-center text-slate-400 dark:text-gray-500`}>
+                        <td className={`${celda} text-center text-tinta-atenuada`}>
                           {indice + 1}
                         </td>
-                        <td className={`${celda} font-semibold text-[#2383C2] truncate`}>
+                        <td className={`${celda} text-etiqueta text-[#2383C2] truncate`}>
                           {registro?.gestionId || 'N/A'}
                         </td>
-                        <td className={`${celda} text-slate-600 dark:text-gray-300 truncate`}>
+                        <td className={`${celda} text-tinta-secundaria truncate`}>
                           {formatearFechaTabla(registro?.fecha)}
                         </td>
                         {enEdicion ? (
-                          <td className={`${celda} font-num truncate`}>
-                            {borradorItem.codigo || <span className="text-red-500 font-bold">S/C</span>}
+                          <td className={`${celda} text-numero-tabla truncate`}>
+                            {borradorItem.codigo || <span className="text-red-500 text-etiqueta">S/C</span>}
                           </td>
                         ) : (
-                          <td className={`${celda} font-num text-emerald-600 dark:text-emerald-400 truncate`} title={it.codigo || 'S/C'}>
+                          <td className={`${celda} text-numero-tabla text-emerald-600 dark:text-emerald-400 truncate`} title={it.codigo || 'S/C'}>
                             {it.codigo || 'S/C'}
                           </td>
                         )}
-                        <td className={`${celda} text-center text-slate-700 dark:text-gray-200 font-semibold truncate`}>
+                        <td className={`${celda} text-center text-tinta-principal text-etiqueta truncate`}>
                           {enEdicion ? (
                             <input
                               type="number"
@@ -1137,16 +1137,16 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                           ) : (it.cantidad ?? 0)}
                         </td>
                         {/* Venta, recargo y total en vivo con el precio y la cantidad del borrador (itemsVista). */}
-                        <td className={`${celda} text-emerald-700 dark:text-emerald-400 font-semibold truncate`}>
+                        <td className={`${celda} text-emerald-700 dark:text-emerald-400 text-etiqueta truncate`}>
                           {venta != null ? (
                             <>
                               ${Number(venta).toLocaleString('es-CL')}
-                              {enEdicion && <span className="ml-1 text-[8px] font-normal text-blue-600 dark:text-blue-400 italic">(en edición)</span>}
+                              {enEdicion && <span className="ml-1 text-pequeno text-blue-600 dark:text-blue-400 italic">(en edición)</span>}
                             </>
                           ) : costo === 0 ? (
-                            <span className="text-slate-400 dark:text-gray-500 italic font-normal">Sin costo</span>
+                            <span className="text-tinta-atenuada italic">Sin costo</span>
                           ) : (
-                            <span className="text-amber-600 dark:text-amber-400 italic font-normal">Sin regla</span>
+                            <span className="text-amber-600 dark:text-amber-400 italic">Sin regla</span>
                           )}
                         </td>
                         {enEdicion ? (
@@ -1165,11 +1165,11 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                               <DropdownReferenciaPortal anchorRef={containerRefEdicion} portalRef={portalRefEdicion}>
                                 <div className="w-56 max-h-48 overflow-y-auto bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded shadow-lg">
                                   {buscandoEdicion ? (
-                                    <div className="px-2.5 py-2 text-[10px] text-slate-400 flex items-center gap-1.5">
+                                    <div className="px-2.5 py-2 text-pequeno text-tinta-atenuada flex items-center gap-1.5">
                                       <Loader2 size={11} className="animate-spin" /> Buscando...
                                     </div>
                                   ) : sugerenciasEdicion.length === 0 ? (
-                                    <div className="px-2.5 py-2 text-[10px] text-slate-400">Sin coincidencias</div>
+                                    <div className="px-2.5 py-2 text-pequeno text-tinta-atenuada">Sin coincidencias</div>
                                   ) : (
                                     sugerenciasEdicion.map(sug => (
                                       <button
@@ -1178,9 +1178,9 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                                         onClick={() => handleSeleccionarSugerenciaEdicion(sug)}
                                         className="w-full text-left px-2.5 py-1.5 hover:bg-slate-100 dark:hover:bg-gray-700/60 border-b border-slate-100 dark:border-gray-700/50 last:border-b-0"
                                       >
-                                        <div className="text-[10px] font-semibold text-slate-700 dark:text-gray-200 truncate">{sug.referencia}</div>
-                                        <div className="text-[9px] text-slate-400 dark:text-gray-500 flex items-center gap-1.5">
-                                          <span className="font-num text-emerald-600 dark:text-emerald-400">{sug.codigo || 'S/C'}</span>
+                                        <div className="text-pequeno text-tinta-principal truncate">{sug.referencia}</div>
+                                        <div className="text-pequeno text-tinta-atenuada flex items-center gap-1.5">
+                                          <span className="text-numero-tabla text-emerald-600 dark:text-emerald-400">{sug.codigo || 'S/C'}</span>
                                           <span>·</span>
                                           <span className="truncate">{sug.empresa}</span>
                                         </div>
@@ -1192,18 +1192,18 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                             )}
                           </td>
                         ) : (
-                          <td className={`${celda} font-medium text-slate-700 dark:text-gray-200 truncate`} title={it.referencia}>
+                          <td className={`${celda} text-tinta-principal truncate`} title={it.referencia}>
                             {it.referencia || '-'}
                           </td>
                         )}
                         <td
-                          className={`${celda} text-slate-500 dark:text-gray-400 truncate`}
+                          className={`${celda} text-tinta-secundaria truncate`}
                           title={enEdicion ? borradorItem.descripcion : it.descripcion}
                         >
                           {(enEdicion ? borradorItem.descripcion : it.descripcion) || '-'}
                         </td>
                         {/* Tipo del maestro (atributo del registro), como el Tipo de Implantes. */}
-                        <td className={`${celda} text-slate-600 dark:text-gray-300 truncate`} title={it.atributo || it.tipo || '-'}>
+                        <td className={`${celda} text-tinta-secundaria truncate`} title={it.atributo || it.tipo || '-'}>
                           {it.atributo || it.tipo || '-'}
                         </td>
                         {enEdicion ? (
@@ -1218,10 +1218,10 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                               aria-label="Precio"
                               aria-invalid={Boolean(errorPrecio(borradorItem.costo))}
                               title={errorPrecio(borradorItem.costo) || 'Precio de esta carga (no modifica el maestro)'}
-                              className={`w-full h-6.5 px-1 text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none text-right ${errorPrecio(borradorItem.costo) ? 'border-red-400 dark:border-red-600' : 'border-blue-300 dark:border-blue-700'}`}
+                              className={`w-full h-6.5 px-1 text-pequeno border rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none text-right ${errorPrecio(borradorItem.costo) ? 'border-red-400 dark:border-red-600' : 'border-blue-300 dark:border-blue-700'}`}
                             />
                             {borradorItem.costoMaestro !== '' && precioANumero(borradorItem.costo) !== Number(borradorItem.costoMaestro) && (
-                              <div className="text-[8px] text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">
+                              <div className="text-pequeno text-violet-600 dark:text-violet-400 mt-0.5 whitespace-nowrap">
                                 Maestro: ${Number(borradorItem.costoMaestro).toLocaleString('es-CL')}
                               </div>
                             )}
@@ -1232,10 +1232,10 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                             {esPrecioEspecial(it) && <BadgePrecioEspecial costoMaestro={it.costoMaestro} />}
                           </td>
                         )}
-                        <td className={`${celda} text-center text-slate-700 dark:text-gray-200 truncate`}>
+                        <td className={`${celda} text-center text-tinta-principal truncate`}>
                           {vecesCosto != null ? `${vecesCosto} x` : '-'}
                         </td>
-                        <td className={`${celda} text-emerald-700 dark:text-emerald-400 font-semibold truncate`}>
+                        <td className={`${celda} text-emerald-700 dark:text-emerald-400 text-etiqueta truncate`}>
                           {totalItem ? `$${Math.round(totalItem).toLocaleString('es-CL')}` : '-'}
                         </td>
                         {/* Estado Carga y Estado son el mismo campo `estado`: imputado
@@ -1244,7 +1244,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                           {candadoBloqueado ? (
                             <span
                               title="Bloqueado: ya fue solicitado/imputado — desbloquealo con el candado"
-                              className={`inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase ${ESTADO_BADGE[estadoKey]}`}
+                              className={`inline-flex items-center gap-1 text-pequeno px-1.5 py-0.5 rounded-full uppercase ${ESTADO_BADGE[estadoKey]}`}
                             >
                               <Lock size={9} /> {estadoKey}
                             </span>
@@ -1254,7 +1254,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                               disabled={actualizando}
                               onChange={(e) => handleActualizarEstadoCarga(guardado, e.target.value)}
                               aria-label="Estado Carga"
-                              className={`h-6 px-1.5 text-[9px] font-bold rounded border outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}
+                              className={`h-6 px-1.5 text-pequeno rounded border outline-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}
                             >
                               {ESTADO_CARGA_OPTIONS.map(op => (
                                 <option key={op} value={op}>{op}</option>
@@ -1265,7 +1265,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                           {it.modificacionPendiente && (
                             <span
                               title="Modificación pendiente: cambios después de solicitar, aún no descargados en Solicitudes de modificaciones"
-                              className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full uppercase bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                              className="ml-1 text-pequeno px-1.5 py-0.5 rounded-full uppercase bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
                             >
                               Modif. pendiente
                             </span>
@@ -1297,7 +1297,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                                 onClick={cancelarEdicionItem}
                                 disabled={guardandoEsteItem}
                                 title="Cancelar edición"
-                                className="text-slate-400 hover:text-slate-600 transition p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40"
+                                className="text-tinta-atenuada hover:text-tinta-secundaria transition p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40"
                               >
                                 <X size={13} />
                               </button>
@@ -1316,7 +1316,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                                     {verificandoEsteCandado ? <Loader2 size={12} className="animate-spin" /> : <Lock size={12} />}
                                   </button>
                                 ) : (
-                                  <span title="Bloqueado: ya fue solicitado/imputado. No tenés permiso para desbloquear." className="inline-flex text-slate-300 dark:text-gray-600">
+                                  <span title="Bloqueado: ya fue solicitado/imputado. No tenés permiso para desbloquear." className="inline-flex text-tinta-atenuada">
                                     <Lock size={12} />
                                   </span>
                                 )
@@ -1356,26 +1356,26 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                         <tr className="bg-blue-50/60 dark:bg-blue-950/20">
                           <td colSpan={COLSPAN_CARGAS} className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60">
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                              <label className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-slate-500 dark:text-gray-400">
+                              <label className="flex items-center gap-1.5 text-pequeno uppercase text-tinta-secundaria">
                                 Lote
                                 <input
                                   type="text"
                                   value={borradorItem.lote}
                                   onChange={e => setBorradorItem(prev => ({ ...prev, lote: e.target.value }))}
                                   placeholder="Sin lote"
-                                  className={`w-32 font-normal normal-case ${input}`}
+                                  className={`w-32 normal-case ${input}`}
                                 />
                               </label>
-                              <label className="flex items-center gap-1.5 text-[9px] font-bold uppercase text-slate-500 dark:text-gray-400">
+                              <label className="flex items-center gap-1.5 text-pequeno uppercase text-tinta-secundaria">
                                 Vencimiento
                                 <input
                                   type="date"
                                   value={borradorItem.vencimiento}
                                   onChange={e => setBorradorItem(prev => ({ ...prev, vencimiento: e.target.value }))}
-                                  className={`font-normal normal-case ${input}`}
+                                  className={`normal-case ${input}`}
                                 />
                               </label>
-                              <span className="text-[9px] text-slate-400 dark:text-gray-500">Se guardan con ✓ junto al resto de la fila.</span>
+                              <span className="text-pequeno text-tinta-atenuada">Se guardan con ✓ junto al resto de la fila.</span>
                             </div>
                           </td>
                         </tr>
@@ -1394,7 +1394,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
           <Package size={13} className="text-[#2383C2]" />
-          <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+          <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">
             Ítems Registrados
           </h3>
           <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} className="ml-auto h-6" />
@@ -1402,12 +1402,12 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
 
         <div className="overflow-auto" ref={setContenedorItems}>
           <table
-            className="text-left text-[10px] border-collapse"
+            className="text-left text-pequeno border-collapse"
             style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: '100%' }}
           >
             <ColgroupRedimensionable columnas={COLUMNAS_ITEMS} anchos={anchos} relleno />
             <thead className="bg-slate-50 dark:bg-gray-900/60">
-              <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+              <tr className="text-tinta-secundaria uppercase text-pequeno">
                 {COLUMNAS_ITEMS.map((col) => (
                   <ThRedimensionable
                     key={col.key}
@@ -1425,7 +1425,7 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={COLSPAN_ITEMS} className="px-3 py-4 text-center text-slate-400 dark:text-gray-500">
+                  <td colSpan={COLSPAN_ITEMS} className="px-3 py-4 text-center text-tinta-atenuada">
                     Sin ítems registrados para esta admisión
                   </td>
                 </tr>
@@ -1449,43 +1449,43 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                     return (
                       <React.Fragment key={it.id}>
                         <tr className={`border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors ${editandoId === it.id ? 'bg-blue-50/40 dark:bg-blue-950/10' : ''}`}>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-num text-emerald-600 dark:text-emerald-400 truncate" title={it.codigo || 'S/C'}>
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-numero-tabla text-emerald-600 dark:text-emerald-400 truncate" title={it.codigo || 'S/C'}>
                             {it.codigo || 'S/C'}
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-medium text-slate-700 dark:text-gray-200 truncate" title={it.referencia}>
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate" title={it.referencia}>
                             {it.referencia || '-'}
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-500 dark:text-gray-400 truncate" title={it.descripcion}>
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate" title={it.descripcion}>
                             {it.descripcion || '-'}
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate" title={renderP(it.empresa)}>
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate" title={renderP(it.empresa)}>
                             {renderP(it.empresa)}
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-slate-700 dark:text-gray-200 font-semibold truncate" title={it.cantidad ?? 0}>
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-tinta-principal text-etiqueta truncate" title={it.cantidad ?? 0}>
                             {it.cantidad ?? 0}
                           </td>
                           <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 truncate" title={it.costo ? `$${Number(it.costo).toLocaleString('es-CL')}` : '-'}>
                             {it.costo ? `$${Number(it.costo).toLocaleString('es-CL')}` : '-'}
                             {esPrecioEspecial(it) && <BadgePrecioEspecial costoMaestro={it.costoMaestro} />}
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate" title={it.lote || (deliveryValor ? 'PAD' : 'Sin lote')}>
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate" title={it.lote || (deliveryValor ? 'PAD' : 'Sin lote')}>
                             {it.lote || (deliveryValor ? 'PAD' : 'Sin lote')}
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate" title={it.vencimiento ? formatearFechaTabla(it.vencimiento) : (deliveryValor ? 'PAD' : 'Sin fecha')}>
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate" title={it.vencimiento ? formatearFechaTabla(it.vencimiento) : (deliveryValor ? 'PAD' : 'Sin fecha')}>
                             {it.vencimiento
                               ? formatearFechaTabla(it.vencimiento)
                               : (deliveryValor ? 'PAD' : 'Sin fecha')}
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 font-semibold truncate" title={total ? `$${Math.round(total).toLocaleString('es-CL')}` : '-'}>
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 text-etiqueta truncate" title={total ? `$${Math.round(total).toLocaleString('es-CL')}` : '-'}>
                             {total ? `$${Math.round(total).toLocaleString('es-CL')}` : '-'}
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate" title={it.delivery || '-'}>
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate" title={it.delivery || '-'}>
                             {it.delivery || '-'}
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate">
                             <NumeroGuiaCell it={it} pendiente={pendiente} />
                           </td>
-                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate" title={it.atributo || '-'}>
+                          <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate" title={it.atributo || '-'}>
                             {it.atributo || '-'}
                           </td>
                           {/* Solo lectura: el estado se cambia en "Cargas". */}
@@ -1493,19 +1493,19 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
                             {candadoBloqueado ? (
                               <span
                                 title="Bloqueado: ya fue solicitado/imputado"
-                                className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border bg-slate-100 dark:bg-gray-800 border-slate-300 dark:border-gray-700 text-slate-500 dark:text-gray-400"
+                                className="inline-flex items-center gap-1 text-pequeno px-1.5 py-0.5 rounded border bg-slate-100 dark:bg-gray-800 border-slate-300 dark:border-gray-700 text-tinta-secundaria"
                               >
                                 <Lock size={9} /> {estadoKey}
                               </span>
                             ) : (
-                              <span className={`inline-block text-[9px] font-bold px-1.5 py-0.5 rounded border ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}>
+                              <span className={`inline-block text-pequeno px-1.5 py-0.5 rounded border ${ESTADO_CARGA_SELECT_STYLE[estadoCargaValor]}`}>
                                 {estadoCargaValor}
                               </span>
                             )}
                             {it.modificacionPendiente && (
                               <span
                                 title="Modificación pendiente: cambios después de solicitar, aún no descargados en Solicitudes de modificaciones"
-                                className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full uppercase bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                                className="ml-1 text-pequeno px-1.5 py-0.5 rounded-full uppercase bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
                               >
                                 Modif. pendiente
                               </span>
@@ -1531,8 +1531,8 @@ const CargasTab = ({ registro, items = [], formData, onChange, setCargando }) =>
             </tbody>
             {items.length > 0 && (
               <tfoot>
-                <tr className="bg-slate-50 dark:bg-gray-900/60 font-bold">
-                  <td colSpan={8} className="px-2.5 py-1.5 border-t border-r border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 text-right whitespace-nowrap">
+                <tr className="bg-slate-50 dark:bg-gray-900/60 text-etiqueta">
+                  <td colSpan={8} className="px-2.5 py-1.5 border-t border-r border-slate-200 dark:border-gray-700 text-tinta-secundaria text-right whitespace-nowrap">
                     Total de la admisión:
                   </td>
                   <td className="px-2.5 py-1.5 border-t border-r border-slate-200 dark:border-gray-700 text-emerald-700 dark:text-emerald-400 whitespace-nowrap">

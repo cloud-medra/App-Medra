@@ -12,7 +12,7 @@ const BadgeGestionImplante = ({ marca, onAbrir, tooltip = tooltipMarca }) => {
   return (
     <span className="inline-flex items-center gap-1 max-w-full">
       <span title={tooltip(marca)} data-estado={estado}
-        className={`inline-flex items-center gap-0.5 h-5 px-1.5 rounded-full border text-[10px] font-semibold truncate ${CLASE_GESTION[estado]}`}>
+        className={`inline-flex items-center gap-0.5 h-5 px-1.5 rounded-full border text-pequeno truncate ${CLASE_GESTION[estado]}`}>
         {estado === ESTADOS_ADMISION.IMPUTADA && <Lock size={9} aria-hidden="true" />}
         {ETIQUETAS_ESTADO[estado]}
       </span>

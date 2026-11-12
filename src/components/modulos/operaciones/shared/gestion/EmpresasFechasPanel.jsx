@@ -17,7 +17,7 @@ const getEstadoStyle = (estado) => {
   const key = (estado || '').toUpperCase().trim();
   return ESTADO_STYLES[key] || {
     dot: 'bg-gray-400',
-    text: 'text-gray-600 dark:text-gray-300',
+    text: 'text-tinta-secundaria',
     bg: 'bg-gray-50 dark:bg-gray-900',
     border: 'border-gray-200 dark:border-gray-700'
   };
@@ -49,7 +49,7 @@ export const EmpresasFechasPanel = ({
     <div className="w-full md:w-48 max-h-48 md:max-h-none shrink-0 bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-slate-200 dark:border-gray-700 flex flex-col overflow-y-auto">
       <div className="p-2 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5 sticky top-0 bg-white dark:bg-gray-800 z-10">
         <Layers size={13} className="text-[#2383C2]" />
-        <h2 className="text-[10px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+        <h2 className="text-pequeno text-tinta-principal uppercase tracking-wide">
           Empresas / Fechas ({bloques.length})
         </h2>
         {onAgregar && (
@@ -76,7 +76,7 @@ export const EmpresasFechasPanel = ({
       )}
 
       {bloques.length === 0 ? (
-        <div className="p-2.5 text-amber-700 dark:text-amber-400 text-[10px] flex items-start gap-1.5">
+        <div className="p-2.5 text-amber-700 dark:text-amber-400 text-pequeno flex items-start gap-1.5">
           <AlertCircle size={13} className="text-amber-600 shrink-0 mt-0.5" />
           <span>No se encontraron registros adicionales para esta admisión.</span>
         </div>
@@ -101,20 +101,20 @@ export const EmpresasFechasPanel = ({
                 <span className="flex items-center gap-1.5">
                   <span className={`h-2 w-2 rounded-full shrink-0 ${conError ? 'bg-red-500' : estilo.dot}`} />
                   <Building2 size={12} className="shrink-0 opacity-70" />
-                  <span className="font-semibold truncate">{bloque.empresa || 'SIN EMPRESA'}</span>
+                  <span className="text-etiqueta truncate">{bloque.empresa || 'SIN EMPRESA'}</span>
                   {conError && !activo && <AlertCircle size={11} className="text-red-500 shrink-0 ml-auto" />}
                 </span>
-                <span className="text-[9px] font-num pl-[18px] opacity-80">
+                <span className="text-pequeno tabular-nums pl-[18px] opacity-80">
                   {bloque.fecha || 'Sin fecha'}
                 </span>
                 {ocsPorBloque && (
                   <span
-                    className="text-[9px] pl-[18px] break-all"
+                    className="text-pequeno pl-[18px] break-all"
                     title={ocsPorBloque[index]?.length ? `OC: ${ocsPorBloque[index].join(', ')}` : 'Sin OC asignada'}
                   >
                     <span className="opacity-60">OC: </span>
                     {ocsPorBloque[index]?.length
-                      ? <span className="font-num font-semibold">{ocsPorBloque[index].join(', ')}</span>
+                      ? <span className="text-numero-tabla">{ocsPorBloque[index].join(', ')}</span>
                       : <span className="opacity-60">Pendiente</span>}
                   </span>
                 )}

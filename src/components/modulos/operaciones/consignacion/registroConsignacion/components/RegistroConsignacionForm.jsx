@@ -270,29 +270,29 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
       <div className="flex flex-wrap items-end gap-2.5">
 
         <div className="w-[100px]">
-          <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">ID</label>
+          <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">ID</label>
           <input
             type="text"
             inputMode="numeric"
             value={formData.gestionId}
             onChange={e => setField('gestionId', e.target.value.replace(/\D/g, ''))}
-            className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-semibold"
+            className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-etiqueta outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal"
             placeholder="Ej: 102"
           />
         </div>
 
         <div className="w-[160px]">
-          <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Nombre</label>
+          <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Nombre</label>
           <input
             value={formData.nombre}
             onChange={e => setField('nombre', e.target.value.toUpperCase())}
-            className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 uppercase"
+            className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal uppercase"
             placeholder="Nombre del paciente"
           />
         </div>
 
         <div className="w-[170px] relative" ref={medicoRef}>
-          <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Médico</label>
+          <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Médico</label>
           <div className="relative">
             <input
               type="text"
@@ -300,14 +300,14 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
               value={formData.medico}
               onChange={e => { setField('medico', e.target.value); setVerTodosMedicos(false); }}
               onFocus={() => setAbiertoMedico(true)}
-              className="w-full h-7 pl-2 pr-12 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 uppercase"
+              className="w-full h-7 pl-2 pr-12 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal uppercase"
               placeholder="Buscar médico..."
             />
             <button
               type="button"
               onClick={() => cargarMedicos(true)}
               title="Actualizar listado de médicos"
-              className="absolute right-6 top-1 p-0.5 text-gray-400 hover:text-[#2383C2] transition"
+              className="absolute right-6 top-1 p-0.5 text-tinta-atenuada hover:text-[#2383C2] transition"
             >
               <RefreshCw size={12} className={cargandoMedicos ? 'animate-spin' : ''} />
             </button>
@@ -315,7 +315,7 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
               type="button"
               onClick={handleAbrirListaMedicos}
               title="Ver listado completo de médicos"
-              className="absolute right-1 top-1 p-0.5 text-gray-400 hover:text-[#2383C2] transition"
+              className="absolute right-1 top-1 p-0.5 text-tinta-atenuada hover:text-[#2383C2] transition"
             >
               <List size={13} />
             </button>
@@ -324,7 +324,7 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
           {abiertoMedico && (
             <div className="absolute top-full left-0 mt-1 w-56 max-h-48 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-30">
               {medicosFiltrados.length === 0 ? (
-                <div className="px-2.5 py-2 text-[10px] text-gray-400">Sin coincidencias</div>
+                <div className="px-2.5 py-2 text-pequeno text-tinta-atenuada">Sin coincidencias</div>
               ) : (
                 medicosFiltrados.map((m) => (
                   <button
@@ -333,9 +333,9 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
                     onClick={() => handleSeleccionarMedico(m)}
                     className="w-full text-left px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700/50 last:border-b-0"
                   >
-                    <div className="text-[10px] font-semibold text-gray-700 dark:text-gray-200 truncate">{m.nombre}</div>
+                    <div className="text-pequeno text-tinta-principal truncate">{m.nombre}</div>
                     {m.especialidad && (
-                      <div className="text-[9px] text-gray-400 dark:text-gray-500 truncate">{m.especialidad}</div>
+                      <div className="text-pequeno text-tinta-atenuada truncate">{m.especialidad}</div>
                     )}
                   </button>
                 ))
@@ -345,15 +345,15 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
         </div>
 
         <div className="w-[130px]">
-          <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5 flex justify-between">
+          <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5 flex justify-between">
             <span>Fecha</span>
-            <span className="text-red-500 font-bold">*</span>
+            <span className="text-red-500 text-etiqueta">*</span>
           </label>
           <input
             type="date"
             value={formData.fecha}
             onChange={e => setField('fecha', e.target.value)}
-            className={`w-full h-7 px-2 border rounded text-[11px] outline-none transition bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 ${errores.fecha
+            className={`w-full h-7 px-2 border rounded text-secundario outline-none transition bg-white dark:bg-gray-900 text-tinta-principal ${errores.fecha
               ? 'border-red-500 ring-1 ring-red-500/30 bg-red-50/20'
               : 'border-gray-300 dark:border-gray-600 focus:border-[#2383C2]'
               }`}
@@ -362,19 +362,19 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
 
         <div className="w-[230px] relative" ref={descripcionRef}>
           <label className="mb-0.5 flex items-center justify-between gap-1">
-            <span className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase flex items-center gap-1">
-              Descripción / Referencia <span className="text-red-500 font-bold">*</span>
+            <span className="text-pequeno text-tinta-secundaria uppercase flex items-center gap-1">
+              Descripción / Referencia <span className="text-red-500 text-etiqueta">*</span>
             </span>
             <span className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => cargarCodigos(tipoFiltro, true)}
                 title="Actualizar catálogo de códigos"
-                className="p-0.5 text-gray-400 hover:text-[#2383C2] transition"
+                className="p-0.5 text-tinta-atenuada hover:text-[#2383C2] transition"
               >
                 <RefreshCw size={11} className={cargandoCodigos ? 'animate-spin' : ''} />
               </button>
-              <span className="flex items-center rounded overflow-hidden border border-gray-300 dark:border-gray-600 text-[8px] font-bold uppercase">
+              <span className="flex items-center rounded overflow-hidden border border-gray-300 dark:border-gray-600 text-pequeno uppercase">
                 {TIPOS.map(t => (
                   <button
                     key={t}
@@ -382,7 +382,7 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
                     onClick={() => handleCambiarTipo(t)}
                     className={`px-1.5 py-0.5 transition ${tipoFiltro === t
                       ? 'bg-[#2383C2] text-white'
-                      : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      : 'bg-white dark:bg-gray-900 text-tinta-secundaria hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                   >
                     {t === 'CONSIGNACION' ? 'CONSIG.' : 'COTIZ.'}
@@ -399,7 +399,7 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
               value={formData.referencia}
               onChange={e => { setField('referencia', e.target.value); setVerTodosCodigos(false); }}
               onFocus={() => setAbiertoDescripcion(true)}
-              className={`w-full h-7 pl-2 pr-6 border rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 ${errores.referencia
+              className={`w-full h-7 pl-2 pr-6 border rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal ${errores.referencia
                 ? 'border-red-500 ring-1 ring-red-500/30'
                 : 'border-gray-300 dark:border-gray-600 focus:border-[#2383C2]'
                 }`}
@@ -409,7 +409,7 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
               type="button"
               onClick={handleAbrirListaDescripcion}
               title="Ver listado completo"
-              className="absolute right-1 top-1 p-0.5 text-gray-400 hover:text-[#2383C2] transition"
+              className="absolute right-1 top-1 p-0.5 text-tinta-atenuada hover:text-[#2383C2] transition"
             >
               <List size={13} />
             </button>
@@ -418,11 +418,11 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
           {abiertoDescripcion && (
             <div className="absolute top-full left-0 mt-1 w-full max-h-48 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-30">
               {cargandoCodigos ? (
-                <div className="px-2.5 py-2 text-[10px] text-gray-400 flex items-center gap-1.5">
+                <div className="px-2.5 py-2 text-pequeno text-tinta-atenuada flex items-center gap-1.5">
                   <Loader2 size={11} className="animate-spin" /> Buscando...
                 </div>
               ) : sugerenciasDescripcion.length === 0 ? (
-                <div className="px-2.5 py-2 text-[10px] text-gray-400">Sin coincidencias en {tipoFiltro}</div>
+                <div className="px-2.5 py-2 text-pequeno text-tinta-atenuada">Sin coincidencias en {tipoFiltro}</div>
               ) : (
                 sugerenciasDescripcion.map((item) => (
                   <button
@@ -431,11 +431,11 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
                     onClick={() => handleSeleccionarDescripcion(item)}
                     className="w-full text-left px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700/60 border-b border-gray-100 dark:border-gray-700/50 last:border-b-0"
                   >
-                    <div className="text-[10px] font-semibold text-gray-700 dark:text-gray-200 truncate flex items-center gap-1.5">
+                    <div className="text-pequeno text-tinta-principal truncate flex items-center gap-1.5">
                       {item.referencia}
-                      <span className="font-num text-[8px] text-emerald-600 dark:text-emerald-400">{item.codigo || 'S/C'}</span>
+                      <span className="text-pequeno tabular-nums text-emerald-600 dark:text-emerald-400">{item.codigo || 'S/C'}</span>
                     </div>
-                    <div className="text-[9px] text-gray-400 dark:text-gray-500 truncate">
+                    <div className="text-pequeno text-tinta-atenuada truncate">
                       {descripcionDesdeMaestro(item) || 'Sin descripción'} · {item.empresa || 'N/A'}
                     </div>
                   </button>
@@ -446,15 +446,15 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
         </div>
 
         <div className="w-[85px]">
-          <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5 flex justify-between">
+          <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5 flex justify-between">
             <span>Cant.</span>
-            <span className="text-red-500 font-bold">*</span>
+            <span className="text-red-500 text-etiqueta">*</span>
           </label>
           <input
             type="number"
             value={formData.cantidad}
             onChange={e => setField('cantidad', e.target.value)}
-            className={`w-full h-7 px-2 border rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 ${errores.cantidad
+            className={`w-full h-7 px-2 border rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal ${errores.cantidad
               ? 'border-red-500 ring-1 ring-red-500/30'
               : 'border-gray-300 dark:border-gray-600 focus:border-[#2383C2]'
               }`}
@@ -463,12 +463,12 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
         </div>
 
         <div className="w-[130px]">
-          <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Delivery</label>
+          <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Delivery</label>
           <input
             type="text"
             value={formData.delivery}
             onChange={e => setField('delivery', e.target.value)}
-            className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+            className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal"
             placeholder="Ej: 3 días hábiles"
           />
         </div>
@@ -476,7 +476,7 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
         <div className="flex items-end gap-1.5">
           <button
             type="submit"
-            className={`h-7 px-3 rounded font-bold text-[11px] flex items-center gap-1.5 text-white transition shrink-0 ${editando ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2383C2] hover:bg-[#369BCE]'}`}
+            className={`h-7 px-3 rounded text-etiqueta flex items-center gap-1.5 text-white transition shrink-0 ${editando ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2383C2] hover:bg-[#369BCE]'}`}
           >
             {editando ? <><Save size={13} /> Actualizar</> : <><Plus size={13} /> Registrar</>}
           </button>
@@ -484,7 +484,7 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
           <button
             type="button"
             onClick={handleLimpiar}
-            className="h-7 px-3 bg-gray-200 dark:bg-gray-700 rounded font-bold text-[11px] text-gray-600 dark:text-gray-300 flex items-center gap-1.5 hover:bg-gray-300 dark:hover:bg-gray-600 transition shrink-0"
+            className="h-7 px-3 bg-gray-200 dark:bg-gray-700 rounded text-etiqueta text-tinta-secundaria flex items-center gap-1.5 hover:bg-gray-300 dark:hover:bg-gray-600 transition shrink-0"
           >
             {editando ? <><X size={13} /> Cancelar</> : <><Eraser size={13} /> Limpiar</>}
           </button>
@@ -492,86 +492,86 @@ const RegistroConsignacionForm = ({ onRegistrar, valoresIniciales = null, onCanc
       </div>
 
       {(errores.fecha || errores.referencia || errores.cantidad) && (
-        <div className="text-[9px] text-red-500 font-medium flex items-center gap-1">
+        <div className="text-pequeno text-red-500 flex items-center gap-1">
           <AlertCircle size={10} /> Fecha, Descripción/Referencia y Cantidad son obligatorios
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-6 pt-1 px-2 bg-gray-100/60 dark:bg-gray-900/40 rounded border border-dashed border-gray-200 dark:border-gray-700/60 py-1.5 text-[11px]">
-        <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+      <div className="flex flex-wrap items-center gap-6 pt-1 px-2 bg-gray-100/60 dark:bg-gray-900/40 rounded border border-dashed border-gray-200 dark:border-gray-700/60 py-1.5 text-secundario">
+        <div className="flex items-center gap-1.5 text-tinta-secundaria">
           <Info size={13} className="text-[#2383C2]" />
-          <span className="text-[10px] font-bold uppercase text-gray-400 dark:text-gray-500">Datos Vinculados:</span>
+          <span className="text-pequeno uppercase text-tinta-atenuada">Datos Vinculados:</span>
           {cargandoVinculacion && (
             <Loader2 size={11} className="animate-spin text-[#2383C2]" />
           )}
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Centro:</span>
-          <span className="font-semibold text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[10px]">
+          <span className="text-tinta-secundaria text-pequeno uppercase">Centro:</span>
+          <span className="text-tinta-principal bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-pequeno">
             {CENTRO_FIJO}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Atributo:</span>
-          <span className="font-semibold text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[10px]">
+          <span className="text-tinta-secundaria text-pequeno uppercase">Atributo:</span>
+          <span className="text-tinta-principal bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-pequeno">
             {tipoFiltro}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Estado:</span>
-          <span className="font-semibold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded text-[10px]">
+          <span className="text-tinta-secundaria text-pequeno uppercase">Estado:</span>
+          <span className="text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40 px-1.5 py-0.5 rounded text-pequeno">
             {ESTADO_FIJO}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Código:</span>
-          <span className="font-num font-semibold text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[10px]">
+          <span className="text-tinta-secundaria text-pequeno uppercase">Código:</span>
+          <span className="text-numero-tabla text-tinta-principal bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded">
             {renderValorVinculado(formData.codigo)}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Empresa:</span>
-          <span className="font-semibold text-gray-700 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-[10px]">
+          <span className="text-tinta-secundaria text-pequeno uppercase">Empresa:</span>
+          <span className="text-tinta-principal bg-gray-200 dark:bg-gray-700 px-1.5 py-0.5 rounded text-pequeno">
             {renderValorVinculado(formData.empresa)}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Costo:</span>
-          <span className="font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded text-[10px]">
+          <span className="text-tinta-secundaria text-pequeno uppercase">Costo:</span>
+          <span className="text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded text-pequeno">
             {formData.costo !== '' ? `$${Number(formData.costo).toLocaleString('es-CL')}` : 'P'}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Convenio:</span>
-          <span className="font-medium text-gray-700 dark:text-gray-200">
+          <span className="text-tinta-secundaria text-pequeno uppercase">Convenio:</span>
+          <span className="text-tinta-principal">
             {renderValorVinculado(formData.convenio)}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Previsión:</span>
-          <span className="font-medium text-gray-700 dark:text-gray-200">
+          <span className="text-tinta-secundaria text-pequeno uppercase">Previsión:</span>
+          <span className="text-tinta-principal">
             {renderValorVinculado(formData.prevision)}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Descripción:</span>
-          <span className="font-medium text-gray-700 dark:text-gray-200 truncate max-w-[250px]" title={renderValorVinculado(formData.descripcion)}>
+          <span className="text-tinta-secundaria text-pequeno uppercase">Descripción:</span>
+          <span className="text-tinta-principal truncate max-w-[250px]" title={renderValorVinculado(formData.descripcion)}>
             {renderValorVinculado(formData.descripcion)}
           </span>
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="font-bold text-gray-500 dark:text-gray-400 text-[10px] uppercase">Descripción Pabellón:</span>
-          <span className="font-medium text-gray-700 dark:text-gray-200 truncate max-w-[250px]" title={renderValorVinculado(formData.descripcionPabellon)}>
+          <span className="text-tinta-secundaria text-pequeno uppercase">Descripción Pabellón:</span>
+          <span className="text-tinta-principal truncate max-w-[250px]" title={renderValorVinculado(formData.descripcionPabellon)}>
             {renderValorVinculado(formData.descripcionPabellon)}
           </span>
         </div>

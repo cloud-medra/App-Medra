@@ -49,8 +49,8 @@ const componentes = {
 
 describe('Gestión compartida', () => {
   it.each([
-    ['implantes', 'GESTIONES DE IMPLANTE'],
-    ['hemodinamia', 'GESTIONES DE HEMODINAMIA'],
+    ['implantes', 'Gestiones de implante'],
+    ['hemodinamia', 'Gestiones de hemodinamia'],
   ])('%s: título, formulario colapsable, filtros, paginación y Sincronizar OC', (modulo, titulo) => {
     render(<GestionGestiones modulo={modulo} componentes={componentes} />);
     expect(screen.getByText(titulo)).toBeInTheDocument();

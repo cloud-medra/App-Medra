@@ -268,24 +268,24 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
   };
 
   return (
-    <div className="flex-grow flex flex-col bg-slate-50/50 dark:bg-gray-900 overflow-hidden text-[10px] relative">
+    <div className="flex-grow flex flex-col bg-slate-50/50 dark:bg-gray-900 overflow-hidden text-pequeno relative">
 
       {showConfirmSalir && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-[1px]">
           <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 bg-amber-50/60 dark:bg-amber-950/20">
               <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
-              <h3 className="text-[12px] font-bold text-gray-800 dark:text-gray-100">Cambios sin guardar</h3>
+              <h3 className="text-subtitulo text-tinta-principal">Cambios sin guardar</h3>
               <button
                 onClick={() => setShowConfirmSalir(false)}
-                className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                className="ml-auto text-tinta-atenuada hover:text-tinta-secundaria transition"
               >
                 <X size={15} />
               </button>
             </div>
 
             <div className="px-4 py-3">
-              <p className="text-[11px] text-gray-600 dark:text-gray-300">
+              <p className="text-secundario text-tinta-secundaria">
                 Tienes modificaciones en Información y/o Delivery que no se han guardado. ¿Qué deseas hacer antes de salir?
               </p>
             </div>
@@ -294,19 +294,19 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
               <button
                 onClick={handleGuardarYSalir}
                 disabled={guardando}
-                className="w-full h-8 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center justify-center gap-1.5 transition text-[11px] disabled:opacity-60"
+                className="w-full h-8 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center justify-center gap-1.5 transition text-etiqueta disabled:opacity-60"
               >
                 {guardando ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Guardar y salir
               </button>
               <button
                 onClick={handleSalirSinGuardar}
-                className="w-full h-8 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 rounded font-semibold transition text-[11px]"
+                className="w-full h-8 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 rounded transition text-etiqueta"
               >
                 Salir sin guardar
               </button>
               <button
                 onClick={() => setShowConfirmSalir(false)}
-                className="w-full h-8 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition text-[11px]"
+                className="w-full h-8 text-tinta-secundaria hover:text-tinta-principal transition text-secundario"
               >
                 Seguir editando
               </button>
@@ -318,21 +318,21 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
       <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <button
           onClick={handleIntentarVolver}
-          className="p-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition shadow-xs"
+          className="p-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-tinta-secundaria hover:bg-gray-50 dark:hover:bg-gray-700/50 transition shadow-xs"
           title="Volver al listado"
         >
           <ArrowLeft size={13} />
         </button>
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-gray-400">
+        <span className="text-etiqueta uppercase tracking-wider text-tinta-atenuada">
           Gestión de Consignación
         </span>
-        <span className="text-slate-300 dark:text-gray-600">/</span>
-        <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] bg-blue-50 dark:bg-blue-950/50 text-[#2383C2] dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40 font-bold">
+        <span className="text-tinta-atenuada">/</span>
+        <span className="inline-flex items-center px-1.5 py-0.2 rounded text-pequeno bg-blue-50 dark:bg-blue-950/50 text-[#2383C2] dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40">
           #{registro?.gestionId || 'N/A'}
         </span>
 
         {cargandoItems && (
-          <span className="flex items-center gap-1 text-[9px] text-slate-400 dark:text-gray-500">
+          <span className="flex items-center gap-1 text-pequeno text-tinta-atenuada">
             <Loader2 size={11} className="animate-spin" /> Cargando ítems...
           </span>
         )}
@@ -341,7 +341,7 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
           <button
             onClick={handleGuardarCambios}
             disabled={guardando}
-            className="ml-auto h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center gap-1.5 transition text-[11px] shadow-xs active:scale-[0.98] disabled:opacity-60"
+            className="ml-auto h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center gap-1.5 transition text-etiqueta shadow-xs active:scale-[0.98] disabled:opacity-60"
           >
             {guardando ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
             {guardando ? 'Guardando...' : 'Guardar Cambios'}
@@ -352,13 +352,13 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
       <div className="flex-grow flex overflow-hidden">
         <div className="w-36 shrink-0 bg-white dark:bg-gray-800 border-r border-slate-200 dark:border-gray-700 flex flex-col">
           <div className="p-2 border-b border-slate-200 dark:border-gray-700">
-            <h2 className="text-[10px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+            <h2 className="text-pequeno text-tinta-principal uppercase tracking-wide">
               Menú de Opción
             </h2>
           </div>
 
           {tabsPermitidas.length === 0 ? (
-            <div className="p-2.5 text-[10px] text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
+            <div className="p-2.5 text-pequeno text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
               <ShieldAlert size={13} className="shrink-0 mt-0.5" />
               Sin pestañas habilitadas para su perfil.
             </div>
@@ -372,9 +372,9 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md font-medium transition text-left ${isActive
-                      ? 'bg-[#2383C2]/10 text-[#2383C2] dark:bg-blue-950/50 dark:text-blue-400 font-semibold'
-                      : 'text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700/50'
+                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md transition text-left ${isActive
+                      ? 'bg-[#2383C2]/10 text-[#2383C2] dark:bg-blue-950/50 dark:text-blue-400 text-etiqueta'
+                      : 'text-tinta-secundaria hover:bg-slate-100 dark:hover:bg-gray-700/50'
                       }`}
                   >
                     <TabIcon size={13} />
@@ -388,7 +388,7 @@ const CargasConsignacionDetalleView = ({ registro, onVolver, setCargando }) => {
 
         <div className="flex-grow flex flex-col overflow-auto">
           {!tabActual && (
-            <div className="flex-grow flex flex-col items-center justify-center text-center p-6 text-slate-500 dark:text-gray-400 text-[10px] gap-1.5">
+            <div className="flex-grow flex flex-col items-center justify-center text-center p-6 text-tinta-secundaria text-pequeno gap-1.5">
               <ShieldAlert size={22} className="text-amber-500" />
               Su perfil no tiene acceso a ninguna pestaña de esta vista de detalle.
             </div>

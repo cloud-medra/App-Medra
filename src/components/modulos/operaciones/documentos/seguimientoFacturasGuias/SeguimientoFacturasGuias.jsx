@@ -64,22 +64,22 @@ const ResumenTotal = ({ resumen }) => {
     <div className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
       <div role="status" aria-label="Total Monto OC" className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#2383C2]/40 bg-[#2383C2]/5">
         <Sigma size={16} className="text-[#2383C2]" />
-        <div className="leading-tight">
-          <div className="text-[9.5px] uppercase tracking-wider text-slate-500 dark:text-gray-400">Total Monto OC</div>
-          <div data-testid="total-monto-oc" className="text-[15px] font-bold font-num text-slate-800 dark:text-gray-100">{formatearMonedaCLP(total)}</div>
+        <div>
+          <div className="text-pequeno uppercase tracking-wider text-tinta-secundaria">Total Monto OC</div>
+          <div data-testid="total-monto-oc" className="text-titulo-seccion tabular-nums text-tinta-principal">{formatearMonedaCLP(total)}</div>
         </div>
-        <div className="pl-3 ml-1 border-l border-slate-200 dark:border-gray-700 leading-tight">
-          <div className="text-[9.5px] uppercase tracking-wider text-slate-500 dark:text-gray-400">Registros</div>
-          <div data-testid="total-registros" className="text-[15px] font-bold font-num text-slate-800 dark:text-gray-100">{registros.toLocaleString('es-CL')}</div>
+        <div className="pl-3 ml-1 border-l border-slate-200 dark:border-gray-700">
+          <div className="text-pequeno uppercase tracking-wider text-tinta-secundaria">Registros</div>
+          <div data-testid="total-registros" className="text-titulo-seccion tabular-nums text-tinta-principal">{registros.toLocaleString('es-CL')}</div>
         </div>
       </div>
       {duplicados.length > 0 && (
-        <div role="alert" className="flex items-start gap-1.5 text-[10.5px] text-amber-700 dark:text-amber-400 max-w-xl">
+        <div role="alert" className="flex items-start gap-1.5 text-pequeno text-amber-700 dark:text-amber-400 max-w-xl">
           <AlertTriangle size={12} className="shrink-0 mt-0.5" />
           <span>
             {plural(filasDuplicadas, 'fila parece importada dos veces', 'filas parecen importadas dos veces')}: misma OC, código, lote, admisión, fecha y monto
             {' '}(ej. OC {ej.oc || '-'}, código {ej.codigo || '-'}, lote {ej.lote || '-'}, admisión {ej.admision || '-'}, {ej.fecha}: {ej.filas} filas de {formatearMonedaCLP(ej.monto)}).
-            {' '}Sin esas copias el total sería <b className="font-num">{formatearMonedaCLP(totalSinDuplicados)}</b>.
+            {' '}Sin esas copias el total sería <b className="text-numero-tabla">{formatearMonedaCLP(totalSinDuplicados)}</b>.
           </span>
         </div>
       )}
@@ -89,7 +89,7 @@ const ResumenTotal = ({ resumen }) => {
 
 const SelectorTipoSeguimiento = ({ onElegir }) => (
   <div className="flex-grow flex flex-col items-center justify-center gap-4 p-6">
-    <span className="text-[11px] font-medium text-slate-500 dark:text-gray-400 uppercase tracking-wide">
+    <span className="text-secundario text-tinta-secundaria uppercase tracking-wide">
       ¿Qué querés revisar?
     </span>
     <div className="flex flex-wrap items-center justify-center gap-3">
@@ -101,7 +101,7 @@ const SelectorTipoSeguimiento = ({ onElegir }) => (
           className="w-52 flex flex-col items-center gap-2 px-5 py-6 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-sm hover:border-[#2383C2] hover:shadow-md transition"
         >
           <Icon size={24} className="text-[#2383C2]" />
-          <span className="text-[12px] font-semibold text-slate-700 dark:text-gray-100">{label}</span>
+          <span className="text-etiqueta text-tinta-principal">{label}</span>
         </button>
       ))}
     </div>
@@ -166,19 +166,19 @@ const SeguimientoFacturasGuias = ({ pathVista = '/documentos/seguimientoFacturas
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden text-[11px]">
+    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden text-secundario">
       <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center gap-2">
         {vista && (
           <button
             onClick={() => setTipoId(null)}
-            className="p-1 rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-700/50 transition"
+            className="p-1 rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-tinta-secundaria hover:bg-slate-50 dark:hover:bg-gray-700/50 transition"
             title="Volver"
           >
             <ArrowLeft size={13} />
           </button>
         )}
         {vista ? <vista.Icon size={16} className="text-[#2383C2]" /> : <Receipt size={16} className="text-[#2383C2]" />}
-        <span className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+        <span className="text-normal text-tinta-principal tracking-wide uppercase">
           {vista ? vista.label : 'Seguimiento de Facturas y Guías'}
         </span>
       </header>
@@ -196,7 +196,7 @@ const SeguimientoFacturasGuias = ({ pathVista = '/documentos/seguimientoFacturas
                 onChange={(e) => setAnio(e.target.value)}
                 aria-label="Año"
                 disabled={cargandoAnios}
-                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">{cargandoAnios ? 'Cargando años...' : 'Año'}</option>
                 {anios.map((yyyy) => (
@@ -209,7 +209,7 @@ const SeguimientoFacturasGuias = ({ pathVista = '/documentos/seguimientoFacturas
                 onChange={(e) => setMes(e.target.value)}
                 aria-label="Mes"
                 disabled={!anio || cargandoMeses || sinMeses}
-                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">{cargandoMeses ? 'Cargando meses...' : sinMeses ? 'Sin meses pendientes' : 'Mes'}</option>
                 {meses.map((mm) => (
@@ -221,7 +221,7 @@ const SeguimientoFacturasGuias = ({ pathVista = '/documentos/seguimientoFacturas
                 value={empresa}
                 onChange={(e) => setEmpresa(e.target.value)}
                 disabled={!anio || faltaMes}
-                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">Empresa</option>
                 {opcionesEmpresas.map((nombre) => (
@@ -241,7 +241,7 @@ const SeguimientoFacturasGuias = ({ pathVista = '/documentos/seguimientoFacturas
                   disabled={!anio}
                   placeholder="Buscar (admisión, OC, lote, atributo, monto…)"
                   aria-label="Buscar"
-                  className="h-7 w-64 pl-6 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] disabled:opacity-50"
+                  className="h-7 w-64 pl-6 pr-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] disabled:opacity-50"
                 />
               </div>
 
@@ -250,7 +250,7 @@ const SeguimientoFacturasGuias = ({ pathVista = '/documentos/seguimientoFacturas
                 onClick={exportar}
                 disabled={!anio || cargandoFilas || exportando || filasFiltradas.length === 0}
                 title="Exporta todos los registros filtrados (no solo esta página)"
-                className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-gray-900 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-[11px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-7 px-2.5 flex items-center gap-1.5 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-400 bg-white dark:bg-gray-900 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-etiqueta disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {exportando ? <Loader2 size={12} className="animate-spin" /> : <FileSpreadsheet size={12} />} Exportar Excel
               </button>
@@ -260,35 +260,35 @@ const SeguimientoFacturasGuias = ({ pathVista = '/documentos/seguimientoFacturas
           )}
 
           {!anio ? (
-            <div className="flex-grow flex flex-col items-center justify-center gap-2 text-center text-slate-400 dark:text-gray-500 px-6">
+            <div className="flex-grow flex flex-col items-center justify-center gap-2 text-center text-tinta-atenuada px-6">
               <CalendarSearch size={26} className="text-slate-300 dark:text-gray-600" />
-              <span className="text-[11px] font-medium">Selecciona un año para ver los registros</span>
+              <span className="text-secundario">Selecciona un año para ver los registros</span>
             </div>
           ) : faltaMes ? (
-            <div className="flex-grow flex flex-col items-center justify-center gap-2 text-center text-slate-400 dark:text-gray-500 px-6">
+            <div className="flex-grow flex flex-col items-center justify-center gap-2 text-center text-tinta-atenuada px-6">
               <CalendarSearch size={26} className="text-slate-300 dark:text-gray-600" />
-              <span className="text-[11px] font-medium">{sinMeses ? criterio.mensajeVacio : 'Selecciona un mes para ver los registros'}</span>
+              <span className="text-secundario">{sinMeses ? criterio.mensajeVacio : 'Selecciona un mes para ver los registros'}</span>
             </div>
           ) : cargandoFilas ? (
-            <div className="flex-grow flex items-center justify-center gap-2 text-slate-400 dark:text-gray-500 text-[11px]">
+            <div className="flex-grow flex items-center justify-center gap-2 text-tinta-atenuada text-secundario">
               <Loader2 size={14} className="animate-spin" /> Cargando registros...
             </div>
           ) : (
             <>
               <ResumenTotal resumen={resumen} />
               {huboTope && (
-                <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-3 py-1 text-[10.5px] text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-3 py-1 text-pequeno text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
                   <AlertTriangle size={11} /> Este período tiene muchos registros — puede que no se estén mostrando todos.
                 </div>
               )}
               <div className="flex-grow min-h-0 overflow-auto relative">
                 <table
-                  className="text-left text-[11px] border-collapse"
+                  className="text-left text-secundario border-collapse"
                   style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: '100%' }}
                 >
                   <ColgroupRedimensionable columnas={COLUMNAS} anchos={anchos} relleno />
                   <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-                    <tr className="text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider">
+                    <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider">
                       {COLUMNAS.map(col => (
                         <ThRedimensionable key={col.key} col={col} anchos={anchos} onResize={handleResize} className={`${TH} ${col.th || ''}`} title={col.label}>
                           {col.label}
@@ -300,7 +300,7 @@ const SeguimientoFacturasGuias = ({ pathVista = '/documentos/seguimientoFacturas
                   <tbody className="divide-y divide-slate-200/60 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
                     {filasPagina.length === 0 ? (
                       <tr>
-                        <td colSpan={COLUMNAS.length + 1} className="px-4 py-6 text-center text-slate-400 dark:text-gray-500 text-xs">
+                        <td colSpan={COLUMNAS.length + 1} className="px-4 py-6 text-center text-tinta-atenuada text-normal">
                           {criterio.mensajeVacio}
                         </td>
                       </tr>

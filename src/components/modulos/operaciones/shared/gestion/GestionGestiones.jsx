@@ -164,7 +164,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
 
   if (refPathAbierto) {
     return (
-      <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+      <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
         <DetalleGestionConHeader
           fila={{ refPath: refPathAbierto }}
           onVolver={() => setRefPathAbierto(null)}
@@ -182,12 +182,12 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
   // filtros y tabla con alto mínimo); desde md, igual que antes: la tabla
   // ocupa el alto restante con su propio scroll.
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-x-hidden overflow-y-auto md:overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-x-hidden overflow-y-auto md:overflow-hidden p-0 relative text-secundario">
       {cargando && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">Procesando...</h3>
+            <h3 className="text-[#2383C2] text-subtitulo">Procesando...</h3>
           </div>
         </div>
       )}
@@ -197,17 +197,17 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
           <div className="bg-white dark:bg-gray-800 w-full max-w-sm max-h-full overflow-y-auto rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 bg-amber-50/60 dark:bg-amber-950/20">
               <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
-              <h3 className="text-[12px] font-bold text-gray-800 dark:text-gray-100">Cambios sin guardar</h3>
+              <h3 className="text-subtitulo text-tinta-principal">Cambios sin guardar</h3>
               <button
                 onClick={() => setShowConfirmSalir(false)}
-                className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+                className="ml-auto text-tinta-atenuada hover:text-tinta-secundaria transition"
               >
                 <X size={15} />
               </button>
             </div>
 
             <div className="px-4 py-3">
-              <p className="text-[11px] text-gray-600 dark:text-gray-300">
+              <p className="text-secundario text-tinta-secundaria">
                 Tienes modificaciones que no se han guardado. ¿Qué deseas hacer antes de salir?
               </p>
             </div>
@@ -215,19 +215,19 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
             <div className="px-4 py-3 bg-gray-50/60 dark:bg-gray-900/40 border-t border-gray-100 dark:border-gray-700 flex flex-col gap-2">
               <button
                 onClick={handleGuardarYSalir}
-                className="w-full h-10 md:h-8 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center justify-center gap-1.5 transition text-[11px]"
+                className="w-full h-10 md:h-8 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center justify-center gap-1.5 transition text-etiqueta"
               >
                 <Save size={13} /> Guardar y salir
               </button>
               <button
                 onClick={handleSalirSinGuardar}
-                className="w-full h-10 md:h-8 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 rounded font-semibold transition text-[11px]"
+                className="w-full h-10 md:h-8 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 rounded transition text-etiqueta"
               >
                 Salir sin guardar
               </button>
               <button
                 onClick={() => setShowConfirmSalir(false)}
-                className="w-full h-10 md:h-8 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition text-[11px]"
+                className="w-full h-10 md:h-8 text-tinta-secundaria hover:text-tinta-principal transition text-secundario"
               >
                 Seguir editando
               </button>
@@ -237,11 +237,11 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
       )}
 
       <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           {registroSeleccionado && (
             <button
               onClick={handleIntentarVolver}
-              className="p-1.5 md:p-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition shadow-xs mr-1"
+              className="p-1.5 md:p-1 rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-tinta-secundaria hover:bg-gray-50 dark:hover:bg-gray-700/50 transition shadow-xs mr-1"
               title="Volver"
             >
               <ArrowLeft size={13} />
@@ -249,14 +249,14 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
           )}
           <Calendar size={15} className="text-[#2383C2]" />
           {registroSeleccionado
-            ? `DETALLE DE GESTION DE ${config.tituloGestion}`
-            : editingId ? `EDITAR GESTION DE ${config.tituloGestion}` : `GESTIONES DE ${config.tituloGestion}`}
+            ? `Detalle de gestión de ${config.tituloGestion}`
+            : editingId ? `Editar gestión de ${config.tituloGestion}` : `Gestiones de ${config.tituloGestion}`}
         </h2>
 
         {registroSeleccionado ? (
           <button
             onClick={() => detalleRef.current?.guardarTodo()}
-            className="px-3 py-2 md:py-1 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center gap-1.5 transition text-[11px] shadow-xs active:scale-[0.98]"
+            className="px-3 py-2 md:py-1 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center gap-1.5 transition text-etiqueta shadow-xs active:scale-[0.98]"
           >
             <Save size={13} />
             <span>Guardar Todo</span>
@@ -270,7 +270,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                   setFormularioPreferido(!formularioVisible);
                   setAbiertoPorEdicion(false);
                 }}
-                className="p-2 md:p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                className="p-2 md:p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                 title={formularioVisible ? "Ocultar formulario" : "Mostrar formulario"}
                 aria-label={formularioVisible ? "Ocultar formulario" : "Mostrar formulario"}
                 aria-expanded={formularioVisible}
@@ -284,7 +284,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
               <button
                 onClick={handleSincronizarVinculados}
                 disabled={sincronizando}
-                className="p-2 md:p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50"
+                className="p-2 md:p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50"
                 title="Sincronizar datos vinculados desde ReportesInfo"
               >
                 {sincronizando ? "Sincronizando..." : <RefreshCw size={15} />}
@@ -295,7 +295,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
               <button
                 onClick={handleSincronizarOC}
                 disabled={sincronizandoOC}
-                className="p-2 md:p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-wait"
+                className="p-2 md:p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-wait"
                 title={sincronizandoOC ? "Sincronizando OC..." : "Sincronizar OC desde Importar Detalles OC"}
                 aria-label="Sincronizar OC"
               >
@@ -306,7 +306,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
             {hasPermission(PATH_VISTA, "header", "btn_configuracion") && (
               <button
                 onClick={() => setShowConfigDrawer(true)}
-                className="p-2 md:p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                className="p-2 md:p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                 title="Configuración de Gestiones (Importar/Exportar)"
               >
                 <Settings size={15} />
@@ -361,7 +361,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
               <BuscadorConLimpiar value={busqueda} onChange={setBusqueda} placeholder="Buscar por ID, nombre, empresa u orden..." className="w-full sm:w-64" />
 
               {admisionFiltrada && (
-                <span className="h-6 inline-flex items-center gap-1 pl-2 pr-1 rounded border border-[#2383C2] bg-blue-50 dark:bg-blue-950/30 text-[#2383C2] text-[11px] font-semibold">
+                <span className="h-6 inline-flex items-center gap-1 pl-2 pr-1 rounded border border-[#2383C2] bg-blue-50 dark:bg-blue-950/30 text-[#2383C2] text-etiqueta">
                   Admisión {admisionFiltrada}
                   <button type="button" onClick={quitarFiltroAdmision} title="Quitar el filtro de admisión" aria-label="Quitar el filtro de admisión"
                     className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40">
@@ -374,7 +374,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                 <select
                   value={filtroAnio}
                   onChange={e => setFiltroAnio(e.target.value)}
-                  className="h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-base md:text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+                  className="h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-subtitulo md:text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
                 >
                   <option value="">Año (Todos)</option>
                   {opcionesFechas.anios.map(yyyy => (
@@ -385,7 +385,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                 <select
                   value={filtroMes}
                   onChange={e => setFiltroMes(e.target.value)}
-                  className="h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-base md:text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+                  className="h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-subtitulo md:text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
                 >
                   <option value="">Mes (Todos)</option>
                   {/* Solo meses con gestiones, con su cantidad (usePeriodosConDatos). */}
@@ -410,7 +410,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                   limpiarFiltroEstados={limpiarFiltroEstados}
                 />
 
-                <div className="flex items-center h-9 md:h-7 border border-gray-300 dark:border-gray-600 rounded overflow-hidden text-[11px] shrink-0" role="group" aria-label="Rango de fecha">
+                <div className="flex items-center h-9 md:h-7 border border-gray-300 dark:border-gray-600 rounded overflow-hidden text-secundario shrink-0" role="group" aria-label="Rango de fecha">
                   {RANGOS_FECHA.map((rango, i) => (
                     <button
                       key={rango.id}
@@ -418,9 +418,9 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                       onClick={() => setFiltroRangoFecha(rango.id)}
                       title={rango.title}
                       aria-pressed={filtroRangoFecha === rango.id}
-                      className={`h-full px-2 font-medium transition ${i > 0 ? 'border-l border-gray-300 dark:border-gray-600' : ''} ${filtroRangoFecha === rango.id
+                      className={`h-full px-2 transition ${i > 0 ? 'border-l border-gray-300 dark:border-gray-600' : ''} ${filtroRangoFecha === rango.id
                         ? 'bg-[#2383C2] text-white'
-                        : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        : 'bg-white dark:bg-gray-900 text-tinta-secundaria hover:bg-gray-100 dark:hover:bg-gray-800'
                         }`}
                     >
                       {rango.label}
@@ -431,7 +431,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                 {(filtroAnio || filtroMes || filtrosDias.length > 0) && (
                   <button
                     onClick={limpiarFiltrosFecha}
-                    className="h-9 md:h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded font-medium flex items-center gap-1 transition"
+                    className="h-9 md:h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-tinta-secundaria rounded flex items-center gap-1 transition"
                     title="Limpiar filtros de fecha"
                   >
                     <FilterX size={12} /> Limpiar
@@ -447,7 +447,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                   (con mes, el mes completo): se avisa arriba de la tabla para
                   que no parezca que faltan registros, con el botón ahí mismo. */}
               {soloRecientes && (
-                <div role="status" className="flex flex-wrap items-center gap-2 px-2 py-1.5 mb-1 rounded border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 text-[11px]">
+                <div role="status" className="flex flex-wrap items-center gap-2 px-2 py-1.5 mb-1 rounded border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30 text-amber-800 dark:text-amber-200 text-secundario">
                   <AlertTriangle size={12} className="shrink-0" />
                   <span className="flex-1 min-w-[12rem]">
                     Se ven solo las {implantes.length} gestiones más recientes. Para ver un mes completo, elige año y mes.
@@ -456,7 +456,7 @@ const GestionGestiones = ({ modulo, componentes, onAbrirZonasDiagnostico, apertu
                     <button
                       type="button"
                       onClick={cargarMasGestiones}
-                      className="h-9 md:h-7 px-3 bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-100 rounded text-[11px] font-medium transition"
+                      className="h-9 md:h-7 px-3 bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-100 rounded text-secundario transition"
                       title="Amplía la lista con gestiones anteriores; los filtros aplican solo sobre las cargadas"
                     >
                       Cargar gestiones anteriores

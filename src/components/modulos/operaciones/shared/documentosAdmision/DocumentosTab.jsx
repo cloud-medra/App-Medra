@@ -209,23 +209,23 @@ export const DocumentosTab = ({
           <FolderOpen size={14} className="text-[#2383C2] shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+              <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">
                 Documentos de la Admisión
               </h3>
               {listadoListo && (
-                <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-slate-200/80 dark:bg-gray-700 text-slate-600 dark:text-gray-300">
+                <span className="text-pequeno px-1.5 py-0.5 rounded-full bg-slate-200/80 dark:bg-gray-700 text-tinta-secundaria">
                   {lista.length}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-gray-400 min-w-0">
+            <div className="flex items-center gap-1 text-pequeno text-tinta-secundaria min-w-0">
               <span className="truncate">Admisión #{gestionId || 'N/A'} - {nombre || 'P'}</span>
               {handleCopiarTexto && (
                 <button
                   type="button"
                   onClick={() => handleCopiarTexto(construirTextoAdmisionNombre(gestionId, nombre))}
                   title="Copiar Admisión - Nombre"
-                  className="p-1 md:p-0.5 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition shrink-0"
+                  className="p-1 md:p-0.5 rounded text-tinta-atenuada hover:text-emerald-600 dark:hover:text-emerald-400 transition shrink-0"
                 >
                   <Copy size={11} />
                 </button>
@@ -240,7 +240,7 @@ export const DocumentosTab = ({
                 onClick={onRecargar}
                 disabled={cargando}
                 title="Actualizar listado"
-                className="h-9 w-9 md:h-7 md:w-7 inline-flex items-center justify-center rounded border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-500 dark:text-gray-400 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 transition"
+                className="h-9 w-9 md:h-7 md:w-7 inline-flex items-center justify-center rounded border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-tinta-secundaria hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 transition"
               >
                 <RefreshCw size={12} className={cargando ? 'animate-spin' : ''} />
               </button>
@@ -249,7 +249,7 @@ export const DocumentosTab = ({
               type="button"
               onClick={() => setMostrarSubida(v => !v)}
               disabled={subidaDeshabilitada}
-              className="h-9 md:h-7 px-2.5 inline-flex items-center gap-1.5 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[10.5px] font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="h-9 md:h-7 px-2.5 inline-flex items-center gap-1.5 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-pequeno disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               {zonaSubidaVisible && lista.length > 0 && !progreso ? <ChevronUp size={13} /> : <UploadCloud size={13} />}
               Subir documentos
@@ -258,7 +258,7 @@ export const DocumentosTab = ({
         </div>
 
         {sinAdmision && (
-          <div className="m-3 flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-[11px] text-amber-700 dark:text-amber-400">
+          <div className="m-3 flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-secundario text-amber-700 dark:text-amber-400">
             <AlertCircle size={14} className="shrink-0" />
             Guarda primero el ID de admisión en Información para ver y subir documentos.
           </div>
@@ -267,10 +267,10 @@ export const DocumentosTab = ({
         {/* SUBIDA (misma lógica de siempre; solo se despliega desde el encabezado) */}
         {zonaSubidaVisible && (
           <div className="p-3 flex flex-col gap-2 border-b border-slate-200 dark:border-gray-700 bg-slate-50/40 dark:bg-gray-900/20">
-            <p className="text-[10px] text-slate-500 dark:text-gray-400">
+            <p className="text-pequeno text-tinta-secundaria">
               PDF ya nombrados, por ejemplo{' '}
-              <strong className="text-slate-700 dark:text-gray-200">{idAdmision || '102030'} - JOSE PEREZ - DP.pdf</strong> o{' '}
-              <strong className="text-slate-700 dark:text-gray-200">{idAdmision || '102030'} - JOSE PEREZ - COT 12345678 - EMPRESA.pdf</strong>.
+              <strong className="text-tinta-principal">{idAdmision || '102030'} - JOSE PEREZ - DP.pdf</strong> o{' '}
+              <strong className="text-tinta-principal">{idAdmision || '102030'} - JOSE PEREZ - COT 12345678 - EMPRESA.pdf</strong>.
               Solo se suben los que comienzan con el id de esta admisión.
             </p>
             <ZonaSubidaPdf
@@ -282,10 +282,10 @@ export const DocumentosTab = ({
         )}
 
         {resumen && (resumen.subidos.length > 0 || resumen.rechazados.length > 0) && (
-          <div className="m-3 space-y-2 text-[10px]">
+          <div className="m-3 space-y-2 text-pequeno">
             {resumen.subidos.length > 0 && (
               <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg text-emerald-800 dark:text-emerald-300">
-                <div className="flex items-center gap-1.5 font-semibold mb-1">
+                <div className="flex items-center gap-1.5 text-etiqueta mb-1">
                   <CheckCircle2 size={13} className="shrink-0" /> Subidos ({resumen.subidos.length})
                 </div>
                 <ul className="space-y-0.5 pl-5 list-disc">
@@ -293,7 +293,7 @@ export const DocumentosTab = ({
                     <li key={d.ruta} className="break-all">
                       {d.nombre}
                       {d.nombre !== d.nombreOriginal && <span className="text-emerald-700/80 dark:text-emerald-400/80"> (original: {d.nombreOriginal})</span>}
-                      {!d.tipo && <span className="font-semibold text-amber-700 dark:text-amber-400"> — Sin tipo</span>}
+                      {!d.tipo && <span className="text-etiqueta text-amber-700 dark:text-amber-400"> — Sin tipo</span>}
                     </li>
                   ))}
                 </ul>
@@ -312,13 +312,13 @@ export const DocumentosTab = ({
 
             {resumen.rechazados.length > 0 && (
               <div className="px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
-                <div className="flex items-center gap-1.5 font-semibold mb-1">
+                <div className="flex items-center gap-1.5 text-etiqueta mb-1">
                   <XCircle size={13} className="shrink-0" /> No subidos ({resumen.rechazados.length})
                   {puedeRespaldar && respaldables.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setRespaldoAbierto(true)}
-                      className="ml-auto h-9 md:h-6 px-2 rounded border border-red-300 dark:border-red-800 bg-white dark:bg-gray-800 text-[10.5px] font-semibold text-red-700 dark:text-red-400 inline-flex items-center gap-1 hover:bg-red-100 dark:hover:bg-red-950/40"
+                      className="ml-auto h-9 md:h-6 px-2 rounded border border-red-300 dark:border-red-800 bg-white dark:bg-gray-800 text-pequeno text-red-700 dark:text-red-400 inline-flex items-center gap-1 hover:bg-red-100 dark:hover:bg-red-950/40"
                       title="Guárdalos en Respaldo de documentos con su propio ID"
                     >
                       <Archive size={12} /> Enviar {respaldables.length} a respaldo
@@ -347,17 +347,17 @@ export const DocumentosTab = ({
                 <div className="h-3 w-16 rounded bg-slate-100 dark:bg-gray-700 ml-auto" />
               </div>
             ))}
-            <p className="flex items-center gap-1.5 pt-1 text-[10px] text-slate-400 dark:text-gray-500">
+            <p className="flex items-center gap-1.5 pt-1 text-pequeno text-tinta-atenuada">
               <Loader2 size={12} className="animate-spin" /> Cargando documentos...
             </p>
           </div>
         ) : errorListado ? (
-          <div className="flex flex-col items-center gap-2 py-8 text-[10.5px] text-red-600 dark:text-red-400">
+          <div className="flex flex-col items-center gap-2 py-8 text-pequeno text-red-600 dark:text-red-400">
             <span className="flex items-center gap-1.5"><AlertCircle size={13} /> {errorListado}</span>
             <button
               type="button"
               onClick={onRecargar}
-              className="flex items-center gap-1 px-2 py-1 rounded border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700/50"
+              className="flex items-center gap-1 px-2 py-1 rounded border border-slate-300 dark:border-gray-600 text-tinta-secundaria hover:bg-slate-100 dark:hover:bg-gray-700/50"
             >
               <RefreshCw size={11} /> Reintentar
             </button>
@@ -367,15 +367,15 @@ export const DocumentosTab = ({
             <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-gray-700/60 flex items-center justify-center mb-1">
               <FileText size={18} className="text-slate-400 dark:text-gray-500" />
             </div>
-            <p className="text-[11px] font-semibold text-slate-600 dark:text-gray-300">Esta admisión aún no tiene documentos</p>
-            <p className="text-[10px] text-slate-400 dark:text-gray-500">Sube los PDF arrastrándolos a la zona de arriba o con "Subir documentos".</p>
+            <p className="text-etiqueta text-tinta-secundaria">Esta admisión aún no tiene documentos</p>
+            <p className="text-pequeno text-tinta-atenuada">Sube los PDF arrastrándolos a la zona de arriba o con "Subir documentos".</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             {/* Ancho según contenido: solo el nombre se estira (hasta un máximo, con "..."). */}
-            <table className="w-auto max-w-full text-left text-[10.5px] border-collapse">
+            <table className="w-auto max-w-full text-left text-pequeno border-collapse">
               <thead className="bg-slate-50 dark:bg-gray-900/60">
-                <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px] whitespace-nowrap">
+                <tr className="text-tinta-secundaria uppercase text-pequeno whitespace-nowrap">
                   <th className="px-3 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Categoría</th>
                   <th className="pl-3 pr-1 py-1.5 border-b border-r border-slate-200 dark:border-gray-700"><span className="sr-only">Ícono</span></th>
                   <th className="pl-1 pr-3 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Nombre del documento</th>
@@ -430,7 +430,7 @@ export const DocumentosTab = ({
   );
 };
 
-const BOTON_ACCION = 'h-8 w-8 md:h-6 md:w-6 inline-flex items-center justify-center rounded text-slate-500 dark:text-gray-400 hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40 transition';
+const BOTON_ACCION = 'h-8 w-8 md:h-6 md:w-6 inline-flex items-center justify-center rounded text-tinta-secundaria hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40 transition';
 
 // Filas de una categoría: la celda "Categoría" (tipo + cantidad) va solo en
 // la primera fila y abarca todas las del grupo (rowSpan).
@@ -447,8 +447,8 @@ const GrupoDocumentos = ({ titulo, docs, abriendoRuta, onVer, onDescargar, onEli
               rowSpan={docs.length}
               className="px-3 py-1.5 align-top whitespace-nowrap border-b border-r border-slate-200 dark:border-gray-700 bg-slate-50/60 dark:bg-gray-900/30"
             >
-              <span className="text-[10px] font-semibold text-slate-700 dark:text-gray-200">{titulo}</span>
-              <span className="ml-1 text-[10px] text-slate-400 dark:text-gray-500">· {docs.length}</span>
+              <span className="text-pequeno text-tinta-principal">{titulo}</span>
+              <span className="ml-1 text-pequeno text-tinta-atenuada">· {docs.length}</span>
             </td>
           )}
           <td className={`${CELDA} border-r pl-3 pr-1 w-px`}>
@@ -458,7 +458,7 @@ const GrupoDocumentos = ({ titulo, docs, abriendoRuta, onVer, onDescargar, onEli
             <button
               type="button"
               onClick={() => onVer(d)}
-              className="block max-w-full truncate text-left text-slate-700 dark:text-gray-200 hover:text-[#2383C2]"
+              className="block max-w-full truncate text-left text-tinta-principal hover:text-[#2383C2]"
               title={d.nombre}
             >
               {d.nombre}

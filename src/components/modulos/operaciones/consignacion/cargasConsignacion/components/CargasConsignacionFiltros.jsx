@@ -39,7 +39,7 @@ const CargasConsignacionFiltros = ({
         <input
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
-          className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]"
+          className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
           placeholder="Buscar por ID, nombre, médico, empresa u orden..."
         />
       </div>
@@ -48,7 +48,7 @@ const CargasConsignacionFiltros = ({
         <select
           value={filtroAnio}
           onChange={e => setFiltroAnio(e.target.value)}
-          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
         >
           <option value="">Año (Todos)</option>
           {opcionesFechas.anios.map(yyyy => (
@@ -59,7 +59,7 @@ const CargasConsignacionFiltros = ({
         <select
           value={filtroMes}
           onChange={e => setFiltroMes(e.target.value)}
-          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
         >
           <option value="">Mes (Todos)</option>
           {opcionesFechas.meses.map(mm => (
@@ -70,7 +70,7 @@ const CargasConsignacionFiltros = ({
         <select
           value={filtroDia}
           onChange={e => setFiltroDia(e.target.value)}
-          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
         >
           <option value="">Día (Todos)</option>
           {opcionesFechas.dias.map(dd => (
@@ -85,14 +85,14 @@ const CargasConsignacionFiltros = ({
           limpiarFiltroEstados={limpiarFiltroEstados}
         />
 
-        <div className="flex items-center h-7 border border-gray-300 dark:border-gray-600 rounded overflow-hidden text-[11px] shrink-0">
+        <div className="flex items-center h-7 border border-gray-300 dark:border-gray-600 rounded overflow-hidden text-secundario shrink-0">
           <button
             type="button"
             onClick={() => setFiltroSoloHastaHoy(true)}
             title="Solo muestra filas con fecha de hoy o anterior (oculta fechas futuras)"
-            className={`h-full px-2 font-medium transition ${filtroSoloHastaHoy
+            className={`h-full px-2 transition ${filtroSoloHastaHoy
               ? 'bg-[#2383C2] text-white'
-              : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              : 'bg-white dark:bg-gray-900 text-tinta-secundaria hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
           >
             Hasta hoy
@@ -101,9 +101,9 @@ const CargasConsignacionFiltros = ({
             type="button"
             onClick={() => setFiltroSoloHastaHoy(false)}
             title="Muestra todas las fechas, incluidas las futuras"
-            className={`h-full px-2 font-medium border-l border-gray-300 dark:border-gray-600 transition ${!filtroSoloHastaHoy
+            className={`h-full px-2 border-l border-gray-300 dark:border-gray-600 transition ${!filtroSoloHastaHoy
               ? 'bg-[#2383C2] text-white'
-              : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              : 'bg-white dark:bg-gray-900 text-tinta-secundaria hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
           >
             Todos los días
@@ -113,7 +113,7 @@ const CargasConsignacionFiltros = ({
         {hayFiltrosActivos && (
           <button
             onClick={limpiarFiltros}
-            className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded font-medium flex items-center gap-1 transition"
+            className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-tinta-secundaria rounded flex items-center gap-1 transition"
             title="Limpiar filtros"
           >
             <FilterX size={12} /> Limpiar

@@ -27,10 +27,10 @@ const MensajeDuplicado = ({ duplicado }) => {
           ? 'Ya existe una gestión con el mismo ID:'
           : 'Ya existe una gestión con el mismo nombre, fecha y empresa:'}
       </span>
-      <span className="block my-2 px-3 py-2 rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-gray-700 dark:text-gray-200">
+      <span className="block my-2 px-3 py-2 rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 text-tinta-principal">
         {filas.map(([etiqueta, valor]) => (
           <span key={etiqueta} className="block">
-            <span className="font-semibold">{etiqueta}:</span> {valor}
+            <span className="text-etiqueta">{etiqueta}:</span> {valor}
           </span>
         ))}
       </span>

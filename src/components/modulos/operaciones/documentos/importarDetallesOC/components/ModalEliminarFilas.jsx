@@ -22,30 +22,30 @@ export const ModalEliminarFilas = ({ filas, eliminando, progreso, onConfirmar, o
 
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-[1px] p-4">
-      <div className="bg-white dark:bg-gray-800 w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden text-[11px]">
+      <div className="bg-white dark:bg-gray-800 w-full max-w-lg max-h-[85vh] flex flex-col rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden text-secundario">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 bg-red-50/60 dark:bg-red-950/20">
           <Trash2 size={15} className="text-red-600 dark:text-red-400 shrink-0" />
-          <h3 className="text-[12px] font-bold text-gray-800 dark:text-gray-100">Eliminar {filas.length} fila(s) de Detalles OC</h3>
-          <button onClick={onCerrar} disabled={eliminando} className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-40" aria-label="Cerrar">
+          <h3 className="text-subtitulo text-tinta-principal">Eliminar {filas.length} fila(s) de Detalles OC</h3>
+          <button onClick={onCerrar} disabled={eliminando} className="ml-auto text-tinta-atenuada hover:text-tinta-secundaria disabled:opacity-40" aria-label="Cerrar">
             <X size={15} />
           </button>
         </div>
 
-        <div className="px-4 py-3 flex flex-col gap-2.5 overflow-auto text-gray-700 dark:text-gray-200">
+        <div className="px-4 py-3 flex flex-col gap-2.5 overflow-auto text-tinta-principal">
           {aviso && (
             <p className="flex items-start gap-1.5 px-2 py-1.5 rounded bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300">
               <AlertTriangle size={12} className="shrink-0 mt-0.5" /> {aviso}
             </p>
           )}
-          <p className="font-semibold text-gray-800 dark:text-gray-100">
-            {filas.length} fila(s) · Monto OC total: <span className="font-num text-red-700 dark:text-red-400">{pesos(total)}</span>
+          <p className="text-etiqueta text-tinta-principal">
+            {filas.length} fila(s) · Monto OC total: <span className="text-numero-tabla text-red-700 dark:text-red-400">{pesos(total)}</span>
           </p>
           <p>
             Se borran de Firestore y salen del snapshot y del índice de OC. Antes se guarda una copia de cada una en
             <code className="mx-1">detallesOCEliminados</code> (solo admin/dev la pueden ver). Si la fila vuelve a venir en un Excel, se importa como nueva.
           </p>
 
-          <ul className="max-h-48 overflow-auto font-num text-[10px] border border-slate-200 dark:border-gray-700 rounded px-2 py-1 space-y-0.5 select-text">
+          <ul className="max-h-48 overflow-auto text-numero-tabla border border-slate-200 dark:border-gray-700 rounded px-2 py-1 space-y-0.5 select-text">
             {filas.slice(0, MAX_LISTA).map(f => (
               <li key={f.refPath} className="truncate" title={f.id}>
                 Adm. {f.admision} · {fechaCorta(f.fecha_cx)} · {f.proveedor} · {f.codigo}{f.oc ? ` · OC ${f.oc}` : ''} · {pesos(Number(f.oc_monto) || 0)}
@@ -70,13 +70,13 @@ export const ModalEliminarFilas = ({ filas, eliminando, progreso, onConfirmar, o
         </div>
 
         <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-2">
-          <button onClick={onCerrar} disabled={eliminando} className="px-3 py-1.5 rounded border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40">
+          <button onClick={onCerrar} disabled={eliminando} className="px-3 py-1.5 rounded border border-gray-200 dark:border-gray-600 text-tinta-secundaria hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40">
             Cancelar
           </button>
           <button
             onClick={() => onConfirmar({ liberarOC: liberarOC && conOC > 0 })}
             disabled={eliminando}
-            className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 text-white font-semibold disabled:opacity-50 flex items-center gap-1.5"
+            className="px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 text-white text-etiqueta disabled:opacity-50 flex items-center gap-1.5"
           >
             {eliminando ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />} Eliminar {filas.length} fila(s)
           </button>

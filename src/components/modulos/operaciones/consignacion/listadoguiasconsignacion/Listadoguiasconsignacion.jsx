@@ -253,27 +253,27 @@ const ListadoGuiasConsignacion = () => {
   const mostrandoOverlay = cargando || (cargandoCalendario && !listo);
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {mostrandoOverlay && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">Cargando...</h3>
+            <h3 className="text-[#2383C2] text-subtitulo">Cargando...</h3>
           </div>
         </div>
       )}
 
       {/* --- CABECERA --- */}
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <ClipboardList size={14} className="text-[#2383C2]" />
-          GUÍAS DE CONSIGNACIÓN
+          Guías de consignación
         </h2>
 
         <button
           onClick={recargarTodo}
           disabled={mostrandoOverlay}
-          className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50"
+          className="p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-50"
           title="Recargar"
         >
           <RefreshCw size={15} className={mostrandoOverlay ? 'animate-spin' : ''} />
@@ -288,7 +288,7 @@ const ListadoGuiasConsignacion = () => {
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             disabled={sinDatosEnAbsoluto}
-            className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] dark:focus:border-[#2383C2] disabled:opacity-50"
+            className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2] dark:focus:border-[#2383C2] disabled:opacity-50"
             placeholder="Buscar por N° de guía, documento, código, lote..."
           />
         </div>
@@ -298,7 +298,7 @@ const ListadoGuiasConsignacion = () => {
             value={mesNumero}
             onChange={(e) => setMesNumero(e.target.value ? Number(e.target.value) : '')}
             disabled={!año}
-            className="h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 disabled:opacity-50"
+            className="h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal disabled:opacity-50"
           >
             <option value="">{año ? 'Selecciona mes' : 'Elige un año primero'}</option>
             {mesesDisponibles.map((m) => (
@@ -310,7 +310,7 @@ const ListadoGuiasConsignacion = () => {
             value={año}
             onChange={(e) => setAño(e.target.value)}
             disabled={añosDisponibles.length === 0}
-            className="h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 disabled:opacity-50"
+            className="h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal disabled:opacity-50"
           >
             <option value="">{añosDisponibles.length === 0 ? 'Sin años' : 'Selecciona año'}</option>
             {añosDisponibles.map((a) => (
@@ -318,7 +318,7 @@ const ListadoGuiasConsignacion = () => {
             ))}
           </select>
 
-          <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 whitespace-nowrap">
+          <span className="text-pequeno text-tinta-atenuada whitespace-nowrap">
             {guiasFiltradas.length} guías
           </span>
         </div>
@@ -326,7 +326,7 @@ const ListadoGuiasConsignacion = () => {
 
       {/* --- ERROR --- */}
       {error && (
-        <div className="mx-3 mt-2 flex items-start gap-2 text-[11px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded-lg px-3 py-2">
+        <div className="mx-3 mt-2 flex items-start gap-2 text-secundario text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded-lg px-3 py-2">
           <AlertCircle size={14} className="shrink-0 mt-0.5" />
           {error}
         </div>
@@ -334,19 +334,19 @@ const ListadoGuiasConsignacion = () => {
 
       {/* --- TABLA --- */}
       {sinDatosEnAbsoluto ? (
-        <div className="flex-grow flex items-center justify-center text-[11px] text-gray-400 dark:text-gray-500">
+        <div className="flex-grow flex items-center justify-center text-secundario text-tinta-atenuada">
           Aún no hay ninguna guía de consignación ingresada.
         </div>
       ) : faltaSeleccionarPeriodo ? (
-        <div className="flex-grow flex items-center justify-center text-[11px] text-gray-400 dark:text-gray-500">
+        <div className="flex-grow flex items-center justify-center text-secundario text-tinta-atenuada">
           Selecciona un año y un mes en los filtros para ver sus guías.
         </div>
       ) : (
         <>
         <div className="flex-grow overflow-auto">
-          <table className="w-full text-left text-[11px] border-collapse">
+          <table className="w-full text-left text-secundario border-collapse">
             <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10">
-              <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+              <tr className="text-tinta-secundaria uppercase text-pequeno">
                 <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 w-8 text-center">#</th>
                 <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 w-8"></th>
                 <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">N° Guía</th>
@@ -359,7 +359,7 @@ const ListadoGuiasConsignacion = () => {
             <tbody>
               {!mostrandoOverlay && !error && guiasFiltradas.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-6 text-center text-gray-400 dark:text-gray-500">
+                  <td colSpan={7} className="py-6 text-center text-tinta-atenuada">
                     No hay guías ingresadas para {NOMBRES_MESES[mesNumero - 1]} de {año}
                     {busqueda && ' que coincidan con la búsqueda'}.
                   </td>
@@ -374,28 +374,28 @@ const ListadoGuiasConsignacion = () => {
                       onClick={() => setGuiaExpandidaId(expandida ? null : guia.id)}
                       className="border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors cursor-pointer"
                     >
-                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-500 dark:text-gray-400 font-bold text-center">
+                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria text-etiqueta text-center">
                         {(paginaSegura - 1) * TAMANO_PAGINA_TABLA + index + 1}
                       </td>
-                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-400 text-center">
+                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-atenuada text-center">
                         {expandida ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                       </td>
-                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-700 dark:text-gray-200 font-medium">
+                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-principal">
                         {guia.numeroGuia || 'N/A'}
                       </td>
-                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300">
+                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria">
                         {guia.numeroDocumento || 'N/A'}
                       </td>
-                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 max-w-[220px]">
+                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria max-w-[220px]">
                         <span className="block truncate" title={guia.descripcionPrimerItem}>
                           {guia.descripcionPrimerItem || 'N/A'}
                         </span>
                       </td>
-                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-500 dark:text-gray-400">
+                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria">
                         {formatearFecha(guia.fechaEmision)}
                       </td>
                       <td className="py-1 px-2 border-b border-gray-200 dark:border-gray-700/70 text-center">
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                        <span className="inline-flex items-center gap-1 text-pequeno px-1.5 py-0.2 rounded-full bg-gray-100 dark:bg-gray-700 text-tinta-secundaria">
                           <Package size={10} />
                           {guia.productos.length}
                         </span>
@@ -405,9 +405,9 @@ const ListadoGuiasConsignacion = () => {
                     {expandida && (
                       <tr>
                         <td colSpan={7} className="p-0 border-b border-gray-200 dark:border-gray-700/70 bg-gray-50/60 dark:bg-gray-900/30">
-                          <table className="w-full text-left text-[11px] border-collapse">
+                          <table className="w-full text-left text-secundario border-collapse">
                             <thead>
-                              <tr className="text-gray-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+                              <tr className="text-tinta-secundaria uppercase text-pequeno">
                                 <th className="py-1 px-2 pl-9 border-b border-gray-200 dark:border-gray-700">Código</th>
                                 <th className="py-1 px-2 border-b border-gray-200 dark:border-gray-700">Descripción</th>
                                 <th className="py-1 px-2 border-b border-gray-200 dark:border-gray-700">Lote</th>
@@ -418,19 +418,19 @@ const ListadoGuiasConsignacion = () => {
                             <tbody>
                               {guia.productos.map((p) => (
                                 <tr key={p.id} className="border-t border-gray-100 dark:border-gray-800">
-                                  <td className="py-1 px-2 pl-9 text-gray-700 dark:text-gray-200 font-num text-[10.5px]">
+                                  <td className="py-1 px-2 pl-9 text-tinta-principal text-numero-tabla">
                                     {p.codigo || 'N/A'}
                                   </td>
-                                  <td className="py-1 px-2 text-gray-600 dark:text-gray-300">
+                                  <td className="py-1 px-2 text-tinta-secundaria">
                                     {p.descripcion || 'N/A'}
                                   </td>
-                                  <td className="py-1 px-2 text-gray-600 dark:text-gray-300">
+                                  <td className="py-1 px-2 text-tinta-secundaria">
                                     {p.lote || 'N/A'}
                                   </td>
-                                  <td className="py-1 px-2 text-gray-600 dark:text-gray-300">
+                                  <td className="py-1 px-2 text-tinta-secundaria">
                                     {p.vencimiento || 'N/A'}
                                   </td>
-                                  <td className="py-1 px-2 text-gray-600 dark:text-gray-300">
+                                  <td className="py-1 px-2 text-tinta-secundaria">
                                     {p.cantidad ?? 'N/A'}
                                   </td>
                                 </tr>
@@ -448,8 +448,8 @@ const ListadoGuiasConsignacion = () => {
         </div>
 
         {guiasFiltradas.length > 0 && (
-          <div className="flex items-center justify-between px-3 py-1.5 border-t border-gray-200 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-800/40 text-[10.5px]">
-            <span className="text-gray-400 dark:text-gray-500 font-medium">
+          <div className="flex items-center justify-between px-3 py-1.5 border-t border-gray-200 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-800/40 text-pequeno">
+            <span className="text-tinta-atenuada">
               {guiasFiltradas.length} guía{guiasFiltradas.length === 1 ? '' : 's'} · Página {paginaSegura} de {totalPaginas}
             </span>
             <div className="flex items-center gap-1">
@@ -457,7 +457,7 @@ const ListadoGuiasConsignacion = () => {
                 type="button"
                 onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
                 disabled={paginaSegura <= 1}
-                className="flex items-center gap-1 px-2 py-1 rounded font-bold text-gray-500 dark:text-gray-400 hover:text-[#2383C2] hover:bg-white dark:hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 px-2 py-1 rounded text-etiqueta text-tinta-secundaria hover:text-[#2383C2] hover:bg-white dark:hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={12} /> Anterior
               </button>
@@ -465,7 +465,7 @@ const ListadoGuiasConsignacion = () => {
                 type="button"
                 onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
                 disabled={paginaSegura >= totalPaginas}
-                className="flex items-center gap-1 px-2 py-1 rounded font-bold text-gray-500 dark:text-gray-400 hover:text-[#2383C2] hover:bg-white dark:hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-1 px-2 py-1 rounded text-etiqueta text-tinta-secundaria hover:text-[#2383C2] hover:bg-white dark:hover:bg-gray-800 transition disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Siguiente <ChevronRight size={12} />
               </button>

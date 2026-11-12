@@ -58,7 +58,7 @@ const InformacionTab = forwardRef(({ registro, items, formData, onChange }, ref)
   return (
     <div className="p-4 max-w-6xl mx-auto w-full space-y-4">
       {bloqueado && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-[11px] text-amber-700 dark:text-amber-400">
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-secundario text-amber-700 dark:text-amber-400">
           <Lock size={14} className="shrink-0" />
           <span>
             Este ítem ya fue solicitado e imputado. La información está en solo lectura — presiona el candado para desbloquearla y poder editarla.
@@ -67,7 +67,7 @@ const InformacionTab = forwardRef(({ registro, items, formData, onChange }, ref)
       )}
 
       {errorCandado && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-[11px] text-red-700 dark:text-red-400">
+        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-secundario text-red-700 dark:text-red-400">
           <AlertCircle size={14} className="shrink-0" />
           <span>{errorCandado}</span>
         </div>
@@ -76,7 +76,7 @@ const InformacionTab = forwardRef(({ registro, items, formData, onChange }, ref)
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
           <User size={13} className="text-[#2383C2]" />
-          <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+          <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">
             Información General
           </h3>
           {solicitado && hasPermission(VIEW_PATH_CARGAS, 'tabla_items_completa', 'accion_desbloquear_candado') && (
@@ -89,7 +89,7 @@ const InformacionTab = forwardRef(({ registro, items, formData, onChange }, ref)
                   ? 'Este ítem ya está imputado — click para desbloquear edición'
                   : 'Desbloqueado — edita y presiona "Guardar Cambios" para volver a bloquearlo'
               }
-              className={`ml-auto flex items-center gap-1 h-6 px-2 rounded text-[9px] font-bold transition ${
+              className={`ml-auto flex items-center gap-1 h-6 px-2 rounded text-pequeno transition ${
                 bloqueado
                   ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 cursor-pointer'
                   : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 cursor-default'
@@ -104,53 +104,53 @@ const InformacionTab = forwardRef(({ registro, items, formData, onChange }, ref)
         <fieldset disabled={bloqueado} className={`min-w-0 ${claseBloqueado}`}>
         <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-600 dark:text-gray-300">Nombre del Paciente</label>
+            <label className="text-etiqueta text-tinta-secundaria">Nombre del Paciente</label>
             <input
               type="text"
               value={formData.nombre}
               onChange={e => setField('nombre', e.target.value.toUpperCase())}
-              className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none uppercase"
+              className="h-6.5 px-2 text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none uppercase"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-600 dark:text-gray-300 flex items-center gap-1">
+            <label className="text-etiqueta text-tinta-secundaria flex items-center gap-1">
               <Stethoscope size={11} className="text-slate-400" /> Médico
             </label>
             <input
               type="text"
               value={formData.medico}
               onChange={e => setField('medico', e.target.value)}
-              className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+              className="h-6.5 px-2 text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-600 dark:text-gray-300 flex items-center gap-1">
+            <label className="text-etiqueta text-tinta-secundaria flex items-center gap-1">
               <CalendarIcon size={11} className="text-slate-400" /> Fecha
             </label>
             <input
               type="date"
               value={formData.fecha}
               onChange={e => setField('fecha', e.target.value)}
-              className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+              className="h-6.5 px-2 text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-600 dark:text-gray-300 flex items-center gap-1">
+            <label className="text-etiqueta text-tinta-secundaria flex items-center gap-1">
               <Building2 size={11} className="text-slate-400" /> Empresa
             </label>
             <input
               type="text"
               value={formData.empresa}
               onChange={e => setField('empresa', e.target.value)}
-              className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+              className="h-6.5 px-2 text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-600 dark:text-gray-300">Centro/Unidad</label>
+            <label className="text-etiqueta text-tinta-secundaria">Centro/Unidad</label>
             <CentroSelect
               value={formData.centro}
               onChange={(centroSeleccionado) => setField('centro', centroSeleccionado.nombre)}
@@ -160,11 +160,11 @@ const InformacionTab = forwardRef(({ registro, items, formData, onChange }, ref)
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-600 dark:text-gray-300">Atributo</label>
+            <label className="text-etiqueta text-tinta-secundaria">Atributo</label>
             <select
               value={formData.atributo}
               onChange={e => setField('atributo', e.target.value)}
-              className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+              className="h-6.5 px-2 text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
             >
               <option value="CONSIGNACION">CONSIGNACION</option>
               <option value="COTIZACION">COTIZACION</option>
@@ -172,44 +172,44 @@ const InformacionTab = forwardRef(({ registro, items, formData, onChange }, ref)
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-600 dark:text-gray-300 flex items-center gap-1">
+            <label className="text-etiqueta text-tinta-secundaria flex items-center gap-1">
               <DollarSign size={11} className="text-slate-400" /> Costo
             </label>
             <input
               type="number"
               value={formData.costo}
               onChange={e => setField('costo', e.target.value)}
-              className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+              className="h-6.5 px-2 text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-600 dark:text-gray-300">Convenio</label>
+            <label className="text-etiqueta text-tinta-secundaria">Convenio</label>
             <input
               type="text"
               value={formData.convenio}
               onChange={e => setField('convenio', e.target.value)}
-              className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+              className="h-6.5 px-2 text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
             />
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="font-semibold text-slate-600 dark:text-gray-300">Previsión</label>
+            <label className="text-etiqueta text-tinta-secundaria">Previsión</label>
             <input
               type="text"
               value={formData.prevision}
               onChange={e => setField('prevision', e.target.value)}
-              className="h-6.5 px-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+              className="h-6.5 px-2 text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
             />
           </div>
 
           <div className="flex flex-col gap-1 md:col-span-2 lg:col-span-3">
-            <label className="font-semibold text-slate-600 dark:text-gray-300">Descripción Pabellón</label>
+            <label className="text-etiqueta text-tinta-secundaria">Descripción Pabellón</label>
             <textarea
               rows={2}
               value={formData.descripcionPabellon}
               onChange={e => setField('descripcionPabellon', e.target.value)}
-              className="p-2 text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none resize-none"
+              className="p-2 text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none resize-none"
             />
           </div>
         </div>

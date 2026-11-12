@@ -84,9 +84,9 @@ const leerArchivoComoDocumento = (archivo) =>
   });
 
 const BadgeEstado = ({ estado, errorMsg }) => {
-  const base = 'inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase whitespace-nowrap';
+  const base = 'inline-flex items-center gap-1 text-pequeno px-1.5 py-0.5 rounded-full uppercase whitespace-nowrap';
   if (estado === 'pendiente') {
-    return <span className={`${base} bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300`}>Pendiente</span>;
+    return <span className={`${base} bg-gray-100 dark:bg-gray-700 text-tinta-secundaria`}>Pendiente</span>;
   }
   if (estado === 'extrayendo') {
     return (
@@ -428,30 +428,30 @@ const IngresarGuiaDespacho = () => {
   const hayPendientesOErrores = totalPendientes + totalErrores > 0;
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {/* --- OVERLAY DE PROCESO (mismo patrón que el "Procesando..." de Empresas) --- */}
       {(procesandoCola || guardandoTodo) && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-2">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">
+            <h3 className="text-[#2383C2] text-subtitulo">
               {procesandoCola ? `Extrayendo guía ${progreso.actual} de ${progreso.total}...` : 'Guardando guías...'}
             </h3>
             {procesandoCola && progreso.nombre && (
-              <p className="text-gray-500 dark:text-gray-400 text-[10.5px] max-w-[220px] truncate">{progreso.nombre}</p>
+              <p className="text-tinta-secundaria text-pequeno max-w-[220px] truncate">{progreso.nombre}</p>
             )}
           </div>
         </div>
       )}
 
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <Layers size={14} className="text-[#2383C2]" />
-          INGRESAR GUÍAS DE DESPACHO
+          Ingresar guías de despacho
         </h2>
         <div className="flex items-center gap-2">
           {documentos.length > 0 && (
-            <span className="text-[10px] text-gray-400 dark:text-gray-500">
+            <span className="text-pequeno text-tinta-atenuada">
               {documentos.length} cargada(s)
               {totalListas > 0 ? ` · ${totalListas} lista(s)` : ''}
               {totalErrores > 0 ? ` · ${totalErrores} error` : ''}
@@ -462,7 +462,7 @@ const IngresarGuiaDespacho = () => {
               onClick={reiniciarTodo}
               disabled={procesandoCola || guardandoTodo}
               title="Limpiar todo"
-              className="p-1 rounded-md text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40"
+              className="p-1 rounded-md text-tinta-secundaria hover:text-red-500 dark:hover:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40"
             >
               <RotateCcw size={14} />
             </button>
@@ -475,10 +475,10 @@ const IngresarGuiaDespacho = () => {
           onDragOver={manejarDragOver}
           onDragLeave={manejarDragLeave}
           onDrop={manejarDrop}
-          className={`flex-1 min-w-[220px] h-7 flex items-center justify-center gap-1.5 border border-dashed rounded text-[10.5px] font-bold cursor-pointer transition-colors ${
+          className={`flex-1 min-w-[220px] h-7 flex items-center justify-center gap-1.5 border border-dashed rounded text-pequeno cursor-pointer transition-colors ${
             arrastrando
               ? 'border-[#2383C2] text-[#2383C2] bg-[#2383C2]/10'
-              : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-[#2383C2] hover:text-[#2383C2]'
+              : 'border-gray-300 dark:border-gray-600 text-tinta-secundaria hover:border-[#2383C2] hover:text-[#2383C2]'
           }`}
         >
           <ImageUp size={13} />
@@ -496,7 +496,7 @@ const IngresarGuiaDespacho = () => {
         <button
           type="button"
           onClick={() => inputCamaraRef.current?.click()}
-          className="h-7 px-2.5 flex items-center gap-1 border border-gray-300 dark:border-gray-600 rounded text-[10.5px] font-bold text-gray-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] transition"
+          className="h-7 px-2.5 flex items-center gap-1 border border-gray-300 dark:border-gray-600 rounded text-pequeno text-tinta-secundaria hover:border-[#2383C2] hover:text-[#2383C2] transition"
         >
           <Camera size={13} />
           Foto
@@ -514,7 +514,7 @@ const IngresarGuiaDespacho = () => {
           type="button"
           onClick={extraerTodo}
           disabled={procesandoCola || guardandoTodo || !hayPendientesOErrores}
-          className="h-7 px-3 rounded font-bold text-[11px] flex items-center gap-1.5 bg-[#2383C2] hover:bg-[#369BCE] text-white transition disabled:opacity-50"
+          className="h-7 px-3 rounded text-etiqueta flex items-center gap-1.5 bg-[#2383C2] hover:bg-[#369BCE] text-white transition disabled:opacity-50"
         >
           <Sparkles size={13} />
           Extraer todo ({totalPendientes + totalErrores})
@@ -525,7 +525,7 @@ const IngresarGuiaDespacho = () => {
             type="button"
             onClick={guardarTodasLasListas}
             disabled={procesandoCola || guardandoTodo}
-            className="h-7 px-3 rounded font-bold text-[11px] flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white transition disabled:opacity-50"
+            className="h-7 px-3 rounded text-etiqueta flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white transition disabled:opacity-50"
           >
             <Save size={13} />
             Guardar todas ({totalListas})
@@ -534,9 +534,9 @@ const IngresarGuiaDespacho = () => {
       </div>
 
       <div className="flex-grow overflow-auto">
-        <table className="w-full text-left text-[11px] border-collapse">
+        <table className="w-full text-left text-secundario border-collapse">
           <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10">
-            <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+            <tr className="text-tinta-secundaria uppercase text-pequeno">
               <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 w-8 text-center">#</th>
               <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Nombre</th>
               <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Descripción</th>
@@ -551,7 +551,7 @@ const IngresarGuiaDespacho = () => {
           <tbody>
             {documentos.length === 0 && (
               <tr>
-                <td colSpan={9} className="py-6 text-center text-gray-400 dark:text-gray-500">
+                <td colSpan={9} className="py-6 text-center text-tinta-atenuada">
                   Aún no has cargado guías. Arrástralas arriba para comenzar.
                 </td>
               </tr>
@@ -568,15 +568,15 @@ const IngresarGuiaDespacho = () => {
               return (
                 <React.Fragment key={documento.id}>
                   <tr className="border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors">
-                    <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-500 dark:text-gray-400 font-bold text-center">
+                    <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria text-etiqueta text-center">
                       {index + 1}
                     </td>
-                    <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-700 dark:text-gray-200 font-medium max-w-[160px]">
+                    <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-principal max-w-[160px]">
                       <span className="block truncate" title={documento.archivoNombre}>
                         {documento.archivoNombre}
                       </span>
                     </td>
-                    <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 max-w-[200px]">
+                    <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria max-w-[200px]">
                       <span className="block truncate" title={primerItemDescripcion}>
                         {primerItemDescripcion || (puedeExpandir ? '(sin descripción)' : '-')}
                       </span>
@@ -590,7 +590,7 @@ const IngresarGuiaDespacho = () => {
                         disabled={!puedeExpandir || soloLectura}
                         placeholder="-"
                         onChange={(e) => actualizarCampoCabecera(documento.id, 'numeroGuia', e.target.value)}
-                        className="w-full h-6 px-1.5 rounded border border-gray-300 dark:border-gray-600 text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 disabled:opacity-50 disabled:bg-transparent disabled:border-transparent"
+                        className="w-full h-6 px-1.5 rounded border border-gray-300 dark:border-gray-600 text-secundario outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal disabled:opacity-50 disabled:bg-transparent disabled:border-transparent"
                       />
                     </td>
                     <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70">
@@ -599,7 +599,7 @@ const IngresarGuiaDespacho = () => {
                         disabled={!puedeExpandir || soloLectura}
                         placeholder="-"
                         onChange={(e) => actualizarCampoCabecera(documento.id, 'numeroDocumento', e.target.value)}
-                        className="w-full h-6 px-1.5 rounded border border-gray-300 dark:border-gray-600 text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 disabled:opacity-50 disabled:bg-transparent disabled:border-transparent"
+                        className="w-full h-6 px-1.5 rounded border border-gray-300 dark:border-gray-600 text-secundario outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal disabled:opacity-50 disabled:bg-transparent disabled:border-transparent"
                       />
                     </td>
                     <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70">
@@ -608,10 +608,10 @@ const IngresarGuiaDespacho = () => {
                         value={documento.fechaEmision}
                         disabled={!puedeExpandir || soloLectura}
                         onChange={(e) => actualizarCampoCabecera(documento.id, 'fechaEmision', e.target.value)}
-                        className="w-full h-6 px-1.5 rounded border border-gray-300 dark:border-gray-600 text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 disabled:opacity-50 disabled:bg-transparent disabled:border-transparent"
+                        className="w-full h-6 px-1.5 rounded border border-gray-300 dark:border-gray-600 text-secundario outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal disabled:opacity-50 disabled:bg-transparent disabled:border-transparent"
                       />
                     </td>
-                    <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-center text-gray-500 dark:text-gray-400 font-bold">
+                    <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-center text-tinta-secundaria text-etiqueta">
                       {puedeExpandir ? `${filasSeleccionadas.length}/${documento.filas.length}` : '-'}
                     </td>
                     <td className="py-1 px-2 border-b border-gray-200 dark:border-gray-700/70">
@@ -630,7 +630,7 @@ const IngresarGuiaDespacho = () => {
                           onClick={() => setFilaExpandidaId((prev) => (prev === documento.id ? null : documento.id))}
                           disabled={!puedeExpandir}
                           title={puedeExpandir ? 'Ver items' : 'Aún no se ha extraído'}
-                          className="text-gray-500 hover:text-[#2383C2] dark:hover:text-[#2383C2] transition disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] transition disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                           {expandida ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         </button>
@@ -652,7 +652,7 @@ const IngresarGuiaDespacho = () => {
                     <tr>
                       <td colSpan={9} className="bg-gray-50 dark:bg-gray-900/40 px-3 py-3 border-b border-gray-200 dark:border-gray-700">
                         <div className="flex items-center justify-between mb-2">
-                          <p className="text-[10.5px] text-gray-500 dark:text-gray-400">
+                          <p className="text-pequeno text-tinta-secundaria">
                             {soloLectura
                               ? 'Esta guía ya fue guardada.'
                               : 'Revisa y corrige si algo no se leyó bien antes de guardar.'}
@@ -661,7 +661,7 @@ const IngresarGuiaDespacho = () => {
                             <button
                               type="button"
                               onClick={() => agregarFilaManual(documento.id)}
-                              className="flex items-center gap-1 text-[10.5px] font-bold text-[#2383C2] hover:underline shrink-0"
+                              className="flex items-center gap-1 text-pequeno text-[#2383C2] hover:underline shrink-0"
                             >
                               <Plus size={12} />
                               Agregar fila
@@ -670,9 +670,9 @@ const IngresarGuiaDespacho = () => {
                         </div>
 
                         <div className="overflow-x-auto -mx-1">
-                          <table className="w-full text-[11px] border-collapse min-w-[620px]">
+                          <table className="w-full text-secundario border-collapse min-w-[620px]">
                             <thead>
-                              <tr className="text-[9.5px] font-bold text-gray-500 dark:text-gray-400 uppercase text-left">
+                              <tr className="text-pequeno text-tinta-secundaria uppercase text-left">
                                 <th className="px-1 py-1 w-7"></th>
                                 <th className="px-1 py-1">Código</th>
                                 <th className="px-1 py-1">Descripción</th>
@@ -699,7 +699,7 @@ const IngresarGuiaDespacho = () => {
                                       value={fila.codigo}
                                       disabled={soloLectura}
                                       onChange={(e) => actualizarFila(documento.id, fila.id, 'codigo', e.target.value)}
-                                      className="w-20 text-[11px] p-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2] disabled:opacity-60"
+                                      className="w-20 text-secundario p-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal focus:outline-none focus:border-[#2383C2] disabled:opacity-60"
                                     />
                                   </td>
                                   <td className="px-1 py-0.5">
@@ -707,7 +707,7 @@ const IngresarGuiaDespacho = () => {
                                       value={fila.descripcion}
                                       disabled={soloLectura}
                                       onChange={(e) => actualizarFila(documento.id, fila.id, 'descripcion', e.target.value)}
-                                      className="w-full min-w-[150px] text-[11px] p-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2] disabled:opacity-60"
+                                      className="w-full min-w-[150px] text-secundario p-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal focus:outline-none focus:border-[#2383C2] disabled:opacity-60"
                                     />
                                   </td>
                                   <td className="px-1 py-0.5">
@@ -715,7 +715,7 @@ const IngresarGuiaDespacho = () => {
                                       value={fila.lote}
                                       disabled={soloLectura}
                                       onChange={(e) => actualizarFila(documento.id, fila.id, 'lote', e.target.value)}
-                                      className="w-20 text-[11px] p-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2] disabled:opacity-60"
+                                      className="w-20 text-secundario p-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal focus:outline-none focus:border-[#2383C2] disabled:opacity-60"
                                     />
                                   </td>
                                   <td className="px-1 py-0.5">
@@ -724,7 +724,7 @@ const IngresarGuiaDespacho = () => {
                                       disabled={soloLectura}
                                       placeholder="DD-MM-AAAA"
                                       onChange={(e) => actualizarFila(documento.id, fila.id, 'vencimiento', e.target.value)}
-                                      className="w-20 text-[11px] p-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2] disabled:opacity-60"
+                                      className="w-20 text-secundario p-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal focus:outline-none focus:border-[#2383C2] disabled:opacity-60"
                                     />
                                   </td>
                                   <td className="px-1 py-0.5">
@@ -732,7 +732,7 @@ const IngresarGuiaDespacho = () => {
                                       value={fila.cantidad}
                                       disabled={soloLectura}
                                       onChange={(e) => actualizarFila(documento.id, fila.id, 'cantidad', e.target.value)}
-                                      className="w-14 text-[11px] p-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2] disabled:opacity-60"
+                                      className="w-14 text-secundario p-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal focus:outline-none focus:border-[#2383C2] disabled:opacity-60"
                                     />
                                   </td>
                                   <td className="px-1 py-0.5">
@@ -740,7 +740,7 @@ const IngresarGuiaDespacho = () => {
                                       <button
                                         type="button"
                                         onClick={() => eliminarFila(documento.id, fila.id)}
-                                        className="p-1 text-gray-400 hover:text-red-500 rounded"
+                                        className="p-1 text-tinta-atenuada hover:text-red-500 rounded"
                                       >
                                         <Trash2 size={12} />
                                       </button>
@@ -758,7 +758,7 @@ const IngresarGuiaDespacho = () => {
                               type="button"
                               onClick={() => guardarDocumento(documento.id)}
                               disabled={guardandoId === documento.id || guardandoTodo || filasSeleccionadas.length === 0}
-                              className="h-7 px-3 rounded font-bold text-[11px] flex items-center gap-1.5 bg-[#2383C2] hover:bg-[#369BCE] text-white transition disabled:opacity-50 min-w-[150px] justify-center"
+                              className="h-7 px-3 rounded text-etiqueta flex items-center gap-1.5 bg-[#2383C2] hover:bg-[#369BCE] text-white transition disabled:opacity-50 min-w-[150px] justify-center"
                             >
                               {guardandoId === documento.id ? (
                                 <>

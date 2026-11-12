@@ -38,12 +38,12 @@ describe('Solicitud: misma pantalla en Implantes y Hemodinamia', () => {
   it('mismas columnas, en el mismo orden; título y período del módulo', () => {
     render(<SolicitudGestiones modulo="implantes" />);
     const implantes = encabezados();
-    expect(screen.getByText(/SOLICITUD DE IMPLANTES/)).toBeInTheDocument();
+    expect(screen.getByText(/Solicitud de implantes/)).toBeInTheDocument();
     expect(screen.getByText(/Período abierto para Implantes/)).toBeInTheDocument();
     cleanup();
     render(<SolicitudGestiones modulo="hemodinamia" />);
     expect(encabezados()).toEqual(implantes);
-    expect(screen.getByText(/SOLICITUD DE HEMODINAMIA/)).toBeInTheDocument();
+    expect(screen.getByText(/Solicitud de hemodinamia/)).toBeInTheDocument();
     expect(screen.getByText(/Período abierto para Hemodinamia/)).toBeInTheDocument();
     expect(modulosPedidos).toEqual(['implantes', 'hemodinamia']);
   });

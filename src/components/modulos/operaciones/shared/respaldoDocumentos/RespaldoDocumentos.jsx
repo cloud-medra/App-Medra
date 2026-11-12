@@ -37,7 +37,7 @@ const fechaHora = (ts) => {
 };
 const etiquetaTipo = (id) => TIPOS_DOCUMENTO.find((t) => t.id === id)?.label || id;
 
-const BTN_ICONO = 'p-1 rounded text-gray-500 hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40';
+const BTN_ICONO = 'p-1 rounded text-tinta-secundaria hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40';
 
 // `modulo`: Implantes o Hemodinamia (ver modulosGestion.js).
 const RespaldoDocumentos = ({ modulo }) => {
@@ -128,19 +128,19 @@ const RespaldoDocumentos = ({ modulo }) => {
     { confirmText: 'Eliminar para siempre', type: 'danger' }
   );
 
-  const celda = 'px-3 py-2 border-b border-gray-100 dark:border-gray-700/60 text-gray-700 dark:text-gray-200 truncate';
+  const celda = 'px-3 py-2 border-b border-gray-100 dark:border-gray-700/60 text-tinta-principal truncate';
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-3">
         <Archive size={18} className="text-[#2383C2]" />
         <div className="flex-1 min-w-0">
-          <h2 className="text-[14px] font-semibold text-gray-800 dark:text-gray-100">Respaldo de documentos</h2>
-          <p className="text-[11.5px] text-gray-500 dark:text-gray-400">PDF cuyo ID / N° de Admisión no coincide con ninguna gestión de {config.etiqueta}.</p>
+          <h2 className="text-titulo-seccion text-tinta-principal">Respaldo de documentos</h2>
+          <p className="text-secundario text-tinta-secundaria">PDF cuyo ID / N° de Admisión no coincide con ninguna gestión de {config.etiqueta}.</p>
         </div>
         {puede.subir && !enPapelera && (
           <button type="button" onClick={() => setFormAbierto(true)}
-            className="h-8 px-3.5 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[12px] font-semibold inline-flex items-center gap-1.5">
+            className="h-8 px-3.5 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta inline-flex items-center gap-1.5">
             <Upload size={14} /> Subir documentos
           </button>
         )}
@@ -152,7 +152,7 @@ const RespaldoDocumentos = ({ modulo }) => {
           ...(puede.papelera ? [{ id: 'papelera', label: `Papelera${totalPapelera ? ` (${totalPapelera})` : ''}`, icon: Trash }] : []),
         ].map((t) => (
           <button key={t.id} type="button" role="tab" aria-selected={vista === t.id} onClick={() => setVista(t.id)}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold border-b-2 -mb-px ${vista === t.id ? 'border-[#2383C2] text-[#2383C2]' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}`}>
+            className={`inline-flex items-center gap-1.5 px-3 py-2 text-etiqueta border-b-2 -mb-px ${vista === t.id ? 'border-[#2383C2] text-[#2383C2]' : 'border-transparent text-tinta-secundaria hover:text-tinta-principal'}`}>
             <t.icon size={14} /> {t.label}
           </button>
         ))}
@@ -163,73 +163,73 @@ const RespaldoDocumentos = ({ modulo }) => {
           <div className="relative w-72 max-w-full">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar por ID o nombre…" aria-label="Buscar por ID o nombre"
-              className="w-full h-8 pl-8 pr-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[12px] focus:outline-none focus:border-[#2383C2]" />
+              className="w-full h-8 pl-8 pr-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-normal focus:outline-none focus:border-[#2383C2]" />
           </div>
         )}
         {puede.filtrarTipo && (
           <select value={tipo} onChange={(e) => setTipo(e.target.value)} aria-label="Filtrar por tipo"
-            className="h-8 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[12px] focus:outline-none focus:border-[#2383C2]">
+            className="h-8 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-normal focus:outline-none focus:border-[#2383C2]">
             <option value="">Todos los tipos</option>
             {TIPOS_DOCUMENTO.map((t) => <option key={t.id} value={t.id}>{t.id} — {t.label}</option>)}
           </select>
         )}
-        <span className="ml-auto text-[11.5px] text-gray-500 dark:text-gray-400">{lista.length} documento(s)</span>
+        <span className="ml-auto text-secundario text-tinta-secundaria">{lista.length} documento(s)</span>
       </div>
 
       <div className="flex-1 overflow-auto">
         {!puede.verTabla ? (
-          <p className="text-center text-[12px] text-gray-400 py-10">No tienes permiso para ver la tabla de documentos.</p>
+          <p className="text-center text-normal text-tinta-atenuada py-10">No tienes permiso para ver la tabla de documentos.</p>
         ) : (
-          <table className="w-full text-left text-[12px] border-collapse table-fixed">
+          <table className="w-full text-left text-normal border-collapse table-fixed">
             <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
-              <tr className="text-[10.5px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <tr className="text-pequeno uppercase tracking-wide text-tinta-secundaria">
                 {verColumna('idAdmision') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold w-32">ID / N° Admisión</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta w-32">ID / N° Admisión</th>
                 )}
                 {verColumna('nombre') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold">Nombre</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta">Nombre</th>
                 )}
                 {verColumna('tipo') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold w-48">Tipo</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta w-48">Tipo</th>
                 )}
                 {verColumna('fecha') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold w-28">Fecha</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta w-28">Fecha</th>
                 )}
                 {verColumna('subidoPor') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold w-44">{enPapelera ? 'Eliminado por' : 'Subido por'}</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta w-44">{enPapelera ? 'Eliminado por' : 'Subido por'}</th>
                 )}
                 {verColumna('subidoEl') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold w-36">{enPapelera ? 'Eliminado el' : 'Fecha de subida'}</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta w-36">{enPapelera ? 'Eliminado el' : 'Fecha de subida'}</th>
                 )}
                 {verColumna('acciones') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold w-28 text-center">Acciones</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta w-28 text-center">Acciones</th>
                 )}
               </tr>
             </thead>
             <tbody>
               {cargando && (
-                <tr><td colSpan={columnasTabla.length} className="py-10 text-center text-gray-400"><Loader2 size={16} className="inline animate-spin mr-1" /> Cargando…</td></tr>
+                <tr><td colSpan={columnasTabla.length} className="py-10 text-center text-tinta-atenuada"><Loader2 size={16} className="inline animate-spin mr-1" /> Cargando…</td></tr>
               )}
               {!cargando && error && (
                 <tr><td colSpan={columnasTabla.length} className="py-10 text-center text-red-600">{error}</td></tr>
               )}
               {!cargando && !error && lista.length === 0 && (
-                <tr><td colSpan={columnasTabla.length} className="py-10 text-center text-gray-400">
+                <tr><td colSpan={columnasTabla.length} className="py-10 text-center text-tinta-atenuada">
                   {enPapelera ? 'La papelera está vacía.' : busqueda || tipo ? 'Ningún documento coincide con la búsqueda.' : 'Aún no hay documentos en el respaldo.'}
                 </td></tr>
               )}
               {!cargando && !error && lista.map((d, i) => (
                 <tr key={d.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-700/30">
                   {verColumna('idAdmision') && (
-                    <td className={`${celda} font-semibold`} title={d.idAdmision}>{d.idAdmision}</td>
+                    <td className={`${celda} text-etiqueta`} title={d.idAdmision}>{d.idAdmision}</td>
                   )}
                   {verColumna('nombre') && (
                     <td className={celda} title={d.nombreArchivo}>{d.nombre}</td>
                   )}
                   {verColumna('tipo') && (
                     <td className={celda} title={etiquetaTipo(d.tipo)}>
-                      <span className="inline-block text-[10.5px] font-bold px-1.5 py-0.5 rounded bg-[#2383C2]/10 text-[#2383C2] mr-1">{d.tipo}</span>
-                      <span className="text-gray-500 dark:text-gray-400">{etiquetaTipo(d.tipo)}</span>
+                      <span className="inline-block text-pequeno px-1.5 py-0.5 rounded bg-[#2383C2]/10 text-[#2383C2] mr-1">{d.tipo}</span>
+                      <span className="text-tinta-secundaria">{etiquetaTipo(d.tipo)}</span>
                     </td>
                   )}
                   {verColumna('fecha') && (

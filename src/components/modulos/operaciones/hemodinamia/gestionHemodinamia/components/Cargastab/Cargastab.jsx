@@ -505,7 +505,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
   if (!bloqueActivo) {
     return (
       <div className="px-3 md:px-4 lg:px-6 py-3 md:py-4 w-full max-w-[2200px] mx-auto">
-        <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs p-6 text-[10px] text-slate-500 dark:text-gray-400">
+        <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs p-6 text-pequeno text-tinta-secundaria">
           Selecciona una empresa/fecha en el panel lateral para gestionar sus cargas.
         </div>
       </div>
@@ -520,7 +520,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
       <div className="flex flex-wrap items-center justify-between gap-x-1.5 gap-y-1 px-1">
         <div className="flex flex-wrap items-center gap-1.5">
           <UploadCloud size={13} className="text-[#2383C2]" />
-          <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+          <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">
             Cotizaciones — Admisión #{formData?.gestionId || 'N/A'} - {formData?.nombre || 'P'}
           </h3>
           {handleCopiarTexto && (
@@ -528,7 +528,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               type="button"
               onClick={() => handleCopiarTexto(construirTextoAdmisionNombre(formData?.gestionId, formData?.nombre))}
               title="Copiar Admisión - Nombre"
-              className="p-1 md:p-0.5 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition shrink-0"
+              className="p-1 md:p-0.5 rounded text-tinta-atenuada hover:text-emerald-600 dark:hover:text-emerald-400 transition shrink-0"
             >
               <Copy size={11} />
             </button>
@@ -543,7 +543,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                   ? 'Este bloque ya está imputado — click para desbloquear edición'
                   : 'Desbloqueado — edita y presiona "Guardar Todo" para volver a bloquearlo'
               }
-              className={`flex items-center gap-1 h-9 md:h-6 px-2 rounded text-[9px] font-bold transition shrink-0 ${
+              className={`flex items-center gap-1 h-9 md:h-6 px-2 rounded text-pequeno transition shrink-0 ${
                 bloqueado
                   ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 cursor-pointer'
                   : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 cursor-default'
@@ -561,20 +561,20 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-[9px] text-slate-500 dark:text-gray-400">
+        <div className="flex flex-wrap items-center gap-2 text-pequeno text-tinta-secundaria">
           <span className="flex items-center gap-1">
             <Building2 size={11} className="text-[#2383C2]" />
             {bloqueActivo.empresa || 'SIN EMPRESA'}
           </span>
-          <span className="text-slate-300 dark:text-gray-600">/</span>
+          <span className="text-tinta-atenuada">/</span>
           <span className="flex items-center gap-1">
             <CalendarIcon size={11} className="text-[#2383C2]" />
             {formatearFechaTabla(bloqueActivo.fecha)}
           </span>
           {periodoAbierto && (
             <>
-              <span className="text-slate-300 dark:text-gray-600">/</span>
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
+              <span className="text-tinta-atenuada">/</span>
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-etiqueta">
                 Período: {periodoAbierto.mes.toUpperCase()} {periodoAbierto.anio}
               </span>
             </>
@@ -593,7 +593,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
       />
 
       {sinPeriodoAbierto && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-[11px] text-red-700 dark:text-red-400">
+        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-secundario text-red-700 dark:text-red-400">
           <Lock size={14} className="shrink-0" />
           <span>
             No hay un período abierto para <strong>Hemodinamia</strong> en Control Mensual. No se pueden registrar ítems nuevos hasta que se abra un período.
@@ -602,7 +602,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
       )}
 
       {bloqueado && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-[11px] text-amber-700 dark:text-amber-400">
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-secundario text-amber-700 dark:text-amber-400">
           <Lock size={14} className="shrink-0" />
           <span>
             Este bloque ya fue solicitado e imputado. Está en solo lectura — presiona el candado para desbloquearlo y poder editarlo.
@@ -611,7 +611,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
       )}
 
       {errorCandado && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-[11px] text-red-700 dark:text-red-400">
+        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-secundario text-red-700 dark:text-red-400">
           <AlertCircle size={14} className="shrink-0" />
           <span>{errorCandado}</span>
         </div>
@@ -622,7 +622,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2 items-end">
 
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase flex justify-between">
+              <label className="text-pequeno text-tinta-secundaria uppercase flex justify-between">
                 <span>N° Cotización</span>
                 <span className="text-red-500">*</span>
               </label>
@@ -632,15 +632,15 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 type="text"
                 value={nuevoItem.numCotizacion}
                 onChange={e => handleChange('numCotizacion', e.target.value)}
-                className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.numCotizacion ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
+                className={`h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none ${errores.numCotizacion ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
                   }`}
                 placeholder="Ej: COT-001"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">
-                Total Cot. <span className="text-slate-400 normal-case font-normal">(= Costo del bloque)</span>
+              <label className="text-pequeno text-tinta-secundaria uppercase">
+                Total Cot. <span className="text-tinta-atenuada normal-case">(= Costo del bloque)</span>
               </label>
               <input
                 type="text"
@@ -650,13 +650,13 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                   const soloNumeros = e.target.value.replace(/\D/g, '');
                   handleChange('totalCotizacion', soloNumeros);
                 }}
-                className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
+                className="h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:ring-1 focus:ring-[#2383C2]"
                 placeholder="0"
               />
             </div>
 
             <div className="flex flex-col gap-1 relative lg:col-span-2" ref={containerRef}>
-              <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase flex justify-between">
+              <label className="text-pequeno text-tinta-secundaria uppercase flex justify-between">
                 <span>Referencia</span>
                 <span className="text-red-500">*</span>
               </label>
@@ -668,7 +668,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 onChange={e => handleChange('referencia', e.target.value)}
                 onFocus={() => sugerencias.length > 0 && setMostrarSug(true)}
                 autoComplete="off"
-                className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.referencia ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
+                className={`h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none ${errores.referencia ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
                   }`}
                 placeholder="Buscar por referencia o descripción..."
               />
@@ -676,11 +676,11 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               {mostrarSug && (
                 <div className="absolute top-full left-0 mt-1 w-full max-h-48 overflow-y-auto bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded shadow-lg z-30">
                   {buscando ? (
-                    <div className="px-2.5 py-2 text-[10px] text-slate-400 flex items-center gap-1.5">
+                    <div className="px-2.5 py-2 text-pequeno text-tinta-atenuada flex items-center gap-1.5">
                       <Loader2 size={11} className="animate-spin" /> Buscando...
                     </div>
                   ) : sugerencias.length === 0 ? (
-                    <div className="px-2.5 py-2 text-[10px] text-slate-400">Sin coincidencias</div>
+                    <div className="px-2.5 py-2 text-pequeno text-tinta-atenuada">Sin coincidencias</div>
                   ) : (
                     sugerencias.map(item => (
                       <button
@@ -689,13 +689,13 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                         onClick={() => handleSeleccionarSugerencia(item)}
                         className="w-full text-left px-2.5 py-1.5 hover:bg-slate-100 dark:hover:bg-gray-700/60 border-b border-slate-100 dark:border-gray-700/50 last:border-b-0"
                       >
-                        <div className="text-[10px] font-semibold text-slate-700 dark:text-gray-200 truncate flex items-center gap-1">
+                        <div className="text-pequeno text-tinta-principal truncate flex items-center gap-1">
                           {item.referencia}
                           {esClasePad(item.clase) && (
-                            <span className="text-[8px] px-1 rounded bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-700 dark:text-fuchsia-400 font-bold">PAD</span>
+                            <span className="text-pequeno px-1 rounded bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-700 dark:text-fuchsia-400">PAD</span>
                           )}
                         </div>
-                        <div className="text-[9px] text-slate-500 dark:text-gray-400 truncate">{item.descriptorAuto}</div>
+                        <div className="text-pequeno text-tinta-secundaria truncate">{item.descriptorAuto}</div>
                       </button>
                     ))
                   )}
@@ -704,7 +704,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase flex justify-between">
+              <label className="text-pequeno text-tinta-secundaria uppercase flex justify-between">
                 <span>Cant.</span>
                 <span className="text-red-500">*</span>
               </label>
@@ -714,22 +714,22 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 type="number"
                 value={nuevoItem.cantidad}
                 onChange={e => handleChange('cantidad', e.target.value)}
-                className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errores.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
+                className={`h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none ${errores.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
                   }`}
                 placeholder="1"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Lote</label>
+              <label className="text-pequeno text-tinta-secundaria uppercase">Lote</label>
               <input
                 type="text"
                 value={esPad ? VALOR_LOTE_VENCIMIENTO_PAD : nuevoItem.lote}
                 disabled={esPad}
                 onChange={e => handleChange('lote', e.target.value)}
-                className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded outline-none ${esPad
-                  ? 'bg-slate-100 dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-slate-500 dark:text-gray-400'
-                  : 'bg-white dark:bg-gray-900 border-slate-300 dark:border-gray-600 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2]'
+                className={`h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border rounded outline-none ${esPad
+                  ? 'bg-slate-100 dark:bg-gray-800 border-slate-200 dark:border-gray-700 text-tinta-secundaria'
+                  : 'bg-white dark:bg-gray-900 border-slate-300 dark:border-gray-600 text-tinta-principal focus:ring-1 focus:ring-[#2383C2]'
                   }`}
                 placeholder="Ej: L-4521"
               />
@@ -737,13 +737,13 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
 
             <div className="flex items-end gap-1.5">
               <div className="flex flex-col gap-1 flex-grow">
-                <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Vencimiento</label>
+                <label className="text-pequeno text-tinta-secundaria uppercase">Vencimiento</label>
                 {esPad ? (
                   <input
                     type="text"
                     value={VALOR_LOTE_VENCIMIENTO_PAD}
                     disabled
-                    className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-200 dark:border-gray-700 rounded bg-slate-100 dark:bg-gray-800 text-slate-500 dark:text-gray-400 outline-none"
+                    className="h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border border-slate-200 dark:border-gray-700 rounded bg-slate-100 dark:bg-gray-800 text-tinta-secundaria outline-none"
                   />
                 ) : (
                   <input
@@ -752,7 +752,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     value={nuevoItem.vencimiento}
                     onChange={e => handleChange('vencimiento', e.target.value)}
                     onKeyDown={alPresionarEnter(() => { if (!sinPeriodoAbierto && !bloqueado) handleAgregar(); })}
-                    className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
+                    className="h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:ring-1 focus:ring-[#2383C2]"
                   />
                 )}
               </div>
@@ -760,7 +760,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 type="button"
                 onClick={handleAgregar}
                 disabled={sinPeriodoAbierto || bloqueado}
-                className="h-9 md:h-7 px-2.5 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center justify-center gap-1 transition text-[10px] shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-9 md:h-7 px-2.5 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center justify-center gap-1 transition text-pequeno shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 title={bloqueado ? 'Bloqueado: desbloquea el candado para agregar ítems' : sinPeriodoAbierto ? "No hay período abierto para Hemodinamia" : "Agregar ítem"}
               >
                 <Plus size={13} />
@@ -769,36 +769,36 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
           </div>
 
           {(errores.numCotizacion || errores.referencia || errores.cantidad) && (
-            <div className="text-[9px] text-red-500 font-medium flex items-center gap-1">
+            <div className="text-pequeno text-red-500 flex items-center gap-1">
               <AlertCircle size={10} /> N° Cotización, Referencia y Cantidad son obligatorios
             </div>
           )}
 
           {esPad && puedeAgregarContenidoPad && (
             <div className="border border-fuchsia-200 dark:border-fuchsia-900 bg-fuchsia-50/40 dark:bg-fuchsia-950/10 rounded-lg p-2.5 space-y-2.5">
-              <span className="text-[10px] font-bold text-fuchsia-700 dark:text-fuchsia-400 uppercase flex items-center gap-1">
-                <Package size={12} /> Contenido del PAD <span className="text-[9px] font-normal normal-case text-fuchsia-500 dark:text-fuchsia-500">(opcional, puedes completarlo ahora o más adelante)</span>
+              <span className="text-pequeno text-fuchsia-700 dark:text-fuchsia-400 uppercase flex items-center gap-1">
+                <Package size={12} /> Contenido del PAD <span className="text-pequeno normal-case text-fuchsia-500 dark:text-fuchsia-500">(opcional, puedes completarlo ahora o más adelante)</span>
               </span>
 
               <div className="bg-white/60 dark:bg-gray-900/40 rounded border border-fuchsia-200/70 dark:border-fuchsia-900/50 p-2 space-y-1">
-                <label className="text-[9px] font-bold text-fuchsia-700 dark:text-fuchsia-400 uppercase">
+                <label className="text-pequeno text-fuchsia-700 dark:text-fuchsia-400 uppercase">
                   N° Cotización del contenido
                 </label>
                 <input
                   type="text"
                   value={numCotizacionPad}
                   onChange={e => setNumCotizacionPad(e.target.value)}
-                  className="w-full h-9 md:h-7 px-2 text-base md:text-[10px] border border-fuchsia-300 dark:border-fuchsia-800 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-fuchsia-500"
+                  className="w-full h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border border-fuchsia-300 dark:border-fuchsia-800 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:ring-1 focus:ring-fuchsia-500"
                   placeholder={nuevoItem.numCotizacion ? `Vacío = ${nuevoItem.numCotizacion}` : 'Ej: COT-002'}
                 />
-                <p className="text-[9px] text-fuchsia-500 dark:text-fuchsia-500 italic">
+                <p className="text-pequeno text-fuchsia-500 dark:text-fuchsia-500 italic">
                   Déjalo en blanco si el contenido se cotizó junto con la referencia principal (usará "{nuevoItem.numCotizacion || 'la misma cotización'}"). El contenido siempre se guarda con precio $0.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-end bg-white dark:bg-gray-900/60 rounded border border-fuchsia-200 dark:border-fuchsia-900/60 p-2">
                 <div className="flex flex-col gap-1 relative md:col-span-2" ref={containerRefContenido}>
-                  <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Referencia contenido</label>
+                  <label className="text-pequeno text-tinta-secundaria uppercase">Referencia contenido</label>
                   <input
                     ref={referenciaContenidoRef}
                     aria-label="Referencia contenido"
@@ -807,17 +807,17 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     onChange={e => handleDraftReferenciaChange(e.target.value)}
                     onFocus={() => sugerenciasContenido.length > 0 && setMostrarSugContenido(true)}
                     autoComplete="off"
-                    className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftContenido.referencia ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'}`}
+                    className={`h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none ${errorDraftContenido.referencia ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'}`}
                     placeholder="Buscar referencia..."
                   />
                   {mostrarSugContenido && (
                     <div className="absolute top-full left-0 mt-1 w-56 max-h-40 overflow-y-auto bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded shadow-lg z-30">
                       {buscandoContenido ? (
-                        <div className="px-2.5 py-2 text-[10px] text-slate-400 flex items-center gap-1.5">
+                        <div className="px-2.5 py-2 text-pequeno text-tinta-atenuada flex items-center gap-1.5">
                           <Loader2 size={11} className="animate-spin" /> Buscando...
                         </div>
                       ) : sugerenciasContenido.length === 0 ? (
-                        <div className="px-2.5 py-2 text-[10px] text-slate-400">Sin coincidencias</div>
+                        <div className="px-2.5 py-2 text-pequeno text-tinta-atenuada">Sin coincidencias</div>
                       ) : (
                         sugerenciasContenido.map(item => (
                           <button
@@ -826,9 +826,9 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                             onClick={() => handleDraftSeleccionarSugerencia(item)}
                             className="w-full text-left px-2.5 py-1.5 hover:bg-slate-100 dark:hover:bg-gray-700/60 border-b border-slate-100 dark:border-gray-700/50 last:border-b-0"
                           >
-                            <div className="text-[10px] font-semibold text-slate-700 dark:text-gray-200 truncate">{item.referencia}</div>
-                            <div className="text-[9px] text-slate-400 dark:text-gray-500 flex items-center gap-1.5">
-                              <span className="font-num text-emerald-600 dark:text-emerald-400">{item.codigo || 'S/C'}</span>
+                            <div className="text-pequeno text-tinta-principal truncate">{item.referencia}</div>
+                            <div className="text-pequeno text-tinta-atenuada flex items-center gap-1.5">
+                              <span className="text-numero-tabla text-emerald-600 dark:text-emerald-400">{item.codigo || 'S/C'}</span>
                               <span>·</span>
                               <span className="truncate">{item.descriptorAuto || item.empresa}</span>
                             </div>
@@ -840,45 +840,45 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Cant.</label>
+                  <label className="text-pequeno text-tinta-secundaria uppercase">Cant.</label>
                   <input
                     ref={cantidadContenidoRef}
                     aria-label="Cantidad contenido"
                     type="number"
                     value={draftContenido.cantidad}
                     onChange={e => handleDraftChange('cantidad', e.target.value)}
-                    className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftContenido.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
+                    className={`h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none ${errorDraftContenido.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
                     placeholder="1"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Lote</label>
+                  <label className="text-pequeno text-tinta-secundaria uppercase">Lote</label>
                   <input
                     type="text"
                     value={draftContenido.lote}
                     onChange={e => handleDraftChange('lote', e.target.value)}
-                    className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                    className="h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none"
                     placeholder="Vacío = Sin lote"
                   />
                 </div>
 
                 <div className="flex items-end gap-1.5">
                   <div className="flex flex-col gap-1 flex-grow">
-                    <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Vencimiento</label>
+                    <label className="text-pequeno text-tinta-secundaria uppercase">Vencimiento</label>
                     <input
                       type="date"
                       aria-label="Vencimiento contenido"
                       value={draftContenido.vencimiento}
                       onChange={e => handleDraftChange('vencimiento', e.target.value)}
                       onKeyDown={alPresionarEnter(handleRegistrarContenido)}
-                      className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                      className="h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none"
                     />
                   </div>
                   <button
                     type="button"
                     onClick={handleRegistrarContenido}
-                    className="h-9 md:h-7 px-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded font-semibold flex items-center justify-center gap-1 transition text-[10px] shrink-0"
+                    className="h-9 md:h-7 px-2.5 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded flex items-center justify-center gap-1 transition text-pequeno shrink-0"
                     title="Registrar esta línea de contenido"
                   >
                     <Check size={13} />
@@ -886,12 +886,12 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 </div>
 
                 {(errorDraftContenido.referencia || errorDraftContenido.cantidad) && (
-                  <div className="md:col-span-5 text-[9px] text-red-500 font-medium flex items-center gap-1">
+                  <div className="md:col-span-5 text-pequeno text-red-500 flex items-center gap-1">
                     <AlertCircle size={10} /> Referencia y Cantidad son obligatorias para registrar
                   </div>
                 )}
 
-                <div className="md:col-span-5 text-[9px] text-slate-400 dark:text-gray-500 truncate">
+                <div className="md:col-span-5 text-pequeno text-tinta-atenuada truncate">
                   {draftContenido.descriptorAuto || (draftContenido.referencia.trim() ? 'Sin descripción encontrada' : 'Vacío = Sin lote / Sin fecha al registrar')}
                 </div>
               </div>
@@ -906,7 +906,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                 />
               )}
 
-              <p className="text-[9px] text-fuchsia-600 dark:text-fuchsia-400 italic">
+              <p className="text-pequeno text-fuchsia-600 dark:text-fuchsia-400 italic">
                 Si no registras contenido aquí, el PAD se guardará solo y quedará marcado como "Contenido pendiente" en la tabla
                 hasta que se lo agregues (ahí mismo, cuando quieras). El ítem principal (el código que buscaste) queda con Lote y
                 Vencimiento = "PAD".
@@ -916,11 +916,11 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
 
           {!esPad && cantidadTotalReferencia > 1 && (
             <div className="border border-sky-200 dark:border-sky-900 bg-sky-50/40 dark:bg-sky-950/10 rounded-lg p-2.5 space-y-2.5">
-              <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 uppercase flex items-center gap-1">
-                <Layers size={12} /> Repartir en varios lotes <span className="text-[9px] font-normal normal-case text-sky-500 dark:text-sky-500">(opcional, solo si esta cantidad viene de lotes/vencimientos distintos)</span>
+              <span className="text-pequeno text-sky-700 dark:text-sky-400 uppercase flex items-center gap-1">
+                <Layers size={12} /> Repartir en varios lotes <span className="text-pequeno normal-case text-sky-500 dark:text-sky-500">(opcional, solo si esta cantidad viene de lotes/vencimientos distintos)</span>
               </span>
 
-              <div className="flex flex-wrap items-center gap-3 text-[9px] font-semibold">
+              <div className="flex flex-wrap items-center gap-3 text-pequeno">
                 <span className="text-sky-700 dark:text-sky-400">Cantidad total: {cantidadTotalReferencia}</span>
                 <span className="text-sky-700 dark:text-sky-400">Asignada a otros lotes: {cantidadAsignadaLotes}</span>
                 <span className={restanteLotes === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-sky-700 dark:text-sky-400'}>
@@ -931,43 +931,43 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
               {restanteLotes > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 items-end bg-white dark:bg-gray-900/60 rounded border border-sky-200 dark:border-sky-900/60 p-2">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">
-                      Cant. <span className="text-slate-400 normal-case font-normal">(máx. {restanteLotes})</span>
+                    <label className="text-pequeno text-tinta-secundaria uppercase">
+                      Cant. <span className="text-tinta-atenuada normal-case">(máx. {restanteLotes})</span>
                     </label>
                     <input
                       type="number"
                       value={draftLote.cantidad}
                       onChange={e => handleDraftLoteChange('cantidad', e.target.value)}
-                      className={`h-9 md:h-7 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none ${errorDraftLote.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
+                      className={`h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none ${errorDraftLote.cantidad ? 'border-red-500 ring-1 ring-red-500/30' : 'border-slate-300 dark:border-gray-600'}`}
                       placeholder="1"
                     />
                   </div>
 
                   <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Lote</label>
+                    <label className="text-pequeno text-tinta-secundaria uppercase">Lote</label>
                     <input
                       type="text"
                       value={draftLote.lote}
                       onChange={e => handleDraftLoteChange('lote', e.target.value)}
-                      className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                      className="h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none"
                       placeholder="Ej: L-9921"
                     />
                   </div>
 
                   <div className="flex items-end gap-1.5">
                     <div className="flex flex-col gap-1 flex-grow">
-                      <label className="text-[9px] font-bold text-slate-500 dark:text-gray-400 uppercase">Vencimiento</label>
+                      <label className="text-pequeno text-tinta-secundaria uppercase">Vencimiento</label>
                       <input
                         type="date"
                         value={draftLote.vencimiento}
                         onChange={e => handleDraftLoteChange('vencimiento', e.target.value)}
-                        className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none"
+                        className="h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={handleRegistrarLote}
-                      className="h-9 md:h-7 px-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded font-semibold flex items-center justify-center gap-1 transition text-[10px] shrink-0"
+                      className="h-9 md:h-7 px-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded flex items-center justify-center gap-1 transition text-pequeno shrink-0"
                       title="Registrar este lote"
                     >
                       <Check size={13} />
@@ -975,26 +975,26 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                   </div>
 
                   {errorDraftLote.cantidad && (
-                    <div className="md:col-span-4 text-[9px] text-red-500 font-medium flex items-center gap-1">
+                    <div className="md:col-span-4 text-pequeno text-red-500 flex items-center gap-1">
                       <AlertCircle size={10} /> La cantidad debe ser mayor a 0 y no puede superar el restante ({restanteLotes})
                     </div>
                   )}
 
-                  <div className="md:col-span-4 text-[9px] text-slate-400 dark:text-gray-500">
+                  <div className="md:col-span-4 text-pequeno text-tinta-atenuada">
                     Este lote adicional se guarda sin código, sin costo y sin venta — la referencia principal ya factura la cantidad total.
                   </div>
                 </div>
               ) : (
-                <p className="text-[9px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                <p className="text-pequeno text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                   <Check size={11} /> Cantidad totalmente repartida entre lotes.
                 </p>
               )}
 
               {lotesAdicionales.length > 0 && (
                 <div className="overflow-x-auto rounded border border-sky-200 dark:border-sky-900/60">
-                  <table className="w-full text-left text-[10px] border-collapse">
+                  <table className="w-full text-left text-pequeno border-collapse">
                     <thead className="bg-sky-100/60 dark:bg-sky-950/30">
-                      <tr className="text-sky-700 dark:text-sky-400 uppercase font-bold text-[9px]">
+                      <tr className="text-sky-700 dark:text-sky-400 uppercase text-pequeno">
                         <th className="px-2 py-1 border-b border-sky-200 dark:border-sky-900/60 text-center">Cant.</th>
                         <th className="px-2 py-1 border-b border-sky-200 dark:border-sky-900/60">Lote</th>
                         <th className="px-2 py-1 border-b border-sky-200 dark:border-sky-900/60">Vencimiento</th>
@@ -1004,17 +1004,17 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
                     <tbody>
                       {lotesAdicionales.map(fila => (
                         <tr key={fila.tempId} className="border-l-2 border-transparent hover:border-[#2383C2] bg-white dark:bg-gray-900/40 hover:bg-sky-50/40 dark:hover:bg-sky-950/10">
-                          <td className="px-2 py-1 border-b border-sky-100 dark:border-sky-900/40 text-center text-slate-600 dark:text-gray-300">
+                          <td className="px-2 py-1 border-b border-sky-100 dark:border-sky-900/40 text-center text-tinta-secundaria">
                             {fila.cantidad}
                           </td>
-                          <td className="px-2 py-1 border-b border-sky-100 dark:border-sky-900/40 text-slate-600 dark:text-gray-300">
+                          <td className="px-2 py-1 border-b border-sky-100 dark:border-sky-900/40 text-tinta-secundaria">
                             {fila.lote === 'Sin lote'
-                              ? <span className="italic text-slate-400 dark:text-gray-500">Sin lote</span>
+                              ? <span className="italic text-tinta-atenuada">Sin lote</span>
                               : fila.lote}
                           </td>
-                          <td className="px-2 py-1 border-b border-sky-100 dark:border-sky-900/40 text-slate-600 dark:text-gray-300">
+                          <td className="px-2 py-1 border-b border-sky-100 dark:border-sky-900/40 text-tinta-secundaria">
                             {fila.vencimiento === 'Sin fecha'
-                              ? <span className="italic text-slate-400 dark:text-gray-500">Sin fecha</span>
+                              ? <span className="italic text-tinta-atenuada">Sin fecha</span>
                               : formatearFechaTabla(fila.vencimiento)}
                           </td>
                           <td className="px-2 py-1 border-b border-sky-100 dark:border-sky-900/40 text-center">
@@ -1036,58 +1036,58 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
             </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-4 px-2.5 py-1.5 bg-gray-100/60 dark:bg-gray-900/40 rounded border border-dashed border-slate-200 dark:border-gray-700/60 text-[10px]">
-            <span className="text-[9px] font-bold uppercase text-gray-400 dark:text-gray-500">Vinculado:</span>
+          <div className="flex flex-wrap items-center gap-4 px-2.5 py-1.5 bg-gray-100/60 dark:bg-gray-900/40 rounded border border-dashed border-slate-200 dark:border-gray-700/60 text-pequeno">
+            <span className="text-pequeno uppercase text-tinta-atenuada">Vinculado:</span>
             <span className="flex items-center gap-1">
-              <span className="font-bold text-gray-500 dark:text-gray-400 text-[9px] uppercase">Código:</span>
+              <span className="text-tinta-secundaria text-pequeno uppercase">Código:</span>
               {buscando ? <Loader2 size={10} className="animate-spin text-[#2383C2]" /> : (
-                <span className={`font-num font-semibold ${nuevoItem.codigo ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-500'}`}>
+                <span className={`text-numero-tabla ${nuevoItem.codigo ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-500'}`}>
                   {nuevoItem.codigo || (nuevoItem.referencia.trim() ? 'NO ENCONTRADO' : 'P')}
                 </span>
               )}
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-bold text-gray-500 dark:text-gray-400 text-[9px] uppercase">Clase:</span>
-              <span className={`font-medium ${esPad ? 'text-fuchsia-600 dark:text-fuchsia-400 font-bold' : 'text-gray-700 dark:text-gray-200'}`}>
+              <span className="text-tinta-secundaria text-pequeno uppercase">Clase:</span>
+              <span className={`${esPad ? 'text-fuchsia-600 dark:text-fuchsia-400 text-etiqueta' : 'text-tinta-principal'}`}>
                 {nuevoItem.clase || 'P'}
               </span>
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-bold text-gray-500 dark:text-gray-400 text-[9px] uppercase">Tipo:</span>
-              <span className="font-medium text-gray-700 dark:text-gray-200">{nuevoItem.tipoVinculado || 'P'}</span>
+              <span className="text-tinta-secundaria text-pequeno uppercase">Tipo:</span>
+              <span className="text-tinta-principal">{nuevoItem.tipoVinculado || 'P'}</span>
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-bold text-gray-500 dark:text-gray-400 text-[9px] uppercase">Precio:</span>
-              <span className="font-semibold text-gray-700 dark:text-gray-200">
+              <span className="text-tinta-secundaria text-pequeno uppercase">Precio:</span>
+              <span className="text-etiqueta text-tinta-principal">
                 {nuevoItem.precio !== '' ? `$${formatearPesos(nuevoItem.precio)}` : 'P'}
               </span>
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-bold text-gray-500 dark:text-gray-400 text-[9px] uppercase">Recargo:</span>
-              <span className="font-semibold text-gray-700 dark:text-gray-200">
+              <span className="text-tinta-secundaria text-pequeno uppercase">Recargo:</span>
+              <span className="text-etiqueta text-tinta-principal">
                 {nuevoItem.precio === '' ? 'P' : `${Math.round(PORCENTAJE_RECARGO_HEMODINAMIA * 100)}%`}
               </span>
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-bold text-gray-500 dark:text-gray-400 text-[9px] uppercase">Venta:</span>
-              <span className="font-semibold text-gray-700 dark:text-gray-200">
+              <span className="text-tinta-secundaria text-pequeno uppercase">Venta:</span>
+              <span className="text-etiqueta text-tinta-principal">
                 ${formatearPesos(ventaActual)}
               </span>
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-bold text-gray-500 dark:text-gray-400 text-[9px] uppercase">Empresa:</span>
-              <span className="font-medium text-gray-700 dark:text-gray-200">{nuevoItem.empresaVinculada || 'P'}</span>
+              <span className="text-tinta-secundaria text-pequeno uppercase">Empresa:</span>
+              <span className="text-tinta-principal">{nuevoItem.empresaVinculada || 'P'}</span>
             </span>
             <span className="flex items-center gap-1">
-              <span className="font-bold text-gray-500 dark:text-gray-400 text-[9px] uppercase">Desc. Auto:</span>
-              <span className="font-medium text-gray-700 dark:text-gray-200">{nuevoItem.descriptorAuto || 'P'}</span>
+              <span className="text-tinta-secundaria text-pequeno uppercase">Desc. Auto:</span>
+              <span className="text-tinta-principal">{nuevoItem.descriptorAuto || 'P'}</span>
             </span>
           </div>
         </div>
       </fieldset>
 
       {cotizaciones.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg p-6 text-center text-[10px] text-slate-400 dark:text-gray-500">
+        <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg p-6 text-center text-pequeno text-tinta-atenuada">
           Aún no hay ítems registrados para esta empresa/fecha.
         </div>
       ) : (
@@ -1114,7 +1114,7 @@ export const CargasTab = forwardRef(({ formData, bloqueActivoIndex, onAgregarIte
         </div>
       )}
 
-      <p className="text-[9px] text-slate-400 dark:text-gray-500 italic px-1">
+      <p className="text-pequeno text-tinta-atenuada italic px-1">
         Los ítems se guardan al presionar "Guardar Todo". Cada ítem queda imputado al período {periodoAbierto ? `${periodoAbierto.mes.toUpperCase()} ${periodoAbierto.anio}` : 'que esté abierto'} en Control Mensual.
       </p>
     </div>

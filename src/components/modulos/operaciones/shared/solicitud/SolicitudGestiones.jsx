@@ -192,12 +192,12 @@ const SolicitudGestiones = ({ modulo }) => {
   )];
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {(cargando || exportando) && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">
+            <h3 className="text-[#2383C2] text-subtitulo">
               {exportando ? 'Exportando y actualizando...' : 'Cargando solicitudes...'}
             </h3>
           </div>
@@ -206,16 +206,16 @@ const SolicitudGestiones = ({ modulo }) => {
 
       {/* HEADER PRINCIPAL */}
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <ClipboardList size={15} className="text-[#2383C2]" />
-          SOLICITUD DE {config.etiqueta.toUpperCase()}
+          Solicitud de {config.etiqueta.toLowerCase()}
         </h2>
 
         <button
           onClick={() => handleExportarYMarcarSolicitado(periodoAbierto)}
           disabled={seleccionados.size === 0 || exportando || hayFilasInvalidas}
           title={hayFilasInvalidas ? 'Hay filas con datos incompletos — corregilas antes de exportar' : undefined}
-          className="px-3 py-1 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center gap-1.5 transition text-[11px] shadow-xs active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="px-3 py-1 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center gap-1.5 transition text-etiqueta shadow-xs active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Download size={13} />
           <span>Exportar Seleccionados ({seleccionados.size})</span>
@@ -223,7 +223,7 @@ const SolicitudGestiones = ({ modulo }) => {
       </div>
 
       {hayFilasInvalidas && (
-        <div className="shrink-0 flex items-start gap-1.5 px-3 py-1.5 text-[10px] text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/40">
+        <div className="shrink-0 flex items-start gap-1.5 px-3 py-1.5 text-pequeno text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/40">
           <AlertTriangle size={12} className="shrink-0 mt-0.5" />
           <span>
             <strong>{filasInvalidas.length} fila(s)</strong> con datos incompletos ("P" o vacío) — el botón de exportar queda bloqueado hasta corregirlas. Revisá las celdas resaltadas en rojo.
@@ -243,15 +243,15 @@ const SolicitudGestiones = ({ modulo }) => {
           quede claro si coincide o no con el que traen los ítems al exportar. */}
       {!cargandoPeriodo && (
         periodoAbierto ? (
-          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-900/40">
+          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-pequeno text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-900/40">
             <Unlock size={11} className="shrink-0" />
             Período abierto para {config.etiqueta}: <strong>{periodoAbierto.mes.toUpperCase()} {periodoAbierto.anio}</strong>
-            <span className="text-emerald-600/70 dark:text-emerald-500/70 font-normal normal-case">
+            <span className="text-emerald-600/70 dark:text-emerald-500/70 normal-case">
               — cada ítem se imputa según el período que estaba abierto cuando fue cargado, no necesariamente este.
             </span>
           </div>
         ) : (
-          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/40">
+          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-pequeno text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/40">
             <Lock size={11} className="shrink-0" />
             No hay un período abierto para {config.etiqueta} en Control Mensual.
           </div>
@@ -259,9 +259,9 @@ const SolicitudGestiones = ({ modulo }) => {
       )}
 
       {/* BARRA INFORMATIVA */}
-      <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 text-[10px] text-gray-500 dark:text-gray-400">
+      <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 text-pequeno text-tinta-secundaria">
         <span>
-          Registros con Estado de Carga completo (<strong className="text-gray-700 dark:text-gray-200">CARGADO</strong>), pendientes de descargar y solicitar.
+          Registros con Estado de Carga completo (<strong className="text-tinta-principal">CARGADO</strong>), pendientes de descargar y solicitar.
         </span>
         <span className="flex items-center gap-1">
           <FileText size={11} className="text-[#2383C2]" />
@@ -278,14 +278,14 @@ const SolicitudGestiones = ({ modulo }) => {
             type="button"
             onClick={restablecerAnchos}
             title="Restablecer ancho de columnas"
-            className="flex items-center gap-1 text-[9px] font-medium text-gray-400 hover:text-[#2383C2] dark:text-gray-500 dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
+            className="flex items-center gap-1 text-pequeno text-tinta-atenuada hover:text-[#2383C2] dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
           >
             <RotateCcw size={10} /> Restablecer columnas
           </button>
         </div>
 
         <table
-          className="text-left text-[10px] border-collapse"
+          className="text-left text-pequeno border-collapse"
           style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: anchoTotalTabla }}
         >
           <colgroup>
@@ -295,7 +295,7 @@ const SolicitudGestiones = ({ modulo }) => {
           </colgroup>
 
           <thead className="bg-gray-100 dark:bg-gray-900 sticky top-[22px] z-10">
-            <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[9px]">
+            <tr className="text-tinta-secundaria uppercase text-pequeno">
               <th className="relative py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 text-center overflow-hidden">
                 <input
                   type="checkbox"
@@ -374,7 +374,7 @@ const SolicitudGestiones = ({ modulo }) => {
           <tbody>
             {filas.length === 0 ? (
               <tr>
-                <td colSpan={17} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500 text-xs">
+                <td colSpan={17} className="px-4 py-8 text-center text-tinta-atenuada text-normal">
                   No hay registros pendientes de solicitar por el momento.
                 </td>
               </tr>
@@ -408,22 +408,22 @@ const SolicitudGestiones = ({ modulo }) => {
                         className="w-3.5 h-3.5 cursor-pointer accent-[#2383C2]"
                       />
                     </td>
-                    <td className={cc('admision', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 font-semibold text-[#2383C2] whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('admision')}>
+                    <td className={cc('admision', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-etiqueta text-[#2383C2] whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('admision')}>
                       {bloque.gestionId}
                     </td>
-                    <td className={cc('paciente', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-700 dark:text-gray-200 font-medium whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('paciente')}>
+                    <td className={cc('paciente', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-principal whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('paciente')}>
                       {bloque.nombre}
                     </td>
-                    <td className={cc('medico', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('medico')}>
+                    <td className={cc('medico', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('medico')}>
                       {bloque.medico}
                     </td>
-                    <td className={cc('fecha', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fecha')}>
+                    <td className={cc('fecha', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fecha')}>
                       {formatearFechaTabla(bloque.fecha)}
                     </td>
-                    <td className={cc('empresa', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 truncate max-w-[160px]')} title={tt('empresa', bloque.empresa)}>
+                    <td className={cc('empresa', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria truncate max-w-[160px]')} title={tt('empresa', bloque.empresa)}>
                       {bloque.empresa}
                     </td>
-                    <td className={cc('codigo', `py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 whitespace-nowrap overflow-hidden text-ellipsis ${esContenidoPad ? 'text-fuchsia-600 dark:text-fuchsia-400 italic' : 'font-num text-emerald-600 dark:text-emerald-400'}`)} title={tt('codigo')}>
+                    <td className={cc('codigo', `py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 whitespace-nowrap overflow-hidden text-ellipsis ${esContenidoPad ? 'text-fuchsia-600 dark:text-fuchsia-400 italic' : 'text-numero-tabla text-emerald-600 dark:text-emerald-400'}`)} title={tt('codigo')}>
                       {item ? (item.codigo || 'S/C') : '-'}
                     </td>
                     <td className={cc('descripcion', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 truncate max-w-[180px]')} title={tt('descripcion', item?.descriptorAuto)}>
@@ -431,37 +431,37 @@ const SolicitudGestiones = ({ modulo }) => {
                         {esContenidoPad && <span className="text-fuchsia-400 dark:text-fuchsia-600 shrink-0">↳</span>}
                         <span className="truncate">{item ? (item.descriptorAuto || '-') : '-'}</span>
                         {esPrincipalPad && (
-                          <span className="flex items-center gap-0.5 text-[8px] px-1 rounded bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-700 dark:text-fuchsia-400 font-bold shrink-0">
+                          <span className="flex items-center gap-0.5 text-pequeno px-1 rounded bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-700 dark:text-fuchsia-400 shrink-0">
                             <Package size={9} /> PAD
                           </span>
                         )}
                       </span>
                     </td>
-                    <td className={cc('cantidad', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-center text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('cantidad')}>
+                    <td className={cc('cantidad', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-center text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('cantidad')}>
                       {item ? item.cantidad : '-'}
                     </td>
-                    <td className={cc('precio', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('precio')}>
+                    <td className={cc('precio', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-emerald-700 dark:text-emerald-400 text-etiqueta whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('precio')}>
                       {item ? `$${Number(item.precio || 0).toLocaleString('es-CL')}` : '-'}
                     </td>
-                    <td className={cc('tipoVinculado', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('tipoVinculado')}>
+                    <td className={cc('tipoVinculado', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('tipoVinculado')}>
                       {item ? (item.tipoVinculado || 'P') : '-'}
                     </td>
-                    <td className={cc('fechaRegistro', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fechaRegistro')}>
+                    <td className={cc('fechaRegistro', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fechaRegistro')}>
                       {formatearFechaDeTimestamp(bloque.fechaRegistroAdmision)}
                     </td>
-                    <td className={cc('fechaCarga', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fechaCarga')}>
+                    <td className={cc('fechaCarga', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fechaCarga')}>
                       {formatearFechaTabla(bloque.fecha)}
                     </td>
-                    <td className={cc('numCotizacion', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('numCotizacion')}>
+                    <td className={cc('numCotizacion', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('numCotizacion')}>
                       {(item?.numCotizacion) || bloque.numCotizacion}
                     </td>
-                    <td className="py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {fechaIngresoHoy}
                     </td>
-                    <td className={cc('lote', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('lote')}>
+                    <td className={cc('lote', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('lote')}>
                       {item ? item.lote : '-'}
                     </td>
-                    <td className={cc('vencimiento', 'py-1 px-2 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('vencimiento')}>
+                    <td className={cc('vencimiento', 'py-1 px-2 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('vencimiento')}>
                       {item ? formatearFechaTabla(item.vencimiento) : '-'}
                     </td>
                   </tr>

@@ -18,7 +18,7 @@ export const CeldaOrdenConsignacion = ({ registro, onGuardar, onInvalido }) => {
       <span
         title="Sincronizada desde OC (Importar Detalles OC): no se puede editar"
         aria-label={`Orden ${valorGuardado}, sincronizada desde OC`}
-        className="flex items-center gap-1 h-6 px-1.5 rounded text-[10px] font-num font-semibold text-slate-600 dark:text-gray-300 bg-slate-100 dark:bg-gray-700/50 cursor-not-allowed"
+        className="flex items-center gap-1 h-6 px-1.5 rounded text-numero-tabla text-tinta-secundaria bg-slate-100 dark:bg-gray-700/50 cursor-not-allowed"
       >
         <Lock size={10} className="shrink-0 text-slate-400" />
         <span className="truncate">{valorGuardado}</span>
@@ -51,7 +51,7 @@ export const CeldaOrdenConsignacion = ({ registro, onGuardar, onInvalido }) => {
       onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
       placeholder="N° Orden"
       title="Solo números; varias órdenes separadas por coma"
-      className="w-full h-6 px-1.5 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-[#2383C2] rounded text-[10px] outline-none bg-transparent focus:bg-white dark:focus:bg-gray-900 text-gray-700 dark:text-gray-200 transition"
+      className="w-full h-6 px-1.5 border border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-[#2383C2] rounded text-pequeno outline-none bg-transparent focus:bg-white dark:focus:bg-gray-900 text-tinta-principal transition"
     />
   );
 };

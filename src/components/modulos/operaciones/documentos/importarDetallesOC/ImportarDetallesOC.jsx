@@ -31,13 +31,13 @@ const TD = 'px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700
 // recuerda por usuario en este navegador). `valor` es lo que se muestra y
 // va también en el tooltip cuando no cabe.
 const COLUMNAS = [
-  { key: 'id', label: 'ID', ancho: 90, min: 60, td: 'font-num text-slate-600 dark:text-gray-400', valor: (i) => i.id },
-  { key: 'admision', label: 'Admisión', ancho: 80, min: 60, td: 'font-semibold text-[#2383C2]', valor: (i) => i.admision },
+  { key: 'id', label: 'ID', ancho: 90, min: 60, td: 'text-numero-tabla text-tinta-secundaria', valor: (i) => i.id },
+  { key: 'admision', label: 'Admisión', ancho: 80, min: 60, td: 'text-etiqueta text-[#2383C2]', valor: (i) => i.admision },
   { key: 'paciente', label: 'Paciente', ancho: 160, min: 60, valor: (i) => i.paciente || '-' },
   { key: 'medico', label: 'Médico', ancho: 140, min: 60, valor: (i) => i.medico || '-' },
   { key: 'fecha_cx', label: 'Fecha Cx', ancho: 85, min: 60, valor: (i) => formatearFechaCelda(i.fecha_cx) },
   { key: 'proveedor', label: 'Proveedor', ancho: 160, min: 60, valor: (i) => i.proveedor || '-' },
-  { key: 'codigo', label: 'Código', ancho: 85, min: 60, td: 'font-num text-emerald-600 dark:text-emerald-400', valor: (i) => i.codigo || '-' },
+  { key: 'codigo', label: 'Código', ancho: 85, min: 60, td: 'text-numero-tabla text-emerald-600 dark:text-emerald-400', valor: (i) => i.codigo || '-' },
   { key: 'descripcion', label: 'Descripción', ancho: 200, min: 60, valor: (i) => i.descripcion || '-' },
   { key: 'cantidad', label: 'Cant.', ancho: 60, min: 60, th: 'text-center', td: 'text-center', valor: (i) => i.cantidad ?? '-' },
   { key: 'oc', label: 'OC', ancho: 95, min: 60, valor: (i) => i.oc || '-' },
@@ -283,12 +283,12 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {procesando && (
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-900/30 dark:bg-black/50 backdrop-blur-[2px]">
           <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-xl flex flex-col items-center gap-2 border border-slate-100 dark:border-gray-700 min-w-[260px]">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-normal text-[12px] text-center">{textoProgreso()}</h3>
+            <h3 className="text-[#2383C2] text-normal text-center">{textoProgreso()}</h3>
             {porcentajeProgreso() !== null && (
               <div className="w-full h-1.5 bg-slate-100 dark:bg-gray-700 rounded-full overflow-hidden mt-1">
                 <div className="h-full bg-[#2383C2] rounded-full transition-all" style={{ width: `${porcentajeProgreso()}%` }} />
@@ -301,7 +301,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
       <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileSpreadsheet size={16} className="text-[#2383C2]" />
-          <span className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+          <span className="text-normal text-tinta-principal tracking-wide uppercase">
             Importar Detalles OC
           </span>
         </div>
@@ -313,7 +313,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
             onClick={handleReconstruir}
             disabled={reconstruyendo || procesando}
             title="Solo admin/dev: rearma el snapshot de comparación leyendo todas las filas guardadas (una vez)"
-            className="px-2 py-1 rounded text-[10px] border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-50 flex items-center gap-1"
+            className="px-2 py-1 rounded text-pequeno border border-slate-300 dark:border-gray-600 text-tinta-secundaria hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-50 flex items-center gap-1"
           >
             {reconstruyendo ? <Loader2 size={11} className="animate-spin" /> : <Database size={11} />} Reconstruir snapshot
           </button>
@@ -324,7 +324,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
             onClick={descargarExcelMes}
             disabled={!periodoSeleccionado || cargando || descargando || procesando}
             title={periodoSeleccionado ? 'Descarga todas las filas guardadas del mes seleccionado' : 'Selecciona un año y mes'}
-            className="px-2 py-1 rounded text-[10px] border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+            className="px-2 py-1 rounded text-pequeno border border-slate-300 dark:border-gray-600 text-tinta-secundaria hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
           >
             {descargando ? <Loader2 size={11} className="animate-spin" /> : <Download size={11} />}
             {descargando ? 'Generando...' : 'Descargar Excel del mes'}
@@ -333,7 +333,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
         {hasPermission(pathVista, 'cabecera_acciones', 'btn_importar') && (
           <button
             onClick={() => setShowModal(true)}
-            className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-[10px] font-normal flex items-center gap-1.5 transition shadow-sm"
+            className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-pequeno flex items-center gap-1.5 transition shadow-sm"
           >
             <Upload size={11} /> Importar Excel
           </button>
@@ -342,7 +342,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
       </header>
 
       {snapshotAntiguo && (
-        <div className="shrink-0 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 px-3 py-2 flex flex-wrap items-center gap-2 text-[10.5px] text-amber-800 dark:text-amber-300">
+        <div className="shrink-0 bg-amber-50 dark:bg-amber-950/30 border-b border-amber-200 dark:border-amber-800 px-3 py-2 flex flex-wrap items-center gap-2 text-pequeno text-amber-800 dark:text-amber-300">
           <AlertTriangle size={13} className="shrink-0" />
           <span className="flex-1 min-w-[200px]">
             El snapshot de comparación está en el formato antiguo. Antes de importar, un administrador debe ejecutar
@@ -362,15 +362,15 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
       )}
 
       {resultadoReconstruccion && (
-        <div className="shrink-0 bg-emerald-50 dark:bg-emerald-950/30 border-b border-emerald-200 dark:border-emerald-800 px-3 py-1.5 flex items-center gap-2 text-[10.5px] text-emerald-800 dark:text-emerald-300">
+        <div className="shrink-0 bg-emerald-50 dark:bg-emerald-950/30 border-b border-emerald-200 dark:border-emerald-800 px-3 py-1.5 flex items-center gap-2 text-pequeno text-emerald-800 dark:text-emerald-300">
           <Database size={12} /> Snapshot reconstruido: {resultadoReconstruccion.totalFilas} fila(s) · Firestore: {resultadoReconstruccion.lecturas} lectura(s), {resultadoReconstruccion.escrituras} escritura(s). Ya puedes importar.
           <button type="button" onClick={() => setResultadoReconstruccion(null)} className="ml-auto p-0.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/40"><X size={12} /></button>
         </div>
       )}
 
       {resultadoEliminacion && (
-        <div className="shrink-0 bg-slate-50 dark:bg-gray-800/60 border-b border-slate-200 dark:border-gray-700 px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-slate-700 dark:text-gray-200">
-          <span className="flex items-center gap-1 font-semibold text-red-700 dark:text-red-400"><Trash2 size={12} /> {resultadoEliminacion.eliminadas} fila(s) eliminada(s) (con respaldo)</span>
+        <div className="shrink-0 bg-slate-50 dark:bg-gray-800/60 border-b border-slate-200 dark:border-gray-700 px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-pequeno text-tinta-principal">
+          <span className="flex items-center gap-1 text-etiqueta text-red-700 dark:text-red-400"><Trash2 size={12} /> {resultadoEliminacion.eliminadas} fila(s) eliminada(s) (con respaldo)</span>
           {resultadoEliminacion.gestionesOC && (
             <span title={resultadoEliminacion.gestionesOC.error || undefined}>
               {resultadoEliminacion.gestionesOC.error
@@ -409,7 +409,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
       {hasPermission(pathVista, 'barra_filtros') && (
         <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-700">
           {!cargandoAnios && anios.length === 0 ? (
-            <span className="flex items-center gap-1.5 h-7 text-[11px] text-slate-500 dark:text-gray-400">
+            <span className="flex items-center gap-1.5 h-7 text-secundario text-tinta-secundaria">
               <AlertTriangle size={12} /> No hay detalles importados.
             </span>
           ) : (
@@ -418,7 +418,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
               value={anio}
               onChange={(e) => setAnio(e.target.value)}
               disabled={cargandoAnios}
-              className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">{cargandoAnios ? 'Cargando años...' : 'Año'}</option>
               {anios.map((yyyy) => (
@@ -430,7 +430,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
               value={mes}
               onChange={(e) => setMes(e.target.value)}
               disabled={!anio || cargandoMeses}
-              className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">{cargandoMeses ? 'Cargando meses...' : 'Mes'}</option>
               {meses.map((mm) => (
@@ -446,7 +446,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
               value={busquedaAdmisionPaciente}
               onChange={(e) => setBusquedaAdmisionPaciente(e.target.value)}
               disabled={!periodoSeleccionado}
-              className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2] disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Buscar por admisión o paciente..."
             />
           </div>
@@ -456,7 +456,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
               value={campoBusquedaOC}
               onChange={(e) => setCampoBusquedaOC(e.target.value)}
               disabled={!periodoSeleccionado}
-              className="h-full px-2 border-r border-gray-300 dark:border-gray-600 text-[11px] bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-full px-2 border-r border-gray-300 dark:border-gray-600 text-secundario bg-gray-100 dark:bg-gray-900 text-tinta-principal outline-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {Object.entries(CAMPOS_BUSQUEDA_OC).map(([clave, { label }]) => (
                 <option key={clave} value={clave}>{label}</option>
@@ -466,7 +466,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
               value={textoBusquedaOC}
               onChange={(e) => setTextoBusquedaOC(e.target.value)}
               disabled={!periodoSeleccionado}
-              className="h-full w-36 px-2 text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-full w-36 px-2 text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal disabled:opacity-50 disabled:cursor-not-allowed"
               placeholder="Buscar valor..."
             />
           </div>
@@ -476,14 +476,14 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
               <button
                 type="button"
                 onClick={() => setSeleccion(new Set())}
-                className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-[10.5px] text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-pequeno text-tinta-secundaria hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 Quitar selección
               </button>
               <button
                 type="button"
                 onClick={() => setModalEliminar({ filas: seleccionadas })}
-                className="h-7 px-2 rounded bg-red-600 hover:bg-red-700 text-white text-[10.5px] font-semibold flex items-center gap-1"
+                className="h-7 px-2 rounded bg-red-600 hover:bg-red-700 text-white text-pequeno flex items-center gap-1"
               >
                 <Trash2 size={12} /> Eliminar seleccionadas ({seleccionadas.length})
               </button>
@@ -494,30 +494,30 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
       )}
 
       {!periodoSeleccionado ? (
-        <div className="flex-grow flex flex-col items-center justify-center gap-2 text-center text-slate-400 dark:text-gray-500 px-6">
+        <div className="flex-grow flex flex-col items-center justify-center gap-2 text-center text-tinta-atenuada px-6">
           <CalendarSearch size={26} className="text-slate-300 dark:text-gray-600" />
-          <span className="text-[11px] font-medium">Selecciona un año y mes para ver los registros</span>
+          <span className="text-secundario">Selecciona un año y mes para ver los registros</span>
         </div>
       ) : cargando ? (
-        <div className="flex-grow flex items-center justify-center gap-2 text-slate-400 dark:text-gray-500 text-[11px]">
+        <div className="flex-grow flex items-center justify-center gap-2 text-tinta-atenuada text-secundario">
           <Loader2 size={14} className="animate-spin" /> Cargando registros...
         </div>
       ) : (
         <>
           {huboTope && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-3 py-1 text-[10.5px] text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-3 py-1 text-pequeno text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
               <AlertTriangle size={11} /> Este período tiene muchos registros — puede que no se estén mostrando todos.
             </div>
           )}
           <div className="flex-grow min-h-0 overflow-auto relative">
             <table
-              className="text-left text-[11px] border-collapse"
+              className="text-left text-secundario border-collapse"
               style={{ tableLayout: 'fixed', width: anchoTabla, minWidth: '100%' }}
             >
               {esAdminODev && <colgroup><col style={{ width: ANCHO_SELECCION }} /></colgroup>}
               <ColgroupRedimensionable columnas={COLUMNAS} anchos={anchos} relleno />
               <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-                <tr className="text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider">
+                <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider">
                   {esAdminODev && (
                     <th className={`${TH} text-center`}>
                       <input
@@ -541,7 +541,7 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
               <tbody className="divide-y divide-slate-200/60 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
                 {filasPagina.length === 0 ? (
                   <tr>
-                    <td colSpan={COLUMNAS.length + 1 + (esAdminODev ? 1 : 0)} className="px-4 py-6 text-center text-slate-400 dark:text-gray-500 text-xs">
+                    <td colSpan={COLUMNAS.length + 1 + (esAdminODev ? 1 : 0)} className="px-4 py-6 text-center text-tinta-atenuada text-normal">
                       No hay registros para los filtros seleccionados.
                     </td>
                   </tr>
@@ -577,9 +577,9 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
                 <div className="p-1.5 bg-[#2383C2]/10 rounded-lg">
                   <Upload size={16} className="text-[#2383C2]" />
                 </div>
-                <h3 className="font-normal text-xs text-slate-800 dark:text-gray-100">Importar Detalles OC</h3>
+                <h3 className="text-subtitulo text-tinta-principal">Importar detalles OC</h3>
               </div>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition p-1">
+              <button onClick={() => setShowModal(false)} className="text-tinta-atenuada hover:text-tinta-secundaria transition p-1">
                 <X size={16} />
               </button>
             </div>
@@ -590,13 +590,13 @@ const ImportarDetallesOC = ({ pathVista = '/documentos/importarDetallesOC' }) =>
                   <FileSpreadsheet size={24} className="text-slate-400 dark:text-gray-500" />
                 </div>
                 <div>
-                  <p className="text-xs font-normal text-slate-700 dark:text-gray-200">Arrastra tu archivo Excel aquí</p>
-                  <p className="text-[10px] text-slate-400 dark:text-gray-400 mt-0.5">Hoja "planilla" — solo se escriben las filas nuevas o modificadas respecto a la importación anterior.</p>
+                  <p className="text-normal text-tinta-principal">Arrastra tu archivo Excel aquí</p>
+                  <p className="text-pequeno text-tinta-atenuada mt-0.5">Hoja "planilla" — solo se escriben las filas nuevas o modificadas respecto a la importación anterior.</p>
                 </div>
               </div>
             </div>
             <div className="px-4 py-3 bg-slate-50 dark:bg-gray-900/40 border-t border-slate-100 dark:border-gray-700 flex justify-end">
-              <button onClick={() => setShowModal(false)} className="text-[11px] font-normal text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 px-3 py-1 rounded-lg transition">
+              <button onClick={() => setShowModal(false)} className="text-secundario text-tinta-secundaria hover:text-tinta-principal px-3 py-1 rounded-lg transition">
                 Cerrar
               </button>
             </div>

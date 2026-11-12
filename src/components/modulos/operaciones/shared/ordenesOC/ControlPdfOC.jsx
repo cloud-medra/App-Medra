@@ -28,15 +28,15 @@ export const ControlPdfOC = ({ oc, tienePdf, subiendo = null, abriendo = false, 
     >
       <input {...getInputProps()} />
       {subiendo ? (
-        <span className="flex items-center gap-1 text-[#2383C2] text-[10px]">
+        <span className="flex items-center gap-1 text-[#2383C2] text-pequeno">
           <Loader2 size={11} className="animate-spin" /> {subiendo.porcentaje}%
         </span>
       ) : tienePdf ? (
-        <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 text-[10px]" title="Tiene PDF">
+        <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 text-pequeno" title="Tiene PDF">
           <CheckCircle2 size={11} /> PDF
         </span>
       ) : (
-        <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 text-[10px]" title="Sin PDF">
+        <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 text-pequeno" title="Sin PDF">
           <FileText size={11} /> Sin PDF
         </span>
       )}
@@ -46,7 +46,7 @@ export const ControlPdfOC = ({ oc, tienePdf, subiendo = null, abriendo = false, 
           onClick={onVer}
           disabled={abriendo}
           title="Ver PDF"
-          className="p-0.5 rounded text-slate-500 dark:text-gray-400 hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-50"
+          className="p-0.5 rounded text-tinta-secundaria hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-50"
         >
           {abriendo ? <Loader2 size={11} className="animate-spin" /> : <Eye size={11} />}
         </button>
@@ -57,7 +57,7 @@ export const ControlPdfOC = ({ oc, tienePdf, subiendo = null, abriendo = false, 
         onClick={open}
         disabled={ocupado}
         title={tienePdf ? 'Reemplazar PDF (elegir o arrastrar)' : 'Subir PDF (elegir o arrastrar)'}
-        className="p-0.5 rounded text-slate-500 dark:text-gray-400 hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40"
+        className="p-0.5 rounded text-tinta-secundaria hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700 disabled:opacity-40"
       >
         <Upload size={11} />
       </button>

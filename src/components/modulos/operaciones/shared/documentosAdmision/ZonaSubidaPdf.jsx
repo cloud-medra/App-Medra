@@ -42,7 +42,7 @@ export const ZonaSubidaPdf = ({
         {subiendo
           ? <Loader2 size={20} className="animate-spin text-[#2383C2]" />
           : <UploadCloud size={20} className={isDragReject ? 'text-red-500' : isDragActive ? 'text-[#2383C2]' : 'text-slate-400 dark:text-gray-500'} />}
-        <p className="text-[11px] font-medium text-slate-700 dark:text-gray-200">
+        <p className="text-secundario text-tinta-principal">
           {subiendo
             ? `Subiendo ${progreso.actual} de ${progreso.total} — ${progreso.porcentaje}%`
             : isDragReject
@@ -51,7 +51,7 @@ export const ZonaSubidaPdf = ({
                 ? textoSoltar
                 : textoAyuda}
         </p>
-        {!subiendo && <p className="text-[9px] text-slate-400 dark:text-gray-500">Uno o varios, hasta {tamanoMaximoMb} MB cada uno.</p>}
+        {!subiendo && <p className="text-pequeno text-tinta-atenuada">Uno o varios, hasta {tamanoMaximoMb} MB cada uno.</p>}
       </div>
 
       {subiendo && (

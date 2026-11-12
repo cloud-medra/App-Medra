@@ -38,7 +38,7 @@ const TONOS_ORDEN = {
   cargando: {
     fila: 'hover:bg-gray-50/80 dark:hover:bg-gray-700/40',
     fija: 'bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-700',
-    badge: 'bg-gray-100 text-gray-700 ring-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:ring-gray-600'
+    badge: 'bg-gray-100 text-tinta-principal ring-gray-300 dark:bg-gray-700 dark:ring-gray-600'
   }
 };
 
@@ -193,8 +193,8 @@ export const GestionesTable = ({
   const getSolicitudEstilo = (solicitud) => {
     const sol = (solicitud || 'PENDIENTE').toUpperCase();
     const estilos = {
-      PENDIENTE: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400',
-      SOLICITAR: 'bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-400 font-bold',
+      PENDIENTE: 'bg-gray-100 dark:bg-gray-700 text-tinta-secundaria',
+      SOLICITAR: 'bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-400 text-etiqueta',
       SOLICITADO: 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400'
     };
     return { label: sol, className: estilos[sol] || estilos.PENDIENTE };
@@ -205,9 +205,9 @@ export const GestionesTable = ({
   const getInformeEstilo = (informe) => {
     const inf = (informe || 'PENDIENTE').toUpperCase().trim();
     const estilos = {
-      PENDIENTE: 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 font-bold ring-1 ring-red-200 dark:ring-red-900',
-      DISPONIBLE: 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 font-semibold',
-      'NO APLICA': 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+      PENDIENTE: 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 text-etiqueta ring-1 ring-red-200 dark:ring-red-900',
+      DISPONIBLE: 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 text-etiqueta',
+      'NO APLICA': 'bg-gray-100 dark:bg-gray-700 text-tinta-secundaria'
     };
     return { label: inf, className: estilos[inf] || estilos.PENDIENTE };
   };
@@ -244,8 +244,8 @@ export const GestionesTable = ({
     <div className="flex-grow min-h-[60vh] md:min-h-0 flex flex-col">
       <div className="shrink-0 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-1 py-0.5 bg-gray-100 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         {/* Leyenda de colores de fila (Orden y PDF). */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 pl-1 text-[9px] font-medium text-gray-500 dark:text-gray-400" aria-label="Leyenda de colores por Orden">
-          <span className="uppercase tracking-wide text-gray-400 dark:text-gray-500">Orden:</span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 pl-1 text-pequeno text-tinta-secundaria" aria-label="Leyenda de colores por Orden">
+          <span className="uppercase tracking-wide text-tinta-atenuada">Orden:</span>
           {['conPdf', 'sinPdf', 'sinOrden'].map(clave => (
             <span key={clave} className="inline-flex items-center gap-1">
               <span className={`h-2 w-2 rounded-sm ${TONOS_ORDEN[clave].punto}`} />
@@ -253,12 +253,12 @@ export const GestionesTable = ({
             </span>
           ))}
           {errorPdfOC && <span className="text-amber-600 dark:text-amber-400" title={errorPdfOC}>· {errorPdfOC}</span>}
-          {!errorPdfOC && pdfsOC === null && <span className="text-gray-400">· Cargando PDF…</span>}
+          {!errorPdfOC && pdfsOC === null && <span className="text-tinta-atenuada">· Cargando PDF…</span>}
         </div>
         <div className="flex items-center gap-1 ml-auto">
           {onCambiarFijarColumnas && (
             <label
-              className="flex items-center gap-1.5 cursor-pointer select-none text-[10px] md:text-[9px] font-medium text-gray-500 dark:text-gray-400 px-1.5 py-1.5 md:py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
+              className="flex items-center gap-1.5 cursor-pointer select-none text-pequeno md:text-pequeno text-tinta-secundaria px-1.5 py-1.5 md:py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
               title="Fijadas, las columnas de ID a Empresa quedan visibles al desplazar la tabla hacia el lado"
             >
               <input
@@ -279,7 +279,7 @@ export const GestionesTable = ({
             type="button"
             onClick={restablecerAnchos}
             title="Restablecer ancho de columnas"
-            className="flex items-center gap-1 text-[10px] md:text-[9px] font-medium text-gray-400 hover:text-[#2383C2] dark:text-gray-500 dark:hover:text-[#2383C2] transition px-1.5 py-1.5 md:py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
+            className="flex items-center gap-1 text-pequeno md:text-pequeno text-tinta-atenuada hover:text-[#2383C2] dark:hover:text-[#2383C2] transition px-1.5 py-1.5 md:py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
           >
             <RotateCcw size={10} /> Restablecer columnas
           </button>
@@ -289,7 +289,7 @@ export const GestionesTable = ({
       {/* overscroll-contain: el scroll táctil de la tabla no arrastra la página. */}
       <div className="flex-grow min-h-0 overflow-auto overscroll-contain relative">
         <table
-          className="text-left text-[11px] border-collapse"
+          className="text-left text-secundario border-collapse"
           style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: anchoTotalTabla }}
         >
           <colgroup>
@@ -299,7 +299,7 @@ export const GestionesTable = ({
           </colgroup>
   
           <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10 select-none">
-            <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+            <tr className="text-tinta-secundaria uppercase text-pequeno">
               {COLUMNAS.map(col => (
                 <th
                   key={col.key}
@@ -356,73 +356,73 @@ export const GestionesTable = ({
                       <span className={`h-2.5 w-2.5 rounded-full inline-block shrink-0 ${status.colorClass}`} title={status.label} />
                     </div>
                   </td>
-                  <td style={getStickyStyle('numero')} className={`${celdaBase} text-gray-500 dark:text-gray-400 font-bold text-center ${fija('numero')}`}>{numeroInicial + index + 1}</td>
-                  <td style={getStickyStyle('id')} className={`${celdaBase} font-semibold text-[#2383C2] ${fija('id')}`} title={idMostrado}>
+                  <td style={getStickyStyle('numero')} className={`${celdaBase} text-tinta-secundaria text-etiqueta text-center ${fija('numero')}`}>{numeroInicial + index + 1}</td>
+                  <td style={getStickyStyle('id')} className={`${celdaBase} text-etiqueta text-[#2383C2] ${fija('id')}`} title={idMostrado}>
                     <div className="flex items-center gap-1">
                       <span className="truncate">{idMostrado}</span>
-                      <button onClick={(e) => { e.stopPropagation(); handleCopiarTexto(idMostrado); }} title="Copiar ID" className="p-0.5 rounded text-gray-400 hover:text-emerald-600 transition shrink-0">
+                      <button onClick={(e) => { e.stopPropagation(); handleCopiarTexto(idMostrado); }} title="Copiar ID" className="p-0.5 rounded text-tinta-atenuada hover:text-emerald-600 transition shrink-0">
                         <Copy size={11} />
                       </button>
                     </div>
                   </td>
-                  <td style={getStickyStyle('nombre')} className={`${celdaBase} text-gray-700 dark:text-gray-200 font-medium ${fija('nombre')}`} title={i.nombre}>{i.nombre}</td>
-                  <td style={getStickyStyle('fecha')} className={`${celdaBase} text-gray-600 dark:text-gray-300 ${fija('fecha')}`}>{formatearFechaTabla(i.fecha)}</td>
-                  <td style={getStickyStyle('empresa')} className={`${celdaBase} text-gray-600 dark:text-gray-300 ${fija('empresa')}`} title={i.empresa}>{i.empresa || '-'}</td>
+                  <td style={getStickyStyle('nombre')} className={`${celdaBase} text-tinta-principal ${fija('nombre')}`} title={i.nombre}>{i.nombre}</td>
+                  <td style={getStickyStyle('fecha')} className={`${celdaBase} text-tinta-secundaria ${fija('fecha')}`}>{formatearFechaTabla(i.fecha)}</td>
+                  <td style={getStickyStyle('empresa')} className={`${celdaBase} text-tinta-secundaria ${fija('empresa')}`} title={i.empresa}>{i.empresa || '-'}</td>
                   <td
-                    className={`${celdaBase} text-gray-700 dark:text-gray-200 font-num`}
+                    className={`${celdaBase} text-tinta-principal text-numero-tabla`}
                     title={ordenTexto ? `${ordenTexto} · ${tono.leyenda || 'Verificando PDF…'}` : 'Sin orden'}
                   >
                     {ordenTexto
-                      ? <span className={`inline-block max-w-full truncate align-middle px-1.5 py-px rounded font-semibold ring-1 ring-inset ${tono.badge}`}>{ordenTexto}</span>
-                      : <span className="text-gray-400 dark:text-gray-500">—</span>}
+                      ? <span className={`inline-block max-w-full truncate align-middle px-1.5 py-px rounded text-etiqueta ring-1 ring-inset ${tono.badge}`}>{ordenTexto}</span>
+                      : <span className="text-tinta-atenuada">—</span>}
                   </td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300`} title={textoAdmisionNombre}>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={textoAdmisionNombre}>
                     <div className="flex items-center gap-1">
                       <span className="truncate">{textoAdmisionNombre}</span>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleCopiarTexto(textoAdmisionNombre); }}
                         title="Copiar Admisión - Nombre"
-                        className="p-0.5 rounded text-gray-400 hover:text-emerald-600 transition shrink-0"
+                        className="p-0.5 rounded text-tinta-atenuada hover:text-emerald-600 transition shrink-0"
                       >
                         <Copy size={11} />
                       </button>
                     </div>
                   </td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300 font-medium`} title={config.centroDe(i)}>{config.centroDe(i)}</td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300 font-medium`} title={i.atributo}>{i.atributo || config.atributoPorDefecto}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={config.centroDe(i)}>{config.centroDe(i)}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={i.atributo}>{i.atributo || config.atributoPorDefecto}</td>
                   <td className={celdaBase} title={i.estado}><EstadoBadge estado={i.estado || 'AGENDANDO'} /></td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300`}>{formatearFechaCarga(i.fechaCarga)}</td>
-                  <td className={`${celdaBase} text-emerald-700 dark:text-emerald-400 font-semibold`}>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{formatearFechaCarga(i.fechaCarga)}</td>
+                  <td className={`${celdaBase} text-emerald-700 dark:text-emerald-400 text-etiqueta`}>
                     {new Intl.NumberFormat('es-CL').format(i.costo ?? 0)}
                   </td>
                   <td className={celdaBase}>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full uppercase ${solicitudInfo.className}`}>
+                    <span className={`text-pequeno px-1.5 py-0.5 rounded-full uppercase ${solicitudInfo.className}`}>
                       {solicitudInfo.label}
                     </span>
                     {/* Editado después de solicitar: se descarga en "Solicitudes de modificaciones". */}
                     {i.modificacionPendiente && (
                       <span
                         title="Modificación pendiente: cambios después de solicitar, aún no descargados en Solicitudes de modificaciones"
-                        className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full uppercase bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                        className="ml-1 text-pequeno px-1.5 py-0.5 rounded-full uppercase bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
                       >
                         Modif. pendiente
                       </span>
                     )}
                   </td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300 font-medium`} title={i.periodo}>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={i.periodo}>
                     {i.periodo || '-'}
                   </td>
                   <td className={celdaBase}>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full uppercase ${informeInfo.className}`}>
+                    <span className={`text-pequeno px-1.5 py-0.5 rounded-full uppercase ${informeInfo.className}`}>
                       {informeInfo.label}
                     </span>
                   </td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={i.convenio}>{i.convenio || '-'}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={i.prevision}>{i.prevision || '-'}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={i.medico}>{i.medico || '-'}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={i.descripcion}>{i.descripcion || '-'}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={i.observacion}>{i.observacion || '-'}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={i.registradoPor}>{i.registradoPor || 'N/A'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={i.convenio}>{i.convenio || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={i.prevision}>{i.prevision || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={i.medico}>{i.medico || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={i.descripcion}>{i.descripcion || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={i.observacion}>{i.observacion || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={i.registradoPor}>{i.registradoPor || 'N/A'}</td>
                   <td className="py-1 px-2 border-b border-gray-200 dark:border-gray-700 text-center overflow-hidden">
                     {/* En el celular no hay doble clic cómodo: el ojo abre el detalle. */}
                     <div className="flex justify-center gap-0.5 md:gap-1.5" onClick={e => e.stopPropagation()}>
@@ -433,7 +433,7 @@ export const GestionesTable = ({
                       >
                         <Eye size={13} />
                       </button>
-                      <button onClick={() => abrirHistorialLogs(i)} title="Ver Historial / Logs" className="text-gray-500 hover:text-[#2383C2] transition p-1.5 md:p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
+                      <button onClick={() => abrirHistorialLogs(i)} title="Ver Historial / Logs" className="text-tinta-secundaria hover:text-[#2383C2] transition p-1.5 md:p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700">
                         <History size={13} />
                       </button>
                       <button onClick={() => iniciarEdicion(i)} title="Editar" className="text-blue-600 hover:text-blue-800 transition p-1.5 md:p-0.5 rounded hover:bg-blue-50 dark:hover:bg-blue-950/30">

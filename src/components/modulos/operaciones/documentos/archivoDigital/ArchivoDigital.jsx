@@ -54,7 +54,7 @@ const IconoNodo = ({ nodo, size = 16 }) => {
   return <FileText size={size} className="text-red-500 shrink-0" />;
 };
 
-const BTN_ICONO = 'p-1 rounded text-gray-500 hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40';
+const BTN_ICONO = 'p-1 rounded text-tinta-secundaria hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40';
 
 const ArchivoDigital = () => {
   const { hasPermission } = useGranularPermission();
@@ -239,7 +239,7 @@ const ArchivoDigital = () => {
     );
   };
 
-  const celda = 'px-3 py-2 border-b border-gray-100 dark:border-gray-700/60 text-gray-700 dark:text-gray-200 truncate';
+  const celda = 'px-3 py-2 border-b border-gray-100 dark:border-gray-700/60 text-tinta-principal truncate';
   const subidasVisibles = subidas.length > 0;
 
   return (
@@ -247,19 +247,19 @@ const ArchivoDigital = () => {
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-3">
         <FolderOpen size={18} className="text-[#2383C2]" />
         <div className="flex-1 min-w-0">
-          <h2 className="text-[14px] font-semibold text-gray-800 dark:text-gray-100">Archivo digital</h2>
-          <p className="text-[11.5px] text-gray-500 dark:text-gray-400">Carpetas y documentos ({FORMATOS_TEXTO}, hasta {TAMANO_MAXIMO_MB} MB por archivo).</p>
+          <h2 className="text-titulo-seccion text-tinta-principal">Archivo digital</h2>
+          <p className="text-secundario text-tinta-secundaria">Carpetas y documentos ({FORMATOS_TEXTO}, hasta {TAMANO_MAXIMO_MB} MB por archivo).</p>
         </div>
         {!enPapelera && puede.crearCarpeta && (
           <button type="button" onClick={() => setDialogo({ tipo: 'carpeta' })}
-            className="h-8 px-3.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-[12px] font-semibold text-gray-700 dark:text-gray-200 hover:border-[#2383C2] hover:text-[#2383C2] inline-flex items-center gap-1.5">
+            className="h-8 px-3.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-etiqueta text-tinta-principal hover:border-[#2383C2] hover:text-[#2383C2] inline-flex items-center gap-1.5">
             <FolderPlus size={14} /> Nueva carpeta
           </button>
         )}
         {!enPapelera && puede.subir && (
           <>
             <button type="button" onClick={() => inputRef.current?.click()}
-              className="h-8 px-3.5 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[12px] font-semibold inline-flex items-center gap-1.5">
+              className="h-8 px-3.5 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta inline-flex items-center gap-1.5">
               <Upload size={14} /> Subir archivos
             </button>
             <input ref={inputRef} type="file" multiple accept={ACEPTA_INPUT} className="hidden" data-testid="input-archivos"
@@ -274,7 +274,7 @@ const ArchivoDigital = () => {
           ...(puede.papelera ? [{ id: 'papelera', label: `Papelera${papelera.length ? ` (${papelera.length})` : ''}`, icon: Trash }] : []),
         ].map((t) => (
           <button key={t.id} type="button" role="tab" aria-selected={vista === t.id} onClick={() => setVista(t.id)}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 text-[12px] font-semibold border-b-2 -mb-px ${vista === t.id ? 'border-[#2383C2] text-[#2383C2]' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}`}>
+            className={`inline-flex items-center gap-1.5 px-3 py-2 text-etiqueta border-b-2 -mb-px ${vista === t.id ? 'border-[#2383C2] text-[#2383C2]' : 'border-transparent text-tinta-secundaria hover:text-tinta-principal'}`}>
             <t.icon size={14} /> {t.label}
           </button>
         ))}
@@ -282,14 +282,14 @@ const ArchivoDigital = () => {
 
       {!enPapelera && (
         <div className="px-4 py-2.5 flex flex-wrap items-center gap-2 border-b border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/30">
-          <nav aria-label="Ruta" className="flex-1 min-w-0 flex items-center flex-wrap gap-0.5 text-[12px]">
+          <nav aria-label="Ruta" className="flex-1 min-w-0 flex items-center flex-wrap gap-0.5 text-normal">
             {buscando ? (
-              <span className="text-gray-600 dark:text-gray-300 font-semibold">Resultados de búsqueda en todo el archivo</span>
+              <span className="text-tinta-secundaria text-etiqueta">Resultados de búsqueda en todo el archivo</span>
             ) : ruta.map((r, i) => (
               <span key={r.id || 'inicio'} className="inline-flex items-center gap-0.5 min-w-0">
                 {i > 0 && <ChevronRight size={13} className="text-gray-400 shrink-0" />}
                 {i === ruta.length - 1 ? (
-                  <span className="px-1.5 py-0.5 font-semibold text-gray-800 dark:text-gray-100 truncate max-w-[200px] inline-flex items-center gap-1" aria-current="page">
+                  <span className="px-1.5 py-0.5 text-etiqueta text-tinta-principal truncate max-w-[200px] inline-flex items-center gap-1" aria-current="page">
                     {i === 0 && <Home size={13} />} {r.nombre}
                   </span>
                 ) : (
@@ -305,9 +305,9 @@ const ArchivoDigital = () => {
             <div className="relative w-72 max-w-full">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar en todo el archivo…" aria-label="Buscar en todo el archivo"
-                className="w-full h-8 pl-8 pr-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[12px] focus:outline-none focus:border-[#2383C2]" />
+                className="w-full h-8 pl-8 pr-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-normal focus:outline-none focus:border-[#2383C2]" />
               {busqueda && (
-                <button type="button" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"><X size={13} /></button>
+                <button type="button" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda" className="absolute right-2 top-1/2 -translate-y-1/2 text-tinta-atenuada hover:text-tinta-secundaria"><X size={13} /></button>
               )}
             </div>
           )}
@@ -316,19 +316,19 @@ const ArchivoDigital = () => {
 
       {subidasVisibles && (
         <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 space-y-1 max-h-40 overflow-y-auto">
-          <div className="flex items-center text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+          <div className="flex items-center text-etiqueta text-tinta-secundaria">
             <span className="flex-1">Subidas</span>
             <button type="button" onClick={() => setSubidas((prev) => prev.filter((s) => !s.listo && !s.error))} className="text-[#2383C2] hover:underline">Limpiar</button>
           </div>
           {subidas.map((s) => (
-            <div key={s.id} className="flex items-start gap-2 text-[11.5px]">
+            <div key={s.id} className="flex items-start gap-2 text-secundario">
               {s.error ? <AlertCircle size={14} className="text-red-500 shrink-0 mt-px" />
                 : s.listo ? <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-px" />
                   : <Loader2 size={14} className="animate-spin text-[#2383C2] shrink-0 mt-px" />}
               <div className="flex-1 min-w-0">
                 <div className="flex gap-2">
-                  <span className="truncate text-gray-700 dark:text-gray-200">{s.nombre}</span>
-                  {!s.error && !s.listo && <span className="ml-auto text-gray-400">{s.progreso}%</span>}
+                  <span className="truncate text-tinta-principal">{s.nombre}</span>
+                  {!s.error && !s.listo && <span className="ml-auto text-tinta-atenuada">{s.progreso}%</span>}
                 </div>
                 {s.error && <p className="text-red-600">{s.error}</p>}
               </div>
@@ -341,42 +341,42 @@ const ArchivoDigital = () => {
         {arrastrando && (
           <div className="absolute inset-2 z-20 rounded-lg border-2 border-dashed border-[#2383C2] bg-[#2383C2]/5 flex flex-col items-center justify-center pointer-events-none">
             <Upload size={28} className="text-[#2383C2] mb-2" />
-            <p className="text-[13px] font-semibold text-[#2383C2]">Suelta los archivos para subirlos a “{ruta[ruta.length - 1].nombre}”</p>
-            <p className="text-[11.5px] text-gray-500">{FORMATOS_TEXTO} · hasta {TAMANO_MAXIMO_MB} MB</p>
+            <p className="text-subtitulo text-[#2383C2]">Suelta los archivos para subirlos a “{ruta[ruta.length - 1].nombre}”</p>
+            <p className="text-secundario text-tinta-secundaria">{FORMATOS_TEXTO} · hasta {TAMANO_MAXIMO_MB} MB</p>
           </div>
         )}
         {!puede.verTabla ? (
-          <p className="text-center text-[12px] text-gray-400 py-10">No tienes permiso para ver el contenido del archivo.</p>
+          <p className="text-center text-normal text-tinta-atenuada py-10">No tienes permiso para ver el contenido del archivo.</p>
         ) : (
-          <table className="w-full text-left text-[12px] border-collapse table-fixed">
+          <table className="w-full text-left text-normal border-collapse table-fixed">
             <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
-              <tr className="text-[10.5px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <tr className="text-pequeno uppercase tracking-wide text-tinta-secundaria">
                 {verColumna('nombre') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold">Nombre</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta">Nombre</th>
                 )}
                 {verColumna('tamano') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold w-24">{enPapelera ? 'Contenido' : 'Tamaño'}</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta w-24">{enPapelera ? 'Contenido' : 'Tamaño'}</th>
                 )}
                 {verColumna('subidoEl') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold w-36">{enPapelera ? 'Eliminado el' : 'Fecha'}</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta w-36">{enPapelera ? 'Eliminado el' : 'Fecha'}</th>
                 )}
                 {verColumna('subidoPor') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold w-44">{enPapelera ? 'Eliminado por' : 'Subido por'}</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta w-44">{enPapelera ? 'Eliminado por' : 'Subido por'}</th>
                 )}
                 {verColumna('acciones') && (
-                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 font-semibold w-40 text-center">Acciones</th>
+                  <th className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 text-etiqueta w-40 text-center">Acciones</th>
                 )}
               </tr>
             </thead>
             <tbody>
               {cargando && (
-                <tr><td colSpan={columnasTabla.length} className="py-10 text-center text-gray-400"><Loader2 size={16} className="inline animate-spin mr-1" /> Cargando…</td></tr>
+                <tr><td colSpan={columnasTabla.length} className="py-10 text-center text-tinta-atenuada"><Loader2 size={16} className="inline animate-spin mr-1" /> Cargando…</td></tr>
               )}
               {!cargando && error && (
                 <tr><td colSpan={columnasTabla.length} className="py-10 text-center text-red-600">{error}</td></tr>
               )}
               {!cargando && !error && lista.length === 0 && (
-                <tr><td colSpan={columnasTabla.length} className="py-10 text-center text-gray-400">
+                <tr><td colSpan={columnasTabla.length} className="py-10 text-center text-tinta-atenuada">
                   {enPapelera ? 'La papelera está vacía.'
                     : buscando ? 'Ningún archivo o carpeta coincide con la búsqueda.'
                       : puede.subir ? 'Esta carpeta está vacía. Arrastra archivos aquí o usa “Subir archivos”.' : 'Esta carpeta está vacía.'}
@@ -393,15 +393,15 @@ const ArchivoDigital = () => {
                           className="inline-flex items-center gap-2 min-w-0 max-w-full text-left hover:text-[#2383C2] disabled:hover:text-inherit disabled:cursor-default">
                           <IconoNodo nodo={n} />
                           <span className="min-w-0">
-                            <span className={`block truncate ${n.tipo === 'carpeta' ? 'font-semibold' : ''}`}>{n.nombre}</span>
-                            {buscando && <span className="block truncate text-[10.5px] text-gray-400">{n.ubicacion}</span>}
+                            <span className={`block truncate ${n.tipo === 'carpeta' ? 'text-etiqueta' : ''}`}>{n.nombre}</span>
+                            {buscando && <span className="block truncate text-pequeno text-tinta-atenuada">{n.ubicacion}</span>}
                           </span>
                         </button>
                       )}
                     </td>
                   )}
                   {verColumna('tamano') && (
-                    <td className={`${celda} text-gray-500`}>
+                    <td className={`${celda} text-tinta-secundaria`}>
                       {enPapelera
                         ? (n.tipo === 'carpeta' ? `${plural(n.archivos, 'archivo', 'archivos')}${n.carpetas ? `, ${plural(n.carpetas, 'carpeta', 'carpetas')}` : ''}` : formatearTamano(n.tamano))
                         : n.tipo === 'carpeta' ? '—' : formatearTamano(n.tamano)}

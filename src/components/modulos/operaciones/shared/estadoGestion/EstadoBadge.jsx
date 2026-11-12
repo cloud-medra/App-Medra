@@ -10,7 +10,7 @@ const EstadoBadge = ({ estado, texto, ancho = true, className = '' }) => {
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-full border text-[10px] leading-4 font-semibold uppercase tracking-wide whitespace-nowrap ${ancho ? 'min-w-[96px]' : ''} ${badge} ${className}`}
+      className={`inline-flex items-center gap-1.5 max-w-full px-2 py-0.5 rounded-full border text-pequeno uppercase tracking-wide whitespace-nowrap ${ancho ? 'min-w-[96px]' : ''} ${badge} ${className}`}
       title={etiqueta}
     >
       <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full shrink-0 ${punto}`} />

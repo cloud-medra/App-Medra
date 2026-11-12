@@ -42,7 +42,7 @@ const ESTADO_INFORME_ESTILOS = {
   PENDIENTE: 'border-red-400 dark:border-red-700 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/30',
   DISPONIBLE: 'border-emerald-400 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30'
 };
-const ESTADO_INFORME_ESTILO_DEFAULT = 'border-slate-300 dark:border-gray-600 text-slate-800 dark:text-gray-100 bg-white dark:bg-gray-900';
+const ESTADO_INFORME_ESTILO_DEFAULT = 'border-slate-300 dark:border-gray-600 text-tinta-principal bg-white dark:bg-gray-900';
 
 export const InformacionTab = forwardRef(({
   formData,
@@ -104,16 +104,16 @@ export const InformacionTab = forwardRef(({
       <div className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 md:px-4 py-2 shadow-xs">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center gap-1.5">
-            <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-400 dark:text-gray-400">
+            <span className="text-pequeno uppercase tracking-wider text-tinta-atenuada">
               Admisión Unificada
             </span>
-            <span className="text-slate-300 dark:text-gray-600">/</span>
-            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] bg-blue-50 dark:bg-blue-950/50 text-[#2383C2] dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40 font-bold">
+            <span className="text-tinta-atenuada">/</span>
+            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-pequeno bg-blue-50 dark:bg-blue-950/50 text-[#2383C2] dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/40">
               #{formData.gestionId || 'N/A'}
             </span>
           </div>
-          <h2 className="text-[13px] font-bold text-slate-800 dark:text-gray-100 leading-tight">
-            Detalle General de Implante ({formData.bloques.length} registros vinculados)
+          <h2 className="text-subtitulo text-tinta-principal">
+            Detalle general de implante ({formData.bloques.length} registros vinculados)
           </h2>
           {bloqueSolicitado && hasPermission(PATH_VISTA, 'tabla_cotizaciones', 'accion_desbloquear_candado') && (
             <button
@@ -125,7 +125,7 @@ export const InformacionTab = forwardRef(({
                   ? 'Este bloque ya está imputado — click para desbloquear edición'
                   : 'Desbloqueado — edita y presiona "Guardar Todo" para volver a bloquearlo'
               }
-              className={`mt-1 flex items-center gap-1 h-9 md:h-6 px-2 rounded text-[9px] font-bold transition ${
+              className={`mt-1 flex items-center gap-1 h-9 md:h-6 px-2 rounded text-pequeno transition ${
                 bloqueado
                   ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-950/50 cursor-pointer'
                   : 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 cursor-default'
@@ -141,7 +141,7 @@ export const InformacionTab = forwardRef(({
       <div className="p-3 md:p-4 max-w-7xl mx-auto w-full space-y-4">
 
         {bloqueado && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-[11px] text-amber-700 dark:text-amber-400">
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg text-secundario text-amber-700 dark:text-amber-400">
             <Lock size={14} className="shrink-0" />
             <span>
               Este bloque ya fue solicitado e imputado. La información está en solo lectura (excepto Estado de Informe) — presiona el candado para desbloquearla y poder editarla.
@@ -150,7 +150,7 @@ export const InformacionTab = forwardRef(({
         )}
 
         {errorCandado && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-[11px] text-red-700 dark:text-red-400">
+          <div className="flex items-center gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-secundario text-red-700 dark:text-red-400">
             <AlertCircle size={14} className="shrink-0" />
             <span>{errorCandado}</span>
           </div>
@@ -159,7 +159,7 @@ export const InformacionTab = forwardRef(({
         <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
           <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
             <User size={13} className="text-[#2383C2]" />
-            <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+            <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">
               Información General del Paciente
             </h3>
           </div>
@@ -167,7 +167,7 @@ export const InformacionTab = forwardRef(({
           <fieldset disabled={bloqueado} className={`min-w-0 ${claseBloqueado}`}>
           <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
             <div className="flex flex-col gap-1">
-              <label className="font-semibold text-slate-600 dark:text-gray-300">ID / Nº Admisión</label>
+              <label className="text-etiqueta text-tinta-secundaria">ID / Nº Admisión</label>
               <input
                 type="text"
                 name="gestionId"
@@ -177,12 +177,12 @@ export const InformacionTab = forwardRef(({
                 onChange={(e) => handleGeneralChange({
                   target: { name: 'gestionId', value: limpiarInputConservandoCursor(e.target, soloDigitos) }
                 })}
-                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
 
             <div className="flex flex-col gap-1 md:col-span-2">
-              <label className="font-semibold text-slate-600 dark:text-gray-300">Nombre Completo del Paciente</label>
+              <label className="text-etiqueta text-tinta-secundaria">Nombre Completo del Paciente</label>
               <input
                 type="text"
                 name="nombre"
@@ -193,23 +193,23 @@ export const InformacionTab = forwardRef(({
                   target: { name: 'nombre', value: limpiarInputConservandoCursor(e.target, nombreEnMayusculas) }
                 })}
                 placeholder="Nombre del paciente"
-                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-semibold text-slate-600 dark:text-gray-300">Convenio</label>
+              <label className="text-etiqueta text-tinta-secundaria">Convenio</label>
               <input
                 type="text"
                 name="convenio"
                 value={formData.convenio}
                 onChange={handleGeneralChange}
-                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-semibold text-slate-600 dark:text-gray-300 flex items-center gap-1">
+              <label className="text-etiqueta text-tinta-secundaria flex items-center gap-1">
                 <ShieldCheck size={11} className="text-slate-400" /> Previsión
               </label>
               <input
@@ -217,12 +217,12 @@ export const InformacionTab = forwardRef(({
                 name="prevision"
                 value={formData.prevision}
                 onChange={handleGeneralChange}
-                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-semibold text-slate-600 dark:text-gray-300 flex items-center gap-1">
+              <label className="text-etiqueta text-tinta-secundaria flex items-center gap-1">
                 <Stethoscope size={11} className="text-slate-400" /> Médico Tratante
               </label>
               <input
@@ -230,7 +230,7 @@ export const InformacionTab = forwardRef(({
                 name="medico"
                 value={formData.medico}
                 onChange={handleGeneralChange}
-                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </div>
           </div>
@@ -240,11 +240,11 @@ export const InformacionTab = forwardRef(({
         {formData.bloques[bloqueActivoIndex] && (
           <div className="bg-white dark:bg-gray-800 border border-blue-200/80 dark:border-blue-800/50 rounded-lg p-3 shadow-xs space-y-2.5">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-gray-700/60 pb-1.5">
-              <span className="font-bold text-[#2383C2] dark:text-blue-400 flex items-center gap-1.5 text-[11px]">
+              <span className="text-[#2383C2] dark:text-blue-400 flex items-center gap-1.5 text-etiqueta">
                 <Building2 size={13} />
                 Empresa y Fecha vinculadas a esta Admisión
               </span>
-              <span className="text-[9px] bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200/50 px-2 py-0.5 rounded font-num font-semibold">
+              <span className="text-pequeno tabular-nums bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200/50 px-2 py-0.5 rounded">
                 Bloque {bloqueActivoIndex + 1} de {formData.bloques.length}
               </span>
             </div>
@@ -252,7 +252,7 @@ export const InformacionTab = forwardRef(({
             <fieldset disabled={bloqueado} className={`min-w-0 ${claseBloqueado}`}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="flex flex-col gap-1">
-                <label className="font-semibold text-slate-600 dark:text-gray-300">Empresa / Proveedor</label>
+                <label className="text-etiqueta text-tinta-secundaria">Empresa / Proveedor</label>
                 <EmpresaSelect
                   value={formData.bloques[bloqueActivoIndex].empresa}
                   onChange={(empresaSeleccionada) =>
@@ -264,32 +264,32 @@ export const InformacionTab = forwardRef(({
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="font-semibold text-slate-600 dark:text-gray-300 flex items-center justify-between">
+                <label className="text-etiqueta text-tinta-secundaria flex items-center justify-between">
                   <span className="flex items-center gap-1">
                     <CalendarIcon size={11} className="text-slate-400" /> Fecha Agenda
                   </span>
-                  <span className="text-red-500 font-bold">*</span>
+                  <span className="text-red-500 text-etiqueta">*</span>
                 </label>
                 <input
                   type="date"
                   value={formData.bloques[bloqueActivoIndex].fecha}
                   onChange={(e) => handleBloqueChange(bloqueActivoIndex, 'fecha', e.target.value)}
-                  className={`h-9 md:h-6.5 px-2 text-base md:text-[10px] border rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none transition ${erroresFecha[bloqueActivoIndex]
+                  className={`h-9 md:h-6.5 px-2 text-subtitulo md:text-pequeno border rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none transition ${erroresFecha[bloqueActivoIndex]
                     ? 'border-red-500 ring-1 ring-red-500/30 bg-red-50/20'
                     : 'border-slate-300 dark:border-gray-600 focus:ring-1 focus:ring-[#2383C2]'
                     }`}
                 />
                 {erroresFecha[bloqueActivoIndex] && (
-                  <span className="text-[8px] text-red-500 font-medium flex items-center gap-0.5">
+                  <span className="text-pequeno text-red-500 flex items-center gap-0.5">
                     <AlertCircle size={9} /> Requerido
                   </span>
                 )}
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="font-semibold text-slate-600 dark:text-gray-300">Costo ($)</label>
+                <label className="text-etiqueta text-tinta-secundaria">Costo ($)</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none text-tinta-atenuada">
                     <DollarSign size={11} />
                   </div>
                   <input
@@ -300,7 +300,7 @@ export const InformacionTab = forwardRef(({
                       const soloNumeros = e.target.value.replace(/\D/g, '');
                       handleBloqueChange(bloqueActivoIndex, 'costo', soloNumeros ? Number(soloNumeros) : 0);
                     }}
-                    className="w-full h-9 md:h-6.5 pl-5 pr-2 text-base md:text-[10px] text-slate-800 dark:text-gray-100 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                    className="w-full h-9 md:h-6.5 pl-5 pr-2 text-subtitulo md:text-pequeno text-tinta-principal border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 focus:ring-1 focus:ring-[#2383C2] outline-none"
                     placeholder="0"
                   />
                 </div>
@@ -313,20 +313,20 @@ export const InformacionTab = forwardRef(({
         <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
           <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
             <Tag size={13} className="text-[#2383C2]" />
-            <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+            <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">
               Clasificación & Estado Operativo
             </h3>
           </div>
 
           <div className="p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5">
             <fieldset disabled={bloqueado} className={`min-w-0 flex flex-col gap-1 ${claseBloqueado}`}>
-              <label className="font-semibold text-slate-600 dark:text-gray-300">Estado Operativo</label>
+              <label className="text-etiqueta text-tinta-secundaria">Estado Operativo</label>
               <div className="relative">
                 <select
                   value={normalizarEstadoOperativo(formData.bloques[bloqueActivoIndex]?.estado)}
                   onChange={(e) => handleBloqueChange(bloqueActivoIndex, 'estado', e.target.value)}
                   disabled={!formData.bloques[bloqueActivoIndex]}
-                  className="w-full h-9 md:h-6.5 pl-2 pr-6 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none appearance-none disabled:opacity-50"
+                  className="w-full h-9 md:h-6.5 pl-2 pr-6 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none appearance-none disabled:opacity-50"
                 >
                   <option value="AGENDADO">AGENDADO</option>
                   <option value="PENDIENTE">PENDIENTE</option>
@@ -340,13 +340,13 @@ export const InformacionTab = forwardRef(({
             </fieldset>
 
             <div className="flex flex-col gap-1">
-              <label className="font-semibold text-slate-600 dark:text-gray-300">Estado de Informe</label>
+              <label className="text-etiqueta text-tinta-secundaria">Estado de Informe</label>
               <div className="relative">
                 <select
                   name="informe"
                   value={formData.informe}
                   onChange={handleGeneralChange}
-                  className={`w-full h-9 md:h-6.5 pl-2 pr-6 text-base md:text-[10px] border rounded focus:ring-1 focus:ring-[#2383C2] outline-none appearance-none font-semibold ${ESTADO_INFORME_ESTILOS[formData.informe] || ESTADO_INFORME_ESTILO_DEFAULT}`}
+                  className={`w-full h-9 md:h-6.5 pl-2 pr-6 text-titulo-seccion md:text-pequeno border rounded focus:ring-1 focus:ring-[#2383C2] outline-none appearance-none ${ESTADO_INFORME_ESTILOS[formData.informe] || ESTADO_INFORME_ESTILO_DEFAULT}`}
                 >
                   <option value="PENDIENTE">PENDIENTE</option>
                   <option value="DISPONIBLE">DISPONIBLE</option>
@@ -357,18 +357,18 @@ export const InformacionTab = forwardRef(({
             </div>
 
             <fieldset disabled={bloqueado} className={`min-w-0 flex flex-col gap-1 ${claseBloqueado}`}>
-              <label className="font-semibold text-slate-600 dark:text-gray-300">Atributo</label>
+              <label className="text-etiqueta text-tinta-secundaria">Atributo</label>
               <input
                 type="text"
                 name="atributo"
                 value={formData.atributo}
                 onChange={handleGeneralChange}
-                className="h-9 md:h-6.5 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-6.5 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
               />
             </fieldset>
 
             <fieldset disabled={bloqueado} className={`min-w-0 flex flex-col gap-1 ${claseBloqueado}`}>
-              <label className="font-semibold text-slate-600 dark:text-gray-300">Centro/Unidad</label>
+              <label className="text-etiqueta text-tinta-secundaria">Centro/Unidad</label>
               <CentroSelect
                 value={formData.centro}
                 onChange={(centroSeleccionado) =>
@@ -384,7 +384,7 @@ export const InformacionTab = forwardRef(({
         <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
           <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
             <FileText size={13} className="text-[#2383C2]" />
-            <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+            <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">
               Observaciones y Detalles Clínicos
             </h3>
           </div>
@@ -392,40 +392,40 @@ export const InformacionTab = forwardRef(({
           <fieldset disabled={bloqueado} className={`min-w-0 ${claseBloqueado}`}>
           <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label className="font-semibold text-slate-600 dark:text-gray-300">Descripción / Nota Operatoria</label>
+              <label className="text-etiqueta text-tinta-secundaria">Descripción / Nota Operatoria</label>
               <textarea
                 name="descripcion"
                 rows={3}
                 value={formData.descripcion}
                 onChange={handleGeneralChange}
                 placeholder="Ingrese detalles técnicos..."
-                className="p-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none resize-none"
+                className="p-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none resize-none"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="lado-gestion" className="font-semibold text-slate-600 dark:text-gray-300">Lado</label>
+              <label htmlFor="lado-gestion" className="text-etiqueta text-tinta-secundaria">Lado</label>
               <select
                 id="lado-gestion"
                 name="lado"
                 value={formData.lado || 'no_especificado'}
                 onChange={handleGeneralChange}
-                className="h-9 md:h-7 px-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none"
+                className="h-9 md:h-7 px-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none"
               >
                 {LADOS.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
               </select>
-              <span className="text-[9.5px] text-slate-400 dark:text-gray-500">Para el Bodymap: tiene prioridad sobre el lado del Maestro de zonas.</span>
+              <span className="text-pequeno text-tinta-atenuada">Para el Bodymap: tiene prioridad sobre el lado del Maestro de zonas.</span>
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="font-semibold text-slate-600 dark:text-gray-300">Texto Libre / Notas Adicionales</label>
+              <label className="text-etiqueta text-tinta-secundaria">Texto Libre / Notas Adicionales</label>
               <textarea
                 name="observacion"
                 rows={3}
                 value={formData.observacion}
                 onChange={(e) => handleGeneralChange({ target: { name: 'observacion', value: e.target.value.toUpperCase() } })}
                 placeholder="Observaciones adicionales..."
-                className="p-2 text-base md:text-[10px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:ring-1 focus:ring-[#2383C2] outline-none resize-none"
+                className="p-2 text-subtitulo md:text-pequeno border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal focus:ring-1 focus:ring-[#2383C2] outline-none resize-none"
               />
             </div>
           </div>

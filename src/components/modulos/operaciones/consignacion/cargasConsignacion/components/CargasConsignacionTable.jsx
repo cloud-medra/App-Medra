@@ -119,14 +119,14 @@ export const CargasConsignacionTable = ({
           type="button"
           onClick={restablecerAnchos}
           title="Restablecer ancho de columnas"
-          className="flex items-center gap-1 text-[9px] font-medium text-gray-400 hover:text-[#2383C2] dark:text-gray-500 dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
+          className="flex items-center gap-1 text-pequeno text-tinta-atenuada hover:text-[#2383C2] dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
         >
           <RotateCcw size={10} /> Restablecer columnas
         </button>
       </div>
 
       <table
-        className="text-left text-[11px] border-collapse"
+        className="text-left text-secundario border-collapse"
         style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: anchoTotalTabla }}
       >
         <colgroup>
@@ -136,7 +136,7 @@ export const CargasConsignacionTable = ({
         </colgroup>
 
         <thead className="bg-gray-100 dark:bg-gray-900 sticky top-[22px] z-10">
-          <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+          <tr className="text-tinta-secundaria uppercase text-pequeno">
             {COLUMNAS.map(col => (
               <th
                 key={col.key}
@@ -160,7 +160,7 @@ export const CargasConsignacionTable = ({
         <tbody>
           {registros.length === 0 ? (
             <tr>
-              <td colSpan={COLUMNAS.length} className="text-center py-12 text-gray-400 dark:text-gray-500 text-[11px]">
+              <td colSpan={COLUMNAS.length} className="text-center py-12 text-tinta-atenuada text-secundario">
                 No hay registros de consignación.
               </td>
             </tr>
@@ -181,31 +181,31 @@ export const CargasConsignacionTable = ({
                       title={estadoKey}
                     />
                   </td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400 font-bold text-center`}>{numeroInicial + index + 1}</td>
-                  <td className={`${celdaBase} font-semibold text-[#2383C2]`} title={r.gestionId}>{r.gestionId || '-'}</td>
-                  <td className={`${celdaBase} text-gray-700 dark:text-gray-200 font-medium`} title={r.nombre}>{r.nombre || '-'}</td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300`}>{formatearFechaTabla(r.fecha)}</td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300`} title={r.empresa}>{renderP(r.empresa)}</td>
-                  <td className={`${celdaBase} text-gray-700 dark:text-gray-200 font-num`} title={esOrdenSincronizada(r) ? `${ordenTexto} · Sincronizada desde OC` : ordenTexto}>
+                  <td className={`${celdaBase} text-tinta-secundaria text-etiqueta text-center`}>{numeroInicial + index + 1}</td>
+                  <td className={`${celdaBase} text-etiqueta text-[#2383C2]`} title={r.gestionId}>{r.gestionId || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-principal`} title={r.nombre}>{r.nombre || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{formatearFechaTabla(r.fecha)}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={r.empresa}>{renderP(r.empresa)}</td>
+                  <td className={`${celdaBase} text-tinta-principal text-numero-tabla`} title={esOrdenSincronizada(r) ? `${ordenTexto} · Sincronizada desde OC` : ordenTexto}>
                     {ordenTexto
                       ? <span className="flex items-center gap-1">{esOrdenSincronizada(r) && <Lock size={10} className="shrink-0 text-slate-400" />}<span className="truncate">{ordenTexto}</span></span>
                       : '—'}
                   </td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300 font-medium`}>{r.centro || 'PABELLON'}</td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300 font-medium`}>{r.atributo || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{r.centro || 'PABELLON'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{r.atributo || '-'}</td>
                   <td className={celdaBase}>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${ESTADO_BADGE[estadoKey] || 'bg-slate-100 text-slate-600'}`}>
+                    <span className={`text-pequeno px-1.5 py-0.5 rounded-full uppercase ${ESTADO_BADGE[estadoKey] || 'bg-slate-100 text-tinta-secundaria'}`}>
                       {estadoKey}
                     </span>
                   </td>
-                  <td className={`${celdaBase} text-emerald-700 dark:text-emerald-400 font-semibold`}>
+                  <td className={`${celdaBase} text-emerald-700 dark:text-emerald-400 text-etiqueta`}>
                     {r.costo ? `$${Number(r.costo).toLocaleString('es-CL')}` : '-'}
                   </td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`}>{renderP(r.convenio)}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`}>{renderP(r.prevision)}</td>
-                  <td className={`${celdaBase} text-gray-600 dark:text-gray-300`} title={r.medico}>{r.medico || '-'}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={r.descripcionPabellon}>{renderP(r.descripcionPabellon)}</td>
-                  <td className={`${celdaBase} text-gray-500 dark:text-gray-400`} title={r.registradoPor}>{renderP(r.registradoPor)}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{renderP(r.convenio)}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`}>{renderP(r.prevision)}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={r.medico}>{r.medico || '-'}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={r.descripcionPabellon}>{renderP(r.descripcionPabellon)}</td>
+                  <td className={`${celdaBase} text-tinta-secundaria`} title={r.registradoPor}>{renderP(r.registradoPor)}</td>
                   <td className="py-1 px-2 border-b border-gray-200 dark:border-gray-700 text-center overflow-hidden">
                     <div className="flex items-center justify-center gap-1.5" onClick={e => e.stopPropagation()}>
                       <button
@@ -219,7 +219,7 @@ export const CargasConsignacionTable = ({
                         onClick={(e) => handleClickActualizarVinculados(r, e)}
                         disabled={actualizandoId === r.id}
                         title="Actualizar datos vinculados desde Reportes"
-                        className="text-gray-500 hover:text-[#2383C2] transition p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-tinta-secundaria hover:text-[#2383C2] transition p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <RefreshCw size={13} className={actualizandoId === r.id ? 'animate-spin' : ''} />
                       </button>

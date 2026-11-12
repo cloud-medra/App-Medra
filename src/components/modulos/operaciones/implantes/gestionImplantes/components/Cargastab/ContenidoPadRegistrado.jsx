@@ -36,9 +36,9 @@ const ContenidoPadRegistrado = ({ filas, onActualizar, onEliminar, deshabilitado
 
   return (
     <div className="overflow-x-auto rounded border border-fuchsia-200 dark:border-fuchsia-900/60">
-      <table className="w-full text-left text-[10px] border-collapse" aria-label="Contenido del PAD registrado">
+      <table className="w-full text-left text-pequeno border-collapse" aria-label="Contenido del PAD registrado">
         <thead className="bg-fuchsia-100/60 dark:bg-fuchsia-950/30">
-          <tr className="text-fuchsia-700 dark:text-fuchsia-400 uppercase font-bold text-[9px]">
+          <tr className="text-fuchsia-700 dark:text-fuchsia-400 uppercase text-pequeno">
             <th className={th}>Referencia</th>
             <th className={`${th} text-center`}>Cant.</th>
             <th className={th}>Lote</th>
@@ -54,33 +54,33 @@ const ContenidoPadRegistrado = ({ filas, onActualizar, onEliminar, deshabilitado
                 <div onKeyDown={alTeclear} className="flex flex-col gap-1.5" role="group" aria-label={`Editar ${fila.referencia}`}>
                   <FilaEditor fila={borrador} onChange={(nueva) => { setBorrador(nueva); setErrores({}); }} puedeEliminar={false} />
                   {Object.keys(errores).length > 0 && (
-                    <div role="alert" className="text-[9px] text-red-500 font-medium flex items-center gap-1">
+                    <div role="alert" className="text-pequeno text-red-500 flex items-center gap-1">
                       <AlertCircle size={10} />
                       {[errores.referencia && 'la referencia es obligatoria', errores.cantidad && 'la cantidad debe ser mayor a 0', errores.vencimiento && 'el vencimiento no es una fecha válida']
                         .filter(Boolean).join(' · ').replace(/^./, (c) => c.toUpperCase())}
                     </div>
                   )}
                   <div className="flex items-center gap-2">
-                    <button type="button" onClick={guardar} className="h-9 md:h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold text-[10px] inline-flex items-center gap-1">
+                    <button type="button" onClick={guardar} className="h-9 md:h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded text-pequeno inline-flex items-center gap-1">
                       <Check size={12} /> Guardar
                     </button>
-                    <button type="button" onClick={cancelar} className="h-9 md:h-7 px-3 text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200 font-medium text-[10px] inline-flex items-center gap-1">
+                    <button type="button" onClick={cancelar} className="h-9 md:h-7 px-3 text-tinta-secundaria hover:text-tinta-principal text-pequeno inline-flex items-center gap-1">
                       <X size={12} /> Cancelar
                     </button>
-                    <span className="text-[9px] text-slate-400 dark:text-gray-500">Enter guarda · Esc cancela</span>
+                    <span className="text-pequeno text-tinta-atenuada">Enter guarda · Esc cancela</span>
                   </div>
                 </div>
               </td>
             </tr>
           ) : (
             <tr key={fila.tempId} className="border-l-2 border-transparent hover:border-[#2383C2] bg-white dark:bg-gray-900/40 hover:bg-fuchsia-50/40 dark:hover:bg-fuchsia-950/10">
-              <td className={`${td} font-semibold text-slate-700 dark:text-gray-200 truncate max-w-[220px]`} title={fila.referencia}>{fila.referencia}</td>
-              <td className={`${td} text-center text-slate-600 dark:text-gray-300`}>{fila.cantidad}</td>
-              <td className={`${td} text-slate-600 dark:text-gray-300`}>
-                {fila.lote === SIN_LOTE ? <span className="italic text-slate-400 dark:text-gray-500">{SIN_LOTE}</span> : fila.lote}
+              <td className={`${td} text-etiqueta text-tinta-principal truncate max-w-[220px]`} title={fila.referencia}>{fila.referencia}</td>
+              <td className={`${td} text-center text-tinta-secundaria`}>{fila.cantidad}</td>
+              <td className={`${td} text-tinta-secundaria`}>
+                {fila.lote === SIN_LOTE ? <span className="italic text-tinta-atenuada">{SIN_LOTE}</span> : fila.lote}
               </td>
-              <td className={`${td} text-slate-600 dark:text-gray-300`}>
-                {fila.vencimiento === SIN_FECHA ? <span className="italic text-slate-400 dark:text-gray-500">{SIN_FECHA}</span> : formatearFechaTabla(fila.vencimiento)}
+              <td className={`${td} text-tinta-secundaria`}>
+                {fila.vencimiento === SIN_FECHA ? <span className="italic text-tinta-atenuada">{SIN_FECHA}</span> : formatearFechaTabla(fila.vencimiento)}
               </td>
               <td className={`${td} text-center`}>
                 <span className="inline-flex items-center gap-1">

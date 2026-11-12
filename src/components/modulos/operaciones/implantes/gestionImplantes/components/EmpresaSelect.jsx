@@ -115,9 +115,9 @@ const EmpresaSelect = ({ value, onChange, placeholder = "Seleccionar empresa..."
         aria-disabled={disabled || undefined}
         onClick={disabled ? undefined : () => (abierto ? cerrar() : abrir())}
         onKeyDown={handleTriggerKeyDown}
-        className={`w-full h-9 md:h-7 px-2 border rounded text-[11px] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex items-center justify-between outline-none focus:border-[#2383C2] ${abierto ? 'border-[#2383C2]' : 'border-gray-300 dark:border-gray-600'} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`w-full h-9 md:h-7 px-2 border rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal flex items-center justify-between outline-none focus:border-[#2383C2] ${abierto ? 'border-[#2383C2]' : 'border-gray-300 dark:border-gray-600'} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
-        <span className={`truncate ${!empresaSeleccionada ? 'text-gray-400' : ''}`}>
+        <span className={`truncate ${!empresaSeleccionada ? 'text-tinta-atenuada' : ''}`}>
           {empresaSeleccionada ? `${empresaSeleccionada.nombre} (${empresaSeleccionada.rut})` : placeholder}
         </span>
         <ChevronDown size={13} className="text-gray-400 shrink-0 ml-1" />
@@ -142,11 +142,11 @@ const EmpresaSelect = ({ value, onChange, placeholder = "Seleccionar empresa..."
               aria-controls={listboxId}
               aria-activedescendant={empresasFiltradas[activo] ? `${listboxId}-${activo}` : undefined}
               placeholder="Buscar por nombre o RUT..."
-              className="w-full text-base md:text-[11px] bg-transparent outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400"
+              className="w-full text-subtitulo md:text-secundario bg-transparent outline-none text-tinta-principal placeholder:text-tinta-atenuada"
             />
           </div>
 
-          <ul id={listboxId} role="listbox" ref={listaRef} className="flex-1 min-h-0 overflow-y-auto text-[11px]">
+          <ul id={listboxId} role="listbox" ref={listaRef} className="flex-1 min-h-0 overflow-y-auto text-secundario">
             {empresasFiltradas.length > 0 ? (
               empresasFiltradas.map((emp, i) => {
                 const isSelected = value === emp.id || value === emp.nombre;
@@ -162,19 +162,19 @@ const EmpresaSelect = ({ value, onChange, placeholder = "Seleccionar empresa..."
                     className={`px-2 py-2.5 md:py-1.5 flex items-center justify-between cursor-pointer ${
                       isActivo ? 'bg-gray-100 dark:bg-gray-700/60' : ''
                     } ${
-                      isSelected ? 'text-[#2383C2] font-semibold' : 'text-gray-700 dark:text-gray-200'
+                      isSelected ? 'text-[#2383C2] text-etiqueta' : 'text-tinta-principal'
                     } ${isSelected && !isActivo ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}
                   >
                     <div className="flex flex-col truncate">
                       <span className="truncate">{emp.nombre}</span>
-                      <span className="text-[9px] text-gray-400">{emp.rut}</span>
+                      <span className="text-pequeno text-tinta-atenuada">{emp.rut}</span>
                     </div>
                     {isSelected && <Check size={12} className="text-[#2383C2] shrink-0 ml-1" />}
                   </li>
                 );
               })
             ) : (
-              <li className="px-2 py-2 text-center text-gray-400 text-[10px]">
+              <li className="px-2 py-2 text-center text-tinta-atenuada text-pequeno">
                 No se encontraron coincidencias
               </li>
             )}

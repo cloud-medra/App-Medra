@@ -62,7 +62,7 @@ const ESTILO_TARJETA = {
 };
 const COLOR_TEXTO = { verde: 'text-emerald-700 dark:text-emerald-400', naranjo: 'text-orange-600 dark:text-orange-400', rojo: 'text-red-700 dark:text-red-400' };
 const COLOR_BARRA = { verde: 'bg-emerald-500', naranjo: 'bg-orange-500', rojo: 'bg-red-600' };
-const ETIQUETA = 'px-1 rounded text-[9px] font-bold whitespace-nowrap';
+const ETIQUETA = 'px-1 rounded text-pequeno whitespace-nowrap';
 const ETIQUETA_VENCE = {
   [ALERTA_VENCIMIENTO.VENCIDA]: { texto: 'VENCIDA', clase: `${ETIQUETA} bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-300` },
   [ALERTA_VENCIMIENTO.PROXIMA]: { texto: 'VENCE PRONTO', clase: `${ETIQUETA} bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300` },
@@ -79,7 +79,7 @@ const BarraUsos = ({ fibra, grande = false }) => {
   const color = colorUsos(fibra);
   return (
     <span className="flex items-center gap-1.5 w-full">
-      <span className={`font-num font-bold whitespace-nowrap ${grande ? 'text-[15px]' : ''} ${COLOR_TEXTO[color] || ''}`}>{textoUsos(fibra)}</span>
+      <span className={`whitespace-nowrap ${grande ? 'text-subtitulo tabular-nums' : 'text-numero-tabla'} ${COLOR_TEXTO[color] || ''}`}>{textoUsos(fibra)}</span>
       <span className={`flex-1 min-w-[24px] ${grande ? 'h-2.5' : 'h-1.5'} rounded bg-gray-200 dark:bg-gray-700 overflow-hidden`} aria-hidden>
         <span className={`block h-full ${COLOR_BARRA[color] || 'bg-teal-600'}`} style={{ width: `${pct}%` }} />
       </span>
@@ -88,7 +88,7 @@ const BarraUsos = ({ fibra, grande = false }) => {
 };
 
 const Leyenda = () => (
-  <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[10px] text-gray-500 dark:text-gray-400">
+  <p className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-pequeno text-tinta-secundaria">
     {LEYENDA_COLOR_USOS.map(({ color, texto }) => (
       <span key={color} className="flex items-center gap-1"><span className={`inline-block w-2.5 h-2.5 rounded-sm ${COLOR_BARRA[color]}`} aria-hidden />{texto}</span>
     ))}
@@ -101,10 +101,10 @@ const TituloSeccion = ({ titulo, cantidad, abierta = true, onAlternar }) => {
   const contenido = (
     <>
       {onAlternar && (abierta ? <ChevronDown size={13} /> : <ChevronRight size={13} />)}
-      {titulo} <span className="font-num text-gray-500 dark:text-gray-400">({cantidad})</span>
+      {titulo} <span className="text-numero-tabla text-tinta-secundaria">({cantidad})</span>
     </>
   );
-  const clase = 'text-[11px] font-bold uppercase text-gray-700 dark:text-gray-200 flex items-center gap-1';
+  const clase = 'text-etiqueta uppercase text-tinta-principal flex items-center gap-1';
   return onAlternar
     ? <button type="button" onClick={onAlternar} aria-expanded={abierta} className={`${clase} hover:text-[#2383C2]`}>{contenido}</button>
     : <h3 className={clase}>{contenido}</h3>;
@@ -170,7 +170,7 @@ const FibrasReutilizables = () => {
           <button type="button" onClick={() => setDetalle(f)} title="Detalle de usos" aria-label={`Detalle ${nombre}`} className="p-0.5 text-[#2383C2] hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded"><ListOrdered size={13} /></button>
         )}
         {puede('tabla_fibras', 'action_editar') && (
-          <button type="button" onClick={() => setDialogo({ tipo: 'editar', fibra: f })} title="Corregir" aria-label={`Corregir ${nombre}`} className="p-0.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"><Pencil size={12} /></button>
+          <button type="button" onClick={() => setDialogo({ tipo: 'editar', fibra: f })} title="Corregir" aria-label={`Corregir ${nombre}`} className="p-0.5 text-tinta-secundaria hover:bg-gray-100 dark:hover:bg-gray-700 rounded"><Pencil size={12} /></button>
         )}
         {puede('tabla_fibras', 'action_cambiar_ubicacion') && ubicacionDe(f) === UBICACION.EN_BODEGA && motivoNoPonerEnUso(f, hoy) === null && (
           <button type="button" onClick={() => pedirPonerEnUso(f)} title="Poner en uso" aria-label={`Poner en uso ${nombre}`} className="p-0.5 text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/30 rounded"><PlayCircle size={13} /></button>
@@ -186,20 +186,20 @@ const FibrasReutilizables = () => {
   };
 
   const celdas = (f) => ({
-    referencia: <td className={`${TD} font-bold text-gray-800 dark:text-gray-100`}><span className="flex items-center gap-1">{f.referencia} <EtiquetaPerdida fibra={f} /></span></td>,
-    codigo: <td className={`${TD} tabular-nums text-[10px] text-gray-400 dark:text-gray-500`}>{f.codigoInterno}</td>,
+    referencia: <td className={`${TD} text-etiqueta text-tinta-principal`}><span className="flex items-center gap-1">{f.referencia} <EtiquetaPerdida fibra={f} /></span></td>,
+    codigo: <td className={`${TD} tabular-nums text-pequeno text-tinta-atenuada`}>{f.codigoInterno}</td>,
     descriptor: <td className={TD} title={f.descriptor}>{f.descriptor}</td>,
-    lote: <td className={`${TD} font-num`}>{f.lote}</td>,
+    lote: <td className={`${TD} text-numero-tabla`}>{f.lote}</td>,
     vencimiento: (
-      <td className={`${TD} font-num`}>
+      <td className={`${TD} text-numero-tabla`}>
         {formatearFechaTabla(f.vencimiento)} {ubicacionDe(f) !== UBICACION.AGOTADA && ETIQUETA_VENCE[alertaVencimiento(f, hoy)] && (
           <span className={ETIQUETA_VENCE[alertaVencimiento(f, hoy)].clase}>{ETIQUETA_VENCE[alertaVencimiento(f, hoy)].texto}</span>
         )}
       </td>
     ),
     usos: <td className={TD}><BarraUsos fibra={f} /></td>,
-    restantes: <td className={`${TD} font-num font-bold ${COLOR_TEXTO[colorUsos(f)] || ''}`}>{usosRestantes(f)}</td>,
-    ultimoUso: <td className={`${TD} font-num`}>{f.ultimoUso ? formatearFechaTabla(f.ultimoUso) : '—'}</td>,
+    restantes: <td className={`${TD} text-numero-tabla ${COLOR_TEXTO[colorUsos(f)] || ''}`}>{usosRestantes(f)}</td>,
+    ultimoUso: <td className={`${TD} text-numero-tabla`}>{f.ultimoUso ? formatearFechaTabla(f.ultimoUso) : '—'}</td>,
     acciones: <td className={TD}>{acciones(f)}</td>,
   });
 
@@ -212,24 +212,24 @@ const FibrasReutilizables = () => {
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <NombreFibra fibra={f} claseReferencia="font-bold text-[13px] text-gray-800 dark:text-gray-100" />
+              <NombreFibra fibra={f} claseReferencia="text-subtitulo text-tinta-principal" />
               {vence && <span className={vence.clase}>{vence.texto}</span>}
             </div>
-            {ver('descriptor') && <p className="text-gray-500 dark:text-gray-400 truncate" title={f.descriptor}>{f.descriptor}</p>}
+            {ver('descriptor') && <p className="text-tinta-secundaria truncate" title={f.descriptor}>{f.descriptor}</p>}
           </div>
           {acciones(f)}
         </div>
         {(ver('lote') || ver('vencimiento')) && (
-          <p className="text-gray-600 dark:text-gray-300 font-num">
+          <p className="text-tinta-secundaria text-numero-tabla">
             {ver('lote') && <>Lote <strong>{f.lote}</strong></>}
             {ver('lote') && ver('vencimiento') && ' · '}
             {ver('vencimiento') && <>Vence <strong className={vence ? (alertaVencimiento(f, hoy) === ALERTA_VENCIMIENTO.VENCIDA ? 'text-red-700 dark:text-red-400' : 'text-amber-700 dark:text-amber-400') : ''}>{formatearFechaTabla(f.vencimiento)}</strong></>}
           </p>
         )}
         {ver('usos') && <BarraUsos fibra={f} grande />}
-        <div className="flex items-center justify-between text-gray-600 dark:text-gray-300">
+        <div className="flex items-center justify-between text-tinta-secundaria">
           {ver('restantes') && (
-            <span className={usosRestantes(f) === 1 ? `font-bold flex items-center gap-1 ${COLOR_TEXTO[color] || ''}` : ''}>
+            <span className={usosRestantes(f) === 1 ? `text-etiqueta flex items-center gap-1 ${COLOR_TEXTO[color] || ''}` : ''}>
               {usosRestantes(f) === 1 && <AlertTriangle size={11} />}
               {usosRestantes(f) === 1 ? 'Queda 1 uso' : `Quedan ${usosRestantes(f)} usos`}
             </span>
@@ -242,17 +242,17 @@ const FibrasReutilizables = () => {
 
   const tarjetaVacia = (tarjeta) => (
     <div key={tarjeta.referencia} className="rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-3 flex flex-col gap-2 justify-center">
-      <p className="text-gray-600 dark:text-gray-300">
-        <strong className="text-gray-800 dark:text-gray-100">{tarjeta.referencia}</strong>: ninguna en uso, {tarjeta.enBodega} en bodega
+      <p className="text-tinta-secundaria">
+        <strong className="text-tinta-principal">{tarjeta.referencia}</strong>: ninguna en uso, {tarjeta.enBodega} en bodega
       </p>
-      {ver('descriptor') && <p className="text-gray-500 dark:text-gray-400 truncate" title={tarjeta.descriptor}>{tarjeta.descriptor}</p>}
+      {ver('descriptor') && <p className="text-tinta-secundaria truncate" title={tarjeta.descriptor}>{tarjeta.descriptor}</p>}
       {puede('tabla_fibras', 'action_cambiar_ubicacion') && (tarjeta.siguiente ? (
-        <button type="button" onClick={() => pedirPonerEnUso(tarjeta.siguiente)} className="self-start h-7 px-2.5 rounded bg-teal-600 hover:bg-teal-700 text-white font-semibold flex items-center gap-1">
+        <button type="button" onClick={() => pedirPonerEnUso(tarjeta.siguiente)} className="self-start h-7 px-2.5 rounded bg-teal-600 hover:bg-teal-700 text-white text-etiqueta flex items-center gap-1">
           {/* La tarjeta ya muestra la referencia: el botón solo distingue cuál de bodega. */}
-          <PlayCircle size={13} /> Poner en uso <span className="tabular-nums font-normal text-[10px] text-teal-100">{tarjeta.siguiente.codigoInterno}</span>
+          <PlayCircle size={13} /> Poner en uso <span className="tabular-nums text-pequeno text-teal-100">{tarjeta.siguiente.codigoInterno}</span>
         </button>
       ) : (
-        <p className="text-[10px] text-gray-500 italic">Las de bodega están vencidas: no se pueden poner en uso.</p>
+        <p className="text-pequeno text-tinta-secundaria italic">Las de bodega están vencidas: no se pueden poner en uso.</p>
       ))}
     </div>
   );
@@ -260,20 +260,20 @@ const FibrasReutilizables = () => {
   const cargando = fibras === null;
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-secundario">
       <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase"><Cable size={14} className="text-[#2383C2]" /> Fibras reutilizables</h2>
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5"><Cable size={14} className="text-[#2383C2]" /> Fibras reutilizables</h2>
         <div className="flex flex-wrap items-center gap-1.5">
           <BuscadorConLimpiar value={texto} onChange={setTexto} className="w-56" placeholder="Buscar referencia, lote, código…" />
-          <select value={filtroColor} onChange={(e) => setFiltroColor(e.target.value)} aria-label="Filtrar por color" className="h-7 px-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200">
+          <select value={filtroColor} onChange={(e) => setFiltroColor(e.target.value)} aria-label="Filtrar por color" className="h-7 px-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal">
             {FILTROS_COLOR.map((o) => <option key={o.valor} value={o.valor}>{o.valor === 'todas' ? 'Color: todas' : o.texto}</option>)}
           </select>
-          <select value={orden} onChange={(e) => setOrden(e.target.value)} aria-label="Ordenar" className="h-7 px-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200">
+          <select value={orden} onChange={(e) => setOrden(e.target.value)} aria-label="Ordenar" className="h-7 px-1.5 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal">
             {ORDENES.map((o) => <option key={o.valor} value={o.valor}>Orden: {o.texto}</option>)}
           </select>
-          <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1 text-gray-600 dark:text-gray-300"><RefreshCw size={12} /> Actualizar</button>
+          <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1 text-tinta-secundaria"><RefreshCw size={12} /> Actualizar</button>
           {puede('encabezado', 'btn_registrar_fibra') && (
-            <button type="button" onClick={() => setDialogo({ tipo: 'registrar' })} className="h-7 px-2.5 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white font-semibold flex items-center gap-1"><Plus size={13} /> Registrar fibra</button>
+            <button type="button" onClick={() => setDialogo({ tipo: 'registrar' })} className="h-7 px-2.5 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta flex items-center gap-1"><Plus size={13} /> Registrar fibra</button>
           )}
         </div>
       </div>
@@ -281,14 +281,14 @@ const FibrasReutilizables = () => {
       <div className="flex-1 overflow-auto p-3 flex flex-col gap-4">
         <Leyenda />
         {cargando ? (
-          <p className="text-gray-400 italic">Cargando…</p>
+          <p className="text-tinta-atenuada italic">Cargando…</p>
         ) : (
           <>
             {/* 1. En uso: una tarjeta por referencia (una debajo de otra en pantallas angostas). */}
             <section className="flex flex-col gap-2">
               <TituloSeccion titulo="En uso" cantidad={secciones.totalEnUso} />
               {secciones.enUso.length === 0 ? (
-                <p className="text-gray-400 italic">{filtrando ? 'Ninguna fibra en uso coincide con la búsqueda o el filtro.' : 'No hay fibras en uso ni en bodega.'}</p>
+                <p className="text-tinta-atenuada italic">{filtrando ? 'Ninguna fibra en uso coincide con la búsqueda o el filtro.' : 'No hay fibras en uso ni en bodega.'}</p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-2">
                   {secciones.enUso.map((t) => (t.fibra ? tarjetaEnUso(t) : tarjetaVacia(t)))}

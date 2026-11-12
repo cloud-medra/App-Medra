@@ -10,7 +10,7 @@ import { leerCodigosFibra } from './useFibrasReutilizablesData';
 // pérdida. Cada uno valida con fibrasNucleo.js antes de llamar a `onGuardar`,
 // que devuelve true si se guardó (entonces se cierra).
 
-const INPUT = 'h-8 w-full px-2 text-[11px] border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2] disabled:bg-slate-100 dark:disabled:bg-gray-800';
+const INPUT = 'h-8 w-full px-2 text-secundario border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:ring-1 focus:ring-[#2383C2] disabled:bg-slate-100 dark:disabled:bg-gray-800';
 
 const Dialogo = ({ titulo, subtitulo, onCerrar, onGuardar, textoGuardar = 'Guardar', guardando, tono = 'primario', children }) => {
   useEffect(() => {
@@ -22,22 +22,22 @@ const Dialogo = ({ titulo, subtitulo, onCerrar, onGuardar, textoGuardar = 'Guard
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label={titulo}>
       <form
         onSubmit={(e) => { e.preventDefault(); if (!guardando) onGuardar(); }}
-        className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 text-[11px]"
+        className="w-full max-w-md bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 text-secundario"
       >
         <div className="px-4 py-3 border-b border-slate-200 dark:border-gray-700 flex items-start justify-between gap-2">
           <div>
-            <h3 className="text-[13px] font-bold text-slate-800 dark:text-gray-100">{titulo}</h3>
-            {subtitulo && <p className="text-[11px] text-slate-500 dark:text-gray-400">{subtitulo}</p>}
+            <h3 className="text-subtitulo text-tinta-principal">{titulo}</h3>
+            {subtitulo && <p className="text-secundario text-tinta-secundaria">{subtitulo}</p>}
           </div>
-          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="text-slate-400 hover:text-slate-600"><X size={16} /></button>
+          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="text-tinta-atenuada hover:text-tinta-secundaria"><X size={16} /></button>
         </div>
         <div className="px-4 py-3 space-y-3">{children}</div>
         <div className="px-4 py-3 border-t border-slate-200 dark:border-gray-700 flex justify-end gap-2">
-          <button type="button" onClick={onCerrar} disabled={guardando} className="h-8 px-3 rounded border border-slate-300 dark:border-gray-600 font-semibold text-slate-600 dark:text-gray-300">Cancelar</button>
+          <button type="button" onClick={onCerrar} disabled={guardando} className="h-8 px-3 rounded border border-slate-300 dark:border-gray-600 text-etiqueta text-tinta-secundaria">Cancelar</button>
           <button
             type="submit"
             disabled={guardando}
-            className={`h-8 px-3 rounded text-white font-semibold flex items-center gap-1.5 disabled:opacity-60 ${tono === 'peligro' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#2383C2] hover:bg-[#1d6fa5]'}`}
+            className={`h-8 px-3 rounded text-white text-etiqueta flex items-center gap-1.5 disabled:opacity-60 ${tono === 'peligro' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#2383C2] hover:bg-[#1d6fa5]'}`}
           >
             {guardando && <Loader2 size={12} className="animate-spin" />} {textoGuardar}
           </button>
@@ -49,10 +49,10 @@ const Dialogo = ({ titulo, subtitulo, onCerrar, onGuardar, textoGuardar = 'Guard
 
 const Campo = ({ etiqueta, error, ayuda, children, htmlFor }) => (
   <div className="flex flex-col gap-1">
-    <label htmlFor={htmlFor} className="text-[10px] font-bold uppercase text-slate-500 dark:text-gray-400">{etiqueta}</label>
+    <label htmlFor={htmlFor} className="text-pequeno uppercase text-tinta-secundaria">{etiqueta}</label>
     {children}
-    {error ? <span className="text-[10px] text-red-600 dark:text-red-400">{error}</span>
-      : ayuda ? <span className="text-[10px] text-slate-400 dark:text-gray-500">{ayuda}</span> : null}
+    {error ? <span className="text-pequeno text-red-600 dark:text-red-400">{error}</span>
+      : ayuda ? <span className="text-pequeno text-tinta-atenuada">{ayuda}</span> : null}
   </div>
 );
 
@@ -199,7 +199,7 @@ export const PerdidaDialogo = ({ fibra, onGuardar, onCerrar }) => {
       guardando={guardando}
     >
       <div className="rounded border border-slate-200 dark:border-gray-700 p-2 space-y-0.5">
-        <p className="text-slate-700 dark:text-gray-200">Usos realizados: <strong>{realizados}/{fibra.usosTotales}</strong></p>
+        <p className="text-tinta-principal">Usos realizados: <strong>{realizados}/{fibra.usosTotales}</strong></p>
         <p className="text-red-700 dark:text-red-400">Usos perdidos: <strong>{perdidos.length}</strong> ({textoNumeros(perdidos, fibra.usosTotales)})</p>
       </div>
       {!confirmando ? (
@@ -220,7 +220,7 @@ export const PerdidaDialogo = ({ fibra, onGuardar, onCerrar }) => {
           </Campo>
         </>
       ) : (
-        <p className="font-semibold text-red-700 dark:text-red-400">
+        <p className="text-etiqueta text-red-700 dark:text-red-400">
           ¿Confirmas la pérdida por "{motivoFinal}"{observacion.trim() ? ` (${observacion.trim()})` : ''}? La fibra {textoFibra(fibra)} no se podrá volver a usar.
         </p>
       )}
@@ -244,7 +244,7 @@ export const AnularPerdidaDialogo = ({ fibra, uso, onGuardar, onCerrar }) => {
       tono="peligro"
       guardando={guardando}
     >
-      <p className="text-[11px] text-slate-600 dark:text-gray-300">Pérdida registrada: {uso.motivo}{uso.observacion ? ` · ${uso.observacion}` : ''}</p>
+      <p className="text-secundario text-tinta-secundaria">Pérdida registrada: {uso.motivo}{uso.observacion ? ` · ${uso.observacion}` : ''}</p>
       <Campo etiqueta="Motivo de la anulación" error={intento && !motivo.trim() ? 'Ingresa el motivo' : undefined} htmlFor="fa-motivo">
         <input id="fa-motivo" autoFocus className={INPUT} value={motivo} onChange={(e) => setMotivo(e.target.value)} placeholder="Ej: se registró por error" />
       </Campo>

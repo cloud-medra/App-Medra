@@ -45,7 +45,7 @@ const HistorialTab = ({ registro }) => {
       {registro?.ref ? (
         <HistorialLogsContenido logsList={logsList} loadingLogs={loadingLogs} formatearFecha={formatearFecha} />
       ) : (
-        <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-[10px]">
+        <div className="text-center py-12 text-tinta-atenuada text-pequeno">
           Este registro aún no se ha guardado — guarda primero para ver su historial.
         </div>
       )}

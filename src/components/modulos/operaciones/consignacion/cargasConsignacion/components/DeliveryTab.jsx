@@ -166,18 +166,18 @@ const DeliveryTab = ({ registro, vinculoData, onVincular, deliveryEsHeredado = f
     <div className="px-4 lg:px-6 py-4 w-full max-w-[2200px] mx-auto space-y-4">
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between gap-1.5">
-          <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+          <span className="flex items-center gap-1.5 text-etiqueta text-tinta-principal uppercase tracking-wide">
             <Truck size={13} className="text-[#2383C2]" />
             Delivery — Admisión #{registro?.gestionId || 'N/A'}
           </span>
 
-          <div className="flex items-center gap-1.5 text-[9px]">
-            <span className="font-bold text-slate-400 dark:text-gray-500 uppercase">N° Delivery / Documento:</span>
-            <span className="font-num font-semibold text-slate-700 dark:text-gray-200 bg-slate-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+          <div className="flex items-center gap-1.5 text-pequeno">
+            <span className="text-etiqueta text-tinta-atenuada uppercase">N° Delivery / Documento:</span>
+            <span className="text-numero-tabla text-tinta-principal bg-slate-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
               {deliveryValor || 'Sin asignar'}
             </span>
             {deliveryEsHeredado && deliveryValor && (
-              <span className="text-[8px] italic text-slate-400 dark:text-gray-500">
+              <span className="text-pequeno italic text-tinta-atenuada">
                 (tomado de otro ítem de esta admisión)
               </span>
             )}
@@ -187,7 +187,7 @@ const DeliveryTab = ({ registro, vinculoData, onVincular, deliveryEsHeredado = f
                 onClick={() => cargarGuia(true)}
                 disabled={cargandoGuia}
                 title="Volver a buscar esta guía (ignora la caché, útil si se acaba de despachar)"
-                className="p-0.5 text-slate-400 hover:text-[#2383C2] dark:hover:text-[#2383C2] transition disabled:opacity-40"
+                className="p-0.5 text-tinta-atenuada hover:text-[#2383C2] dark:hover:text-[#2383C2] transition disabled:opacity-40"
               >
                 <RefreshCw size={11} className={cargandoGuia ? 'animate-spin' : ''} />
               </button>
@@ -197,26 +197,26 @@ const DeliveryTab = ({ registro, vinculoData, onVincular, deliveryEsHeredado = f
 
         <div className="p-3">
           {!deliveryValor && (
-            <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-gray-400 bg-slate-50 dark:bg-gray-900/40 border border-dashed border-slate-200 dark:border-gray-700 rounded p-3">
+            <div className="flex items-center gap-2 text-pequeno text-tinta-secundaria bg-slate-50 dark:bg-gray-900/40 border border-dashed border-slate-200 dark:border-gray-700 rounded p-3">
               <AlertCircle size={13} className="shrink-0" />
               Este ítem no tiene un N° de Delivery/Documento asignado. Complétalo en Información para poder vincularlo con una guía.
             </div>
           )}
 
           {deliveryValor && cargandoGuia && (
-            <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-gray-400 p-3">
+            <div className="flex items-center gap-2 text-pequeno text-tinta-secundaria p-3">
               <Loader2 size={13} className="animate-spin" /> Buscando guía con N° Documento {deliveryValor}...
             </div>
           )}
 
           {deliveryValor && !cargandoGuia && error && (
-            <div className="flex items-center gap-2 text-[10px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded p-3">
+            <div className="flex items-center gap-2 text-pequeno text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded p-3">
               <AlertCircle size={13} className="shrink-0" /> {error}
             </div>
           )}
 
           {deliveryValor && !cargandoGuia && !error && !guiaEncontrada && (
-            <div className="flex items-center gap-2 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 rounded p-3">
+            <div className="flex items-center gap-2 text-pequeno text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 rounded p-3">
               <AlertCircle size={13} className="shrink-0" />
               No se encontró ninguna guía con N° Documento{' '}<strong>{deliveryValor}</strong>. Aún no ha sido despachada o el número no coincide. Si acabas de ingresarla, presiona el ícono de actualizar de arriba.
             </div>
@@ -225,16 +225,16 @@ const DeliveryTab = ({ registro, vinculoData, onVincular, deliveryEsHeredado = f
           {guiaEncontrada && (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2 text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/40 rounded p-2.5 flex-grow">
+                <div className="flex items-center gap-2 text-pequeno text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-900/40 rounded p-2.5 flex-grow">
                   <CheckCircle2 size={13} className="shrink-0" />
                   Guía encontrada.
                   {yaVinculado && !vinculoIncompletoGuardado && (
-                    <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-emerald-600 text-white">
+                    <span className="ml-2 text-pequeno uppercase px-1.5 py-0.5 rounded-full bg-emerald-600 text-white">
                       Vinculado
                     </span>
                   )}
                   {yaVinculado && vinculoIncompletoGuardado && (
-                    <span className="ml-2 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full bg-amber-500 text-white">
+                    <span className="ml-2 text-pequeno uppercase px-1.5 py-0.5 rounded-full bg-amber-500 text-white">
                       Vinculado (parcial)
                     </span>
                   )}
@@ -245,7 +245,7 @@ const DeliveryTab = ({ registro, vinculoData, onVincular, deliveryEsHeredado = f
                   onClick={handleVincular}
                   disabled={!puedeVincular}
                   title="Vincular esta guía con el registro y guardar de inmediato"
-                  className="h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center gap-1.5 transition text-[10px] disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                  className="h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center gap-1.5 transition text-pequeno disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                 >
                   {guardando ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                   {yaVinculado ? 'Actualizar y guardar vínculo' : 'Vincular y guardar'}
@@ -253,49 +253,49 @@ const DeliveryTab = ({ registro, vinculoData, onVincular, deliveryEsHeredado = f
               </div>
 
               {errorGuardado && (
-                <div className="flex items-center gap-2 text-[10px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded p-2.5">
+                <div className="flex items-center gap-2 text-pequeno text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/40 rounded p-2.5">
                   <AlertCircle size={13} className="shrink-0" /> {errorGuardado}
                 </div>
               )}
 
               {yaVinculado && !errorGuardado && (
-                <div className="text-[9px] text-slate-500 dark:text-gray-400 italic">
+                <div className="text-pequeno text-tinta-secundaria italic">
                   Este vínculo ya quedó guardado en la base de datos.
                 </div>
               )}
 
               {!productoCoincidente && (
-                <div className="flex items-center gap-2 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-dashed border-amber-200 dark:border-amber-900/40 rounded p-2.5">
+                <div className="flex items-center gap-2 text-pequeno text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-dashed border-amber-200 dark:border-amber-900/40 rounded p-2.5">
                   <AlertCircle size={13} className="shrink-0" />
                   Ningún producto de esta guía tiene un código que coincida con la referencia de este ítem (<strong>{referenciaRegistro || 'sin referencia'}</strong>). Puedes vincular igual con los datos generales de la guía, pero revisa manualmente el lote/vencimiento/código.
                 </div>
               )}
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-[10px]">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-pequeno">
                 <div className="flex flex-col gap-0.5">
-                  <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">N° Guía</span>
-                  <span className="text-slate-700 dark:text-gray-200 font-semibold">{guiaEncontrada.numeroGuia || 'N/A'}</span>
+                  <span className="text-tinta-atenuada text-pequeno uppercase">N° Guía</span>
+                  <span className="text-tinta-principal text-etiqueta">{guiaEncontrada.numeroGuia || 'N/A'}</span>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">N° Documento</span>
-                  <span className="text-slate-700 dark:text-gray-200">{guiaEncontrada.numeroDocumento || 'N/A'}</span>
+                  <span className="text-tinta-atenuada text-pequeno uppercase">N° Documento</span>
+                  <span className="text-tinta-principal">{guiaEncontrada.numeroDocumento || 'N/A'}</span>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">Fecha Emisión</span>
-                  <span className="text-slate-700 dark:text-gray-200">{formatearFecha(guiaEncontrada.fechaEmision)}</span>
+                  <span className="text-tinta-atenuada text-pequeno uppercase">Fecha Emisión</span>
+                  <span className="text-tinta-principal">{formatearFecha(guiaEncontrada.fechaEmision)}</span>
                 </div>
                 <div className="flex flex-col gap-0.5">
-                  <span className="font-bold text-slate-400 dark:text-gray-500 text-[9px] uppercase">N° Productos</span>
-                  <span className="inline-flex items-center gap-1 text-slate-700 dark:text-gray-200 font-semibold">
+                  <span className="text-tinta-atenuada text-pequeno uppercase">N° Productos</span>
+                  <span className="inline-flex items-center gap-1 text-tinta-principal text-etiqueta">
                     <Package size={11} /> {productosVisibles.length}
                   </span>
                 </div>
               </div>
 
               <div className="border border-slate-200 dark:border-gray-700/80 rounded-lg overflow-hidden">
-                <table className="w-full text-left text-[10px] border-collapse">
+                <table className="w-full text-left text-pequeno border-collapse">
                   <thead className="bg-slate-50 dark:bg-gray-900/60">
-                    <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+                    <tr className="text-tinta-secundaria uppercase text-pequeno">
                       <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Código (Delivery)</th>
                       <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Descripción (Guía)</th>
                       <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Lote</th>
@@ -312,7 +312,7 @@ const DeliveryTab = ({ registro, vinculoData, onVincular, deliveryEsHeredado = f
                   <tbody>
                     {productosVisibles.length === 0 ? (
                       <tr>
-                        <td colSpan={9} className="px-3 py-4 text-center text-slate-400 dark:text-gray-500">
+                        <td colSpan={9} className="px-3 py-4 text-center text-tinta-atenuada">
                           Sin productos visibles en esta guía.
                         </td>
                       </tr>
@@ -326,37 +326,37 @@ const DeliveryTab = ({ registro, vinculoData, onVincular, deliveryEsHeredado = f
                             className={`border-t border-slate-100 dark:border-gray-800 ${esElDeEsteRegistro ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''}`}
                             title={esElDeEsteRegistro ? 'Este es el producto que corresponde a este registro' : ''}
                           >
-                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 font-num text-emerald-600 dark:text-emerald-400">
+                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 text-numero-tabla text-emerald-600 dark:text-emerald-400">
                               <span className="flex items-center gap-1">
                                 {esElDeEsteRegistro && <CheckCircle2 size={11} className="text-blue-600 dark:text-blue-400 shrink-0" />}
                                 {p.codigo || 'N/A'}
                               </span>
                             </td>
-                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">
+                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">
                               {p.descripcion || 'N/A'}
                             </td>
-                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">
+                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">
                               {p.lote || 'N/A'}
                             </td>
-                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">
+                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">
                               {p.vencimiento || 'N/A'}
                             </td>
-                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">
+                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">
                               {p.cantidad ?? 'N/A'}
                             </td>
 
-                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 bg-blue-50/30 dark:bg-blue-950/10 font-num text-blue-700 dark:text-blue-400 font-semibold">
+                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 bg-blue-50/30 dark:bg-blue-950/10 text-numero-tabla text-blue-700 dark:text-blue-400">
                               {cargandoVinculos ? '...' : (vinculo?.codigo || (
-                                <span className="text-amber-600 dark:text-amber-400 font-normal">Sin vincular</span>
+                                <span className="text-amber-600 dark:text-amber-400">Sin vincular</span>
                               ))}
                             </td>
-                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 bg-blue-50/30 dark:bg-blue-950/10 text-slate-700 dark:text-gray-200">
+                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 bg-blue-50/30 dark:bg-blue-950/10 text-tinta-principal">
                               {cargandoVinculos ? '...' : (vinculo?.descripcion || '-')}
                             </td>
-                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 bg-blue-50/30 dark:bg-blue-950/10 text-slate-700 dark:text-gray-200">
+                            <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 bg-blue-50/30 dark:bg-blue-950/10 text-tinta-principal">
                               {cargandoVinculos ? '...' : (vinculo?.empresa || '-')}
                             </td>
-                            <td className="px-2.5 py-1.5 bg-blue-50/30 dark:bg-blue-950/10 text-slate-700 dark:text-gray-200">
+                            <td className="px-2.5 py-1.5 bg-blue-50/30 dark:bg-blue-950/10 text-tinta-principal">
                               {cargandoVinculos ? '...' : (vinculo?.tipo || '-')}
                             </td>
                           </tr>

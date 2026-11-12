@@ -644,16 +644,16 @@ const GestionesImplantesDetalleView = forwardRef(({
   const registroPdfOC = useRegistroPdfOC(tabActual?.id === 'orden');
 
   return (
-    <div className="flex-grow flex flex-col bg-slate-50/50 dark:bg-gray-900 overflow-hidden text-[10px]">
+    <div className="flex-grow flex flex-col bg-slate-50/50 dark:bg-gray-900 overflow-hidden text-pequeno">
 
       {!cargandoPeriodo && (
         periodoActivo ? (
-          <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-900/40">
+          <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 text-pequeno text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-900/40">
             <Unlock size={11} className="shrink-0" />
             Período abierto para Implantes: <strong>{nombrePeriodoActivo}</strong>
           </div>
         ) : (
-          <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/40">
+          <div className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 text-pequeno text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/40">
             <Lock size={11} className="shrink-0" />
             No hay un período abierto para Implantes.
           </div>
@@ -664,13 +664,13 @@ const GestionesImplantesDetalleView = forwardRef(({
 
         <div className="w-full md:w-36 shrink-0 bg-white dark:bg-gray-800 border-b md:border-b-0 md:border-r border-slate-200 dark:border-gray-700 flex flex-col">
           <div className="hidden md:block p-2 border-b border-slate-200 dark:border-gray-700">
-            <h2 className="text-[10px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+            <h2 className="text-pequeno text-tinta-principal uppercase tracking-wide">
               Menú de Opción
             </h2>
           </div>
 
           {tabsPermitidas.length === 0 ? (
-            <div className="p-2.5 text-[10px] text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
+            <div className="p-2.5 text-pequeno text-amber-700 dark:text-amber-400 flex items-start gap-1.5">
               <ShieldAlert size={13} className="shrink-0 mt-0.5" />
               Sin pestañas habilitadas para su perfil.
             </div>
@@ -689,9 +689,9 @@ const GestionesImplantesDetalleView = forwardRef(({
                       setActiveTab(tab.id);
                       e.currentTarget.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
                     }}
-                    className={`shrink-0 md:w-full flex items-center gap-2 px-2.5 py-2 md:py-1.5 rounded-md font-medium whitespace-nowrap transition text-left ${isActive
-                      ? 'bg-[#2383C2]/10 text-[#2383C2] dark:bg-blue-950/50 dark:text-blue-400 font-semibold'
-                      : 'text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700/50'
+                    className={`shrink-0 md:w-full flex items-center gap-2 px-2.5 py-2 md:py-1.5 rounded-md whitespace-nowrap transition text-left ${isActive
+                      ? 'bg-[#2383C2]/10 text-[#2383C2] dark:bg-blue-950/50 dark:text-blue-400 text-etiqueta'
+                      : 'text-tinta-secundaria hover:bg-slate-100 dark:hover:bg-gray-700/50'
                       }`}
                   >
                     <TabIcon size={13} />
@@ -725,7 +725,7 @@ const GestionesImplantesDetalleView = forwardRef(({
         <div className="flex-grow flex flex-col overflow-auto min-h-[70vh] md:min-h-0">
 
           {!tabActual && (
-            <div className="flex-grow flex flex-col items-center justify-center text-center p-6 text-slate-500 dark:text-gray-400 text-[10px] gap-1.5">
+            <div className="flex-grow flex flex-col items-center justify-center text-center p-6 text-tinta-secundaria text-pequeno gap-1.5">
               <ShieldAlert size={22} className="text-amber-500" />
               Su perfil no tiene acceso a ninguna pestaña de esta vista de detalle.
             </div>
@@ -800,7 +800,7 @@ const GestionesImplantesDetalleView = forwardRef(({
                   formatearFecha={formatearFecha}
                 />
               ) : (
-                <div className="text-center py-12 text-gray-400 dark:text-gray-500 text-[10px]">
+                <div className="text-center py-12 text-tinta-atenuada text-pequeno">
                   Este bloque aún no se ha guardado — guarda primero para ver su historial.
                 </div>
               )}

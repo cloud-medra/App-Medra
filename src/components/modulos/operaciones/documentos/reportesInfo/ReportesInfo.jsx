@@ -69,7 +69,7 @@ const OPCIONES_REVISADO = [REVISADO.REVISADO, REVISADO.PENDIENTE, REVISADO.NO_AP
 const CLASE_REVISADO = {
     [REVISADO.REVISADO]: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
     [REVISADO.PENDIENTE]: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
-    [REVISADO.NO_APLICA]: 'bg-slate-200 text-slate-700 border-slate-300 dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600'
+    [REVISADO.NO_APLICA]: 'bg-slate-200 text-tinta-principal border-slate-300 dark:bg-slate-700 dark:border-slate-600'
 };
 // La consulta filtra por ocultaX (sin orderBy, para no requerir un índice
 // compuesto): el orden por fecha se hace en memoria.
@@ -710,7 +710,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                 <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-900/30 dark:bg-black/50 backdrop-blur-[2px]">
                     <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-xl flex flex-col items-center gap-2 border border-slate-100 dark:border-gray-700">
                         <Spinner size="md" color="#2383C2" />
-                        <h3 className="text-[#2383C2] font-normal text-[12px]">Procesando y omitiendo duplicados...</h3>
+                        <h3 className="text-[#2383C2] text-normal">Procesando y omitiendo duplicados...</h3>
                     </div>
                 </div>
             )}
@@ -730,7 +730,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
             <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <ClipboardList size={16} className="text-[#2383C2]" />
-                    <span className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+                    <span className="text-normal text-tinta-principal tracking-wide uppercase">
                         Reportes de Cirugías / Información
                     </span>
                 </div>
@@ -740,7 +740,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                     <button
                         onClick={exportarExcel}
                         disabled={reportesFiltrados.length === 0}
-                        className="border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 hover:border-[#2383C2] hover:text-[#2383C2] text-slate-700 dark:text-gray-200 px-2.5 py-1 rounded text-[10px] font-normal flex items-center gap-1.5 transition disabled:opacity-40"
+                        className="border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 hover:border-[#2383C2] hover:text-[#2383C2] text-tinta-principal px-2.5 py-1 rounded text-pequeno flex items-center gap-1.5 transition disabled:opacity-40"
                     >
                         <Download size={11} /> Exportar Excel
                     </button>
@@ -748,7 +748,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                 {hasPermission(PATH_VISTA, "cabecera_acciones", "btn_importar") && (
                     <button
                         onClick={() => setShowModal(true)}
-                        className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-[10px] font-normal flex items-center gap-1.5 transition shadow-sm"
+                        className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-pequeno flex items-center gap-1.5 transition shadow-sm"
                     >
                         <Upload size={11} /> Importar Excel
                     </button>
@@ -758,12 +758,12 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
 
             {/* Filtros */}
             <div className="bg-slate-100/70 dark:bg-gray-800/40 p-1.5 flex flex-wrap gap-1.5 items-center border-b border-slate-200 dark:border-gray-700">
-                <select value={filtroAnio} onChange={(e) => conResetDia(setFiltroAnio)(e.target.value)} className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2]">
+                <select value={filtroAnio} onChange={(e) => conResetDia(setFiltroAnio)(e.target.value)} className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none focus:border-[#2383C2]">
                     <option value="">Año</option>
                     {aniosDisponibles.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
 
-                <select value={filtroMes} onChange={(e) => conResetDia(setFiltroMes)(e.target.value)} className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none capitalize focus:border-[#2383C2]">
+                <select value={filtroMes} onChange={(e) => conResetDia(setFiltroMes)(e.target.value)} className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none capitalize focus:border-[#2383C2]">
                     <option value="">Mes</option>
                     {mesesDisponibles.map(m => <option key={m} value={m}>{m}</option>)}
                 </select>
@@ -773,7 +773,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                     aria-label="Filtrar por día"
                     onChange={(e) => conResetPagina(setFiltroDia)(e.target.value)}
                     disabled={!filtroAnio || !filtroMes || cargandoLista}
-                    className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2] disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none focus:border-[#2383C2] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <option value="">Día (Todos)</option>
                     {diasDisponibles.map(d => <option key={d} value={d}>{d}</option>)}
@@ -784,7 +784,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                     <input
                         value={busqueda}
                         onChange={e => conResetPagina(setBusqueda)(e.target.value)}
-                        className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:border-[#2383C2]"
+                        className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
                         placeholder="Buscar por Admisión, Paciente, Descripción, Cirujano, Arancel..."
                     />
                 </div>
@@ -793,7 +793,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                     value={filtroRevisado}
                     aria-label="Filtrar por revisado"
                     onChange={(e) => conResetPagina(setFiltroRevisado)(e.target.value)}
-                    className={`h-6 border rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2] ${filtroRevisado ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 font-semibold' : 'border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100'}`}
+                    className={`h-6 border rounded px-1.5 outline-none focus:border-[#2383C2] ${filtroRevisado ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 text-etiqueta' : 'border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal'}`}
                 >
                     <option value="">Revisado (Todos)</option>
                     {OPCIONES_REVISADO.map(o => <option key={o} value={o}>{o}</option>)}
@@ -804,7 +804,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                         value={filtroGestion}
                         onChange={(e) => conResetPagina(setFiltroGestion)(e.target.value)}
                         aria-label="Filtrar por gestión implante"
-                        className={`h-6 border rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2] ${filtroGestion ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 font-semibold' : 'border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100'}`}
+                        className={`h-6 border rounded px-1.5 outline-none focus:border-[#2383C2] ${filtroGestion ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 text-etiqueta' : 'border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal'}`}
                     >
                         <option value="">Gestión implante (Todas)</option>
                         {OPCIONES_GESTION.map(o => <option key={o} value={o}>{ETIQUETAS_ESTADO[o]} ({conteoGestion[o] || 0} adm.)</option>)}
@@ -816,7 +816,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                         value={filtroGestionConsignacion}
                         onChange={(e) => conResetPagina(setFiltroGestionConsignacion)(e.target.value)}
                         aria-label="Filtrar por gestión consignación"
-                        className={`h-6 border rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2] ${filtroGestionConsignacion ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 font-semibold' : 'border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100'}`}
+                        className={`h-6 border rounded px-1.5 outline-none focus:border-[#2383C2] ${filtroGestionConsignacion ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 text-etiqueta' : 'border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal'}`}
                     >
                         <option value="">Gestión consignación (Todas)</option>
                         {OPCIONES_GESTION.map(o => <option key={o} value={o}>{ETIQUETAS_ESTADO[o]} ({conteoGestionConsignacion[o] || 0} adm.)</option>)}
@@ -833,7 +833,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                 />
 
                 {puedeMostrarOcultas && (
-                    <label className={`h-6 ml-auto inline-flex items-center gap-1.5 px-2 rounded border text-[11px] cursor-pointer select-none ${mostrarOcultas ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 font-semibold' : 'border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200'}`}
+                    <label className={`h-6 ml-auto inline-flex items-center gap-1.5 px-2 rounded border cursor-pointer select-none ${mostrarOcultas ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 text-etiqueta' : 'border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal'}`}
                         title={`Filas con descripción oculta en ${NOMBRE_MODULO[modulo]} (Maestros → Descripciones ocultas). No cuentan en los contadores.`}>
                         <input type="checkbox" role="switch" checked={mostrarOcultas} onChange={(e) => conResetPagina(setMostrarOcultas)(e.target.checked)} className="accent-[#2383C2]" />
                         <EyeOff size={11} /> Mostrar ocultas ({nOcultas})
@@ -843,18 +843,18 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
 
             {/* Tabla Principal */}
             {cargandoLista ? (
-                <div className="flex-grow flex items-center justify-center gap-2 text-slate-400 dark:text-gray-500 text-[11px]">
+                <div className="flex-grow flex items-center justify-center gap-2 text-tinta-atenuada text-secundario">
                     <Loader2 size={14} className="animate-spin" /> Cargando registros...
                 </div>
             ) : (
             <div ref={tablaScrollRef} className="flex-grow overflow-auto">
                 <table
-                    className="text-left text-[11px] border-collapse"
+                    className="text-left text-secundario border-collapse"
                     style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: '100%' }}
                 >
                     <ColgroupRedimensionable columnas={columnasVisibles} anchos={anchos} />
                     <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-                        <tr className="text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider">
+                        <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider">
                             {columnasVisibles.map(col => (
                                 <ThRedimensionable key={col.key} col={col} anchos={anchos} onResize={handleResize} className={`px-2 py-1.5 border-b border-r border-slate-200 dark:border-gray-700 ${col.align || ''}`}>
                                     {col.label}
@@ -865,7 +865,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                     <tbody className="divide-y divide-slate-200/60 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
                         {reportesPagina.length === 0 ? (
                             <tr>
-                                <td colSpan={columnasVisibles.length} className="px-4 py-6 text-center text-slate-400 dark:text-gray-500 text-xs">
+                                <td colSpan={columnasVisibles.length} className="px-4 py-6 text-center text-tinta-atenuada text-normal">
                                     No hay registros disponibles para el período o filtros seleccionados.
                                 </td>
                             </tr>
@@ -881,34 +881,34 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                                         className={`group hover:bg-slate-50 dark:hover:bg-gray-700/40 transition-all duration-150 border-l-2 hover:border-l-[#2383C2] ${item.id === filaOrigenId ? 'bg-blue-50/80 dark:bg-blue-950/30 border-l-[#2383C2]' : 'border-l-transparent'} ${item._oculta ? 'opacity-55 bg-slate-50/70 dark:bg-gray-900/40' : ''}`}
                                     >
                                         {ver('fecha') && (
-                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 truncate text-slate-600 dark:text-gray-400">
+                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 truncate text-tinta-secundaria">
                                               {item["Fecha"]}
                                           </td>
                                         )}
                                         {ver('admision') && (
-                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-700 dark:text-gray-200 font-normal truncate">
+                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal truncate">
                                               {item["Admisión"]}
                                           </td>
                                         )}
                                         {ver('paciente') && (
-                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-800 dark:text-gray-100 font-normal truncate" title={item["Paciente"]}>
+                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal truncate" title={item["Paciente"]}>
                                               {item["Paciente"]}
                                           </td>
                                         )}
                                         {ver('edad') && (
-                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-600 dark:text-gray-400 text-center truncate">
+                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-secundaria text-center truncate">
                                               {item["Edad"]}
                                           </td>
                                         )}
                                         {ver('codArt') && (
-                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-600 dark:text-gray-400 truncate">
+                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-secundaria truncate">
                                               {item["Cod.Artículo"]}
                                           </td>
                                         )}
                                         {ver('descripcion') && (
-                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-700 dark:text-gray-300" title={item["Descripción"]}>
+                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal" title={item["Descripción"]}>
                                               <span className="flex items-center gap-1 min-w-0">
-                                                  {item._oculta && <span className="shrink-0 px-1 rounded border border-slate-300 dark:border-gray-600 text-[9px] font-semibold uppercase text-slate-500 dark:text-gray-400">Oculta</span>}
+                                                  {item._oculta && <span className="shrink-0 px-1 rounded border border-slate-300 dark:border-gray-600 text-pequeno uppercase text-tinta-secundaria">Oculta</span>}
                                                   {avisoGestion && (
                                                       <span className="shrink-0 inline-flex" data-aviso="gestion" title="Descripción oculta en Implantes, pero la admisión tiene gestión: se muestra igual.">
                                                           <AlertTriangle size={11} className="text-amber-600" aria-label="Descripción oculta con gestión" />
@@ -918,7 +918,7 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                                                   {puedeOcultar && !item._oculta && !avisoGestion && (
                                                       <button type="button" onClick={() => pedirOcultar(item)}
                                                           title={`Ocultar esta descripción en ${NOMBRE_MODULO[modulo]}`} aria-label="Ocultar esta descripción"
-                                                          className="ml-auto shrink-0 p-0.5 rounded text-slate-400 hover:text-[#2383C2] opacity-0 group-hover:opacity-100 focus:opacity-100 transition">
+                                                          className="ml-auto shrink-0 p-0.5 rounded text-tinta-atenuada hover:text-[#2383C2] opacity-0 group-hover:opacity-100 focus:opacity-100 transition">
                                                           <EyeOff size={11} />
                                                       </button>
                                                   )}
@@ -927,37 +927,37 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                                         )}
                                         {ver('arancel') && (
                                           <td
-                                              className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-700 dark:text-gray-300 truncate"
+                                              className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal truncate"
                                               title={[item["Cód.Arancel"], item["Arancel"]].filter(Boolean).join(' — ')}
                                           >
-                                              {item["Arancel"] || <span className="text-slate-400 dark:text-gray-500">-</span>}
+                                              {item["Arancel"] || <span className="text-tinta-atenuada">-</span>}
                                           </td>
                                         )}
                                         {ver('prevision') && (
-                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-600 dark:text-gray-400 truncate" title={`${item["Previsión"] || ''} - ${item["Isapre"] || ''}`}>
+                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-secundaria truncate" title={`${item["Previsión"] || ''} - ${item["Isapre"] || ''}`}>
                                               {item["Previsión"]} {item["Isapre"] ? `(${item["Isapre"]})` : ''}
                                           </td>
                                         )}
                                         {ver('cirujano') && (
-                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-700 dark:text-gray-300 truncate" title={item["1° Cirujano"]}>
+                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal truncate" title={item["1° Cirujano"]}>
                                               {item["1° Cirujano"]}
                                           </td>
                                         )}
                                         {ver('cantidad') && (
-                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-800 dark:text-gray-100 text-center font-normal">
+                                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal text-center">
                                               {item["Cant.Art."]}
                                           </td>
                                         )}
                                         {ver('revisado') && (
                                           <td className="px-1.5 py-0.5 border-b border-slate-200/60 dark:border-gray-700/70 text-center">
                                               {item._oculta ? (
-                                                  <span className="text-[10px] text-slate-400 dark:text-gray-500">No requiere</span>
+                                                  <span className="text-pequeno text-tinta-atenuada">No requiere</span>
                                               ) : (
                                               <select
                                                   value={revisado}
                                                   onChange={(e) => cambiarRevisado(item, e.target.value)}
                                                   title={item.revisadoPor ? `Última modificación: ${item.revisadoPor}` : undefined}
-                                                  className={`w-full h-5 px-1 rounded-full border text-[10px] font-semibold outline-none cursor-pointer focus:ring-1 focus:ring-[#2383C2] ${CLASE_REVISADO[revisado]}`}
+                                                  className={`w-full h-5 px-1 rounded-full border text-pequeno outline-none cursor-pointer focus:ring-1 focus:ring-[#2383C2] ${CLASE_REVISADO[revisado]}`}
                                               >
                                                   {OPCIONES_REVISADO.map(o => <option key={o} value={o}>{o}</option>)}
                                               </select>
@@ -994,12 +994,12 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
 
             {/* Totalizador Footer */}
             <div className="bg-slate-100 dark:bg-gray-900 border-t border-slate-200 dark:border-gray-700 p-2 flex items-center justify-between">
-                <div className="text-[10px] text-slate-500 dark:text-gray-400">
-                    Registros del mes: <strong className="text-slate-800 dark:text-gray-200 font-normal">{reportes.length}</strong>
-                    {nOcultas > 0 && <> · Ocultas: <strong className="text-slate-800 dark:text-gray-200 font-normal">{nOcultas}</strong></>}
-                    {totalFilas !== filasPantalla.length && <> · Filtrados: <strong className="text-slate-800 dark:text-gray-200 font-normal">{totalFilas}</strong></>}
+                <div className="text-pequeno text-tinta-secundaria">
+                    Registros del mes: <strong className="text-tinta-principal">{reportes.length}</strong>
+                    {nOcultas > 0 && <> · Ocultas: <strong className="text-tinta-principal">{nOcultas}</strong></>}
+                    {totalFilas !== filasPantalla.length && <> · Filtrados: <strong className="text-tinta-principal">{totalFilas}</strong></>}
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] flex-wrap justify-end">
+                <div className="flex items-center gap-1.5 text-pequeno flex-wrap justify-end">
                     {ver('gestionImplante') && OPCIONES_GESTION.map(o => (
                         <span key={o} className={`px-1.5 py-0.5 rounded-full border ${CLASE_GESTION[o]}`} title="Admisiones distintas del mes">
                             {ETIQUETAS_ESTADO[o]}: {conteoGestion[o] || 0}
@@ -1021,10 +1021,10 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                     <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-gray-700">
                         <div className="px-4 py-3 border-b border-slate-100 dark:border-gray-700 flex items-center gap-2 bg-slate-50/60 dark:bg-gray-900/40">
                             <EyeOff size={15} className="text-[#2383C2] shrink-0" />
-                            <h3 className="text-[12px] font-bold text-slate-800 dark:text-gray-100">Ocultar descripción en {NOMBRE_MODULO[modulo]}</h3>
+                            <h3 className="text-subtitulo text-tinta-principal">Ocultar descripción en {NOMBRE_MODULO[modulo]}</h3>
                         </div>
-                        <div className="px-4 py-3 text-[11px] text-slate-600 dark:text-gray-300 flex flex-col gap-2">
-                            <p className="font-semibold text-slate-800 dark:text-gray-100 break-words">{confirmarOcultar.texto}</p>
+                        <div className="px-4 py-3 text-secundario text-tinta-secundaria flex flex-col gap-2">
+                            <p className="text-etiqueta text-tinta-principal break-words">{confirmarOcultar.texto}</p>
                             <p>
                                 Afecta <b>{confirmarOcultar.total === undefined ? '…' : (confirmarOcultar.total ?? confirmarOcultar.mes)}</b> fila(s) en total
                                 {' '}(<b>{confirmarOcultar.mes}</b> en este mes). Las filas se siguen guardando y se pueden ver con "Mostrar ocultas".
@@ -1035,12 +1035,12 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                                     {confirmarOcultar.conGestion} fila(s) de este mes tienen gestión en Implantes: seguirán visibles, con aviso.
                                 </p>
                             )}
-                            <p className="text-slate-400 dark:text-gray-500">Se vuelve a mostrar en Maestros → Descripciones ocultas.</p>
+                            <p className="text-tinta-atenuada">Se vuelve a mostrar en Maestros → Descripciones ocultas.</p>
                         </div>
                         <div className="px-4 py-3 bg-slate-50 dark:bg-gray-900/40 border-t border-slate-100 dark:border-gray-700 flex justify-end gap-2">
-                            <button type="button" onClick={() => setConfirmarOcultar(null)} className="h-7 px-3 text-[11px] text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200">Cancelar</button>
+                            <button type="button" onClick={() => setConfirmarOcultar(null)} className="h-7 px-3 text-secundario text-tinta-secundaria hover:text-tinta-principal">Cancelar</button>
                             <button type="button" onClick={confirmarOcultacion} disabled={confirmarOcultar.guardando}
-                                className="h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded text-[11px] font-semibold inline-flex items-center gap-1.5 disabled:opacity-50">
+                                className="h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded text-etiqueta inline-flex items-center gap-1.5 disabled:opacity-50">
                                 {confirmarOcultar.guardando ? <Loader2 size={12} className="animate-spin" /> : <EyeOff size={12} />} Ocultar
                             </button>
                         </div>
@@ -1057,9 +1057,9 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                                 <div className="p-1.5 bg-[#2383C2]/10 rounded-lg">
                                     <Upload size={16} className="text-[#2383C2]" />
                                 </div>
-                                <h3 className="font-normal text-xs text-slate-800 dark:text-gray-100">Importar Reporte de Cirugías</h3>
+                                <h3 className="text-subtitulo text-tinta-principal">Importar reporte de cirugías</h3>
                             </div>
-                            <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition p-1">
+                            <button onClick={() => setShowModal(false)} className="text-tinta-atenuada hover:text-tinta-secundaria transition p-1">
                                 <X size={16} />
                             </button>
                         </div>
@@ -1070,13 +1070,13 @@ const ReportesInfo = ({ pathVista = '/documentos/reportesInfo', onAbrirGestionIm
                                     <FileSpreadsheet size={24} className="text-slate-400 dark:text-gray-500" />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-normal text-slate-700 dark:text-gray-200">Arrastra tu archivo Excel aquí</p>
-                                    <p className="text-[10px] text-slate-400 dark:text-gray-400 mt-0.5">La columna 'Rut' será omitida automáticamente y se evitarán registros duplicados.</p>
+                                    <p className="text-normal text-tinta-principal">Arrastra tu archivo Excel aquí</p>
+                                    <p className="text-pequeno text-tinta-atenuada mt-0.5">La columna 'Rut' será omitida automáticamente y se evitarán registros duplicados.</p>
                                 </div>
                             </div>
                         </div>
                         <div className="px-4 py-3 bg-slate-50 dark:bg-gray-900/40 border-t border-slate-100 dark:border-gray-700 flex justify-end">
-                            <button onClick={() => setShowModal(false)} className="text-[11px] font-normal text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 px-3 py-1 rounded-lg transition">
+                            <button onClick={() => setShowModal(false)} className="text-secundario text-tinta-secundaria hover:text-tinta-principal px-3 py-1 rounded-lg transition">
                                 Cancelar
                             </button>
                         </div>

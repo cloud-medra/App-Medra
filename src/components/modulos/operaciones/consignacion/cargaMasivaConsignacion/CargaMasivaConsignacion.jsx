@@ -353,24 +353,24 @@ const CargaMasivaConsignacion = () => {
   const puedeGuardar = cargado && resumen.guardables > 0 && !ocupado;
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {ocupado && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">{guardando ? 'Guardando...' : 'Consultando datos...'}</h3>
+            <h3 className="text-[#2383C2] text-subtitulo">{guardando ? 'Guardando...' : 'Consultando datos...'}</h3>
           </div>
         </div>
       )}
 
       <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <Sheet size={15} className="text-[#2383C2]" />
-          CARGA MASIVA DE CONSIGNACIÓN
+          Carga masiva de consignación
         </h2>
 
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="flex items-center rounded overflow-hidden border border-gray-300 dark:border-gray-600 text-[9px] font-bold uppercase" title="Tipo de código en el maestro (define el atributo)">
+          <span className="flex items-center rounded overflow-hidden border border-gray-300 dark:border-gray-600 text-pequeno uppercase" title="Tipo de código en el maestro (define el atributo)">
             {TIPOS_CONSIGNACION.map((t) => (
               <button
                 key={t}
@@ -379,7 +379,7 @@ const CargaMasivaConsignacion = () => {
                 disabled={ocupado}
                 className={`px-2 py-1 transition ${tipo === t
                   ? 'bg-[#2383C2] text-white'
-                  : 'bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  : 'bg-white dark:bg-gray-900 text-tinta-secundaria hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
               >
                 {t === 'CONSIGNACION' ? 'CONSIG.' : 'COTIZ.'}
@@ -391,7 +391,7 @@ const CargaMasivaConsignacion = () => {
             type="button"
             onClick={() => handleAgregarFilas(1)}
             disabled={ocupado}
-            className="h-7 px-2.5 rounded font-bold text-[11px] flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-50"
+            className="h-7 px-2.5 rounded text-etiqueta flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-tinta-secundaria hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-50"
           >
             <Plus size={13} /> Fila
           </button>
@@ -399,7 +399,7 @@ const CargaMasivaConsignacion = () => {
             type="button"
             onClick={() => handleAgregarFilas(10)}
             disabled={ocupado}
-            className="h-7 px-2.5 rounded font-bold text-[11px] flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-50"
+            className="h-7 px-2.5 rounded text-etiqueta flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-tinta-secundaria hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-50"
           >
             <Plus size={13} /> 10 filas
           </button>
@@ -407,7 +407,7 @@ const CargaMasivaConsignacion = () => {
             type="button"
             onClick={handleLimpiarTodo}
             disabled={ocupado}
-            className="h-7 px-2.5 rounded font-bold text-[11px] flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-50"
+            className="h-7 px-2.5 rounded text-etiqueta flex items-center gap-1 bg-gray-200 dark:bg-gray-700 text-tinta-secundaria hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-50"
           >
             <Eraser size={13} /> Limpiar todo
           </button>
@@ -415,7 +415,7 @@ const CargaMasivaConsignacion = () => {
             type="button"
             onClick={handleCargar}
             disabled={ocupado}
-            className="h-7 px-3 rounded font-bold text-[11px] flex items-center gap-1.5 text-white bg-[#2383C2] hover:bg-[#369BCE] transition disabled:opacity-50"
+            className="h-7 px-3 rounded text-etiqueta flex items-center gap-1.5 text-white bg-[#2383C2] hover:bg-[#369BCE] transition disabled:opacity-50"
           >
             {cargando ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />} Cargar
           </button>
@@ -424,7 +424,7 @@ const CargaMasivaConsignacion = () => {
             onClick={handleGuardar}
             disabled={!puedeGuardar}
             title={!cargado ? 'Primero presiona "Cargar"' : undefined}
-            className="h-7 px-3 rounded font-bold text-[11px] flex items-center gap-1.5 text-white bg-emerald-600 hover:bg-emerald-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="h-7 px-3 rounded text-etiqueta flex items-center gap-1.5 text-white bg-emerald-600 hover:bg-emerald-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Save size={13} /> Guardar
           </button>
@@ -434,13 +434,13 @@ const CargaMasivaConsignacion = () => {
       {borradorActivo && (
         <div
           role={borradorRestaurado ? 'alert' : undefined}
-          className={`px-3 py-1.5 flex flex-wrap items-center gap-2 border-b text-[10.5px] ${borradorRestaurado
+          className={`px-3 py-1.5 flex flex-wrap items-center gap-2 border-b text-pequeno ${borradorRestaurado
             ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400'
-            : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400'}`}
+            : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-tinta-secundaria'}`}
         >
           <History size={12} className="shrink-0" />
           {borradorRestaurado ? (
-            <span className="font-semibold">
+            <span className="text-etiqueta">
               Tienes datos sin guardar de una carga anterior ({formatearFechaHora(borradorRestaurado)}). Presiona "Cargar" para revalidarlos.
             </span>
           ) : (
@@ -450,53 +450,53 @@ const CargaMasivaConsignacion = () => {
             type="button"
             onClick={handleDescartarBorrador}
             disabled={ocupado}
-            className="ml-auto h-6 px-2 rounded border border-current font-bold hover:bg-white/60 dark:hover:bg-black/20 transition disabled:opacity-50"
+            className="ml-auto h-6 px-2 rounded border border-current text-etiqueta hover:bg-white/60 dark:hover:bg-black/20 transition disabled:opacity-50"
           >
             Descartar borrador
           </button>
         </div>
       )}
 
-      <div className="px-3 py-1.5 flex flex-wrap items-center gap-3 border-b border-gray-200 dark:border-gray-700 text-[10.5px]">
+      <div className="px-3 py-1.5 flex flex-wrap items-center gap-3 border-b border-gray-200 dark:border-gray-700 text-pequeno">
         {cargado ? (
           <>
-            <span className="font-bold text-gray-700 dark:text-gray-200">
+            <span className="text-etiqueta text-tinta-principal">
               {resumen.ok} fila{resumen.ok === 1 ? '' : 's'} OK, {resumen.errores} con errores
             </span>
             {resumen.advertencias > 0 && (
-              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-semibold">
+              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 text-etiqueta">
                 <AlertTriangle size={11} /> {resumen.advertencias} con Admisión no encontrada (se guardan con Datos Vinculados pendientes)
               </span>
             )}
             {resumen.sinCargar > 0 && (
-              <span className="flex items-center gap-1 text-gray-500 dark:text-gray-400 font-semibold">
+              <span className="flex items-center gap-1 text-tinta-secundaria text-etiqueta">
                 <AlertCircle size={11} /> {resumen.sinCargar} sin cargar (editadas): presiona "Cargar" de nuevo
               </span>
             )}
           </>
         ) : (
-          <span className="text-gray-400 dark:text-gray-500">
+          <span className="text-tinta-atenuada">
             Copia desde Excel y pega en la primera celda (una columna o un bloque). Luego presiona "Cargar" para validar y traer los datos.
           </span>
         )}
       </div>
 
       <div className="flex-grow overflow-auto">
-        <table className="border-collapse text-[11px] min-w-max">
-          <thead className="sticky top-0 z-10 bg-gray-100 dark:bg-gray-900 text-[9.5px] uppercase text-gray-500 dark:text-gray-400">
+        <table className="border-collapse text-secundario min-w-max">
+          <thead className="sticky top-0 z-10 bg-gray-100 dark:bg-gray-900 text-pequeno uppercase text-tinta-secundaria">
             <tr>
               <th className="px-1.5 py-1 border border-gray-200 dark:border-gray-700 w-[32px]">#</th>
               {COLUMNAS_INGRESO.map((c) => (
-                <th key={c.key} className={`px-1.5 py-1 border border-gray-200 dark:border-gray-700 font-bold text-left ${c.ancho}`}>
+                <th key={c.key} className={`px-1.5 py-1 border border-gray-200 dark:border-gray-700 text-etiqueta text-left ${c.ancho}`}>
                   {c.label}
                 </th>
               ))}
               <th className="px-1.5 py-1 border border-gray-200 dark:border-gray-700 w-[28px]" />
-              <th className="px-1.5 py-1 border border-gray-200 dark:border-gray-700 font-bold text-left min-w-[130px] bg-gray-200/60 dark:bg-gray-800">Estado</th>
-              <th className="px-1.5 py-1 border border-gray-200 dark:border-gray-700 font-bold text-left min-w-[220px] bg-gray-200/60 dark:bg-gray-800">Detalle</th>
-              <th className="px-1.5 py-1 border border-gray-200 dark:border-gray-700 font-bold text-left min-w-[220px] bg-gray-200/60 dark:bg-gray-800">Observación</th>
+              <th className="px-1.5 py-1 border border-gray-200 dark:border-gray-700 text-etiqueta text-left min-w-[130px] bg-gray-200/60 dark:bg-gray-800">Estado</th>
+              <th className="px-1.5 py-1 border border-gray-200 dark:border-gray-700 text-etiqueta text-left min-w-[220px] bg-gray-200/60 dark:bg-gray-800">Detalle</th>
+              <th className="px-1.5 py-1 border border-gray-200 dark:border-gray-700 text-etiqueta text-left min-w-[220px] bg-gray-200/60 dark:bg-gray-800">Observación</th>
               {COLUMNAS_LECTURA.map((c) => (
-                <th key={c.key} className={`px-1.5 py-1 border border-gray-200 dark:border-gray-700 font-bold text-left bg-gray-200/60 dark:bg-gray-800 ${c.ancho}`}>
+                <th key={c.key} className={`px-1.5 py-1 border border-gray-200 dark:border-gray-700 text-etiqueta text-left bg-gray-200/60 dark:bg-gray-800 ${c.ancho}`}>
                   {c.label}
                 </th>
               ))}
@@ -507,7 +507,7 @@ const CargaMasivaConsignacion = () => {
               const r = fila.resultado;
               return (
                 <tr key={fila.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-700/20">
-                  <td className="px-1.5 border border-gray-200 dark:border-gray-700 text-center text-gray-400 text-[10px]">{i + 1}</td>
+                  <td className="px-1.5 border border-gray-200 dark:border-gray-700 text-center text-tinta-atenuada text-pequeno">{i + 1}</td>
                   {COLUMNAS_INGRESO.map((c, j) => (
                     <td key={c.key} className={`p-0 border border-gray-200 dark:border-gray-700 ${c.ancho}`}>
                       <input
@@ -525,7 +525,7 @@ const CargaMasivaConsignacion = () => {
                         }
                         disabled={ocupado}
                         inputMode={c.key === 'admision' || c.key === 'cantidad' ? 'numeric' : undefined}
-                        className={`w-full h-6 px-1.5 outline-none focus:ring-2 focus:ring-inset focus:ring-[#2383C2] text-gray-800 dark:text-gray-100 placeholder:text-gray-400 placeholder:italic ${c.key === 'paciente' ? 'uppercase' : ''} ${claseCelda(fila, c.key)}`}
+                        className={`w-full h-6 px-1.5 outline-none focus:ring-2 focus:ring-inset focus:ring-[#2383C2] text-tinta-principal placeholder:text-tinta-atenuada placeholder:italic ${c.key === 'paciente' ? 'uppercase' : ''} ${claseCelda(fila, c.key)}`}
                       />
                     </td>
                   ))}
@@ -535,23 +535,23 @@ const CargaMasivaConsignacion = () => {
                       onClick={() => handleEliminarFila(i)}
                       disabled={ocupado}
                       title="Eliminar fila"
-                      className="p-0.5 text-gray-400 hover:text-red-500 transition disabled:opacity-40"
+                      className="p-0.5 text-tinta-atenuada hover:text-red-500 transition disabled:opacity-40"
                     >
                       <Trash2 size={12} />
                     </button>
                   </td>
                   <td className="px-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60">
                     {r && (
-                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9.5px] font-bold ${ESTILO_ESTADO[r.estado]}`}>
+                      <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-pequeno ${ESTILO_ESTADO[r.estado]}`}>
                         {r.estado === ESTADOS_FILA.OK ? <CheckCircle2 size={10} /> : r.estado === ESTADOS_FILA.ADMISION_NO_ENCONTRADA ? <AlertTriangle size={10} /> : <AlertCircle size={10} />}
                         {ETIQUETAS_ESTADO[r.estado]}
                       </span>
                     )}
                   </td>
-                  <td className="px-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200 max-w-[260px] truncate" title={r?.vinculados?.descripcion || ''}>
+                  <td className="px-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 text-tinta-principal max-w-[260px] truncate" title={r?.vinculados?.descripcion || ''}>
                     {r?.vinculados?.descripcion || ''}
                   </td>
-                  <td className="px-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 text-[10px] text-gray-600 dark:text-gray-300 max-w-[320px] truncate" title={r?.observacion || ''}>
+                  <td className="px-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 text-pequeno text-tinta-secundaria max-w-[320px] truncate" title={r?.observacion || ''}>
                     {r?.observacion || ''}
                   </td>
                   {COLUMNAS_LECTURA.map((c) => {
@@ -576,10 +576,10 @@ const CargaMasivaConsignacion = () => {
                             disabled={ocupado}
                             aria-label={`Precio fila ${i + 1}`}
                             title={error || 'Precio especial solo para esta carga (vacío = precio del maestro)'}
-                            className={`w-full h-6 px-1.5 outline-none text-right bg-transparent text-gray-800 dark:text-gray-100 placeholder:text-gray-500 focus:ring-2 focus:ring-inset focus:ring-[#2383C2] ${error ? 'ring-1 ring-inset ring-red-400 bg-red-50 dark:bg-red-900/30' : ''}`}
+                            className={`w-full h-6 px-1.5 outline-none text-right bg-transparent text-tinta-principal placeholder:text-tinta-secundaria focus:ring-2 focus:ring-inset focus:ring-[#2383C2] ${error ? 'ring-1 ring-inset ring-red-400 bg-red-50 dark:bg-red-900/30' : ''}`}
                           />
                           {especial && (
-                            <div className="px-1.5 pb-0.5 text-[9px] text-gray-600 dark:text-gray-300 whitespace-nowrap" title="Venta = precio × veces costo × cantidad">
+                            <div className="px-1.5 pb-0.5 text-pequeno text-tinta-secundaria whitespace-nowrap" title="Venta = precio × veces costo × cantidad">
                               <BadgePrecioEspecial costoMaestro={maestro} />
                               {!recargosCargados ? ' Calculando venta…' : v?.venta != null ? ` Venta $${v.venta.toLocaleString('es-CL')} · ${v.vecesCosto} x` : ' Sin regla de recargo'}
                             </div>
@@ -588,7 +588,7 @@ const CargaMasivaConsignacion = () => {
                       );
                     }
                     return (
-                      <td key={c.key} className="px-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200 max-w-[260px] truncate" title={valor ? String(valor) : ''}>
+                      <td key={c.key} className="px-1.5 border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-800/60 text-tinta-principal max-w-[260px] truncate" title={valor ? String(valor) : ''}>
                         {c.formato ? c.formato(valor) : (valor ?? '')}
                       </td>
                     );

@@ -20,10 +20,10 @@ const IngresoOrdenes = ({ pathVista = '/documentos/ingresoOrdenes' }) => {
   const abrir = (id) => { setPestana(id); setAbiertas(prev => (prev.has(id) ? prev : new Set([...prev, id]))); };
 
   return (
-    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden text-[11px]">
+    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden text-secundario">
       <header className="shrink-0 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center gap-2">
         <FileUp size={16} className="text-[#2383C2]" />
-        <span className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+        <span className="text-normal text-tinta-principal tracking-wide uppercase">
           Ingreso de Órdenes
         </span>
         <nav className="ml-3 flex items-center gap-1">
@@ -32,10 +32,10 @@ const IngresoOrdenes = ({ pathVista = '/documentos/ingresoOrdenes' }) => {
               key={p.id}
               type="button"
               onClick={() => abrir(p.id)}
-              className={`px-2.5 py-1 rounded text-[11px] transition ${
+              className={`px-2.5 py-1 rounded text-secundario transition ${
                 pestana === p.id
                   ? 'bg-[#2383C2] text-white'
-                  : 'text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700/50'
+                  : 'text-tinta-secundaria hover:bg-slate-100 dark:hover:bg-gray-700/50'
               }`}
             >
               {p.label}

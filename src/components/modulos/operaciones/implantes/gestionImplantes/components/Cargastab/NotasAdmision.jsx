@@ -32,10 +32,10 @@ const Seccion = ({ titulo, texto, onCopiar }) => {
   return (
     <section className="min-w-0 flex flex-col gap-1" aria-label={titulo}>
       <div className="flex items-center gap-2">
-        <h4 className="text-[9px] font-bold uppercase tracking-wide text-slate-500 dark:text-gray-400">{titulo}</h4>
+        <h4 className="text-pequeno uppercase tracking-wide text-tinta-secundaria">{titulo}</h4>
         {texto && onCopiar && (
           <button type="button" onClick={() => onCopiar(texto)} title={`Copiar ${titulo}`} aria-label={`Copiar ${titulo}`}
-            className="ml-auto p-1 md:p-0.5 rounded text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+            className="ml-auto p-1 md:p-0.5 rounded text-tinta-atenuada hover:text-emerald-600 dark:hover:text-emerald-400 transition">
             <Copy size={11} />
           </button>
         )}
@@ -44,20 +44,20 @@ const Seccion = ({ titulo, texto, onCopiar }) => {
         <>
           <p
             data-expandido={largo ? String(expandido) : undefined}
-            className={`text-[10.5px] leading-relaxed text-slate-700 dark:text-gray-200 whitespace-pre-wrap break-words ${
+            className={`text-pequeno text-tinta-principal whitespace-pre-wrap break-words ${
               largo && !expandido ? 'max-h-[4.6rem] overflow-hidden [mask-image:linear-gradient(to_bottom,black_60%,transparent)]' : largo ? 'max-h-60 overflow-y-auto pr-1' : ''
             }`}
           >
             {texto}
           </p>
           {largo && (
-            <button type="button" onClick={() => setExpandido((v) => !v)} className="self-start text-[9.5px] font-semibold text-[#2383C2] hover:underline">
+            <button type="button" onClick={() => setExpandido((v) => !v)} className="self-start text-pequeno text-[#2383C2] hover:underline">
               {expandido ? 'Ver menos' : 'Ver más'}
             </button>
           )}
         </>
       ) : (
-        <p className="text-[10.5px] italic text-slate-400 dark:text-gray-500">Sin información</p>
+        <p className="text-pequeno italic text-tinta-atenuada">Sin información</p>
       )}
     </section>
   );
@@ -76,11 +76,11 @@ const NotasAdmision = ({ descripcion, observacion, onCopiar, onEditar, verDescri
         <button type="button" onClick={alternar} aria-expanded={abierto} className="flex items-center gap-1.5 text-left flex-grow">
           {abierto ? <ChevronUp size={13} className="text-slate-400" /> : <ChevronDown size={13} className="text-slate-400" />}
           <StickyNote size={12} className="text-[#2383C2]" />
-          <span className="text-[10px] font-bold uppercase tracking-wide text-slate-700 dark:text-gray-200">Notas de la admisión</span>
-          {!abierto && (desc || obs) && <span className="text-[9.5px] text-slate-400 dark:text-gray-500 truncate">· {desc || obs}</span>}
+          <span className="text-pequeno uppercase tracking-wide text-tinta-principal">Notas de la admisión</span>
+          {!abierto && (desc || obs) && <span className="text-pequeno text-tinta-atenuada truncate">· {desc || obs}</span>}
         </button>
         {onEditar && (
-          <button type="button" onClick={onEditar} className="shrink-0 inline-flex items-center gap-1 py-1.5 md:py-0 text-[9.5px] font-semibold text-[#2383C2] hover:underline">
+          <button type="button" onClick={onEditar} className="shrink-0 inline-flex items-center gap-1 py-1.5 md:py-0 text-pequeno text-[#2383C2] hover:underline">
             <Pencil size={10} /> Editar en Información
           </button>
         )}

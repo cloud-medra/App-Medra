@@ -16,9 +16,9 @@ export const MODULOS_GESTION = Object.freeze({
     centroDe: (gestion) => gestion.centro || 'PABELLON',
     atributoPorDefecto: 'IMPLANTES',
     // Excel de Solicitud
-    tituloResumen: 'IMPUTADOS DE IMPLANTES',
+    tituloResumen: 'Imputados de implantes',
     // Pantalla de Gestión (títulos y formulario).
-    tituloGestion: 'IMPLANTE',
+    tituloGestion: 'implante',
     tituloDetalle: 'Detalle de Gestión de Implante',
     placeholderNombre: 'Nombre del implante/paciente',
     // Textos del drawer de Configuración (Exportar / Importación masiva).
@@ -54,8 +54,8 @@ export const MODULOS_GESTION = Object.freeze({
     // Todo lo de Hemodinamia tiene centro fijo.
     centroDe: () => CENTRO_HEMODINAMIA,
     atributoPorDefecto: 'HEMODINAMIA',
-    tituloResumen: 'IMPUTADOS DE HEMODINAMIA',
-    tituloGestion: 'HEMODINAMIA',
+    tituloResumen: 'Imputados de hemodinamia',
+    tituloGestion: 'hemodinamia',
     tituloDetalle: 'Detalle de Gestión de Hemodinamia',
     placeholderNombre: 'Nombre del paciente',
     textoRegistros: 'registros de Hemodinamia',

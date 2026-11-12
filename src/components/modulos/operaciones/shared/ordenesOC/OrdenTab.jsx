@@ -43,13 +43,13 @@ export const OrdenTab = ({
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
         <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
           <ClipboardList size={13} className="text-[#2383C2]" />
-          <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">
+          <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">
             Órdenes de compra ({ocsAdmision.length})
           </h3>
         </div>
         <div className="p-3 flex flex-wrap gap-1.5">
           {ocsAdmision.length === 0 ? (
-            <span className="text-[10px] text-slate-400 dark:text-gray-500">
+            <span className="text-pequeno text-tinta-atenuada">
               {textoPendiente}
             </span>
           ) : ocsAdmision.map(oc => (
@@ -58,7 +58,7 @@ export const OrdenTab = ({
                 type="button"
                 onClick={() => handleCopiarTexto?.(oc)}
                 title="Copiar OC"
-                className="flex items-center gap-1 px-2 py-1.5 md:py-0.5 text-[#2383C2] dark:text-blue-400 font-num font-semibold text-[11px] hover:bg-[#2383C2]/10 transition rounded-l"
+                className="flex items-center gap-1 px-2 py-1.5 md:py-0.5 text-[#2383C2] dark:text-blue-400 text-numero-tabla hover:bg-[#2383C2]/10 transition rounded-l"
               >
                 {oc} <Copy size={10} className="opacity-60" />
               </button>
@@ -67,19 +67,19 @@ export const OrdenTab = ({
           ))}
         </div>
         {registroPdf?.error && (
-          <div className="mx-3 mb-3 flex items-center gap-2 text-[10px] text-red-600 dark:text-red-400">
+          <div className="mx-3 mb-3 flex items-center gap-2 text-pequeno text-red-600 dark:text-red-400">
             <AlertCircle size={12} /> {registroPdf.error}
             <button
               type="button"
               onClick={onRecargarRegistroPdf}
-              className="flex items-center gap-1 px-2 py-1.5 md:py-0.5 rounded border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700/50"
+              className="flex items-center gap-1 px-2 py-1.5 md:py-0.5 rounded border border-slate-300 dark:border-gray-600 text-tinta-secundaria hover:bg-slate-100 dark:hover:bg-gray-700/50"
             >
               <RefreshCw size={10} /> Reintentar
             </button>
           </div>
         )}
         {puedeSubirPdf && ocsAdmision.length > 0 && !registroPdf?.error && (
-          <p className="px-3 pb-2 text-[9.5px] text-slate-400 dark:text-gray-500">
+          <p className="px-3 pb-2 text-pequeno text-tinta-atenuada">
             Un PDF por OC, nombrado OC_número.pdf. Arrástralo sobre la OC o usa el botón de subir.
           </p>
         )}
@@ -87,9 +87,9 @@ export const OrdenTab = ({
 
       {bloques.length > 0 && (
         <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-x-auto">
-          <table className="w-full text-left text-[10px] border-collapse">
+          <table className="w-full text-left text-pequeno border-collapse">
             <thead className="bg-slate-50 dark:bg-gray-900/60">
-              <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+              <tr className="text-tinta-secundaria uppercase text-pequeno">
                 <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Empresa</th>
                 <th className="px-2.5 py-1.5 border-b border-r border-slate-200 dark:border-gray-700">Fecha</th>
                 <th className="px-2.5 py-1.5 border-b border-slate-200 dark:border-gray-700">OC</th>
@@ -103,25 +103,25 @@ export const OrdenTab = ({
                     key={bloque.uniqueKey || idx}
                     className={idx === bloqueActivoIndex ? 'bg-[#2383C2]/5 dark:bg-blue-950/30' : 'hover:bg-gray-50/80 dark:hover:bg-gray-700/40'}
                   >
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-medium text-slate-700 dark:text-gray-200">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal">
                       <span className="flex items-center gap-1.5"><Building2 size={11} className="text-[#2383C2]" />{bloque.empresa || 'SIN EMPRESA'}</span>
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">
                       <span className="flex items-center gap-1.5"><CalendarIcon size={11} className="text-[#2383C2]" />{formatearFechaTabla(bloque.fecha)}</span>
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60 font-num">
+                    <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60 text-numero-tabla">
                       {ocs.length
                         ? (
                           <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
                             {ocs.map(oc => (
                               <span key={oc} className="flex items-center gap-1">
-                                <span className="text-slate-700 dark:text-gray-200 font-semibold">{oc}</span>
+                                <span className="text-tinta-principal text-etiqueta">{oc}</span>
                                 {controlPdf(oc)}
                               </span>
                             ))}
                           </span>
                         )
-                        : <span className="text-slate-400 dark:text-gray-500">Pendiente</span>}
+                        : <span className="text-tinta-atenuada">Pendiente</span>}
                     </td>
                   </tr>
                 );

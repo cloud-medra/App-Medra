@@ -25,10 +25,10 @@ export const EstadoFilterDropdown = ({
     <div className="relative" ref={anclaRef}>
       <button
         onClick={() => setOpen(o => !o)}
-        className={`h-9 md:h-7 px-2 border rounded text-[11px] flex items-center gap-1.5 transition
+        className={`h-9 md:h-7 px-2 border rounded flex items-center gap-1.5 transition
           ${hayFiltroActivo
-            ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 font-semibold'
-            : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900'}`}
+            ? 'border-[#2383C2] text-[#2383C2] bg-blue-50 dark:bg-blue-950/30 text-etiqueta'
+            : 'border-gray-300 dark:border-gray-600 text-secundario text-tinta-principal bg-white dark:bg-gray-900'}`}
       >
         <ListFilter size={12} />
         {label}
@@ -43,7 +43,7 @@ export const EstadoFilterDropdown = ({
         >
           <button
             onClick={limpiarFiltroEstados}
-            className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700"
+            className="w-full flex items-center justify-between px-2.5 py-1.5 text-etiqueta text-tinta-secundaria hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700"
           >
             Mostrar todos
             {!hayFiltroActivo && <Check size={13} className="text-[#2383C2]" />}
@@ -55,7 +55,7 @@ export const EstadoFilterDropdown = ({
               <button
                 key={estado}
                 onClick={() => toggleFiltroEstado(estado)}
-                className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="w-full flex items-center justify-between px-2.5 py-1.5 text-secundario text-tinta-principal hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <span className="flex items-center gap-1.5">
                   <span className={`h-2 w-2 rounded-full inline-block ${coloresEstadoGestion(estado).punto}`} />
@@ -67,7 +67,7 @@ export const EstadoFilterDropdown = ({
           })}
 
           {opcionesEstados.length === 0 && (
-            <div className="px-2.5 py-1.5 text-[11px] text-gray-400">Sin estados disponibles</div>
+            <div className="px-2.5 py-1.5 text-secundario text-tinta-atenuada">Sin estados disponibles</div>
           )}
         </div>,
         document.body

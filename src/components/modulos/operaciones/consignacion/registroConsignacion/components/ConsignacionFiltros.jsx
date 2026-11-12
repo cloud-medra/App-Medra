@@ -37,7 +37,7 @@ const ConsignacionFiltros = ({
         <input
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
-          className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]"
+          className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
           placeholder="Buscar por ID, nombre, médico, referencia u orden..."
         />
       </div>
@@ -46,7 +46,7 @@ const ConsignacionFiltros = ({
         <select
           value={filtroAnio}
           onChange={e => setFiltroAnio(e.target.value)}
-          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
         >
           <option value="">Año (Todos)</option>
           {opcionesFechas.anios.map(yyyy => (
@@ -57,7 +57,7 @@ const ConsignacionFiltros = ({
         <select
           value={filtroMes}
           onChange={e => setFiltroMes(e.target.value)}
-          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
         >
           <option value="">Mes (Todos)</option>
           {opcionesFechas.meses.map(mm => (
@@ -68,7 +68,7 @@ const ConsignacionFiltros = ({
         <select
           value={filtroDia}
           onChange={e => setFiltroDia(e.target.value)}
-          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
         >
           <option value="">Día (Todos)</option>
           {opcionesFechas.dias.map(dd => (
@@ -79,7 +79,7 @@ const ConsignacionFiltros = ({
         <select
           value={filtroDespachado}
           onChange={e => setFiltroDespachado(e.target.value)}
-          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
         >
           <option value="">Despachado (Todos)</option>
           <option value="PENDIENTE">PENDIENTE</option>
@@ -89,7 +89,7 @@ const ConsignacionFiltros = ({
         <select
           value={filtroEstado}
           onChange={e => setFiltroEstado(e.target.value)}
-          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 outline-none focus:border-[#2383C2] cursor-pointer"
+          className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] cursor-pointer"
         >
           <option value="">Estado (Todos)</option>
           <option value="INGRESADO">INGRESADO</option>
@@ -103,7 +103,7 @@ const ConsignacionFiltros = ({
         {hayFiltrosActivos && (
           <button
             onClick={limpiarFiltros}
-            className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded font-medium flex items-center gap-1 transition"
+            className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-tinta-secundaria rounded flex items-center gap-1 transition"
             title="Limpiar filtros"
           >
             <FilterX size={12} /> Limpiar

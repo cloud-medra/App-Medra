@@ -36,7 +36,7 @@ const LISTAS_EN_PARALELO = 10;
 const CLASE_ESTADO = {
   LISTO: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800',
   DUPLICADO: 'bg-sky-100 text-sky-800 border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800',
-  VERIFICANDO: 'bg-slate-100 text-slate-600 border-slate-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600',
+  VERIFICANDO: 'bg-slate-100 text-tinta-secundaria border-slate-300 dark:bg-gray-700 dark:border-gray-600',
   ERROR_VERIFICACION: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800',
 };
 const CLASE_RECHAZO = 'bg-red-100 text-red-800 border-red-300 dark:bg-red-950/60 dark:text-red-300 dark:border-red-800';
@@ -211,19 +211,19 @@ const CargaMasivaDocumentos = ({ modulo }) => {
   const etiquetaTipo = (tipo) => (tipo ? TIPOS_DOCUMENTO.find(t => t.id === tipo)?.id : null);
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <FolderUp size={15} className="text-[#2383C2]" />
           Carga masiva de documentos
         </h2>
       </div>
 
       <div className="flex-grow overflow-y-auto p-3 space-y-3">
-        <p className="text-[10px] text-slate-500 dark:text-gray-400">
+        <p className="text-pequeno text-tinta-secundaria">
           Arrastra PDF de una o varias admisiones, nombrados como{' '}
-          <strong className="text-slate-700 dark:text-gray-200">102030 - JOSE PEREZ - DP.pdf</strong> o{' '}
-          <strong className="text-slate-700 dark:text-gray-200">102030 - JOSE PEREZ - COT 12345678 - EMPRESA.pdf</strong>.
+          <strong className="text-tinta-principal">102030 - JOSE PEREZ - DP.pdf</strong> o{' '}
+          <strong className="text-tinta-principal">102030 - JOSE PEREZ - COT 12345678 - EMPRESA.pdf</strong>.
           Cada archivo se guarda en la carpeta de su admisión. Revisa la vista previa y presiona <strong>Subir</strong>.
         </p>
 
@@ -236,14 +236,14 @@ const CargaMasivaDocumentos = ({ modulo }) => {
         {items.length > 0 && (
           <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700/80 rounded-lg shadow-xs overflow-hidden">
             <div className="px-3 py-1.5 bg-slate-50/80 dark:bg-gray-800/80 border-b border-slate-200 dark:border-gray-700 flex flex-wrap items-center gap-2">
-              <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide mr-auto">
+              <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide mr-auto">
                 Vista previa ({items.length})
               </h3>
-              <span className="text-[10px] text-emerald-700 dark:text-emerald-400">Para subir: <strong>{subibles.length}</strong></span>
-              {totalRechazados > 0 && <span className="text-[10px] text-red-700 dark:text-red-400">No se subirán: <strong>{totalRechazados}</strong></span>}
-              {totalAdvertencias > 0 && <span className="text-[10px] text-amber-700 dark:text-amber-400">Advertencias: <strong>{totalAdvertencias}</strong></span>}
+              <span className="text-pequeno text-emerald-700 dark:text-emerald-400">Para subir: <strong>{subibles.length}</strong></span>
+              {totalRechazados > 0 && <span className="text-pequeno text-red-700 dark:text-red-400">No se subirán: <strong>{totalRechazados}</strong></span>}
+              {totalAdvertencias > 0 && <span className="text-pequeno text-amber-700 dark:text-amber-400">Advertencias: <strong>{totalAdvertencias}</strong></span>}
               {verificando > 0 && (
-                <span className="text-[10px] text-slate-500 dark:text-gray-400 flex items-center gap-1">
+                <span className="text-pequeno text-tinta-secundaria flex items-center gap-1">
                   <Loader2 size={11} className="animate-spin" /> Verificando admisiones...
                 </span>
               )}
@@ -252,7 +252,7 @@ const CargaMasivaDocumentos = ({ modulo }) => {
                   type="button"
                   onClick={reintentarVerificacion}
                   disabled={subiendo}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 text-[10px] disabled:opacity-50"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 text-pequeno disabled:opacity-50"
                 >
                   <RefreshCw size={11} /> Reintentar verificación
                 </button>
@@ -261,7 +261,7 @@ const CargaMasivaDocumentos = ({ modulo }) => {
                 type="button"
                 onClick={() => setItems([])}
                 disabled={subiendo}
-                className="flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-700/50 text-[10px] disabled:opacity-50"
+                className="flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 dark:border-gray-600 text-tinta-secundaria hover:bg-slate-100 dark:hover:bg-gray-700/50 text-pequeno disabled:opacity-50"
               >
                 <Trash2 size={11} /> Limpiar lista
               </button>
@@ -269,7 +269,7 @@ const CargaMasivaDocumentos = ({ modulo }) => {
                 type="button"
                 onClick={handleSubir}
                 disabled={subibles.length === 0 || verificando > 0 || subiendo}
-                className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-[10px] font-medium flex items-center gap-1.5 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-pequeno flex items-center gap-1.5 transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {subiendo ? <Loader2 size={11} className="animate-spin" /> : <UploadCloud size={11} />}
                 {subiendo ? `Subiendo ${progreso.actual} de ${progreso.total}` : `Subir (${subibles.length})`}
@@ -277,9 +277,9 @@ const CargaMasivaDocumentos = ({ modulo }) => {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-[10px] border-collapse">
+              <table className="w-full text-left text-pequeno border-collapse">
                 <thead className="bg-slate-100 dark:bg-gray-900/80">
-                  <tr className="text-slate-600 dark:text-gray-400 uppercase text-[9px] tracking-wider">
+                  <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider">
                     <th className="px-2 py-1.5 border-b border-slate-200 dark:border-gray-700 w-24">Id admisión</th>
                     <th className="px-2 py-1.5 border-b border-slate-200 dark:border-gray-700">Archivo</th>
                     <th className="px-2 py-1.5 border-b border-slate-200 dark:border-gray-700 w-20 text-center">Tipo</th>
@@ -292,19 +292,19 @@ const CargaMasivaDocumentos = ({ modulo }) => {
                     const admision = idAdmision ? admisiones.get(idAdmision) : null;
                     return [
                       <tr key={`grupo_${idAdmision}`} className="bg-slate-50 dark:bg-gray-900/40">
-                        <td colSpan={5} className="px-2 py-1 border-b border-slate-200 dark:border-gray-700 font-semibold text-slate-700 dark:text-gray-200">
+                        <td colSpan={5} className="px-2 py-1 border-b border-slate-200 dark:border-gray-700 text-etiqueta text-tinta-principal">
                           {idAdmision
                             ? <>Admisión {idAdmision}{admision?.nombre ? ` · ${admision.nombre}` : ''}</>
                             : 'Sin id de admisión legible'}
-                          <span className="font-normal text-slate-500 dark:text-gray-400"> — {filasGrupo.length} archivo(s)</span>
+                          <span className="text-tinta-secundaria"> — {filasGrupo.length} archivo(s)</span>
                         </td>
                       </tr>,
                       ...filasGrupo.map(f => (
                         <tr key={f.key} className="hover:bg-slate-50 dark:hover:bg-gray-700/40">
-                          <td className="px-2 py-1 border-b border-slate-200/60 dark:border-gray-700/70 text-slate-600 dark:text-gray-400">
+                          <td className="px-2 py-1 border-b border-slate-200/60 dark:border-gray-700/70 text-tinta-secundaria">
                             {f.idAdmision || '—'}
                           </td>
-                          <td className="px-2 py-1 border-b border-slate-200/60 dark:border-gray-700/70 text-slate-800 dark:text-gray-100">
+                          <td className="px-2 py-1 border-b border-slate-200/60 dark:border-gray-700/70 text-tinta-principal">
                             <div className="break-all">{f.nombre}</div>
                             {f.advertencia && (
                               <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 mt-0.5">
@@ -314,11 +314,11 @@ const CargaMasivaDocumentos = ({ modulo }) => {
                           </td>
                           <td className="px-2 py-1 border-b border-slate-200/60 dark:border-gray-700/70 text-center">
                             {etiquetaTipo(f.tipo)
-                              ? <span className="font-semibold text-slate-700 dark:text-gray-200">{etiquetaTipo(f.tipo)}</span>
+                              ? <span className="text-etiqueta text-tinta-principal">{etiquetaTipo(f.tipo)}</span>
                               : <span className="text-amber-700 dark:text-amber-400">Sin tipo</span>}
                           </td>
                           <td className="px-2 py-1 border-b border-slate-200/60 dark:border-gray-700/70 text-center">
-                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[9px] font-semibold ${CLASE_ESTADO[f.estado] || CLASE_RECHAZO}`}>
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-pequeno ${CLASE_ESTADO[f.estado] || CLASE_RECHAZO}`}>
                               {f.estado === 'VERIFICANDO' && <Loader2 size={9} className="animate-spin" />}
                               {ESTADOS[f.estado].label}
                             </span>
@@ -329,7 +329,7 @@ const CargaMasivaDocumentos = ({ modulo }) => {
                               onClick={() => quitarArchivo(f.key)}
                               disabled={subiendo}
                               title="Quitar de la lista"
-                              className="p-0.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50"
+                              className="p-0.5 rounded text-tinta-atenuada hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50"
                             >
                               <X size={12} />
                             </button>
@@ -345,10 +345,10 @@ const CargaMasivaDocumentos = ({ modulo }) => {
         )}
 
         {resumen && (
-          <div className="space-y-2 text-[10px]">
+          <div className="space-y-2 text-pequeno">
             {resumen.porAdmision.length > 0 && (
               <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg text-emerald-800 dark:text-emerald-300">
-                <div className="flex items-center gap-1.5 font-semibold mb-1">
+                <div className="flex items-center gap-1.5 text-etiqueta mb-1">
                   <CheckCircle2 size={13} className="shrink-0" />
                   Subidos: {resumen.porAdmision.reduce((acc, r) => acc + r.subidos.length, 0)} en {resumen.porAdmision.length} admisión(es)
                 </div>
@@ -361,7 +361,7 @@ const CargaMasivaDocumentos = ({ modulo }) => {
                           <li key={d.ruta} className="break-all">
                             {d.nombre}
                             {d.nombre !== d.nombreOriginal && <span className="opacity-80"> (original: {d.nombreOriginal})</span>}
-                            {!d.tipo && <span className="font-semibold text-amber-700 dark:text-amber-400"> — Sin tipo</span>}
+                            {!d.tipo && <span className="text-etiqueta text-amber-700 dark:text-amber-400"> — Sin tipo</span>}
                           </li>
                         ))}
                       </ul>
@@ -382,13 +382,13 @@ const CargaMasivaDocumentos = ({ modulo }) => {
 
             {resumen.rechazados.length > 0 && (
               <div className="px-3 py-2 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400">
-                <div className="flex items-center gap-1.5 font-semibold mb-1">
+                <div className="flex items-center gap-1.5 text-etiqueta mb-1">
                   <XCircle size={13} className="shrink-0" /> No subidos ({resumen.rechazados.length})
                   {puedeRespaldar && respaldables.length > 0 && (
                     <button
                       type="button"
                       onClick={() => setRespaldoAbierto(true)}
-                      className="ml-auto h-6 px-2 rounded border border-red-300 dark:border-red-800 bg-white dark:bg-gray-800 text-[10.5px] font-semibold text-red-700 dark:text-red-400 inline-flex items-center gap-1 hover:bg-red-100 dark:hover:bg-red-950/40"
+                      className="ml-auto h-6 px-2 rounded border border-red-300 dark:border-red-800 bg-white dark:bg-gray-800 text-pequeno text-red-700 dark:text-red-400 inline-flex items-center gap-1 hover:bg-red-100 dark:hover:bg-red-950/40"
                       title="Las admisiones de estos archivos no existen: guárdalos en Respaldo de documentos"
                     >
                       <Archive size={12} /> Enviar {respaldables.length} a respaldo

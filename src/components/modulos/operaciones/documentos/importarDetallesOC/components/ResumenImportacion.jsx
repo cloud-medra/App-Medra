@@ -24,11 +24,11 @@ const Seccion = ({ titulo, items, Icono, tono = 'aviso', ayuda, render }) => {
   };
   return (
     <details className={`w-full ${tonos[tono]}`}>
-      <summary className="cursor-pointer font-semibold inline-flex items-center gap-1" title={ayuda}>
+      <summary className="cursor-pointer text-etiqueta inline-flex items-center gap-1" title={ayuda}>
         <Icono size={12} /> {titulo} ({items.length})
       </summary>
-      {ayuda && <p className="mt-0.5 text-[10px] text-slate-500 dark:text-gray-400">{ayuda}</p>}
-      <ul className="mt-1 max-h-40 overflow-auto font-num text-[10px] space-y-0.5 text-slate-700 dark:text-gray-300 select-text">
+      {ayuda && <p className="mt-0.5 text-pequeno text-tinta-secundaria">{ayuda}</p>}
+      <ul className="mt-1 max-h-40 overflow-auto text-numero-tabla space-y-0.5 text-tinta-principal select-text">
         {items.slice(0, 200).map((it, i) => <li key={i}>{render(it)}</li>)}
         {items.length > 200 && <li>… y {items.length - 200} más</li>}
       </ul>
@@ -57,13 +57,13 @@ const SeccionYaNoVienen = ({ items, onEliminar, preparando }) => {
   });
   return (
     <details className="w-full text-amber-700 dark:text-amber-400">
-      <summary className="cursor-pointer font-semibold inline-flex items-center gap-1" title={AYUDA_YA_NO_VIENEN}>
+      <summary className="cursor-pointer text-etiqueta inline-flex items-center gap-1" title={AYUDA_YA_NO_VIENEN}>
         <EyeOff size={12} /> Registradas que ya no vienen en el archivo ({items.length})
       </summary>
-      <p className="mt-0.5 text-[10px] text-slate-500 dark:text-gray-400">
+      <p className="mt-0.5 text-pequeno text-tinta-secundaria">
         {AYUDA_YA_NO_VIENEN} Puedes seleccionar las que sobran y eliminarlas (con respaldo). Si el archivo trae solo parte del mes, aquí aparece también el resto: revisa antes de eliminar.
       </p>
-      <div className="mt-1 flex items-center gap-2 text-[10.5px] text-slate-700 dark:text-gray-200">
+      <div className="mt-1 flex items-center gap-2 text-pequeno text-tinta-principal">
         <label className="inline-flex items-center gap-1 cursor-pointer">
           <input
             type="checkbox"
@@ -77,12 +77,12 @@ const SeccionYaNoVienen = ({ items, onEliminar, preparando }) => {
           type="button"
           onClick={() => onEliminar(marcadas)}
           disabled={marcadas.length === 0 || preparando}
-          className="ml-auto h-6 px-2 rounded bg-red-600 hover:bg-red-700 text-white font-semibold flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="ml-auto h-6 px-2 rounded bg-red-600 hover:bg-red-700 text-white text-etiqueta flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {preparando ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />} Eliminar seleccionadas ({marcadas.length})
         </button>
       </div>
-      <ul className="mt-1 max-h-40 overflow-auto font-num text-[10px] space-y-0.5 text-slate-700 dark:text-gray-300 select-text">
+      <ul className="mt-1 max-h-40 overflow-auto text-numero-tabla space-y-0.5 text-tinta-principal select-text">
         {items.map(it => (
           <li key={it.id}>
             <label className="inline-flex items-start gap-1.5 cursor-pointer" title={it.id}>
@@ -105,21 +105,21 @@ export const ResumenImportacion = ({ resumen, onCerrar, onReintentar, reintentan
   const gestiones = resumen.gestionesOC;
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[10.5px] max-h-[45%] overflow-y-auto shrink-0">
-      <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold">
+    <div className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-pequeno max-h-[45%] overflow-y-auto shrink-0">
+      <span className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 text-etiqueta">
         <PlusCircle size={12} /> {resumen.nuevas} nueva(s)
       </span>
-      <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold" title={camposActualizados || undefined}>
+      <span className="flex items-center gap-1 text-amber-700 dark:text-amber-400 text-etiqueta" title={camposActualizados || undefined}>
         <RefreshCw size={12} /> {resumen.actualizadas} actualizada(s)
       </span>
-      <span className="flex items-center gap-1 text-slate-500 dark:text-gray-400">
+      <span className="flex items-center gap-1 text-tinta-secundaria">
         <MinusCircle size={12} /> {resumen.sinCambios} sin cambios
       </span>
-      <span className={`flex items-center gap-1 ${resumen.errores.length ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-slate-500 dark:text-gray-400'}`}>
+      <span className={`flex items-center gap-1 ${resumen.errores.length ? 'text-red-600 dark:text-red-400 text-etiqueta' : 'text-tinta-secundaria'}`}>
         <AlertTriangle size={12} /> {resumen.errores.length} con error
       </span>
       <span
-        className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-gray-700/60 text-slate-600 dark:text-gray-300"
+        className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-gray-700/60 text-tinta-secundaria"
         title={`Snapshot ${resumen.snapshotDesdeCache ? 'desde la caché local' : 'descargado de Storage'}${resumen.meses?.length ? ` · meses del archivo: ${resumen.meses.join(', ')}` : ''}`}
       >
         <Database size={11} /> Firestore: {resumen.lecturasFirestore} lectura(s) · {resumen.escriturasFirestore} escritura(s)
@@ -132,10 +132,10 @@ export const ResumenImportacion = ({ resumen, onCerrar, onReintentar, reintentan
         <span className="flex items-center gap-1 text-red-600 dark:text-red-400"><AlertTriangle size={12} /> {resumen.indiceOC.error}</span>
       )}
       {onCerrar && (
-        <button type="button" onClick={onCerrar} title="Cerrar resumen" className="ml-auto p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-gray-200"><X size={12} /></button>
+        <button type="button" onClick={onCerrar} title="Cerrar resumen" className="ml-auto p-0.5 rounded text-tinta-atenuada hover:text-tinta-secundaria"><X size={12} /></button>
       )}
 
-      {camposActualizados && <p className="w-full text-[10px] text-slate-500 dark:text-gray-400">Campos actualizados — {camposActualizados}</p>}
+      {camposActualizados && <p className="w-full text-pequeno text-tinta-secundaria">Campos actualizados — {camposActualizados}</p>}
 
       <Seccion
         titulo="Proveedores sin empresa en el Maestro"

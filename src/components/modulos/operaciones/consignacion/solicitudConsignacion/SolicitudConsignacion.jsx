@@ -150,12 +150,12 @@ const SolicitudConsignacion = () => {
   )];
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {(cargando || exportando) && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">
+            <h3 className="text-[#2383C2] text-subtitulo">
               {exportando ? 'Exportando y actualizando...' : 'Cargando solicitudes...'}
             </h3>
           </div>
@@ -164,9 +164,9 @@ const SolicitudConsignacion = () => {
 
       {/* HEADER PRINCIPAL */}
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <ClipboardCheck size={15} className="text-[#2383C2]" />
-          SOLICITUD DE CONSIGNACIÓN
+          Solicitud de consignación
         </h2>
 
         <div className="flex items-center gap-2">
@@ -175,7 +175,7 @@ const SolicitudConsignacion = () => {
             onClick={refrescar}
             disabled={cargando}
             title="Actualizar lista (vuelve a leer guías y maestros)"
-            className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40"
+            className="p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition disabled:opacity-40"
           >
             <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} />
           </button>
@@ -184,7 +184,7 @@ const SolicitudConsignacion = () => {
             onClick={() => handleExportarYMarcarSolicitado(periodoAbierto)}
             disabled={seleccionados.size === 0 || exportando || hayFilasInvalidas}
             title={hayFilasInvalidas ? 'Hay filas con datos incompletos — corregilas antes de exportar' : undefined}
-            className="px-3 py-1 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center gap-1.5 transition text-[11px] shadow-xs active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3 py-1 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center gap-1.5 transition text-etiqueta shadow-xs active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Download size={13} />
             <span>Exportar Seleccionados ({seleccionados.size})</span>
@@ -193,7 +193,7 @@ const SolicitudConsignacion = () => {
       </div>
 
       {hayFilasInvalidas && (
-        <div className="shrink-0 flex items-start gap-1.5 px-3 py-1.5 text-[10px] text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/40">
+        <div className="shrink-0 flex items-start gap-1.5 px-3 py-1.5 text-pequeno text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border-b border-red-100 dark:border-red-900/40">
           <AlertTriangle size={12} className="shrink-0 mt-0.5" />
           <span>
             <strong>{filasInvalidas.length} fila(s)</strong> con datos incompletos ("P" o vacío) — el botón de exportar queda bloqueado hasta corregirlas. Revisá las celdas resaltadas en rojo.
@@ -208,15 +208,15 @@ const SolicitudConsignacion = () => {
       {/* PERÍODO ABIERTO (Control Mensual) — solo referencial. */}
       {!cargandoPeriodo && (
         periodoAbierto ? (
-          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-900/40">
+          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-pequeno text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-100 dark:border-emerald-900/40">
             <Unlock size={11} className="shrink-0" />
             Período abierto para Consignación: <strong>{periodoAbierto.mes.toUpperCase()} {periodoAbierto.anio}</strong>
-            <span className="text-emerald-600/70 dark:text-emerald-500/70 font-normal normal-case">
+            <span className="text-emerald-600/70 dark:text-emerald-500/70 normal-case">
               — cada ítem se imputa según el período que estaba abierto cuando fue cargado, no necesariamente este.
             </span>
           </div>
         ) : (
-          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[10px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/40">
+          <div className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-pequeno text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-900/40">
             <Lock size={11} className="shrink-0" />
             No hay un período abierto para Consignación en Control Mensual.
           </div>
@@ -224,9 +224,9 @@ const SolicitudConsignacion = () => {
       )}
 
       {/* BARRA INFORMATIVA */}
-      <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 text-[10px] text-gray-500 dark:text-gray-400">
+      <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 text-pequeno text-tinta-secundaria">
         <span>
-          Ítems con Estado <strong className="text-gray-700 dark:text-gray-200">CARGADO</strong>, pendientes de descargar y solicitar.
+          Ítems con Estado <strong className="text-tinta-principal">CARGADO</strong>, pendientes de descargar y solicitar.
         </span>
         <span className="flex items-center gap-1">
           <FileText size={11} className="text-[#2383C2]" />
@@ -244,14 +244,14 @@ const SolicitudConsignacion = () => {
             type="button"
             onClick={restablecerAnchos}
             title="Restablecer ancho de columnas"
-            className="flex items-center gap-1 text-[9px] font-medium text-gray-400 hover:text-[#2383C2] dark:text-gray-500 dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
+            className="flex items-center gap-1 text-pequeno text-tinta-atenuada hover:text-[#2383C2] dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
           >
             <RotateCcw size={10} /> Restablecer columnas
           </button>
         </div>
 
         <table
-          className="text-left text-[10px] border-collapse"
+          className="text-left text-pequeno border-collapse"
           style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: anchoTotalTabla }}
         >
           <colgroup>
@@ -261,7 +261,7 @@ const SolicitudConsignacion = () => {
           </colgroup>
 
           <thead className="bg-gray-100 dark:bg-gray-900 sticky top-[22px] z-10 select-none">
-            <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[9px]">
+            <tr className="text-tinta-secundaria uppercase text-pequeno">
               <th className="relative py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 text-center overflow-hidden">
                 <input
                   type="checkbox"
@@ -340,7 +340,7 @@ const SolicitudConsignacion = () => {
           <tbody>
             {items.length === 0 ? (
               <tr>
-                <td colSpan={17} className="px-4 py-8 text-center text-gray-400 dark:text-gray-500 text-xs">
+                <td colSpan={17} className="px-4 py-8 text-center text-tinta-atenuada text-normal">
                   No hay ítems pendientes de solicitar por el momento.
                 </td>
               </tr>
@@ -371,52 +371,52 @@ const SolicitudConsignacion = () => {
                         className="w-3.5 h-3.5 cursor-pointer accent-[#2383C2]"
                       />
                     </td>
-                    <td className={cc('admision', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 font-semibold text-[#2383C2] whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('admision')}>
+                    <td className={cc('admision', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-etiqueta text-[#2383C2] whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('admision')}>
                       {it.gestionId}
                     </td>
-                    <td className={cc('paciente', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-700 dark:text-gray-200 font-medium whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('paciente')}>
+                    <td className={cc('paciente', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-principal whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('paciente')}>
                       {it.nombre}
                     </td>
-                    <td className={cc('medico', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('medico')}>
+                    <td className={cc('medico', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('medico')}>
                       {it.medico}
                     </td>
-                    <td className={cc('fecha', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fecha')}>
+                    <td className={cc('fecha', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fecha')}>
                       {formatearFechaTabla(it.fecha)}
                     </td>
-                    <td className={cc('empresa', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 truncate max-w-[160px]')} title={tt('empresa', it.empresa)}>
+                    <td className={cc('empresa', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria truncate max-w-[160px]')} title={tt('empresa', it.empresa)}>
                       {it.empresa}
                     </td>
-                    <td className={cc('codigo', `py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 whitespace-nowrap overflow-hidden text-ellipsis ${it.esFilaGuia ? 'text-slate-500 dark:text-gray-400 italic' : 'font-num text-emerald-600 dark:text-emerald-400'}`)} title={tt('codigo')}>
+                    <td className={cc('codigo', `py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 whitespace-nowrap overflow-hidden text-ellipsis ${it.esFilaGuia ? 'text-tinta-secundaria italic' : 'text-numero-tabla text-emerald-600 dark:text-emerald-400'}`)} title={tt('codigo')}>
                       {it.codigo}
                     </td>
                     <td className={cc('descripcion', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 truncate max-w-[180px]')} title={tt('descripcion', it.descripcion)}>
                       {it.descripcion}
                     </td>
-                    <td className={cc('cantidad', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-center text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('cantidad')}>
+                    <td className={cc('cantidad', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-center text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('cantidad')}>
                       {it.cantidad}
                     </td>
-                    <td className={cc('precio', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('precio')}>
+                    <td className={cc('precio', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-emerald-700 dark:text-emerald-400 text-etiqueta whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('precio')}>
                       ${Number(it.costo || 0).toLocaleString('es-CL')}
                     </td>
-                    <td className={cc('atributo', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('atributo')}>
+                    <td className={cc('atributo', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('atributo')}>
                       {it.atributo}
                     </td>
-                    <td className={cc('fechaRegistro', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fechaRegistro')}>
+                    <td className={cc('fechaRegistro', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fechaRegistro')}>
                       {formatearFechaDeTimestamp(it.fechaRegistro)}
                     </td>
-                    <td className={cc('fechaCarga', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fechaCarga')}>
+                    <td className={cc('fechaCarga', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('fechaCarga')}>
                       {formatearFechaTabla(it.fecha)}
                     </td>
-                    <td className={cc('numGuia', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('numGuia')}>
+                    <td className={cc('numGuia', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('numGuia')}>
                       {it.numeroGuia}
                     </td>
-                    <td className="py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {fechaIngresoHoy}
                     </td>
-                    <td className={cc('lote', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('lote')}>
+                    <td className={cc('lote', 'py-1 px-2 border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('lote')}>
                       {it.lote}
                     </td>
-                    <td className={cc('vencimiento', 'py-1 px-2 text-gray-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('vencimiento')}>
+                    <td className={cc('vencimiento', 'py-1 px-2 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis')} title={tt('vencimiento')}>
                       {it.vencimiento}
                     </td>
                   </tr>

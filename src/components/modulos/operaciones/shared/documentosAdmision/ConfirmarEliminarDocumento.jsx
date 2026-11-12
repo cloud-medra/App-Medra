@@ -25,11 +25,11 @@ export const ConfirmarEliminarDocumento = ({ documento, eliminando, onConfirmar,
           <div className="w-10 h-10 rounded-full flex items-center justify-center mb-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
             <AlertTriangle size={20} />
           </div>
-          <h3 id="titulo-eliminar-documento" className="text-sm font-bold text-gray-800 dark:text-gray-100">Eliminar documento</h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-2">
-            ¿Seguro que deseas eliminar <strong className="break-all text-gray-700 dark:text-gray-200">{documento.nombre}</strong>?
+          <h3 id="titulo-eliminar-documento" className="text-titulo-seccion text-tinta-principal">Eliminar documento</h3>
+          <p className="text-secundario text-tinta-secundaria mt-2">
+            ¿Seguro que deseas eliminar <strong className="break-all text-tinta-principal">{documento.nombre}</strong>?
           </p>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 mb-4">
+          <p className="text-pequeno text-tinta-atenuada mt-1 mb-4">
             Dejará de aparecer en la admisión. Queda un respaldo en la papelera del sistema.
           </p>
         </div>
@@ -38,7 +38,7 @@ export const ConfirmarEliminarDocumento = ({ documento, eliminando, onConfirmar,
             type="button"
             onClick={onCancelar}
             disabled={eliminando}
-            className="flex-1 py-2.5 md:py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-[11px] font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 transition"
+            className="flex-1 py-2.5 md:py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-secundario text-tinta-secundaria hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 transition"
           >
             Cancelar
           </button>
@@ -46,7 +46,7 @@ export const ConfirmarEliminarDocumento = ({ documento, eliminando, onConfirmar,
             type="button"
             onClick={onConfirmar}
             disabled={eliminando}
-            className="flex-1 py-2.5 md:py-2 rounded-lg inline-flex items-center justify-center gap-1.5 text-[11px] font-medium bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 transition"
+            className="flex-1 py-2.5 md:py-2 rounded-lg inline-flex items-center justify-center gap-1.5 text-secundario bg-red-600 hover:bg-red-700 text-white disabled:opacity-60 transition"
           >
             {eliminando ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
             {eliminando ? 'Eliminando...' : 'Eliminar'}

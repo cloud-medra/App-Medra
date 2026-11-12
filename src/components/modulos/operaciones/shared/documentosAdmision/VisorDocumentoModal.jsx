@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Download, ExternalLink, X, Loader2, AlertCir
 import { obtenerBlobDocumento } from './documentosStorage';
 import { mensajeErrorStorage, TIPOS_DOCUMENTO } from './documentosHelpers';
 
-const BOTON = 'h-9 md:h-7 px-2 inline-flex items-center gap-1.5 rounded border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-[10.5px] font-medium text-slate-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:text-slate-600 transition';
+const BOTON = 'h-9 md:h-7 px-2 inline-flex items-center gap-1.5 rounded border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-pequeno text-tinta-secundaria hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-slate-200 disabled:hover:text-tinta-secundaria transition';
 
 const etiquetaTipo = (tipo) => {
   const info = TIPOS_DOCUMENTO.find((t) => t.id === tipo);
@@ -91,8 +91,8 @@ export const VisorDocumentoModal = ({ documentos, indiceInicial = 0, onCerrar, d
         <div className="px-3 py-2 border-b border-slate-200 dark:border-gray-700 bg-slate-50/80 dark:bg-gray-900/40 flex items-center gap-2 flex-wrap">
           <FileText size={15} className="text-slate-500 dark:text-gray-400 shrink-0" />
           <div className="min-w-0 flex-1">
-            <h3 className="text-[12px] font-bold text-slate-800 dark:text-gray-100 truncate" title={actual.nombre}>{actual.nombre}</h3>
-            <p className="text-[10px] text-slate-500 dark:text-gray-400 truncate">
+            <h3 className="text-subtitulo text-tinta-principal truncate" title={actual.nombre}>{actual.nombre}</h3>
+            <p className="text-pequeno text-tinta-secundaria truncate">
               {describir(actual)} · {indice + 1} de {total}
             </p>
           </div>
@@ -118,7 +118,7 @@ export const VisorDocumentoModal = ({ documentos, indiceInicial = 0, onCerrar, d
             <button
               type="button"
               onClick={onCerrar}
-              className="h-9 w-9 md:h-7 md:w-7 inline-flex items-center justify-center rounded text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition"
+              className="h-9 w-9 md:h-7 md:w-7 inline-flex items-center justify-center rounded text-tinta-atenuada hover:text-tinta-principal hover:bg-slate-200/60 dark:hover:bg-gray-700 transition"
               title="Cerrar (Esc)"
             >
               <X size={16} />
@@ -128,12 +128,12 @@ export const VisorDocumentoModal = ({ documentos, indiceInicial = 0, onCerrar, d
 
         <div className="flex-1 min-h-0 bg-slate-100 dark:bg-gray-900">
           {cargando && (
-            <div className="h-full flex items-center justify-center gap-2 text-[11px] text-slate-500 dark:text-gray-400">
+            <div className="h-full flex items-center justify-center gap-2 text-secundario text-tinta-secundaria">
               <Loader2 size={15} className="animate-spin" /> Cargando documento...
             </div>
           )}
           {error && (
-            <div className="h-full flex flex-col items-center justify-center gap-2 text-[11px] text-red-600 dark:text-red-400 px-4 text-center">
+            <div className="h-full flex flex-col items-center justify-center gap-2 text-secundario text-red-600 dark:text-red-400 px-4 text-center">
               <AlertCircle size={18} /> {error}
             </div>
           )}

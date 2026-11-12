@@ -15,7 +15,7 @@ import { copiarAlPortapapeles } from '../../../../../utils/portapapeles';
 import { buscarEmpresaMaestro } from './utils/empresaMaestro';
 
 const DURACION_COPIADO = 2000;
-const ETIQUETA = 'h-7 px-2 flex items-center rounded border text-[11px]';
+const ETIQUETA = 'h-7 px-2 flex items-center rounded border text-secundario';
 
 const RutEmpresa = ({ nombre }) => {
   const { datos: empresas, cargando, error } = useCatalogo('empresas');
@@ -41,7 +41,7 @@ const RutEmpresa = ({ nombre }) => {
 
   if (!rut) {
     return (
-      <span className={`${ETIQUETA} border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900`}>
+      <span className={`${ETIQUETA} border-gray-200 dark:border-gray-700 text-tinta-atenuada bg-white dark:bg-gray-900`}>
         Sin RUT
       </span>
     );
@@ -65,11 +65,11 @@ const RutEmpresa = ({ nombre }) => {
       aria-label={`Copiar RUT ${rut}`}
       className={`${ETIQUETA} gap-1.5 cursor-pointer transition ${copiado
         ? 'border-emerald-500 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20'
-        : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:border-[#2383C2] hover:text-[#2383C2]'}`}
+        : 'border-gray-300 dark:border-gray-600 text-tinta-principal bg-white dark:bg-gray-900 hover:border-[#2383C2] hover:text-[#2383C2]'}`}
     >
       {copiado ? <Check size={12} /> : <Copy size={12} />}
-      <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-gray-400">RUT</span>
-      <span className="font-num font-semibold">{copiado ? '¡Copiado!' : rut}</span>
+      <span className="text-pequeno uppercase tracking-wider text-tinta-secundaria">RUT</span>
+      <span className="text-numero-tabla">{copiado ? '¡Copiado!' : rut}</span>
     </button>
   );
 };

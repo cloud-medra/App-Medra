@@ -54,7 +54,7 @@ const TONO_MOVIMIENTO = {
 };
 
 const Diferencia = ({ valor, moneda = false }) => (
-  <span className={`font-semibold ${valor > 0 ? 'text-emerald-700 dark:text-emerald-400' : valor < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500'}`}>
+  <span className={`text-etiqueta ${valor > 0 ? 'text-emerald-700 dark:text-emerald-400' : valor < 0 ? 'text-red-600 dark:text-red-400' : 'text-tinta-secundaria'}`}>
     {moneda ? (valor > 0 ? `+${pesos(valor)}` : pesos(valor)) : conSigno(valor)}
   </span>
 );
@@ -87,14 +87,14 @@ const HistorialModificaciones = ({ modulo, config, puedeCopiar }) => {
   return (
     <div className="flex-1 min-h-0 overflow-auto p-3 space-y-2">
       {cargando && entradas.length === 0 && <div className="py-10 flex justify-center"><Loader2 className="animate-spin text-[#2383C2]" /></div>}
-      {!cargando && entradas.length === 0 && <p className="py-10 text-center text-[12px] text-gray-400">Todavía no se han descargado modificaciones.</p>}
+      {!cargando && entradas.length === 0 && <p className="py-10 text-center text-normal text-tinta-atenuada">Todavía no se han descargado modificaciones.</p>}
       {entradas.map((e) => (
-        <div key={e.id} className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-[12px]">
+        <div key={e.id} className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-normal">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <span className="font-semibold text-gray-800 dark:text-gray-100">{fecha(e.fecha)}</span>
-            <span className="text-gray-500">por {e.usuario}</span>
-            <span className="text-gray-500">{e.bloques?.length || 0} bloque(s) · {e.totalFilas || 0} cambio(s)</span>
-            <span className="text-gray-400 tabular-nums text-[11px]">{e.nombreArchivo}</span>
+            <span className="text-etiqueta text-tinta-principal">{fecha(e.fecha)}</span>
+            <span className="text-tinta-secundaria">por {e.usuario}</span>
+            <span className="text-tinta-secundaria">{e.bloques?.length || 0} bloque(s) · {e.totalFilas || 0} cambio(s)</span>
+            <span className="text-tinta-atenuada tabular-nums text-secundario">{e.nombreArchivo}</span>
             {puedeCopiar && (
               <button type="button" onClick={() => { descargarCopia(config, e); showToast('Copia descargada (no cambia ningún estado)', 'info'); }}
                 className="ml-auto inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -102,7 +102,7 @@ const HistorialModificaciones = ({ modulo, config, puedeCopiar }) => {
               </button>
             )}
           </div>
-          <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-secundario text-tinta-secundaria">
             {(e.bloques || []).map((b) => `${b.gestionId} · ${b.nombre} (${b.empresa}, ${fechaISO(b.fecha)})`).join(' — ')}
           </p>
         </div>
@@ -110,7 +110,7 @@ const HistorialModificaciones = ({ modulo, config, puedeCopiar }) => {
       {hayMas && (
         <div className="flex justify-center pt-1">
           <button type="button" onClick={() => cargar(true)} disabled={cargando}
-            className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-gray-300 dark:border-gray-600 text-[12px] hover:bg-gray-50 dark:hover:bg-gray-700">
+            className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-gray-300 dark:border-gray-600 text-normal hover:bg-gray-50 dark:hover:bg-gray-700">
             {cargando && <Loader2 size={12} className="animate-spin" />} Cargar más
           </button>
         </div>
@@ -191,11 +191,11 @@ const SolicitudModificaciones = ({ modulo }) => {
   const celdaBloque = (col, b) => {
     switch (col.key) {
       case 'sel': return <input type="checkbox" checked={seleccion.has(b.refPath)} onChange={() => alternar(b.refPath)} onClick={(e) => e.stopPropagation()} aria-label={`Seleccionar ${b.gestionId}`} className="accent-[#2383C2] cursor-pointer" />;
-      case 'admision': return <span className="font-semibold text-[#2383C2]">{b.gestionId}</span>;
+      case 'admision': return <span className="text-etiqueta text-[#2383C2]">{b.gestionId}</span>;
       case 'paciente': return <span title={b.nombre}>{b.nombre}</span>;
       case 'empresa': return <span title={b.empresa}>{b.empresa}</span>;
       case 'fecha': return fechaISO(b.fecha);
-      case 'solicitud': return <span className="text-gray-500">{fecha(b.fechaSolicitud)}</span>;
+      case 'solicitud': return <span className="text-tinta-secundaria">{fecha(b.fechaSolicitud)}</span>;
       case 'periodo': return textoPeriodoSolicitud(b) || '—';
       case 'agregados': return b.resumen.agregados || '—';
       case 'modificados': return b.resumen.modificados || '—';
@@ -207,7 +207,7 @@ const SolicitudModificaciones = ({ modulo }) => {
 
   const celdaCambio = (col, f) => {
     switch (col.key) {
-      case 'MOVIMIENTO': return <span className={`font-bold ${TONO_MOVIMIENTO[f.MOVIMIENTO]}`}>{f.MOVIMIENTO}</span>;
+      case 'MOVIMIENTO': return <span className={`text-etiqueta ${TONO_MOVIMIENTO[f.MOVIMIENTO]}`}>{f.MOVIMIENTO}</span>;
       case 'CODIGO': return f.CODIGO && f['CODIGO ANTERIOR'] && f.CODIGO !== f['CODIGO ANTERIOR']
         ? <span title={`Antes: ${f['CODIGO ANTERIOR']}`}>{f['CODIGO ANTERIOR']} → {f.CODIGO}</span> : (f.CODIGO || f['CODIGO ANTERIOR']);
       case 'DESCRIPCION': return <span title={f.DESCRIPCION}>{f.DESCRIPCION}</span>;
@@ -220,23 +220,23 @@ const SolicitudModificaciones = ({ modulo }) => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-secundario">
       <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <FilePen size={15} className="text-[#2383C2]" />
-          SOLICITUDES DE MODIFICACIONES DE {config.etiqueta.toUpperCase()}
+          Solicitudes de modificaciones de {config.etiqueta.toLowerCase()}
         </h2>
-        <div className="flex items-center gap-1 text-[11px]" role="tablist">
+        <div className="flex items-center gap-1 text-secundario" role="tablist">
           {[['pendientes', `Pendientes (${bloques.length})`, FilePen], ['historial', 'Historial', History]].map(([id, etiqueta, Icono]) => (
             <button key={id} type="button" role="tab" aria-selected={seccion === id} onClick={() => setSeccion(id)}
-              className={`inline-flex items-center gap-1 h-7 px-2.5 rounded-md border ${seccion === id ? 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-[#2383C2] font-semibold' : 'border-transparent text-gray-500 hover:bg-white/60 dark:hover:bg-gray-700/40'}`}>
+              className={`inline-flex items-center gap-1 h-7 px-2.5 rounded-md border ${seccion === id ? 'bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-[#2383C2] text-etiqueta' : 'border-transparent text-tinta-secundaria hover:bg-white/60 dark:hover:bg-gray-700/40'}`}>
               <Icono size={12} /> {etiqueta}
             </button>
           ))}
         </div>
       </div>
 
-      <p className="px-3 py-1.5 text-[11px] text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 flex items-start gap-1.5">
+      <p className="px-3 py-1.5 text-secundario text-tinta-secundaria border-b border-gray-200 dark:border-gray-700 flex items-start gap-1.5">
         <Info size={12} className="shrink-0 mt-0.5 text-[#2383C2]" />
         Solo cambios hechos después de la solicitud (agregados, modificados y eliminados), con el valor anterior y el nuevo. No reemplaza ni duplica la Solicitud original y no vuelve a imputar: la imputación ya se actualizó al guardar cada edición.
       </p>
@@ -250,14 +250,14 @@ const SolicitudModificaciones = ({ modulo }) => {
               <input type="checkbox" checked={todos} onChange={() => setSeleccion(todos ? new Set() : new Set(bloques.map((b) => b.refPath)))} className="accent-[#2383C2]" />
               Seleccionar todos
             </label>
-            <span className="text-gray-500">
-              <span className="text-emerald-700 dark:text-emerald-400 font-semibold">{totales.agregados}</span> agregados ·{' '}
-              <span className="text-amber-700 dark:text-amber-400 font-semibold">{totales.modificados}</span> modificados ·{' '}
-              <span className="text-red-600 dark:text-red-400 font-semibold">{totales.eliminados}</span> eliminados
+            <span className="text-tinta-secundaria">
+              <span className="text-emerald-700 dark:text-emerald-400 text-etiqueta">{totales.agregados}</span> agregados ·{' '}
+              <span className="text-amber-700 dark:text-amber-400 text-etiqueta">{totales.modificados}</span> modificados ·{' '}
+              <span className="text-red-600 dark:text-red-400 text-etiqueta">{totales.eliminados}</span> eliminados
             </span>
             {puedeExportar && (
               <button type="button" onClick={descargar} disabled={!elegidos.length || exportando}
-                className="ml-auto inline-flex items-center gap-1.5 h-7 px-3 rounded font-bold bg-[#2383C2] hover:bg-[#1d6fa5] text-white disabled:opacity-50">
+                className="ml-auto inline-flex items-center gap-1.5 h-7 px-3 rounded text-etiqueta bg-[#2383C2] hover:bg-[#1d6fa5] text-white disabled:opacity-50">
                 {exportando ? <RefreshCw size={13} className="animate-spin" /> : <Download size={13} />}
                 Descargar modificaciones ({elegidos.length})
               </button>
@@ -278,7 +278,7 @@ const SolicitudModificaciones = ({ modulo }) => {
                 mensajeVacio="No hay modificaciones pendientes: todo lo editado después de solicitar ya fue descargado."
               />
             </div>
-            <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-500 bg-gray-100 dark:bg-gray-900 border-y border-gray-200 dark:border-gray-700">
+            <div className="px-3 py-1 text-pequeno uppercase tracking-wide text-tinta-secundaria bg-gray-100 dark:bg-gray-900 border-y border-gray-200 dark:border-gray-700">
               Vista previa de cambios {elegidos.length ? `(${elegidos.length} bloque(s) seleccionado(s))` : '(todos los pendientes)'}
             </div>
             <div className="flex-1 min-h-0 flex flex-col">

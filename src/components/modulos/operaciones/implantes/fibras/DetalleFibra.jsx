@@ -23,7 +23,7 @@ const COLUMNAS_DETALLE = [
   { key: 'acciones', label: '', fija: true, ancho: 40, min: 40 },
 ];
 
-const TH = 'px-2 py-1.5 text-left text-[10px] font-bold uppercase text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/60';
+const TH = 'px-2 py-1.5 text-left text-pequeno uppercase text-tinta-secundaria border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/60';
 const TD = 'px-2 py-1.5 border-b border-slate-100 dark:border-gray-700/60 truncate';
 
 // Movimientos de ubicación (logs de la fibra) en palabras.
@@ -78,10 +78,10 @@ const DetalleFibra = ({ fibra, leerUsos, leerMovimientos, version, onAnularPerdi
     // Pérdida nueva: todos los números perdidos en una fila; antigua: uno.
     const numeros = u.numerosPerdidos || [u.numeroUso];
     switch (key) {
-      case 'numero': return <span className={`font-num font-bold ${anulado ? 'line-through text-slate-400' : ''}`} title={textoNumeros(numeros, u.usosTotales)}>{numeros.length > 1 ? `${numeros[0]}–${numeros[numeros.length - 1]}` : numeros[0]}/{u.usosTotales}</span>;
+      case 'numero': return <span className={`text-numero-tabla ${anulado ? 'line-through text-tinta-atenuada' : ''}`} title={textoNumeros(numeros, u.usosTotales)}>{numeros.length > 1 ? `${numeros[0]}–${numeros[numeros.length - 1]}` : numeros[0]}/{u.usosTotales}</span>;
       case 'tipo': return perdida
         ? (
-          <span className="text-red-700 dark:text-red-400 font-semibold" title={[u.motivo, u.observacion].filter(Boolean).join(' · ')}>
+          <span className="text-red-700 dark:text-red-400 text-etiqueta" title={[u.motivo, u.observacion].filter(Boolean).join(' · ')}>
             {u.numerosPerdidos ? `Pérdida de ${numeros.length} uso${numeros.length === 1 ? '' : 's'}` : 'Pérdida'}: {u.motivo}{u.observacion ? ` · ${u.observacion}` : ''}
           </span>
         )
@@ -92,8 +92,8 @@ const DetalleFibra = ({ fibra, leerUsos, leerMovimientos, version, onAnularPerdi
       case 'medico': return perdida ? '—' : u.medico;
       case 'registradoPor': return <span title={fechaHora(u.registradoEl)}>{u.registradoPor?.nombre || ''}</span>;
       case 'estado': return anulado
-        ? <span className="text-slate-500" title={`${fechaHora(u.anuladoEl)} · ${u.anuladoPor?.nombre || ''}`}>Anulado: {TEXTO_MOTIVO_ANULACION[u.motivoAnulacion] || u.motivoAnulacion}{u.detalleAnulacion ? ` (${u.detalleAnulacion})` : ''}</span>
-        : <span className="text-emerald-700 dark:text-emerald-400 font-semibold">Vigente</span>;
+        ? <span className="text-tinta-secundaria" title={`${fechaHora(u.anuladoEl)} · ${u.anuladoPor?.nombre || ''}`}>Anulado: {TEXTO_MOTIVO_ANULACION[u.motivoAnulacion] || u.motivoAnulacion}{u.detalleAnulacion ? ` (${u.detalleAnulacion})` : ''}</span>
+        : <span className="text-emerald-700 dark:text-emerald-400 text-etiqueta">Vigente</span>;
       case 'acciones': return puedeAnular && perdida && !anulado
         ? <button type="button" onClick={() => onAnularPerdida(u)} title="Anular pérdida" aria-label={`Anular pérdida ${u.numeroUso}`} className="text-red-600 hover:text-red-800 p-0.5"><Undo2 size={13} /></button>
         : null;
@@ -103,34 +103,34 @@ const DetalleFibra = ({ fibra, leerUsos, leerMovimientos, version, onAnularPerdi
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-black/30" onClick={onCerrar}>
-      <div className="h-full w-full max-w-5xl bg-white dark:bg-gray-800 shadow-xl flex flex-col text-[11px]" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Detalle ${textoFibra(fibra)}`}>
+      <div className="h-full w-full max-w-5xl bg-white dark:bg-gray-800 shadow-xl flex flex-col text-secundario" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Detalle ${textoFibra(fibra)}`}>
         <div className="px-4 py-3 border-b border-slate-200 dark:border-gray-700 flex items-start justify-between gap-2">
           <div>
-            <h3 className="text-[14px]"><NombreFibra fibra={fibra} claseReferencia="font-bold text-slate-800 dark:text-gray-100" /></h3>
-            <p className="text-slate-500 dark:text-gray-400">
+            <h3 className="text-subtitulo"><NombreFibra fibra={fibra} claseReferencia="text-etiqueta text-tinta-principal" /></h3>
+            <p className="text-tinta-secundaria">
               Lote {fibra.lote} · vence {formatearFechaTabla(fibra.vencimiento)} · {ubicacionDe(fibra).toLowerCase()}
             </p>
             {/* Usos reales y perdidos por separado. */}
-            <p className="text-slate-700 dark:text-gray-200 font-semibold">
+            <p className="text-tinta-principal text-etiqueta">
               {usosRealizadosDe(fibra)} uso{usosRealizadosDe(fibra) === 1 ? '' : 's'} realizado{usosRealizadosDe(fibra) === 1 ? '' : 's'} de {fibra.usosTotales}
               {numerosPerdidosDe(fibra).length > 0 && (
                 <span className="text-red-700 dark:text-red-400">
                   {' · '}{numerosPerdidosDe(fibra).length} perdido{numerosPerdidosDe(fibra).length === 1 ? '' : 's'} ({textoNumeros(numerosPerdidosDe(fibra), fibra.usosTotales)})
-                  {' '}<span className="px-1 rounded text-[9px] font-bold bg-red-600 text-white">Pérdida</span>
+                  {' '}<span className="px-1 rounded text-pequeno bg-red-600 text-white">Pérdida</span>
                 </span>
               )}
             </p>
             {movimientos.length > 0 && (
-              <ul className="mt-1.5 text-[10px] text-slate-500 dark:text-gray-400 space-y-0.5" aria-label="Movimientos de ubicación">
+              <ul className="mt-1.5 text-pequeno text-tinta-secundaria space-y-0.5" aria-label="Movimientos de ubicación">
                 {movimientos.map((m) => <li key={m.id}>{textoMovimiento(m)}</li>)}
               </ul>
             )}
           </div>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="text-tinta-atenuada hover:text-tinta-secundaria"><X size={18} /></button>
         </div>
         <div className="flex-1 overflow-auto p-3">
           {usos === null ? (
-            <p className="text-slate-400 flex items-center gap-1.5"><Loader2 size={12} className="animate-spin" /> Cargando usos…</p>
+            <p className="text-tinta-atenuada flex items-center gap-1.5"><Loader2 size={12} className="animate-spin" /> Cargando usos…</p>
           ) : (
             <table className="border-collapse" style={{ tableLayout: 'fixed', minWidth: '100%' }}>
               <ColgroupRedimensionable columnas={columnasVisibles} anchos={anchos} relleno />
@@ -145,13 +145,13 @@ const DetalleFibra = ({ fibra, leerUsos, leerMovimientos, version, onAnularPerdi
               <tbody>
                 {Number(fibra.usosPrevios) > 0 && (
                   <tr className="bg-slate-50/70 dark:bg-gray-900/30">
-                    <td colSpan={columnasVisibles.length + 1} className={`${TD} text-slate-500 italic`}>
+                    <td colSpan={columnasVisibles.length + 1} className={`${TD} text-tinta-secundaria italic`}>
                       Usos 1{Number(fibra.usosPrevios) > 1 ? `–${fibra.usosPrevios}` : ''}/{fibra.usosTotales}: previos al registro en el sistema (sin detalle).
                     </td>
                   </tr>
                 )}
                 {usos.length === 0 && (
-                  <tr><td colSpan={columnasVisibles.length + 1} className={`${TD} text-slate-400 italic`}>Sin usos registrados en el sistema.</td></tr>
+                  <tr><td colSpan={columnasVisibles.length + 1} className={`${TD} text-tinta-atenuada italic`}>Sin usos registrados en el sistema.</td></tr>
                 )}
                 {usos.map((u) => (
                   <tr key={u.id} className={u.estado === ESTADO_USO.ANULADO ? 'opacity-60' : u.tipo === TIPO_USO.PERDIDA ? 'bg-red-50/50 dark:bg-red-950/10' : ''}>

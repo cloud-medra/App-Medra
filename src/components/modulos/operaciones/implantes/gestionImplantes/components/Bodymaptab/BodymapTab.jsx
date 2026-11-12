@@ -42,26 +42,26 @@ export const BodymapTab = ({ descripcion, lado: ladoGestion, onAbrirMaestro }) =
   const puedeAsignar = Boolean(onAbrirMaestro) && hasPermission(RUTA_MAESTRO, 'tabla_datos', 'action_editar');
 
   return (
-    <div className="flex flex-col gap-3 text-[11.5px]">
+    <div className="flex flex-col gap-3 text-secundario">
       <section className="rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-hidden">
         <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/40">
           <PersonStanding size={13} className="text-[#2383C2]" />
-          <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wide">Bodymap</h3>
+          <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wide">Bodymap</h3>
         </div>
         <div className="p-3 flex flex-col gap-1">
-          <p className="text-gray-500 dark:text-gray-400">Descripción</p>
-          <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100 break-words">{valida ? normalizarDescripcion(descripcion) : 'Sin descripción'}</p>
+          <p className="text-tinta-secundaria">Descripción</p>
+          <p className="text-subtitulo text-tinta-principal break-words">{valida ? normalizarDescripcion(descripcion) : 'Sin descripción'}</p>
           {zonas.length > 0 && (
-            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-gray-600 dark:text-gray-300">
+            <p className="mt-1 flex flex-wrap items-center gap-1.5 text-tinta-secundaria">
               <span>Zona{zonas.length > 1 ? 's' : ''}:</span>
-              {zonas.map((z) => <span key={z} className="text-[10.5px] font-semibold px-1.5 py-0.5 rounded-full bg-[#2383C2]/10 text-[#1d6fa5] dark:text-blue-300">{nombreZona(z)}</span>)}
+              {zonas.map((z) => <span key={z} className="text-pequeno px-1.5 py-0.5 rounded-full bg-[#2383C2]/10 text-[#1d6fa5] dark:text-blue-300">{nombreZona(z)}</span>)}
               {!sinZonaEspecifica && (
                 <>
-                  <span className="text-gray-400">·</span>
+                  <span className="text-tinta-atenuada">·</span>
                   <span>Lado: <b>{nombreLado(lado)}</b>{ladoGestion && ladoGestion !== LADO_POR_DEFECTO ? ' (de la gestión)' : ''}</span>
                 </>
               )}
-              {entrada?.estado === ESTADOS.SUGERIDA && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" title="Asignada automáticamente por palabras clave; aún no confirmada en el Maestro">Sugerida</span>}
+              {entrada?.estado === ESTADOS.SUGERIDA && <span className="text-pequeno px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" title="Asignada automáticamente por palabras clave; aún no confirmada en el Maestro">Sugerida</span>}
             </p>
           )}
           {zonas.length > 0 && !sinZonaEspecifica && lado === LADO_POR_DEFECTO && (
@@ -71,11 +71,11 @@ export const BodymapTab = ({ descripcion, lado: ladoGestion, onAbrirMaestro }) =
       </section>
 
       {!valida ? (
-        <p className="rounded-lg border border-slate-200 dark:border-gray-700 px-3 py-6 text-center text-gray-500">Esta gestión no tiene descripción: complétala en Información para ver su zona.</p>
+        <p className="rounded-lg border border-slate-200 dark:border-gray-700 px-3 py-6 text-center text-tinta-secundaria">Esta gestión no tiene descripción: complétala en Información para ver su zona.</p>
       ) : cargando ? (
-        <p className="py-10 text-center text-gray-400"><Loader2 size={14} className="inline animate-spin mr-1" />Cargando…</p>
+        <p className="py-10 text-center text-tinta-atenuada"><Loader2 size={14} className="inline animate-spin mr-1" />Cargando…</p>
       ) : sinZonaEspecifica ? (
-        <p className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-gray-700 px-3 py-6 text-center text-gray-500 dark:text-gray-400">
+        <p className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 dark:border-gray-700 px-3 py-6 text-center text-tinta-secundaria">
           <Info size={13} className="shrink-0" /> Diagnóstico sin zona específica: depende de cada caso.
         </p>
       ) : zonas.length === 0 ? (
@@ -83,7 +83,7 @@ export const BodymapTab = ({ descripcion, lado: ladoGestion, onAbrirMaestro }) =
           <AlertTriangle size={15} className="shrink-0" />
           <span className="flex-1 min-w-0">Esta descripción aún no tiene una zona asignada.</span>
           {puedeAsignar && (
-            <button type="button" onClick={() => onAbrirMaestro(normalizarDescripcion(descripcion))} className="inline-flex items-center gap-1 font-semibold text-[#1d6fa5] dark:text-blue-300 hover:underline">
+            <button type="button" onClick={() => onAbrirMaestro(normalizarDescripcion(descripcion))} className="inline-flex items-center gap-1 text-etiqueta text-[#1d6fa5] dark:text-blue-300 hover:underline">
               Asignar en Zonas por diagnóstico <ArrowRight size={12} />
             </button>
           )}

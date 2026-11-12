@@ -55,18 +55,18 @@ const AgregarEmpresaFechaForm = ({ EmpresaSelect, validar, onAgregar, onCancelar
       className="m-1.5 mb-0 p-2 rounded-md border border-[#2383C2]/40 bg-blue-50/40 dark:bg-blue-950/20 flex flex-col gap-1.5"
     >
       <div>
-        <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Fecha</label>
+        <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Fecha</label>
         <input
           type="date"
           autoFocus
           value={fecha}
           onChange={e => { setFecha(e.target.value); setError(''); }}
-          className="w-full h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-base md:text-[11px] outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100"
+          className="w-full h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-subtitulo md:text-secundario outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal"
         />
       </div>
 
       <div>
-        <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Empresa</label>
+        <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Empresa</label>
         <EmpresaSelect
           value={empresa}
           onChange={(emp) => { setEmpresa(emp.nombre); setError(''); }}
@@ -75,7 +75,7 @@ const AgregarEmpresaFechaForm = ({ EmpresaSelect, validar, onAgregar, onCancelar
       </div>
 
       {error && (
-        <p className="text-[9px] text-red-600 dark:text-red-400 font-medium flex items-start gap-1">
+        <p className="text-pequeno text-red-600 dark:text-red-400 flex items-start gap-1">
           <AlertCircle size={11} className="shrink-0 mt-px" /> {error}
         </p>
       )}
@@ -84,7 +84,7 @@ const AgregarEmpresaFechaForm = ({ EmpresaSelect, validar, onAgregar, onCancelar
         <button
           type="submit"
           disabled={guardando}
-          className="flex-1 h-9 md:h-7 rounded font-bold text-[11px] flex items-center justify-center gap-1 bg-[#2383C2] hover:bg-[#369BCE] text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
+          className="flex-1 h-9 md:h-7 rounded text-etiqueta flex items-center justify-center gap-1 bg-[#2383C2] hover:bg-[#369BCE] text-white transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {guardando ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}
           Agregar
@@ -93,7 +93,7 @@ const AgregarEmpresaFechaForm = ({ EmpresaSelect, validar, onAgregar, onCancelar
           type="button"
           onClick={onCancelar}
           disabled={guardando}
-          className="flex-1 h-9 md:h-7 rounded font-bold text-[11px] flex items-center justify-center gap-1 bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-60"
+          className="flex-1 h-9 md:h-7 rounded text-etiqueta flex items-center justify-center gap-1 bg-gray-200 dark:bg-gray-700 text-tinta-secundaria hover:bg-gray-300 dark:hover:bg-gray-600 transition disabled:opacity-60"
         >
           <X size={12} /> Cancelar
         </button>
