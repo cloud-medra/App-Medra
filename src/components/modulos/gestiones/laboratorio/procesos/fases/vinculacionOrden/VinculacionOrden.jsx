@@ -246,7 +246,7 @@ const VinculacionOrden = () => {
                     <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <ClipboardList size={16} className="text-[#2383C2]" />
-                            <span className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+                            <span className="text-normal text-tinta-principal tracking-wide uppercase">
                                 Vinculación de Orden de Compra (Documentos Listos para OC)
                             </span>
                         </div>
@@ -258,7 +258,7 @@ const VinculacionOrden = () => {
                                 <select
                                     value={filtroAnio}
                                     onChange={(e) => setFiltroAnio(e.target.value)}
-                                    className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2]"
+                                    className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none focus:border-[#2383C2]"
                                 >
                                     <option value="">Seleccionar Año</option>
                                     {aniosDisponibles.map((a, idx) => (
@@ -273,7 +273,7 @@ const VinculacionOrden = () => {
                                     <input
                                         value={busqueda}
                                         onChange={e => setBusqueda(e.target.value)}
-                                        className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:border-[#2383C2]"
+                                        className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
                                         placeholder="Buscar por Folio, Ref, Mes o Razón Social..."
                                     />
                                 </div>
@@ -283,7 +283,7 @@ const VinculacionOrden = () => {
                         <button
                             onClick={cargarDocumentosProcesarOC}
                             disabled={!filtroAnio || loading}
-                            className="h-6 px-2 rounded text-[11px] font-medium bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors disabled:opacity-50"
+                            className="h-6 px-2 rounded text-secundario bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 text-tinta-principal hover:bg-slate-50 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors disabled:opacity-50"
                             title="Recargar datos"
                         >
                             <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
@@ -294,13 +294,13 @@ const VinculacionOrden = () => {
                     {hasPermission(PATH_VISTA, "tabla_documentos") && (
                         <div className="flex-grow overflow-auto">
                             {loading ? (
-                                <div className="w-full h-40 flex items-center justify-center text-xs text-slate-500 dark:text-gray-400">
+                                <div className="w-full h-40 flex items-center justify-center text-normal text-tinta-secundaria">
                                     Cargando documentos en estado "Procesar OC" del año {filtroAnio}...
                                 </div>
                             ) : (
-                                <table className="w-full text-left text-[11px] border-collapse table-fixed min-w-[950px]">
+                                <table className="w-full text-left text-secundario border-collapse table-fixed min-w-[950px]">
                                     <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-                                        <tr className="text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider">
+                                        <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider">
                                             {verColumna('folio') && (
                                               <th className="px-2 py-1.5 border-b border-r border-slate-200 dark:border-gray-700 w-[10%]">Folio</th>
                                             )}
@@ -330,7 +330,7 @@ const VinculacionOrden = () => {
                                     <tbody className="divide-y divide-slate-200/60 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
                                         {documentosFiltrados.length === 0 ? (
                                             <tr>
-                                                <td colSpan={columnasTabla.length} className="px-3 py-6 text-center text-slate-400 dark:text-gray-500 text-xs">
+                                                <td colSpan={columnasTabla.length} className="px-3 py-6 text-center text-tinta-atenuada text-normal">
                                                     {filtroAnio
                                                         ? "No hay documentos listos para Orden de Compra (Procesar OC) en este año."
                                                         : "Seleccione un año para visualizar los documentos."}
@@ -345,32 +345,32 @@ const VinculacionOrden = () => {
                                                     title="Doble clic para ver el detalle"
                                                 >
                                                     {verColumna('folio') && (
-                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 font-normal text-slate-800 dark:text-gray-100 truncate">
+                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal truncate">
                                                           {f.folio}
                                                       </td>
                                                     )}
                                                     {verColumna('emision') && (
-                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-600 dark:text-gray-400 whitespace-nowrap">
+                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap">
                                                           {formatearFechaEmision(f.fchEmis)}
                                                       </td>
                                                     )}
                                                     {verColumna('mesImputacion') && (
-                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-700 dark:text-gray-300 whitespace-nowrap font-medium">
+                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal whitespace-nowrap">
                                                           {formatearMesImputado(f.mesImputado || f.mesId)}
                                                       </td>
                                                     )}
                                                     {verColumna('ref') && (
-                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-600 dark:text-gray-400 truncate">
+                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-secundaria truncate">
                                                           {f.folioRef}
                                                       </td>
                                                     )}
                                                     {verColumna('razonSocial') && (
-                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-700 dark:text-gray-300 truncate" title={f.rznSoc}>
+                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal truncate" title={f.rznSoc}>
                                                           {f.rznSoc}
                                                       </td>
                                                     )}
                                                     {verColumna('total') && (
-                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-800 dark:text-gray-100 font-normal text-right whitespace-nowrap">
+                                                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal text-right whitespace-nowrap">
                                                           ${parseInt(f.total || 0, 10).toLocaleString('es-CL')}
                                                       </td>
                                                     )}
@@ -387,7 +387,7 @@ const VinculacionOrden = () => {
                                                                   e.stopPropagation();
                                                                   handleVerDetalles(f);
                                                               }}
-                                                              className="p-1 text-slate-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                                              className="p-1 text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                                                               title="Visualizar documento"
                                                           >
                                                               <Eye size={14} />

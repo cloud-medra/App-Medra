@@ -91,153 +91,153 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-slate-800 dark:text-gray-100 uppercase tracking-wide">
-                  Editando Documento Folio: {formData.folio || '-'}
+                <h2 className="text-titulo-seccion text-tinta-principal">
+                  Editando documento folio: {formData.folio || '-'}
                 </h2>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getEstadoProcesoClase(formData.estado)}`}>
+                <span className={`px-2 py-0.5 rounded-full text-pequeno border ${getEstadoProcesoClase(formData.estado)}`}>
                   {formData.estado || 'Proceso'}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-gray-400 font-medium">
+              <p className="text-normal text-tinta-secundaria">
                 {formData.rznSoc || 'Sin Razón Social'}
               </p>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-gray-200 p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-gray-800 transition"
+            className="text-tinta-atenuada hover:text-tinta-principal p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-gray-800 transition"
             title="Cerrar"
           >
             <X size={18} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-grow space-y-6 text-xs bg-slate-50/50 dark:bg-gray-900/40">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-grow space-y-6 text-normal bg-slate-50/50 dark:bg-gray-900/40">
           
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-xs">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-2">
+            <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wider mb-3 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-2">
               <Building2 size={14} className="text-[#2383C2]" /> Datos Generales del Documento
             </h3>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">Razón Social</label>
+                <label className="text-tinta-atenuada block mb-1">Razón Social</label>
                 <input 
                   type="text" 
                   name="rznSoc" 
                   value={formData.rznSoc || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                 />
               </div>
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">Folio Ref.</label>
+                <label className="text-tinta-atenuada block mb-1">Folio Ref.</label>
                 <input 
                   type="text" 
                   name="folioRef" 
                   value={formData.folioRef || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                 />
               </div>
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">Fch. Emisión</label>
+                <label className="text-tinta-atenuada block mb-1">Fch. Emisión</label>
                 <input 
                   type="date" 
                   name="fchEmis" 
                   value={formData.fchEmis || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                 />
               </div>
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">Periodo (Mes)</label>
+                <label className="text-tinta-atenuada block mb-1">Periodo (Mes)</label>
                 <input 
                   type="text" 
                   name="mes" 
                   value={formData.mes || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold capitalize"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta capitalize"
                 />
               </div>
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">Periodo (Año)</label>
+                <label className="text-tinta-atenuada block mb-1">Periodo (Año)</label>
                 <input 
                   type="text" 
                   name="anio" 
                   value={formData.anio || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                 />
               </div>
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">Imputado (Mes)</label>
+                <label className="text-tinta-atenuada block mb-1">Imputado (Mes)</label>
                 <input 
                   type="text" 
                   name="mesImputado" 
                   value={formData.mesImputado || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold capitalize"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta capitalize"
                 />
               </div>
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">Imputado (Año)</label>
+                <label className="text-tinta-atenuada block mb-1">Imputado (Año)</label>
                 <input 
                   type="text" 
                   name="anioImputado" 
                   value={formData.anioImputado || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                 />
               </div>
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">Total Neto ($)</label>
+                <label className="text-tinta-atenuada block mb-1">Total Neto ($)</label>
                 <input 
                   type="number" 
                   name="total" 
                   value={formData.total || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 font-bold text-emerald-600 dark:text-emerald-400"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-etiqueta text-emerald-600 dark:text-emerald-400"
                 />
               </div>
 
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">N° Orden</label>
+                <label className="text-tinta-atenuada block mb-1">N° Orden</label>
                 <input 
                   type="text" 
                   name="numeroOrden" 
                   value={formData.numeroOrden || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                 />
               </div>
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">N° Acta</label>
+                <label className="text-tinta-atenuada block mb-1">N° Acta</label>
                 <input 
                   type="text" 
                   name="numeroActa" 
                   value={formData.numeroActa || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                 />
               </div>
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">N° Salida</label>
+                <label className="text-tinta-atenuada block mb-1">N° Salida</label>
                 <input 
                   type="text" 
                   name="numeroSalida" 
                   value={formData.numeroSalida || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                 />
               </div>
               <div>
-                <label className="text-slate-400 dark:text-gray-500 block mb-1">Estado</label>
+                <label className="text-tinta-atenuada block mb-1">Estado</label>
                 <select 
                   name="estado" 
                   value={formData.estado || ''} 
                   onChange={handleChange}
-                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                  className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                 >
                   <option value="Finalizado">Finalizado</option>
                   <option value="Proceso">Proceso</option>
@@ -248,13 +248,13 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-xs">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-2">
+            <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wider mb-3 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-2">
               <Package size={14} className="text-[#2383C2]" /> Ítems Vinculados y Detalle (Editables)
             </h3>
 
             <div className="border border-slate-200 dark:border-gray-700 rounded-lg overflow-x-auto">
-              <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-100 dark:bg-gray-900 text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px]">
+              <table className="w-full text-left text-normal whitespace-nowrap">
+                <thead className="bg-slate-100 dark:bg-gray-900 text-tinta-secundaria uppercase text-pequeno">
                   <tr>
                     {verColumna('linea') && (
                       <th className="p-2 text-center w-12">Lin.</th>
@@ -283,7 +283,7 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
                   {formData.detalles?.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition">
                       {verColumna('linea') && (
-                        <td className="p-2 text-center text-slate-500">{item.nroLin || idx + 1}</td>
+                        <td className="p-2 text-center text-tinta-secundaria">{item.nroLin || idx + 1}</td>
                       )}
                       {verColumna('codigoDoc') && (
                         <td className="p-2">
@@ -291,7 +291,7 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
                             type="text" 
                             value={item.codigo || ''} 
                             onChange={(e) => handleDetalleChange(idx, 'codigo', e.target.value)}
-                            className="p-1 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-600 dark:text-gray-300 w-28"
+                            className="p-1 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-secundaria w-28"
                           />
                         </td>
                       )}
@@ -301,7 +301,7 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
                             type="text" 
                             value={item.codigoMaestro || ''} 
                             onChange={(e) => handleDetalleChange(idx, 'codigoMaestro', e.target.value)}
-                            className="p-1 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 font-semibold text-[#2383C2] w-24"
+                            className="p-1 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-etiqueta text-[#2383C2] w-24"
                           />
                         </td>
                       )}
@@ -311,7 +311,7 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
                             type="text" 
                             value={item.nombre || ''} 
                             onChange={(e) => handleDetalleChange(idx, 'nombre', e.target.value)}
-                            className="p-1 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 w-48"
+                            className="p-1 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal w-48"
                           />
                         </td>
                       )}
@@ -321,7 +321,7 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
                             type="text" 
                             value={item.cantidad || ''} 
                             onChange={(e) => handleDetalleChange(idx, 'cantidad', e.target.value)}
-                            className="p-1 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 font-medium text-slate-700 dark:text-gray-200 w-16 text-right"
+                            className="p-1 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal w-16 text-right"
                           />
                         </td>
                       )}
@@ -331,7 +331,7 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
                             type="text" 
                             value={item.monto || ''} 
                             onChange={(e) => handleDetalleChange(idx, 'monto', e.target.value)}
-                            className="p-1 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 font-semibold text-slate-800 dark:text-gray-100 w-28 text-right"
+                            className="p-1 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-etiqueta text-tinta-principal w-28 text-right"
                           />
                         </td>
                       )}
@@ -355,46 +355,46 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-xs">
-              <h4 className="text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-2 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-1.5">
+              <h4 className="text-etiqueta text-tinta-principal uppercase tracking-wider mb-2 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-1.5">
                 <User size={14} className="text-[#2383C2]" /> Información de Registro
               </h4>
               <div className="space-y-2 pt-1">
                 <div>
-                  <label className="text-slate-400 dark:text-gray-500 block mb-1">Usuario Registrado Por:</label>
+                  <label className="text-tinta-atenuada block mb-1">Usuario Registrado Por:</label>
                   <input 
                     type="text" 
                     name="registeredPor" 
                     value={formData.registeredPor || ''} 
                     onChange={handleChange}
-                    className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                    className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                   />
                 </div>
               </div>
             </div>
 
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200 dark:border-gray-700 shadow-xs">
-              <h4 className="text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-2 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-1.5">
+              <h4 className="text-etiqueta text-tinta-principal uppercase tracking-wider mb-2 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-1.5">
                 <Briefcase size={14} className="text-[#2383C2]" /> Orden de Compra Vinculada
               </h4>
               <div className="space-y-2 pt-1">
                 <div>
-                  <label className="text-slate-400 dark:text-gray-500 block mb-1">Folio OC:</label>
+                  <label className="text-tinta-atenuada block mb-1">Folio OC:</label>
                   <input 
                     type="text" 
                     name="folio" 
                     value={formData.ordenCompraVinculada?.folio || ''} 
                     onChange={handleOCChange}
-                    className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                    className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                   />
                 </div>
                 <div>
-                  <label className="text-slate-400 dark:text-gray-500 block mb-1">Fecha Vinculación:</label>
+                  <label className="text-tinta-atenuada block mb-1">Fecha Vinculación:</label>
                   <input 
                     type="text" 
                     name="fechaVinculacion" 
                     value={formData.ordenCompraVinculada?.fechaVinculacion || ''} 
                     onChange={handleOCChange}
-                    className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold"
+                    className="w-full p-1.5 rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal text-etiqueta"
                   />
                 </div>
               </div>
@@ -405,13 +405,13 @@ const EditarDocumentoImputado = ({ documento, onClose, onGuardar }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-gray-800 transition font-medium"
+              className="px-4 py-2 rounded-lg border border-slate-300 dark:border-gray-700 text-tinta-secundaria hover:bg-slate-100 dark:hover:bg-gray-800 transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2383C2] hover:bg-[#1a6a9e] text-white transition font-semibold shadow-sm"
+              className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#2383C2] hover:bg-[#1a6a9e] text-white transition text-etiqueta shadow-sm"
             >
               <Save size={16} /> Guardar Cambios
             </button>

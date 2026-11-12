@@ -400,31 +400,31 @@ const CodigoVacunatorio = () => {
     c.descripcion?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
-  const inputClass = "w-full h-7 px-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded text-[11px] outline-none focus:border-[#2383C2]";
-  const labelClass = "block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5";
+  const inputClass = "w-full h-7 px-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario outline-none focus:border-[#2383C2]";
+  const labelClass = "block text-pequeno text-tinta-secundaria uppercase mb-0.5";
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {cargando && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">Procesando...</h3>
+            <h3 className="text-[#2383C2] text-subtitulo">Procesando...</h3>
           </div>
         </div>
       )}
 
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <Package size={14} className="text-[#2383C2]" />
-          {editingId ? "EDITAR CÓDIGO" : "GESTIÓN DE CÓDIGOS"}
+          {editingId ? "Editar código" : "Gestión de códigos"}
         </h2>
 
         {hasPermission(PATH_VISTA, "header", "btn_configuracion") && (
           <button
             onClick={handleAbrirConfiguracion}
-            className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-            title="Configuración de Códigos (Importar/Exportar)"
+            className="p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            title="Configuración de códigos (Importar/Exportar)"
           >
             <Settings size={15} />
           </button>
@@ -458,12 +458,12 @@ const CodigoVacunatorio = () => {
             </div>
           )}
           {hasPermission(PATH_VISTA, "formulario", "btn_registrar") && (
-            <button type="submit" className={`h-7 px-3 rounded font-bold text-[11px] flex items-center gap-1.5 whitespace-nowrap shrink-0 ${editingId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2383C2] hover:bg-[#369BCE]'} text-white transition`}>
+            <button type="submit" className={`h-7 px-3 rounded text-etiqueta flex items-center gap-1.5 whitespace-nowrap shrink-0 ${editingId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2383C2] hover:bg-[#369BCE]'} text-white transition`}>
               {editingId ? <><Save size={13} /> Actualizar</> : <><Plus size={13} /> Registrar</>}
             </button>
           )}
           {editingId && hasPermission(PATH_VISTA, "formulario", "btn_cancelar") && (
-            <button type="button" onClick={cancelarEdicion} className="h-7 px-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded font-bold text-[11px] text-gray-600 dark:text-gray-300 flex items-center gap-1.5 transition">
+            <button type="button" onClick={cancelarEdicion} className="h-7 px-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-etiqueta text-tinta-secundaria flex items-center gap-1.5 transition">
               <X size={13} /> Cancelar
             </button>
           )}
@@ -488,8 +488,8 @@ const CodigoVacunatorio = () => {
 
       {hasPermission(PATH_VISTA, "tabla", "ver_tabla") && (
         <div className="flex-grow overflow-auto">
-          <table className="w-full text-left text-[11px] border-collapse table-fixed">
-            <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10 text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+          <table className="w-full text-left text-secundario border-collapse table-fixed">
+            <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10 text-tinta-secundaria uppercase text-pequeno">
               <tr>
                 {hasPermission(PATH_VISTA, "tabla", "col_referencia") && <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 w-[18%]">Referencia</th>}
                 {hasPermission(PATH_VISTA, "tabla", "col_codigo") && <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 w-[15%]">Código</th>}
@@ -501,15 +501,15 @@ const CodigoVacunatorio = () => {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
               {codigosFiltrados.map((c) => (
                 <tr key={c.id} className="border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors">
-                  {hasPermission(PATH_VISTA, "tabla", "col_referencia") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 font-bold text-gray-700 dark:text-gray-200 truncate">{c.referencia}</td>}
-                  {hasPermission(PATH_VISTA, "tabla", "col_codigo") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-400 truncate">{c.codigo}</td>}
-                  {hasPermission(PATH_VISTA, "tabla", "col_descripcion") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-600 dark:text-gray-300 truncate">{c.descripcion}</td>}
-                  {hasPermission(PATH_VISTA, "tabla", "col_precio") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 font-bold text-[#2383C2] text-right whitespace-nowrap">$ {Number(c.precio).toLocaleString('es-CL')}</td>}
+                  {hasPermission(PATH_VISTA, "tabla", "col_referencia") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-etiqueta text-tinta-principal truncate">{c.referencia}</td>}
+                  {hasPermission(PATH_VISTA, "tabla", "col_codigo") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria truncate">{c.codigo}</td>}
+                  {hasPermission(PATH_VISTA, "tabla", "col_descripcion") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria truncate">{c.descripcion}</td>}
+                  {hasPermission(PATH_VISTA, "tabla", "col_precio") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-etiqueta text-[#2383C2] text-right whitespace-nowrap">$ {Number(c.precio).toLocaleString('es-CL')}</td>}
                   {hasPermission(PATH_VISTA, "tabla", "col_acciones") && (
                     <td className="py-1 px-2 border-b border-gray-200 dark:border-gray-700 text-center">
                       <div className="flex justify-center gap-2">
                         {hasPermission(PATH_VISTA, "tabla", "btn_log") && (
-                          <button onClick={() => abrirHistorialLogs(c)} title="Ver Historial / Logs" className="text-gray-500 hover:text-[#2383C2] dark:hover:text-[#2383C2] transition">
+                          <button onClick={() => abrirHistorialLogs(c)} title="Ver Historial / Logs" className="text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] transition">
                             <History size={13} />
                           </button>
                         )}

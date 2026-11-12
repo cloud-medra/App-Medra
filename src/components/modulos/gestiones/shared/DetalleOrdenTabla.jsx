@@ -23,7 +23,7 @@ const COLUMNAS = [
 
 const TH = 'px-3 py-1.5 border-r border-slate-200 dark:border-gray-700/80';
 const TD = 'px-3 py-1 border-r border-slate-200/50 dark:border-gray-700/50';
-const INPUT = 'w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:border-[#2383C2]';
+const INPUT = 'w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]';
 
 const Buscador = ({ value, onChange, placeholder }) => (
   <div className="relative w-52">
@@ -52,13 +52,13 @@ const DetalleOrdenTabla = ({ pathVista, detalle, facturacion, errorFacturacion, 
           <button
             type="button"
             onClick={limpiarFiltros}
-            className="h-6 px-2 rounded text-[11px] flex items-center gap-1 text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 hover:bg-slate-200/70 dark:hover:bg-gray-700 transition"
+            className="h-6 px-2 rounded text-secundario flex items-center gap-1 text-tinta-secundaria hover:text-tinta-principal hover:bg-slate-200/70 dark:hover:bg-gray-700 transition"
           >
             <X size={12} /> Limpiar filtros
           </button>
         )}
         {hayFiltros && (
-          <span className="text-[10px] text-slate-500 dark:text-gray-400 ml-auto">
+          <span className="text-pequeno text-tinta-secundaria ml-auto">
             {detalleFiltrado.length} de {detalle.length} líneas
           </span>
         )}
@@ -66,12 +66,12 @@ const DetalleOrdenTabla = ({ pathVista, detalle, facturacion, errorFacturacion, 
 
       <div className="flex-grow overflow-auto min-h-0">
         <table
-          className="text-left text-[11px] border-collapse"
+          className="text-left text-secundario border-collapse"
           style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: '100%' }}
         >
           <ColgroupRedimensionable columnas={columnasVisibles} anchos={anchos} relleno />
           <thead className="bg-slate-100/90 dark:bg-gray-900 sticky top-0 z-10 shadow-xs">
-            <tr className="text-slate-500 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider border-b border-slate-200 dark:border-gray-700">
+            <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider border-b border-slate-200 dark:border-gray-700">
               {columnasVisibles.map(col => (
                 <ThRedimensionable key={col.key} col={col} anchos={anchos} onResize={handleResize} className={`${TH} ${col.align || ''}`}>{col.label}</ThRedimensionable>
               ))}
@@ -81,7 +81,7 @@ const DetalleOrdenTabla = ({ pathVista, detalle, facturacion, errorFacturacion, 
           <tbody className="divide-y divide-slate-200/60 dark:divide-gray-700/40 bg-white dark:bg-gray-800">
             {detalleFiltrado.length === 0 && (
               <tr>
-                <td colSpan={columnasVisibles.length + 1} className="px-4 py-6 text-center text-slate-400 dark:text-gray-500 text-xs">
+                <td colSpan={columnasVisibles.length + 1} className="px-4 py-6 text-center text-tinta-atenuada text-normal">
                   {hayFiltros ? 'Ninguna línea coincide con los filtros.' : 'La orden no tiene líneas.'}
                 </td>
               </tr>
@@ -97,7 +97,7 @@ const DetalleOrdenTabla = ({ pathVista, detalle, facturacion, errorFacturacion, 
                 ? 'text-orange-600 dark:text-orange-400'
                 : fact?.todosFinales
                   ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-slate-700 dark:text-gray-300';
+                  : 'text-tinta-principal';
               const tituloFacturada = fact?.tieneTemporal
                 ? 'Temporal: incluye facturas con diferencia por resolver, sujeto a cambios'
                 : fact?.todosFinales ? 'Definitivo: todas las facturas están sin diferencias' : undefined;
@@ -109,32 +109,32 @@ const DetalleOrdenTabla = ({ pathVista, detalle, facturacion, errorFacturacion, 
                   className="hover:bg-slate-50/80 dark:hover:bg-gray-700/30 transition-all duration-150 group border-l-2 border-l-transparent hover:border-l-[#2383C2]"
                 >
                   {ver('codigo') && (
-                    <td className={`${TD} text-[10px] text-slate-700 dark:text-gray-200 truncate`}>
+                    <td className={`${TD} text-pequeno text-tinta-principal truncate`}>
                       {item["Cod.Artículo"] || "N/A"}
                     </td>
                   )}
                   {ver('descripcion') && (
-                    <td className={`${TD} text-slate-800 dark:text-gray-200 font-normal truncate`} title={item["Artículo"]}>
+                    <td className={`${TD} text-tinta-principal truncate`} title={item["Artículo"]}>
                       {item["Artículo"] || "Sin Descripción"}
                     </td>
                   )}
                   {ver('cantidad') && (
-                    <td className={`${TD} text-slate-700 dark:text-gray-300 text-center font-normal`}>
+                    <td className={`${TD} text-tinta-principal text-center`}>
                       {cantidad}
                     </td>
                   )}
                   {ver('precio') && (
-                    <td className={`${TD} text-slate-600 dark:text-gray-300 text-right whitespace-nowrap text-[10px]`}>
+                    <td className={`${TD} text-tinta-secundaria text-right whitespace-nowrap text-pequeno`}>
                       ${precioUnidad.toLocaleString('es-CL', { minimumFractionDigits: 0 })}
                     </td>
                   )}
                   {ver('subtotal') && (
-                    <td className={`${TD} text-slate-900 dark:text-gray-100 font-normal text-right whitespace-nowrap`}>
+                    <td className={`${TD} text-tinta-principal text-right whitespace-nowrap`}>
                       ${totalLinea.toLocaleString('es-CL', { minimumFractionDigits: 0 })}
                     </td>
                   )}
                   {ver('documento') && (
-                    <td className={`${TD} text-[10px] text-slate-600 dark:text-gray-300 truncate`} title={documentosTitle}>
+                    <td className={`${TD} text-pequeno text-tinta-secundaria truncate`} title={documentosTitle}>
                       {fact ? fact.documentos.map((x, idx) => (
                         <span key={x.id} className={x.temporal ? 'text-orange-600 dark:text-orange-400' : ''}>
                           {idx > 0 && ', '}{x.folio} ({x.cantidad}){x.temporal && ' ⚠'}
@@ -143,13 +143,13 @@ const DetalleOrdenTabla = ({ pathVista, detalle, facturacion, errorFacturacion, 
                     </td>
                   )}
                   {ver('facturada') && (
-                    <td className={`${TD} text-center font-normal ${claseFacturada}`} title={tituloFacturada}>
+                    <td className={`${TD} text-center ${claseFacturada}`} title={tituloFacturada}>
                       {facturada}
                     </td>
                   )}
                   {ver('pendiente') && (
                     <td
-                      className={`px-3 py-1 border-r border-slate-200/50 dark:border-gray-700/50 text-center font-normal ${pendiente < 0 ? 'text-red-600 dark:text-red-400' : pendiente === 0 && facturada > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-700 dark:text-gray-300'}`}
+                      className={`px-3 py-1 border-r border-slate-200/50 dark:border-gray-700/50 text-center ${pendiente < 0 ? 'text-red-600 dark:text-red-400' : pendiente === 0 && facturada > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-tinta-principal'}`}
                       title={pendiente < 0 ? 'Facturado sobre la cantidad de la orden' : undefined}
                     >
                       {pendiente}
@@ -164,15 +164,15 @@ const DetalleOrdenTabla = ({ pathVista, detalle, facturacion, errorFacturacion, 
       </div>
 
       <div className="bg-slate-100 dark:bg-gray-900 border-t border-slate-200 dark:border-gray-700 p-2.5 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-4 text-[10px] text-slate-500 dark:text-gray-400">
-          <span>Líneas: <strong className="text-slate-800 dark:text-gray-200 font-normal">{detalle.length}</strong></span>
-          <span>Unidades totales: <strong className="text-slate-800 dark:text-gray-200 font-normal">{totalUnidades}</strong></span>
-          <span>Facturadas: <strong className="text-slate-800 dark:text-gray-200 font-normal">{totalFacturadas}</strong></span>
+        <div className="flex items-center gap-4 text-pequeno text-tinta-secundaria">
+          <span>Líneas: <strong className="text-tinta-principal">{detalle.length}</strong></span>
+          <span>Unidades totales: <strong className="text-tinta-principal">{totalUnidades}</strong></span>
+          <span>Facturadas: <strong className="text-tinta-principal">{totalFacturadas}</strong></span>
           {errorFacturacion && <span className="text-red-500" title={errorFacturacion.message}>No se pudo cargar la facturación (¿índice pendiente de desplegar?)</span>}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-normal text-slate-500 dark:text-gray-400 uppercase tracking-wider">Total Orden:</span>
-          <span className="text-[13px] font-normal text-[#2383C2] dark:text-[#369BCE] px-2 py-0.5 rounded bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700">
+          <span className="text-pequeno text-tinta-secundaria uppercase tracking-wider">Total Orden:</span>
+          <span className="text-normal text-[#2383C2] dark:text-[#369BCE] px-2 py-0.5 rounded bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700">
             ${(totalOrden || totalDetalle).toLocaleString('es-CL', { minimumFractionDigits: 0 })}
           </span>
         </div>

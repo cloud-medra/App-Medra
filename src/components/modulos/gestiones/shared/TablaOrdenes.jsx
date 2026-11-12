@@ -28,12 +28,12 @@ const TablaOrdenes = ({ pathVista, ordenes, onSeleccionar }) => {
 
   return (
     <table
-      className="text-left text-[11px] border-collapse"
+      className="text-left text-secundario border-collapse"
       style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: '100%' }}
     >
       <ColgroupRedimensionable columnas={columnasVisibles} anchos={anchos} relleno />
       <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-        <tr className="text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider">
+        <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider">
           {columnasVisibles.map(col => (
             <ThRedimensionable key={col.key} col={col} anchos={anchos} onResize={handleResize} className={`${TH} ${col.align || ''}`}>{col.label}</ThRedimensionable>
           ))}
@@ -48,27 +48,27 @@ const TablaOrdenes = ({ pathVista, ordenes, onSeleccionar }) => {
             className={`hover:bg-slate-50 dark:hover:bg-gray-700/40 transition-all duration-150 ${onSeleccionar ? 'cursor-pointer' : ''} group border-l-2 border-l-transparent hover:border-l-[#2383C2]`}
           >
             {ver('nro') && (
-              <td className={`${TD} font-normal text-slate-700 dark:text-gray-200 truncate`}>{o["Nro.Orden"]}</td>
+              <td className={`${TD} text-tinta-principal truncate`}>{o["Nro.Orden"]}</td>
             )}
             {ver('fecha') && (
-              <td className={`${TD} text-slate-600 dark:text-gray-400 truncate`}>{o["F.Orden"]}</td>
+              <td className={`${TD} text-tinta-secundaria truncate`}>{o["F.Orden"]}</td>
             )}
             {ver('rut') && (
-              <td className={`${TD} text-slate-600 dark:text-gray-400 truncate`}>{o["Rut proveedor"]}</td>
+              <td className={`${TD} text-tinta-secundaria truncate`}>{o["Rut proveedor"]}</td>
             )}
             {ver('proveedor') && (
-              <td className={`${TD} text-slate-700 dark:text-gray-300 truncate`} title={o["Proveedor"]}>{o["Proveedor"]}</td>
+              <td className={`${TD} text-tinta-principal truncate`} title={o["Proveedor"]}>{o["Proveedor"]}</td>
             )}
             {ver('items') && (
-              <td className={`${TD} text-slate-600 dark:text-gray-400 text-center font-normal`}>{o.totalItems}</td>
+              <td className={`${TD} text-tinta-secundaria text-center`}>{o.totalItems}</td>
             )}
             {ver('total') && (
-              <td className={`${TD} text-slate-800 dark:text-gray-100 font-normal text-right truncate`}>${o.totalOrden?.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
+              <td className={`${TD} text-tinta-principal text-right truncate`}>${o.totalOrden?.toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
             )}
             {ver('acciones') && (
               <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700 text-center">
                 {onSeleccionar && (
-                  <button onClick={() => onSeleccionar(o)} className="text-slate-400 hover:text-[#2383C2] transition inline-flex items-center justify-center p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700">
+                  <button onClick={() => onSeleccionar(o)} className="text-tinta-atenuada hover:text-[#2383C2] transition inline-flex items-center justify-center p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700">
                     <Eye size={13} />
                   </button>
                 )}

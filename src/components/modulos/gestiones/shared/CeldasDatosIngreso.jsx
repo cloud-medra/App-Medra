@@ -5,7 +5,7 @@
 // mesImputado). Se comparten entre Documentos Recibidos y XML Documentos para
 // que ambas pantallas muestren lo mismo.
 
-const TD = 'px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center text-slate-700 dark:text-gray-300 truncate';
+const TD = 'px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center text-tinta-principal truncate';
 
 // `ver(key)`: permiso por columna de la tabla que las contiene (keys orden,
 // acta, salida, mesImputado; ver useColumnasPermitidas). Sin `ver`, todas.

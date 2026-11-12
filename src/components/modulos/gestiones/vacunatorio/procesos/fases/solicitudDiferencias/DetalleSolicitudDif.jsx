@@ -147,15 +147,15 @@ const DetalleSolicitudDif = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onVolver}
-            className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded text-slate-600 dark:text-gray-300 flex items-center gap-1 text-[11px] font-medium transition-colors cursor-pointer"
+            className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded text-tinta-secundaria flex items-center gap-1 text-secundario transition-colors cursor-pointer"
             title="Volver a la lista"
           >
             <ArrowLeft size={15} className="text-[#2383C2]" />
             <span>Volver</span>
           </button>
-          <span className="text-slate-300 dark:text-gray-600">|</span>
+          <span className="text-tinta-atenuada">|</span>
           <FileWarning className="text-amber-500" size={16} />
-          <span className="text-[12px] font-bold text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+          <span className="text-etiqueta text-tinta-principal tracking-wide uppercase">
             Detalle Solicitud de Diferencias — Folio N° {documento.folio}
           </span>
         </div>
@@ -163,19 +163,19 @@ const DetalleSolicitudDif = ({
 
       <div className="px-3 py-2 bg-slate-100/60 dark:bg-gray-900/40 border-b border-slate-200 dark:border-gray-700 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 shrink-0">
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <Hash size={11} className="text-[#2383C2]" /> Folio
           </span>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+          <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
             {documento.folio}
           </span>
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <Calendar size={11} className="text-[#2383C2]" /> Fecha Emisión
           </span>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+          <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
             {formatearFechaEmision
               ? formatearFechaEmision(documento.fchEmis)
               : documento.fchEmis || '-'}
@@ -183,34 +183,34 @@ const DetalleSolicitudDif = ({
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <CalendarDays size={11} className="text-[#2383C2]" /> Mes Imputado
           </span>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5 capitalize">
+          <span className="text-etiqueta text-tinta-principal truncate mt-0.5 capitalize">
             {documento.mesImputado || documento.mes_imputado || '-'}
           </span>
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <Tag size={11} className="text-[#2383C2]" /> Ref. (OC)
           </span>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+          <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
             {documento.folioRef || 'Sin Referencia'}
           </span>
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <DollarSign size={11} className="text-[#2383C2]" /> Total Neto
           </span>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+          <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
             {formatearMoneda(documento.total)}
           </span>
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <Activity size={11} className="text-[#2383C2]" /> Estado
           </span>
           <div className="mt-0.5 truncate">
@@ -223,14 +223,14 @@ const DetalleSolicitudDif = ({
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <FileSpreadsheet size={11} className="text-emerald-600 dark:text-emerald-500" /> Exportar
           </span>
           <button
             type="button"
             onClick={handleExportarExcelLocal}
             disabled={!puedeExportar}
-            className="mt-0.5 w-full flex items-center justify-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors shadow-xs cursor-pointer truncate disabled:opacity-40 disabled:cursor-not-allowed"
+            className="mt-0.5 w-full flex items-center justify-center gap-1 px-1.5 py-0.5 rounded text-pequeno text-white bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors shadow-xs cursor-pointer truncate disabled:opacity-40 disabled:cursor-not-allowed"
             title={puedeExportar ? 'Generar o descargar solicitud en Excel' : 'No tienes permiso para exportar la solicitud'}
           >
             <FileSpreadsheet size={11} />
@@ -239,7 +239,7 @@ const DetalleSolicitudDif = ({
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <Copy size={11} className="text-[#2383C2]" /> Portapapeles
           </span>
           <button
@@ -250,7 +250,7 @@ const DetalleSolicitudDif = ({
                 'Resumen'
               )
             }
-            className="mt-0.5 w-full text-left text-[11px] font-bold text-slate-800 dark:text-gray-100 hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:underline truncate cursor-pointer"
+            className="mt-0.5 w-full text-left text-etiqueta text-tinta-principal hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:underline truncate cursor-pointer"
             title="Copiar resumen al portapapeles"
           >
             Copiar Resumen
@@ -258,51 +258,51 @@ const DetalleSolicitudDif = ({
         </div>
       </div>
 
-      <div className="px-3 py-1.5 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between shrink-0 text-xs">
+      <div className="px-3 py-1.5 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between shrink-0 text-normal">
         <div className="flex items-center gap-2 truncate">
           <Building2 size={13} className="text-[#2383C2] shrink-0" />
-          <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase">
+          <span className="text-pequeno text-tinta-atenuada uppercase">
             Proveedor:
           </span>
           <span
-            className="text-[11px] font-semibold text-slate-800 dark:text-gray-200 truncate"
+            className="text-etiqueta text-tinta-principal truncate"
             title={documento.rznSoc}
           >
             {documento.rznSoc || 'Sin Razón Social'}
           </span>
-          <span className="text-slate-400 dark:text-gray-500 text-[11px]">
+          <span className="text-tinta-atenuada text-secundario">
             (RUT: {documento.rutEmisor || 'N/A'})
           </span>
           {documento.rutEmisor && (
             <button
               onClick={() => copiarAlPortapapeles(documento.rutEmisor, 'RUT')}
-              className="text-slate-400 hover:text-[#2383C2] transition-colors p-0.5 cursor-pointer"
+              className="text-tinta-atenuada hover:text-[#2383C2] transition-colors p-0.5 cursor-pointer"
               title="Copiar RUT"
             >
               <Copy size={12} />
             </button>
           )}
         </div>
-        <span className="text-[10px] text-slate-400 font-semibold shrink-0">
-          Total Ítems: <strong className="text-slate-700 dark:text-gray-200">{detalles.length}</strong>
+        <span className="text-pequeno text-tinta-atenuada shrink-0">
+          Total Ítems: <strong className="text-tinta-principal">{detalles.length}</strong>
         </span>
       </div>
 
       <div className="flex-grow flex flex-col min-h-0 p-3 space-y-3 overflow-hidden">
         <div className="bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-md p-3 shrink-0 max-h-32 overflow-y-auto">
-          <h4 className="font-semibold text-amber-900 dark:text-amber-200 mb-1 flex items-center gap-1.5 text-xs">
+          <h4 className="text-amber-900 dark:text-amber-200 mb-1 flex items-center gap-1.5 text-etiqueta">
             <Receipt size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
             <span>Motivo u Observaciones de la Discrepancia</span>
           </h4>
-          <p className="text-slate-700 dark:text-amber-200 text-[11px] leading-relaxed whitespace-pre-wrap">
+          <p className="text-tinta-principal dark:text-amber-200 text-secundario whitespace-pre-wrap">
             {observaciones}
           </p>
         </div>
 
         <div className="border border-slate-200 dark:border-gray-700 rounded-md overflow-auto flex-1 min-h-0 bg-white dark:bg-gray-800">
-          <table className="w-full text-left text-[11px] border-collapse min-w-[1400px]">
+          <table className="w-full text-left text-secundario border-collapse min-w-[1400px]">
             <thead className="bg-slate-100 dark:bg-gray-900 sticky top-0 z-10 shadow-xs">
-              <tr className="text-slate-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+              <tr className="text-tinta-secundaria uppercase text-pequeno">
                 {verColumna('linea') && (
                   <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-10 text-center">#</th>
                 )}
@@ -322,13 +322,13 @@ const DetalleSolicitudDif = ({
                   <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-24 text-right">Total Línea</th>
                 )}
                 {verColumna('codigoMaestro') && (
-                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-blue-100/70 dark:bg-blue-950/60 text-slate-900 dark:text-blue-200">Cód. Maestro</th>
+                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-blue-100/70 dark:bg-blue-950/60 text-tinta-principal dark:text-blue-200">Cód. Maestro</th>
                 )}
                 {verColumna('descripcionMaestro') && (
-                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 bg-blue-100/70 dark:bg-blue-950/60 text-slate-900 dark:text-blue-200">Descripción Maestro</th>
+                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 bg-blue-100/70 dark:bg-blue-950/60 text-tinta-principal dark:text-blue-200">Descripción Maestro</th>
                 )}
                 {verColumna('articuloOC') && (
-                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-blue-100/70 dark:bg-blue-950/60 text-slate-900 dark:text-blue-200">Artículo OC</th>
+                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-blue-100/70 dark:bg-blue-950/60 text-tinta-principal dark:text-blue-200">Artículo OC</th>
                 )}
                 {verColumna('cantidadOC') && (
                   <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-20 bg-blue-100/70 dark:bg-blue-950/60 text-center text-blue-900 dark:text-blue-200">Cant. OC</th>
@@ -344,7 +344,7 @@ const DetalleSolicitudDif = ({
             <tbody className="divide-y divide-slate-200 dark:divide-gray-700/60 bg-white dark:bg-gray-800">
               {detalles.length === 0 ? (
                 <tr>
-                  <td colSpan={columnasTabla.length} className="py-6 text-center text-slate-400 dark:text-gray-500 text-xs">
+                  <td colSpan={columnasTabla.length} className="py-6 text-center text-tinta-atenuada text-normal">
                     Este documento no posee ítems cargados.
                   </td>
                 </tr>
@@ -358,47 +358,47 @@ const DetalleSolicitudDif = ({
                   return (
                     <tr key={item.id || item.codigo || idx} className="hover:bg-slate-50 dark:hover:bg-gray-700/40">
                       {verColumna('linea') && (
-                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-500 text-center font-bold">
+                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-secundaria text-center text-etiqueta">
                           {idx + 1}
                         </td>
                       )}
                       {verColumna('codigoDoc') && (
-                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-500">
+                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-secundaria">
                           {item.codigo || '-'}
                         </td>
                       )}
                       {verColumna('descripcionDoc') && (
-                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-800 dark:text-gray-200 font-medium">
+                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-principal">
                           {item.nombre || item.descripcion}
                         </td>
                       )}
                       {verColumna('cantidadDoc') && (
-                        <td className={`py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center ${tieneDifCant ? 'font-bold text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30' : ''}`}>
+                        <td className={`py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center ${tieneDifCant ? 'text-etiqueta text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30' : ''}`}>
                           {item.cantidad}
                         </td>
                       )}
                       {verColumna('precioDoc') && (
-                        <td className={`py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right ${tieneDifPrecio ? 'font-bold text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30' : ''}`}>
+                        <td className={`py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right ${tieneDifPrecio ? 'text-etiqueta text-amber-600 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-950/30' : ''}`}>
                           {formatearMoneda(item.precio)}
                         </td>
                       )}
                       {verColumna('totalLinea') && (
-                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right font-bold">
+                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right text-etiqueta">
                           {formatearMoneda(item.monto || item.precio * item.cantidad)}
                         </td>
                       )}
                       {verColumna('codigoMaestro') && (
-                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-600 dark:text-gray-300 bg-blue-50/30 dark:bg-blue-950/20">
+                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-secundaria bg-blue-50/30 dark:bg-blue-950/20">
                           {item.codigoMaestro || item.codigo_maestro || '-'}
                         </td>
                       )}
                       {verColumna('descripcionMaestro') && (
-                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-800 dark:text-gray-200 bg-blue-50/30 dark:bg-blue-950/20 font-medium">
+                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-principal bg-blue-50/30 dark:bg-blue-950/20">
                           {item.descripcionMaestro || item.nombreMaestro || item.descripcion_maestro || '-'}
                         </td>
                       )}
                       {verColumna('articuloOC') && (
-                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-600 dark:text-gray-300 bg-blue-50/30 dark:bg-blue-950/20">
+                        <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-secundaria bg-blue-50/30 dark:bg-blue-950/20">
                           {item.articuloOC || item.articulo_oc || item.codigoOC || item.codigo_oc || '-'}
                         </td>
                       )}
@@ -415,12 +415,12 @@ const DetalleSolicitudDif = ({
                       {verColumna('estadoDiscrepancia') && (
                         <td className="py-1 px-2 border-b border-slate-200 dark:border-gray-700 text-center">
                           <span
-                            className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold whitespace-nowrap ${
+                            className={`inline-block px-1.5 py-0.5 rounded text-pequeno whitespace-nowrap ${
                               tagEstado === 'Sin diferencias'
                                 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
                                 : tagEstado.includes('Diferencia')
                                 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-                                : 'bg-slate-100 text-slate-600 dark:bg-gray-700 dark:text-gray-400'
+                                : 'bg-slate-100 text-tinta-secundaria dark:bg-gray-700'
                             }`}
                           >
                             {tagEstado}

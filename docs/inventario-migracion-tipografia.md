@@ -23,6 +23,7 @@ Foto del 06-11-2026, con las pantallas nuevas agregadas el 12-11-2026: las cifra
 | **Bodega** | `bodega/` (38 archivos). Incluye compartidos que se ven también en Armado de Kits, Códigos de barra, Fibras (`TablaBodega`) e Inventario → Tránsito (`GestionTransitoModal`). Alertas numéricas: `text-numero-tabla` pasa a `text-etiqueta tabular-nums` | 12-11-2026 |
 | **Maestros** | `maestros/` (34 archivos, además de Códigos de barra ya migrado). Incluye `codigosMaestrosV2/ui/TablaCodigos` y `PanelLateral`, que se ven también en Soporte, Estadísticas y Solicitudes de modificaciones. Títulos que estaban escritos en mayúsculas pasaron a tipo oración | 12-11-2026 |
 | **Herramientas** | `administracion/` (46 archivos, además de Historial de imputaciones ya migrado). Valores de tarjetas de indicadores (Estadísticas, Resumen del período, Totales de Finanzas, ficha de usuario) con `text-numero-indicador` | 12-11-2026 |
+| **Gestiones** | `gestiones/` (Laboratorio y Vacunatorio: procesos, registros, importaciones y visualizador, más `shared/`). Títulos escritos en mayúsculas pasaron a tipo oración | 12-11-2026 |
 
 Login y cambio de contraseña usan además los tokens `text-acceso-*` (portada de 30, título de 24 y cuerpo de 16 px; solo para pantallas de acceso). Conservan sus grises (`text-gray-*`) y no usan `text-tinta-*`: tienen fondo blanco fijo y la clase `.dark` se aplica a toda la página, así que con el tema oscuro guardado el texto quedaría claro sobre blanco. Los textos legales que abre el cambio de contraseña (`general/legales/`) van con el módulo General.
 
@@ -291,111 +292,6 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 | Archivo | Clases | <10 px | `font-num` | Cortes |
 |---|---:|---:|---:|---:|
 | `shared/estadoGestion/EstadoBadge.jsx` | 2 | 0 | 0 | 2 |
-
-## gestiones
-
-56 archivos, 1750 clases.
-
-### laboratorio/procesos (19 archivos, 648 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `fases/documentosListasIngreso/DetalleListasIngreso.jsx` | 83 | 9 | 8 | 9 |
-| `fases/documentosEditor/EdicionComponent.jsx` | 60 | 2 | 0 | 1 |
-| `fases/solicitudDiferencias/DetalleSolicitudDif.jsx` | 58 | 10 | 0 | 12 |
-| `fases/vinculacionOrden/DetalleVinculacionOC.jsx` | 54 | 9 | 0 | 9 |
-| `fases/vinculacionCodigos/DetalleDocu.jsx` | 51 | 8 | 0 | 9 |
-| `fases/documentosRecibidos/EditorDocumentos.jsx` | 42 | 10 | 1 | 1 |
-| `fases/documentosImputados/EditarDocumentoImputado.jsx` | 39 | 0 | 0 | 1 |
-| `fases/documentosEditor/VizualizadorDetallesImputados.jsx` | 37 | 0 | 0 | 1 |
-| `fases/documentosImputados/VizualizadorDetallesImputados.jsx` | 37 | 0 | 0 | 1 |
-| `fases/documentosRecibidos/HistorialDocumentos.jsx` | 28 | 8 | 2 | 3 |
-| `fases/iniciarProceso/IniciarProceso.jsx` | 24 | 0 | 0 | 6 |
-| `fases/vinculacionOrden/DrawerSeleccionOC.jsx` | 23 | 1 | 0 | 1 |
-| `fases/solicitudDiferencias/SolicitudDiferencias.jsx` | 21 | 0 | 0 | 8 |
-| `fases/documentosListasIngreso/DocListasIngreso.jsx` | 19 | 0 | 0 | 8 |
-| `fases/vinculacionCodigos/VinculacionCodigos.jsx` | 15 | 0 | 0 | 8 |
-| `fases/vinculacionOrden/VinculacionOrden.jsx` | 15 | 0 | 0 | 8 |
-| `fases/documentosEditor/DocumentosEditor.jsx` | 14 | 0 | 0 | 10 |
-| `fases/documentosImputados/DocumentosImputados.jsx` | 14 | 0 | 0 | 10 |
-| `fases/documentosRecibidos/DocRecibidos.jsx` | 14 | 0 | 0 | 6 |
-
-### vacunatorio/procesos (19 archivos, 648 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `fases/documentosListasIngreso/DetalleListasIngreso.jsx` | 83 | 9 | 8 | 9 |
-| `fases/documentosEditor/EdicionComponent.jsx` | 60 | 2 | 0 | 1 |
-| `fases/solicitudDiferencias/DetalleSolicitudDif.jsx` | 58 | 10 | 0 | 12 |
-| `fases/vinculacionOrden/DetalleVinculacionOC.jsx` | 54 | 9 | 0 | 9 |
-| `fases/vinculacionCodigos/DetalleDocu.jsx` | 51 | 8 | 0 | 9 |
-| `fases/documentosRecibidos/EditorDocumentos.jsx` | 42 | 10 | 1 | 1 |
-| `fases/documentosImputados/EditarDocumentoImputado.jsx` | 39 | 0 | 0 | 1 |
-| `fases/documentosEditor/VizualizadorDetallesImputados.jsx` | 37 | 0 | 0 | 1 |
-| `fases/documentosImputados/VizualizadorDetallesImputados.jsx` | 37 | 0 | 0 | 1 |
-| `fases/documentosRecibidos/HistorialDocumentos.jsx` | 28 | 8 | 2 | 3 |
-| `fases/iniciarProceso/IniciarProceso.jsx` | 24 | 0 | 0 | 6 |
-| `fases/vinculacionOrden/DrawerSeleccionOC.jsx` | 23 | 1 | 0 | 1 |
-| `fases/solicitudDiferencias/SolicitudDiferencias.jsx` | 21 | 0 | 0 | 8 |
-| `fases/documentosListasIngreso/DocListasIngreso.jsx` | 19 | 0 | 0 | 8 |
-| `fases/vinculacionCodigos/VinculacionCodigos.jsx` | 15 | 0 | 0 | 8 |
-| `fases/vinculacionOrden/VinculacionOrden.jsx` | 15 | 0 | 0 | 8 |
-| `fases/documentosEditor/DocumentosEditor.jsx` | 14 | 0 | 0 | 10 |
-| `fases/documentosImputados/DocumentosImputados.jsx` | 14 | 0 | 0 | 10 |
-| `fases/documentosRecibidos/DocRecibidos.jsx` | 14 | 0 | 0 | 6 |
-
-### laboratorio/registros (4 archivos, 130 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `laboratorio/registros/EmpresasLaboratorioDrawers.jsx` | 50 | 6 | 1 | 5 |
-| `laboratorio/registros/CodigoLaboratorioDrawers.jsx` | 37 | 3 | 1 | 5 |
-| `laboratorio/registros/EmpresasLaboratorio.jsx` | 26 | 4 | 0 | 0 |
-| `laboratorio/registros/CodigoLaboratorio.jsx` | 17 | 1 | 0 | 5 |
-
-### vacunatorio/registros (3 archivos, 111 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `vacunatorio/registros/EmpresasVacunatorio.jsx` | 57 | 9 | 1 | 3 |
-| `vacunatorio/registros/CodigoVacunatorioDrawers.jsx` | 37 | 3 | 1 | 5 |
-| `vacunatorio/registros/CodigoVacunatorio.jsx` | 17 | 1 | 0 | 5 |
-
-### laboratorio/importaciones (2 archivos, 55 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `laboratorio/importaciones/OrdenLaboratorio.jsx` | 36 | 4 | 0 | 1 |
-| `laboratorio/importaciones/XmlDocLaboratorio.jsx` | 19 | 0 | 0 | 0 |
-
-### vacunatorio/importaciones (2 archivos, 55 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `vacunatorio/importaciones/OrdenVacunatorio.jsx` | 36 | 4 | 0 | 1 |
-| `vacunatorio/importaciones/XmlDocVacunatorio.jsx` | 19 | 0 | 0 | 0 |
-
-### shared (5 archivos, 53 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `gestiones/shared/DetalleOrdenTabla.jsx` | 23 | 0 | 0 | 5 |
-| `gestiones/shared/FaseControlProcesos.jsx` | 15 | 0 | 1 | 0 |
-| `gestiones/shared/TablaOrdenes.jsx` | 6 | 0 | 0 | 5 |
-| `gestiones/shared/TablaXmlDocumentos.jsx` | 6 | 0 | 0 | 6 |
-| `gestiones/shared/EstadoProcesoBadge.jsx` | 3 | 1 | 0 | 1 |
-
-### laboratorio/vizualizador (1 archivos, 25 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `laboratorio/vizualizador/XmlDetallesDoc.jsx` | 25 | 3 | 0 | 4 |
-
-### vacunatorio/vizualizador (1 archivos, 25 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `vacunatorio/vizualizador/XmlDetallesDoc.jsx` | 25 | 3 | 0 | 4 |
 
 ## inventario
 

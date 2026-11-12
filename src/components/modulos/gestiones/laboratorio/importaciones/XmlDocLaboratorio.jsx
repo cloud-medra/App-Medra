@@ -246,12 +246,12 @@ const XmlDocLaboratorio = () => {
   );
 
   return (
-    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {cargando && (
         <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-900/30 dark:bg-black/50 backdrop-blur-[2px]">
           <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-xl flex flex-col items-center gap-2 border border-slate-100 dark:border-gray-700">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-normal text-[12px]">Procesando XML...</h3>
+            <h3 className="text-[#2383C2] text-normal">Procesando XML...</h3>
           </div>
         </div>
       )}
@@ -259,7 +259,7 @@ const XmlDocLaboratorio = () => {
       <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText size={16} className="text-[#2383C2]" />
-          <span className="text-[12px] font-bold text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+          <span className="text-etiqueta text-tinta-principal tracking-wide uppercase">
             Gestión de Documentos XML
           </span>
         </div>
@@ -267,7 +267,7 @@ const XmlDocLaboratorio = () => {
         {hasPermission(PATH_VISTA, "cabecera_acciones", "btn_importar_xml") && (
           <button
             onClick={() => setShowModal(true)}
-            className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-[10px] font-bold flex items-center gap-1.5 transition shadow-sm"
+            className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-pequeno flex items-center gap-1.5 transition shadow-sm"
           >
             <Upload size={11} /> Importar XML
           </button>
@@ -282,7 +282,7 @@ const XmlDocLaboratorio = () => {
               setFiltroAnio(e.target.value);
               setFiltroMes("");
             }}
-            className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2]"
+            className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none focus:border-[#2383C2]"
           >
             <option value="">Año</option>
             {aniosDisponibles.map((a, idx) => (
@@ -295,7 +295,7 @@ const XmlDocLaboratorio = () => {
           <select
             value={filtroMes}
             onChange={(e) => setFiltroMes(e.target.value)}
-            className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none capitalize focus:border-[#2383C2]"
+            className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none capitalize focus:border-[#2383C2]"
           >
             <option value="">Mes</option>
             {mesesDisponibles.map((m, idx) => (
@@ -310,7 +310,7 @@ const XmlDocLaboratorio = () => {
             <input
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
-              className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:border-[#2383C2]"
+              className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
               placeholder="Buscar por Folio, Ref, Razón Social o Estado..."
             />
           </div>
@@ -349,11 +349,11 @@ const XmlDocLaboratorio = () => {
                 <div className="p-1.5 bg-[#2383C2]/10 rounded-lg">
                   <Upload size={16} className="text-[#2383C2]" />
                 </div>
-                <h3 className="font-bold text-xs text-slate-800 dark:text-gray-100">Importar Documentos XML</h3>
+                <h3 className="text-subtitulo text-tinta-principal">Importar documentos XML</h3>
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition p-1"
+                className="text-tinta-atenuada hover:text-tinta-secundaria transition p-1"
               >
                 <X size={16} />
               </button>
@@ -371,15 +371,15 @@ const XmlDocLaboratorio = () => {
                   <FileText size={24} className="text-slate-400 dark:text-gray-500" />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-slate-700 dark:text-gray-200">Arrastra tus archivos XML aquí</p>
-                  <p className="text-[10px] text-slate-400 dark:text-gray-400 mt-0.5">o haz clic para seleccionar desde tu carpeta</p>
+                  <p className="text-normal text-tinta-principal">Arrastra tus archivos XML aquí</p>
+                  <p className="text-pequeno text-tinta-atenuada mt-0.5">o haz clic para seleccionar desde tu carpeta</p>
                 </div>
               </div>
             </div>
             <div className="px-4 py-3 bg-slate-50 dark:bg-gray-900/40 border-t border-slate-100 dark:border-gray-700 flex justify-end">
               <button
                 onClick={() => setShowModal(false)}
-                className="text-[11px] font-bold text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 px-3 py-1 rounded-lg transition"
+                className="text-etiqueta text-tinta-secundaria hover:text-tinta-principal px-3 py-1 rounded-lg transition"
               >
                 Cancelar
               </button>

@@ -292,11 +292,11 @@ const DrawerSeleccionOC = ({
             <div className={`absolute top-0 right-0 h-full w-full max-w-md bg-white dark:bg-gray-800 border-l border-slate-200 dark:border-gray-700 shadow-2xl z-30 transform transition-transform duration-300 flex flex-col ${panelAbierto ? 'translate-x-0' : 'translate-x-full'}`}>
 
                 <div className="bg-slate-100 dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-1.5 text-slate-800 dark:text-gray-100 font-bold text-xs uppercase">
+                    <div className="flex items-center gap-1.5 text-tinta-principal text-etiqueta uppercase">
                         <ListOrdered size={15} className="text-[#2383C2]" />
                         <span>Seleccionar Orden de Compra</span>
                     </div>
-                    <button onClick={() => setPanelAbierto(false)} className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-gray-200 rounded-full">
+                    <button onClick={() => setPanelAbierto(false)} className="p-1 text-tinta-atenuada hover:text-tinta-secundaria rounded-full">
                         <X size={16} />
                     </button>
                 </div>
@@ -304,11 +304,11 @@ const DrawerSeleccionOC = ({
                 <div className="p-3 bg-slate-50 dark:bg-gray-800/60 border-b border-slate-200 dark:border-gray-700 flex flex-col gap-2 shrink-0">
                     <div className="grid grid-cols-2 gap-2">
                         <div>
-                            <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">Año</label>
+                            <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Año</label>
                             <select
                                 value={anioOC}
                                 onChange={(e) => setAnioOC(e.target.value)}
-                                className="w-full h-7 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2]"
+                                className="w-full h-7 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none focus:border-[#2383C2]"
                             >
                                 <option value="">Seleccionar Año</option>
                                 {aniosDisponibles.map((a) => (
@@ -318,12 +318,12 @@ const DrawerSeleccionOC = ({
                         </div>
 
                         <div>
-                            <label className="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">Mes</label>
+                            <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Mes</label>
                             <select
                                 value={mesOC}
                                 onChange={(e) => setMesOC(e.target.value)}
                                 disabled={loadingMeses || !anioOC || mesesDisponibles.length === 0}
-                                className="w-full h-7 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2] disabled:opacity-50"
+                                className="w-full h-7 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none focus:border-[#2383C2] disabled:opacity-50"
                             >
                                 {loadingMeses ? (
                                     <option value="">Cargando meses...</option>
@@ -350,25 +350,25 @@ const DrawerSeleccionOC = ({
                             value={busquedaOC}
                             onChange={(e) => setBusquedaOC(e.target.value)}
                             placeholder="Buscar por Folio u Orden..."
-                            className="w-full h-7 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:border-[#2383C2]"
+                            className="w-full h-7 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
                         />
                     </div>
                 </div>
 
                 <div className="flex-grow overflow-auto p-2">
                     {loadingOC ? (
-                        <div className="h-40 flex items-center justify-center gap-2 text-xs text-slate-500">
+                        <div className="h-40 flex items-center justify-center gap-2 text-normal text-tinta-secundaria">
                             <RefreshCw size={14} className="animate-spin text-[#2383C2]" />
                             <span>Cargando Órdenes...</span>
                         </div>
                     ) : !anioOC || !mesOC ? (
-                        <div className="h-40 flex items-center justify-center text-xs text-slate-400 text-center px-4">
+                        <div className="h-40 flex items-center justify-center text-normal text-tinta-atenuada text-center px-4">
                             {!anioOC
                                 ? 'Seleccione un Año para comenzar.'
                                 : 'Seleccione un Mes para consultar órdenes.'}
                         </div>
                     ) : ordenesFiltradas.length === 0 ? (
-                        <div className="h-40 flex items-center justify-center text-xs text-slate-400 text-center px-4">
+                        <div className="h-40 flex items-center justify-center text-normal text-tinta-atenuada text-center px-4">
                             No se encontraron Órdenes de Compra registradas en {NOMBRES_MESES[mesOC] || mesOC} de {anioOC}.
                         </div>
                     ) : (
@@ -387,23 +387,23 @@ const DrawerSeleccionOC = ({
                                             } ${estaCargando ? 'opacity-60 pointer-events-none' : ''}`}
                                     >
                                         <div className="flex items-center justify-between">
-                                            <span className="font-bold text-slate-800 dark:text-gray-100 text-[11px] flex items-center gap-1">
+                                            <span className="text-tinta-principal text-etiqueta flex items-center gap-1">
                                                 <Tag size={12} className="text-[#2383C2]" />
                                                 OC {oc.folioCalculado}
                                             </span>
-                                            <span className="font-bold text-[#2383C2] text-[11px] flex items-center gap-1">
+                                            <span className="text-[#2383C2] text-etiqueta flex items-center gap-1">
                                                 {estaCargando && <Loader2 size={11} className="animate-spin" />}
                                                 ${Math.round(oc.montoCalculado).toLocaleString('es-CL')}
                                             </span>
                                         </div>
 
-                                        <div className="text-[10px] text-slate-600 dark:text-gray-300 truncate">
+                                        <div className="text-pequeno text-tinta-secundaria truncate">
                                             {oc.proveedorCalculado}
                                         </div>
 
-                                        <div className="flex items-center justify-between text-[9px] text-slate-400 dark:text-gray-500 mt-1 pt-1 border-t border-slate-100 dark:border-gray-800">
+                                        <div className="flex items-center justify-between text-pequeno text-tinta-atenuada mt-1 pt-1 border-t border-slate-100 dark:border-gray-800">
                                             <span>Emisión: {oc.fechaCalculada}</span>
-                                            <span className="font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300">
+                                            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-gray-800 text-tinta-secundaria">
                                                 {oc.estado || 'Pendiente'}
                                             </span>
                                         </div>
@@ -417,14 +417,14 @@ const DrawerSeleccionOC = ({
                 <div className="p-2.5 bg-slate-100 dark:bg-gray-900 border-t border-slate-200 dark:border-gray-700 flex items-center justify-end gap-2 shrink-0">
                     <button
                         onClick={() => setPanelAbierto(false)}
-                        className="px-3 py-1.5 bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 text-slate-700 dark:text-gray-200 rounded text-xs font-semibold transition-colors"
+                        className="px-3 py-1.5 bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 text-tinta-principal rounded text-etiqueta transition-colors"
                     >
                         Cancelar
                     </button>
                     <button
                         onClick={() => onConfirmar(ocSeleccionada)}
                         disabled={!ocSeleccionada || cargandoItemsId !== null}
-                        className="px-3 py-1.5 bg-[#2383C2] hover:bg-[#1d6fa5] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-xs font-semibold transition-colors flex items-center gap-1"
+                        className="px-3 py-1.5 bg-[#2383C2] hover:bg-[#1d6fa5] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-etiqueta transition-colors flex items-center gap-1"
                     >
                         Confirmar Vinculación
                     </button>

@@ -211,15 +211,15 @@ const DetalleListasIngreso = ({
         <div className="flex items-center gap-2">
           <button
             onClick={onVolver}
-            className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded text-slate-600 dark:text-gray-300 flex items-center gap-1 text-[11px] font-medium transition-colors cursor-pointer"
+            className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded text-tinta-secundaria flex items-center gap-1 text-secundario transition-colors cursor-pointer"
             title="Volver a la lista"
           >
             <ArrowLeft size={15} className="text-[#2383C2]" />
             <span>Volver</span>
           </button>
-          <span className="text-slate-300 dark:text-gray-600">|</span>
+          <span className="text-tinta-atenuada">|</span>
           <FileText className="text-[#2383C2]" size={16} />
-          <span className="text-[12px] font-bold text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+          <span className="text-etiqueta text-tinta-principal tracking-wide uppercase">
             Detalle Lista de Ingreso — Folio N° {documento.folio}
           </span>
         </div>
@@ -227,19 +227,19 @@ const DetalleListasIngreso = ({
 
       <div className="px-3 py-2 bg-slate-100/60 dark:bg-gray-900/40 border-b border-slate-200 dark:border-gray-700 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 shrink-0">
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <Hash size={11} className="text-[#2383C2]" /> Folio
           </span>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+          <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
             #{documento.folio}
           </span>
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <Calendar size={11} className="text-[#2383C2]" /> Fecha Emisión
           </span>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+          <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
             {formatearFechaEmision
               ? formatearFechaEmision(documento.fchEmis)
               : documento.fchEmis || '-'}
@@ -247,34 +247,34 @@ const DetalleListasIngreso = ({
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <CalendarDays size={11} className="text-[#2383C2]" /> Mes Imputado
           </span>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5 capitalize">
+          <span className="text-etiqueta text-tinta-principal truncate mt-0.5 capitalize">
             {documento.mesImputado || documento.mes_imputado || '-'}
           </span>
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <Tag size={11} className="text-[#2383C2]" /> Ref. (OC)
           </span>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5 font-num">
+          <span className="text-numero-tabla text-tinta-principal truncate mt-0.5">
             {documento.folioRef || 'Sin Referencia'}
           </span>
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <DollarSign size={11} className="text-[#2383C2]" /> Total Neto
           </span>
-          <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+          <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
             {formatearMoneda(documento.total)}
           </span>
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <Activity size={11} className="text-[#2383C2]" /> Estado
           </span>
           <div className="mt-0.5 truncate">
@@ -287,14 +287,14 @@ const DetalleListasIngreso = ({
         </div>
 
         <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-          <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+          <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
             <FileCheck size={11} className="text-[#2383C2]" /> Documento
           </span>
           <button
             type="button"
             onClick={() => setPanelActaAbierto(true)}
             disabled={!puedeFinalizarActa}
-            className="mt-0.5 w-full py-1 px-2 bg-[#2383C2] hover:bg-[#1b6b9f] text-white rounded border border-[#1b6b9f] text-[10px] font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
+            className="mt-0.5 w-full py-1 px-2 bg-[#2383C2] hover:bg-[#1b6b9f] text-white rounded border border-[#1b6b9f] text-pequeno flex items-center justify-center gap-1 transition-colors cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed"
             title={puedeFinalizarActa ? 'Añadir Acta' : 'No tienes permiso para finalizar el acta'}
           >
             <FileCheck size={11} />
@@ -303,39 +303,39 @@ const DetalleListasIngreso = ({
         </div>
       </div>
 
-      <div className="px-3 py-1.5 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between shrink-0 text-xs">
+      <div className="px-3 py-1.5 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between shrink-0 text-normal">
         <div className="flex items-center gap-2 truncate">
           <Building2 size={13} className="text-[#2383C2] shrink-0" />
-          <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase">
+          <span className="text-pequeno text-tinta-atenuada uppercase">
             Proveedor:
           </span>
-          <span className="text-[11px] font-semibold text-slate-800 dark:text-gray-200 truncate" title={documento.rznSoc}>
+          <span className="text-etiqueta text-tinta-principal truncate" title={documento.rznSoc}>
             {documento.rznSoc || 'Sin Razón Social'}
           </span>
-          <span className="text-slate-400 dark:text-gray-500 text-[11px]">
+          <span className="text-tinta-atenuada text-secundario">
             (RUT: {documento.rutEmisor || 'N/A'})
           </span>
         </div>
-        <span className="text-[10px] text-slate-400 font-semibold shrink-0">
-          Total Ítems: <strong className="text-slate-700 dark:text-gray-200">{detalles.length}</strong>
+        <span className="text-pequeno text-tinta-atenuada shrink-0">
+          Total Ítems: <strong className="text-tinta-principal">{detalles.length}</strong>
         </span>
       </div>
 
       <div className="flex-grow flex flex-col min-h-0 p-3 space-y-3 overflow-hidden">
         <div className="bg-slate-50 dark:bg-gray-900/50 border border-slate-200 dark:border-gray-700 rounded-md p-3 shrink-0 max-h-32 overflow-y-auto">
-          <h4 className="font-semibold text-slate-800 dark:text-gray-200 mb-1 flex items-center gap-1.5 text-xs">
+          <h4 className="text-tinta-principal mb-1 flex items-center gap-1.5 text-etiqueta">
             <Receipt size={14} className="text-[#2383C2] shrink-0" />
             <span>Observaciones o Comentarios</span>
           </h4>
-          <p className="text-slate-700 dark:text-gray-300 text-[11px] leading-relaxed whitespace-pre-wrap">
+          <p className="text-tinta-principal text-secundario whitespace-pre-wrap">
             {observaciones}
           </p>
         </div>
 
         <div className="border border-slate-200 dark:border-gray-700 rounded-md overflow-auto flex-1 min-h-0 bg-white dark:bg-gray-800">
-          <table className="w-full text-left text-[11px] border-collapse min-w-[1400px]">
+          <table className="w-full text-left text-secundario border-collapse min-w-[1400px]">
             <thead className="bg-slate-100 dark:bg-gray-900 sticky top-0 z-10 shadow-xs">
-              <tr className="text-slate-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+              <tr className="text-tinta-secundaria uppercase text-pequeno">
                 {verColumna('linea') && (
                   <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-10 text-center">#</th>
                 )}
@@ -355,13 +355,13 @@ const DetalleListasIngreso = ({
                   <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-24 text-right">Total Línea</th>
                 )}
                 {verColumna('codigoMaestro') && (
-                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-blue-100/70 dark:bg-blue-950/60 text-slate-900 dark:text-blue-200">Cód. Maestro</th>
+                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-blue-100/70 dark:bg-blue-950/60 text-tinta-principal dark:text-blue-200">Cód. Maestro</th>
                 )}
                 {verColumna('descripcionMaestro') && (
-                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 bg-blue-100/70 dark:bg-blue-950/60 text-slate-900 dark:text-blue-200">Descripción Maestro</th>
+                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 bg-blue-100/70 dark:bg-blue-950/60 text-tinta-principal dark:text-blue-200">Descripción Maestro</th>
                 )}
                 {verColumna('articuloOC') && (
-                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-blue-100/70 dark:bg-blue-950/60 text-slate-900 dark:text-blue-200">Artículo OC</th>
+                  <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-blue-100/70 dark:bg-blue-950/60 text-tinta-principal dark:text-blue-200">Artículo OC</th>
                 )}
                 {verColumna('cantidadOC') && (
                   <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-20 bg-blue-100/70 dark:bg-blue-950/60 text-center text-blue-900 dark:text-blue-200">Cant. OC</th>
@@ -377,7 +377,7 @@ const DetalleListasIngreso = ({
             <tbody className="divide-y divide-slate-200 dark:divide-gray-700/60 bg-white dark:bg-gray-800">
               {detalles.length === 0 ? (
                 <tr>
-                  <td colSpan={columnasTabla.length} className="py-6 text-center text-slate-400 dark:text-gray-500 text-xs">
+                  <td colSpan={columnasTabla.length} className="py-6 text-center text-tinta-atenuada text-normal">
                     Este documento no posee ítems cargados.
                   </td>
                 </tr>
@@ -385,41 +385,41 @@ const DetalleListasIngreso = ({
                 detalles.map((item, idx) => (
                   <tr key={item.id || item.codigo || idx} className="hover:bg-slate-50 dark:hover:bg-gray-700/40">
                     {verColumna('linea') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-500 text-center font-bold">{idx + 1}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-secundaria text-center text-etiqueta">{idx + 1}</td>
                     )}
                     {verColumna('codigoDoc') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 font-num text-slate-500">{item.codigo || '-'}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-numero-tabla text-tinta-secundaria">{item.codigo || '-'}</td>
                     )}
                     {verColumna('descripcionDoc') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-800 dark:text-gray-200 font-medium">{item.nombre || item.descripcion}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-principal">{item.nombre || item.descripcion}</td>
                     )}
                     {verColumna('cantidadDoc') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center font-num">{item.cantidad}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center text-numero-tabla">{item.cantidad}</td>
                     )}
                     {verColumna('precioDoc') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right font-num">{formatearMoneda(item.precio)}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right text-numero-tabla">{formatearMoneda(item.precio)}</td>
                     )}
                     {verColumna('totalLinea') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right font-bold">{formatearMoneda(item.monto || item.precio * item.cantidad)}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right text-etiqueta">{formatearMoneda(item.monto || item.precio * item.cantidad)}</td>
                     )}
                     {verColumna('codigoMaestro') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 font-num text-slate-600 dark:text-gray-300 bg-blue-50/30 dark:bg-blue-950/20">{item.codigoMaestro || '-'}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-numero-tabla text-tinta-secundaria bg-blue-50/30 dark:bg-blue-950/20">{item.codigoMaestro || '-'}</td>
                     )}
                     {verColumna('descripcionMaestro') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-800 dark:text-gray-200 bg-blue-50/30 dark:bg-blue-950/20 font-medium">{item.descripcionMaestro || '-'}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-principal bg-blue-50/30 dark:bg-blue-950/20">{item.descripcionMaestro || '-'}</td>
                     )}
                     {verColumna('articuloOC') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 font-num text-slate-600 dark:text-gray-300 bg-blue-50/30 dark:bg-blue-950/20">{item.articuloOC || '-'}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-numero-tabla text-tinta-secundaria bg-blue-50/30 dark:bg-blue-950/20">{item.articuloOC || '-'}</td>
                     )}
                     {verColumna('cantidadOC') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center font-num bg-blue-50/30 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300">{item.cantidadOC ?? '-'}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center text-numero-tabla bg-blue-50/30 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300">{item.cantidadOC ?? '-'}</td>
                     )}
                     {verColumna('precioOC') && (
-                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right font-num bg-blue-50/30 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300">{item.precioOC !== undefined ? formatearMoneda(item.precioOC) : '-'}</td>
+                      <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right text-numero-tabla bg-blue-50/30 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300">{item.precioOC !== undefined ? formatearMoneda(item.precioOC) : '-'}</td>
                     )}
                     {verColumna('estadoItem') && (
                       <td className="py-1 px-2 border-b border-slate-200 dark:border-gray-700 text-center">
-                        <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold whitespace-nowrap bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-gray-300">
+                        <span className="inline-block px-1.5 py-0.5 rounded text-pequeno whitespace-nowrap bg-slate-100 text-tinta-principal dark:bg-gray-700">
                           {item.vincuOCTexto || item.estadoItem || 'Registrado'}
                         </span>
                       </td>
@@ -439,13 +439,13 @@ const DetalleListasIngreso = ({
               <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-gray-700">
                 <div className="flex items-center gap-2">
                   <FileCheck size={18} className="text-[#2383C2]" />
-                  <h3 className="text-xs font-bold uppercase tracking-wide text-slate-800 dark:text-gray-100">
-                    Añadir Datos de Recepción
+                  <h3 className="text-subtitulo text-tinta-principal">
+                    Añadir datos de recepción
                   </h3>
                 </div>
                 <button
                   onClick={() => setPanelActaAbierto(false)}
-                  className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                  className="p-1 rounded text-tinta-atenuada hover:text-tinta-secundaria hover:bg-slate-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
                 >
                   <X size={16} />
                 </button>
@@ -453,62 +453,62 @@ const DetalleListasIngreso = ({
 
               <div className="mt-4 space-y-3">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-gray-300">Número de Orden</label>
+                  <label className="text-etiqueta text-tinta-secundaria">Número de Orden</label>
                   <input
                     type="text"
                     value={numeroOrden}
                     onChange={(e) => setNumeroOrden(e.target.value)}
                     placeholder="Ej. OC-1234"
-                    className="h-8 px-2.5 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 text-xs outline-none focus:border-[#2383C2]"
+                    className="h-8 px-2.5 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal text-normal outline-none focus:border-[#2383C2]"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-gray-300">Número de Acta</label>
+                  <label className="text-etiqueta text-tinta-secundaria">Número de Acta</label>
                   <input
                     type="text"
                     value={numeroActa}
                     onChange={(e) => setNumeroActa(e.target.value)}
                     placeholder="Ej. ACT-001"
-                    className="h-8 px-2.5 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 text-xs outline-none focus:border-[#2383C2]"
+                    className="h-8 px-2.5 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal text-normal outline-none focus:border-[#2383C2]"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-gray-300">Número de Salida</label>
+                  <label className="text-etiqueta text-tinta-secundaria">Número de Salida</label>
                   <input
                     type="text"
                     value={numeroSalida}
                     onChange={(e) => setNumeroSalida(e.target.value)}
                     placeholder="Ej. SAL-998"
-                    className="h-8 px-2.5 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 text-xs outline-none focus:border-[#2383C2]"
+                    className="h-8 px-2.5 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal text-normal outline-none focus:border-[#2383C2]"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-gray-300">Fecha Acta</label>
+                  <label className="text-etiqueta text-tinta-secundaria">Fecha Acta</label>
                   <input
                     type="date"
                     value={fechaActa}
                     onChange={(e) => setFechaActa(e.target.value)}
-                    className="h-8 px-2.5 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 text-xs outline-none focus:border-[#2383C2]"
+                    className="h-8 px-2.5 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal text-normal outline-none focus:border-[#2383C2]"
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-gray-300">Fecha de Salida</label>
+                  <label className="text-etiqueta text-tinta-secundaria">Fecha de Salida</label>
                   <input
                     type="date"
                     value={fechaSalida}
                     onChange={(e) => setFechaSalida(e.target.value)}
-                    className="h-8 px-2.5 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 text-xs outline-none focus:border-[#2383C2]"
+                    className="h-8 px-2.5 rounded border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal text-normal outline-none focus:border-[#2383C2]"
                   />
                 </div>
               </div>
             </div>
 
             {cargandoPeriodo ? null : periodoAbierto ? (
-              <div className="p-2.5 rounded border border-blue-200 dark:border-blue-800/50 bg-blue-50/60 dark:bg-blue-950/30 text-[11px] text-slate-700 dark:text-gray-200 flex items-start gap-2">
+              <div className="p-2.5 rounded border border-blue-200 dark:border-blue-800/50 bg-blue-50/60 dark:bg-blue-950/30 text-secundario text-tinta-principal flex items-start gap-2">
                 <CalendarDays size={14} className="shrink-0 mt-0.5 text-[#2383C2]" />
                 <p>
                   Al finalizar, el documento quedará imputado en el período actual:{' '}
@@ -516,7 +516,7 @@ const DetalleListasIngreso = ({
                 </p>
               </div>
             ) : (
-              <div className="p-2.5 rounded border border-rose-200 dark:border-rose-800/50 bg-rose-50 dark:bg-rose-950/30 text-[11px] text-rose-700 dark:text-rose-300 flex items-start gap-2">
+              <div className="p-2.5 rounded border border-rose-200 dark:border-rose-800/50 bg-rose-50 dark:bg-rose-950/30 text-secundario text-rose-700 dark:text-rose-300 flex items-start gap-2">
                 <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                 <p>No hay un período de imputación abierto para Laboratorio. No se puede finalizar hasta que se abra uno.</p>
               </div>
@@ -527,7 +527,7 @@ const DetalleListasIngreso = ({
                 type="button"
                 onClick={() => setPanelActaAbierto(false)}
                 disabled={guardando}
-                className="px-3 py-1.5 rounded border border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 text-xs font-medium hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded border border-slate-300 dark:border-gray-600 text-tinta-secundaria text-normal hover:bg-slate-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
@@ -535,7 +535,7 @@ const DetalleListasIngreso = ({
                 type="button"
                 onClick={handleFinalizarActa}
                 disabled={guardando || cargandoPeriodo || !periodoAbierto}
-                className="px-3 py-1.5 rounded bg-[#2383C2] hover:bg-[#1b6b9f] text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 rounded bg-[#2383C2] hover:bg-[#1b6b9f] text-white text-etiqueta transition-colors cursor-pointer flex items-center gap-1 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {guardando ? 'Guardando...' : 'Finalizar'}
               </button>

@@ -88,79 +88,79 @@ const VizualizadorDetallesImputados = ({ documento, onClose }) => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-slate-800 dark:text-gray-100 uppercase tracking-wide">
-                  Documento Folio: {documento.folio || '-'}
+                <h2 className="text-titulo-seccion text-tinta-principal">
+                  Documento folio: {documento.folio || '-'}
                 </h2>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getEstadoProcesoClase(documento.estado)}`}>
+                <span className={`px-2 py-0.5 rounded-full text-pequeno border ${getEstadoProcesoClase(documento.estado)}`}>
                   {documento.estado || 'Proceso'}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-gray-400 font-medium">
+              <p className="text-normal text-tinta-secundaria">
                 {documento.rznSoc || 'Sin Razón Social'}
               </p>
             </div>
           </div>
           <button 
             onClick={onClose} 
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-gray-200 p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-gray-800 transition"
+            className="text-tinta-atenuada hover:text-tinta-principal p-1.5 rounded-lg hover:bg-slate-200/60 dark:hover:bg-gray-800 transition"
             title="Cerrar"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-grow space-y-6 text-xs bg-slate-50/50 dark:bg-gray-900/40">
+        <div className="p-6 overflow-y-auto flex-grow space-y-6 text-normal bg-slate-50/50 dark:bg-gray-900/40">
           
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200/80 dark:border-gray-700/80 shadow-xs">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-2">
+            <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wider mb-3 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-2">
               <Building2 size={14} className="text-[#2383C2]" /> Datos Generales del Documento
             </h3>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
               <div>
-                <span className="text-slate-400 dark:text-gray-500 block">Folio Ref.</span>
-                <span className="font-semibold text-slate-700 dark:text-gray-200">{documento.folioRef || '-'}</span>
+                <span className="text-tinta-atenuada block">Folio Ref.</span>
+                <span className="text-etiqueta text-tinta-principal">{documento.folioRef || '-'}</span>
               </div>
               <div>
-                <span className="text-slate-400 dark:text-gray-500 block">Fch. Emisión</span>
-                <span className="font-semibold text-slate-700 dark:text-gray-200">{formatearFechaSolo(documento.fchEmis)}</span>
+                <span className="text-tinta-atenuada block">Fch. Emisión</span>
+                <span className="text-etiqueta text-tinta-principal">{formatearFechaSolo(documento.fchEmis)}</span>
               </div>
               <div>
-                <span className="text-slate-400 dark:text-gray-500 block">Periodo (Mes / Año)</span>
-                <span className="font-semibold text-slate-700 dark:text-gray-200 capitalize">{documento.mes || '-'}/{documento.anio || '-'}</span>
+                <span className="text-tinta-atenuada block">Periodo (Mes / Año)</span>
+                <span className="text-etiqueta text-tinta-principal capitalize">{documento.mes || '-'}/{documento.anio || '-'}</span>
               </div>
               <div>
-                <span className="text-slate-400 dark:text-gray-500 block">Imputado (Mes / Año)</span>
-                <span className="font-semibold text-slate-700 dark:text-gray-200 capitalize">{documento.mesImputado || '-'}/{documento.anioImputado || '-'}</span>
+                <span className="text-tinta-atenuada block">Imputado (Mes / Año)</span>
+                <span className="text-etiqueta text-tinta-principal capitalize">{documento.mesImputado || '-'}/{documento.anioImputado || '-'}</span>
               </div>
               <div>
-                <span className="text-slate-400 dark:text-gray-500 block">Total Neto</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">${Number(documento.total || 0).toLocaleString('es-CL')}</span>
+                <span className="text-tinta-atenuada block">Total Neto</span>
+                <span className="text-etiqueta text-emerald-600 dark:text-emerald-400">${Number(documento.total || 0).toLocaleString('es-CL')}</span>
               </div>
 
               <div>
-                <span className="text-slate-400 dark:text-gray-500 block">N° Orden</span>
-                <span className="font-semibold text-slate-700 dark:text-gray-200">{documento.numeroOrden || '-'}</span>
+                <span className="text-tinta-atenuada block">N° Orden</span>
+                <span className="text-etiqueta text-tinta-principal">{documento.numeroOrden || '-'}</span>
               </div>
               <div>
-                <span className="text-slate-400 dark:text-gray-500 block">N° Acta / Fecha</span>
-                <span className="font-semibold text-slate-700 dark:text-gray-200">{documento.numeroActa || '-'} ({formatearFechaSolo(documento.fechaActa)})</span>
+                <span className="text-tinta-atenuada block">N° Acta / Fecha</span>
+                <span className="text-etiqueta text-tinta-principal">{documento.numeroActa || '-'} ({formatearFechaSolo(documento.fechaActa)})</span>
               </div>
               <div>
-                <span className="text-slate-400 dark:text-gray-500 block">N° Salida / Fecha</span>
-                <span className="font-semibold text-slate-700 dark:text-gray-200">{documento.numeroSalida || '-'} ({formatearFechaSolo(documento.fechaSalida)})</span>
+                <span className="text-tinta-atenuada block">N° Salida / Fecha</span>
+                <span className="text-etiqueta text-tinta-principal">{documento.numeroSalida || '-'} ({formatearFechaSolo(documento.fechaSalida)})</span>
               </div>
             </div>
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200/80 dark:border-gray-700/80 shadow-xs">
-            <h3 className="text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-3 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-2">
+            <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wider mb-3 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-2">
               <Package size={14} className="text-[#2383C2]" /> Ítems Vinculados y Detalle
             </h3>
 
             <div className="border border-slate-200 dark:border-gray-700 rounded-lg overflow-x-auto">
-              <table className="w-full text-left text-xs whitespace-nowrap">
-                <thead className="bg-slate-100 dark:bg-gray-900 text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px]">
+              <table className="w-full text-left text-normal whitespace-nowrap">
+                <thead className="bg-slate-100 dark:bg-gray-900 text-tinta-secundaria uppercase text-pequeno">
                   <tr>
                     {verColumna('linea') && (
                       <th className="p-2 text-center w-12">Lin.</th>
@@ -192,29 +192,29 @@ const VizualizadorDetallesImputados = ({ documento, onClose }) => {
                   {documento.detalles?.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition">
                       {verColumna('linea') && (
-                        <td className="p-2 text-center text-slate-500">{item.nroLin || idx + 1}</td>
+                        <td className="p-2 text-center text-tinta-secundaria">{item.nroLin || idx + 1}</td>
                       )}
                       {verColumna('codigoDoc') && (
-                        <td className="p-2 text-slate-600 dark:text-gray-300">{item.codigo || '-'}</td>
+                        <td className="p-2 text-tinta-secundaria">{item.codigo || '-'}</td>
                       )}
                       {verColumna('codigoMaestro') && (
-                        <td className="p-2 font-semibold text-[#2383C2]">{item.codigoMaestro || '-'}</td>
+                        <td className="p-2 text-etiqueta text-[#2383C2]">{item.codigoMaestro || '-'}</td>
                       )}
                       {verColumna('nombreItem') && (
-                        <td className="p-2 text-slate-700 dark:text-gray-200" title={item.nombre}>{item.nombre || '-'}</td>
+                        <td className="p-2 text-tinta-principal" title={item.nombre}>{item.nombre || '-'}</td>
                       )}
                       {verColumna('descripcionMaestro') && (
-                        <td className="p-2 text-slate-600 dark:text-gray-400" title={item.descripcionMaestro}>{item.descripcionMaestro || '-'}</td>
+                        <td className="p-2 text-tinta-secundaria" title={item.descripcionMaestro}>{item.descripcionMaestro || '-'}</td>
                       )}
                       {verColumna('cantidad') && (
-                        <td className="p-2 text-right font-medium text-slate-700 dark:text-gray-200">{item.cantidad || '0'}</td>
+                        <td className="p-2 text-right text-tinta-principal">{item.cantidad || '0'}</td>
                       )}
                       {verColumna('monto') && (
-                        <td className="p-2 text-right font-semibold text-slate-800 dark:text-gray-100">${Number(item.monto || 0).toLocaleString('es-CL')}</td>
+                        <td className="p-2 text-right text-etiqueta text-tinta-principal">${Number(item.monto || 0).toLocaleString('es-CL')}</td>
                       )}
                       {verColumna('estado') && (
                         <td className="p-2 text-center">
-                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <span className="inline-block px-1.5 py-0.5 rounded text-pequeno bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                             {item.estadoItem || 'Vinculado'}
                           </span>
                         </td>
@@ -229,25 +229,25 @@ const VizualizadorDetallesImputados = ({ documento, onClose }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200/80 dark:border-gray-700/80 shadow-xs">
-              <h4 className="text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-2 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-1.5">
+              <h4 className="text-etiqueta text-tinta-principal uppercase tracking-wider mb-2 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-1.5">
                 <User size={14} className="text-[#2383C2]" /> Información de Registro
               </h4>
-              <div className="space-y-1 text-slate-600 dark:text-gray-300 pt-1">
-                <p><span className="font-semibold text-slate-700 dark:text-gray-200">Usuario:</span> {documento.registeredPor || '-'}</p>
-                <p><span className="font-semibold text-slate-700 dark:text-gray-200">Fecha Iniciada:</span> {formatearFechaConHora(fechaIniciadaValor)}</p>
-                <p><span className="font-semibold text-slate-700 dark:text-gray-200">Fecha Finalizada:</span> {formatearFechaConHora(documento.fechaImputacionFinal)}</p>
+              <div className="space-y-1 text-tinta-secundaria pt-1">
+                <p><span className="text-etiqueta text-tinta-principal">Usuario:</span> {documento.registeredPor || '-'}</p>
+                <p><span className="text-etiqueta text-tinta-principal">Fecha Iniciada:</span> {formatearFechaConHora(fechaIniciadaValor)}</p>
+                <p><span className="text-etiqueta text-tinta-principal">Fecha Finalizada:</span> {formatearFechaConHora(documento.fechaImputacionFinal)}</p>
               </div>
             </div>
 
             {documento.ordenCompraVinculada && (
               <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-200/80 dark:border-gray-700/80 shadow-xs">
-                <h4 className="text-xs font-bold text-slate-700 dark:text-gray-300 uppercase tracking-wider mb-2 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-1.5">
+                <h4 className="text-etiqueta text-tinta-principal uppercase tracking-wider mb-2 flex items-center gap-1.5 border-b border-slate-200 dark:border-gray-700 pb-1.5">
                   <Briefcase size={14} className="text-[#2383C2]" /> Orden de Compra Vinculada
                 </h4>
-                <div className="space-y-1 text-slate-600 dark:text-gray-300 pt-1">
-                  <p><span className="font-semibold text-slate-700 dark:text-gray-200">Folio OC:</span> {documento.ordenCompraVinculada.folio || '-'}</p>
-                  <p><span className="font-semibold text-slate-700 dark:text-gray-200">Fecha Vinculación:</span> {documento.ordenCompraVinculada.fechaVinculacion || '-'}</p>
-                  <p><span className="font-semibold text-slate-700 dark:text-gray-200">Origen (Mes/Año):</span> {documento.ordenCompraVinculada.origenMes} / {documento.ordenCompraVinculada.origenAnio}</p>
+                <div className="space-y-1 text-tinta-secundaria pt-1">
+                  <p><span className="text-etiqueta text-tinta-principal">Folio OC:</span> {documento.ordenCompraVinculada.folio || '-'}</p>
+                  <p><span className="text-etiqueta text-tinta-principal">Fecha Vinculación:</span> {documento.ordenCompraVinculada.fechaVinculacion || '-'}</p>
+                  <p><span className="text-etiqueta text-tinta-principal">Origen (Mes/Año):</span> {documento.ordenCompraVinculada.origenMes} / {documento.ordenCompraVinculada.origenAnio}</p>
                 </div>
               </div>
             )}

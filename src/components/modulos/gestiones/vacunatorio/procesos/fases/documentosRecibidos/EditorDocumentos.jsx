@@ -221,19 +221,19 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-[2px] p-3 text-[11px]">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-[2px] p-3 text-secundario">
       <div className="bg-white dark:bg-gray-800 w-full max-w-6xl rounded-lg shadow-xl overflow-hidden flex flex-col h-[92vh] border border-gray-200 dark:border-gray-700">
 
         <div className="flex justify-between items-center px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/80 shrink-0">
           <div className="flex items-center gap-2">
             <Settings className="text-[#2383C2]" size={16} />
-            <h3 className="text-[12px] font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wide">
-              Edición Integral de Documento
+            <h3 className="text-subtitulo text-tinta-principal">
+              Edición integral de documento
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-tinta-atenuada hover:text-tinta-principal transition-colors"
           >
             <X size={15} />
           </button>
@@ -244,31 +244,31 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
           <div className="p-3 bg-gray-50/50 dark:bg-gray-900/40 border-b border-gray-200 dark:border-gray-700 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2.5 shrink-0">
 
             <div className="flex flex-col gap-0.5">
-              <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase flex items-center gap-1">
+              <label className="text-pequeno text-tinta-secundaria uppercase flex items-center gap-1">
                 <Hash size={10} className="text-[#2383C2]" /> Folio
               </label>
               <input
                 type="text"
                 value={folio}
                 onChange={(e) => setFolio(e.target.value)}
-                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 font-bold text-gray-800 dark:text-gray-100 outline-none focus:border-[#2383C2]"
+                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-etiqueta text-tinta-principal outline-none focus:border-[#2383C2]"
               />
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase flex items-center gap-1">
+              <label className="text-pequeno text-tinta-secundaria uppercase flex items-center gap-1">
                 <Calendar size={10} className="text-[#2383C2]" /> Fch. Emisión
               </label>
               <input
                 type="date"
                 value={fchEmis}
                 onChange={(e) => setFchEmis(e.target.value)}
-                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none focus:border-[#2383C2]"
+                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2]"
               />
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase flex items-center gap-1">
+              <label className="text-pequeno text-tinta-secundaria uppercase flex items-center gap-1">
                 <Tag size={10} className="text-[#2383C2]" /> Ref. / OC
               </label>
               <input
@@ -278,28 +278,28 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
                   setFolioRef(e.target.value);
                   setOrdenCompra(e.target.value);
                 }}
-                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none focus:border-[#2383C2]"
+                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2]"
               />
             </div>
 
             <div className="flex flex-col gap-0.5 col-span-2 md:col-span-1">
-              <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase flex items-center gap-1">
+              <label className="text-pequeno text-tinta-secundaria uppercase flex items-center gap-1">
                 <Building2 size={10} className="text-[#2383C2]" /> Razón Social
               </label>
               <input
                 type="text"
                 value={rznSoc}
                 onChange={(e) => setRznSoc(e.target.value)}
-                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none focus:border-[#2383C2] truncate"
+                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] truncate"
               />
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase">Estado</label>
+              <label className="text-pequeno text-tinta-secundaria uppercase">Estado</label>
               <select
                 value={estado}
                 onChange={(e) => setEstado(e.target.value)}
-                className="h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none focus:border-[#2383C2]"
+                className="h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2]"
               >
                 <option value="">-- Estado --</option>
                 <option value="Iniciar Ingreso">Iniciar Ingreso</option>
@@ -316,43 +316,43 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase">N° Acta</label>
+              <label className="text-pequeno text-tinta-secundaria uppercase">N° Acta</label>
               <input
                 type="text"
                 value={acta}
                 onChange={(e) => setActa(e.target.value)}
                 placeholder="Acta"
-                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none focus:border-[#2383C2]"
+                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2]"
               />
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase">Salida</label>
+              <label className="text-pequeno text-tinta-secundaria uppercase">Salida</label>
               <input
                 type="text"
                 value={salida}
                 onChange={(e) => setSalida(e.target.value)}
                 placeholder="Salida"
-                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none focus:border-[#2383C2]"
+                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2]"
               />
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase">Mes Imputado</label>
+              <label className="text-pequeno text-tinta-secundaria uppercase">Mes Imputado</label>
               <input
                 type="text"
                 value={mesImputado}
                 onChange={(e) => setMesImputado(e.target.value)}
                 placeholder="Mes"
-                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 outline-none focus:border-[#2383C2] capitalize"
+                className="h-7 px-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:border-[#2383C2] capitalize"
               />
             </div>
 
             <div className="flex flex-col gap-0.5">
-              <label className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase flex items-center gap-1">
+              <label className="text-pequeno text-tinta-secundaria uppercase flex items-center gap-1">
                 <DollarSign size={10} className="text-[#2383C2]" /> Total Neto Calculado
               </label>
-              <div className="h-7 px-2 border border-gray-200 dark:border-gray-700 rounded bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 font-bold flex items-center justify-end">
+              <div className="h-7 px-2 border border-gray-200 dark:border-gray-700 rounded bg-gray-100 dark:bg-gray-800 text-tinta-principal text-etiqueta flex items-center justify-end">
                 ${totalCalculado.toLocaleString('es-CL')}
               </div>
             </div>
@@ -360,22 +360,22 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
           </div>
 
           <div className="px-4 py-1.5 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0">
-            <span className="text-[10px] font-bold uppercase text-gray-600 dark:text-gray-300">
+            <span className="text-pequeno uppercase text-tinta-secundaria">
               Detalle de Ítems ({detalles.length})
             </span>
             <button
               type="button"
               onClick={handleAddRow}
-              className="h-6 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-bold transition flex items-center gap-1 shadow-xs"
+              className="h-6 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-pequeno transition flex items-center gap-1 shadow-xs"
             >
               <Plus size={12} /> Añadir Ítem
             </button>
           </div>
 
           <div className="flex-grow overflow-y-auto">
-            <table className="w-full text-left border-collapse text-[11px]">
+            <table className="w-full text-left border-collapse text-secundario">
               <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-20 shadow-xs">
-                <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+                <tr className="text-tinta-secundaria uppercase text-pequeno">
                   {verColumna('linea') && (
                     <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 w-10 text-center">#</th>
                   )}
@@ -406,7 +406,7 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
                 {detalles.map((item, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors">
                     {verColumna('linea') && (
-                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-400 font-bold text-center">
+                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-atenuada text-etiqueta text-center">
                         {idx + 1}
                       </td>
                     )}
@@ -416,7 +416,7 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
                           type="text"
                           value={item.codigo}
                           onChange={(e) => handleItemChange(idx, 'codigo', e.target.value)}
-                          className="w-full h-6 px-1 border border-transparent hover:border-gray-300 focus:border-[#2383C2] rounded bg-transparent text-gray-800 dark:text-gray-100 font-num outline-none"
+                          className="w-full h-6 px-1 border border-transparent hover:border-gray-300 focus:border-[#2383C2] rounded bg-transparent text-tinta-principal text-numero-tabla outline-none"
                           placeholder="Sin cód."
                         />
                       </td>
@@ -427,7 +427,7 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
                           type="text"
                           value={item.nombre}
                           onChange={(e) => handleItemChange(idx, 'nombre', e.target.value)}
-                          className="w-full h-6 px-1 border border-transparent hover:border-gray-300 focus:border-[#2383C2] rounded bg-transparent text-gray-800 dark:text-gray-100 font-medium outline-none"
+                          className="w-full h-6 px-1 border border-transparent hover:border-gray-300 focus:border-[#2383C2] rounded bg-transparent text-tinta-principal outline-none"
                           placeholder="Descripción del producto o servicio"
                         />
                       </td>
@@ -439,7 +439,7 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
                           min="0"
                           value={item.cantidad}
                           onChange={(e) => handleItemChange(idx, 'cantidad', e.target.value)}
-                          className="w-full h-6 px-1 border border-transparent hover:border-gray-300 focus:border-[#2383C2] rounded bg-transparent text-gray-800 dark:text-gray-100 text-center font-medium outline-none"
+                          className="w-full h-6 px-1 border border-transparent hover:border-gray-300 focus:border-[#2383C2] rounded bg-transparent text-tinta-principal text-center outline-none"
                         />
                       </td>
                     )}
@@ -449,7 +449,7 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
                           type="text"
                           value={item.unidad}
                           onChange={(e) => handleItemChange(idx, 'unidad', e.target.value)}
-                          className="w-full h-6 px-1 border border-transparent hover:border-gray-300 focus:border-[#2383C2] rounded bg-transparent text-gray-800 dark:text-gray-100 text-center uppercase outline-none text-[10px]"
+                          className="w-full h-6 px-1 border border-transparent hover:border-gray-300 focus:border-[#2383C2] rounded bg-transparent text-tinta-principal text-center uppercase outline-none text-pequeno"
                         />
                       </td>
                     )}
@@ -460,12 +460,12 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
                           min="0"
                           value={item.precio}
                           onChange={(e) => handleItemChange(idx, 'precio', e.target.value)}
-                          className="w-full h-6 px-1 border border-transparent hover:border-gray-300 focus:border-[#2383C2] rounded bg-transparent text-gray-800 dark:text-gray-100 text-right outline-none"
+                          className="w-full h-6 px-1 border border-transparent hover:border-gray-300 focus:border-[#2383C2] rounded bg-transparent text-tinta-principal text-right outline-none"
                         />
                       </td>
                     )}
                     {verColumna('totalLinea') && (
-                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700 text-right font-bold text-gray-800 dark:text-gray-100">
+                      <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700 text-right text-etiqueta text-tinta-principal">
                         ${(Number(item.monto) || 0).toLocaleString('es-CL')}
                       </td>
                     )}
@@ -474,7 +474,7 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
                         <button
                           type="button"
                           onClick={() => handleRemoveRow(idx)}
-                          className="text-gray-400 hover:text-red-500 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          className="text-tinta-atenuada hover:text-red-500 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                           title="Eliminar fila"
                         >
                           <Trash2 size={13} />
@@ -488,20 +488,20 @@ const EditorDocumentos = ({ documento, filtroAnio, filtroMes, onClose }) => {
           </div>
 
           <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex justify-between items-center shrink-0">
-            <p className="text-[9px] text-gray-400 italic">Los cambios modifican directamente la información guardada en la base de datos.</p>
+            <p className="text-pequeno text-tinta-atenuada italic">Los cambios modifican directamente la información guardada en la base de datos.</p>
 
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="h-7 px-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded text-[10px] font-bold transition"
+                className="h-7 px-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-tinta-principal rounded text-pequeno transition"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="h-7 px-4 bg-[#2383C2] hover:bg-[#1c6fa6] text-white rounded text-[10px] font-bold transition shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+                className="h-7 px-4 bg-[#2383C2] hover:bg-[#1c6fa6] text-white rounded text-pequeno transition shadow-sm flex items-center gap-1.5 disabled:opacity-50"
               >
                 <Save size={12} />
                 {loading ? 'Guardando...' : 'Guardar Todo'}

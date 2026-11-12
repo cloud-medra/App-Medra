@@ -219,7 +219,7 @@ const IniciarProceso = () => {
       <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText size={16} className="text-[#2383C2]" />
-          <span className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+          <span className="text-normal text-tinta-principal tracking-wide uppercase">
             Iniciar Proceso de Documentos (Selección por Año)
           </span>
         </div>
@@ -231,7 +231,7 @@ const IniciarProceso = () => {
             <select
               value={filtroAnio}
               onChange={(e) => setFiltroAnio(e.target.value)}
-              className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2]"
+              className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none focus:border-[#2383C2]"
             >
               <option value="">Seleccionar Año</option>
               {aniosDisponibles.map((a, idx) => (
@@ -246,7 +246,7 @@ const IniciarProceso = () => {
               <input
                 value={busqueda}
                 onChange={e => setBusqueda(e.target.value)}
-                className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:border-[#2383C2]"
+                className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
                 placeholder="Buscar por Folio, Ref o Razón Social..."
               />
             </div>
@@ -257,10 +257,10 @@ const IniciarProceso = () => {
         <button
           onClick={handleAbrirModalIniciar}
           disabled={seleccionadas.length === 0}
-          className={`h-6 px-2.5 rounded text-[11px] font-medium flex items-center gap-1 transition-colors ${
+          className={`h-6 px-2.5 rounded text-secundario flex items-center gap-1 transition-colors ${
             seleccionadas.length > 0
               ? 'bg-[#2383C2] text-white hover:bg-blue-600 shadow-xs cursor-pointer'
-              : 'bg-slate-200 dark:bg-gray-700 text-slate-400 dark:text-gray-500 cursor-not-allowed'
+              : 'bg-slate-200 dark:bg-gray-700 text-tinta-atenuada cursor-not-allowed'
           }`}
         >
           <PlayCircle size={13} />
@@ -272,17 +272,17 @@ const IniciarProceso = () => {
       {hasPermission(PATH_VISTA, "tabla_documentos") && (
         <div className="flex-grow overflow-auto">
           {loading ? (
-            <div className="w-full h-40 flex items-center justify-center text-xs text-slate-500 dark:text-gray-400">
+            <div className="w-full h-40 flex items-center justify-center text-normal text-tinta-secundaria">
               Cargando documentos pendientes del año {filtroAnio}...
             </div>
           ) : (
-            <table className="w-full text-left text-[11px] border-collapse table-fixed min-w-[800px]">
+            <table className="w-full text-left text-secundario border-collapse table-fixed min-w-[800px]">
               <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-                <tr className="text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider">
+                <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider">
                   <th className="px-2 py-1.5 border-b border-r border-slate-200 dark:border-gray-700 w-[4%] text-center">
                     <button
                       onClick={toggleSeleccionarTodas}
-                      className="text-slate-500 dark:text-gray-400 hover:text-[#2383C2] focus:outline-none"
+                      className="text-tinta-secundaria hover:text-[#2383C2] focus:outline-none"
                       title="Seleccionar todas"
                       type="button"
                     >
@@ -316,7 +316,7 @@ const IniciarProceso = () => {
               <tbody className="divide-y divide-slate-200/60 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
                 {documentosFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={columnasTabla.length} className="px-3 py-6 text-center text-slate-400 dark:text-gray-500 text-xs">
+                    <td colSpan={columnasTabla.length} className="px-3 py-6 text-center text-tinta-atenuada text-normal">
                       {filtroAnio
                         ? "No hay documentos pendientes en estado 'Iniciar Ingreso' para este año."
                         : "Seleccione un año para visualizar los documentos pendientes."}
@@ -345,27 +345,27 @@ const IniciarProceso = () => {
                           />
                         </td>
                         {verColumna('folio') && (
-                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 font-normal text-slate-800 dark:text-gray-100 truncate">
+                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal truncate">
                             {docu.folio}
                           </td>
                         )}
                         {verColumna('emision') && (
-                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-600 dark:text-gray-400 whitespace-nowrap">
+                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap">
                             {formatearFechaEmision(docu.fchEmis)}
                           </td>
                         )}
                         {verColumna('ref') && (
-                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-600 dark:text-gray-400 truncate">
+                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-secundaria truncate">
                             {docu.folioRef}
                           </td>
                         )}
                         {verColumna('razonSocial') && (
-                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-700 dark:text-gray-300 truncate" title={docu.rznSoc}>
+                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal truncate" title={docu.rznSoc}>
                             {docu.rznSoc}
                           </td>
                         )}
                         {verColumna('total') && (
-                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-800 dark:text-gray-100 font-normal text-right whitespace-nowrap">
+                          <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal text-right whitespace-nowrap">
                             ${parseInt(docu.total || 0).toLocaleString('es-CL')}
                           </td>
                         )}
@@ -386,29 +386,29 @@ const IniciarProceso = () => {
 
       {showModalIniciar && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 max-w-md w-full p-4 space-y-4 text-slate-800 dark:text-gray-100">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 max-w-md w-full p-4 space-y-4 text-tinta-principal">
             <div className="flex items-start justify-between border-b border-slate-100 dark:border-gray-700 pb-3">
               <div className="flex items-center gap-2">
                 <div className="p-2 rounded-lg bg-[#2383C2]/10 text-[#2383C2]">
                   <Play size={18} className="fill-current" />
                 </div>
                 <div>
-                  <h3 className="text-[13px] font-bold uppercase tracking-wide">Iniciar Proceso</h3>
-                  <p className="text-[10px] text-slate-500 dark:text-gray-400">Confirmación de procesamiento de documentos</p>
+                  <h3 className="text-subtitulo">Iniciar proceso</h3>
+                  <p className="text-pequeno text-tinta-secundaria">Confirmación de procesamiento de documentos</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowModalIniciar(false)}
                 disabled={procesando}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-200 p-1"
+                className="text-tinta-atenuada hover:text-tinta-secundaria p-1"
               >
                 <X size={16} />
               </button>
             </div>
 
-            <div className="space-y-3 text-[11px]">
-              <p className="text-slate-600 dark:text-gray-300 leading-relaxed">
-                ¿Desea iniciar el proceso para <span className="font-bold text-[#2383C2]">{seleccionadas.length} documento(s)</span> seleccionado(s)?
+            <div className="space-y-3 text-secundario">
+              <p className="text-tinta-secundaria">
+                ¿Desea iniciar el proceso para <span className="text-etiqueta text-[#2383C2]">{seleccionadas.length} documento(s)</span> seleccionado(s)?
               </p>
 
             </div>
@@ -417,14 +417,14 @@ const IniciarProceso = () => {
               <button
                 onClick={() => setShowModalIniciar(false)}
                 disabled={procesando}
-                className="px-3 py-1.5 rounded bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-gray-300 text-[11px] font-medium hover:bg-slate-300 dark:hover:bg-gray-600 transition"
+                className="px-3 py-1.5 rounded bg-slate-200 dark:bg-gray-700 text-tinta-principal text-secundario hover:bg-slate-300 dark:hover:bg-gray-600 transition"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirmarInicioProceso}
                 disabled={procesando}
-                className="px-3 py-1.5 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[11px] font-bold flex items-center gap-1.5 transition disabled:opacity-50"
+                className="px-3 py-1.5 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta flex items-center gap-1.5 transition disabled:opacity-50"
               >
                 {procesando ? (
                   <>

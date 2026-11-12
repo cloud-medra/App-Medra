@@ -183,7 +183,7 @@ const OrdenVacunatorio = () => {
                 <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-900/30 dark:bg-black/50 backdrop-blur-[2px]">
                     <div className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-xl flex flex-col items-center gap-2 border border-slate-100 dark:border-gray-700">
                         <Spinner size="md" color="#2383C2" />
-                        <h3 className="text-[#2383C2] font-normal text-[12px]">Procesando datos...</h3>
+                        <h3 className="text-[#2383C2] text-normal">Procesando datos...</h3>
                     </div>
                 </div>
             )}
@@ -193,14 +193,14 @@ const OrdenVacunatorio = () => {
                     <div className="flex items-center gap-3 w-full">
                         <button 
                             onClick={() => setOrdenSeleccionada(null)} 
-                            className="p-1 rounded-md text-slate-500 hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700 transition"
+                            className="p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700 transition"
                             title="Volver al listado"
                         >
                             <ArrowLeft size={16} />
                         </button>
                         <div className="flex items-center gap-2 border-l border-slate-200 dark:border-gray-700 pl-3">
                             <Receipt size={16} className="text-[#2383C2]" />
-                            <span className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-tight">
+                            <span className="text-normal text-tinta-principal tracking-tight">
                                 DETALLE DE ORDEN
                             </span>
                         </div>
@@ -208,7 +208,7 @@ const OrdenVacunatorio = () => {
                 ) : (
                     <div className="flex items-center gap-2">
                         <ClipboardList size={16} className="text-[#2383C2]" />
-                        <span className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+                        <span className="text-normal text-tinta-principal tracking-wide uppercase">
                             Órdenes de Vacunatorio
                         </span>
                     </div>
@@ -217,7 +217,7 @@ const OrdenVacunatorio = () => {
                 {!ordenSeleccionada && hasPermission(PATH_VISTA, "cabecera_acciones", "btn_importar") && (
                     <button 
                         onClick={() => setShowModal(true)} 
-                        className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-[10px] font-normal flex items-center gap-1.5 transition shadow-sm"
+                        className="bg-[#2383C2] hover:bg-[#1c6fa6] text-white px-2.5 py-1 rounded text-pequeno flex items-center gap-1.5 transition shadow-sm"
                     >
                         <Upload size={11} /> Importar Excel
                     </button>
@@ -233,38 +233,38 @@ const OrdenVacunatorio = () => {
                                 <Hash size={13} />
                             </div>
                             <div>
-                                <span className="block text-[9px] uppercase font-normal text-slate-400 dark:text-gray-400 leading-none">N° Orden</span>
-                                <span className="text-[11px] font-normal text-slate-800 dark:text-gray-100">{ordenSeleccionada.id}</span>
+                                <span className="block text-pequeno uppercase text-tinta-atenuada">N° Orden</span>
+                                <span className="text-secundario text-tinta-principal">{ordenSeleccionada.id}</span>
                             </div>
                         </div>
 
                         <div className="bg-slate-50 dark:bg-gray-900/60 p-1.5 rounded border border-slate-200/80 dark:border-gray-700/50 flex items-center gap-2">
-                            <div className="p-1 bg-slate-200/60 dark:bg-gray-700 text-slate-600 dark:text-gray-300 rounded">
+                            <div className="p-1 bg-slate-200/60 dark:bg-gray-700 text-tinta-secundaria rounded">
                                 <Calendar size={13} />
                             </div>
                             <div>
-                                <span className="block text-[9px] uppercase font-normal text-slate-400 dark:text-gray-400 leading-none">Fecha Orden</span>
-                                <span className="text-[11px] font-normal text-slate-700 dark:text-gray-200">{ordenSeleccionada["F.Orden"]}</span>
+                                <span className="block text-pequeno uppercase text-tinta-atenuada">Fecha Orden</span>
+                                <span className="text-secundario text-tinta-principal">{ordenSeleccionada["F.Orden"]}</span>
                             </div>
                         </div>
 
                         <div className="bg-slate-50 dark:bg-gray-900/60 p-1.5 rounded border border-slate-200/80 dark:border-gray-700/50 flex items-center gap-2">
-                            <div className="p-1 bg-slate-200/60 dark:bg-gray-700 text-slate-600 dark:text-gray-300 rounded">
+                            <div className="p-1 bg-slate-200/60 dark:bg-gray-700 text-tinta-secundaria rounded">
                                 <Building2 size={13} />
                             </div>
                             <div>
-                                <span className="block text-[9px] uppercase font-normal text-slate-400 dark:text-gray-400 leading-none">RUT Proveedor</span>
-                                <span className="text-[11px] font-normal text-slate-700 dark:text-gray-200">{ordenSeleccionada["Rut proveedor"]}</span>
+                                <span className="block text-pequeno uppercase text-tinta-atenuada">RUT Proveedor</span>
+                                <span className="text-secundario text-tinta-principal">{ordenSeleccionada["Rut proveedor"]}</span>
                             </div>
                         </div>
 
                         <div className="bg-slate-50 dark:bg-gray-900/60 p-1.5 rounded border border-slate-200/80 dark:border-gray-700/50 flex items-center gap-2">
-                            <div className="p-1 bg-slate-200/60 dark:bg-gray-700 text-slate-600 dark:text-gray-300 rounded">
+                            <div className="p-1 bg-slate-200/60 dark:bg-gray-700 text-tinta-secundaria rounded">
                                 <PackageCheck size={13} />
                             </div>
                             <div className="overflow-hidden">
-                                <span className="block text-[9px] uppercase font-normal text-slate-400 dark:text-gray-400 leading-none">Proveedor</span>
-                                <span className="text-[11px] font-normal text-slate-800 dark:text-gray-100 truncate block" title={ordenSeleccionada["Proveedor"]}>
+                                <span className="block text-pequeno uppercase text-tinta-atenuada">Proveedor</span>
+                                <span className="text-secundario text-tinta-principal truncate block" title={ordenSeleccionada["Proveedor"]}>
                                     {ordenSeleccionada["Proveedor"]}
                                 </span>
                             </div>
@@ -277,14 +277,14 @@ const OrdenVacunatorio = () => {
             {!ordenSeleccionada && (
                 <div className="bg-slate-100/70 dark:bg-gray-800/40 p-1.5 flex flex-wrap gap-1.5 items-center border-b border-slate-200 dark:border-gray-700">
                     {hasPermission(PATH_VISTA, "listado", "select_anio") && (
-                    <select value={filtroAnio} onChange={(e) => setFiltroAnio(e.target.value)} className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2]">
+                    <select value={filtroAnio} onChange={(e) => setFiltroAnio(e.target.value)} className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none focus:border-[#2383C2]">
                         <option value="">Año</option>
                         {aniosDisponibles.map(a => <option key={a} value={a}>{a}</option>)}
                     </select>
                     )}
 
                     {hasPermission(PATH_VISTA, "listado", "select_mes") && (
-                    <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none capitalize focus:border-[#2383C2]">
+                    <select value={filtroMes} onChange={(e) => setFiltroMes(e.target.value)} className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none capitalize focus:border-[#2383C2]">
                         <option value="">Mes</option>
                         {mesesDisponibles.map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
@@ -293,7 +293,7 @@ const OrdenVacunatorio = () => {
                     {hasPermission(PATH_VISTA, "listado", "input_buscar") && (
                     <div className="relative flex-grow max-w-xs">
                         <Search className="absolute left-2 top-1.5 text-slate-400 dark:text-gray-500" size={12} />
-                        <input value={busqueda} onChange={e => setBusqueda(e.target.value)} className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:border-[#2383C2]" placeholder="Buscar por N°, RUT o Proveedor..." />
+                        <input value={busqueda} onChange={e => setBusqueda(e.target.value)} className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]" placeholder="Buscar por N°, RUT o Proveedor..." />
                     </div>
                     )}
                 </div>
@@ -325,9 +325,9 @@ const OrdenVacunatorio = () => {
                                 <div className="p-1.5 bg-[#2383C2]/10 rounded-lg">
                                     <Upload size={16} className="text-[#2383C2]" />
                                 </div>
-                                <h3 className="font-normal text-xs text-slate-800 dark:text-gray-100">Importar Orden Excel</h3>
+                                <h3 className="text-subtitulo text-tinta-principal">Importar orden Excel</h3>
                             </div>
-                            <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 transition p-1">
+                            <button onClick={() => setShowModal(false)} className="text-tinta-atenuada hover:text-tinta-secundaria transition p-1">
                                 <X size={16} />
                             </button>
                         </div>
@@ -338,13 +338,13 @@ const OrdenVacunatorio = () => {
                                     <FileSpreadsheet size={24} className="text-slate-400 dark:text-gray-500" />
                                 </div>
                                 <div>
-                                    <p className="text-xs font-normal text-slate-700 dark:text-gray-200">Arrastra tu archivo Excel aquí</p>
-                                    <p className="text-[10px] text-slate-400 dark:text-gray-400 mt-0.5">o haz clic para seleccionar desde tu carpeta</p>
+                                    <p className="text-normal text-tinta-principal">Arrastra tu archivo Excel aquí</p>
+                                    <p className="text-pequeno text-tinta-atenuada mt-0.5">o haz clic para seleccionar desde tu carpeta</p>
                                 </div>
                             </div>
                         </div>
                         <div className="px-4 py-3 bg-slate-50 dark:bg-gray-900/40 border-t border-slate-100 dark:border-gray-700 flex justify-end">
-                            <button onClick={() => setShowModal(false)} className="text-[11px] font-normal text-slate-500 dark:text-gray-400 hover:text-slate-800 dark:hover:text-gray-200 px-3 py-1 rounded-lg transition">
+                            <button onClick={() => setShowModal(false)} className="text-secundario text-tinta-secundaria hover:text-tinta-principal px-3 py-1 rounded-lg transition">
                                 Cancelar
                             </button>
                         </div>

@@ -36,12 +36,12 @@ const TablaXmlDocumentos = ({ pathVista, documentos, mensajeVacio, puedeVer, pue
 
   return (
     <table
-      className="text-left text-[11px] border-collapse"
+      className="text-left text-secundario border-collapse"
       style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: '100%' }}
     >
       <ColgroupRedimensionable columnas={columnasVisibles} anchos={anchos} relleno />
       <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-        <tr className="text-slate-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+        <tr className="text-tinta-secundaria uppercase text-pequeno">
           {columnasVisibles.map(col => (
             <ThRedimensionable key={col.key} col={col} anchos={anchos} onResize={handleResize} className={`${TH} ${col.align || ''}`}>{col.label}</ThRedimensionable>
           ))}
@@ -51,7 +51,7 @@ const TablaXmlDocumentos = ({ pathVista, documentos, mensajeVacio, puedeVer, pue
       <tbody className="divide-y divide-slate-200/60 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
         {documentos.length === 0 ? (
           <tr>
-            <td colSpan={columnasVisibles.length + 1} className="text-center py-6 text-slate-400 dark:text-gray-500">
+            <td colSpan={columnasVisibles.length + 1} className="text-center py-6 text-tinta-atenuada">
               {mensajeVacio}
             </td>
           </tr>
@@ -61,32 +61,32 @@ const TablaXmlDocumentos = ({ pathVista, documentos, mensajeVacio, puedeVer, pue
             className="border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors"
           >
             {ver('n') && (
-              <td className={`${TD} text-gray-500 dark:text-gray-400 font-bold text-center`}>
+              <td className={`${TD} text-tinta-secundaria text-etiqueta text-center`}>
                 {index + 1}
               </td>
             )}
             {ver('folio') && (
-              <td className={`${TD} font-medium text-slate-800 dark:text-gray-100 truncate`}>
+              <td className={`${TD} text-tinta-principal truncate`}>
                 {docItem.folio}
               </td>
             )}
             {ver('emision') && (
-              <td className={`${TD} text-slate-600 dark:text-gray-400 truncate`}>
+              <td className={`${TD} text-tinta-secundaria truncate`}>
                 {docItem.fchEmis}
               </td>
             )}
             {ver('ref') && (
-              <td className={`${TD} text-slate-600 dark:text-gray-400 truncate`}>
+              <td className={`${TD} text-tinta-secundaria truncate`}>
                 {docItem.folioRef}
               </td>
             )}
             {ver('razonSocial') && (
-              <td className={`${TD} text-slate-700 dark:text-gray-300 truncate`} title={docItem.rznSoc}>
+              <td className={`${TD} text-tinta-principal truncate`} title={docItem.rznSoc}>
                 {docItem.rznSoc}
               </td>
             )}
             {ver('total') && (
-              <td className={`${TD} text-slate-800 dark:text-gray-100 font-medium text-right truncate`}>
+              <td className={`${TD} text-tinta-principal text-right truncate`}>
                 ${parseInt(docItem.total || 0, 10).toLocaleString('es-CL')}
               </td>
             )}
@@ -102,7 +102,7 @@ const TablaXmlDocumentos = ({ pathVista, documentos, mensajeVacio, puedeVer, pue
                   {puedeVer && (
                     <button
                       onClick={() => onVer(docItem)}
-                      className="text-gray-500 hover:text-[#2383C2] dark:hover:text-[#2383C2] transition"
+                      className="text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] transition"
                       title="Ver Detalle"
                     >
                       <Eye size={13} />

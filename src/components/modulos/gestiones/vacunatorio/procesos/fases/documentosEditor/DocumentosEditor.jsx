@@ -156,7 +156,7 @@ const DocumentosEditor = () => {
       <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <FileText size={16} className="text-[#2383C2]" />
-          <span className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+          <span className="text-normal text-tinta-principal tracking-wide uppercase">
             Documentos Imputados
           </span>
         </div>
@@ -167,7 +167,7 @@ const DocumentosEditor = () => {
           <select
             value={filtroAnio}
             onChange={(e) => { setFiltroAnio(e.target.value); setFiltroMes(""); }}
-            className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none focus:border-[#2383C2]"
+            className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none focus:border-[#2383C2]"
           >
             <option value="">Año</option>
             {aniosDisponibles.map((a, idx) => <option key={`anio-${a}-${idx}`} value={a}>{a}</option>)}
@@ -178,7 +178,7 @@ const DocumentosEditor = () => {
           <select
             value={filtroMes}
             onChange={(e) => setFiltroMes(e.target.value)}
-            className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-1.5 outline-none capitalize focus:border-[#2383C2]"
+            className="h-6 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-secundario px-1.5 outline-none capitalize focus:border-[#2383C2]"
           >
             <option value="">Mes</option>
             {mesesDisponibles.map((m, idx) => <option key={`mes-${m}-${idx}`} value={m}>{m}</option>)}
@@ -191,7 +191,7 @@ const DocumentosEditor = () => {
             <input
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
-              className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 focus:border-[#2383C2]"
+              className="w-full h-6 pl-7 pr-2 border border-slate-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
               placeholder="Buscar por Folio, Ref, Orden, Acta, Razón Social..."
             />
           </div>
@@ -200,9 +200,9 @@ const DocumentosEditor = () => {
 
       {hasPermission(PATH_VISTA, "tabla_documentos") && (
         <div className="flex-grow overflow-auto">
-          <table className="w-full text-left text-[11px] border-collapse table-fixed min-w-[950px]">
+          <table className="w-full text-left text-secundario border-collapse table-fixed min-w-[950px]">
             <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-              <tr className="text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider">
+              <tr className="text-tinta-secundaria uppercase text-pequeno tracking-wider">
                 {verColumna('folio') && (
                   <th className="px-2 py-1.5 border-b border-r border-slate-200 dark:border-gray-700 w-[9%]">Folio</th>
                 )}
@@ -241,7 +241,7 @@ const DocumentosEditor = () => {
             <tbody className="divide-y divide-slate-200/60 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
               {documentosFiltrados.length === 0 ? (
                 <tr>
-                  <td colSpan={columnasTabla.length} className="py-8 text-center text-slate-400 dark:text-gray-500 text-[11px]">
+                  <td colSpan={columnasTabla.length} className="py-8 text-center text-tinta-atenuada text-secundario">
                     {!filtroAnio || !filtroMes ? "Selecciona un año y mes para cargar registros." : "No se encontraron documentos con los criterios seleccionados."}
                   </td>
                 </tr>
@@ -252,54 +252,54 @@ const DocumentosEditor = () => {
                     className="border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors"
                   >
                     {verColumna('folio') && (
-                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 font-normal text-slate-800 dark:text-gray-100 truncate">
+                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal truncate">
                         {docItem.folio || '-'}
                       </td>
                     )}
                     {verColumna('emision') && (
-                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-600 dark:text-gray-400 whitespace-nowrap">
+                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-secundaria whitespace-nowrap">
                         {formatearFechaEmision(docItem.fchEmis)}
                       </td>
                     )}
                     {verColumna('ref') && (
-                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-600 dark:text-gray-400 truncate">
+                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-secundaria truncate">
                         {docItem.folioRef || '-'}
                       </td>
                     )}
                     {verColumna('razonSocial') && (
-                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-700 dark:text-gray-300 truncate" title={docItem.rznSoc}>
+                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal truncate" title={docItem.rznSoc}>
                         {docItem.rznSoc || '-'}
                       </td>
                     )}
                     {verColumna('total') && (
-                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-slate-800 dark:text-gray-100 font-normal text-right whitespace-nowrap">
+                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-tinta-principal text-right whitespace-nowrap">
                         ${Math.round(Number(docItem.total) || 0).toLocaleString('es-CL')}
                       </td>
                     )}
                     {verColumna('estado') && (
                       <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center whitespace-nowrap">
-                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold border ${getEstadoProcesoClase(docItem.estado)}`}>
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-pequeno border ${getEstadoProcesoClase(docItem.estado)}`}>
                           {docItem.estado || "Iniciar Ingreso"}
                         </span>
                       </td>
                     )}
                     {verColumna('orden') && (
-                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center text-slate-700 dark:text-gray-300 truncate" title={docItem.numeroOrden}>
+                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center text-tinta-principal truncate" title={docItem.numeroOrden}>
                         {docItem.numeroOrden || '-'}
                       </td>
                     )}
                     {verColumna('acta') && (
-                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center text-slate-700 dark:text-gray-300 truncate" title={docItem.numeroActa || docItem.acta || docItem.numActa}>
+                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center text-tinta-principal truncate" title={docItem.numeroActa || docItem.acta || docItem.numActa}>
                         {docItem.numeroActa || '-'}
                       </td>
                     )}
                     {verColumna('salida') && (
-                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center text-slate-700 dark:text-gray-300 truncate" title={docItem.numeroSalida || docItem.salida || docItem.numSalida}>
+                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center text-tinta-principal truncate" title={docItem.numeroSalida || docItem.salida || docItem.numSalida}>
                         {docItem.numeroSalida || '-'}
                       </td>
                     )}
                     {verColumna('mesImputado') && (
-                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center text-slate-700 dark:text-gray-300 capitalize truncate">
+                      <td className="px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 text-center text-tinta-principal capitalize truncate">
                         {docItem.mesImputado || docItem.mesImputacion || '-'}
                       </td>
                     )}
@@ -309,7 +309,7 @@ const DocumentosEditor = () => {
                           {hasPermission(PATH_VISTA, "tabla_documentos", "btn_log") && (
                             <button
                               onClick={() => abrirHistorialLogs(docItem)}
-                              className="text-slate-400 hover:text-[#2383C2] transition inline-flex items-center justify-center p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
+                              className="text-tinta-atenuada hover:text-[#2383C2] transition inline-flex items-center justify-center p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
                               title="Ver Historial / Logs"
                             >
                               <History size={13} />
@@ -318,7 +318,7 @@ const DocumentosEditor = () => {
                           {hasPermission(PATH_VISTA, "tabla_documentos", "btn_ver") && (
                             <button
                               onClick={() => setDocumentoSeleccionado(docItem)}
-                              className="text-slate-400 hover:text-[#2383C2] transition inline-flex items-center justify-center p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
+                              className="text-tinta-atenuada hover:text-[#2383C2] transition inline-flex items-center justify-center p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
                               title="Ver Detalle"
                             >
                               <Eye size={13} />
@@ -327,7 +327,7 @@ const DocumentosEditor = () => {
                           {hasPermission(PATH_VISTA, "tabla_documentos", "btn_configurar") && (
                             <button
                               onClick={() => setDocumentoParaConfigurar(docItem)}
-                              className="text-slate-400 hover:text-amber-600 transition inline-flex items-center justify-center p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
+                              className="text-tinta-atenuada hover:text-amber-600 transition inline-flex items-center justify-center p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
                               title="Configurar"
                             >
                               <Settings size={13} />
@@ -336,7 +336,7 @@ const DocumentosEditor = () => {
                           {hasPermission(PATH_VISTA, "tabla_documentos", "btn_eliminar") && (
                             <button
                               onClick={() => handleDelete(docItem.id)}
-                              className="text-slate-400 hover:text-red-500 transition inline-flex items-center justify-center p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
+                              className="text-tinta-atenuada hover:text-red-500 transition inline-flex items-center justify-center p-0.5 rounded hover:bg-slate-100 dark:hover:bg-gray-700"
                               title="Eliminar"
                             >
                               <Trash2 size={13} />

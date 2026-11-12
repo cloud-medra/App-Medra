@@ -239,15 +239,15 @@ const DetalleVinculacionOC = ({
                 <div className="flex items-center gap-2">
                     <button
                         onClick={onVolver}
-                        className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded text-slate-600 dark:text-gray-300 flex items-center gap-1 text-[11px] font-medium transition-colors cursor-pointer"
+                        className="p-1 hover:bg-slate-100 dark:hover:bg-gray-700 rounded text-tinta-secundaria flex items-center gap-1 text-secundario transition-colors cursor-pointer"
                         title="Volver a la lista"
                     >
                         <ArrowLeft size={15} className="text-[#2383C2]" />
                         <span>Volver</span>
                     </button>
-                    <span className="text-slate-300 dark:text-gray-600">|</span>
+                    <span className="text-tinta-atenuada">|</span>
                     <FileText className="text-[#2383C2]" size={15} />
-                    <span className="text-[12px] font-bold text-slate-800 dark:text-gray-100 tracking-wide uppercase">
+                    <span className="text-etiqueta text-tinta-principal tracking-wide uppercase">
                         Vinculación OC — Folio {documento.folio}
                     </span>
                 </div>
@@ -255,35 +255,35 @@ const DetalleVinculacionOC = ({
 
             <div className="px-3 py-2 bg-slate-100/60 dark:bg-gray-900/40 border-b border-slate-200 dark:border-gray-700 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 shrink-0">
                 <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+                    <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
                         <Hash size={11} className="text-[#2383C2]" /> Folio
                     </span>
-                    <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">{documento.folio}</span>
+                    <span className="text-etiqueta text-tinta-principal truncate mt-0.5">{documento.folio}</span>
                 </div>
 
                 <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+                    <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
                         <Calendar size={11} className="text-[#2383C2]" /> Fecha Emisión
                     </span>
-                    <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+                    <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
                         {formatearFechaEmision ? formatearFechaEmision(documento.fchEmis) : (documento.fchEmis || '-')}
                     </span>
                 </div>
 
                 <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+                    <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
                         <CalendarDays size={11} className="text-[#2383C2]" /> Mes Imputado
                     </span>
-                    <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+                    <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
                         {documento.mesImputado || documento.mes_imputado || '-'}
                     </span>
                 </div>
 
                 <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+                    <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
                         <Tag size={11} className="text-[#2383C2]" /> Ref. (OC)
                     </span>
-                    <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+                    <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
                         {ocVinculadaActiva
                             ? `${ocVinculadaActiva.folioCalculado || ocVinculadaActiva.folio || ocVinculadaActiva.id || documento.folioRef || 'N/A'}`
                             : (documento.folioRef ? `${documento.folioRef}` : "N/A")}
@@ -291,16 +291,16 @@ const DetalleVinculacionOC = ({
                 </div>
 
                 <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+                    <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
                         <DollarSign size={11} className="text-[#2383C2]" /> Total Neto
                     </span>
-                    <span className="text-[11px] font-bold text-slate-800 dark:text-gray-100 truncate mt-0.5">
+                    <span className="text-etiqueta text-tinta-principal truncate mt-0.5">
                         {formatearMoneda(documento.total)}
                     </span>
                 </div>
 
                 <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+                    <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
                         <Activity size={11} className="text-[#2383C2]" /> Estado
                     </span>
                     <div className="mt-0.5">
@@ -309,14 +309,14 @@ const DetalleVinculacionOC = ({
                 </div>
 
                 <div className="px-2.5 py-1.5 rounded bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 flex flex-col justify-between">
-                    <span className="text-[9px] uppercase font-bold text-slate-400 dark:text-gray-500 flex items-center gap-1">
+                    <span className="text-pequeno uppercase text-tinta-atenuada flex items-center gap-1">
                         <ShoppingCart size={11} className="text-[#2383C2]" /> Acción
                     </span>
                     <button
                         onClick={() => setPanelAbierto(true)}
                         disabled={!puedeVincular}
                         title={puedeVincular ? undefined : 'No tienes permiso para vincular OC'}
-                        className="mt-0.5 w-full h-5 bg-[#2383C2] hover:bg-[#1d6fa5] active:bg-[#175b88] text-white rounded text-[10px] font-bold flex items-center justify-center gap-1 transition-colors shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="mt-0.5 w-full h-5 bg-[#2383C2] hover:bg-[#1d6fa5] active:bg-[#175b88] text-white rounded text-pequeno flex items-center justify-center gap-1 transition-colors shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                         <ShoppingCart size={11} />
                         <span>Vincular OC</span>
@@ -327,18 +327,18 @@ const DetalleVinculacionOC = ({
             <div className="px-3 py-1.5 bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2 truncate">
                     <Building2 size={13} className="text-[#2383C2] shrink-0" />
-                    <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase">Receptor:</span>
-                    <span className="text-[11px] font-medium text-slate-800 dark:text-gray-200 truncate">{documento.rznSoc}</span>
+                    <span className="text-pequeno text-tinta-atenuada uppercase">Receptor:</span>
+                    <span className="text-secundario text-tinta-principal truncate">{documento.rznSoc}</span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-semibold shrink-0">
-                    Total ítems: <strong className="text-slate-700 dark:text-gray-200">{detallesProcesados.length}</strong>
+                <span className="text-pequeno text-tinta-atenuada shrink-0">
+                    Total ítems: <strong className="text-tinta-principal">{detallesProcesados.length}</strong>
                 </span>
             </div>
 
             <div className="flex-grow overflow-auto">
-                <table className="w-full text-left text-[11px] border-collapse min-w-[1550px]">
+                <table className="w-full text-left text-secundario border-collapse min-w-[1550px]">
                     <thead className="bg-slate-100 dark:bg-gray-900 sticky top-0 z-10 shadow-xs">
-                        <tr className="text-slate-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+                        <tr className="text-tinta-secundaria uppercase text-pequeno">
                             {verColumna('linea') && (
                               <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-10 text-center">#</th>
                             )}
@@ -361,13 +361,13 @@ const DetalleVinculacionOC = ({
                               <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-24 text-right">Total Línea</th>
                             )}
                             {verColumna('codigoMaestro') && (
-                              <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-slate-200/60 dark:bg-gray-800/80 text-slate-800 dark:text-gray-200">Cód. Maestro</th>
+                              <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-slate-200/60 dark:bg-gray-800/80 text-tinta-principal">Cód. Maestro</th>
                             )}
                             {verColumna('descripcionMaestro') && (
-                              <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-48 bg-slate-200/60 dark:bg-gray-800/80 text-slate-800 dark:text-gray-200">Descripción Maestro</th>
+                              <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-48 bg-slate-200/60 dark:bg-gray-800/80 text-tinta-principal">Descripción Maestro</th>
                             )}
                             {verColumna('precioMaestro') && (
-                              <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-24 bg-slate-200/60 dark:bg-gray-800/80 text-right text-slate-800 dark:text-gray-200">Precio Maestro</th>
+                              <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-24 bg-slate-200/60 dark:bg-gray-800/80 text-right text-tinta-principal">Precio Maestro</th>
                             )}
                             {verColumna('articuloOC') && (
                               <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-28 bg-blue-100/70 dark:bg-blue-950/60 text-blue-900 dark:text-blue-200">ArticuloOC</th>
@@ -382,14 +382,14 @@ const DetalleVinculacionOC = ({
                               <th className="py-1.5 px-2 border-b border-r border-slate-200 dark:border-gray-700 w-36 bg-blue-100/70 dark:bg-blue-950/60 text-center text-blue-900 dark:text-blue-200">Vincu OC</th>
                             )}
                             {verColumna('estadoItem') && (
-                              <th className="py-1.5 px-2 border-b border-slate-200 dark:border-gray-700 w-28 bg-slate-200/60 dark:bg-gray-800/80 text-center text-slate-800 dark:text-gray-200">Estado Ítem</th>
+                              <th className="py-1.5 px-2 border-b border-slate-200 dark:border-gray-700 w-28 bg-slate-200/60 dark:bg-gray-800/80 text-center text-tinta-principal">Estado Ítem</th>
                             )}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-gray-700/60 bg-white dark:bg-gray-800">
                         {detallesProcesados.length === 0 ? (
                             <tr>
-                                <td colSpan={columnasTabla.length} className="py-6 text-center text-slate-400 dark:text-gray-500 text-xs">
+                                <td colSpan={columnasTabla.length} className="py-6 text-center text-tinta-atenuada text-normal">
                                     Este documento no posee ítems cargados.
                                 </td>
                             </tr>
@@ -399,46 +399,46 @@ const DetalleVinculacionOC = ({
                                 return (
                                     <tr key={item.id || item.codigo || idx} className="hover:bg-slate-50 dark:hover:bg-gray-700/40">
                                         {verColumna('linea') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-500 text-center font-bold">{idx + 1}</td>
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-secundaria text-center text-etiqueta">{idx + 1}</td>
                                         )}
                                         {verColumna('codigoDoc') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-500">{item.codigo || '-'}</td>
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-secundaria">{item.codigo || '-'}</td>
                                         )}
                                         {verColumna('descripcion') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-slate-800 dark:text-gray-200 font-medium">{item.nombre}</td>
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-tinta-principal">{item.nombre}</td>
                                         )}
                                         {verColumna('cantidad') && (
                                           <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center">{item.cantidad}</td>
                                         )}
                                         {verColumna('unidad') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center text-[10px] uppercase">{item.unidad || '-'}</td>
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center text-pequeno uppercase">{item.unidad || '-'}</td>
                                         )}
                                         {verColumna('precioUnitario') && (
                                           <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right">{formatearMoneda(item.precio)}</td>
                                         )}
                                         {verColumna('totalLinea') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right font-bold">{formatearMoneda(item.monto)}</td>
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right text-etiqueta">{formatearMoneda(item.monto)}</td>
                                         )}
                                         {verColumna('codigoMaestro') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 font-semibold bg-slate-50/50 dark:bg-gray-900/30">{item.codigoMaestro || '-'}</td>
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-etiqueta bg-slate-50/50 dark:bg-gray-900/30">{item.codigoMaestro || '-'}</td>
                                         )}
                                         {verColumna('descripcionMaestro') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 bg-slate-50/50 dark:bg-gray-900/30 text-slate-700 dark:text-gray-300 truncate max-w-[200px]" title={descMaestroText}>
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 bg-slate-50/50 dark:bg-gray-900/30 text-tinta-principal truncate max-w-[200px]" title={descMaestroText}>
                                               {descMaestroText}
                                           </td>
                                         )}
                                         {verColumna('precioMaestro') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right font-semibold bg-slate-50/50 dark:bg-gray-900/30">
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right text-etiqueta bg-slate-50/50 dark:bg-gray-900/30">
                                               {item.precioMaestro !== undefined && item.precioMaestro !== null ? formatearMoneda(item.precioMaestro) : '-'}
                                           </td>
                                         )}
                                         {verColumna('articuloOC') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 font-semibold bg-blue-50/40 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300">
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-etiqueta bg-blue-50/40 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300">
                                               {item.articuloOC || item.codArticuloOC || item.articulo_oc || '-'}
                                           </td>
                                         )}
                                         {verColumna('precioOC') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right font-semibold bg-blue-50/40 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300">
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-right text-etiqueta bg-blue-50/40 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300">
                                               {item.precioOC !== null && item.precioOC !== undefined
                                                   ? formatearMoneda(item.precioOC)
                                                   : '-'
@@ -446,16 +446,16 @@ const DetalleVinculacionOC = ({
                                           </td>
                                         )}
                                         {verColumna('cantidadOC') && (
-                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center font-semibold bg-blue-50/40 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300">
+                                          <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center text-etiqueta bg-blue-50/40 dark:bg-blue-950/20 text-blue-900 dark:text-blue-300">
                                               {item.cantidadOC !== null && item.cantidadOC !== undefined ? item.cantidadOC : '-'}
                                           </td>
                                         )}
                                         {verColumna('vinculoOC') && (
                                           <td className="py-1 px-2 border-b border-r border-slate-200 dark:border-gray-700/70 text-center bg-blue-50/40 dark:bg-blue-950/20">
-                                              <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold whitespace-nowrap ${item.vincuOCTexto === "Sin diferencias"
+                                              <span className={`inline-block px-1.5 py-0.5 rounded text-pequeno whitespace-nowrap ${item.vincuOCTexto === "Sin diferencias"
                                                   ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                                                   : item.vincuOCTexto === "Sin coincidencia en OC"
-                                                      ? "bg-slate-100 text-slate-500 dark:bg-gray-700 dark:text-gray-400"
+                                                      ? "bg-slate-100 text-tinta-secundaria dark:bg-gray-700"
                                                       : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
                                                   }`}>
                                                   {item.vincuOCTexto || "-"}
@@ -464,11 +464,11 @@ const DetalleVinculacionOC = ({
                                         )}
                                         {verColumna('estadoItem') && (
                                           <td className="py-1 px-2 border-b border-slate-200 dark:border-gray-700 text-center bg-slate-50/50 dark:bg-gray-900/30">
-                                              <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold ${item.estadoItem === 'Vinculado'
+                                              <span className={`inline-block px-2 py-0.5 rounded text-pequeno ${item.estadoItem === 'Vinculado'
                                                   ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300'
                                                   : item.estadoItem === 'Diferencia'
                                                       ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300'
-                                                      : 'bg-slate-100 text-slate-800 dark:bg-gray-700 dark:text-gray-300'
+                                                      : 'bg-slate-100 text-tinta-principal dark:bg-gray-700'
                                                   }`}>
                                                   {item.estadoItem || 'Pendiente'}
                                               </span>
