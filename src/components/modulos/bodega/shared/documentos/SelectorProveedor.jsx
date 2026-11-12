@@ -21,10 +21,10 @@ const SelectorProveedor = ({ valor, onCambiar, deshabilitado = false, placeholde
 
   if (elegida) {
     return (
-      <div className="h-7 px-2 flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-[11px]">
-        <span className="flex-1 truncate font-semibold">{elegida.nombre}</span>
-        {elegida.rut && <span className="font-num text-[11px] text-gray-500">{elegida.rut}</span>}
-        {!deshabilitado && <button type="button" onClick={() => onCambiar('')} title={tituloCambiar} className="p-0.5 text-gray-400 hover:text-red-600"><X size={13} /></button>}
+      <div className="h-7 px-2 flex items-center gap-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-secundario">
+        <span className="flex-1 truncate text-etiqueta">{elegida.nombre}</span>
+        {elegida.rut && <span className="text-numero-tabla text-tinta-secundaria">{elegida.rut}</span>}
+        {!deshabilitado && <button type="button" onClick={() => onCambiar('')} title={tituloCambiar} className="p-0.5 text-tinta-atenuada hover:text-red-600"><X size={13} /></button>}
       </div>
     );
   }
@@ -37,15 +37,15 @@ const SelectorProveedor = ({ valor, onCambiar, deshabilitado = false, placeholde
         onFocus={() => setAbierto(true)}
         onBlur={() => setTimeout(() => setAbierto(false), 150)}
         placeholder={placeholder}
-        className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]"
+        className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
       />
       {abierto && opciones.length > 0 && (
         <ul className="absolute z-30 mt-1 w-full max-h-60 overflow-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg">
           {opciones.map((e) => (
             <li key={e.id}>
               <button type="button" onMouseDown={(ev) => ev.preventDefault()} onClick={() => { onCambiar(e.id); setTexto(''); setAbierto(false); }}
-                className="w-full text-left px-2 py-1.5 hover:bg-blue-50 dark:hover:bg-gray-800 text-[11px]">
-                {e.nombre} {e.rut && <span className="font-num text-[11px] text-gray-500">{e.rut}</span>}
+                className="w-full text-left px-2 py-1.5 hover:bg-blue-50 dark:hover:bg-gray-800 text-secundario">
+                {e.nombre} {e.rut && <span className="text-numero-tabla text-tinta-secundaria">{e.rut}</span>}
               </button>
             </li>
           ))}

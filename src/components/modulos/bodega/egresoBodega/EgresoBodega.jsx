@@ -36,7 +36,7 @@ const COLUMNAS = [
 const CLAVE_CENTRO = 'bodega.ultimoCentroEgreso';
 const leerUltimoCentro = () => { try { return JSON.parse(localStorage.getItem(CLAVE_CENTRO) || 'null'); } catch { return null; } };
 const guardarUltimoCentro = (c) => { try { localStorage.setItem(CLAVE_CENTRO, JSON.stringify(c)); } catch { /* sin almacenamiento */ } };
-const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[13px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]';
+const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-normal outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]';
 
 // Salida de la Bodega General a tránsito en uno o varios centros.
 // Por línea: escanear o buscar el producto -> lote (el exacto del código o
@@ -199,9 +199,9 @@ const EgresoBodega = () => {
   const nombreCentroActual = centro?.id ? (centros.find((c) => c.id === centro.id)?.nombre || centro.nombre) : '';
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[12px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-normal">
       <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <ArrowUpFromLine size={14} className="text-[#2383C2]" /> Egreso · salida a tránsito por centro
         </h2>
       </div>
@@ -215,8 +215,8 @@ const EgresoBodega = () => {
         {seleccion && (
           <div className="p-2 rounded-lg border-2 border-[#2383C2]/50 bg-blue-50/50 dark:bg-sky-950/20 flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="font-bold text-gray-800 dark:text-gray-100">{seleccion.producto.nombre} <span className="font-num text-[11px] text-gray-500">{seleccion.producto.codigoMaestro}</span></span>
-              <button type="button" onClick={() => { setSeleccion(null); enfocar(); }} title="Descartar" className="p-1 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700"><X size={14} /></button>
+              <span className="text-etiqueta text-tinta-principal">{seleccion.producto.nombre} <span className="text-numero-tabla text-tinta-secundaria">{seleccion.producto.codigoMaestro}</span></span>
+              <button type="button" onClick={() => { setSeleccion(null); enfocar(); }} title="Descartar" className="p-1 rounded text-tinta-secundaria hover:bg-gray-200 dark:hover:bg-gray-700"><X size={14} /></button>
             </div>
             <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Lote">
               {disponiblesSeleccion.map((l, i) => {
@@ -225,10 +225,10 @@ const EgresoBodega = () => {
                 return (
                   <button key={l.id} type="button" role="radio" aria-checked={activo} onClick={() => setSeleccion((s) => ({ ...s, loteId: l.id, codigoLote: '' }))}
                     className={`px-2.5 py-1.5 rounded border text-left ${activo ? 'border-[#2383C2] bg-white dark:bg-gray-900 ring-2 ring-[#2383C2]/40' : 'border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/50'}`}>
-                    <div className="font-num font-bold">{l.lote || 'S/L'} {i === 0 && <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300">FEFO</span>}</div>
-                    {l.propietarioNombre && <div className="text-[9px] font-bold text-violet-700 dark:text-violet-300">CONSIG. {l.propietarioNombre}</div>}
-                    <div className="text-[11px] text-gray-600 dark:text-gray-300 font-num">
-                      {l.vencimiento || 'sin venc.'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>} · disp. {l.restante}
+                    <div className="text-numero-tabla">{l.lote || 'S/L'} {i === 0 && <span className="text-pequeno text-emerald-700 dark:text-emerald-300">FEFO</span>}</div>
+                    {l.propietarioNombre && <div className="text-pequeno text-violet-700 dark:text-violet-300">CONSIG. {l.propietarioNombre}</div>}
+                    <div className="text-numero-tabla text-tinta-secundaria">
+                      {l.vencimiento || 'sin venc.'} {venc.etiqueta && <span className={`px-1 rounded text-pequeno ${venc.badge}`}>{venc.etiqueta}</span>} · disp. {l.restante}
                     </div>
                   </button>
                 );
@@ -236,28 +236,28 @@ const EgresoBodega = () => {
             </div>
             <div className="flex flex-wrap items-end gap-2">
               <label className="flex flex-col">
-                <span className="text-[10px] font-bold uppercase text-gray-500">Cantidad</span>
+                <span className="text-pequeno uppercase text-tinta-secundaria">Cantidad</span>
                 <input ref={cantidadRef} type="number" min="1" max={loteSeleccionado?.restante || 1} step="1" inputMode="numeric" value={seleccion.cantidad}
                   onChange={(e) => setSeleccion((s) => ({ ...s, cantidad: e.target.value }))}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); agregar(); } }}
-                  className={`${INPUT} w-24 font-num`} />
+                  className={`${INPUT} w-24 text-numero-tabla`} />
               </label>
               <div className="flex flex-col w-64">
-                <span className="text-[10px] font-bold uppercase text-gray-500">Centro de destino *</span>
+                <span className="text-pequeno uppercase text-tinta-secundaria">Centro de destino *</span>
                 <CentroSelect todos value={centro?.id || null} onChange={cambiarCentro} placeholder="Elegir centro…" />
               </div>
-              <button type="button" onClick={agregar} className="h-9 px-3 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><Plus size={14} /> Agregar</button>
+              <button type="button" onClick={agregar} className="h-9 px-3 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1"><Plus size={14} /> Agregar</button>
             </div>
           </div>
         )}
         {!seleccion && nombreCentroActual && (
-          <p className="text-[11px] text-gray-500">Centro por defecto para la próxima línea: <strong>{nombreCentroActual}</strong> (se puede cambiar en cada una).</p>
+          <p className="text-secundario text-tinta-secundaria">Centro por defecto para la próxima línea: <strong>{nombreCentroActual}</strong> (se puede cambiar en cada una).</p>
         )}
 
         <div className="flex items-center justify-between gap-2">
-          <h3 className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-300">Líneas de la salida</h3>
+          <h3 className="text-etiqueta uppercase text-tinta-secundaria">Líneas de la salida</h3>
           <div className="flex items-center gap-2">
-            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300">
+            <label className="flex items-center gap-1.5 text-etiqueta text-tinta-secundaria">
               <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} /> <Layers size={12} /> Agrupar por centro
             </label>
             <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} />
@@ -272,26 +272,26 @@ const EgresoBodega = () => {
               const encabezado = agrupar && (i === 0 || filas[i - 1].centroId !== l.centroId);
               const sub = subtotales.find((c) => c.centroId === l.centroId);
               const celdas = {
-                referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p?.codigoMaestro || ''}` : p?.codigoMaestro}>{referencia || '—'}</td>,
-                producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={l.productoNombre}>{l.productoNombre}</td>,
+                referencia: <td className={`${TD} text-numero-tabla text-tinta-principal`} title={referencia ? `${referencia} · ${p?.codigoMaestro || ''}` : p?.codigoMaestro}>{referencia || '—'}</td>,
+                producto: <td className={`${TD} text-etiqueta text-tinta-principal`} title={l.productoNombre}>{l.productoNombre}</td>,
                 lote: (
-                  <td className={`${TD} font-num`} title={`${l.lote || ''}${l.propietarioNombre ? ` · consignado ${l.propietarioNombre}` : ''}`}>
-                    {l.lote || '—'}{l.propietarioNombre && <span className="ml-1 px-1 rounded text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span>}
+                  <td className={`${TD} text-numero-tabla`} title={`${l.lote || ''}${l.propietarioNombre ? ` · consignado ${l.propietarioNombre}` : ''}`}>
+                    {l.lote || '—'}{l.propietarioNombre && <span className="ml-1 px-1 rounded text-pequeno bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span>}
                   </td>
                 ),
-                vencimiento: <td className={`${TD} font-num`}>{l.vencimiento || '—'}</td>,
+                vencimiento: <td className={`${TD} text-numero-tabla`}>{l.vencimiento || '—'}</td>,
                 centro: <td className={TD} title={l.centroNombre}>{l.centroNombre}</td>,
-                cantidad: <td className={`${TD} text-right font-num font-bold`}>{l.cantidad}</td>,
+                cantidad: <td className={`${TD} text-right text-numero-tabla`}>{l.cantidad}</td>,
                 quitar: (
                   <td className={`${TD} !py-0 text-center`}>
-                    <button type="button" disabled={ocupado} onClick={() => setLineas((ls) => ls.filter((x) => x.key !== l.key))} title="Quitar línea" className="p-0.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={14} /></button>
+                    <button type="button" disabled={ocupado} onClick={() => setLineas((ls) => ls.filter((x) => x.key !== l.key))} title="Quitar línea" className="p-0.5 rounded text-tinta-atenuada hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={14} /></button>
                   </td>
                 ),
               };
               return (
                 <Fragment key={l.key}>
                   {encabezado && (
-                    <FilaAnchoCompleto columnas={columnasVisibles} className="bg-amber-50 dark:bg-amber-950/20" celdaClassName="px-2 py-1 font-bold text-amber-800 dark:text-amber-200 border-b border-gray-200 dark:border-gray-700/70">
+                    <FilaAnchoCompleto columnas={columnasVisibles} className="bg-amber-50 dark:bg-amber-950/20" celdaClassName="px-2 py-1 text-etiqueta text-amber-800 dark:text-amber-200 border-b border-gray-200 dark:border-gray-700/70">
                       {l.centroNombre} · {sub.lineas} línea(s) · {sub.unidades} u.
                     </FilaAnchoCompleto>
                   )}
@@ -304,17 +304,17 @@ const EgresoBodega = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           <label className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase text-gray-500">Solicitante / destino (opcional)</span>
+            <span className="text-pequeno uppercase text-tinta-secundaria">Solicitante / destino (opcional)</span>
             <input value={solicitante} onChange={(e) => setSolicitante(e.target.value)} maxLength={120} disabled={ocupado} className={INPUT} placeholder="Ej: Dra. Pérez, Pabellón 3" />
           </label>
           <label className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase text-gray-500">Observación (opcional)</span>
+            <span className="text-pequeno uppercase text-tinta-secundaria">Observación (opcional)</span>
             <input value={observacion} onChange={(e) => setObservacion(e.target.value)} maxLength={MAX_OBSERVACION} disabled={ocupado} className={INPUT} />
           </label>
         </div>
         {hasPermission(PATH_VISTA, 'egreso', 'btn_confirmar') && (
           <div className="flex justify-end">
-            <button type="button" onClick={confirmar} disabled={ocupado || !lineas.length} className="h-10 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 disabled:opacity-50">
+            <button type="button" onClick={confirmar} disabled={ocupado || !lineas.length} className="h-10 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-etiqueta flex items-center gap-1.5 disabled:opacity-50">
               <CheckCircle2 size={15} /> Confirmar salida ({lineas.length})
             </button>
           </div>

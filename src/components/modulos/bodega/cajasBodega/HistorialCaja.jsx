@@ -9,10 +9,10 @@ import DetalleReposicion from './DetalleReposicion';
 
 const VentanaDetalle = ({ titulo, onCerrar, children, pie }) => (
   <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={titulo}>
-    <div className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-[12px]">
+    <div className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-normal">
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between">
-        <h3 className="text-[13px] font-bold">{titulo}</h3>
-        <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
+        <h3 className="text-subtitulo">{titulo}</h3>
+        <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 rounded-full text-tinta-atenuada hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
       </div>
       <div className="p-4 overflow-auto">{children}</div>
       {pie && <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-end gap-2">{pie}</div>}
@@ -22,13 +22,13 @@ const VentanaDetalle = ({ titulo, onCerrar, children, pie }) => (
 
 const Lista = ({ titulo, items, vacio, texto, onAbrir }) => (
   <div className="flex-1 min-w-[240px]">
-    <h4 className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-300 mb-1">{titulo}</h4>
-    {items === null ? <p className="text-gray-400 italic">Cargando…</p> : items.length === 0 ? <p className="text-gray-400 italic">{vacio}</p> : (
+    <h4 className="text-etiqueta uppercase text-tinta-secundaria mb-1">{titulo}</h4>
+    {items === null ? <p className="text-tinta-atenuada italic">Cargando…</p> : items.length === 0 ? <p className="text-tinta-atenuada italic">{vacio}</p> : (
       <ul className="divide-y divide-gray-100 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded">
         {items.map((i) => (
           <li key={i.id}>
             <button type="button" onClick={() => onAbrir(i)} className="w-full text-left px-2 py-1.5 hover:bg-blue-50 dark:hover:bg-gray-700/40">
-              <span className="font-num font-semibold">{fechaHora(i.fecha)}</span> · {i.usuario?.nombre || ''} <span className="text-gray-500">· {texto(i)}</span>
+              <span className="text-numero-tabla">{fechaHora(i.fecha)}</span> · {i.usuario?.nombre || ''} <span className="text-tinta-secundaria">· {texto(i)}</span>
             </button>
           </li>
         ))}

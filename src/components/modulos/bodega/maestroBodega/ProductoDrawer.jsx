@@ -47,10 +47,10 @@ const PESTANAS = [
   { id: 'datos', label: 'Datos', icon: FileText },
 ];
 
-const Tarjeta = ({ titulo, valor, clase = 'text-gray-800 dark:text-gray-100' }) => (
+const Tarjeta = ({ titulo, valor, clase = 'text-tinta-principal' }) => (
   <div className="flex flex-col px-2.5 py-2 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60">
-    <span className="text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400">{titulo}</span>
-    <span className={`text-[16px] font-bold font-num ${clase}`}>{valor}</span>
+    <span className="text-pequeno uppercase text-tinta-secundaria">{titulo}</span>
+    <span className={`text-titulo-seccion tabular-nums ${clase}`}>{valor}</span>
   </div>
 );
 
@@ -87,22 +87,22 @@ const PestanaStock = ({ producto, nombreCentro }) => {
         <Tarjeta titulo="Mínimo" valor={producto.stockMinimo ?? '—'} />
       </div>
       {dejadoPorCentro.length > 0 && (
-        <p className="text-[11px] text-violet-700 dark:text-violet-300">
-          Dejado en centros (no usado, sigue siendo stock): <strong className="font-num">{formatoCantidad(producto.enCentro)}</strong> · {dejadoPorCentro.map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ')}
+        <p className="text-secundario text-violet-700 dark:text-violet-300">
+          Dejado en centros (no usado, sigue siendo stock): <strong className="text-numero-tabla">{formatoCantidad(producto.enCentro)}</strong> · {dejadoPorCentro.map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ')}
         </p>
       )}
 
       <section>
-        <h4 className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-300 mb-1 flex items-center gap-1"><Truck size={12} /> Tránsito por centro</h4>
+        <h4 className="text-etiqueta uppercase text-tinta-secundaria mb-1 flex items-center gap-1"><Truck size={12} /> Tránsito por centro</h4>
         {porCentro.length === 0 ? (
-          <p className="text-[11px] text-gray-400 italic">Sin unidades en tránsito.</p>
+          <p className="text-secundario text-tinta-atenuada italic">Sin unidades en tránsito.</p>
         ) : (
           <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
             <TablaBodega columnas={COLUMNAS_TRANSITO} anchos={transitoTabla.anchos} onResize={transitoTabla.handleResize}>
               {porCentro.map(([centroId, n]) => (
                 <FilaBodega key={centroId} columnas={COLUMNAS_TRANSITO} celdas={{
                   centro: <td className={TD} title={nombreCentro(centroId)}>{nombreCentro(centroId)}</td>,
-                  transito: <td className={`${TD} text-right font-bold font-num text-amber-600 dark:text-amber-400`}>{formatoCantidad(n)}</td>,
+                  transito: <td className={`${TD} text-right text-numero-tabla text-amber-600 dark:text-amber-400`}>{formatoCantidad(n)}</td>,
                 }} />
               ))}
             </TablaBodega>
@@ -112,17 +112,17 @@ const PestanaStock = ({ producto, nombreCentro }) => {
 
       <section>
         <div className="flex items-center justify-between mb-1">
-          <h4 className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-300 flex items-center gap-1"><Layers size={12} /> Lotes con stock</h4>
+          <h4 className="text-etiqueta uppercase text-tinta-secundaria flex items-center gap-1"><Layers size={12} /> Lotes con stock</h4>
           <div className="flex items-center gap-1">
             <BotonRestablecerAnchos onClick={() => { lotesTabla.restablecerAnchos(); transitoTabla.restablecerAnchos(); }} personalizados={lotesTabla.personalizados || transitoTabla.personalizados} />
-            <button type="button" onClick={recargar} title="Actualizar lotes" className="p-1 rounded text-gray-500 hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700"><RefreshCw size={12} /></button>
+            <button type="button" onClick={recargar} title="Actualizar lotes" className="p-1 rounded text-tinta-secundaria hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700"><RefreshCw size={12} /></button>
           </div>
         </div>
-        {error && <p className="text-[11px] text-red-600">{error}</p>}
+        {error && <p className="text-secundario text-red-600">{error}</p>}
         {lotes === null ? (
-          <p className="text-[11px] text-gray-400 italic">Cargando lotes…</p>
+          <p className="text-secundario text-tinta-atenuada italic">Cargando lotes…</p>
         ) : lotesConStock.length === 0 ? (
-          <p className="text-[11px] text-gray-400 italic">Sin lotes con stock.</p>
+          <p className="text-secundario text-tinta-atenuada italic">Sin lotes con stock.</p>
         ) : (
           <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
             <TablaBodega columnas={columnasVisibles} anchos={lotesTabla.anchos} onResize={lotesTabla.handleResize}>
@@ -131,12 +131,12 @@ const PestanaStock = ({ producto, nombreCentro }) => {
                 const centrosTexto = Object.entries(l.transitoPorCentro || {}).map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ') || '—';
                 const enCentroTexto = Object.entries(l.enCentroPorCentro || {}).map(([c, n]) => `${nombreCentro(c)}: ${n}`).join(' · ') || '—';
                 const celdas = {
-                  lote: <td className={`${TD} font-num`} title={l.lote || ''}>{l.lote || '—'}</td>,
-                  vencimiento: <td className={`${TD} font-num`}>{l.vencimiento || '—'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
-                  propietario: <td className={TD} title={l.propietarioNombre || 'Propio'}>{l.propietarioNombre ? <span className="px-1 rounded text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span> : 'Propio'}</td>,
-                  disponible: <td className={`${TD} text-right font-num font-bold text-emerald-600 dark:text-emerald-400`}>{formatoCantidad(l.disponible)}</td>,
-                  transito: <td className={`${TD} text-right font-num text-amber-600 dark:text-amber-400`}>{formatoCantidad(l.transito)}</td>,
-                  centros: <td className={`${TD} text-gray-600 dark:text-gray-300`} title={centrosTexto}>{centrosTexto}</td>,
+                  lote: <td className={`${TD} text-numero-tabla`} title={l.lote || ''}>{l.lote || '—'}</td>,
+                  vencimiento: <td className={`${TD} text-numero-tabla`}>{l.vencimiento || '—'} {venc.etiqueta && <span className={`px-1 rounded text-pequeno ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
+                  propietario: <td className={TD} title={l.propietarioNombre || 'Propio'}>{l.propietarioNombre ? <span className="px-1 rounded text-pequeno bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300">CONSIG. {l.propietarioNombre}</span> : 'Propio'}</td>,
+                  disponible: <td className={`${TD} text-right text-numero-tabla text-emerald-600 dark:text-emerald-400`}>{formatoCantidad(l.disponible)}</td>,
+                  transito: <td className={`${TD} text-right text-numero-tabla text-amber-600 dark:text-amber-400`}>{formatoCantidad(l.transito)}</td>,
+                  centros: <td className={`${TD} text-tinta-secundaria`} title={centrosTexto}>{centrosTexto}</td>,
                   enCentro: <td className={`${TD} text-violet-700 dark:text-violet-300`} title={enCentroTexto}>{enCentroTexto}</td>,
                 };
                 return <FilaBodega key={l.id} columnas={columnasVisibles} celdas={celdas} className={venc.fila} />;
@@ -229,21 +229,21 @@ const PestanaCodigos = ({ producto }) => {
           placeholder="Escanea un código para vincularlo a este producto" />
       )}
       {codigos === null ? (
-        <p className="text-[11px] text-gray-400 italic">Cargando códigos…</p>
+        <p className="text-secundario text-tinta-atenuada italic">Cargando códigos…</p>
       ) : codigos.length === 0 ? (
-        <p className="text-[11px] text-gray-400 italic">Sin códigos de barra vinculados.</p>
+        <p className="text-secundario text-tinta-atenuada italic">Sin códigos de barra vinculados.</p>
       ) : (
         <ul className="divide-y divide-gray-100 dark:divide-gray-700 border border-gray-200 dark:border-gray-700 rounded">
           {codigos.map((c) => (
-            <li key={c.id} className="flex items-center gap-2 px-2 py-1.5 text-[11px]">
+            <li key={c.id} className="flex items-center gap-2 px-2 py-1.5 text-secundario">
               <Barcode size={14} className="text-gray-400 shrink-0" />
               <div className="flex-1 min-w-0">
-                <div className="font-num font-bold text-gray-800 dark:text-gray-100 break-all">{c.clave}</div>
-                {c.codigoLeido && c.codigoLeido !== c.clave && <div className="font-num text-[10px] text-gray-500 break-all">Leído: {c.codigoLeido}</div>}
-                <div className="text-[10px] text-gray-400">{c.creadoPor?.nombre || ''}</div>
+                <div className="text-numero-tabla text-tinta-principal break-all">{c.clave}</div>
+                {c.codigoLeido && c.codigoLeido !== c.clave && <div className="text-numero-tabla text-tinta-secundaria break-all">Leído: {c.codigoLeido}</div>}
+                <div className="text-pequeno text-tinta-atenuada">{c.creadoPor?.nombre || ''}</div>
               </div>
               {puedeQuitar && (
-                <button type="button" onClick={() => quitar(c)} title="Quitar código" className="p-1.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40">
+                <button type="button" onClick={() => quitar(c)} title="Quitar código" className="p-1.5 rounded text-tinta-atenuada hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40">
                   <Trash2 size={14} />
                 </button>
               )}
@@ -317,25 +317,25 @@ const ProductoDrawer = ({ productoId, pestanaInicial = 'stock', onCerrar, onAbri
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-[2px] flex justify-end">
       <div className="absolute inset-0" onClick={onCerrar} />
-      <div className="relative w-full max-w-2xl bg-gray-50 dark:bg-gray-800 h-full shadow-2xl flex flex-col border-l border-gray-200 dark:border-gray-700 z-10 animate-in slide-in-from-right duration-200 text-[12px]">
+      <div className="relative w-full max-w-2xl bg-gray-50 dark:bg-gray-800 h-full shadow-2xl flex flex-col border-l border-gray-200 dark:border-gray-700 z-10 animate-in slide-in-from-right duration-200 text-normal">
         <div className="px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3">
           <div className="flex items-start gap-2 min-w-0">
             <Package className="text-[#2383C2] shrink-0 mt-0.5" size={18} />
             <div className="min-w-0">
-              <h3 className="text-[14px] font-bold text-gray-800 dark:text-gray-100 truncate">{producto.nombre}</h3>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                <span className="font-num font-bold text-[#2383C2]">{producto.codigoMaestro}</span>
+              <h3 className="text-titulo-seccion text-tinta-principal truncate">{producto.nombre}</h3>
+              <p className="text-secundario text-tinta-secundaria">
+                <span className="text-numero-tabla text-[#2383C2]">{producto.codigoMaestro}</span>
                 {producto.referencia && <> · Ref. {producto.referencia}</>}
                 {' · '}{categorias[producto.categoriaId] || 'Sin categoría'} · {unidades[producto.unidadId] || '—'}
                 {producto.ubicacion && <> · Ubic. {producto.ubicacion}</>}
-                {producto.activo === false && <span className="ml-1 px-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 font-bold">INACTIVO</span>}
+                {producto.activo === false && <span className="ml-1 px-1 rounded bg-gray-200 dark:bg-gray-700 text-tinta-secundaria text-etiqueta">INACTIVO</span>}
               </p>
               {producto.maestroCodigo && (
-                <p className="text-[10px] text-gray-500">Maestro clínico: {producto.maestroCodigo.codigo || 'S/C'} · {producto.maestroCodigo.descriptor}</p>
+                <p className="text-pequeno text-tinta-secundaria">Maestro clínico: {producto.maestroCodigo.codigo || 'S/C'} · {producto.maestroCodigo.descriptor}</p>
               )}
             </div>
           </div>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 text-gray-400 hover:text-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full">
+          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 text-tinta-atenuada hover:text-tinta-principal hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full">
             <X size={18} />
           </button>
         </div>
@@ -343,7 +343,7 @@ const ProductoDrawer = ({ productoId, pestanaInicial = 'stock', onCerrar, onAbri
         <div className="px-4 pt-2 flex gap-1 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           {PESTANAS.map(({ id, label, icon: Icono }) => (
             <button key={id} type="button" onClick={() => setPestana(id)}
-              className={`h-8 px-3 -mb-px border-b-2 font-semibold flex items-center gap-1.5 ${pestana === id ? 'border-[#2383C2] text-[#2383C2]' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}`}>
+              className={`h-8 px-3 -mb-px border-b-2 text-etiqueta flex items-center gap-1.5 ${pestana === id ? 'border-[#2383C2] text-[#2383C2]' : 'border-transparent text-tinta-secundaria hover:text-tinta-principal'}`}>
               <Icono size={13} /> {label}
             </button>
           ))}

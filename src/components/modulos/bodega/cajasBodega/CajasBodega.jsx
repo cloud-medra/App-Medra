@@ -63,15 +63,15 @@ const CajasBodega = () => {
   const nombresOcupados = useMemo(() => new Set((cajas || []).map((c) => idUnico.caja(c.nombre))), [cajas]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-secundario">
       <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase"><Package size={14} className="text-[#2383C2]" /> Cajas</h2>
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5"><Package size={14} className="text-[#2383C2]" /> Cajas</h2>
         {!abierta && (
           <div className="flex items-center gap-1.5">
-            <label className="flex items-center gap-1 text-gray-600 dark:text-gray-300"><input type="checkbox" checked={verInactivas} onChange={(e) => setVerInactivas(e.target.checked)} /> Ver inactivas</label>
-            <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1 text-gray-600 dark:text-gray-300"><RefreshCw size={12} /> Actualizar</button>
+            <label className="flex items-center gap-1 text-tinta-secundaria"><input type="checkbox" checked={verInactivas} onChange={(e) => setVerInactivas(e.target.checked)} /> Ver inactivas</label>
+            <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1 text-tinta-secundaria"><RefreshCw size={12} /> Actualizar</button>
             {hasPermission(PATH_VISTA, 'cajas', 'btn_guardar') && (
-              <button type="button" onClick={() => setCreando(true)} className="h-7 px-2 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><Plus size={12} /> Nueva caja</button>
+              <button type="button" onClick={() => setCreando(true)} className="h-7 px-2 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1"><Plus size={12} /> Nueva caja</button>
             )}
           </div>
         )}
@@ -86,7 +86,7 @@ const CajasBodega = () => {
             onDuplicada={(id) => { recargar(); refrescarAbierta(id); }}
           />
         ) : cajas === null ? (
-          <p className="text-gray-400 italic">Cargando…</p>
+          <p className="text-tinta-atenuada italic">Cargando…</p>
         ) : (
           <div className="flex flex-col gap-1.5">
             <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
@@ -96,14 +96,14 @@ const CajasBodega = () => {
                 {visibles.map((c) => (
                   <FilaBodega key={c.id} columnas={columnasVisibles} className="cursor-pointer" onClick={() => setAbierta(c)} celdas={{
                     nombre: (
-                      <td className={`${TD} font-semibold text-[#2383C2] underline-offset-2 group-hover:underline`} title={c.nombre}>
-                        {c.nombre} {c.activa === false && <span className="ml-1 px-1 rounded bg-gray-200 dark:bg-gray-700 text-[9px] font-bold text-gray-600">INACTIVA</span>}
+                      <td className={`${TD} text-etiqueta text-[#2383C2] underline-offset-2 group-hover:underline`} title={c.nombre}>
+                        {c.nombre} {c.activa === false && <span className="ml-1 px-1 rounded bg-gray-200 dark:bg-gray-700 text-pequeno text-tinta-secundaria">INACTIVA</span>}
                       </td>
                     ),
-                    productos: <td className={`${TD} text-right font-num`}>{c.cantidadProductos || 0}</td>,
+                    productos: <td className={`${TD} text-right text-numero-tabla`}>{c.cantidadProductos || 0}</td>,
                     completitud: <td className={TD}><BarraCompletitud valor={c.completitud} /></td>,
-                    faltante: <td className={`${TD} text-right font-num ${c.totalFaltante ? 'font-bold text-red-600 dark:text-red-400' : ''}`}>{formatoCantidad(c.totalFaltante)}</td>,
-                    ultimoInventario: <td className={`${TD} font-num`}>{c.ultimoInventario?.fecha ? fechaHora(c.ultimoInventario.fecha) : '—'}</td>,
+                    faltante: <td className={`${TD} text-right ${c.totalFaltante ? 'text-etiqueta tabular-nums text-red-600 dark:text-red-400' : 'text-numero-tabla'}`}>{formatoCantidad(c.totalFaltante)}</td>,
+                    ultimoInventario: <td className={`${TD} text-numero-tabla`}>{c.ultimoInventario?.fecha ? fechaHora(c.ultimoInventario.fecha) : '—'}</td>,
                   }} />
                 ))}
               </TablaBodega>

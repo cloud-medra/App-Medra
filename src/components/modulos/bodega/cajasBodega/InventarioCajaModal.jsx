@@ -50,10 +50,10 @@ const InventarioCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Inventario de la caja">
-      <div className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-[12px]">
+      <div className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-normal">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between">
-          <h3 className="text-[13px] font-bold flex items-center gap-1.5"><ClipboardCheck size={15} /> {resultado ? 'Resultado del inventario' : 'Hacer inventario'} · {caja.nombre}</h3>
-          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
+          <h3 className="text-subtitulo flex items-center gap-1.5"><ClipboardCheck size={15} /> {resultado ? 'Resultado del inventario' : 'Hacer inventario'} · {caja.nombre}</h3>
+          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-tinta-atenuada hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
         </div>
         <div className="p-4 overflow-auto">
           {resultado ? (
@@ -66,10 +66,10 @@ const InventarioCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
                   {productos.map((p, i) => {
                     const referencia = referenciaDe(p.productoId);
                     const celdas = {
-                      producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={p.nombre}>{p.nombre}</td>,
-                      referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p.codigoMaestro}` : p.codigoMaestro}>{referencia || '—'}</td>,
-                      objetivo: <td className={`${TD} text-right font-num`}>{formatoCantidad(p.stockObjetivo)}</td>,
-                      actual: <td className={`${TD} text-right font-num`}>{formatoCantidad(p.stockActual)}</td>,
+                      producto: <td className={`${TD} text-etiqueta text-tinta-principal`} title={p.nombre}>{p.nombre}</td>,
+                      referencia: <td className={`${TD} text-numero-tabla text-tinta-principal`} title={referencia ? `${referencia} · ${p.codigoMaestro}` : p.codigoMaestro}>{referencia || '—'}</td>,
+                      objetivo: <td className={`${TD} text-right text-numero-tabla`}>{formatoCantidad(p.stockObjetivo)}</td>,
+                      actual: <td className={`${TD} text-right text-numero-tabla`}>{formatoCantidad(p.stockActual)}</td>,
                       contado: (
                         <td className={`${TD} !py-0 text-right`}>
                           <input
@@ -77,7 +77,7 @@ const InventarioCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
                             value={conteos[p.productoId] ?? ''}
                             onChange={(e) => setConteos((c) => ({ ...c, [p.productoId]: e.target.value }))}
                             disabled={guardando} aria-label={`Contado de ${p.nombre}`}
-                            className="h-6 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-right font-num bg-white dark:bg-gray-900 outline-none focus:border-[#2383C2] w-full max-w-24"
+                            className="h-6 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-right text-numero-tabla bg-white dark:bg-gray-900 outline-none focus:border-[#2383C2] w-full max-w-24"
                           />
                         </td>
                       ),
@@ -94,12 +94,12 @@ const InventarioCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
           {resultado ? (
             <>
               {pie?.(resultado)}
-              <button type="button" onClick={onCerrar} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 font-semibold">Cerrar</button>
+              <button type="button" onClick={onCerrar} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 text-etiqueta">Cerrar</button>
             </>
           ) : (
             <>
-              <button type="button" onClick={onCerrar} disabled={guardando} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 font-semibold">Cancelar</button>
-              <button type="button" onClick={confirmar} disabled={guardando} className="h-9 px-4 rounded bg-[#2383C2] text-white font-bold disabled:opacity-50">{guardando ? 'Guardando…' : 'Confirmar inventario'}</button>
+              <button type="button" onClick={onCerrar} disabled={guardando} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 text-etiqueta">Cancelar</button>
+              <button type="button" onClick={confirmar} disabled={guardando} className="h-9 px-4 rounded bg-[#2383C2] text-white text-etiqueta disabled:opacity-50">{guardando ? 'Guardando…' : 'Confirmar inventario'}</button>
             </>
           )}
         </div>

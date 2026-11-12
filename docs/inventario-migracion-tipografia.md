@@ -20,6 +20,7 @@ Foto del 06-11-2026, con las pantallas nuevas agregadas el 12-11-2026: las cifra
 | **Piezas sueltas: acceso y páginas** | `components/LoginForm.jsx`, `pages/auth/CambiarPassword.jsx`, `pages/PlataformaExterna.jsx`, `pages/TestPage.jsx`, `pages/Dashboard.jsx` (texto de carga de `<main>`) | 12-11-2026 |
 | **Componentes comunes** | `components/ui/` (`ModalConfirm`, `Toast`, `BotonRestablecerAnchos`, `PaginacionSimple`, `BuscadorConLimpiar`, `CentroSelect`, `MultiSelectFiltro`, `TablaRedimensionable`, `bodymap/DetalleZona`, `bodymap/CuerpoCompleto`). Se ven con tokens también dentro de pantallas sin migrar | 12-11-2026 |
 | **General** | `general/` (20 archivos: Ajustes, Perfil, foto de perfil, Soporte y tickets, textos legales, acceso rápido de módulos). Excepción: la inicial del avatar grande de Perfil (`text-5xl`), que es gráfica | 12-11-2026 |
+| **Bodega** | `bodega/` (38 archivos). Incluye compartidos que se ven también en Armado de Kits, Códigos de barra, Fibras (`TablaBodega`) e Inventario → Tránsito (`GestionTransitoModal`). Alertas numéricas: `text-numero-tabla` pasa a `text-etiqueta tabular-nums` | 12-11-2026 |
 
 Login y cambio de contraseña usan además los tokens `text-acceso-*` (portada de 30, título de 24 y cuerpo de 16 px; solo para pantallas de acceso). Conservan sus grises (`text-gray-*`) y no usan `text-tinta-*`: tienen fondo blanco fijo y la clase `.dark` se aplica a toda la página, así que con el tema oscuro guardado el texto quedaría claro sobre blanco. Los textos legales que abre el cambio de contraseña (`general/legales/`) van con el módulo General.
 
@@ -599,95 +600,6 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 | Archivo | Clases | <10 px | `font-num` | Cortes |
 |---|---:|---:|---:|---:|
 | `administracion/gestionModulos/GestionModulos.jsx` | 12 | 0 | 0 | 2 |
-
-## bodega
-
-35 archivos, 670 clases.
-
-### shared (11 archivos, 202 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `shared/documentos/EditorLineasStock.jsx` | 50 | 3 | 14 | 0 |
-| `shared/transito/GestionTransitoModal.jsx` | 29 | 0 | 4 | 0 |
-| `shared/documentos/PantallaDocumento.jsx` | 23 | 0 | 3 | 1 |
-| `bodega/shared/ModalVincularCodigo.jsx` | 23 | 0 | 8 | 1 |
-| `bodega/shared/FormProducto.jsx` | 22 | 0 | 5 | 0 |
-| `shared/transito/TablaTransitos.jsx` | 17 | 2 | 7 | 0 |
-| `shared/transito/HistorialTransitoModal.jsx` | 14 | 0 | 2 | 0 |
-| `shared/documentos/SelectorProveedor.jsx` | 8 | 0 | 2 | 1 |
-| `shared/escaneo/CampoEscaneoBodega.jsx` | 8 | 0 | 1 | 0 |
-| `bodega/shared/BuscadorProducto.jsx` | 5 | 0 | 1 | 0 |
-| `bodega/shared/TablaBodega.jsx` | 3 | 0 | 0 | 0 |
-
-### maestroBodega (3 archivos, 114 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `bodega/maestroBodega/MaestroBodega.jsx` | 48 | 3 | 13 | 0 |
-| `bodega/maestroBodega/ProductoDrawer.jsx` | 43 | 2 | 10 | 1 |
-| `bodega/maestroBodega/KardexProducto.jsx` | 23 | 0 | 6 | 0 |
-
-### cajasBodega (10 archivos, 104 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `bodega/cajasBodega/DetalleCaja.jsx` | 16 | 0 | 4 | 1 |
-| `bodega/cajasBodega/FormCajaModal.jsx` | 16 | 0 | 3 | 0 |
-| `bodega/cajasBodega/ReponerCajaModal.jsx` | 14 | 0 | 4 | 0 |
-| `bodega/cajasBodega/CajasBodega.jsx` | 12 | 1 | 3 | 0 |
-| `bodega/cajasBodega/InventarioCajaModal.jsx` | 11 | 0 | 4 | 0 |
-| `bodega/cajasBodega/DetalleReposicion.jsx` | 8 | 0 | 5 | 0 |
-| `bodega/cajasBodega/DuplicarCajaModal.jsx` | 8 | 0 | 0 | 0 |
-| `bodega/cajasBodega/ResultadoInventario.jsx` | 8 | 0 | 2 | 0 |
-| `bodega/cajasBodega/HistorialCaja.jsx` | 7 | 0 | 1 | 0 |
-| `bodega/cajasBodega/comunes.jsx` | 4 | 0 | 1 | 0 |
-
-### inventarioBodega (3 archivos, 76 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `bodega/inventarioBodega/InventarioBodega.jsx` | 38 | 1 | 0 | 0 |
-| `bodega/inventarioBodega/ComparacionInventario.jsx` | 25 | 2 | 9 | 0 |
-| `bodega/inventarioBodega/CierreInventarioModal.jsx` | 13 | 0 | 1 | 0 |
-
-### consignacionesBodega (3 archivos, 65 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `bodega/consignacionesBodega/DetalleConsignacion.jsx` | 27 | 3 | 9 | 0 |
-| `bodega/consignacionesBodega/ConsignacionesBodega.jsx` | 20 | 1 | 7 | 0 |
-| `bodega/consignacionesBodega/FormConsignacionModal.jsx` | 18 | 0 | 4 | 0 |
-
-### egresoBodega (1 archivos, 42 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `bodega/egresoBodega/EgresoBodega.jsx` | 42 | 4 | 8 | 0 |
-
-### consumoBodega (1 archivos, 23 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `bodega/consumoBodega/ConsumoBodega.jsx` | 23 | 0 | 5 | 1 |
-
-### centrosBodega (1 archivos, 20 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `bodega/centrosBodega/CentrosBodega.jsx` | 20 | 1 | 5 | 0 |
-
-### catalogosBodega (1 archivos, 17 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `bodega/catalogosBodega/CatalogosBodega.jsx` | 17 | 1 | 0 | 0 |
-
-### transitoBodega (1 archivos, 7 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `bodega/transitoBodega/TransitoBodega.jsx` | 7 | 0 | 0 | 0 |
 
 ## inventario
 

@@ -29,12 +29,12 @@ const DetalleReposicion = ({ lineas }) => {
             const referencia = referenciaDe(l.productoId);
             const lotes = textoLotes(l.lotes);
             const celdas = {
-              producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={l.nombre}>{l.nombre}</td>,
-              referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${l.codigoMaestro || ''}` : l.codigoMaestro}>{referencia || '—'}</td>,
-              faltanteAntes: <td className={`${TD} text-right font-num`}>{formatoCantidad(l.faltanteAntes)}</td>,
-              repuesto: <td className={`${TD} text-right font-num ${l.cantidad ? 'font-bold text-emerald-600' : 'text-gray-400'}`}>{formatoCantidad(l.cantidad)}</td>,
-              pendiente: <td className={`${TD} text-right font-num ${l.pendiente ? 'font-bold text-red-600' : 'text-gray-400'}`}>{l.pendiente ? formatoCantidad(l.pendiente) : '—'}</td>,
-              lotes: <td className={`${TD} font-num text-gray-500`} title={lotes}>{lotes}</td>,
+              producto: <td className={`${TD} text-etiqueta text-tinta-principal`} title={l.nombre}>{l.nombre}</td>,
+              referencia: <td className={`${TD} text-numero-tabla text-tinta-principal`} title={referencia ? `${referencia} · ${l.codigoMaestro || ''}` : l.codigoMaestro}>{referencia || '—'}</td>,
+              faltanteAntes: <td className={`${TD} text-right text-numero-tabla`}>{formatoCantidad(l.faltanteAntes)}</td>,
+              repuesto: <td className={`${TD} text-right ${l.cantidad ? 'text-etiqueta tabular-nums text-emerald-600' : 'text-numero-tabla text-tinta-atenuada'}`}>{formatoCantidad(l.cantidad)}</td>,
+              pendiente: <td className={`${TD} text-right ${l.pendiente ? 'text-etiqueta tabular-nums text-red-600' : 'text-numero-tabla text-tinta-atenuada'}`}>{l.pendiente ? formatoCantidad(l.pendiente) : '—'}</td>,
+              lotes: <td className={`${TD} text-numero-tabla text-tinta-secundaria`} title={lotes}>{lotes}</td>,
             };
             return <FilaBodega key={l.productoId} columnas={COLUMNAS} celdas={celdas} />;
           })}

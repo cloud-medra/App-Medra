@@ -20,10 +20,10 @@ import { TD_BODEGA, TH_BODEGA } from './anchosTablaBodega';
 export const TablaBodega = ({ columnas, anchos, onResize, encabezado = (col) => col.label, children }) => {
   const anchoTabla = columnas.reduce((n, c) => n + (anchos[c.key] ?? c.ancho), 0);
   return (
-    <table className="text-left text-[11px] border-collapse" style={{ tableLayout: 'fixed', width: anchoTabla, minWidth: '100%' }}>
+    <table className="text-left text-secundario border-collapse" style={{ tableLayout: 'fixed', width: anchoTabla, minWidth: '100%' }}>
       <ColgroupRedimensionable columnas={columnas} anchos={anchos} relleno />
       <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10 select-none">
-        <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+        <tr className="text-tinta-secundaria uppercase text-pequeno">
           {columnas.map((col) => (
             <ThRedimensionable key={col.key} col={col} anchos={anchos} onResize={onResize} title={col.label} className={`${TH_BODEGA} ${col.alinear || ''}`}>
               {encabezado(col)}
@@ -48,7 +48,7 @@ export const FilaBodega = ({ columnas, celdas, className = '', ...rest }) => (
 );
 
 // Fila que ocupa todo el ancho (mensaje "sin datos", desglose expandido…).
-export const FilaAnchoCompleto = ({ columnas, className = '', celdaClassName = 'px-2 py-6 text-center text-gray-400 italic', children }) => (
+export const FilaAnchoCompleto = ({ columnas, className = '', celdaClassName = 'px-2 py-6 text-center text-tinta-atenuada italic', children }) => (
   <tr className={className}>
     <td colSpan={columnas.length + 1} className={celdaClassName}>{children}</td>
   </tr>

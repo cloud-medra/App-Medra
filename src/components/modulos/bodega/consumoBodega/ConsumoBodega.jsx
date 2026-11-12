@@ -30,7 +30,7 @@ const COLUMNAS = [
   { key: 'valorNeto', label: 'Valor neto', alinear: 'text-right', ancho: 120, min: 70 },
 ];
 const pesos = (n) => `$${Math.round(Number(n) || 0).toLocaleString('es-CL')}`;
-const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] bg-white dark:bg-gray-900';
+const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-normal bg-white dark:bg-gray-900';
 
 // Consumo por centro: entregas (movimientos ENTREGA, y lo usado de los kits
 // recibidos en el centro: ENTREGA_KIT) y lo que el centro repuso de lo usado
@@ -58,12 +58,12 @@ const ConsumoBodega = () => {
   const totalRepuesto = grupos.reduce((n, c) => n + c.repuesto, 0);
   // Celdas de usado, repuesto y neto (centro o producto).
   const celdasCantidades = (x, fuerte = false) => ({
-    unidades: <td className={`${TD} text-right font-num ${fuerte ? 'font-bold' : ''}`}>{formatoCantidad(x.unidades)}</td>,
-    valor: <td className={`${TD} text-right font-num`}>{pesos(x.valor)}</td>,
-    repuesto: <td className={`${TD} text-right font-num`}>{x.repuesto ? formatoCantidad(x.repuesto) : '—'}</td>,
-    valorRepuesto: <td className={`${TD} text-right font-num`}>{x.repuesto ? pesos(x.valorRepuesto) : '—'}</td>,
-    neto: <td className={`${TD} text-right font-num`}>{formatoCantidad(x.neto)}</td>,
-    valorNeto: <td className={`${TD} text-right font-num`}>{pesos(x.valorNeto)}</td>,
+    unidades: <td className={`${TD} text-right ${fuerte ? 'text-etiqueta tabular-nums' : 'text-numero-tabla'}`}>{formatoCantidad(x.unidades)}</td>,
+    valor: <td className={`${TD} text-right text-numero-tabla`}>{pesos(x.valor)}</td>,
+    repuesto: <td className={`${TD} text-right text-numero-tabla`}>{x.repuesto ? formatoCantidad(x.repuesto) : '—'}</td>,
+    valorRepuesto: <td className={`${TD} text-right text-numero-tabla`}>{x.repuesto ? pesos(x.valorRepuesto) : '—'}</td>,
+    neto: <td className={`${TD} text-right text-numero-tabla`}>{formatoCantidad(x.neto)}</td>,
+    valorNeto: <td className={`${TD} text-right text-numero-tabla`}>{pesos(x.valorNeto)}</td>,
   });
 
   const consultar = async () => {
@@ -124,35 +124,35 @@ const ConsumoBodega = () => {
   ]);
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[12px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-normal">
       <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase"><BarChart3 size={14} className="text-[#2383C2]" /> Consumo por centro (entregas)</h2>
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5"><BarChart3 size={14} className="text-[#2383C2]" /> Consumo por centro (entregas)</h2>
       </div>
       <div className="px-3 py-2 flex flex-wrap items-end gap-2 border-b border-gray-200 dark:border-gray-700">
-        <label className="flex flex-col"><span className="text-[10px] font-bold uppercase text-gray-500">Desde</span><input type="date" value={filtros.desde} onChange={(e) => setFiltros((f) => ({ ...f, desde: e.target.value }))} className={INPUT} /></label>
-        <label className="flex flex-col"><span className="text-[10px] font-bold uppercase text-gray-500">Hasta</span><input type="date" value={filtros.hasta} onChange={(e) => setFiltros((f) => ({ ...f, hasta: e.target.value }))} className={INPUT} /></label>
-        <label className="flex flex-col"><span className="text-[10px] font-bold uppercase text-gray-500">Centro</span>
+        <label className="flex flex-col"><span className="text-pequeno uppercase text-tinta-secundaria">Desde</span><input type="date" value={filtros.desde} onChange={(e) => setFiltros((f) => ({ ...f, desde: e.target.value }))} className={INPUT} /></label>
+        <label className="flex flex-col"><span className="text-pequeno uppercase text-tinta-secundaria">Hasta</span><input type="date" value={filtros.hasta} onChange={(e) => setFiltros((f) => ({ ...f, hasta: e.target.value }))} className={INPUT} /></label>
+        <label className="flex flex-col"><span className="text-pequeno uppercase text-tinta-secundaria">Centro</span>
           <select value={filtros.centroId} onChange={(e) => setFiltros((f) => ({ ...f, centroId: e.target.value }))} className={`${INPUT} max-w-[220px]`}>
             <option value="">Todos</option>
             {centros.filter((c) => c.nombre).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map((c) => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </select>
         </label>
         <div className="flex flex-col w-72">
-          <span className="text-[10px] font-bold uppercase text-gray-500">Producto</span>
+          <span className="text-pequeno uppercase text-tinta-secundaria">Producto</span>
           {filtros.producto ? (
             <button type="button" onClick={() => setFiltros((f) => ({ ...f, producto: null }))} className={`${INPUT} text-left truncate`} title="Quitar filtro de producto">{filtros.producto.nombre} ✕</button>
           ) : <BuscadorProducto onElegir={(p) => setFiltros((f) => ({ ...f, producto: p }))} placeholder="Todos (buscar para filtrar)" />}
         </div>
-        <button type="button" onClick={consultar} disabled={cargando} className="h-9 px-3 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1 disabled:opacity-50"><Search size={14} /> {cargando ? 'Consultando…' : 'Consultar'}</button>
+        <button type="button" onClick={consultar} disabled={cargando} className="h-9 px-3 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1 disabled:opacity-50"><Search size={14} /> {cargando ? 'Consultando…' : 'Consultar'}</button>
         {hasPermission(PATH_VISTA, 'reporte', 'btn_exportar') && (
-          <button type="button" onClick={exportar} disabled={!grupos.length} className="h-9 px-3 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1 disabled:opacity-40"><FileSpreadsheet size={14} /> Excel</button>
+          <button type="button" onClick={exportar} disabled={!grupos.length} className="h-9 px-3 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 text-etiqueta flex items-center gap-1 disabled:opacity-40"><FileSpreadsheet size={14} /> Excel</button>
         )}
       </div>
       <div className="flex-1 overflow-auto p-3">
         {error && <p className="text-red-600 mb-2">{error}</p>}
         {resultado?.truncado && <p className="text-amber-700 mb-2">Se muestran las primeras {resultado.entregas.length} entregas: acota el rango para ver todo.</p>}
         {!resultado ? (
-          <p className="text-gray-400 italic">Elige el rango y presiona Consultar.</p>
+          <p className="text-tinta-atenuada italic">Elige el rango y presiona Consultar.</p>
         ) : (
           <div className="flex flex-col gap-1.5">
             <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
@@ -161,9 +161,9 @@ const ConsumoBodega = () => {
                 {grupos.length === 0 && <FilaAnchoCompleto columnas={columnasVisibles}>Sin entregas en el rango.</FilaAnchoCompleto>}
                 {grupos.map((c) => (
                   <Fragment key={c.centroId}>
-                    <FilaBodega columnas={columnasVisibles} className="bg-amber-50 dark:bg-amber-950/20 font-bold" celdas={{
+                    <FilaBodega columnas={columnasVisibles} className="bg-amber-50 dark:bg-amber-950/20 text-etiqueta" celdas={{
                       producto: <td className={TD} title={c.centroNombre}>{c.centroNombre}</td>,
-                      entregas: <td className={`${TD} text-right font-num`}>{c.productos.reduce((n, p) => n + p.entregas, 0)}</td>,
+                      entregas: <td className={`${TD} text-right text-numero-tabla`}>{c.productos.reduce((n, p) => n + p.entregas, 0)}</td>,
                       ...celdasCantidades(c),
                     }} />
                     {c.productos.map((p) => {
@@ -173,12 +173,12 @@ const ConsumoBodega = () => {
                         <Fragment key={clave}>
                           <FilaBodega columnas={columnasVisibles} className="cursor-pointer" onClick={() => alternar(clave)} celdas={{
                             producto: <td className={`${TD} pl-5`} title={p.productoNombre}>{abiertos.has(clave) ? <ChevronDown size={11} className="inline" /> : <ChevronRight size={11} className="inline" />} {p.productoNombre}</td>,
-                            referencia: <td className={`${TD} font-num`} title={`${referenciaDe(p.productoId)} · ${p.codigoMaestro}`}>{referenciaDe(p.productoId) || '—'}</td>,
-                            entregas: <td className={`${TD} text-right font-num`}>{p.entregas}</td>,
+                            referencia: <td className={`${TD} text-numero-tabla`} title={`${referenciaDe(p.productoId)} · ${p.codigoMaestro}`}>{referenciaDe(p.productoId) || '—'}</td>,
+                            entregas: <td className={`${TD} text-right text-numero-tabla`}>{p.entregas}</td>,
                             ...celdasCantidades(p, true),
                           }} />
                           {detalle.map((m) => (
-                            <FilaAnchoCompleto key={m.id} columnas={columnasVisibles} className="text-[11px] text-gray-600 dark:text-gray-300" celdaClassName="px-2 py-0.5 pl-10 border-b border-gray-100 dark:border-gray-700/70">
+                            <FilaAnchoCompleto key={m.id} columnas={columnasVisibles} className="text-secundario text-tinta-secundaria" celdaClassName="px-2 py-0.5 pl-10 border-b border-gray-100 dark:border-gray-700/70">
                               {esReposicion(m) ? 'Repuesto · ' : ''}{fechaHora(m.fecha)} · lote {m.lote || 'S/L'} · <strong>{m.cantidad} u.</strong> · {m.kitCodigo ? `Kit ${m.kitCodigo}` : `${ETIQUETA_ID_ENTREGA} ${m.idEntrega || '—'}`} · {pesos(m.valor)} · {m.observacion} · {m.usuario?.nombre || ''}
                             </FilaAnchoCompleto>
                           ))}
@@ -188,7 +188,7 @@ const ConsumoBodega = () => {
                   </Fragment>
                 ))}
                 {grupos.length > 0 && (
-                  <FilaAnchoCompleto columnas={columnasVisibles} className="bg-gray-100 dark:bg-gray-900 font-bold" celdaClassName="px-2 py-1 text-right">
+                  <FilaAnchoCompleto columnas={columnasVisibles} className="bg-gray-100 dark:bg-gray-900 text-etiqueta" celdaClassName="px-2 py-1 text-right">
                     Total usado: {formatoCantidad(total)} unidad(es){totalRepuesto ? ` · repuesto: ${formatoCantidad(totalRepuesto)} · neto: ${formatoCantidad(total - totalRepuesto)}` : ''} en {resultado.entregas.length} movimiento(s)
                   </FilaAnchoCompleto>
                 )}

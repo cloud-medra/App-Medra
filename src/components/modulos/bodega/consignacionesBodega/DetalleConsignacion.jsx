@@ -32,7 +32,7 @@ const COLUMNAS = [
 const situacion = (f) => (f.diferencia < 0 ? `Faltan ${-f.diferencia}` : f.diferencia > 0 ? `Sobran ${f.diferencia}` : 'OK');
 
 const Chip = ({ titulo, valor, clase = '' }) => (
-  <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-700/60 text-[11px]">{titulo}: <strong className={`font-num ${clase}`}>{valor}</strong></span>
+  <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-700/60 text-secundario">{titulo}: <strong className={`text-numero-tabla ${clase}`}>{valor}</strong></span>
 );
 
 // Detalle de una empresa consignante: por producto + lote + vencimiento,
@@ -97,15 +97,15 @@ const DetalleConsignacion = ({ empresa, consignacion, lotes, onVolver, onGuardad
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={onVolver} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><ArrowLeft size={12} /> Empresas</button>
-        <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-100">{empresa.nombre}</h3>
-        {consignacion?.actualizadoEn && <span className="text-gray-500">Actualizada {fechaHora(consignacion.actualizadoEn)} por {consignacion.actualizadoPor?.nombre || ''}</span>}
+        <button type="button" onClick={onVolver} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1"><ArrowLeft size={12} /> Empresas</button>
+        <h3 className="text-subtitulo text-tinta-principal">{empresa.nombre}</h3>
+        {consignacion?.actualizadoEn && <span className="text-tinta-secundaria">Actualizada {fechaHora(consignacion.actualizadoEn)} por {consignacion.actualizadoPor?.nombre || ''}</span>}
         <div className="ml-auto flex items-center gap-1.5">
           {hasPermission(PATH_VISTA, 'consignacion', 'btn_guardar') && (
-            <button type="button" onClick={() => setEditando(true)} className="h-7 px-2 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><Pencil size={12} /> {consignacion ? 'Editar consignación' : 'Registrar consignación'}</button>
+            <button type="button" onClick={() => setEditando(true)} className="h-7 px-2 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1"><Pencil size={12} /> {consignacion ? 'Editar consignación' : 'Registrar consignación'}</button>
           )}
           {hasPermission(PATH_VISTA, 'consignacion', 'btn_exportar') && (
-            <button type="button" disabled={!visibles.length} onClick={exportar} className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1 disabled:opacity-40"><FileSpreadsheet size={12} /> Exportar a Excel</button>
+            <button type="button" disabled={!visibles.length} onClick={exportar} className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 text-etiqueta flex items-center gap-1 disabled:opacity-40"><FileSpreadsheet size={12} /> Exportar a Excel</button>
           )}
         </div>
       </div>
@@ -118,12 +118,12 @@ const DetalleConsignacion = ({ empresa, consignacion, lotes, onVolver, onGuardad
         <Chip titulo="Faltante" valor={`${formatoCantidad(totales.faltante)} u. en ${totales.conFaltante} línea(s)`} clase={totales.faltante ? 'text-red-600 dark:text-red-400' : ''} />
         {totales.porVencer > 0 && <Chip titulo="Vencidos o próximos a vencer" valor={totales.porVencer} clase="text-amber-600 dark:text-amber-400" />}
       </div>
-      {consignacion?.observacion && <p className="text-[11px] text-gray-500">Observación: {consignacion.observacion}</p>}
+      {consignacion?.observacion && <p className="text-secundario text-tinta-secundaria">Observación: {consignacion.observacion}</p>}
 
       <div className="flex flex-wrap items-center gap-3">
         <BuscadorConLimpiar value={filtro.texto} onChange={(texto) => setFiltro((f) => ({ ...f, texto }))} className="w-64" placeholder="Buscar producto, código, lote…" />
-        <label className="flex items-center gap-1 text-gray-600 dark:text-gray-300"><input type="checkbox" checked={filtro.soloFaltantes} onChange={(e) => setFiltro((f) => ({ ...f, soloFaltantes: e.target.checked }))} /> Solo faltantes</label>
-        <label className="flex items-center gap-1 text-gray-600 dark:text-gray-300"><input type="checkbox" checked={filtro.soloPorVencer} onChange={(e) => setFiltro((f) => ({ ...f, soloPorVencer: e.target.checked }))} /> Solo vencidos / próximos a vencer</label>
+        <label className="flex items-center gap-1 text-tinta-secundaria"><input type="checkbox" checked={filtro.soloFaltantes} onChange={(e) => setFiltro((f) => ({ ...f, soloFaltantes: e.target.checked }))} /> Solo faltantes</label>
+        <label className="flex items-center gap-1 text-tinta-secundaria"><input type="checkbox" checked={filtro.soloPorVencer} onChange={(e) => setFiltro((f) => ({ ...f, soloPorVencer: e.target.checked }))} /> Solo vencidos / próximos a vencer</label>
       </div>
 
       <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
@@ -140,27 +140,27 @@ const DetalleConsignacion = ({ empresa, consignacion, lotes, onVolver, onGuardad
             const centrosDejado = textoPorCentro(f.enCentroPorCentro, nombreCentro);
             return (
               <FilaBodega key={f.loteId} columnas={columnasVisibles} className={faltante ? 'bg-red-50/60 dark:bg-red-950/20' : venc.fila} celdas={{
-                referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={`${f.referencia || ''} · ${f.codigoMaestro || ''}`}>{f.referencia || '—'}</td>,
+                referencia: <td className={`${TD} text-numero-tabla text-tinta-principal`} title={`${f.referencia || ''} · ${f.codigoMaestro || ''}`}>{f.referencia || '—'}</td>,
                 producto: (
-                  <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={f.productoNombre}>
+                  <td className={`${TD} text-etiqueta text-tinta-principal`} title={f.productoNombre}>
                     {f.productoNombre}
-                    {!f.registrada && <span className="ml-1 px-1 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300" title="Hay stock de esta empresa en este lote, pero no está en la consignación registrada">NO REGISTRADO</span>}
+                    {!f.registrada && <span className="ml-1 px-1 rounded text-pequeno bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300" title="Hay stock de esta empresa en este lote, pero no está en la consignación registrada">NO REGISTRADO</span>}
                   </td>
                 ),
-                lote: <td className={`${TD} font-num`}>{f.lote || '—'}</td>,
-                vencimiento: <td className={`${TD} font-num`}>{f.vencimiento || '—'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
-                consignada: <td className={`${TD} text-right font-num font-bold`}>{formatoCantidad(f.cantidadConsignada)}</td>,
-                actual: <td className={`${TD} text-right font-num text-emerald-700 dark:text-emerald-400`}>{formatoCantidad(f.actual)}</td>,
-                transito: <td className={`${TD} text-right font-num text-amber-600 dark:text-amber-400`} title={textoPorCentro(f.transitoPorCentro, nombreCentro)}>{f.transito ? formatoCantidad(f.transito) : '—'}</td>,
+                lote: <td className={`${TD} text-numero-tabla`}>{f.lote || '—'}</td>,
+                vencimiento: <td className={`${TD} text-numero-tabla`}>{f.vencimiento || '—'} {venc.etiqueta && <span className={`px-1 rounded text-pequeno ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
+                consignada: <td className={`${TD} text-right text-numero-tabla`}>{formatoCantidad(f.cantidadConsignada)}</td>,
+                actual: <td className={`${TD} text-right text-numero-tabla text-emerald-700 dark:text-emerald-400`}>{formatoCantidad(f.actual)}</td>,
+                transito: <td className={`${TD} text-right text-numero-tabla text-amber-600 dark:text-amber-400`} title={textoPorCentro(f.transitoPorCentro, nombreCentro)}>{f.transito ? formatoCantidad(f.transito) : '—'}</td>,
                 enCentro: (
                   <td className={`${TD} text-right`} title={centrosDejado}>
-                    {f.enCentro ? <><strong className="font-num text-violet-600 dark:text-violet-400">{formatoCantidad(f.enCentro)}</strong> <span className="text-[10px] text-gray-500">{centrosDejado}</span></> : '—'}
+                    {f.enCentro ? <><strong className="text-numero-tabla text-violet-600 dark:text-violet-400">{formatoCantidad(f.enCentro)}</strong> <span className="text-pequeno text-tinta-secundaria">{centrosDejado}</span></> : '—'}
                   </td>
                 ),
                 diferencia: (
-                  <td className={`${TD} text-right font-num font-bold ${faltante ? 'text-red-600 dark:text-red-400' : f.diferencia > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`} title={situacion(f)}>
+                  <td className={`${TD} text-right text-numero-tabla ${faltante ? 'text-red-600 dark:text-red-400' : f.diferencia > 0 ? 'text-blue-600 dark:text-blue-400' : 'text-emerald-600 dark:text-emerald-400'}`} title={situacion(f)}>
                     {faltante && <AlertTriangle size={11} className="inline mr-0.5 -mt-0.5" />}
-                    {f.diferencia > 0 ? `+${f.diferencia}` : f.diferencia} <span className="text-[9px] font-semibold">{situacion(f)}</span>
+                    {f.diferencia > 0 ? `+${f.diferencia}` : f.diferencia} <span className="text-pequeno">{situacion(f)}</span>
                   </td>
                 ),
               }} />
@@ -168,7 +168,7 @@ const DetalleConsignacion = ({ empresa, consignacion, lotes, onVolver, onGuardad
           })}
         </TablaBodega>
       </div>
-      <p className="text-[10px] text-gray-500">Diferencia = stock actual + en tránsito + en otro centro − consignada. Negativa (rojo) = faltante: se usó, se perdió o no ha llegado. Los lotes vencidos o que vencen en los próximos 90 días se resaltan.</p>
+      <p className="text-pequeno text-tinta-secundaria">Diferencia = stock actual + en tránsito + en otro centro − consignada. Negativa (rojo) = faltante: se usó, se perdió o no ha llegado. Los lotes vencidos o que vencen en los próximos 90 días se resaltan.</p>
 
       {editando && (
         <FormConsignacionModal empresa={empresa} consignacion={consignacion} lotesEmpresa={lotes} onCerrar={() => setEditando(false)}

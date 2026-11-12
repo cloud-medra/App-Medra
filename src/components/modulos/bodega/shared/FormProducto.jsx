@@ -7,8 +7,8 @@ import { PRODUCTO_VACIO, productoAFormulario } from './productoFormulario';
 import { precioMaestroClinico } from './documentos/lineasDocumento';
 import { datosProductoEnlazado, etiquetaProductoEnlazado, maestrosConProducto } from './productoEnlazado';
 
-const INPUT = 'w-full h-8 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-60';
-const LABEL = 'block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5';
+const INPUT = 'w-full h-8 px-2 border border-gray-300 dark:border-gray-600 rounded text-normal outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2] disabled:opacity-60';
+const LABEL = 'block text-pequeno text-tinta-secundaria uppercase mb-0.5';
 
 // Buscador en el maestro clínico (maestros_codigos) para crear el producto
 // a partir de él: completa nombre y referencia y deja el vínculo. Marca los
@@ -34,10 +34,10 @@ const SelectorMaestroClinico = ({ onElegir, conProducto }) => {
         <ul className="mt-1 max-h-48 overflow-auto divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
           {resultados.map((c) => (
             <li key={c.id}>
-              <button type="button" onClick={() => onElegir(c)} className="w-full text-left px-2 py-1.5 hover:bg-blue-50 dark:hover:bg-gray-800 text-[11px]">
-                <span className="font-num font-bold text-[#2383C2]">{c.codigo || 'S/C'}</span>
-                <span className="text-gray-500"> · {c.referencia || 'sin ref.'}</span>
-                <div className="text-gray-700 dark:text-gray-200">{descriptorMaestroClinico(c)}</div>
+              <button type="button" onClick={() => onElegir(c)} className="w-full text-left px-2 py-1.5 hover:bg-blue-50 dark:hover:bg-gray-800 text-secundario">
+                <span className="text-numero-tabla text-[#2383C2]">{c.codigo || 'S/C'}</span>
+                <span className="text-tinta-secundaria"> · {c.referencia || 'sin ref.'}</span>
+                <div className="text-tinta-principal">{descriptorMaestroClinico(c)}</div>
                 {conProducto.has(c.id) && (
                   <span className="inline-block mt-0.5 px-1 rounded text-pequeno bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                     Ya tiene producto en Bodega: {etiquetaProductoEnlazado(datosProductoEnlazado(conProducto.get(c.id)))}
@@ -49,7 +49,7 @@ const SelectorMaestroClinico = ({ onElegir, conProducto }) => {
         </ul>
       )}
       {texto.trim().length >= 2 && !cargando && resultados.length === 0 && (
-        <p className="mt-1 text-[11px] text-gray-500 italic">Sin coincidencias en el maestro clínico.</p>
+        <p className="mt-1 text-secundario text-tinta-secundaria italic">Sin coincidencias en el maestro clínico.</p>
       )}
     </div>
   );
@@ -108,18 +108,18 @@ const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, conPrecioNeto = false
   };
 
   return (
-    <form onSubmit={enviar} className="flex flex-col gap-2.5 text-[12px]">
+    <form onSubmit={enviar} className="flex flex-col gap-2.5 text-normal">
       {/* Vínculo con el maestro clínico */}
       <div>
         <span className={LABEL}>Maestro clínico (opcional)</span>
         {form.maestroCodigoId ? (
           <div className="flex items-center gap-2 px-2 py-1.5 rounded border border-[#2383C2]/40 bg-blue-50/60 dark:bg-sky-950/30">
             <Link2 size={13} className="text-[#2383C2] shrink-0" />
-            <span className="flex-1 text-[11px]">
-              <span className="font-num font-bold">{form.maestroCodigo?.codigo || 'S/C'}</span> · {form.maestroCodigo?.descriptor || form.maestroCodigo?.referencia || form.maestroCodigoId}
+            <span className="flex-1 text-secundario">
+              <span className="text-numero-tabla">{form.maestroCodigo?.codigo || 'S/C'}</span> · {form.maestroCodigo?.descriptor || form.maestroCodigo?.referencia || form.maestroCodigoId}
             </span>
             {!bloqueado && (
-              <button type="button" title="Quitar vínculo" onClick={() => setForm((f) => ({ ...f, maestroCodigoId: '', maestroCodigo: null }))} className="p-0.5 text-gray-500 hover:text-red-600">
+              <button type="button" title="Quitar vínculo" onClick={() => setForm((f) => ({ ...f, maestroCodigoId: '', maestroCodigo: null }))} className="p-0.5 text-tinta-secundaria hover:text-red-600">
                 <X size={13} />
               </button>
             )}
@@ -128,7 +128,7 @@ const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, conPrecioNeto = false
           <SelectorMaestroClinico onElegir={elegirMaestro} conProducto={conProducto} />
         ) : (
           !bloqueado && (
-            <button type="button" onClick={() => setBuscandoMaestro(true)} className="h-8 px-2.5 rounded border border-dashed border-[#2383C2]/60 text-[#2383C2] text-[11px] font-semibold hover:bg-blue-50 dark:hover:bg-gray-800">
+            <button type="button" onClick={() => setBuscandoMaestro(true)} className="h-8 px-2.5 rounded border border-dashed border-[#2383C2]/60 text-[#2383C2] text-etiqueta hover:bg-blue-50 dark:hover:bg-gray-800">
               Completar desde el maestro clínico…
             </button>
           )
@@ -144,13 +144,13 @@ const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, conPrecioNeto = false
           <div>
             <label className={LABEL} htmlFor="bp-precio">Precio neto</label>
             <input id="bp-precio" type="number" min="0" step="1" inputMode="numeric" value={precioNeto} onChange={(e) => setPrecioNeto(e.target.value)} disabled={bloqueado}
-              className={`${INPUT} font-num`} placeholder="Del maestro clínico" title="Precio unitario de esta línea de la carga inicial (código maestro automático)" />
+              className={`${INPUT} text-numero-tabla`} placeholder="Del maestro clínico" title="Precio unitario de esta línea de la carga inicial (código maestro automático)" />
           </div>
         ) : (
           <div>
             <label className={LABEL} htmlFor="bp-codigo">Código maestro</label>
             <input id="bp-codigo" value={form.codigoMaestro} onChange={(e) => cambiar('codigoMaestro')(e.target.value.toUpperCase())} maxLength={MAX.codigoMaestro} disabled={bloqueado}
-              className={`${INPUT} font-num`} placeholder={esNuevo ? 'Automático (BOD-00001)' : ''} />
+              className={`${INPUT} text-numero-tabla`} placeholder={esNuevo ? 'Automático (BOD-00001)' : ''} />
           </div>
         )}
         <div>
@@ -177,26 +177,26 @@ const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, conPrecioNeto = false
         </div>
         <div>
           <label className={LABEL} htmlFor="bp-min">Stock mínimo</label>
-          <input id="bp-min" type="number" min="0" step="1" inputMode="numeric" value={form.stockMinimo} onChange={cambiar('stockMinimo')} disabled={bloqueado} className={`${INPUT} font-num`} placeholder="Sin mínimo" />
+          <input id="bp-min" type="number" min="0" step="1" inputMode="numeric" value={form.stockMinimo} onChange={cambiar('stockMinimo')} disabled={bloqueado} className={`${INPUT} text-numero-tabla`} placeholder="Sin mínimo" />
         </div>
       </div>
 
       <div className="flex flex-wrap gap-x-5 gap-y-1.5">
-        <label className="flex items-center gap-1.5 font-semibold text-gray-700 dark:text-gray-200" title={lotesBloqueados ? 'No se puede cambiar: el producto ya tiene movimientos' : ''}>
+        <label className="flex items-center gap-1.5 text-etiqueta text-tinta-principal" title={lotesBloqueados ? 'No se puede cambiar: el producto ya tiene movimientos' : ''}>
           <input type="checkbox" checked={form.manejaLote} onChange={cambiar('manejaLote')} disabled={bloqueado || lotesBloqueados} /> Maneja lote
         </label>
-        <label className="flex items-center gap-1.5 font-semibold text-gray-700 dark:text-gray-200" title={lotesBloqueados ? 'No se puede cambiar: el producto ya tiene movimientos' : ''}>
+        <label className="flex items-center gap-1.5 text-etiqueta text-tinta-principal" title={lotesBloqueados ? 'No se puede cambiar: el producto ya tiene movimientos' : ''}>
           <input type="checkbox" checked={form.manejaVencimiento} onChange={cambiar('manejaVencimiento')} disabled={bloqueado || lotesBloqueados} /> Maneja vencimiento
         </label>
         {!esNuevo && (
-          <label className="flex items-center gap-1.5 font-semibold text-gray-700 dark:text-gray-200" title={puedeInactivar ? '' : 'Requiere el permiso "Activar / inactivar producto"'}>
+          <label className="flex items-center gap-1.5 text-etiqueta text-tinta-principal" title={puedeInactivar ? '' : 'Requiere el permiso "Activar / inactivar producto"'}>
             <input type="checkbox" checked={form.activo} onChange={cambiar('activo')} disabled={bloqueado || !puedeInactivar} /> Activo
           </label>
         )}
       </div>
 
       {errores.length > 0 && (
-        <ul className="text-[11px] text-red-600 dark:text-red-400 list-disc pl-4">
+        <ul className="text-secundario text-red-600 dark:text-red-400 list-disc pl-4">
           {errores.map((e) => <li key={e}>{e}</li>)}
         </ul>
       )}
@@ -204,11 +204,11 @@ const FormProducto = ({ inicial = PRODUCTO_VACIO, esNuevo, conPrecioNeto = false
       {puedeEditar && (
         <div className="flex justify-end gap-2 pt-1">
           {onCancelar && (
-            <button type="button" onClick={onCancelar} disabled={guardando} className="h-8 px-3 rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold">
+            <button type="button" onClick={onCancelar} disabled={guardando} className="h-8 px-3 rounded bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-tinta-principal text-etiqueta">
               Cancelar
             </button>
           )}
-          <button type="submit" disabled={guardando} className="h-8 px-3 rounded bg-[#2383C2] hover:bg-blue-600 text-white font-bold flex items-center gap-1.5 disabled:opacity-50">
+          <button type="submit" disabled={guardando} className="h-8 px-3 rounded bg-[#2383C2] hover:bg-blue-600 text-white text-etiqueta flex items-center gap-1.5 disabled:opacity-50">
             <Save size={13} /> {guardando ? 'Guardando…' : (textoGuardar || (esNuevo ? 'Crear producto' : 'Guardar cambios'))}
           </button>
         </div>

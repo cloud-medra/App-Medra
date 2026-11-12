@@ -38,15 +38,15 @@ const BuscadorProducto = ({ onElegir, deshabilitado = false, placeholder = 'Busc
         onBlur={() => setTimeout(() => setAbierto(false), 150)}
         onKeyDown={(e) => { if (e.key === 'Enter' && resultados.length === 1) { e.preventDefault(); elegir(resultados[0]); } }}
         placeholder={placeholder}
-        className="w-full h-9 pl-8 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]"
+        className="w-full h-9 pl-8 pr-2 border border-gray-300 dark:border-gray-600 rounded text-normal outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
       />
       {abierto && resultados.length > 0 && (
         <ul className="absolute z-30 mt-1 w-full max-h-64 overflow-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg divide-y divide-gray-100 dark:divide-gray-800">
           {resultados.map((p) => (
             <li key={p.id}>
-              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => elegir(p)} className="w-full text-left px-2 py-1.5 hover:bg-blue-50 dark:hover:bg-gray-800 text-[12px]">
-                <span className="font-semibold text-gray-800 dark:text-gray-100">{p.nombre}</span>
-                <span className="ml-1 font-num text-[11px] text-gray-500">{p.codigoMaestro}</span>
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => elegir(p)} className="w-full text-left px-2 py-1.5 hover:bg-blue-50 dark:hover:bg-gray-800 text-normal">
+                <span className="text-etiqueta text-tinta-principal">{p.nombre}</span>
+                <span className="ml-1 text-numero-tabla text-tinta-secundaria">{p.codigoMaestro}</span>
               </button>
             </li>
           ))}

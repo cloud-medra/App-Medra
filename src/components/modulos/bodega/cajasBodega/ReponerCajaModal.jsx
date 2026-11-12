@@ -54,19 +54,19 @@ const ReponerCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Reponer caja">
-      <div className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-[12px]">
+      <div className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-normal">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between">
-          <h3 className="text-[13px] font-bold flex items-center gap-1.5"><PackagePlus size={15} /> {resultado ? 'Reposición registrada' : 'Reponer desde la Bodega General'} · {caja.nombre}</h3>
-          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
+          <h3 className="text-subtitulo flex items-center gap-1.5"><PackagePlus size={15} /> {resultado ? 'Reposición registrada' : 'Reponer desde la Bodega General'} · {caja.nombre}</h3>
+          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-tinta-atenuada hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
         </div>
         <div className="p-4 overflow-auto">
           {resultado ? (
             <>
-              <p className="mb-2 text-gray-600 dark:text-gray-300">Repuestas {formatoCantidad(resultado.totalRepuesto)} u.; quedan {formatoCantidad(resultado.totalPendiente)} u. pendientes.</p>
+              <p className="mb-2 text-tinta-secundaria">Repuestas {formatoCantidad(resultado.totalRepuesto)} u.; quedan {formatoCantidad(resultado.totalPendiente)} u. pendientes.</p>
               <DetalleReposicion lineas={resultado.lineas} />
             </>
           ) : conFaltante.length === 0 ? (
-            <p className="text-gray-500 italic">La caja está completa: no hay nada que reponer.</p>
+            <p className="text-tinta-secundaria italic">La caja está completa: no hay nada que reponer.</p>
           ) : (
             <div className="flex flex-col gap-1">
               <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
@@ -76,10 +76,10 @@ const ReponerCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
                     const disp = disponibles[p.productoId] ?? 0;
                     const referencia = referenciaDe(p.productoId);
                     const celdas = {
-                      producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={p.nombre}>{p.nombre}</td>,
-                      referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p.codigoMaestro}` : p.codigoMaestro}>{referencia || '—'}</td>,
-                      faltante: <td className={`${TD} text-right font-num font-bold text-red-600`}>{formatoCantidad(p.faltante)}</td>,
-                      disponible: <td className={`${TD} text-right font-num ${disp < p.faltante ? 'text-amber-600 font-bold' : ''}`}>{formatoCantidad(disp)}</td>,
+                      producto: <td className={`${TD} text-etiqueta text-tinta-principal`} title={p.nombre}>{p.nombre}</td>,
+                      referencia: <td className={`${TD} text-numero-tabla text-tinta-principal`} title={referencia ? `${referencia} · ${p.codigoMaestro}` : p.codigoMaestro}>{referencia || '—'}</td>,
+                      faltante: <td className={`${TD} text-right text-numero-tabla text-red-600`}>{formatoCantidad(p.faltante)}</td>,
+                      disponible: <td className={`${TD} text-right ${disp < p.faltante ? 'text-amber-600 text-etiqueta tabular-nums' : 'text-numero-tabla'}`}>{formatoCantidad(disp)}</td>,
                       reponer: (
                         <td className={`${TD} !py-0 text-right`}>
                           <input
@@ -87,7 +87,7 @@ const ReponerCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
                             value={cantidades[p.productoId] ?? ''}
                             onChange={(e) => setCantidades((c) => ({ ...c, [p.productoId]: e.target.value }))}
                             disabled={guardando} aria-label={`A reponer de ${p.nombre}`}
-                            className="h-6 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-right font-num bg-white dark:bg-gray-900 outline-none focus:border-[#2383C2] w-full max-w-24"
+                            className="h-6 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-right text-numero-tabla bg-white dark:bg-gray-900 outline-none focus:border-[#2383C2] w-full max-w-24"
                           />
                         </td>
                       ),
@@ -98,19 +98,19 @@ const ReponerCajaModal = ({ caja, onCerrar, onHecho, pie }) => {
               </div>
             </div>
           )}
-          {!resultado && conFaltante.length > 0 && <p className="mt-2 text-[11px] text-gray-500">Se descuenta de la Bodega General por lote, el que vence primero (FEFO). Deja en 0 lo que no repongas ahora: queda como pendiente.</p>}
+          {!resultado && conFaltante.length > 0 && <p className="mt-2 text-secundario text-tinta-secundaria">Se descuenta de la Bodega General por lote, el que vence primero (FEFO). Deja en 0 lo que no repongas ahora: queda como pendiente.</p>}
           {error && <p className="mt-2 text-red-600">{error}</p>}
         </div>
         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex flex-wrap justify-end gap-2">
           {resultado ? (
             <>
               {pie?.(resultado)}
-              <button type="button" onClick={onCerrar} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 font-semibold">Cerrar</button>
+              <button type="button" onClick={onCerrar} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 text-etiqueta">Cerrar</button>
             </>
           ) : (
             <>
-              <button type="button" onClick={onCerrar} disabled={guardando} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 font-semibold">Cancelar</button>
-              <button type="button" onClick={confirmar} disabled={guardando || conFaltante.length === 0} className="h-9 px-4 rounded bg-[#2383C2] text-white font-bold disabled:opacity-50">{guardando ? 'Reponiendo…' : 'Confirmar reposición'}</button>
+              <button type="button" onClick={onCerrar} disabled={guardando} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 text-etiqueta">Cancelar</button>
+              <button type="button" onClick={confirmar} disabled={guardando || conFaltante.length === 0} className="h-9 px-4 rounded bg-[#2383C2] text-white text-etiqueta disabled:opacity-50">{guardando ? 'Reponiendo…' : 'Confirmar reposición'}</button>
             </>
           )}
         </div>

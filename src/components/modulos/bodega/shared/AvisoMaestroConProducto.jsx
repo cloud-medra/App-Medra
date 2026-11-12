@@ -28,7 +28,7 @@ const AvisoMaestroConProducto = ({ aviso, codigo = '', onAgregar, onAbrir, onCer
       <div className="w-full max-w-lg bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-secundario">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between">
           <h3 className="text-subtitulo flex items-center gap-1.5"><AlertTriangle size={15} className="text-amber-600" /> Este ítem ya tiene producto</h3>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 rounded-full text-tinta-atenuada hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
         </div>
         <div className="p-4 flex flex-col gap-2">
           {aviso.productoId ? (

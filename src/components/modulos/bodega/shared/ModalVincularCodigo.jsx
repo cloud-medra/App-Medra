@@ -128,22 +128,22 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Vincular código de barra">
-      <div className="w-full max-w-2xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-[12px]">
+      <div className="w-full max-w-2xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-normal">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between gap-3 bg-amber-50 dark:bg-amber-950/30 rounded-t-lg">
           <div>
-            <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
+            <h3 className="text-subtitulo text-tinta-principal flex items-center gap-1.5">
               <ScanBarcode size={16} className="text-amber-600" /> Código sin vincular
             </h3>
-            <p className="font-num text-[13px] text-gray-700 dark:text-gray-200 break-all">{lectura.codigo}</p>
+            <p className="text-normal tabular-nums text-tinta-principal break-all">{lectura.codigo}</p>
             {gs1?.esGS1 && (
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                GS1 · GTIN <span className="font-num">{gs1.gtin}</span>
-                {gs1.lote && <> · Lote <span className="font-num">{gs1.lote}</span></>}
-                {gs1.vencimiento && <> · Vence <span className="font-num">{gs1.vencimiento}</span></>}
+              <p className="text-secundario text-tinta-secundaria">
+                GS1 · GTIN <span className="text-numero-tabla">{gs1.gtin}</span>
+                {gs1.lote && <> · Lote <span className="text-numero-tabla">{gs1.lote}</span></>}
+                {gs1.vencimiento && <> · Vence <span className="text-numero-tabla">{gs1.vencimiento}</span></>}
               </p>
             )}
           </div>
-          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700">
+          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-tinta-atenuada hover:text-tinta-principal hover:bg-gray-200 dark:hover:bg-gray-700">
             <X size={16} />
           </button>
         </div>
@@ -160,9 +160,9 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
           />
         )}
         {esCodigoKit(lectura.codigo) ? (
-          <p className="p-4 text-gray-600 dark:text-gray-300">Este es el código de barras de un kit: no se vincula a productos. Despáchalo desde Bodega &gt; Egreso.</p>
+          <p className="p-4 text-tinta-secundaria">Este es el código de barras de un kit: no se vincula a productos. Despáchalo desde Bodega &gt; Egreso.</p>
         ) : !puedeVincular ? (
-          <p className="p-4 text-gray-600 dark:text-gray-300">No tienes permiso para vincular códigos de barra. Pide a un administrador que lo vincule desde el Maestro de Bodega.</p>
+          <p className="p-4 text-tinta-secundaria">No tienes permiso para vincular códigos de barra. Pide a un administrador que lo vincule desde el Maestro de Bodega.</p>
         ) : (
           <>
             {onDatosLote && (
@@ -176,20 +176,20 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
                   }}
                   placeholder="Código 2: escanea aquí el código de lote/vencimiento (opcional)"
                   aria-label="Código de lote y vencimiento"
-                  className="flex-1 min-w-[240px] h-8 px-2 border border-dashed border-amber-400 rounded outline-none bg-white dark:bg-gray-900 font-num focus:border-[#2383C2]" />
+                  className="flex-1 min-w-[240px] h-8 px-2 border border-dashed border-amber-400 rounded outline-none bg-white dark:bg-gray-900 text-numero-tabla focus:border-[#2383C2]" />
                 {loteLeido && (
-                  <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 text-[11px] font-semibold">
-                    Lote <span className="font-num">{loteLeido.lote || '—'}</span> · vence <span className="font-num">{loteLeido.vencimiento || '—'}</span>: se aplicará al producto
+                  <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 text-etiqueta">
+                    Lote <span className="text-numero-tabla">{loteLeido.lote || '—'}</span> · vence <span className="text-numero-tabla">{loteLeido.vencimiento || '—'}</span>: se aplicará al producto
                   </span>
                 )}
               </div>
             )}
             <div className="px-4 pt-3 flex gap-1.5">
-              <button type="button" onClick={() => setModo('buscar')} className={`h-8 px-3 rounded font-semibold flex items-center gap-1.5 ${modo === 'buscar' ? 'bg-[#2383C2] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}>
+              <button type="button" onClick={() => setModo('buscar')} className={`h-8 px-3 rounded text-etiqueta flex items-center gap-1.5 ${modo === 'buscar' ? 'bg-[#2383C2] text-white' : 'bg-gray-100 dark:bg-gray-700 text-tinta-principal'}`}>
                 <Link2 size={13} /> Vincular a un producto existente
               </button>
               {puedeCrear && (
-                <button type="button" onClick={() => setModo('crear')} className={`h-8 px-3 rounded font-semibold flex items-center gap-1.5 ${modo === 'crear' ? 'bg-[#2383C2] text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200'}`}>
+                <button type="button" onClick={() => setModo('crear')} className={`h-8 px-3 rounded text-etiqueta flex items-center gap-1.5 ${modo === 'crear' ? 'bg-[#2383C2] text-white' : 'bg-gray-100 dark:bg-gray-700 text-tinta-principal'}`}>
                   <PackagePlus size={13} /> Crear producto nuevo
                 </button>
               )}
@@ -201,8 +201,8 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
                   {productoSugerido && (
                     <button type="button" disabled={guardando} onClick={() => vincular(productoSugerido)}
                       className="text-left px-3 py-2 rounded border-2 border-[#2383C2] bg-blue-50 dark:bg-sky-950/30 hover:bg-blue-100 disabled:opacity-50">
-                      <span className="text-[10px] font-bold uppercase text-[#2383C2]">Producto en curso</span>
-                      <div className="font-semibold">{productoSugerido.codigoMaestro} · {productoSugerido.nombre}</div>
+                      <span className="text-pequeno uppercase text-[#2383C2]">Producto en curso</span>
+                      <div className="text-etiqueta">{productoSugerido.codigoMaestro} · {productoSugerido.nombre}</div>
                     </button>
                   )}
                   <div className="relative">
@@ -216,20 +216,20 @@ const ModalVincularCodigo = ({ lectura, productoSugerido = null, conPrecioNeto =
                     {resultados.map((p) => (
                       <li key={p.id} className="flex items-center gap-2 px-2 py-1.5">
                         <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-gray-800 dark:text-gray-100 truncate">{p.nombre}</div>
-                          <div className="text-[11px] text-gray-500 font-num">{p.codigoMaestro}{p.referencia ? ` · ${p.referencia}` : ''}</div>
+                          <div className="text-etiqueta text-tinta-principal truncate">{p.nombre}</div>
+                          <div className="text-numero-tabla text-tinta-secundaria">{p.codigoMaestro}{p.referencia ? ` · ${p.referencia}` : ''}</div>
                         </div>
-                        <button type="button" disabled={guardando} onClick={() => vincular(p)} className="h-8 px-3 rounded bg-[#2383C2] text-white font-bold disabled:opacity-50">
+                        <button type="button" disabled={guardando} onClick={() => vincular(p)} className="h-8 px-3 rounded bg-[#2383C2] text-white text-etiqueta disabled:opacity-50">
                           Vincular
                         </button>
                       </li>
                     ))}
                     {texto.trim() && resultados.length === 0 && (
-                      <li className="px-2 py-3 text-gray-500 italic">
+                      <li className="px-2 py-3 text-tinta-secundaria italic">
                         Sin coincidencias.{puedeCrear && <> Usa <strong>Crear producto nuevo</strong>.</>}
                       </li>
                     )}
-                    {!texto.trim() && <li className="px-2 py-3 text-gray-400 italic">Escribe para buscar en el maestro de Bodega.</li>}
+                    {!texto.trim() && <li className="px-2 py-3 text-tinta-atenuada italic">Escribe para buscar en el maestro de Bodega.</li>}
                   </ul>
                 </div>
               ) : (

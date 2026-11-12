@@ -95,30 +95,30 @@ const DetalleCaja = ({ caja, onVolver, onCambio, onDuplicada, nombresOcupados })
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={onVolver} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><ArrowLeft size={12} /> Cajas</button>
-        <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-100">{caja.nombre}</h3>
-        {caja.activa === false && <span className="px-1.5 rounded bg-gray-200 dark:bg-gray-700 text-[10px] font-bold">INACTIVA</span>}
+        <button type="button" onClick={onVolver} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1"><ArrowLeft size={12} /> Cajas</button>
+        <h3 className="text-subtitulo text-tinta-principal">{caja.nombre}</h3>
+        {caja.activa === false && <span className="px-1.5 rounded bg-gray-200 dark:bg-gray-700 text-pequeno">INACTIVA</span>}
         <BarraCompletitud valor={caja.completitud} />
-        <span className="text-gray-500">{formatoCantidad(caja.totalFaltante)} u. faltantes</span>
+        <span className="text-tinta-secundaria">{formatoCantidad(caja.totalFaltante)} u. faltantes</span>
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           {hasPermission(PATH_VISTA, 'caja', 'btn_inventario') && productos.length > 0 && (
-            <button type="button" onClick={() => setInventariando(true)} className="h-7 px-2 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><ClipboardCheck size={12} /> Hacer inventario</button>
+            <button type="button" onClick={() => setInventariando(true)} className="h-7 px-2 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1"><ClipboardCheck size={12} /> Hacer inventario</button>
           )}
           {puedeReponer && caja.activa !== false && (
-            <button type="button" onClick={() => setReponiendo(caja)} disabled={!caja.totalFaltante} title={caja.totalFaltante ? 'Reponer faltantes desde la Bodega General' : 'La caja está completa'} className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1 disabled:opacity-40"><PackagePlus size={12} /> Reponer</button>
+            <button type="button" onClick={() => setReponiendo(caja)} disabled={!caja.totalFaltante} title={caja.totalFaltante ? 'Reponer faltantes desde la Bodega General' : 'La caja está completa'} className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 text-etiqueta flex items-center gap-1 disabled:opacity-40"><PackagePlus size={12} /> Reponer</button>
           )}
           {puedeExportar && <BotonesExportar deshabilitado={!productos.length} exportar={exportarCon((f) => exportarContenidoCaja(caja, f))} />}
-          <button type="button" onClick={() => setVerHistorial((v) => !v)} className={`h-7 px-2 rounded border font-semibold flex items-center gap-1 ${verHistorial ? 'border-[#2383C2] text-[#2383C2]' : 'border-gray-300 dark:border-gray-600'}`}><History size={12} /> Historial</button>
+          <button type="button" onClick={() => setVerHistorial((v) => !v)} className={`h-7 px-2 rounded border text-etiqueta flex items-center gap-1 ${verHistorial ? 'border-[#2383C2] text-[#2383C2]' : 'border-gray-300 dark:border-gray-600'}`}><History size={12} /> Historial</button>
           {hasPermission(PATH_VISTA, 'cajas', 'btn_guardar') && (
             <>
-              <button type="button" onClick={() => setDuplicando(true)} title="Crear otra caja con los mismos productos, stock objetivo y orden" className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><Copy size={12} /> Duplicar</button>
-              <button type="button" onClick={() => setEditando(true)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><Pencil size={12} /> Editar</button>
+              <button type="button" onClick={() => setDuplicando(true)} title="Crear otra caja con los mismos productos, stock objetivo y orden" className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1"><Copy size={12} /> Duplicar</button>
+              <button type="button" onClick={() => setEditando(true)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1"><Pencil size={12} /> Editar</button>
             </>
           )}
         </div>
       </div>
-      {caja.descripcion && <p className="text-gray-500">{caja.descripcion}</p>}
-      {caja.ultimoInventario?.fecha && <p className="text-gray-500">Último inventario: {fechaHora(caja.ultimoInventario.fecha)} · {caja.ultimoInventario.usuario || ''}</p>}
+      {caja.descripcion && <p className="text-tinta-secundaria">{caja.descripcion}</p>}
+      {caja.ultimoInventario?.fecha && <p className="text-tinta-secundaria">Último inventario: {fechaHora(caja.ultimoInventario.fecha)} · {caja.ultimoInventario.usuario || ''}</p>}
 
       <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
       <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
@@ -145,17 +145,17 @@ const DetalleCaja = ({ caja, onVolver, onCambio, onDuplicada, nombresOcupados })
                     {puedeOrdenar && productos.length > 1 ? (
                       <span className="flex items-center gap-1 min-w-0">
                         <GripVertical size={12} className="shrink-0 text-gray-400" aria-hidden="true" />
-                        <button type="button" onClick={() => mover(i, i - 1)} disabled={ordenando || i === 0} aria-label={`Subir ${p.nombre}`} title="Subir" className="shrink-0 p-0.5 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><ChevronUp size={12} /></button>
-                        <button type="button" onClick={() => mover(i, i + 1)} disabled={ordenando || i === productos.length - 1} aria-label={`Bajar ${p.nombre}`} title="Bajar" className="shrink-0 p-0.5 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><ChevronDown size={12} /></button>
+                        <button type="button" onClick={() => mover(i, i - 1)} disabled={ordenando || i === 0} aria-label={`Subir ${p.nombre}`} title="Subir" className="shrink-0 p-0.5 rounded text-tinta-secundaria hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><ChevronUp size={12} /></button>
+                        <button type="button" onClick={() => mover(i, i + 1)} disabled={ordenando || i === productos.length - 1} aria-label={`Bajar ${p.nombre}`} title="Bajar" className="shrink-0 p-0.5 rounded text-tinta-secundaria hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30"><ChevronDown size={12} /></button>
                         <span className="truncate">{p.nombre}</span>
                       </span>
                     ) : p.nombre}
                   </td>
                 ),
-                referencia: <td className={`${TD} font-num text-gray-600 dark:text-gray-300`} title={`${referencia} · ${p.codigoMaestro || ''}`}>{referencia || '—'}</td>,
-                objetivo: <td className={`${TD} text-right font-num`}>{formatoCantidad(p.stockObjetivo)}</td>,
-                actual: <td className={`${TD} text-right font-num`}>{formatoCantidad(p.stockActual)}</td>,
-                faltante: <td className={`${TD} text-right font-num ${p.faltante ? 'font-bold text-red-600 dark:text-red-400' : 'text-gray-400'}`}>{p.faltante ? formatoCantidad(p.faltante) : '—'}</td>,
+                referencia: <td className={`${TD} text-numero-tabla text-tinta-secundaria`} title={`${referencia} · ${p.codigoMaestro || ''}`}>{referencia || '—'}</td>,
+                objetivo: <td className={`${TD} text-right text-numero-tabla`}>{formatoCantidad(p.stockObjetivo)}</td>,
+                actual: <td className={`${TD} text-right text-numero-tabla`}>{formatoCantidad(p.stockActual)}</td>,
+                faltante: <td className={`${TD} text-right ${p.faltante ? 'text-etiqueta tabular-nums text-red-600 dark:text-red-400' : 'text-numero-tabla text-tinta-atenuada'}`}>{p.faltante ? formatoCantidad(p.faltante) : '—'}</td>,
               }} />
             );
           })}
@@ -173,7 +173,7 @@ const DetalleCaja = ({ caja, onVolver, onCambio, onDuplicada, nombresOcupados })
             <>
               {botonesInventario(inv)}
               {puedeReponer && caja.activa !== false && inv.resumen?.faltante > 0 && (
-                <button type="button" onClick={() => { setInventariando(false); setReponiendo(cajaTrasInventario(caja, inv.lineas)); }} className="h-9 px-3 rounded bg-emerald-600 text-white font-bold flex items-center gap-1"><PackagePlus size={14} /> Reponer faltantes</button>
+                <button type="button" onClick={() => { setInventariando(false); setReponiendo(cajaTrasInventario(caja, inv.lineas)); }} className="h-9 px-3 rounded bg-emerald-600 text-white text-etiqueta flex items-center gap-1"><PackagePlus size={14} /> Reponer faltantes</button>
               )}
             </>
           )}

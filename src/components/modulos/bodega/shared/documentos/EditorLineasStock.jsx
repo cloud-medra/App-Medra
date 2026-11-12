@@ -35,13 +35,13 @@ const COLUMNAS = [
 // Celda con un campo editable: sin relleno vertical para que la fila quede
 // del mismo alto que las de solo texto.
 const TD_CAMPO = `${TD} !py-0 text-right`;
-const CAMPO_FILA = 'h-6 px-1.5 text-right font-num border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900';
+const CAMPO_FILA = 'h-6 px-1.5 text-right text-numero-tabla border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900';
 
 const CLAVE_AUTO = 'bodega.autoAgregarEscaneo';
 const leerAuto = () => { try { return localStorage.getItem(CLAVE_AUTO) !== 'no'; } catch { return true; } };
 const guardarAuto = (v) => { try { localStorage.setItem(CLAVE_AUTO, v ? 'si' : 'no'); } catch { /* sin almacenamiento */ } };
 
-const INPUT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]';
+const INPUT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]';
 
 // Editor de líneas por escaneo, común a Ingreso y Carga inicial.
 // Flujo: escanear (o buscar) producto -> cantidad -> lote -> vencimiento ->
@@ -65,7 +65,7 @@ const INPUT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text
 // Aviso de lote sin vencimiento (se puede guardar así y completarlo después:
 // Maestro → filtro "Con lotes sin vencimiento").
 const SinVencimiento = () => (
-  <span className="ml-1 normal-case px-1 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">Sin vencimiento</span>
+  <span className="ml-1 normal-case px-1 rounded text-pequeno bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">Sin vencimiento</span>
 );
 
 const LotesExistentes = ({ opciones, lote, vencimiento, onElegir }) => {
@@ -73,21 +73,21 @@ const LotesExistentes = ({ opciones, lote, vencimiento, onElegir }) => {
   const actual = normalizarLote(lote);
   const existe = opciones !== 'cargando' && opciones.some((o) => normalizarLote(o.lote) === actual && (o.vencimiento || '') === (vencimiento || ''));
   return (
-    <div className="w-full flex flex-wrap items-center gap-1.5 text-[11px]">
-      <span className="text-[10px] font-bold uppercase text-gray-500">Lotes existentes:</span>
-      {opciones === 'cargando' && <span className="text-gray-400 italic">cargando…</span>}
-      {opciones !== 'cargando' && opciones.length === 0 && <span className="text-gray-400 italic">ninguno</span>}
+    <div className="w-full flex flex-wrap items-center gap-1.5 text-secundario">
+      <span className="text-pequeno uppercase text-tinta-secundaria">Lotes existentes:</span>
+      {opciones === 'cargando' && <span className="text-tinta-atenuada italic">cargando…</span>}
+      {opciones !== 'cargando' && opciones.length === 0 && <span className="text-tinta-atenuada italic">ninguno</span>}
       {opciones !== 'cargando' && opciones.slice(0, 20).map((o) => {
         const activo = normalizarLote(o.lote) === actual && (o.vencimiento || '') === (vencimiento || '');
         const venc = estadoVencimiento(o.vencimiento);
         return (
           <button key={`${o.lote}|${o.vencimiento}`} type="button" onClick={() => onElegir(o)}
-            className={`px-2 py-0.5 rounded border font-num ${activo ? 'border-[#2383C2] bg-white dark:bg-gray-900 ring-2 ring-[#2383C2]/40 font-bold' : 'border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/50'}`}>
-            {o.lote || 'S/L'} · {o.vencimiento || 'sin venc.'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>} · stock {formatoCantidad(o.disponible)}
+            className={`px-2 py-0.5 rounded border ${activo ? 'border-[#2383C2] bg-white dark:bg-gray-900 ring-2 ring-[#2383C2]/40 text-etiqueta tabular-nums' : 'text-numero-tabla border-gray-300 dark:border-gray-600 bg-white/70 dark:bg-gray-900/50'}`}>
+            {o.lote || 'S/L'} · {o.vencimiento || 'sin venc.'} {venc.etiqueta && <span className={`px-1 rounded text-pequeno ${venc.badge}`}>{venc.etiqueta}</span>} · stock {formatoCantidad(o.disponible)}
           </button>
         );
       })}
-      {opciones !== 'cargando' && (actual || vencimiento) && !existe && <span className="px-1.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 font-bold text-[10px]">LOTE NUEVO: se crea al confirmar</span>}
+      {opciones !== 'cargando' && (actual || vencimiento) && !existe && <span className="px-1.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 text-pequeno">LOTE NUEVO: se crea al confirmar</span>}
     </div>
   );
 };
@@ -270,12 +270,12 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
   const total = totalUnidades(lineas);
 
   return (
-    <div className="flex flex-col gap-1.5 text-[11px]">
+    <div className="flex flex-col gap-1.5 text-secundario">
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-2 items-start">
         <CampoEscaneoBodega ref={escanerRef} autoFocus onLectura={onLectura} deshabilitado={deshabilitado} senal={senal.tipo} mensaje={senal.mensaje} />
         <div className="flex flex-col gap-1">
           <BuscadorProducto deshabilitado={deshabilitado} onElegir={(p) => tomarProducto(p, null)} />
-          <label className="flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-300 font-semibold" title="Si el código trae todo lo necesario, se agrega con cantidad 1 sin presionar nada más">
+          <label className="flex items-center gap-1.5 text-etiqueta text-tinta-secundaria" title="Si el código trae todo lo necesario, se agrega con cantidad 1 sin presionar nada más">
             <input type="checkbox" checked={auto} onChange={(e) => { setAuto(e.target.checked); guardarAuto(e.target.checked); }} /> Agregar al escanear (cantidad 1)
           </label>
         </div>
@@ -284,39 +284,39 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
       {pendiente && (
         <div className="flex flex-wrap items-end gap-1.5 px-2 py-1.5 rounded-lg border-2 border-[#2383C2]/50 bg-blue-50/50 dark:bg-sky-950/20">
           <div className="flex-1 min-w-[180px]">
-            <span className="block text-[10px] font-bold uppercase text-gray-500">Producto</span>
-            <span className="font-bold text-gray-800 dark:text-gray-100">{pendiente.producto.nombre}</span>
-            <span className="ml-1 font-num text-[11px] text-gray-500">
+            <span className="block text-pequeno uppercase text-tinta-secundaria">Producto</span>
+            <span className="text-etiqueta text-tinta-principal">{pendiente.producto.nombre}</span>
+            <span className="ml-1 text-numero-tabla text-tinta-secundaria">
               {conPrecio ? (referenciaProducto(pendiente.producto) ? `Ref. ${referenciaProducto(pendiente.producto)}` : 'Sin referencia') : pendiente.producto.codigoMaestro}
             </span>
           </div>
           {pendiente.producto.manejaLote && (
             <label className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Lote <span className="normal-case font-normal">(opcional)</span></span>
-              <input ref={loteRef} value={pendiente.lote} onChange={cambiar('lote')} data-campo="lote" onKeyDown={alTeclaEnLote} maxLength={300} placeholder="Escanea el código de lote" title="Escanea aquí el código 2 (lote/vencimiento) o escribe el lote" className={`${INPUT} w-36 font-num uppercase`} />
+              <span className="text-pequeno uppercase text-tinta-secundaria">Lote <span className="normal-case">(opcional)</span></span>
+              <input ref={loteRef} value={pendiente.lote} onChange={cambiar('lote')} data-campo="lote" onKeyDown={alTeclaEnLote} maxLength={300} placeholder="Escanea el código de lote" title="Escanea aquí el código 2 (lote/vencimiento) o escribe el lote" className={`${INPUT} w-36 text-numero-tabla uppercase`} />
             </label>
           )}
           {pendiente.producto.manejaVencimiento && (
             <label className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase text-gray-500">
-                Vencimiento <span className="normal-case font-normal">(opcional)</span>
+              <span className="text-pequeno uppercase text-tinta-secundaria">
+                Vencimiento <span className="normal-case">(opcional)</span>
                 {!pendiente.vencimiento && <SinVencimiento />}
               </span>
-              <input ref={vencimientoRef} type="date" value={pendiente.vencimiento} onChange={cambiar('vencimiento')} data-campo="vencimiento" onKeyDown={alPresionarEnter} className={`${INPUT} w-40 font-num`} />
+              <input ref={vencimientoRef} type="date" value={pendiente.vencimiento} onChange={cambiar('vencimiento')} data-campo="vencimiento" onKeyDown={alPresionarEnter} className={`${INPUT} w-40 text-numero-tabla`} />
             </label>
           )}
           <label className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase text-gray-500">Cantidad</span>
-            <input ref={cantidadRef} type="number" min="1" step="1" inputMode="numeric" value={pendiente.cantidad} onChange={cambiar('cantidad')} data-campo="cantidad" onKeyDown={alPresionarEnter} className={`${INPUT} w-24 font-num`} />
+            <span className="text-pequeno uppercase text-tinta-secundaria">Cantidad</span>
+            <input ref={cantidadRef} type="number" min="1" step="1" inputMode="numeric" value={pendiente.cantidad} onChange={cambiar('cantidad')} data-campo="cantidad" onKeyDown={alPresionarEnter} className={`${INPUT} w-24 text-numero-tabla`} />
           </label>
           {precioEnLinea && (
             <label className="flex flex-col">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Precio unitario <span className="normal-case font-normal">(opcional)</span></span>
-              <input ref={precioRef} type="number" min="0" step="1" inputMode="numeric" value={pendiente.precioUnitario ?? ''} onChange={cambiar('precioUnitario')} data-campo="precio" onKeyDown={alPresionarEnter} className={`${INPUT} w-32 font-num`} aria-label="Precio unitario" />
+              <span className="text-pequeno uppercase text-tinta-secundaria">Precio unitario <span className="normal-case">(opcional)</span></span>
+              <input ref={precioRef} type="number" min="0" step="1" inputMode="numeric" value={pendiente.precioUnitario ?? ''} onChange={cambiar('precioUnitario')} data-campo="precio" onKeyDown={alPresionarEnter} className={`${INPUT} w-32 text-numero-tabla`} aria-label="Precio unitario" />
             </label>
           )}
-          <button type="button" onClick={confirmarPendiente} className="h-7 px-2.5 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><Plus size={13} /> Agregar</button>
-          <button type="button" onClick={() => { setPendiente(null); enfocar(null); }} title="Descartar" className="h-7 px-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-200"><X size={14} /></button>
+          <button type="button" onClick={confirmarPendiente} className="h-7 px-2.5 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1"><Plus size={13} /> Agregar</button>
+          <button type="button" onClick={() => { setPendiente(null); enfocar(null); }} title="Descartar" className="h-7 px-2 rounded bg-gray-200 dark:bg-gray-700 text-tinta-secundaria"><X size={14} /></button>
           {(pendiente.producto.manejaLote || pendiente.producto.manejaVencimiento) && (
             <LotesExistentes opciones={lotesProducto[pendiente.producto.id]} lote={pendiente.lote} vencimiento={pendiente.vencimiento}
               onElegir={(o) => { setPendiente((p) => ({ ...p, lote: o.lote, vencimiento: o.vencimiento })); enfocar('cantidad', true); }} />
@@ -324,8 +324,8 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
         </div>
       )}
       {espera && !pendiente && (
-        <div className="flex items-center gap-2 px-2 py-1 rounded border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-[11px] text-amber-800 dark:text-amber-200">
-          <span>Lote <strong className="font-num">{espera.lote || '—'}</strong> · vence <strong className="font-num">{espera.vencimiento || '—'}</strong> en espera: escanea el código del producto.</span>
+        <div className="flex items-center gap-2 px-2 py-1 rounded border border-amber-300 bg-amber-50 dark:bg-amber-950/30 text-secundario text-amber-800 dark:text-amber-200">
+          <span>Lote <strong className="text-numero-tabla">{espera.lote || '—'}</strong> · vence <strong className="text-numero-tabla">{espera.vencimiento || '—'}</strong> en espera: escanea el código del producto.</span>
           <button type="button" onClick={() => setEspera(null)} title="Descartar" className="ml-auto p-0.5"><X size={12} /></button>
         </div>
       )}
@@ -341,10 +341,10 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
             const venc = estadoVencimiento(l.vencimiento);
             const referencia = referenciaProducto(p);
             const celdas = {
-              referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p?.codigoMaestro || ''}` : p?.codigoMaestro}>{referencia || '—'}</td>,
-              producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={p?.nombre || ''}>{p?.nombre || <span className="text-red-600">Producto no encontrado</span>}</td>,
-              lote: <td className={`${TD} font-num`} title={l.lote || ''}>{l.lote || '—'}</td>,
-              vencimiento: <td className={`${TD} font-num`}>{l.vencimiento || (p?.manejaVencimiento ? <SinVencimiento /> : '—')} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
+              referencia: <td className={`${TD} text-numero-tabla text-tinta-principal`} title={referencia ? `${referencia} · ${p?.codigoMaestro || ''}` : p?.codigoMaestro}>{referencia || '—'}</td>,
+              producto: <td className={`${TD} text-etiqueta text-tinta-principal`} title={p?.nombre || ''}>{p?.nombre || <span className="text-red-600">Producto no encontrado</span>}</td>,
+              lote: <td className={`${TD} text-numero-tabla`} title={l.lote || ''}>{l.lote || '—'}</td>,
+              vencimiento: <td className={`${TD} text-numero-tabla`}>{l.vencimiento || (p?.manejaVencimiento ? <SinVencimiento /> : '—')} {venc.etiqueta && <span className={`px-1 rounded text-pequeno ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
               cantidad: (
                 <td className={TD_CAMPO}>
                   <input type="number" min="1" step="1" inputMode="numeric" value={l.cantidad} disabled={deshabilitado}
@@ -359,19 +359,19 @@ const EditorLineasStock = ({ rutaVista, lineas, onCambiar, deshabilitado = false
                     className={`${CAMPO_FILA} w-full max-w-28`} aria-label="Precio unitario" />
                 </td>
               ),
-              total: <td className={`${TD} text-right font-num font-semibold`}>{formatoPesos(totalLinea(l))}</td>,
+              total: <td className={`${TD} text-right text-numero-tabla`}>{formatoPesos(totalLinea(l))}</td>,
               quitar: (
                 <td className={`${TD} !py-0 text-center`}>
-                  <button type="button" disabled={deshabilitado} onClick={() => onCambiar(quitarLinea(lineas, l.key))} title="Quitar línea" className="p-0.5 rounded text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={14} /></button>
+                  <button type="button" disabled={deshabilitado} onClick={() => onCambiar(quitarLinea(lineas, l.key))} title="Quitar línea" className="p-0.5 rounded text-tinta-atenuada hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={14} /></button>
                 </td>
               ),
             };
             return <FilaBodega key={l.key} columnas={columnasVisibles} celdas={celdas} className={venc.fila} />;
           })}
           {lineas.length > 0 && (
-            <FilaAnchoCompleto columnas={columnasVisibles} className="bg-gray-50 dark:bg-gray-900 font-bold" celdaClassName="px-2 py-1 text-right">
+            <FilaAnchoCompleto columnas={columnasVisibles} className="bg-gray-50 dark:bg-gray-900 text-etiqueta" celdaClassName="px-2 py-1 text-right">
               <PackageCheck size={13} className="inline mr-1 text-emerald-600" />{lineas.length} línea(s) · {formatoCantidad(total)} unidad(es)
-              {precioEnLinea && <> · Total {conPrecio ? 'carga' : 'ingreso'} <span className="font-num">{formatoPesos(totalValorLineas(lineas))}</span></>}
+              {precioEnLinea && <> · Total {conPrecio ? 'carga' : 'ingreso'} <span className="text-numero-tabla">{formatoPesos(totalValorLineas(lineas))}</span></>}
             </FilaAnchoCompleto>
           )}
         </TablaBodega>

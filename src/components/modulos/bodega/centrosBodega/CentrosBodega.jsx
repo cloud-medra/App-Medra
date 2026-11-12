@@ -65,9 +65,9 @@ const DetalleCentro = ({ centro, onVolver }) => {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" onClick={() => onVolver(huboCambios)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1"><ArrowLeft size={12} /> Centros</button>
-        <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-100">{centro.centroNombre}</h3>
-        <span className="text-gray-500">
+        <button type="button" onClick={() => onVolver(huboCambios)} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1"><ArrowLeft size={12} /> Centros</button>
+        <h3 className="text-subtitulo text-tinta-principal">{centro.centroNombre}</h3>
+        <span className="text-tinta-secundaria">
           {formatoCantidad(filtrados.reduce((n, t) => n + (t.pendiente || 0), 0))} u. en tránsito
           {filtrados.some((t) => t.enCentro) && ` · ${formatoCantidad(filtrados.reduce((n, t) => n + (t.enCentro || 0), 0))} u. dejadas en el centro`} · {filtrados.length} registro(s)
         </span>
@@ -76,15 +76,15 @@ const DetalleCentro = ({ centro, onVolver }) => {
           {hasPermission(PATH_VISTA, 'exportar', 'btn_exportar') && (
             <>
               <button type="button" disabled={!filtrados.length} onClick={() => exportarExcel(`transito_${centro.centroNombre}`, [{ nombre: 'Tránsito', columnas: COLUMNAS_EXPORT, filas: filtrados }])}
-                className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1 disabled:opacity-40"><FileSpreadsheet size={12} /> Excel</button>
+                className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 text-etiqueta flex items-center gap-1 disabled:opacity-40"><FileSpreadsheet size={12} /> Excel</button>
               <button type="button" disabled={!filtrados.length} onClick={() => exportarPdf(`transito_${centro.centroNombre}`, { titulo: `Tránsito en ${centro.centroNombre}`, subtitulo: `${filtrados.length} registro(s) · ${filtrados.reduce((n, t) => n + (t.pendiente || 0), 0)} u. en tránsito · ${filtrados.reduce((n, t) => n + (t.enCentro || 0), 0)} u. dejadas en el centro`, columnas: COLUMNAS_EXPORT, filas: filtrados })}
-                className="h-7 px-2 rounded border border-red-600 text-red-700 dark:text-red-300 font-semibold flex items-center gap-1 disabled:opacity-40"><FileDown size={12} /> PDF</button>
+                className="h-7 px-2 rounded border border-red-600 text-red-700 dark:text-red-300 text-etiqueta flex items-center gap-1 disabled:opacity-40"><FileDown size={12} /> PDF</button>
             </>
           )}
         </div>
       </div>
       {transitos === null
-        ? <p className="text-gray-400 italic">Cargando…</p>
+        ? <p className="text-tinta-atenuada italic">Cargando…</p>
         : <TablaTransitos transitos={filtrados} rutaVista={PATH_VISTA} origen="centros" ocultarCentro onCambio={(r) => {
             setHuboCambios(true);
             if (r?.transitos) setTransitos((t) => aplicarResultadoTransitos(t || [], r.transitos));
@@ -138,16 +138,16 @@ const CentrosBodega = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-secundario">
       <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase"><Building2 size={14} className="text-[#2383C2]" /> Tránsito por centro</h2>
-        {!abierto && <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1 text-gray-600 dark:text-gray-300"><RefreshCw size={12} /> Actualizar</button>}
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5"><Building2 size={14} className="text-[#2383C2]" /> Tránsito por centro</h2>
+        {!abierto && <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1 text-tinta-secundaria"><RefreshCw size={12} /> Actualizar</button>}
       </div>
       <div className="flex-1 overflow-auto p-3">
         {abierto ? (
           <DetalleCentro centro={abierto} onVolver={volver} />
         ) : centros === null ? (
-          <p className="text-gray-400 italic">Cargando…</p>
+          <p className="text-tinta-atenuada italic">Cargando…</p>
         ) : (
           <div className="flex flex-col gap-1.5">
             <div className="flex justify-end"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
@@ -159,12 +159,12 @@ const CentrosBodega = () => {
                   const dias = r ? diasEnTransito(r.masAntiguo) : null;
                   const venc = estadoVencimiento(r?.proximoVencimiento);
                   const celdas = {
-                    centro: <td className={`${TD} font-semibold text-[#2383C2] underline-offset-2 group-hover:underline`} title={c.centroNombre}>{c.centroNombre}</td>,
-                    productos: <td className={`${TD} text-right font-num`}>{c.productosDistintos}</td>,
-                    unidades: <td className={`${TD} text-right font-num font-bold text-amber-600 dark:text-amber-400`}>{formatoCantidad(c.unidades)}</td>,
-                    enCentro: <td className={`${TD} text-right font-num font-bold text-violet-600 dark:text-violet-400`}>{c.enCentro ? formatoCantidad(c.enCentro) : '—'}</td>,
-                    antiguo: <td className={`${TD} text-right font-num ${dias > 7 ? 'text-red-600 font-bold' : ''}`}>{r ? (dias ?? '—') : '…'}</td>,
-                    vencimiento: <td className={`${TD} font-num`}>{r ? (r.proximoVencimiento || '—') : '…'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
+                    centro: <td className={`${TD} text-etiqueta text-[#2383C2] underline-offset-2 group-hover:underline`} title={c.centroNombre}>{c.centroNombre}</td>,
+                    productos: <td className={`${TD} text-right text-numero-tabla`}>{c.productosDistintos}</td>,
+                    unidades: <td className={`${TD} text-right text-numero-tabla text-amber-600 dark:text-amber-400`}>{formatoCantidad(c.unidades)}</td>,
+                    enCentro: <td className={`${TD} text-right text-numero-tabla text-violet-600 dark:text-violet-400`}>{c.enCentro ? formatoCantidad(c.enCentro) : '—'}</td>,
+                    antiguo: <td className={`${TD} text-right ${dias > 7 ? 'text-red-600 text-etiqueta tabular-nums' : 'text-numero-tabla'}`}>{r ? (dias ?? '—') : '…'}</td>,
+                    vencimiento: <td className={`${TD} text-numero-tabla`}>{r ? (r.proximoVencimiento || '—') : '…'} {venc.etiqueta && <span className={`px-1 rounded text-pequeno ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
                   };
                   return <FilaBodega key={c.id} columnas={columnasVisibles} celdas={celdas} className="cursor-pointer" onClick={() => setAbierto(c)} />;
                 })}

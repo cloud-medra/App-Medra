@@ -48,7 +48,7 @@ const COLUMNAS = [
   { key: 'minimo', label: 'Mínimo', alinear: 'text-right', ancho: 70, min: 50 },
   { key: 'ficha', label: 'Ficha', alinear: 'text-center', fija: true, ancho: 50, min: 40 },
 ];
-const SELECT = 'h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
+const SELECT = 'h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal';
 
 // Modal simple para crear un producto desde el Maestro.
 const ModalNuevoProducto = ({ onCerrar, onCreado, onAbrirProducto }) => {
@@ -73,8 +73,8 @@ const ModalNuevoProducto = ({ onCerrar, onCreado, onAbrirProducto }) => {
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Nuevo producto">
       <div className="w-full max-w-2xl max-h-[92vh] overflow-auto bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-100 flex items-center gap-1.5"><PackagePlus size={16} className="text-[#2383C2]" /> Nuevo producto</h3>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
+          <h3 className="text-subtitulo text-tinta-principal flex items-center gap-1.5"><PackagePlus size={16} className="text-[#2383C2]" /> Nuevo producto</h3>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 rounded-full text-tinta-atenuada hover:text-tinta-principal hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
         </div>
         <div className="p-4">
           <FormProducto esNuevo inicial={PRODUCTO_VACIO} guardando={guardando} onGuardar={crear} onCancelar={onCerrar} onMaestroConProducto={setAvisoMaestro} />
@@ -229,33 +229,33 @@ const MaestroBodega = () => {
   ];
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden relative text-secundario">
       {cargando && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">Cargando productos...</h3>
+            <h3 className="text-[#2383C2] text-subtitulo">Cargando productos...</h3>
           </div>
         </div>
       )}
 
       {/* Encabezado */}
       <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <Boxes size={14} className="text-[#2383C2]" />
           Maestro de productos · Bodega General
         </h2>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold bg-gray-100 dark:bg-gray-700/60 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-600">
+          <span className="text-pequeno text-tinta-secundaria bg-gray-100 dark:bg-gray-700/60 px-2 py-0.5 rounded border border-gray-200 dark:border-gray-600">
             {filtrados.length} de {productos.length} producto(s)
           </span>
           {hasPermission(PATH_VISTA, 'listado', 'btn_actualizar') && (
-            <button type="button" onClick={actualizar} title="Volver a leer productos y stock" className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:text-[#2383C2] flex items-center gap-1 font-semibold">
+            <button type="button" onClick={actualizar} title="Volver a leer productos y stock" className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-tinta-secundaria hover:text-[#2383C2] flex items-center gap-1 text-etiqueta">
               <RefreshCw size={12} /> Actualizar
             </button>
           )}
           {hasPermission(PATH_VISTA, 'productos', 'btn_crear') && (
-            <button type="button" onClick={() => setCreando(true)} className="h-7 px-2.5 rounded bg-[#2383C2] hover:bg-blue-600 text-white flex items-center gap-1 font-bold">
+            <button type="button" onClick={() => setCreando(true)} className="h-7 px-2.5 rounded bg-[#2383C2] hover:bg-blue-600 text-white flex items-center gap-1 text-etiqueta">
               <PackagePlus size={13} /> Nuevo producto
             </button>
           )}
@@ -276,10 +276,10 @@ const MaestroBodega = () => {
           <option value="inactivos">Inactivos</option>
           <option value="todos">Todos</option>
         </select>
-        <label className="flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300">
+        <label className="flex items-center gap-1 text-etiqueta text-tinta-secundaria">
           <input type="checkbox" checked={filtros.conStock} onChange={cambiarFiltro('conStock')} /> Con stock
         </label>
-        <label className="flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300">
+        <label className="flex items-center gap-1 text-etiqueta text-tinta-secundaria">
           <input type="checkbox" checked={filtros.soloBajoMinimo} onChange={cambiarFiltro('soloBajoMinimo')} /> Bajo mínimo
         </label>
         <select value={vencimiento.modo} onChange={(e) => { setLotesVenc(null); setVencimiento((v) => ({ ...v, modo: e.target.value })); }} className={SELECT} aria-label="Vencimiento">
@@ -289,21 +289,21 @@ const MaestroBodega = () => {
           <option value="sinVencimiento">Con lotes sin vencimiento</option>
         </select>
         {vencimiento.modo === 'proximos' && (
-          <label className="flex items-center gap-1 font-semibold text-gray-600 dark:text-gray-300">en
+          <label className="flex items-center gap-1 text-etiqueta text-tinta-secundaria">en
             <input type="number" min="1" max="3650" value={vencimiento.dias} onChange={(e) => { setVencimiento((v) => ({ ...v, dias: Math.max(1, Number(e.target.value) || 1) })); }} className={`${SELECT} w-16`} aria-label="Días" /> días
           </label>
         )}
         {hasPermission(PATH_VISTA, 'listado', 'btn_exportar') && (
           <>
-            <button type="button" disabled={!filtrados.length} onClick={() => exportarExcel('bodega_productos', [{ nombre: 'Productos', columnas: columnasExport, filas: filtrados }])} className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1 disabled:opacity-40"><FileSpreadsheet size={12} /> Excel</button>
-            <button type="button" disabled={!filtrados.length} onClick={() => exportarCsv('bodega_productos', columnasExport, filtrados)} className="h-7 px-2 rounded border border-gray-400 text-gray-700 dark:text-gray-200 font-semibold flex items-center gap-1 disabled:opacity-40"><FileText size={12} /> CSV</button>
+            <button type="button" disabled={!filtrados.length} onClick={() => exportarExcel('bodega_productos', [{ nombre: 'Productos', columnas: columnasExport, filas: filtrados }])} className="h-7 px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 text-etiqueta flex items-center gap-1 disabled:opacity-40"><FileSpreadsheet size={12} /> Excel</button>
+            <button type="button" disabled={!filtrados.length} onClick={() => exportarCsv('bodega_productos', columnasExport, filtrados)} className="h-7 px-2 rounded border border-gray-400 text-tinta-principal text-etiqueta flex items-center gap-1 disabled:opacity-40"><FileText size={12} /> CSV</button>
           </>
         )}
-        <div className="ml-auto flex items-center gap-3 font-medium text-gray-600 dark:text-gray-300">
-          <span>Disponible: <strong className="text-emerald-600 dark:text-emerald-400 font-num">{formatoCantidad(totales.disponible)}</strong></span>
-          <span>En tránsito: <strong className="text-amber-600 dark:text-amber-400 font-num">{formatoCantidad(totales.transito)}</strong></span>
-          {totales.enCentro > 0 && <span>Dejado en centros: <strong className="text-violet-600 dark:text-violet-400 font-num">{formatoCantidad(totales.enCentro)}</strong></span>}
-          <span title="Precio neto × disponible B.G. de los productos filtrados">Total $: <strong className="text-gray-800 dark:text-gray-100 font-num">{formatoPesos(valorTotal)}</strong></span>
+        <div className="ml-auto flex items-center gap-3 text-tinta-secundaria">
+          <span>Disponible: <strong className="text-emerald-600 dark:text-emerald-400 text-numero-tabla">{formatoCantidad(totales.disponible)}</strong></span>
+          <span>En tránsito: <strong className="text-amber-600 dark:text-amber-400 text-numero-tabla">{formatoCantidad(totales.transito)}</strong></span>
+          {totales.enCentro > 0 && <span>Dejado en centros: <strong className="text-violet-600 dark:text-violet-400 text-numero-tabla">{formatoCantidad(totales.enCentro)}</strong></span>}
+          <span title="Precio neto × disponible B.G. de los productos filtrados">Total $: <strong className="text-tinta-principal text-numero-tabla">{formatoPesos(valorTotal)}</strong></span>
           <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} />
         </div>
       </div>
@@ -313,7 +313,7 @@ const MaestroBodega = () => {
         {error ? (
           <div className="p-8 text-center text-red-600 flex flex-col items-center gap-1"><AlertCircle size={20} /> No se pudieron leer los productos: {mensajeError(error)}</div>
         ) : !cargando && filtrados.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 dark:text-gray-400 italic flex flex-col items-center gap-1">
+          <div className="p-8 text-center text-tinta-secundaria italic flex flex-col items-center gap-1">
             <AlertCircle size={20} className="text-gray-400 mb-1" />
             {productos.length === 0 ? 'Aún no hay productos en Bodega.' : 'Ningún producto coincide con la búsqueda o los filtros.'}
           </div>
@@ -324,18 +324,18 @@ const MaestroBodega = () => {
                 const expandido = expandidos.has(p.id);
                 const alerta = bajoMinimo(p);
                 const celdas = {
-                  referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referenciaProducto(p)}>{referenciaProducto(p) || '—'}</td>,
+                  referencia: <td className={`${TD} text-numero-tabla text-tinta-principal`} title={referenciaProducto(p)}>{referenciaProducto(p) || '—'}</td>,
                   producto: (
-                    <td className={`${TD} text-gray-800 dark:text-gray-100`} title={`${p.nombre} · ${p.codigoMaestro}`}>
-                      <button type="button" onClick={() => setAbierto({ id: p.id, pestana: 'stock' })} className="text-left font-semibold hover:text-[#2383C2] hover:underline">{p.nombre}</button>
-                      {p.activo === false && <span className="ml-1 text-[9px] font-bold px-1 rounded bg-gray-200 dark:bg-gray-700">INACTIVO</span>}
+                    <td className={`${TD} text-tinta-principal`} title={`${p.nombre} · ${p.codigoMaestro}`}>
+                      <button type="button" onClick={() => setAbierto({ id: p.id, pestana: 'stock' })} className="text-left text-etiqueta hover:text-[#2383C2] hover:underline">{p.nombre}</button>
+                      {p.activo === false && <span className="ml-1 text-pequeno px-1 rounded bg-gray-200 dark:bg-gray-700">INACTIVO</span>}
                       {vencePorProducto?.[p.id]?.sinVencimiento && (
-                        <span className="ml-1 text-[9px] font-bold px-1 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                        <span className="ml-1 text-pequeno px-1 rounded bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                           {vencePorProducto[p.id].lotes} lote(s) sin vencimiento
                         </span>
                       )}
                       {vencePorProducto?.[p.id] && !vencePorProducto[p.id].sinVencimiento && (
-                        <span className={`ml-1 text-[9px] font-bold px-1 rounded ${estadoVencimiento(vencePorProducto[p.id].vencimiento, { diasAviso: vencimiento.dias }).badge}`}>
+                        <span className={`ml-1 text-pequeno px-1 rounded ${estadoVencimiento(vencePorProducto[p.id].vencimiento, { diasAviso: vencimiento.dias }).badge}`}>
                           {vencePorProducto[p.id].lotes} lote(s) · vence {vencePorProducto[p.id].vencimiento}
                         </span>
                       )}
@@ -344,29 +344,29 @@ const MaestroBodega = () => {
                   categoria: <td className={TD}>{categorias[p.categoriaId] || '—'}</td>,
                   unidad: <td className={TD}>{unidades[p.unidadId] || '—'}</td>,
                   ubicacion: <td className={TD}>{p.ubicacion || '—'}</td>,
-                  loteVencimiento: <td className={`${TD} text-center text-[10px]`}>{p.manejaLote ? 'Lote' : '—'} / {p.manejaVencimiento ? 'Venc.' : '—'}</td>,
-                  disponible: <td className={`${TD} text-right font-num font-bold text-emerald-600 dark:text-emerald-400`}>{formatoCantidad(p.disponible)}</td>,
+                  loteVencimiento: <td className={`${TD} text-center text-pequeno`}>{p.manejaLote ? 'Lote' : '—'} / {p.manejaVencimiento ? 'Venc.' : '—'}</td>,
+                  disponible: <td className={`${TD} text-right text-numero-tabla text-emerald-600 dark:text-emerald-400`}>{formatoCantidad(p.disponible)}</td>,
                   transito: (
-                    <td className={`${TD} text-right font-num`}>
+                    <td className={`${TD} text-right text-numero-tabla`}>
                       {centrosConTransito.length > 0 ? (
-                        <button type="button" onClick={() => alternar(p.id)} title="Ver desglose por centro" className="inline-flex items-center gap-0.5 font-bold text-amber-600 dark:text-amber-400 hover:underline">
+                        <button type="button" onClick={() => alternar(p.id)} title="Ver desglose por centro" className="inline-flex items-center gap-0.5 text-etiqueta text-amber-600 dark:text-amber-400 hover:underline">
                           {expandido ? <ChevronDown size={11} /> : <ChevronRight size={11} />} {formatoCantidad(p.transito)}
                         </button>
-                      ) : <span className="text-gray-400">0</span>}
+                      ) : <span className="text-tinta-atenuada">0</span>}
                     </td>
                   ),
                   enCentro: (
-                    <td className={`${TD} text-right font-num`} title={Object.entries(p.enCentroPorCentro || {}).map(([c, n]) => `${nombresCentros[c] || c}: ${n}`).join('\n')}>
-                      {p.enCentro ? <strong className="text-violet-600 dark:text-violet-400">{formatoCantidad(p.enCentro)}</strong> : <span className="text-gray-400">0</span>}
+                    <td className={`${TD} text-right text-numero-tabla`} title={Object.entries(p.enCentroPorCentro || {}).map(([c, n]) => `${nombresCentros[c] || c}: ${n}`).join('\n')}>
+                      {p.enCentro ? <strong className="text-violet-600 dark:text-violet-400">{formatoCantidad(p.enCentro)}</strong> : <span className="text-tinta-atenuada">0</span>}
                     </td>
                   ),
-                  total: <td className={`${TD} text-right font-num font-bold`}>{formatoCantidad(stockTotal(p))}</td>,
-                  precio: <td className={`${TD} text-right font-num`}>{precioNetoProducto(p) === null ? <span className="text-gray-400">—</span> : formatoPesos(precioNetoProducto(p))}</td>,
-                  valor: <td className={`${TD} text-right font-num font-bold`}>{formatoPesos(totalValorizado(p))}</td>,
-                  minimo: <td className={`${TD} text-right font-num ${alerta ? 'text-red-600 font-bold' : ''}`} title={alerta ? 'Disponible bajo el mínimo' : ''}>{p.stockMinimo ?? '—'}</td>,
+                  total: <td className={`${TD} text-right text-numero-tabla`}>{formatoCantidad(stockTotal(p))}</td>,
+                  precio: <td className={`${TD} text-right text-numero-tabla`}>{precioNetoProducto(p) === null ? <span className="text-tinta-atenuada">—</span> : formatoPesos(precioNetoProducto(p))}</td>,
+                  valor: <td className={`${TD} text-right text-numero-tabla`}>{formatoPesos(totalValorizado(p))}</td>,
+                  minimo: <td className={`${TD} text-right ${alerta ? 'text-red-600 text-etiqueta tabular-nums' : 'text-numero-tabla'}`} title={alerta ? 'Disponible bajo el mínimo' : ''}>{p.stockMinimo ?? '—'}</td>,
                   ficha: (
                     <td className={`${TD} text-center`}>
-                      <button type="button" onClick={() => setAbierto({ id: p.id, pestana: 'stock' })} title="Ver ficha del producto" className="p-1 text-gray-500 hover:text-[#2383C2] hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
+                      <button type="button" onClick={() => setAbierto({ id: p.id, pestana: 'stock' })} title="Ver ficha del producto" className="p-1 text-tinta-secundaria hover:text-[#2383C2] hover:bg-gray-200 dark:hover:bg-gray-700 rounded">
                         <Info size={14} />
                       </button>
                     </td>
@@ -378,13 +378,13 @@ const MaestroBodega = () => {
                     {expandido && (
                       <FilaAnchoCompleto columnas={columnasVisibles} className="bg-amber-50/50 dark:bg-amber-950/10" celdaClassName="py-1 px-2 border-b border-gray-200 dark:border-gray-700/70">
                           <div className="ml-auto max-w-sm">
-                            <div className="text-[10px] font-bold uppercase text-gray-500 mb-0.5">En tránsito por centro</div>
+                            <div className="text-pequeno uppercase text-tinta-secundaria mb-0.5">En tránsito por centro</div>
                             {centrosConTransito
                               .sort(([a], [b]) => (nombresCentros[a] || a).localeCompare(nombresCentros[b] || b, 'es'))
                               .map(([centroId, n]) => (
-                                <div key={centroId} className="flex justify-between gap-3 text-[10.5px]">
+                                <div key={centroId} className="flex justify-between gap-3 text-pequeno">
                                   <span>{nombresCentros[centroId] || `Centro ${centroId}`}</span>
-                                  <span className="font-num font-bold text-amber-600 dark:text-amber-400">{formatoCantidad(n)}</span>
+                                  <span className="text-numero-tabla text-amber-600 dark:text-amber-400">{formatoCantidad(n)}</span>
                                 </div>
                               ))}
                           </div>

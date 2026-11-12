@@ -9,7 +9,7 @@ import { TD_BODEGA as TD, useAnchosTablaBodega } from '../shared/anchosTablaBode
 import { useReferenciaDe } from '../shared/referencias';
 import { productosDeCaja } from './cajas';
 
-const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-60';
+const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-normal outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2] disabled:opacity-60';
 
 // Mismo diseño que el Maestro (TablaBodega): columnas redimensionables.
 const COLUMNAS = [
@@ -59,44 +59,44 @@ const FormCajaModal = ({ caja = null, onCerrar, onGuardada }) => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={caja ? 'Editar caja' : 'Nueva caja'}>
-      <div className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-[12px]">
+      <div className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-normal">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between">
-          <h3 className="text-[13px] font-bold flex items-center gap-1.5"><Package size={15} /> {caja ? `Editar caja · ${caja.nombre}` : 'Nueva caja'}</h3>
-          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
+          <h3 className="text-subtitulo flex items-center gap-1.5"><Package size={15} /> {caja ? `Editar caja · ${caja.nombre}` : 'Nueva caja'}</h3>
+          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-tinta-atenuada hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
         </div>
         <div className="p-4 flex flex-col gap-3 overflow-auto">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <label className="flex flex-col sm:col-span-2">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Nombre *</span>
+              <span className="text-pequeno uppercase text-tinta-secundaria">Nombre *</span>
               <input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={MAX_NOMBRE_CAJA} disabled={guardando} className={INPUT} placeholder="Ej. Caja de tutores" />
             </label>
             <label className="flex items-center gap-1.5 sm:mt-4">
               <input type="checkbox" checked={activa} onChange={(e) => setActiva(e.target.checked)} disabled={guardando} /> Activa
             </label>
             <label className="flex flex-col sm:col-span-3">
-              <span className="text-[10px] font-bold uppercase text-gray-500">Descripción (opcional)</span>
+              <span className="text-pequeno uppercase text-tinta-secundaria">Descripción (opcional)</span>
               <input value={descripcion} onChange={(e) => setDescripcion(e.target.value)} maxLength={MAX_DESCRIPCION_CAJA} disabled={guardando} className={INPUT} />
             </label>
           </div>
           <div>
-            <span className="text-[10px] font-bold uppercase text-gray-500">Agregar producto del maestro</span>
+            <span className="text-pequeno uppercase text-tinta-secundaria">Agregar producto del maestro</span>
             <BuscadorProducto onElegir={agregar} deshabilitado={guardando} filtro={(p) => !enCaja.has(p.id)} />
           </div>
           <div className="flex justify-end -mb-2"><BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} /></div>
           <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
             <TablaBodega columnas={COLUMNAS} anchos={anchos} onResize={handleResize}>
-              {productos.length === 0 && <FilaAnchoCompleto columnas={COLUMNAS} celdaClassName="px-2 py-4 text-center text-gray-400 italic">Agrega los productos que lleva la caja.</FilaAnchoCompleto>}
+              {productos.length === 0 && <FilaAnchoCompleto columnas={COLUMNAS} celdaClassName="px-2 py-4 text-center text-tinta-atenuada italic">Agrega los productos que lleva la caja.</FilaAnchoCompleto>}
               {productos.map((p) => {
                 const referencia = referenciaDe(p.productoId);
                 const celdas = {
-                  producto: <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={p.nombre}>{p.nombre}</td>,
-                  referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={referencia ? `${referencia} · ${p.codigoMaestro}` : p.codigoMaestro}>{referencia || '—'}</td>,
+                  producto: <td className={`${TD} text-etiqueta text-tinta-principal`} title={p.nombre}>{p.nombre}</td>,
+                  referencia: <td className={`${TD} text-numero-tabla text-tinta-principal`} title={referencia ? `${referencia} · ${p.codigoMaestro}` : p.codigoMaestro}>{referencia || '—'}</td>,
                   objetivo: (
                     <td className={`${TD} !py-0 text-right`}>
-                      <input type="number" min="0" step="1" inputMode="numeric" value={p.stockObjetivo} onChange={(e) => cambiarObjetivo(p.productoId, e.target.value)} disabled={guardando} aria-label={`Stock objetivo de ${p.nombre}`} className={`${INPUT} !h-6 !px-1.5 w-full max-w-24 text-right font-num`} />
+                      <input type="number" min="0" step="1" inputMode="numeric" value={p.stockObjetivo} onChange={(e) => cambiarObjetivo(p.productoId, e.target.value)} disabled={guardando} aria-label={`Stock objetivo de ${p.nombre}`} className={`${INPUT} !h-6 !px-1.5 w-full max-w-24 text-right text-numero-tabla`} />
                     </td>
                   ),
-                  actual: <td className={`${TD} text-right font-num text-gray-500`} title="Solo cambia por inventario o reposición">{p.stockActual}</td>,
+                  actual: <td className={`${TD} text-right text-numero-tabla text-tinta-secundaria`} title="Solo cambia por inventario o reposición">{p.stockActual}</td>,
                   quitar: (
                     <td className={`${TD} !py-0 text-center`}>
                       <button type="button" onClick={() => quitar(p.productoId)} disabled={guardando} title="Quitar de la caja" className="p-0.5 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"><Trash2 size={13} /></button>
@@ -110,8 +110,8 @@ const FormCajaModal = ({ caja = null, onCerrar, onGuardada }) => {
           {error && <p className="text-red-600">{error}</p>}
         </div>
         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
-          <button type="button" onClick={onCerrar} disabled={guardando} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 font-semibold">Cancelar</button>
-          <button type="button" onClick={guardar} disabled={guardando} className="h-9 px-4 rounded bg-[#2383C2] text-white font-bold disabled:opacity-50">{guardando ? 'Guardando…' : 'Guardar'}</button>
+          <button type="button" onClick={onCerrar} disabled={guardando} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 text-etiqueta">Cancelar</button>
+          <button type="button" onClick={guardar} disabled={guardando} className="h-9 px-4 rounded bg-[#2383C2] text-white text-etiqueta disabled:opacity-50">{guardando ? 'Guardando…' : 'Guardar'}</button>
         </div>
       </div>
     </div>

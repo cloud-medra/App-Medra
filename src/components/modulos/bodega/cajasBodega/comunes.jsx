@@ -8,7 +8,7 @@ export const BarraCompletitud = ({ valor }) => {
   return (
     <span className="inline-flex items-center gap-1.5" title={`${n.toLocaleString('es-CL')} % completa`}>
       <span className="w-16 h-1.5 rounded bg-gray-200 dark:bg-gray-700 overflow-hidden"><span className={`block h-full ${color}`} style={{ width: `${n}%` }} /></span>
-      <span className="font-num font-bold">{n.toLocaleString('es-CL')} %</span>
+      <span className="text-numero-tabla">{n.toLocaleString('es-CL')} %</span>
     </span>
   );
 };
@@ -23,8 +23,8 @@ export const BotonesExportar = ({ exportar, deshabilitado = false, alto = 'h-7' 
   };
   return (
     <>
-      <button type="button" disabled={deshabilitado || ocupado} onClick={() => correr('excel')} className={`${alto} px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1 disabled:opacity-40`}><FileSpreadsheet size={12} /> Excel</button>
-      <button type="button" disabled={deshabilitado || ocupado} onClick={() => correr('pdf')} className={`${alto} px-2 rounded border border-red-600 text-red-700 dark:text-red-300 font-semibold flex items-center gap-1 disabled:opacity-40`}><FileDown size={12} /> PDF</button>
+      <button type="button" disabled={deshabilitado || ocupado} onClick={() => correr('excel')} className={`${alto} px-2 rounded border border-emerald-600 text-emerald-700 dark:text-emerald-300 text-etiqueta flex items-center gap-1 disabled:opacity-40`}><FileSpreadsheet size={12} /> Excel</button>
+      <button type="button" disabled={deshabilitado || ocupado} onClick={() => correr('pdf')} className={`${alto} px-2 rounded border border-red-600 text-red-700 dark:text-red-300 text-etiqueta flex items-center gap-1 disabled:opacity-40`}><FileDown size={12} /> PDF</button>
     </>
   );
 };

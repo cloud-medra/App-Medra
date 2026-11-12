@@ -51,18 +51,18 @@ const CampoEscaneoBodega = ({ ref, onLectura, senal = null, mensaje = '', deshab
           spellCheck={false}
           aria-label="Código de barra"
           placeholder={placeholder || 'Escanea o escribe un código y presiona Enter'}
-          className="flex-1 min-w-0 h-full bg-transparent outline-none text-[12px] font-num text-gray-800 dark:text-gray-100 placeholder:text-gray-400 placeholder:text-[11px] disabled:opacity-50"
+          className="flex-1 min-w-0 h-full bg-transparent outline-none text-numero-tabla text-tinta-principal placeholder:text-tinta-atenuada placeholder:text-secundario disabled:opacity-50"
         />
         <button
           type="button"
           onClick={leer}
           disabled={deshabilitado || !texto.trim()}
-          className="h-6 px-2 rounded bg-[#2383C2] text-white text-[11px] font-bold flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="h-6 px-2 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <CornerDownLeft size={12} /> Leer
         </button>
       </div>
-      <div role="status" aria-live="polite" className={`min-h-[16px] text-[11px] font-semibold ${ESTILOS_MENSAJE[senal] || 'text-gray-500 dark:text-gray-400'}`}>
+      <div role="status" aria-live="polite" className={`min-h-[16px] text-etiqueta ${ESTILOS_MENSAJE[senal] || 'text-tinta-secundaria'}`}>
         {mensaje}
       </div>
     </div>

@@ -31,7 +31,7 @@ const COLUMNAS = [
   { key: 'acciones', label: 'Acciones', fija: true, ancho: 130, min: 110 },
 ];
 const BOTON = 'p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700';
-const BOTON_SELECCION = 'h-7 px-2.5 rounded text-white font-bold flex items-center gap-1';
+const BOTON_SELECCION = 'h-7 px-2.5 rounded text-white text-etiqueta flex items-center gap-1';
 
 // Tabla de tránsitos abiertos con acciones de a uno o sobre los
 // seleccionados (máx. MAX_ACCIONES_TRANSITO). onCambio() se llama después de
@@ -66,14 +66,14 @@ const TablaTransitos = ({ transitos, rutaVista, origen, onCambio, ocultarCentro 
   return (
     <div className="flex flex-col gap-2">
       {seleccionados.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 px-2 py-1.5 rounded bg-blue-50 dark:bg-sky-950/30 border border-blue-200 dark:border-sky-900 text-[11px]">
-          <span className="font-bold">{seleccionados.length} seleccionado(s)</span>
+        <div className="flex flex-wrap items-center gap-2 px-2 py-1.5 rounded bg-blue-50 dark:bg-sky-950/30 border border-blue-200 dark:border-sky-900 text-secundario">
+          <span className="text-etiqueta">{seleccionados.length} seleccionado(s)</span>
           {seleccionados.length > MAX_ACCIONES_TRANSITO && <span className="text-amber-700">Se procesan los primeros {MAX_ACCIONES_TRANSITO}.</span>}
           {puede.ENTREGAR && <button type="button" onClick={() => abrir('ENTREGAR', seleccionados)} className={`${BOTON_SELECCION} bg-emerald-600`}><PackageCheck size={13} /> Entregar</button>}
           {puede.DEVOLVER && <button type="button" onClick={() => abrir('DEVOLVER', seleccionados)} className={`${BOTON_SELECCION} bg-[#2383C2]`}><Undo2 size={13} /> Devolver</button>}
           {puede.DEJAR_EN_CENTRO && <button type="button" onClick={() => abrir('DEJAR_EN_CENTRO', seleccionados)} className={`${BOTON_SELECCION} bg-violet-600`}><Building2 size={13} /> Dejar en centro</button>}
           {puede.NOTA && <button type="button" onClick={() => abrir('NOTA', seleccionados)} className={`${BOTON_SELECCION} bg-amber-600`}><StickyNote size={13} /> Nota</button>}
-          <button type="button" onClick={() => setSeleccion(new Set())} className="ml-auto text-[11px] underline text-gray-600">Quitar selección</button>
+          <button type="button" onClick={() => setSeleccion(new Set())} className="ml-auto text-secundario underline text-tinta-secundaria">Quitar selección</button>
         </div>
       )}
       <div className="flex justify-end">
@@ -94,30 +94,30 @@ const TablaTransitos = ({ transitos, rutaVista, origen, onCambio, ocultarCentro 
             const dias = diasEnTransito(t.fechaSalida);
             const celdas = {
               sel: <td className={`${TD} text-center`}><input type="checkbox" aria-label="Seleccionar" checked={seleccion.has(t.id)} onChange={() => alternar(t.id)} /></td>,
-              referencia: <td className={`${TD} font-num text-gray-700 dark:text-gray-200`} title={t.referencia ? `${t.referencia} · ${t.codigoMaestro}` : t.codigoMaestro}>{t.referencia || '—'}</td>,
+              referencia: <td className={`${TD} text-numero-tabla text-tinta-principal`} title={t.referencia ? `${t.referencia} · ${t.codigoMaestro}` : t.codigoMaestro}>{t.referencia || '—'}</td>,
               producto: (
-                <td className={`${TD} font-semibold text-gray-800 dark:text-gray-100`} title={`${t.productoNombre}${t.propietarioNombre ? ` · consignado ${t.propietarioNombre}` : ''}`}>
+                <td className={`${TD} text-etiqueta text-tinta-principal`} title={`${t.productoNombre}${t.propietarioNombre ? ` · consignado ${t.propietarioNombre}` : ''}`}>
                   {t.productoNombre}
-                  {t.propietarioNombre && <span className="ml-1 px-1 rounded text-[9px] font-bold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300" title="Stock en consignación">CONSIG. {t.propietarioNombre}</span>}
+                  {t.propietarioNombre && <span className="ml-1 px-1 rounded text-pequeno bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300" title="Stock en consignación">CONSIG. {t.propietarioNombre}</span>}
                 </td>
               ),
-              lote: <td className={`${TD} font-num`}>{t.lote || '—'}</td>,
-              vencimiento: <td className={`${TD} font-num`}>{t.vencimiento || '—'} {venc.etiqueta && <span className={`px-1 rounded text-[9px] font-bold ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
+              lote: <td className={`${TD} text-numero-tabla`}>{t.lote || '—'}</td>,
+              vencimiento: <td className={`${TD} text-numero-tabla`}>{t.vencimiento || '—'} {venc.etiqueta && <span className={`px-1 rounded text-pequeno ${venc.badge}`}>{venc.etiqueta}</span>}</td>,
               centro: <td className={TD} title={t.centroNombre}>{t.centroNombre}</td>,
-              cantidad: <td className={`${TD} text-right font-num`}><strong className="text-amber-600 dark:text-amber-400">{t.pendiente}</strong> / {t.cantidadSalida}</td>,
-              enCentro: <td className={`${TD} text-right font-num`}>{t.enCentro ? <strong className="text-violet-600 dark:text-violet-400">{t.enCentro}</strong> : '—'}</td>,
+              cantidad: <td className={`${TD} text-right text-numero-tabla`}><strong className="text-amber-600 dark:text-amber-400">{t.pendiente}</strong> / {t.cantidadSalida}</td>,
+              enCentro: <td className={`${TD} text-right text-numero-tabla`}>{t.enCentro ? <strong className="text-violet-600 dark:text-violet-400">{t.enCentro}</strong> : '—'}</td>,
               fechaSalida: <td className={TD}>{fechaHora(t.fechaSalida)}</td>,
-              dias: <td className={`${TD} text-right font-num ${dias > 7 ? 'text-red-600 font-bold' : ''}`}>{dias ?? '—'}</td>,
+              dias: <td className={`${TD} text-right ${dias > 7 ? 'text-red-600 text-etiqueta tabular-nums' : 'text-numero-tabla'}`}>{dias ?? '—'}</td>,
               usuario: <td className={TD} title={t.usuario?.nombre || ''}>{t.usuario?.nombre || ''}</td>,
               solicitante: <td className={TD} title={t.solicitante || ''}>{t.solicitante || '—'}</td>,
-              salida: <td className={`${TD} text-right font-num`}>{t.salidaNumero}</td>,
+              salida: <td className={`${TD} text-right text-numero-tabla`}>{t.salidaNumero}</td>,
               acciones: (
                 <td className={TD}>
                   {puede.ENTREGAR && <button type="button" onClick={() => abrir('ENTREGAR', [t])} title="Entregar (usado)" className={`${BOTON} text-emerald-600`}><PackageCheck size={14} /></button>}
                   {puede.DEVOLVER && <button type="button" onClick={() => abrir('DEVOLVER', [t])} title="Devolver a stock" className={`${BOTON} text-[#2383C2]`}><Undo2 size={14} /></button>}
                   {puede.DEJAR_EN_CENTRO && (t.pendiente || 0) > 0 && <button type="button" onClick={() => abrir('DEJAR_EN_CENTRO', [t])} title="Dejar en centro (no usado)" className={`${BOTON} text-violet-600`}><Building2 size={14} /></button>}
                   {puede.NOTA && <button type="button" onClick={() => abrir('NOTA', [t])} title="Mantener en tránsito (nota)" className={`${BOTON} text-amber-600`}><StickyNote size={14} /></button>}
-                  <button type="button" onClick={() => setHistorial(t)} title="Historial" className={`${BOTON} text-gray-500`}><History size={14} /></button>
+                  <button type="button" onClick={() => setHistorial(t)} title="Historial" className={`${BOTON} text-tinta-secundaria`}><History size={14} /></button>
                 </td>
               ),
             };

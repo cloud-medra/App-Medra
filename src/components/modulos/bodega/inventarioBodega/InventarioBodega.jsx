@@ -21,9 +21,9 @@ import { resolverDuenos } from './duenosConteo';
 const PATH_VISTA = '/bodega/inventarioBodega';
 const ESTADO_BADGE = {
   PREPARANDO: 'bg-amber-100 text-amber-700', ABIERTO: 'bg-blue-100 text-blue-700', CERRANDO: 'bg-amber-100 text-amber-700',
-  CERRADO: 'bg-emerald-100 text-emerald-700', ANULADO: 'bg-gray-200 text-gray-600',
+  CERRADO: 'bg-emerald-100 text-emerald-700', ANULADO: 'bg-gray-200 text-tinta-secundaria',
 };
-const INPUT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900';
+const INPUT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900';
 
 // El mismo lote existe como propio y consignado (o de dos empresas): elegir
 // a quién corresponde lo contado de cada línea.
@@ -31,10 +31,10 @@ const ElegirDuenoModal = ({ ambiguos, onCancelar, onConfirmar }) => {
   const [elecciones, setElecciones] = useState(() => Object.fromEntries(ambiguos.map((a) => [a.linea.key, a.opciones[0].propietarioId || ''])));
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Elegir dueño del lote">
-      <div className="w-full max-w-xl max-h-[90vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-[12px]">
+      <div className="w-full max-w-xl max-h-[90vh] flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-normal">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-100">¿De quién es lo contado?</h3>
-          <p className="text-[11px] text-gray-500">Estos lotes existen como stock propio y en consignación (o de más de una empresa). Elige a cuál sumar el conteo.</p>
+          <h3 className="text-subtitulo text-tinta-principal">¿De quién es lo contado?</h3>
+          <p className="text-secundario text-tinta-secundaria">Estos lotes existen como stock propio y en consignación (o de más de una empresa). Elige a cuál sumar el conteo.</p>
         </div>
         <ul className="p-4 overflow-auto flex flex-col gap-2">
           {ambiguos.map(({ linea, opciones, productoNombre }) => (
@@ -47,8 +47,8 @@ const ElegirDuenoModal = ({ ambiguos, onCancelar, onConfirmar }) => {
           ))}
         </ul>
         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
-          <button type="button" onClick={onCancelar} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 font-semibold">Cancelar</button>
-          <button type="button" onClick={() => onConfirmar(elecciones)} className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Guardar conteo</button>
+          <button type="button" onClick={onCancelar} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 text-etiqueta">Cancelar</button>
+          <button type="button" onClick={() => onConfirmar(elecciones)} className="h-9 px-4 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-etiqueta">Guardar conteo</button>
         </div>
       </div>
     </div>
@@ -89,37 +89,37 @@ const InicioInventario = ({ onIniciado, onAbrirHistorial }) => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {hasPermission(PATH_VISTA, 'inventario', 'btn_iniciar') ? (
         <section className="flex flex-col gap-2 p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
-          <h3 className="font-bold text-[12px] uppercase text-gray-700 dark:text-gray-200">Nueva toma de inventario</h3>
-          <p className="text-[11px] text-gray-500">Se cuenta el disponible de la Bodega General. Mientras esté abierto, no se puede ingresar, egresar ni devolver stock de los productos del alcance (las entregas desde tránsito sí).</p>
-          <label className="flex flex-col"><span className="text-[10px] font-bold uppercase text-gray-500">Nombre *</span>
+          <h3 className="text-etiqueta uppercase text-tinta-principal">Nueva toma de inventario</h3>
+          <p className="text-secundario text-tinta-secundaria">Se cuenta el disponible de la Bodega General. Mientras esté abierto, no se puede ingresar, egresar ni devolver stock de los productos del alcance (las entregas desde tránsito sí).</p>
+          <label className="flex flex-col"><span className="text-pequeno uppercase text-tinta-secundaria">Nombre *</span>
             <input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={MAX_NOMBRE_INVENTARIO} className={INPUT} placeholder="Ej: Inventario octubre 2026" />
           </label>
           <div>
-            <span className="text-[10px] font-bold uppercase text-gray-500">Alcance (sin marcar = todos los productos)</span>
+            <span className="text-pequeno uppercase text-tinta-secundaria">Alcance (sin marcar = todos los productos)</span>
             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
               {categorias.map((c) => (
-                <label key={c.id} className="flex items-center gap-1 text-[12px]">
+                <label key={c.id} className="flex items-center gap-1 text-normal">
                   <input type="checkbox" checked={elegidas.includes(c.id)} onChange={(e) => setElegidas((l) => (e.target.checked ? [...l, c.id] : l.filter((x) => x !== c.id)))} /> {c.nombre}
                 </label>
               ))}
             </div>
           </div>
-          <button type="button" onClick={iniciar} disabled={iniciando || !nombre.trim()} className="self-start h-7 px-3 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1.5 disabled:opacity-50"><Play size={14} /> {iniciando ? 'Iniciando…' : 'Iniciar inventario'}</button>
+          <button type="button" onClick={iniciar} disabled={iniciando || !nombre.trim()} className="self-start h-7 px-3 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1.5 disabled:opacity-50"><Play size={14} /> {iniciando ? 'Iniciando…' : 'Iniciar inventario'}</button>
         </section>
-      ) : <p className="text-gray-500 italic">No hay un inventario abierto.</p>}
+      ) : <p className="text-tinta-secundaria italic">No hay un inventario abierto.</p>}
       <section className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-        <h3 className="px-3 py-1.5 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 font-bold text-[11px] uppercase text-gray-600 dark:text-gray-300 flex items-center gap-1"><History size={12} /> Historial</h3>
-        <ul className="divide-y divide-gray-100 dark:divide-gray-700 text-[11px] max-h-96 overflow-auto">
-          {historial === null && <li className="px-3 py-3 text-gray-400 italic">Cargando…</li>}
-          {historial?.length === 0 && <li className="px-3 py-3 text-gray-400 italic">Sin inventarios.</li>}
+        <h3 className="px-3 py-1.5 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 text-etiqueta uppercase text-tinta-secundaria flex items-center gap-1"><History size={12} /> Historial</h3>
+        <ul className="divide-y divide-gray-100 dark:divide-gray-700 text-secundario max-h-96 overflow-auto">
+          {historial === null && <li className="px-3 py-3 text-tinta-atenuada italic">Cargando…</li>}
+          {historial?.length === 0 && <li className="px-3 py-3 text-tinta-atenuada italic">Sin inventarios.</li>}
           {historial?.map((i) => (
             <li key={i.id}>
               <button type="button" onClick={() => onAbrirHistorial(i.id)} className="w-full text-left px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700/40">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold flex-1">{i.nombre}</span>
-                  <span className={`px-1.5 rounded text-[9px] font-bold ${ESTADO_BADGE[i.estado] || ''}`}>{i.estado}</span>
+                  <span className="text-etiqueta flex-1">{i.nombre}</span>
+                  <span className={`px-1.5 rounded text-pequeno ${ESTADO_BADGE[i.estado] || ''}`}>{i.estado}</span>
                 </div>
-                <div className="text-gray-500">
+                <div className="text-tinta-secundaria">
                   {fechaHora(i.fechaInicio)} · {i.iniciadoPor?.nombre || ''} · {i.lineasTotal || 0} línea(s)
                   {i.resumen && ` · +${i.resumen.unidadesSobrantes} / −${i.resumen.unidadesFaltantes}${i.resumen.conPrecio ? ` · ${formatoPesos(i.resumen.valorSobrante - i.resumen.valorFaltante)}` : ''}`}
                 </div>
@@ -171,7 +171,7 @@ const DetalleInventario = ({ id, onSalir, puedeVolver }) => {
     }
   }, [id, recargar]);
 
-  if (!inventario || !lineas) return <p className="text-gray-400 italic">Cargando inventario…</p>;
+  if (!inventario || !lineas) return <p className="text-tinta-atenuada italic">Cargando inventario…</p>;
   const abierto = inventario.estado === 'ABIERTO';
   const verPestana = abierto ? pestana : 'comparacion';
 
@@ -226,23 +226,23 @@ const DetalleInventario = ({ id, onSalir, puedeVolver }) => {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        {puedeVolver && <button type="button" onClick={onSalir} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1 text-[11px]"><ArrowLeft size={12} /> Volver</button>}
-        <h3 className="text-[14px] font-bold text-gray-800 dark:text-gray-100">{inventario.nombre}</h3>
-        <span className={`px-1.5 rounded text-[10px] font-bold ${ESTADO_BADGE[inventario.estado] || ''}`}>{inventario.estado}</span>
-        <span className="text-[11px] text-gray-500">
+        {puedeVolver && <button type="button" onClick={onSalir} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 flex items-center gap-1 text-etiqueta"><ArrowLeft size={12} /> Volver</button>}
+        <h3 className="text-titulo-seccion text-tinta-principal">{inventario.nombre}</h3>
+        <span className={`px-1.5 rounded text-pequeno ${ESTADO_BADGE[inventario.estado] || ''}`}>{inventario.estado}</span>
+        <span className="text-secundario text-tinta-secundaria">
           {inventario.alcance?.categoriasNombres?.length ? `Categorías: ${inventario.alcance.categoriasNombres.join(', ')}` : 'Todos los productos'} · iniciado {fechaHora(inventario.fechaInicio)} por {inventario.iniciadoPor?.nombre || ''}
           {inventario.estado === 'CERRADO' && ` · cerrado ${fechaHora(inventario.fechaCierre)} por ${inventario.cerradoPor?.nombre || ''} · motivo: ${inventario.motivoAjuste}`}
         </span>
         <div className="ml-auto flex gap-1.5">
           <button type="button" onClick={recargar} className="h-8 px-2 rounded border border-gray-300 dark:border-gray-600"><RefreshCw size={13} /></button>
           {(inventario.estado === 'PREPARANDO' || inventario.estado === 'CERRANDO') && (
-            <button type="button" onClick={reanudar} disabled={ocupado} className="h-8 px-3 rounded bg-amber-600 text-white font-bold">{inventario.estado === 'PREPARANDO' ? 'Reanudar preparación' : 'Reanudar cierre'}</button>
+            <button type="button" onClick={reanudar} disabled={ocupado} className="h-8 px-3 rounded bg-amber-600 text-white text-etiqueta">{inventario.estado === 'PREPARANDO' ? 'Reanudar preparación' : 'Reanudar cierre'}</button>
           )}
           {abierto && hasPermission(PATH_VISTA, 'inventario', 'btn_anular') && (
-            <button type="button" onClick={anular} className="h-8 px-3 rounded border border-gray-400 font-bold flex items-center gap-1 text-gray-700 dark:text-gray-200"><Ban size={13} /> Anular</button>
+            <button type="button" onClick={anular} className="h-8 px-3 rounded border border-gray-400 text-etiqueta flex items-center gap-1 text-tinta-principal"><Ban size={13} /> Anular</button>
           )}
           {abierto && hasPermission(PATH_VISTA, 'inventario', 'btn_cerrar') && (
-            <button type="button" onClick={() => setCerrando(true)} disabled={conteo.length > 0} title={conteo.length ? 'Guarda o descarta el conteo pendiente antes de cerrar' : ''} className="h-8 px-3 rounded bg-red-600 hover:bg-red-700 text-white font-bold flex items-center gap-1 disabled:opacity-50"><Lock size={13} /> Cerrar con ajuste…</button>
+            <button type="button" onClick={() => setCerrando(true)} disabled={conteo.length > 0} title={conteo.length ? 'Guarda o descarta el conteo pendiente antes de cerrar' : ''} className="h-8 px-3 rounded bg-red-600 hover:bg-red-700 text-white text-etiqueta flex items-center gap-1 disabled:opacity-50"><Lock size={13} /> Cerrar con ajuste…</button>
           )}
         </div>
       </div>
@@ -250,17 +250,17 @@ const DetalleInventario = ({ id, onSalir, puedeVolver }) => {
       {abierto && (
         <div className="flex gap-1 border-b border-gray-200 dark:border-gray-700">
           {[['contar', 'Contar'], ['comparacion', 'Comparación']].map(([v, l]) => (
-            <button key={v} type="button" onClick={() => setPestana(v)} className={`h-8 px-3 -mb-px border-b-2 font-semibold ${pestana === v ? 'border-[#2383C2] text-[#2383C2]' : 'border-transparent text-gray-500'}`}>{l}</button>
+            <button key={v} type="button" onClick={() => setPestana(v)} className={`h-8 px-3 -mb-px border-b-2 text-etiqueta ${pestana === v ? 'border-[#2383C2] text-[#2383C2]' : 'border-transparent text-tinta-secundaria'}`}>{l}</button>
           ))}
         </div>
       )}
 
       {verPestana === 'contar' && hasPermission(PATH_VISTA, 'inventario', 'btn_contar') && (
         <div className="flex flex-col gap-2">
-          <p className="text-[11px] text-gray-500">Escanea lo que hay físicamente en la bodega. Cada lectura <strong>se suma</strong> a lo ya contado de ese lote al guardar; para corregir un valor usa la pestaña Comparación. Un lote que no estaba en el sistema se agrega.</p>
+          <p className="text-secundario text-tinta-secundaria">Escanea lo que hay físicamente en la bodega. Cada lectura <strong>se suma</strong> a lo ya contado de ese lote al guardar; para corregir un valor usa la pestaña Comparación. Un lote que no estaba en el sistema se agrega.</p>
           <EditorLineasStock key={reinicio} rutaVista={PATH_VISTA} lineas={conteo} onCambiar={setConteo} deshabilitado={ocupado} />
           <div className="flex justify-end">
-            <button type="button" onClick={() => guardarConteo()} disabled={ocupado || !conteo.length} className="h-7 px-3 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 disabled:opacity-50">
+            <button type="button" onClick={() => guardarConteo()} disabled={ocupado || !conteo.length} className="h-7 px-3 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-etiqueta flex items-center gap-1.5 disabled:opacity-50">
               <Save size={15} /> {ocupado ? 'Guardando…' : `Guardar conteo (${formatoCantidad(totalUnidades(conteo))} u.)`}
             </button>
           </div>
@@ -298,13 +298,13 @@ const InventarioBodega = () => {
 
   const id = historialId || abiertoId;
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[12px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-normal">
       <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase"><ClipboardCheck size={14} className="text-[#2383C2]" /> Inventario físico · Bodega General</h2>
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5"><ClipboardCheck size={14} className="text-[#2383C2]" /> Inventario físico · Bodega General</h2>
       </div>
       <div className="flex-1 overflow-auto p-3">
         {abiertoId === undefined ? (
-          <p className="text-gray-400 italic">Cargando…</p>
+          <p className="text-tinta-atenuada italic">Cargando…</p>
         ) : id ? (
           <DetalleInventario key={id} id={id} puedeVolver={Boolean(historialId)} onSalir={() => { setHistorialId(null); setAbiertoId(undefined); leerEstadoBodega().then((e) => setAbiertoId(e.inventarioAbierto?.id || null)).catch(() => setAbiertoId(null)); }} />
         ) : (

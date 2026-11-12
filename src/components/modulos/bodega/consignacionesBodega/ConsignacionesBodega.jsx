@@ -63,16 +63,16 @@ const ConsignacionesBodega = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-secundario">
       <div className="px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5 uppercase"><Handshake size={14} className="text-[#2383C2]" /> Stock consignado</h2>
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5"><Handshake size={14} className="text-[#2383C2]" /> Stock consignado</h2>
         {!abierta && (
           <div className="flex items-center gap-1.5">
             {hasPermission(PATH_VISTA, 'empresas', 'btn_actualizar') && (
-              <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 font-semibold flex items-center gap-1 text-gray-600 dark:text-gray-300"><RefreshCw size={12} /> Actualizar</button>
+              <button type="button" onClick={recargar} className="h-7 px-2 rounded border border-gray-300 dark:border-gray-600 text-etiqueta flex items-center gap-1 text-tinta-secundaria"><RefreshCw size={12} /> Actualizar</button>
             )}
             {hasPermission(PATH_VISTA, 'consignacion', 'btn_guardar') && (
-              <button type="button" onClick={() => setNueva({ empresaId: '' })} className="h-7 px-2 rounded bg-[#2383C2] text-white font-bold flex items-center gap-1"><Plus size={12} /> Nueva consignación</button>
+              <button type="button" onClick={() => setNueva({ empresaId: '' })} className="h-7 px-2 rounded bg-[#2383C2] text-white text-etiqueta flex items-center gap-1"><Plus size={12} /> Nueva consignación</button>
             )}
           </div>
         )}
@@ -83,19 +83,19 @@ const ConsignacionesBodega = () => {
         {nueva && !nueva.empresa && (
           <div className="flex flex-wrap items-end gap-2 p-2 rounded border border-[#2383C2]/50 bg-blue-50/50 dark:bg-sky-950/20">
             <div className="w-80">
-              <span className="block text-[10px] font-bold uppercase text-gray-500 mb-0.5">Empresa consignante</span>
+              <span className="block text-pequeno uppercase text-tinta-secundaria mb-0.5">Empresa consignante</span>
               <SelectorProveedor valor={nueva.empresaId} onCambiar={(id) => {
                 if (!id) { setNueva({ empresaId: '' }); return; }
                 if (resumen.some((e) => e.empresaId === id && e.consignacion)) { setNueva(null); setAbiertaId(id); return; } // ya tiene: se abre
                 setNueva({ empresa: { id, nombre: nombreEmpresa(id) } });
               }} placeholder="Busca la empresa por nombre o RUT…" />
             </div>
-            <button type="button" onClick={() => setNueva(null)} className="h-9 px-2 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-1"><X size={13} /> Cancelar</button>
+            <button type="button" onClick={() => setNueva(null)} className="h-9 px-2 rounded text-tinta-secundaria hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-1"><X size={13} /> Cancelar</button>
           </div>
         )}
 
         {datos === null ? (
-          <p className="text-gray-400 italic">Cargando…</p>
+          <p className="text-tinta-atenuada italic">Cargando…</p>
         ) : abierta ? (
           <DetalleConsignacion
             key={abierta.empresaId}
@@ -114,18 +114,18 @@ const ConsignacionesBodega = () => {
                 {resumen.map((e) => (
                   <FilaBodega key={e.empresaId} columnas={columnasVisibles} className="cursor-pointer" onClick={() => setAbiertaId(e.empresaId)} celdas={{
                     empresa: (
-                      <td className={`${TD} font-semibold text-[#2383C2] underline-offset-2 group-hover:underline`} title={e.empresaNombre}>
+                      <td className={`${TD} text-etiqueta text-[#2383C2] underline-offset-2 group-hover:underline`} title={e.empresaNombre}>
                         {e.empresaNombre}
-                        {!e.consignacion && <span className="ml-1 px-1 rounded text-[9px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">SIN REGISTRAR</span>}
+                        {!e.consignacion && <span className="ml-1 px-1 rounded text-pequeno bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300">SIN REGISTRAR</span>}
                       </td>
                     ),
-                    lineas: <td className={`${TD} text-right font-num`}>{e.lineas}</td>,
-                    consignada: <td className={`${TD} text-right font-num font-bold`}>{formatoCantidad(e.consignada)}</td>,
-                    actual: <td className={`${TD} text-right font-num text-emerald-700 dark:text-emerald-400`}>{formatoCantidad(e.actual)}</td>,
-                    transito: <td className={`${TD} text-right font-num text-amber-600 dark:text-amber-400`}>{formatoCantidad(e.transito)}</td>,
-                    enCentro: <td className={`${TD} text-right font-num text-violet-600 dark:text-violet-400`}>{formatoCantidad(e.enCentro)}</td>,
-                    faltante: <td className={`${TD} text-right font-num ${e.faltante ? 'font-bold text-red-600 dark:text-red-400' : ''}`}>{formatoCantidad(e.faltante)}</td>,
-                    porVencer: <td className={`${TD} text-right font-num ${e.porVencer ? 'font-bold text-amber-600 dark:text-amber-400' : ''}`}>{e.porVencer || '—'}</td>,
+                    lineas: <td className={`${TD} text-right text-numero-tabla`}>{e.lineas}</td>,
+                    consignada: <td className={`${TD} text-right text-numero-tabla`}>{formatoCantidad(e.consignada)}</td>,
+                    actual: <td className={`${TD} text-right text-numero-tabla text-emerald-700 dark:text-emerald-400`}>{formatoCantidad(e.actual)}</td>,
+                    transito: <td className={`${TD} text-right text-numero-tabla text-amber-600 dark:text-amber-400`}>{formatoCantidad(e.transito)}</td>,
+                    enCentro: <td className={`${TD} text-right text-numero-tabla text-violet-600 dark:text-violet-400`}>{formatoCantidad(e.enCentro)}</td>,
+                    faltante: <td className={`${TD} text-right ${e.faltante ? 'text-etiqueta tabular-nums text-red-600 dark:text-red-400' : 'text-numero-tabla'}`}>{formatoCantidad(e.faltante)}</td>,
+                    porVencer: <td className={`${TD} text-right ${e.porVencer ? 'text-etiqueta tabular-nums text-amber-600 dark:text-amber-400' : 'text-numero-tabla'}`}>{e.porVencer || '—'}</td>,
                   }} />
                 ))}
               </TablaBodega>

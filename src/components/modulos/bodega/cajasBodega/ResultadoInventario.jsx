@@ -13,18 +13,18 @@ const Tabla = ({ titulo, ayuda, columnas, filas, vacio, clave }) => {
     <div>
       <div className="flex items-end justify-between gap-2 mb-1">
         <div>
-          <h4 className="text-[11px] font-bold uppercase text-gray-600 dark:text-gray-300">{titulo}</h4>
-          <p className="text-[11px] text-gray-500">{ayuda}</p>
+          <h4 className="text-etiqueta uppercase text-tinta-secundaria">{titulo}</h4>
+          <p className="text-secundario text-tinta-secundaria">{ayuda}</p>
         </div>
         <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} />
       </div>
       <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto">
         <TablaBodega columnas={columnas} anchos={anchos} onResize={handleResize}>
-          {filas.length === 0 && <FilaAnchoCompleto columnas={columnas} celdaClassName="px-2 py-3 text-center text-gray-400 italic">{vacio}</FilaAnchoCompleto>}
+          {filas.length === 0 && <FilaAnchoCompleto columnas={columnas} celdaClassName="px-2 py-3 text-center text-tinta-atenuada italic">{vacio}</FilaAnchoCompleto>}
           {filas.map((l) => (
             <FilaBodega key={l.productoId} columnas={columnas} celdas={Object.fromEntries(columnas.map((c) => {
               const valor = c.valor(l);
-              return [c.key, <td className={`${TD} ${c.alinear ? `${c.alinear} font-num` : ''} ${c.clase?.(l) || ''}`} title={typeof valor === 'string' ? valor : undefined}>{valor}</td>];
+              return [c.key, <td className={`${TD} ${c.alinear ? `${c.alinear} text-numero-tabla` : ''} ${c.clase?.(l) || ''}`} title={typeof valor === 'string' ? valor : undefined}>{valor}</td>];
             }))} />
           ))}
         </TablaBodega>
@@ -41,21 +41,21 @@ const ResultadoInventario = ({ lineas }) => {
   const referenciaDe = useReferenciaDe();
   const [columnasConsumo, columnasFaltante] = useMemo(() => {
     const comunes = [
-      { key: 'producto', label: 'Producto', ancho: 260, min: 110, valor: (l) => l.nombre, clase: () => 'font-semibold text-gray-800 dark:text-gray-100' },
-      { key: 'referencia', label: 'Referencia', ancho: 120, min: 60, valor: (l) => referenciaDe(l.productoId) || '—', clase: () => 'font-num text-gray-700 dark:text-gray-200' },
+      { key: 'producto', label: 'Producto', ancho: 260, min: 110, valor: (l) => l.nombre, clase: () => 'text-etiqueta text-tinta-principal' },
+      { key: 'referencia', label: 'Referencia', ancho: 120, min: 60, valor: (l) => referenciaDe(l.productoId) || '—', clase: () => 'text-numero-tabla text-tinta-principal' },
     ];
     return [
       [
         ...comunes,
         cantidad('actualPrevio', 'Actual previo', 'actualPrevio'),
         cantidad('contado', 'Contado', 'contado'),
-        cantidad('consumo', 'Consumo', 'consumo', (l) => (l.consumo > 0 ? 'font-bold text-amber-600' : l.consumo < 0 ? 'text-emerald-600' : 'text-gray-400')),
+        cantidad('consumo', 'Consumo', 'consumo', (l) => (l.consumo > 0 ? 'text-etiqueta text-amber-600' : l.consumo < 0 ? 'text-emerald-600' : 'text-tinta-atenuada')),
       ],
       [
         ...comunes,
         cantidad('objetivo', 'Objetivo', 'objetivo'),
         cantidad('contado', 'Contado', 'contado'),
-        cantidad('faltante', 'Faltante', 'faltante', (l) => (l.faltante ? 'font-bold text-red-600' : 'text-gray-400')),
+        cantidad('faltante', 'Faltante', 'faltante', (l) => (l.faltante ? 'text-etiqueta text-red-600' : 'text-tinta-atenuada')),
       ],
     ];
   }, [referenciaDe]);

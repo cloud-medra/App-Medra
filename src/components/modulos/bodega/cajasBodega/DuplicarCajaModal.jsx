@@ -3,7 +3,7 @@ import { X, Copy } from 'lucide-react';
 import { nombreSugeridoCopia, validarDuplicadoCaja, idUnico, MAX_NOMBRE_CAJA } from '../../../../../functions/bodega/nucleo.mjs';
 import { duplicarCaja, mensajeError } from '../shared/bodegaApi';
 
-const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-[12px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] disabled:opacity-60';
+const INPUT = 'h-9 px-2 border border-gray-300 dark:border-gray-600 rounded text-normal outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2] disabled:opacity-60';
 
 // Duplicar una caja: pide el nombre de la nueva (sugerido: el siguiente
 // número o "(copia)"). Copia descripción, estado, productos, stock objetivo
@@ -33,24 +33,24 @@ const DuplicarCajaModal = ({ caja, nombresOcupados = new Set(), onCerrar, onDupl
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] flex items-center justify-center p-3" role="dialog" aria-modal="true" aria-label="Duplicar caja">
-      <form onSubmit={(e) => { e.preventDefault(); duplicar(); }} className="w-full max-w-md flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-[12px]">
+      <form onSubmit={(e) => { e.preventDefault(); duplicar(); }} className="w-full max-w-md flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 text-normal">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-start justify-between">
-          <h3 className="text-[13px] font-bold flex items-center gap-1.5"><Copy size={15} /> Duplicar caja · {caja.nombre}</h3>
-          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
+          <h3 className="text-subtitulo flex items-center gap-1.5"><Copy size={15} /> Duplicar caja · {caja.nombre}</h3>
+          <button type="button" onClick={onCerrar} disabled={guardando} aria-label="Cerrar" className="p-1 rounded-full text-tinta-atenuada hover:bg-gray-200 dark:hover:bg-gray-700"><X size={16} /></button>
         </div>
         <div className="p-4 flex flex-col gap-3">
           <label className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase text-gray-500">Nombre de la nueva caja *</span>
+            <span className="text-pequeno uppercase text-tinta-secundaria">Nombre de la nueva caja *</span>
             <input value={nombre} onChange={(e) => { setNombre(e.target.value); setError(''); }} maxLength={MAX_NOMBRE_CAJA} disabled={guardando} autoFocus onFocus={(e) => e.target.select()} className={INPUT} />
           </label>
-          <p className="text-gray-500">
+          <p className="text-tinta-secundaria">
             Se copian la descripción y los {cantidad} producto(s) con su stock objetivo y su orden. El stock actual de la nueva caja parte en 0 y no se copian inventarios, reposiciones ni historial.
           </p>
           {error && <p className="text-red-600" role="alert">{error}</p>}
         </div>
         <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
-          <button type="button" onClick={onCerrar} disabled={guardando} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 font-semibold">Cancelar</button>
-          <button type="submit" disabled={guardando} className="h-9 px-4 rounded bg-[#2383C2] text-white font-bold disabled:opacity-50">{guardando ? 'Duplicando…' : 'Duplicar'}</button>
+          <button type="button" onClick={onCerrar} disabled={guardando} className="h-9 px-3 rounded bg-gray-200 dark:bg-gray-700 text-etiqueta">Cancelar</button>
+          <button type="submit" disabled={guardando} className="h-9 px-4 rounded bg-[#2383C2] text-white text-etiqueta disabled:opacity-50">{guardando ? 'Duplicando…' : 'Duplicar'}</button>
         </div>
       </form>
     </div>
