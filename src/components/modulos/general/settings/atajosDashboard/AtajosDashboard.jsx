@@ -39,9 +39,9 @@ const AtajosDashboard = ({ userData }) => {
   if (!autorizado) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center py-12 px-6 text-gray-400 dark:text-gray-500">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center py-12 px-6 text-tinta-atenuada">
           <Lock size={26} className="mb-2 opacity-60" />
-          <p className="text-xs">Solo los administradores pueden configurar los atajos del Dashboard.</p>
+          <p className="text-normal">Solo los administradores pueden configurar los atajos del Dashboard.</p>
         </div>
       </div>
     );
@@ -89,14 +89,14 @@ const AtajosDashboard = ({ userData }) => {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Atajos del Dashboard</h3>
+              <h3 className="text-titulo-seccion text-tinta-principal">Atajos del Dashboard</h3>
               {seleccion && (
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                <span className="text-pequeno px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-tinta-secundaria">
                   {seleccionados.length} {seleccionados.length === 1 ? 'atajo' : 'atajos'}
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-normal text-tinta-secundaria mt-0.5">
               Marca los ítems que aparecen en "Accesos rápidos" y ordénalos arrastrando con el
               ícono <GripVertical size={11} className="inline -mt-0.5" /> o con las flechas. La
               configuración es para todo el sistema: cada usuario ve solo los atajos a los que
@@ -106,7 +106,7 @@ const AtajosDashboard = ({ userData }) => {
         </div>
 
         {!seleccion ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-xs text-gray-400 dark:text-gray-500">
+          <div className="flex items-center justify-center gap-2 py-12 text-normal text-tinta-atenuada">
             <Loader2 size={14} className="animate-spin" /> Cargando atajos...
           </div>
         ) : (
@@ -114,11 +114,11 @@ const AtajosDashboard = ({ userData }) => {
 
             {/* ATAJOS SELECCIONADOS (ORDEN) */}
             <section>
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+              <h4 className="text-pequeno uppercase tracking-wider text-tinta-atenuada mb-2">
                 Orden en el Dashboard
               </h4>
               {seleccionados.length === 0 ? (
-                <p className="text-xs text-gray-400 dark:text-gray-500 border border-dashed border-gray-200 dark:border-gray-700 rounded-xl py-4 text-center">
+                <p className="text-normal text-tinta-atenuada border border-dashed border-gray-200 dark:border-gray-700 rounded-xl py-4 text-center">
                   No hay atajos seleccionados: el Dashboard no mostrará accesos rápidos.
                 </p>
               ) : (
@@ -134,18 +134,18 @@ const AtajosDashboard = ({ userData }) => {
                       className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm cursor-move"
                     >
                       <GripVertical size={15} className="text-gray-300 dark:text-gray-600 flex-shrink-0" />
-                      <span className="text-[10px] font-bold text-gray-400 w-4 text-right flex-shrink-0">{index + 1}</span>
+                      <span className="text-pequeno text-tinta-atenuada w-4 text-right flex-shrink-0">{index + 1}</span>
                       <CuadritoIcono icon={a.icon} color={a.color} />
                       <div className="flex-grow min-w-0">
-                        <span className="block text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{a.label}</span>
-                        <span className="block text-[10px] uppercase tracking-wide text-gray-400 dark:text-gray-500 truncate">{a.moduloLabel}</span>
+                        <span className="block text-subtitulo text-tinta-principal truncate">{a.label}</span>
+                        <span className="block text-pequeno uppercase tracking-wide text-tinta-atenuada truncate">{a.moduloLabel}</span>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button
                           type="button"
                           onClick={() => mover(index, index - 1)}
                           disabled={index === 0}
-                          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500 dark:text-gray-400"
+                          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-tinta-secundaria"
                           title="Mover arriba"
                         >
                           <ArrowUp size={14} />
@@ -154,7 +154,7 @@ const AtajosDashboard = ({ userData }) => {
                           type="button"
                           onClick={() => mover(index, index + 1)}
                           disabled={index === seleccionados.length - 1}
-                          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500 dark:text-gray-400"
+                          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-tinta-secundaria"
                           title="Mover abajo"
                         >
                           <ArrowDown size={14} />
@@ -162,7 +162,7 @@ const AtajosDashboard = ({ userData }) => {
                         <button
                           type="button"
                           onClick={() => setSeleccion((prev) => alternarAtajo(prev, a))}
-                          className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-gray-400 hover:text-red-600 ml-1"
+                          className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-950/30 text-tinta-atenuada hover:text-red-600 ml-1"
                           title="Quitar atajo"
                         >
                           <X size={14} />
@@ -176,7 +176,7 @@ const AtajosDashboard = ({ userData }) => {
 
             {/* CATÁLOGO: MÓDULOS E ÍTEMS DEL SIDEBAR */}
             <section>
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 mb-2">
+              <h4 className="text-pequeno uppercase tracking-wider text-tinta-atenuada mb-2">
                 Ítems disponibles
               </h4>
               <div className="space-y-2">
@@ -184,7 +184,7 @@ const AtajosDashboard = ({ userData }) => {
                   <div key={mKey} className="rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900/40">
                       <CuadritoIcono icon={modulo.icon} color={modulo.color} />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">{modulo.label}</span>
+                      <span className="text-subtitulo text-tinta-principal truncate">{modulo.label}</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 px-3 py-1.5">
                       {modulo.subItems.map((sub) => {
@@ -199,7 +199,7 @@ const AtajosDashboard = ({ userData }) => {
                               className="cursor-pointer accent-[#2383C2] flex-shrink-0"
                             />
                             <CuadritoIcono icon={sub.icon} color={sub.color} tamano="sm" />
-                            <span className={`text-xs truncate ${marcado ? 'font-semibold text-gray-800 dark:text-gray-100' : 'text-gray-600 dark:text-gray-300'}`}>
+                            <span className={`text-normal truncate ${marcado ? 'text-tinta-principal' : 'text-tinta-secundaria'}`}>
                               {sub.label}
                             </span>
                           </label>
@@ -219,7 +219,7 @@ const AtajosDashboard = ({ userData }) => {
             type="button"
             onClick={() => setSeleccion(ATAJOS_POR_DEFECTO)}
             disabled={!seleccion}
-            className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors disabled:opacity-40"
+            className="flex items-center gap-2 text-normal text-tinta-secundaria hover:text-tinta-principal transition-colors disabled:opacity-40"
           >
             <RotateCcw size={13} /> Restablecer atajos predeterminados
           </button>
@@ -228,7 +228,7 @@ const AtajosDashboard = ({ userData }) => {
             type="button"
             onClick={handleGuardar}
             disabled={saving || !seleccion}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2383C2] hover:bg-[#1a6aa0] text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2383C2] hover:bg-[#1a6aa0] text-white text-etiqueta shadow-sm transition-colors disabled:opacity-60"
           >
             {savedMsg ? (
               <><Check size={14} /> Guardado</>

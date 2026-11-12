@@ -91,7 +91,7 @@ const CambiarPasswordAjustes = () => {
   };
 
   const RequirementItem = ({ valid, text }) => (
-    <div className={`flex items-center gap-2 text-xs ${valid ? 'text-green-600' : 'text-red-500'}`}>
+    <div className={`flex items-center gap-2 text-normal ${valid ? 'text-green-600' : 'text-red-500'}`}>
       {valid ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
       <span>{text}</span>
     </div>
@@ -101,18 +101,18 @@ const CambiarPasswordAjustes = () => {
     <div className="w-full max-w-lg">
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm flex flex-col gap-4">
         <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2">
+          <h3 className="text-titulo-seccion text-tinta-principal flex items-center gap-2">
             <Shield size={16} className="text-[#2383C2]" />
-            Cambiar Contraseña
+            Cambiar contraseña
           </h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+          <p className="text-secundario text-tinta-secundaria">
             Por tu seguridad, confirma tu contraseña actual antes de definir una nueva.
           </p>
         </div>
 
         <div className="flex flex-col gap-3">
           <div>
-            <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            <label className="block text-etiqueta text-tinta-secundaria mb-1">
               Contraseña actual
             </label>
             <div className="relative flex items-center">
@@ -122,13 +122,13 @@ const CambiarPasswordAjustes = () => {
                 value={passwords.current}
                 onChange={(e) => setPasswords({ ...passwords, current: e.target.value })}
                 placeholder="********"
-                className="w-full text-xs p-2 pl-7 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2]"
+                className="w-full text-normal p-2 pl-7 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-tinta-principal focus:outline-none focus:border-[#2383C2]"
               />
             </div>
           </div>
 
           <div className="border-t border-gray-100 dark:border-gray-700 pt-3">
-            <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            <label className="block text-etiqueta text-tinta-secundaria mb-1">
               Nueva contraseña
             </label>
             <div className="relative flex items-center mb-2">
@@ -138,7 +138,7 @@ const CambiarPasswordAjustes = () => {
                 value={passwords.new}
                 onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
                 placeholder="Mínimo 8 caracteres"
-                className="w-full text-xs p-2 pl-7 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2]"
+                className="w-full text-normal p-2 pl-7 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-tinta-principal focus:outline-none focus:border-[#2383C2]"
               />
             </div>
 
@@ -149,7 +149,7 @@ const CambiarPasswordAjustes = () => {
               <RequirementItem valid={validations.number} text="Un número" />
             </div>
 
-            <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            <label className="block text-etiqueta text-tinta-secundaria mb-1">
               Confirmar nueva contraseña
             </label>
             <div className="relative flex items-center">
@@ -159,11 +159,11 @@ const CambiarPasswordAjustes = () => {
                 value={passwords.confirm}
                 onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
                 placeholder="********"
-                className={`w-full text-xs p-2 pl-7 rounded border focus:outline-none ${
+                className={`w-full text-normal p-2 pl-7 rounded border focus:outline-none ${
                   passwords.confirm && passwords.new !== passwords.confirm
                     ? 'border-red-400 focus:border-red-400'
                     : 'border-gray-200 dark:border-gray-700 focus:border-[#2383C2]'
-                } bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200`}
+                } bg-gray-50 dark:bg-gray-900 text-tinta-principal`}
               />
             </div>
           </div>
@@ -173,7 +173,7 @@ const CambiarPasswordAjustes = () => {
           <button
             onClick={handleUpdate}
             disabled={loading || !isFormValid}
-            className="bg-[#2383C2] hover:bg-[#1b6aa0] text-white text-xs font-bold px-4 py-2 rounded flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px] justify-center"
+            className="bg-[#2383C2] hover:bg-[#1b6aa0] text-white text-etiqueta px-4 py-2 rounded flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[160px] justify-center"
           >
             {loading ? (
               <>

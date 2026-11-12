@@ -23,22 +23,22 @@ const ModulosVisibles = ({ userData }) => {
     <div className="w-full max-w-2xl">
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm flex flex-col gap-4">
         <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2">
+          <h3 className="text-titulo-seccion text-tinta-principal flex items-center gap-2">
             <LayoutGrid size={16} className="text-[#2383C2]" />
-            Módulos Visibles
+            Módulos visibles
           </h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+          <p className="text-secundario text-tinta-secundaria">
             Estos son los módulos y funciones habilitadas para tu usuario.
             {userData?.rol && (
               <>
-                {' '}Rol: <span className="font-semibold text-gray-600 dark:text-gray-300">{userData.rol}</span>.
+                {' '}Rol: <strong className="text-tinta-secundaria">{userData.rol}</strong>.
               </>
             )}
           </p>
         </div>
 
         {modulosConAcceso.length === 0 ? (
-          <p className="text-xs text-gray-400 dark:text-gray-500 italic text-center py-6">
+          <p className="text-normal text-tinta-atenuada italic text-center py-6">
             No tienes módulos habilitados todavía. Contacta a un administrador.
           </p>
         ) : (
@@ -57,9 +57,9 @@ const ModulosVisibles = ({ userData }) => {
                 >
                   <div className="flex items-center gap-2 p-2.5 border-b border-gray-100 dark:border-gray-700/60">
                     <CuadritoIcono icon={modulo.icon} color={modulo.color} tamano="sm" />
-                    <span className="text-xs font-bold text-gray-700 dark:text-gray-200">{modulo.label}</span>
+                    <span className="text-etiqueta text-tinta-principal">{modulo.label}</span>
                     {mostrarContador && (
-                      <span className="text-[10px] font-normal text-gray-400 ml-auto">
+                      <span className="text-pequeno text-tinta-atenuada ml-auto">
                         {itemsHabilitados.length}/{modulo.subItems.length}
                       </span>
                     )}
@@ -69,7 +69,7 @@ const ModulosVisibles = ({ userData }) => {
                     {itemsHabilitados.map((sub) => (
                       <div
                         key={sub.path}
-                        className="flex items-center gap-2 text-[11px] text-gray-600 dark:text-gray-300"
+                        className="flex items-center gap-2 text-secundario text-tinta-secundaria"
                       >
                         <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
                         <CuadritoIcono icon={sub.icon} color={sub.color} tamano="sm" />

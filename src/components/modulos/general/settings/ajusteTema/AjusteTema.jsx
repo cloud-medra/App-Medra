@@ -25,11 +25,11 @@ const AjusteTema = () => {
     <div className="w-full max-w-2xl">
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm flex flex-col gap-4">
         <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2">
+          <h3 className="text-titulo-seccion text-tinta-principal flex items-center gap-2">
             <Palette size={16} className="text-[#2383C2]" />
-            Tema y Apariencia
+            Tema y apariencia
           </h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+          <p className="text-secundario text-tinta-secundaria">
             Elige cómo quieres ver el sistema. Se aplica al instante y se guarda en tu cuenta.
           </p>
         </div>
@@ -55,8 +55,8 @@ const AjusteTema = () => {
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-xs font-bold text-gray-700 dark:text-gray-200">{titulo}</p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">{descripcion}</p>
+                    <p className="text-etiqueta text-tinta-principal">{titulo}</p>
+                    <p className="text-pequeno text-tinta-secundaria">{descripcion}</p>
                   </div>
                   <div
                     className={`w-3.5 h-3.5 rounded-full border-2 shrink-0 ${

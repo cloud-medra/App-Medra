@@ -8,18 +8,18 @@ const Section = ({ number, title, children, highlight }) => {
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between text-left py-1 group"
       >
-        <h2 className="text-sm font-bold text-gray-700 group-hover:text-indigo-600 transition-colors dark:text-gray-200">
+        <h2 className="text-titulo-seccion text-tinta-principal group-hover:text-indigo-600 transition-colors">
           {number}. {title}
           {highlight && (
-            <span className="ml-2 text-xs font-normal text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
+            <span className="ml-2 text-normal text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
               {highlight}
             </span>
           )}
         </h2>
-        <span className="text-gray-400 text-xs ml-2">{open ? '▲' : '▼'}</span>
+        <span className="text-tinta-atenuada text-normal ml-2">{open ? '▲' : '▼'}</span>
       </button>
       {open && (
-        <div className="mt-2 text-xs text-gray-600 leading-relaxed space-y-2 pl-3 border-l-2 border-indigo-100 dark:text-gray-300">
+        <div className="mt-2 text-normal text-tinta-secundaria space-y-2 pl-3 border-l-2 border-indigo-100">
           {children}
         </div>
       )}
@@ -33,15 +33,15 @@ const TerminosServicio = () => {
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
           <div className="w-1 h-6 bg-indigo-500 rounded-full" />
-          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Términos del Servicio</h1>
+          <h1 className="text-titulo-pagina text-tinta-principal">Términos del Servicio</h1>
         </div>
         <div className="flex items-center gap-4 ml-3 mt-1">
-          <p className="text-xs text-gray-400">Cloud – Medra</p>
-          <span className="text-gray-200 dark:text-gray-600">|</span>
-          <p className="text-xs text-gray-400">Última actualización: Junio 2026</p>
+          <p className="text-normal text-tinta-atenuada">Cloud – Medra</p>
+          <span className="text-tinta-atenuada">|</span>
+          <p className="text-normal text-tinta-atenuada">Última actualización: Junio 2026</p>
         </div>
         <div className="mt-3 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
-          <p className="text-xs text-indigo-700 leading-relaxed">
+          <p className="text-normal text-indigo-700">
             <strong>Uso interno restringido:</strong> Cloud – Medra es una plataforma de gestión 
             administrativa de uso exclusivo para personal autorizado. El acceso está condicionado 
             a la aceptación íntegra de estos términos y a la autorización expresa del administrador titular.
@@ -130,7 +130,7 @@ const TerminosServicio = () => {
             y se compromete a no ingresar voluntariamente información adicional que permita 
             la identificación inequívoca de una persona natural.
           </p>
-          <p className="text-gray-500 italic dark:text-gray-400">
+          <p className="text-tinta-secundaria italic">
             El administrador del sistema es el responsable del tratamiento de estos datos 
             conforme a la Política de Privacidad vigente.
           </p>
@@ -221,10 +221,10 @@ const TerminosServicio = () => {
       </div>
 
       <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between dark:border-gray-700">
-        <p className="text-xs text-gray-400">
+        <p className="text-normal text-tinta-atenuada">
           Marco legal: Ley N° 19.628 · República de Chile
         </p>
-        <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full border border-indigo-100 font-medium">
+        <span className="text-normal bg-indigo-50 text-indigo-600 px-2 py-1 rounded-full border border-indigo-100">
           v1.0 · Junio 2026
         </span>
       </div>

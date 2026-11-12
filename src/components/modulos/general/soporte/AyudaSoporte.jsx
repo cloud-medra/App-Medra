@@ -71,15 +71,15 @@ const AyudaSoporte = ({ contexto = {}, abrirNuevo = false }) => {
   const renderCelda = (col, t) => {
     switch (col.key) {
       case 'numero': return (
-        <span className="inline-flex items-center gap-1.5 tabular-nums font-semibold text-slate-700 dark:text-gray-200">
+        <span className="inline-flex items-center gap-1.5 text-etiqueta tabular-nums text-tinta-principal">
           {t.noLeidoUsuario && <PuntoNovedad title="Tiene una respuesta o un cambio de estado sin ver" />}
           {codigoTicket(t.numero)}
         </span>
       );
-      case 'titulo': return <span className={t.noLeidoUsuario ? 'font-semibold text-slate-900 dark:text-gray-50' : ''} title={t.titulo}>{t.titulo}</span>;
+      case 'titulo': return <span className={t.noLeidoUsuario ? 'text-etiqueta text-tinta-principal' : ''} title={t.titulo}>{t.titulo}</span>;
       case 'tipo': return <TipoTicket tipo={t.tipo} />;
       case 'estado': return <BadgeEstadoTicket estado={t.estado} />;
-      case 'actualizado': return <span className="text-gray-500 dark:text-gray-400">{formatearFechaTicket(t.actualizadoEl)}</span>;
+      case 'actualizado': return <span className="text-tinta-secundaria">{formatearFechaTicket(t.actualizadoEl)}</span>;
       case 'acciones': return <BotonIcono icono={Eye} title="Ver ticket" onClick={() => abrir(t.id)} />;
       default: return null;
     }
@@ -89,19 +89,19 @@ const AyudaSoporte = ({ contexto = {}, abrirNuevo = false }) => {
     <div className="h-full flex flex-col bg-white dark:bg-gray-900 rounded-lg border border-slate-200 dark:border-gray-700 overflow-hidden">
       <header className="shrink-0 px-5 py-4 border-b border-slate-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1"><LifeBuoy size={12} /> Ayuda y soporte</p>
-          <h1 className="text-[18px] font-semibold text-slate-900 dark:text-gray-50">{seccion === 'equipo' ? 'Tickets de mi equipo' : 'Mis tickets'}</h1>
-          <p className="text-[12px] text-slate-500 dark:text-gray-400">Reporta errores, pide mejoras o integraciones y haz consultas. Doble clic en un ticket para ver la conversación.</p>
+          <p className="text-secundario uppercase tracking-wider text-tinta-atenuada flex items-center gap-1"><LifeBuoy size={12} /> Ayuda y soporte</p>
+          <h1 className="text-titulo-pagina text-tinta-principal">{seccion === 'equipo' ? 'Tickets de mi equipo' : 'Mis tickets'}</h1>
+          <p className="text-normal text-tinta-secundaria">Reporta errores, pide mejoras o integraciones y haz consultas. Doble clic en un ticket para ver la conversación.</p>
         </div>
         <div className="flex items-center gap-2">
           {seccion === 'mios' && (
           <button type="button" onClick={() => cargar()} disabled={cargando} title="Actualizar"
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-[12px] text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50">
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-normal text-tinta-principal hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50">
             <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} /> Actualizar
           </button>
           )}
           <button type="button" onClick={() => setNuevoAbierto(true)}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa6] text-white text-[12px] font-medium">
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa6] text-white text-normal">
             <Plus size={14} /> Nuevo ticket
           </button>
         </div>
@@ -111,7 +111,7 @@ const AyudaSoporte = ({ contexto = {}, abrirNuevo = false }) => {
         <nav className="shrink-0 px-5 flex items-center gap-5 border-b border-slate-200 dark:border-gray-700" role="tablist">
           {[['mios', 'Mis tickets', User], ['equipo', 'Tickets de mi equipo', Users]].map(([id, etiqueta, Icono]) => (
             <button key={id} type="button" role="tab" aria-selected={seccion === id} onClick={() => setSeccion(id)}
-              className={`inline-flex items-center gap-1.5 py-2.5 -mb-px border-b-2 text-[13px] ${seccion === id ? 'border-[#2383C2] text-slate-900 dark:text-gray-50 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-gray-200'}`}>
+              className={`inline-flex items-center gap-1.5 py-2.5 -mb-px border-b-2 text-normal ${seccion === id ? 'border-[#2383C2] text-tinta-principal' : 'border-transparent text-tinta-secundaria hover:text-tinta-principal'}`}>
               <Icono size={14} /> {etiqueta}
             </button>
           ))}
@@ -134,7 +134,7 @@ const AyudaSoporte = ({ contexto = {}, abrirNuevo = false }) => {
       {hayMas && (
         <div className="shrink-0 flex justify-center py-2 border-t border-slate-200 dark:border-gray-700">
           <button type="button" onClick={() => cargar({ mas: true })} disabled={cargando}
-            className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-[12px] text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800">
+            className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-normal text-tinta-secundaria hover:bg-slate-50 dark:hover:bg-gray-800">
             {cargando && <Loader2 size={12} className="animate-spin" />} Cargar más
           </button>
         </div>

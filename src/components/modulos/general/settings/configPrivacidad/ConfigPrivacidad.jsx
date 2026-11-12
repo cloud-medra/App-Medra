@@ -48,17 +48,17 @@ const ConfigPrivacidad = () => {
     <div className="w-full max-w-lg">
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm flex flex-col gap-4">
         <div className="border-b border-gray-100 dark:border-gray-700 pb-2">
-          <h3 className="text-sm font-bold text-gray-700 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2">
+          <h3 className="text-titulo-seccion text-tinta-principal flex items-center gap-2">
             <Lock size={16} className="text-[#2383C2]" />
-            Configuración de Privacidad
+            Configuración de privacidad
           </h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">
+          <p className="text-secundario text-tinta-secundaria">
             Elige qué dato tuyo se muestra en los saludos del sistema. Solo afecta lo que ves tú.
           </p>
         </div>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-1.5">Nombre a mostrar</legend>
+          <legend className="text-etiqueta text-tinta-principal mb-1.5">Nombre a mostrar</legend>
           {OPCIONES_NOMBRE_MOSTRAR.map(({ valor, label, descripcion, campo }) => {
             const activo = seleccion === valor;
             const dato = String(userData?.[campo] ?? '').trim();
@@ -80,9 +80,9 @@ const ConfigPrivacidad = () => {
                   className="accent-[#2383C2]"
                 />
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-gray-700 dark:text-gray-200">{label}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                    {descripcion}: <span className="font-num">{dato || 'sin dato — se usará el siguiente disponible'}</span>
+                  <p className="text-etiqueta text-tinta-principal">{label}</p>
+                  <p className="text-pequeno text-tinta-secundaria truncate">
+                    {descripcion}: <span className="text-numero-tabla">{dato || 'sin dato — se usará el siguiente disponible'}</span>
                   </p>
                 </div>
               </label>
@@ -90,8 +90,8 @@ const ConfigPrivacidad = () => {
           })}
         </fieldset>
 
-        <div className="p-2.5 rounded-md bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700/60 text-[11px] text-gray-600 dark:text-gray-300">
-          Vista previa: <span className="font-semibold">Hola, <span className="text-[#2383C2] font-bold">{vistaPrevia || '—'}</span>.</span>
+        <div className="p-2.5 rounded-md bg-gray-50 dark:bg-gray-900/40 border border-gray-100 dark:border-gray-700/60 text-secundario text-tinta-secundaria">
+          Vista previa: <strong>Hola, <span className="text-[#2383C2]">{vistaPrevia || '—'}</span>.</strong>
         </div>
 
         <div className="flex justify-end">
@@ -99,7 +99,7 @@ const ConfigPrivacidad = () => {
             type="button"
             onClick={guardar}
             disabled={!hayCambios || guardando}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded text-xs font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded text-etiqueta transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {guardando ? <Spinner size="xs" color="#ffffff" /> : <Save size={14} />}
             <span>{guardando ? 'Guardando…' : 'Guardar'}</span>

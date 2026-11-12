@@ -19,6 +19,7 @@ Foto del 06-11-2026, con las pantallas nuevas agregadas el 12-11-2026: las cifra
 | **Portal Proveedores: Órdenes de compra** | `portalProveedores/ordenesCompra/OrdenesCompra.jsx` | 12-11-2026 |
 | **Piezas sueltas: acceso y páginas** | `components/LoginForm.jsx`, `pages/auth/CambiarPassword.jsx`, `pages/PlataformaExterna.jsx`, `pages/TestPage.jsx`, `pages/Dashboard.jsx` (texto de carga de `<main>`) | 12-11-2026 |
 | **Componentes comunes** | `components/ui/` (`ModalConfirm`, `Toast`, `BotonRestablecerAnchos`, `PaginacionSimple`, `BuscadorConLimpiar`, `CentroSelect`, `MultiSelectFiltro`, `TablaRedimensionable`, `bodymap/DetalleZona`, `bodymap/CuerpoCompleto`). Se ven con tokens también dentro de pantallas sin migrar | 12-11-2026 |
+| **General** | `general/` (20 archivos: Ajustes, Perfil, foto de perfil, Soporte y tickets, textos legales, acceso rápido de módulos). Excepción: la inicial del avatar grande de Perfil (`text-5xl`), que es gráfica | 12-11-2026 |
 
 Login y cambio de contraseña usan además los tokens `text-acceso-*` (portada de 30, título de 24 y cuerpo de 16 px; solo para pantallas de acceso). Conservan sus grises (`text-gray-*`) y no usan `text-tinta-*`: tienen fondo blanco fijo y la clase `.dark` se aplica a toda la página, así que con el tema oscuro guardado el texto quedaría claro sobre blanco. Los textos legales que abre el cambio de contraseña (`general/legales/`) van con el módulo General.
 
@@ -767,65 +768,6 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 |---|---:|---:|---:|---:|
 | `inventario/ingresosInventario/IngresosInventario.jsx` | 6 | 0 | 0 | 0 |
 | `inventario/ingresosInventario/TablaItemsIngreso.jsx` | 1 | 0 | 0 | 0 |
-
-## general
-
-20 archivos, 303 clases.
-
-### settings (7 archivos, 119 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `settings/datosUsuarios/DatosUsuarios.jsx` | 36 | 0 | 0 | 2 |
-| `settings/atajosDashboard/AtajosDashboard.jsx` | 25 | 0 | 0 | 4 |
-| `settings/cambiarPassword/CambiarPasswordAjustes.jsx` | 15 | 0 | 0 | 0 |
-| `settings/configPrivacidad/ConfigPrivacidad.jsx` | 14 | 0 | 1 | 1 |
-| `settings/ordenModulos/OrdenModulos.jsx` | 13 | 0 | 0 | 2 |
-| `settings/modulosVisibles/ModulosVisibles.jsx` | 10 | 0 | 0 | 0 |
-| `settings/ajusteTema/AjusteTema.jsx` | 6 | 0 | 0 | 0 |
-
-### soporte (6 archivos, 92 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `general/soporte/TicketPanel.jsx` | 34 | 0 | 0 | 1 |
-| `general/soporte/NuevoTicketPanel.jsx` | 19 | 0 | 0 | 0 |
-| `general/soporte/GestionTickets.jsx` | 15 | 0 | 0 | 0 |
-| `general/soporte/AyudaSoporte.jsx` | 14 | 0 | 0 | 0 |
-| `general/soporte/TicketsEquipo.jsx` | 8 | 0 | 0 | 0 |
-| `general/soporte/BadgesTicket.jsx` | 2 | 0 | 0 | 2 |
-
-### perfil (1 archivos, 29 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `general/perfil/Perfil.jsx` | 29 | 0 | 1 | 0 |
-
-### legales (2 archivos, 26 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `general/legales/TerminosServicio.jsx` | 14 | 0 | 0 | 0 |
-| `general/legales/PoliticasPrivacidad.jsx` | 12 | 0 | 0 | 0 |
-
-### ajustes (2 archivos, 15 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `general/ajustes/CambiarPasswordSeguro.jsx` | 13 | 0 | 0 | 0 |
-| `general/ajustes/Ajustes.jsx` | 2 | 0 | 0 | 0 |
-
-### fotoPerfil (1 archivos, 14 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `general/fotoPerfil/FotoPerfilModal.jsx` | 14 | 0 | 0 | 0 |
-
-### accesoModulo (1 archivos, 8 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `general/accesoModulo/AccesoRapidoModulo.jsx` | 8 | 0 | 0 | 2 |
 
 ## dashboard
 

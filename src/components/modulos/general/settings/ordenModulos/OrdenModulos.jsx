@@ -150,16 +150,16 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">
-                Orden de Módulos
+              <h3 className="text-titulo-seccion text-tinta-principal">
+                Orden de módulos
               </h3>
               {totalModulos > 0 && (
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                <span className="text-pequeno px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-tinta-secundaria">
                   {totalModulos} {totalModulos === 1 ? 'módulo' : 'módulos'}
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-normal text-tinta-secundaria mt-0.5">
               Arrastra con el ícono <GripVertical size={11} className="inline -mt-0.5" /> o usa las
               flechas para ordenar tus módulos. Haz clic en un módulo para reordenar también sus
               secciones internas.
@@ -170,9 +170,9 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
         {/* CUERPO: LISTA DE MÓDULOS */}
         <div className="p-4 sm:p-6">
           {totalModulos === 0 ? (
-            <div className="flex flex-col items-center justify-center text-center py-10 text-gray-400 dark:text-gray-500">
+            <div className="flex flex-col items-center justify-center text-center py-10 text-tinta-atenuada">
               <LayoutList size={28} className="mb-2 opacity-60" />
-              <p className="text-xs">No tienes módulos habilitados para reordenar.</p>
+              <p className="text-normal">No tienes módulos habilitados para reordenar.</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -199,7 +199,7 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
               >
                 <GripVertical size={16} className="text-gray-300 dark:text-gray-600 flex-shrink-0" />
                 <CuadritoIcono icon={modulo.icon} color={modulo.color} />
-                <span className="flex-grow text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                <span className="flex-grow text-subtitulo text-tinta-principal truncate">
                   {modulo.label}
                 </span>
 
@@ -207,7 +207,7 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
                   <button
                     onClick={() => moveModule(index, -1)}
                     disabled={index === 0}
-                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500 dark:text-gray-400"
+                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-tinta-secundaria"
                     title="Mover arriba"
                   >
                     <ArrowUp size={14} />
@@ -215,7 +215,7 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
                   <button
                     onClick={() => moveModule(index, 1)}
                     disabled={index === moduleOrder.length - 1}
-                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500 dark:text-gray-400"
+                    className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-tinta-secundaria"
                     title="Mover abajo"
                   >
                     <ArrowDown size={14} />
@@ -224,7 +224,7 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
                   {modulo.subItems?.length > 0 && (
                     <button
                       onClick={() => setExpandedModule(isExpanded ? null : mKey)}
-                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 ml-1"
+                      className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-tinta-secundaria ml-1"
                       title="Ver secciones"
                     >
                       {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -247,20 +247,20 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
                     >
                       <GripVertical size={13} className="text-gray-300 dark:text-gray-600 flex-shrink-0" />
                       <CuadritoIcono icon={sub.icon} color={sub.color} tamano="sm" />
-                      <span className="flex-grow text-xs text-gray-600 dark:text-gray-300 truncate">
+                      <span className="flex-grow text-normal text-tinta-secundaria truncate">
                         {sub.label}
                       </span>
                       <button
                         onClick={() => moveSubItem(mKey, subIndex, -1)}
                         disabled={subIndex === 0}
-                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500 dark:text-gray-400"
+                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-tinta-secundaria"
                       >
                         <ArrowUp size={12} />
                       </button>
                       <button
                         onClick={() => moveSubItem(mKey, subIndex, 1)}
                         disabled={subIndex === subItemsOrdenados.length - 1}
-                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-gray-500 dark:text-gray-400"
+                        className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed text-tinta-secundaria"
                       >
                         <ArrowDown size={12} />
                       </button>
@@ -279,7 +279,7 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-gray-100 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/30">
           <button
             onClick={handleRestablecer}
-            className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            className="flex items-center gap-2 text-normal text-tinta-secundaria hover:text-tinta-principal transition-colors"
           >
             <RotateCcw size={13} /> Restablecer orden predeterminado
           </button>
@@ -287,7 +287,7 @@ const OrdenModulos = ({ userData, onOrderSaved }) => {
           <button
             onClick={handleGuardar}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2383C2] hover:bg-[#1a6aa0] text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2383C2] hover:bg-[#1a6aa0] text-white text-etiqueta shadow-sm transition-colors disabled:opacity-60"
           >
             {savedMsg ? (
               <>

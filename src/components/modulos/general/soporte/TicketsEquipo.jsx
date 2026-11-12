@@ -22,7 +22,7 @@ const COLUMNAS = [
 
 const Selector = ({ value, onChange, todos, opciones }) => (
   <select value={value} onChange={(e) => onChange(e.target.value)}
-    className={`h-8 pl-2 pr-6 rounded-md border text-[12px] bg-white dark:bg-gray-950 outline-none cursor-pointer ${value ? 'border-[#2383C2]/60 text-[#2383C2] font-medium' : 'border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300'}`}>
+    className={`h-8 pl-2 pr-6 rounded-md border text-normal bg-white dark:bg-gray-950 outline-none cursor-pointer ${value ? 'border-[#2383C2]/60 text-[#2383C2]' : 'border-slate-300 dark:border-gray-700 text-tinta-secundaria'}`}>
     <option value="">{todos}</option>
     {opciones.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
   </select>
@@ -71,13 +71,13 @@ const TicketsEquipo = ({ userData }) => {
 
   const renderCelda = (col, t) => {
     switch (col.key) {
-      case 'numero': return <span className="tabular-nums font-semibold text-slate-700 dark:text-gray-200">{codigoTicket(t.numero)}</span>;
+      case 'numero': return <span className="text-etiqueta tabular-nums text-tinta-principal">{codigoTicket(t.numero)}</span>;
       case 'titulo': return <span title={t.titulo}>{t.titulo}</span>;
       case 'usuario': return <span title={t.creadoPorEmail}>{t.creadoPorNombre}</span>;
       case 'tipo': return <TipoTicket tipo={t.tipo} />;
       case 'prioridad': return <BadgePrioridadTicket prioridad={t.prioridad} />;
       case 'estado': return <BadgeEstadoTicket estado={t.estado} />;
-      case 'actualizado': return <span className="text-gray-500 dark:text-gray-400">{formatearFechaTicket(t.actualizadoEl)}</span>;
+      case 'actualizado': return <span className="text-tinta-secundaria">{formatearFechaTicket(t.actualizadoEl)}</span>;
       case 'acciones': return <BotonIcono icono={Eye} title="Ver ticket" onClick={() => abrir(t.id)} />;
       default: return null;
     }
@@ -86,17 +86,17 @@ const TicketsEquipo = ({ userData }) => {
   return (
     <>
       <div className="shrink-0 px-4 py-2.5 flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-gray-700">
-        <span className="text-[12px] text-slate-500 dark:text-gray-400 mr-1">Tickets de los usuarios que tienes asignados (solo lectura).</span>
+        <span className="text-normal text-tinta-secundaria mr-1">Tickets de los usuarios que tienes asignados (solo lectura).</span>
         <Selector value={filtros.estado} onChange={(v) => setFiltros((p) => ({ ...p, estado: v }))} todos="Estado: todos" opciones={ESTADOS_TICKET} />
         <Selector value={filtros.tipo} onChange={(v) => setFiltros((p) => ({ ...p, tipo: v }))} todos="Tipo: todos" opciones={TIPOS_TICKET} />
         {hayFiltros && (
           <button type="button" onClick={() => setFiltros({ estado: '', tipo: '' })}
-            className="inline-flex items-center gap-1 h-8 px-2 rounded-md text-[12px] text-slate-500 hover:bg-slate-100 dark:hover:bg-gray-800">
+            className="inline-flex items-center gap-1 h-8 px-2 rounded-md text-normal text-tinta-secundaria hover:bg-slate-100 dark:hover:bg-gray-800">
             <FilterX size={14} /> Limpiar
           </button>
         )}
         <button type="button" onClick={() => cargar()} disabled={cargando} title="Actualizar"
-          className="ml-auto inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-[12px] text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50">
+          className="ml-auto inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-normal text-tinta-principal hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50">
           <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} /> Actualizar
         </button>
       </div>
@@ -115,7 +115,7 @@ const TicketsEquipo = ({ userData }) => {
       {hayMas && (
         <div className="shrink-0 flex justify-center py-2 border-t border-slate-200 dark:border-gray-700">
           <button type="button" onClick={() => cargar({ mas: true })} disabled={cargando}
-            className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-[12px] text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800">
+            className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-normal text-tinta-secundaria hover:bg-slate-50 dark:hover:bg-gray-800">
             {cargando && <Loader2 size={12} className="animate-spin" />} Cargar más
           </button>
         </div>

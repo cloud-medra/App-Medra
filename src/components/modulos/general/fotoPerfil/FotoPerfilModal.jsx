@@ -134,10 +134,10 @@ const FotoPerfilModal = ({ abierto, onCerrar, userData }) => {
       <div className="absolute inset-0 bg-slate-900/40" onClick={() => !guardando && onCerrar()} />
       <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-slate-200 dark:border-gray-700 overflow-hidden">
         <header className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-gray-700">
-          <h2 className="flex items-center gap-2 text-[14px] font-semibold text-slate-900 dark:text-gray-50">
+          <h2 className="flex items-center gap-2 text-titulo-seccion text-tinta-principal">
             <Camera size={16} className="text-[#2383C2]" /> Foto de perfil
           </h2>
-          <button type="button" onClick={onCerrar} disabled={guardando} title="Cerrar" className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-gray-800">
+          <button type="button" onClick={onCerrar} disabled={guardando} title="Cerrar" className="p-1 rounded-md text-tinta-atenuada hover:text-tinta-principal hover:bg-slate-100 dark:hover:bg-gray-800">
             <X size={16} />
           </button>
         </header>
@@ -168,41 +168,41 @@ const FotoPerfilModal = ({ abierto, onCerrar, userData }) => {
                   <div className="pointer-events-none absolute inset-0 rounded-full shadow-[0_0_0_999px_rgba(15,23,42,0.45)]" />
                 </div>
                 <div className="flex flex-col items-center gap-3 pt-2">
-                  <span className="text-[11px] text-slate-500 dark:text-gray-400">Vista previa</span>
+                  <span className="text-secundario text-tinta-secundaria">Vista previa</span>
                   <canvas ref={previaGrandeRef} width={96} height={96} className="w-24 h-24 rounded-full ring-2 ring-slate-200 dark:ring-gray-700" />
                   <canvas ref={previaChicaRef} width={36} height={36} className="w-9 h-9 rounded-full shadow-md" title="Así se verá en el encabezado" />
                 </div>
               </div>
-              <label className="flex items-center gap-2 text-[12px] text-slate-600 dark:text-gray-300">
+              <label className="flex items-center gap-2 text-normal text-tinta-secundaria">
                 <ZoomIn size={14} />
                 <input type="range" min="1" max="3" step="0.01" value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="flex-1 accent-[#2383C2]" aria-label="Zoom" />
               </label>
             </>
           ) : (
             <div className="flex items-center gap-4">
-              <AvatarUsuario nombre={userData?.nombreCompleto} fotoUrl={userData?.fotoPerfilUrl} className="w-24 h-24 text-3xl font-bold bg-[#2383C2] text-white" porDefecto="U" />
-              <div className="text-[12px] text-slate-500 dark:text-gray-400 space-y-1">
+              <AvatarUsuario nombre={userData?.nombreCompleto} fotoUrl={userData?.fotoPerfilUrl} className="w-24 h-24 text-titulo-pagina bg-[#2383C2] text-white" porDefecto="U" />
+              <div className="text-normal text-tinta-secundaria space-y-1">
                 <p>{tieneFoto ? 'Tienes una foto de perfil.' : 'Sin foto: se muestran tus iniciales.'}</p>
                 <p>JPG, PNG o WebP, hasta 10 MB. Se recorta en cuadrado y se reduce a 256 × 256 px antes de subirla.</p>
               </div>
             </div>
           )}
 
-          {error && <p className="text-[12px] text-red-600 dark:text-red-400" role="alert">{error}</p>}
+          {error && <p className="text-normal text-red-600 dark:text-red-400" role="alert">{error}</p>}
         </div>
 
         <footer className="flex items-center justify-between gap-2 px-5 py-3 border-t border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/80">
           {tieneFoto && !imagen ? (
-            <button type="button" onClick={quitar} disabled={guardando} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-[12px] font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50">
+            <button type="button" onClick={quitar} disabled={guardando} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-normal text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50">
               <Trash2 size={14} /> Quitar foto
             </button>
           ) : <span />}
           <div className="flex items-center gap-2">
-            <button type="button" onClick={() => inputRef.current?.click()} disabled={guardando} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-[12px] font-medium text-slate-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-50">
+            <button type="button" onClick={() => inputRef.current?.click()} disabled={guardando} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-normal text-tinta-principal hover:bg-white dark:hover:bg-gray-800 disabled:opacity-50">
               <ImagePlus size={14} /> {imagen ? 'Elegir otra' : tieneFoto ? 'Cambiar foto' : 'Subir foto'}
             </button>
             {imagen && (
-              <button type="button" onClick={guardar} disabled={guardando} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa6] text-white text-[12px] font-medium disabled:opacity-50">
+              <button type="button" onClick={guardar} disabled={guardando} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa6] text-white text-normal disabled:opacity-50">
                 {guardando && <Loader2 size={14} className="animate-spin" />} Guardar foto
               </button>
             )}

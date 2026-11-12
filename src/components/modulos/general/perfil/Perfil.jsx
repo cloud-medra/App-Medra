@@ -13,14 +13,14 @@ const Perfil = ({ userData, onGestionarPassword }) => {
   return (
     <div className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
       <div className="bg-gray-50 dark:bg-gray-800/50 p-5 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
-        <h2 className="text-[15px] font-extrabold text-gray-800 dark:text-gray-100 flex items-center gap-2.5 tracking-tight">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-2.5 tracking-tight">
           <div className="p-1.5 bg-[#2383C2]/10 dark:bg-[#2383C2]/20 rounded-lg">
             <User size={18} className="text-[#2383C2]" />
           </div>
           PANEL DE PERFIL PERSONAL
         </h2>
         
-        <span className={`text-[11px] px-3 py-1 rounded-full font-bold uppercase flex items-center gap-1.5 border ${
+        <span className={`text-etiqueta px-3 py-1 rounded-full uppercase flex items-center gap-1.5 border ${
           esActivo 
             ? 'bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/50' 
             : 'bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50'
@@ -47,30 +47,30 @@ const Perfil = ({ userData, onGestionarPassword }) => {
               </div>
             </div>
             
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
+            <h3 className="text-titulo-pagina text-tinta-principal">
               {userData.nombreCompleto || 'Usuario'}
             </h3>
-            <p className="text-[13px] text-gray-500 dark:text-gray-400 font-medium mb-4 flex items-center gap-1">
+            <p className="text-subtitulo text-tinta-secundaria mb-4 flex items-center gap-1">
               <AtSign size={12} className="text-gray-400 dark:text-gray-500" />
               {userData.nombreUsuario || 'sin_nombre_usuario'}
             </p>
             
-            <span className="text-[11px] px-4 py-1 rounded-full font-bold uppercase tracking-wider bg-[#2383C2] text-white shadow-sm">
+            <span className="text-etiqueta px-4 py-1 rounded-full uppercase tracking-wider bg-[#2383C2] text-white shadow-sm">
               {userData.rol || 'Sin Rol'}
             </span>
             
             <div className="w-full border-t border-gray-200 dark:border-gray-700 my-5"></div>
             
-            <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 text-[12px]">
+            <div className="flex items-center gap-2 text-tinta-secundaria text-normal">
                 <CalendarDays size={14} className="text-gray-400 dark:text-gray-500" />
-                <span>Miembro desde: <span className='font-semibold text-gray-700 dark:text-gray-200'>{fechaUnion}</span></span>
+                <span>Miembro desde: <strong className='text-tinta-principal'>{fechaUnion}</strong></span>
             </div>
           </div>
 
           <div className="w-full md:w-2/3 space-y-6">
             <div className="flex items-center justify-between">
-                <h4 className="text-[13px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Información Detallada</h4>
-                <button className="text-[12px] font-semibold text-[#2383C2] hover:underline">Editar Datos</button>
+                <h4 className="text-titulo-seccion text-tinta-principal">Información detallada</h4>
+                <button className="text-etiqueta text-[#2383C2] hover:underline">Editar datos</button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -87,10 +87,10 @@ const Perfil = ({ userData, onGestionarPassword }) => {
                     <Shield size={20}/>
                 </div>
                 <div>
-                    <h5 className="text-[14px] font-bold text-blue-900 dark:text-blue-300">Seguridad de la Cuenta</h5>
-                    <p className="text-[12px] text-blue-800/80 dark:text-blue-400/80">Tu cuenta está protegida. Último cambio de contraseña: {textoFechaCambioPassword(userData.passwordCambiadaEl)}.</p>
+                    <h5 className="text-titulo-seccion text-blue-900 dark:text-blue-300">Seguridad de la Cuenta</h5>
+                    <p className="text-normal text-blue-800/80 dark:text-blue-400/80">Tu cuenta está protegida. Último cambio de contraseña: {textoFechaCambioPassword(userData.passwordCambiadaEl)}.</p>
                 </div>
-                <button type="button" onClick={onGestionarPassword} className="ml-auto text-[12px] px-4 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <button type="button" onClick={onGestionarPassword} className="ml-auto text-etiqueta px-4 py-2 bg-white dark:bg-gray-800 text-tinta-principal rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                   Gestionar
                 </button>
             </div>
@@ -108,12 +108,12 @@ const ElegantInfoCard = ({ icon: Icon, label, value, isCapitalized, isCode }) =>
     </div>
 
     <div className="relative flex items-center gap-4">
-      <div className="p-2.5 bg-gray-100 dark:bg-gray-900 rounded-xl text-gray-500 dark:text-gray-400 group-hover:bg-[#2383C2]/10 dark:group-hover:bg-[#2383C2]/20 group-hover:text-[#2383C2] transition-colors">
+      <div className="p-2.5 bg-gray-100 dark:bg-gray-900 rounded-xl text-tinta-secundaria group-hover:bg-[#2383C2]/10 dark:group-hover:bg-[#2383C2]/20 group-hover:text-[#2383C2] transition-colors">
         <Icon size={18} />
       </div>
       <div className="flex-1">
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase font-bold tracking-widest mb-0.5">{label}</p>
-        <p className={`text-[14px] font-semibold text-gray-800 dark:text-gray-200 ${isCapitalized ? 'capitalize' : ''} ${isCode ? 'font-num text-[13px] bg-gray-50 dark:bg-gray-900 px-1.5 py-0.5 rounded border border-transparent dark:border-gray-700' : ''}`}>
+        <p className="text-pequeno text-tinta-atenuada uppercase tracking-widest mb-0.5">{label}</p>
+        <p className={`text-titulo-seccion text-tinta-principal ${isCapitalized ? 'capitalize' : ''} ${isCode ? 'text-normal tabular-nums bg-gray-50 dark:bg-gray-900 px-1.5 py-0.5 rounded border border-transparent dark:border-gray-700' : ''}`}>
           {value || 'No disponible'}
         </p>
       </div>

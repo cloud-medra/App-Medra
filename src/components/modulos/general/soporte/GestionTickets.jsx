@@ -33,7 +33,7 @@ const FILTROS_VACIOS = { estado: '', tipo: '', modulo: '', prioridad: '', orden:
 
 const Selector = ({ value, onChange, todos, opciones }) => (
   <select value={value} onChange={(e) => onChange(e.target.value)}
-    className={`h-8 pl-2 pr-6 rounded-md border text-[12px] bg-white dark:bg-gray-950 outline-none cursor-pointer ${value ? 'border-[#2383C2]/60 text-[#2383C2] font-medium' : 'border-slate-300 dark:border-gray-700 text-slate-600 dark:text-gray-300'}`}>
+    className={`h-8 pl-2 pr-6 rounded-md border text-normal bg-white dark:bg-gray-950 outline-none cursor-pointer ${value ? 'border-[#2383C2]/60 text-[#2383C2]' : 'border-slate-300 dark:border-gray-700 text-tinta-secundaria'}`}>
     <option value="">{todos}</option>
     {opciones.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
   </select>
@@ -94,19 +94,19 @@ const GestionTickets = () => {
   const renderCelda = (col, t) => {
     switch (col.key) {
       case 'numero': return (
-        <span className="inline-flex items-center gap-1.5 tabular-nums font-semibold text-slate-700 dark:text-gray-200">
+        <span className="inline-flex items-center gap-1.5 text-etiqueta tabular-nums text-tinta-principal">
           {t.pendienteGestor && <PuntoNovedad title="Sin revisar" />}
           {codigoTicket(t.numero)}
         </span>
       );
-      case 'titulo': return <span className={t.pendienteGestor ? 'font-semibold text-slate-900 dark:text-gray-50' : ''} title={t.titulo}>{t.titulo}</span>;
+      case 'titulo': return <span className={t.pendienteGestor ? 'text-etiqueta text-tinta-principal' : ''} title={t.titulo}>{t.titulo}</span>;
       case 'tipo': return <TipoTicket tipo={t.tipo} />;
       case 'prioridad': return <BadgePrioridadTicket prioridad={t.prioridad} />;
       case 'modulo': return <span title={etiquetaModuloTicket(t.modulo)}>{etiquetaModuloTicket(t.modulo)}</span>;
       case 'estado': return <BadgeEstadoTicket estado={t.estado} />;
       case 'usuario': return <span title={t.creadoPorEmail}>{t.creadoPorNombre}</span>;
-      case 'creado': return <span className="text-gray-500 dark:text-gray-400">{formatearFechaTicket(t.creadoEl)}</span>;
-      case 'actualizado': return <span className="text-gray-500 dark:text-gray-400">{formatearFechaTicket(t.actualizadoEl)}</span>;
+      case 'creado': return <span className="text-tinta-secundaria">{formatearFechaTicket(t.creadoEl)}</span>;
+      case 'actualizado': return <span className="text-tinta-secundaria">{formatearFechaTicket(t.actualizadoEl)}</span>;
       case 'acciones': return <BotonIcono icono={Eye} title="Abrir ticket" onClick={() => abrir(t.id)} />;
       default: return null;
     }
@@ -115,9 +115,9 @@ const GestionTickets = () => {
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900 rounded-lg border border-slate-200 dark:border-gray-700 overflow-hidden">
       <header className="shrink-0 px-5 py-4 border-b border-slate-200 dark:border-gray-700">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400 flex items-center gap-1"><Inbox size={12} /> Herramientas</p>
-        <h1 className="text-[18px] font-semibold text-slate-900 dark:text-gray-50">Gestionar tickets</h1>
-        <p className="text-[12px] text-slate-500 dark:text-gray-400">Bandeja de tickets de soporte. Doble clic para abrir, responder o cambiar el estado.</p>
+        <p className="text-secundario uppercase tracking-wider text-tinta-atenuada flex items-center gap-1"><Inbox size={12} /> Herramientas</p>
+        <h1 className="text-titulo-pagina text-tinta-principal">Gestionar tickets</h1>
+        <p className="text-normal text-tinta-secundaria">Bandeja de tickets de soporte. Doble clic para abrir, responder o cambiar el estado.</p>
       </header>
 
       <div className="shrink-0 px-4 py-2.5 flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-gray-700">
@@ -125,25 +125,25 @@ const GestionTickets = () => {
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="N° (TK-0012), título o usuario…"
             title="Un número busca ese ticket; otro texto filtra la página cargada"
-            className="w-full h-8 pl-8 pr-2 rounded-md border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-[12px] outline-none focus:border-[#2383C2]" />
+            className="w-full h-8 pl-8 pr-2 rounded-md border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-normal outline-none focus:border-[#2383C2]" />
         </div>
         <Selector value={filtros.estado} onChange={setFiltro('estado')} todos="Estado: todos" opciones={ESTADOS_TICKET} />
         <Selector value={filtros.tipo} onChange={setFiltro('tipo')} todos="Tipo: todos" opciones={TIPOS_TICKET} />
         <Selector value={filtros.modulo} onChange={setFiltro('modulo')} todos="Módulo: todos" opciones={modulos} />
         <Selector value={filtros.prioridad} onChange={setFiltro('prioridad')} todos="Prioridad: todas" opciones={PRIORIDADES_TICKET} />
         <select value={filtros.orden} onChange={(e) => setFiltro('orden')(e.target.value)} aria-label="Orden"
-          className="h-8 px-2 rounded-md border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-[12px] text-slate-600 dark:text-gray-300">
+          className="h-8 px-2 rounded-md border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-normal text-tinta-secundaria">
           <option value="desc">Más recientes primero</option>
           <option value="asc">Más antiguos primero</option>
         </select>
         {hayFiltros && (
           <button type="button" onClick={() => { setFiltros(FILTROS_VACIOS); setBusqueda(''); }}
-            className="inline-flex items-center gap-1 h-8 px-2 rounded-md text-[12px] text-slate-500 hover:bg-slate-100 dark:hover:bg-gray-800">
+            className="inline-flex items-center gap-1 h-8 px-2 rounded-md text-normal text-tinta-secundaria hover:bg-slate-100 dark:hover:bg-gray-800">
             <FilterX size={14} /> Limpiar
           </button>
         )}
         <button type="button" onClick={() => cargar()} disabled={cargando} title="Actualizar"
-          className="ml-auto inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-[12px] text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50">
+          className="ml-auto inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-normal text-tinta-principal hover:bg-slate-50 dark:hover:bg-gray-800 disabled:opacity-50">
           <RefreshCw size={14} className={cargando ? 'animate-spin' : ''} /> Actualizar
         </button>
       </div>
@@ -163,7 +163,7 @@ const GestionTickets = () => {
       {hayMas && !numeroBuscado && (
         <div className="shrink-0 flex justify-center py-2 border-t border-slate-200 dark:border-gray-700">
           <button type="button" onClick={() => cargar({ mas: true })} disabled={cargando}
-            className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-[12px] text-slate-600 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-gray-800">
+            className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-normal text-tinta-secundaria hover:bg-slate-50 dark:hover:bg-gray-800">
             {cargando && <Loader2 size={12} className="animate-spin" />} Cargar más
           </button>
         </div>

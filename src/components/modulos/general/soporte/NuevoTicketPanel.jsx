@@ -7,14 +7,14 @@ import {
 } from './ticketsConfig';
 import { crearTicket, validarCaptura, TIPOS_CAPTURA } from './ticketsServicio';
 
-const CLASE_CONTROL = 'w-full px-3 rounded-md border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-[13px] text-slate-800 dark:text-gray-100 outline-none focus:border-[#2383C2] focus:ring-2 focus:ring-[#2383C2]/15';
+const CLASE_CONTROL = 'w-full px-3 rounded-md border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-normal text-tinta-principal outline-none focus:border-[#2383C2] focus:ring-2 focus:ring-[#2383C2]/15';
 
 const Campo = ({ etiqueta, error, children, ayuda }) => (
   <label className="block">
-    <span className="block mb-1 text-[12px] font-medium text-slate-700 dark:text-gray-300">{etiqueta}</span>
+    <span className="block mb-1 text-normal text-tinta-principal">{etiqueta}</span>
     {children}
-    {error ? <span className="block mt-1 text-[11px] text-red-600 dark:text-red-400">{error}</span>
-      : ayuda ? <span className="block mt-1 text-[11px] text-slate-400">{ayuda}</span> : null}
+    {error ? <span className="block mt-1 text-secundario text-red-600 dark:text-red-400">{error}</span>
+      : ayuda ? <span className="block mt-1 text-secundario text-tinta-atenuada">{ayuda}</span> : null}
   </label>
 );
 
@@ -78,16 +78,16 @@ const NuevoTicketPanel = ({ abierto, onCerrar, onCreado, userData, modulos, modu
 
   const encabezado = (
     <div>
-      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400"><LifeBuoy size={12} /> Ayuda y soporte</div>
-      <h3 className="mt-1.5 text-[17px] font-semibold text-slate-900 dark:text-gray-50">Nuevo ticket</h3>
-      <p className="mt-0.5 text-[12px] text-slate-500 dark:text-gray-400">Reporta un error, pide una mejora o haz una consulta.</p>
+      <div className="flex items-center gap-1.5 text-secundario uppercase tracking-wider text-tinta-atenuada"><LifeBuoy size={12} /> Ayuda y soporte</div>
+      <h3 className="mt-1.5 text-titulo-pagina text-tinta-principal">Nuevo ticket</h3>
+      <p className="mt-0.5 text-normal text-tinta-secundaria">Reporta un error, pide una mejora o haz una consulta.</p>
     </div>
   );
 
   const pie = (
     <div className="flex items-center justify-end gap-2">
-      <button type="button" onClick={onCerrar} disabled={enviando} className="h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-[12px] font-medium text-slate-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-800">Cancelar</button>
-      <button type="button" onClick={enviar} disabled={enviando} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa6] text-white text-[12px] font-medium disabled:opacity-50">
+      <button type="button" onClick={onCerrar} disabled={enviando} className="h-8 px-3 rounded-md border border-slate-300 dark:border-gray-700 text-normal text-tinta-principal hover:bg-white dark:hover:bg-gray-800">Cancelar</button>
+      <button type="button" onClick={enviar} disabled={enviando} className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa6] text-white text-normal disabled:opacity-50">
         {enviando ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Enviar ticket
       </button>
     </div>
@@ -121,7 +121,7 @@ const NuevoTicketPanel = ({ abierto, onCerrar, onCreado, userData, modulos, modu
         </div>
 
         <div>
-          <span className="block mb-1 text-[12px] font-medium text-slate-700 dark:text-gray-300">Capturas de pantalla (opcional, hasta {MAX_CAPTURAS})</span>
+          <span className="block mb-1 text-normal text-tinta-principal">Capturas de pantalla (opcional, hasta {MAX_CAPTURAS})</span>
           <input ref={inputRef} type="file" accept={TIPOS_CAPTURA.join(',')} multiple className="hidden"
             onChange={(e) => { agregarCapturas([...(e.target.files || [])]); e.target.value = ''; }} />
           <div className="flex flex-wrap gap-2">
@@ -134,14 +134,14 @@ const NuevoTicketPanel = ({ abierto, onCerrar, onCreado, userData, modulos, modu
             ))}
             {capturas.length < MAX_CAPTURAS && (
               <button type="button" onClick={() => inputRef.current?.click()}
-                className="w-20 h-20 rounded-md border border-dashed border-slate-300 dark:border-gray-700 text-slate-400 hover:text-[#2383C2] hover:border-[#2383C2] flex flex-col items-center justify-center gap-1 text-[10px]">
+                className="w-20 h-20 rounded-md border border-dashed border-slate-300 dark:border-gray-700 text-tinta-atenuada hover:text-[#2383C2] hover:border-[#2383C2] flex flex-col items-center justify-center gap-1 text-pequeno">
                 <ImagePlus size={18} /> Agregar
               </button>
             )}
           </div>
-          <span className="block mt-1 text-[11px] text-slate-400">JPG, PNG o WebP. Se reducen y comprimen antes de subirlas.</span>
+          <span className="block mt-1 text-secundario text-tinta-atenuada">JPG, PNG o WebP. Se reducen y comprimen antes de subirlas.</span>
         </div>
-        <p className="text-[11px] text-slate-400">Se adjunta automáticamente información técnica (pantalla, navegador y versión) para ayudar a resolverlo.</p>
+        <p className="text-secundario text-tinta-atenuada">Se adjunta automáticamente información técnica (pantalla, navegador y versión) para ayudar a resolverlo.</p>
       </div>
     </PanelLateral>
   );

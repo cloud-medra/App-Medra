@@ -6,7 +6,7 @@ const Ajustes = () => {
   return (
     <div className="w-full h-full flex flex-col bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden p-0">
       
-      <h2 className="text-[14px] font-bold text-gray-700 p-4 flex items-center gap-2 border-b border-gray-200">
+      <h2 className="text-titulo-seccion text-tinta-principal p-4 flex items-center gap-2 border-b border-gray-200">
         <ShieldCheck size={16} className="text-[#2383C2]" /> AJUSTES DE SEGURIDAD
       </h2>
 

@@ -10,8 +10,8 @@ import { actualizarTicket } from './ticketsServicio';
 
 const Dato = ({ etiqueta, children }) => (
   <div className="min-w-0">
-    <dt className="text-[11px] text-slate-400 dark:text-gray-500">{etiqueta}</dt>
-    <dd className="text-[12px] text-slate-700 dark:text-gray-200 truncate">{children}</dd>
+    <dt className="text-secundario text-tinta-atenuada">{etiqueta}</dt>
+    <dd className="text-normal text-tinta-principal truncate">{children}</dd>
   </div>
 );
 
@@ -84,11 +84,11 @@ const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModu
 
   const encabezado = (
     <div>
-      <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-slate-400">
+      <div className="flex items-center gap-2 text-secundario uppercase tracking-wider text-tinta-atenuada">
         <span className="tabular-nums">{codigoTicket(ticket.numero)}</span>
         <BadgeEstadoTicket estado={ticket.estado} />
       </div>
-      <h3 className="mt-1.5 text-[16px] font-semibold text-slate-900 dark:text-gray-50 break-words">{ticket.titulo}</h3>
+      <h3 className="mt-1.5 text-titulo-seccion text-tinta-principal break-words">{ticket.titulo}</h3>
     </div>
   );
 
@@ -97,7 +97,7 @@ const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModu
   return (
     <PanelLateral abierto={abierto} onSolicitarCierre={() => !guardando && onCerrar()} encabezado={encabezado} ancho="max-w-[560px]"
       pie={soloLectura ? (
-        <p className="flex items-center gap-1.5 text-[12px] text-slate-500 dark:text-gray-400">
+        <p className="flex items-center gap-1.5 text-normal text-tinta-secundaria">
           <Eye size={14} /> Solo lectura: ticket de un usuario de tu equipo. Las respuestas y los cambios de estado los hace soporte.
         </p>
       ) : (
@@ -105,11 +105,11 @@ const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModu
           <textarea value={texto} onChange={(e) => setTexto(e.target.value)} maxLength={MAX_MENSAJE} rows={2}
             placeholder={esGestor ? 'Responder al usuario…' : 'Escribe una respuesta…'}
             onKeyDown={(e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') responder(); }}
-            className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-[13px] text-slate-800 dark:text-gray-100 outline-none focus:border-[#2383C2] resize-none" />
+            className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-normal text-tinta-principal outline-none focus:border-[#2383C2] resize-none" />
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-slate-400">Ctrl+Enter para enviar</span>
+            <span className="text-secundario text-tinta-atenuada">Ctrl+Enter para enviar</span>
             <button type="button" onClick={responder} disabled={guardando || !texto.trim()}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa6] text-white text-[12px] font-medium disabled:opacity-50">
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa6] text-white text-normal disabled:opacity-50">
               {guardando ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Responder
             </button>
           </div>
@@ -127,8 +127,8 @@ const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModu
         </dl>
 
         <section className="rounded-lg border border-slate-200 dark:border-gray-700 p-3">
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Descripción</h4>
-          <p className="text-[13px] text-slate-700 dark:text-gray-200 whitespace-pre-wrap break-words">{ticket.descripcion}</p>
+          <h4 className="text-etiqueta uppercase tracking-wider text-tinta-secundaria mb-1.5">Descripción</h4>
+          <p className="text-normal text-tinta-principal whitespace-pre-wrap break-words">{ticket.descripcion}</p>
           {(ticket.capturas || []).length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {ticket.capturas.map((c, i) => (
@@ -139,35 +139,35 @@ const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModu
               ))}
             </div>
           )}
-          {(ticket.capturas || []).length === 0 && <p className="mt-2 text-[11px] text-slate-400 flex items-center gap-1"><ImageIcon size={11} /> Sin capturas</p>}
+          {(ticket.capturas || []).length === 0 && <p className="mt-2 text-secundario text-tinta-atenuada flex items-center gap-1"><ImageIcon size={11} /> Sin capturas</p>}
         </section>
 
         {esGestor && ticket.contexto && (
-          <details className="rounded-lg border border-slate-200 dark:border-gray-700 p-3 text-[12px]">
-            <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1"><Info size={12} /> Contexto técnico</summary>
-            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-slate-600 dark:text-gray-300">
-              <dt className="text-slate-400">Pantalla</dt><dd className="break-all">{ticket.contexto.vista || '—'}</dd>
-              <dt className="text-slate-400">URL</dt><dd className="break-all">{ticket.contexto.url || '—'}</dd>
-              <dt className="text-slate-400">Navegador</dt><dd className="break-all">{ticket.contexto.navegador || '—'}</dd>
-              <dt className="text-slate-400">Pantalla (px)</dt><dd>{ticket.contexto.pantalla || '—'}</dd>
-              <dt className="text-slate-400">Versión</dt><dd>{ticket.contexto.versionApp || '—'}</dd>
-              <dt className="text-slate-400">Fecha y hora</dt><dd>{formatearFechaTicket(ticket.contexto.fechaCliente)}</dd>
-              <dt className="text-slate-400">Correo</dt><dd className="break-all">{ticket.creadoPorEmail || '—'}</dd>
+          <details className="rounded-lg border border-slate-200 dark:border-gray-700 p-3 text-normal">
+            <summary className="cursor-pointer text-etiqueta uppercase tracking-wider text-tinta-secundaria flex items-center gap-1"><Info size={12} /> Contexto técnico</summary>
+            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-tinta-secundaria">
+              <dt className="text-tinta-atenuada">Pantalla</dt><dd className="break-all">{ticket.contexto.vista || '—'}</dd>
+              <dt className="text-tinta-atenuada">URL</dt><dd className="break-all">{ticket.contexto.url || '—'}</dd>
+              <dt className="text-tinta-atenuada">Navegador</dt><dd className="break-all">{ticket.contexto.navegador || '—'}</dd>
+              <dt className="text-tinta-atenuada">Pantalla (px)</dt><dd>{ticket.contexto.pantalla || '—'}</dd>
+              <dt className="text-tinta-atenuada">Versión</dt><dd>{ticket.contexto.versionApp || '—'}</dd>
+              <dt className="text-tinta-atenuada">Fecha y hora</dt><dd>{formatearFechaTicket(ticket.contexto.fechaCliente)}</dd>
+              <dt className="text-tinta-atenuada">Correo</dt><dd className="break-all">{ticket.creadoPorEmail || '—'}</dd>
             </dl>
           </details>
         )}
 
         {esGestor && (
           <section className="rounded-lg border border-slate-200 dark:border-gray-700 p-3 space-y-2">
-            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1"><ShieldCheck size={12} /> Cambiar estado</h4>
+            <h4 className="text-etiqueta uppercase tracking-wider text-tinta-secundaria flex items-center gap-1"><ShieldCheck size={12} /> Cambiar estado</h4>
             <div className="flex flex-wrap items-center gap-2">
               <select value={estadoNuevo} onChange={(e) => setEstadoNuevo(e.target.value)} aria-label="Nuevo estado"
-                className="h-8 px-2 rounded-md border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-[12px]">
+                className="h-8 px-2 rounded-md border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-950 text-normal">
                 <option value="">Elegir estado…</option>
                 {ESTADOS_TICKET.filter((e) => e.id !== ticket.estado).map((e) => <option key={e.id} value={e.id}>{e.label}</option>)}
               </select>
               <button type="button" onClick={cambiarEstado} disabled={!estadoNuevo || guardando}
-                className={`h-8 px-3 rounded-md text-[12px] font-medium text-white disabled:opacity-50 ${estadoNuevo === 'RECHAZADO' ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-700 hover:bg-slate-800'}`}>
+                className={`h-8 px-3 rounded-md text-normal text-white disabled:opacity-50 ${estadoNuevo === 'RECHAZADO' ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-700 hover:bg-slate-800'}`}>
                 {estadoNuevo === 'RECHAZADO' ? 'Rechazar' : 'Aplicar'}
               </button>
             </div>
@@ -175,30 +175,30 @@ const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModu
               <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={2} maxLength={MAX_MENSAJE}
                 aria-label={estadoNuevo === 'RECHAZADO' ? 'Motivo del rechazo' : 'Comentario'}
                 placeholder={estadoNuevo === 'RECHAZADO' ? 'Motivo del rechazo (obligatorio)' : 'Comentario para el usuario (opcional)'}
-                className={`w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-950 text-[12px] outline-none resize-none ${estadoNuevo === 'RECHAZADO' && !motivo.trim() ? 'border-red-300' : 'border-slate-300 dark:border-gray-700'}`} />
+                className={`w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-950 text-normal outline-none resize-none ${estadoNuevo === 'RECHAZADO' && !motivo.trim() ? 'border-red-300' : 'border-slate-300 dark:border-gray-700'}`} />
             )}
           </section>
         )}
 
         <section>
-          <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1"><MessageSquare size={12} /> Conversación</h4>
-          {mensajes.length === 0 && <p className="text-[12px] text-slate-400">Aún no hay respuestas.</p>}
+          <h4 className="text-etiqueta uppercase tracking-wider text-tinta-secundaria mb-2 flex items-center gap-1"><MessageSquare size={12} /> Conversación</h4>
+          {mensajes.length === 0 && <p className="text-normal text-tinta-atenuada">Aún no hay respuestas.</p>}
           <ol className="space-y-2">
             {mensajes.map((m) => (m.tipo === 'estado' ? (
-              <li key={m.id} className="text-[11px] text-slate-500 dark:text-gray-400 flex flex-wrap items-center gap-1 px-1">
-                <strong className="font-medium text-slate-700 dark:text-gray-200">{m.autorNombre}</strong> cambió el estado
+              <li key={m.id} className="text-secundario text-tinta-secundaria flex flex-wrap items-center gap-1 px-1">
+                <strong className="text-tinta-principal">{m.autorNombre}</strong> cambió el estado
                 <BadgeEstadoTicket estado={m.estadoAnterior} /> <ArrowRight size={11} /> <BadgeEstadoTicket estado={m.estadoNuevo} />
-                <span className="text-slate-400">· {formatearFechaTicket(m.fecha)}</span>
-                {m.texto && <p className="basis-full mt-0.5 text-slate-600 dark:text-gray-300 whitespace-pre-wrap">{m.estadoNuevo === 'RECHAZADO' ? 'Motivo: ' : ''}{m.texto}</p>}
+                <span className="text-tinta-atenuada">· {formatearFechaTicket(m.fecha)}</span>
+                {m.texto && <p className="basis-full mt-0.5 text-tinta-secundaria whitespace-pre-wrap">{m.estadoNuevo === 'RECHAZADO' ? 'Motivo: ' : ''}{m.texto}</p>}
               </li>
             ) : (
               <li key={m.id} className={`max-w-[85%] rounded-lg px-3 py-2 ${m.deGestor ? 'bg-[#2383C2]/[0.07] dark:bg-[#2383C2]/15 border border-[#2383C2]/20' : 'ml-auto bg-slate-100 dark:bg-gray-800'}`}>
-                <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-gray-400">
-                  <strong className="font-medium text-slate-700 dark:text-gray-200">{m.autorNombre}</strong>
-                  {m.deGestor && <span className="text-[10px] text-[#2383C2]">Soporte</span>}
+                <div className="flex items-center gap-2 text-secundario text-tinta-secundaria">
+                  <strong className="text-tinta-principal">{m.autorNombre}</strong>
+                  {m.deGestor && <span className="text-pequeno text-[#2383C2]">Soporte</span>}
                   <span className="ml-auto">{formatearFechaTicket(m.fecha)}</span>
                 </div>
-                <p className="mt-0.5 text-[13px] text-slate-700 dark:text-gray-100 whitespace-pre-wrap break-words">{m.texto}</p>
+                <p className="mt-0.5 text-normal text-tinta-principal whitespace-pre-wrap break-words">{m.texto}</p>
               </li>
             )))}
           </ol>
