@@ -21,20 +21,20 @@ import {
 // Son dos componentes para que la vista de un externo nunca monte la consulta interna.
 const TH = 'px-2 py-1.5 border-b border-r border-slate-200 dark:border-gray-700';
 const TD = 'px-2 py-1 border-b border-r border-slate-200/60 dark:border-gray-700/70 truncate';
-const SELECT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 disabled:opacity-50';
+const SELECT = 'h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal disabled:opacity-50';
 
 // `soloInternos`: un externo no ve la columna, aunque se le marque en permisos (solo ve su
 // empresa: Proveedor no le dice nada).
 const COLUMNAS = [
   { key: 'paciente', label: 'Nombre', ancho: 180, min: 60, valor: (i) => i.paciente || '-' },
-  { key: 'fecha_cx', label: 'Fecha Cx', ancho: 85, min: 60, valor: (i) => formatearFecha(i.fecha_cx) },
+  { key: 'fecha_cx', label: 'Fecha Cx', ancho: 85, min: 60, td: 'text-numero-tabla', valor: (i) => formatearFecha(i.fecha_cx) },
   { key: 'proveedor', label: 'Proveedor', ancho: 180, min: 60, soloInternos: true, valor: (i) => i.proveedor || '-' },
   { key: 'oc', label: 'OC', ancho: 95, min: 60, valor: (i) => i.oc || '-' },
-  { key: 'codigo', label: 'Código', ancho: 90, min: 60, td: 'font-num text-emerald-600 dark:text-emerald-400', valor: (i) => i.codigo || '-' },
+  { key: 'codigo', label: 'Código', ancho: 90, min: 60, td: 'text-numero-tabla text-emerald-600 dark:text-emerald-400', valor: (i) => i.codigo || '-' },
   { key: 'descripcion', label: 'Descripción', ancho: 260, min: 80, valor: (i) => i.descripcion || '-' },
-  { key: 'cantidad', label: 'Cant.', ancho: 60, min: 50, th: 'text-center', td: 'text-center', valor: (i) => i.cantidad ?? '-' },
-  { key: 'precio_u', label: 'Precio unitario', ancho: 105, min: 70, th: 'text-right', td: 'text-right font-num', valor: (i) => formatearMontoOGuion(i.precio_u) },
-  { key: 'oc_monto', label: 'Total ítems', ancho: 105, min: 70, th: 'text-right', td: 'text-right font-num', valor: (i) => formatearMontoOGuion(i.oc_monto) },
+  { key: 'cantidad', label: 'Cant.', ancho: 60, min: 50, th: 'text-center', td: 'text-center text-numero-tabla', valor: (i) => i.cantidad ?? '-' },
+  { key: 'precio_u', label: 'Precio unitario', ancho: 105, min: 70, th: 'text-right', td: 'text-right text-numero-tabla', valor: (i) => formatearMontoOGuion(i.precio_u) },
+  { key: 'oc_monto', label: 'Total ítems', ancho: 105, min: 70, th: 'text-right', td: 'text-right text-numero-tabla', valor: (i) => formatearMontoOGuion(i.oc_monto) },
   { key: 'estado', label: 'Estado', ancho: 110, min: 60, valor: (i) => i.estado || '-' },
   { key: 'numero_guia', label: 'N° Guía', ancho: 95, min: 60, valor: (i) => i.numero_guia || '-' },
   { key: 'numero_factura', label: 'N° Factura', ancho: 95, min: 60, valor: (i) => i.numero_factura || '-' },
@@ -71,7 +71,7 @@ const PantallaOrdenes = ({ externo, userData, periodo, datos, camposBusqueda, pl
     <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       <header className="px-3 py-2 flex items-center gap-2 border-b border-slate-200 dark:border-gray-700">
         <FileText size={16} className="text-[#2383C2]" />
-        <h2 className="text-[12px] font-normal text-slate-800 dark:text-gray-100 tracking-wide uppercase">Órdenes de Compra</h2>
+        <h2 className="text-titulo-seccion text-tinta-principal">Órdenes de compra</h2>
       </header>
 
       <div className="bg-gray-50 dark:bg-gray-800/50 px-3 py-1.5 flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-700">
@@ -92,37 +92,37 @@ const PantallaOrdenes = ({ externo, userData, periodo, datos, camposBusqueda, pl
             disabled={!periodoElegido}
             placeholder={placeholder}
             aria-label="Buscar"
-            className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 disabled:opacity-50"
+            className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal disabled:opacity-50"
           />
         </div>
         <BotonRestablecerAnchos onClick={restablecerAnchos} personalizados={personalizados} className="ml-auto h-7" />
       </div>
 
       {!periodoElegido ? (
-        <div className="flex-grow flex flex-col items-center justify-center gap-2 text-center text-slate-400 dark:text-gray-500 p-8">
+        <div className="flex-grow flex flex-col items-center justify-center gap-2 text-center text-tinta-atenuada p-8">
           <CalendarSearch size={26} className="text-slate-300 dark:text-gray-600" />
-          <span className="text-[11px] font-medium">Selecciona un año y mes para ver las órdenes</span>
+          <span className="text-secundario">Selecciona un año y mes para ver las órdenes</span>
         </div>
       ) : cargando ? (
-        <div className="flex-grow flex items-center justify-center gap-2 text-slate-400 dark:text-gray-500 text-[11px] p-8">
+        <div className="flex-grow flex items-center justify-center gap-2 text-tinta-atenuada text-secundario p-8">
           <Loader2 size={14} className="animate-spin" /> Cargando órdenes...
         </div>
       ) : error ? (
-        <div role="alert" className="flex-grow flex items-center justify-center gap-2 text-amber-700 dark:text-amber-400 text-[12px] p-8">
+        <div role="alert" className="flex-grow flex items-center justify-center gap-2 text-amber-700 dark:text-amber-400 text-normal p-8">
           <AlertTriangle size={14} /> No se pudieron cargar las órdenes. Si el problema continúa, contacta al administrador.
         </div>
       ) : (
         <>
           {huboTope && (
-            <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-3 py-1 text-[10.5px] text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-3 py-1 text-pequeno text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
               <AlertTriangle size={11} /> Este período tiene muchos registros: puede que no se estén mostrando todos.
             </div>
           )}
           <div className="flex-grow min-h-0 overflow-auto">
-            <table className="text-left text-[11px] border-collapse" style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: '100%' }}>
+            <table className="text-left text-secundario border-collapse" style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: '100%' }}>
               <ColgroupRedimensionable columnas={columnas} anchos={anchos} relleno />
               <thead className="bg-slate-100 dark:bg-gray-900/80 sticky top-0 z-10">
-                <tr className="text-slate-600 dark:text-gray-400 uppercase font-normal text-[10px] tracking-wider">
+                <tr className="text-pequeno text-tinta-secundaria uppercase tracking-wider">
                   {columnas.map((col) => (
                     <ThRedimensionable key={col.key} col={col} anchos={anchos} onResize={handleResize} className={`${TH} ${col.th || ''}`}>
                       {col.label}
@@ -131,10 +131,10 @@ const PantallaOrdenes = ({ externo, userData, periodo, datos, camposBusqueda, pl
                   <ThRelleno className="border-b border-slate-200 dark:border-gray-700" />
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800">
+              <tbody className="bg-white dark:bg-gray-800 text-tinta-principal">
                 {filasPagina.length === 0 ? (
                   <tr>
-                    <td colSpan={columnas.length + 1} className="px-4 py-6 text-center text-slate-400 dark:text-gray-500">
+                    <td colSpan={columnas.length + 1} className="px-4 py-6 text-center text-tinta-atenuada">
                       No hay órdenes para los filtros seleccionados.
                     </td>
                   </tr>
@@ -142,7 +142,7 @@ const PantallaOrdenes = ({ externo, userData, periodo, datos, camposBusqueda, pl
                   <tr key={item.id}>
                     {columnas.map((col) => {
                       const valor = col.valor(item);
-                      return <td key={col.key} className={`${TD} ${col.td || 'text-slate-700 dark:text-gray-200'}`} title={String(valor)}>{valor}</td>;
+                      return <td key={col.key} className={`${TD} ${col.td || ''}`} title={String(valor)}>{valor}</td>;
                     })}
                     <TdRelleno className="border-b border-slate-200/60 dark:border-gray-700/70" />
                   </tr>

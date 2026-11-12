@@ -16,6 +16,7 @@ Foto del 06-11-2026, con las pantallas nuevas agregadas el 12-11-2026: las cifra
 | **Maestros: Códigos de barra** (nacida con tokens) | `maestros/codigosBarra/` (`CodigosBarra`, `AccionCodigoModal`, `CorregirCodigoModal`) | 09-11-2026 |
 | **Bodega: aviso de ítem del maestro** (nacido con tokens) | `bodega/shared/AvisoMaestroConProducto.jsx` | 09-11-2026 |
 | **Armado de Kits** (nacido con tokens) | `armadoKits/shared/` (`PantallaKits`, `PantallaConfiguracionKits`, `DetalleKit`, `FormKitModal`, `KitsEnTransito`, `DespachoKitModal`, `CompletarVencimientoModal`, `ReposicionKitModal`, `RevisarDevolucionKitModal`) | 09 y 10-11-2026 |
+| **Portal Proveedores: Órdenes de compra** | `portalProveedores/ordenesCompra/OrdenesCompra.jsx` (los hijos comunes `PaginacionSimple` y `BotonRestablecerAnchos` van con el módulo de componentes comunes) | 12-11-2026 |
 
 En `pages/Dashboard.jsx`, lo que no es header ni sidebar sigue con tamaños escritos a mano en cada pantalla (la fuente ya es Inter en todo).
 
@@ -870,16 +871,6 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 | Archivo | Clases | <10 px | `font-num` | Cortes |
 |---|---:|---:|---:|---:|
 | `components/LoginForm.jsx` | 21 | 0 | 0 | 1 |
-
-## portalProveedores
-
-1 archivos, 15 clases.
-
-### ordenesCompra (1 archivos, 15 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `portalProveedores/ordenesCompra/OrdenesCompra.jsx` | 15 | 0 | 3 | 1 |
 
 ## dashboard
 
