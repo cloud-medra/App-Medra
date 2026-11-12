@@ -46,7 +46,6 @@ import {
   Layers,
   PackagePlus,
   PackageMinus,
-  PackageSearch,
   PackageOpen,
   Tags,
   Settings2,
@@ -251,22 +250,6 @@ export const MODULES = {
       { label: 'Solicitud', path: '/consignacion/solicitudConsignacion', icon: <FilePlus size={14} />, color: PALETA_MENU.indigo },
       { label: 'Solicitudes de modificaciones', path: '/consignacion/solicitudModificacionesConsignacion', icon: <FilePen size={14} />, color: PALETA_MENU.azul, heredaDe: '/consignacion/solicitudConsignacion' },
       { label: 'Imputados', path: '/consignacion/resumenConsignacion', icon: <BarChart2 size={14} />, color: PALETA_MENU.rojo },
-    ]
-  },
-  inventario: {
-    label: 'Inventario',
-    icon: <Warehouse size={18} />,
-    color: PALETA_MENU.pasto,
-    subItems: [
-      { label: 'Stock General', path: '/inventario/generalInventario', icon: <Boxes size={14} />, color: PALETA_MENU.indigo },
-      { label: 'Existencias', path: '/inventario/existenciasInventario', icon: <PackageSearch size={14} />, color: PALETA_MENU.rojo },
-      { label: 'Ingresos', path: '/inventario/ingresosInventario', icon: <ArrowDownToLine size={14} />, color: PALETA_MENU.cafe },
-      { label: 'Egresos', path: '/inventario/egresosInventario', icon: <ArrowUpFromLine size={14} />, color: PALETA_MENU.pizarra },
-      { label: 'En Tránsito', path: '/inventario/transitoInventario', icon: <Truck size={14} />, color: PALETA_MENU.azul },
-      { label: 'Historial', path: '/inventario/historialInventario', icon: <History size={14} />, color: PALETA_MENU.verde },
-      { label: 'Stock Unidad', path: '/inventario/unidadInventario', icon: <Building2 size={14} />, color: PALETA_MENU.frambuesa },
-      { label: 'Escaneo', path: '/inventario/escaneoInventario', icon: <ScanBarcode size={14} />, color: PALETA_MENU.violeta },
-      { label: 'Inventario por cajas', path: '/inventario/inventarioCajas', icon: <ClipboardCheck size={14} />, color: PALETA_MENU.ambar },
     ]
   },
   bodega: {

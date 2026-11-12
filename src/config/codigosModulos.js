@@ -24,7 +24,6 @@ export const CODIGOS_MODULOS = Object.freeze({
   vacunatorio: 'VAC',
   bodega: 'BOD',
   armadoKits: 'KIT',
-  inventario: 'INV',
   maestros: 'MAE',
   finanzas: 'FIN',
   usuarios: 'USR',
@@ -33,6 +32,15 @@ export const CODIGOS_MODULOS = Object.freeze({
   portalProveedores: 'POR',
   [ENTRADA_AJUSTES]: 'AJU',
 });
+
+// Códigos retirados: su módulo o ítem ya no existe, pero el código queda
+// reservado para siempre (no se reutiliza). Inventario se eliminó el 12-11-2026:
+// lo reemplazó Bodega.
+export const CODIGOS_RETIRADOS = Object.freeze([
+  'INV',
+  'INVGEN', 'INVEXI', 'INVING', 'INVEGR', 'INVTRA',
+  'INVHIS', 'INVUNI', 'INVESC', 'INVCAJ',
+]);
 
 // Código de una entrada del sidebar (módulo o grupo), o null si no tiene.
 export const codigoEntrada = (entrada) => CODIGOS_MODULOS[entrada] ?? null;
@@ -122,16 +130,6 @@ export const CODIGOS_ITEMS = Object.freeze({
   '/consignacion/solicitudConsignacion': 'CONSOL',
   '/consignacion/solicitudModificacionesConsignacion': 'CONMOD',
   '/consignacion/resumenConsignacion': 'CONIPT',
-  // Inventario
-  '/inventario/generalInventario': 'INVGEN',
-  '/inventario/existenciasInventario': 'INVEXI',
-  '/inventario/ingresosInventario': 'INVING',
-  '/inventario/egresosInventario': 'INVEGR',
-  '/inventario/transitoInventario': 'INVTRA',
-  '/inventario/historialInventario': 'INVHIS',
-  '/inventario/unidadInventario': 'INVUNI',
-  '/inventario/escaneoInventario': 'INVESC',
-  '/inventario/inventarioCajas': 'INVCAJ',
   // Bodega
   '/bodega/maestroBodega': 'BODKAR',
   '/bodega/ingresoBodega': 'BODING',

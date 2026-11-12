@@ -3,7 +3,6 @@ import { laboratorioComponentMaps } from './laboratorio.js';
 import { vacunatorioComponentMaps } from './vacunatorio.js';
 import { maestrosComponentMaps } from './maestros.js';
 import { consignacionComponentMaps } from './consignacion.js';
-import { inventarioComponentMaps } from './inventario.js';
 import { bodegaComponentMaps } from './bodega.js';
 import { armadoKitsComponentMaps } from './armadoKits.js';
 import { documentosComponentMaps } from './documentos.js';
@@ -17,7 +16,6 @@ export const COMPONENT_MAPS = {
   ...vacunatorioComponentMaps,
   ...maestrosComponentMaps,
   ...consignacionComponentMaps,
-  ...inventarioComponentMaps,
   ...bodegaComponentMaps,
   ...armadoKitsComponentMaps,
   ...documentosComponentMaps,

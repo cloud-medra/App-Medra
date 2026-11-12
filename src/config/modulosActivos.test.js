@@ -6,40 +6,40 @@ import {
 import { MODULES } from './modulesConfig.jsx';
 import { subItemsVisibles } from './accesoMenu';
 
-const STOCK = '/inventario/generalInventario';
-const EXISTENCIAS = '/inventario/existenciasInventario';
+const STOCK = '/bodega/maestroBodega';
+const EXISTENCIAS = '/bodega/ingresoBodega';
 
 describe('Gestión de módulos: activos/inactivos', () => {
   it('sin documento, todo activo', () => {
     const config = normalizarModulosActivos(null);
     expect(config).toEqual(CONFIG_TODO_ACTIVO);
-    expect(moduloActivo(config, 'inventario')).toBe(true);
-    expect(itemActivo(config, 'inventario', STOCK)).toBe(true);
-    expect(moduloActivo(undefined, 'inventario')).toBe(true);
+    expect(moduloActivo(config, 'bodega')).toBe(true);
+    expect(itemActivo(config, 'bodega', STOCK)).toBe(true);
+    expect(moduloActivo(undefined, 'bodega')).toBe(true);
   });
 
   it('Administración y Gestión de módulos no se pueden inactivar (ni guardados a mano)', () => {
-    const config = normalizarModulosActivos({ modulosInactivos: ['administracion', 'inventario'], itemsInactivos: [RUTA_GESTION_MODULOS] });
-    expect(config).toEqual({ modulosInactivos: ['inventario'], itemsInactivos: [] });
+    const config = normalizarModulosActivos({ modulosInactivos: ['administracion', 'bodega'], itemsInactivos: [RUTA_GESTION_MODULOS] });
+    expect(config).toEqual({ modulosInactivos: ['bodega'], itemsInactivos: [] });
     expect(alternarModulo(CONFIG_TODO_ACTIVO, 'administracion')).toBe(CONFIG_TODO_ACTIVO);
     expect(alternarItem(CONFIG_TODO_ACTIVO, RUTA_GESTION_MODULOS)).toBe(CONFIG_TODO_ACTIVO);
   });
 
   it('inactivar un módulo oculta todos sus ítems; al reactivarlo vuelven con su estado', () => {
     let config = alternarItem(CONFIG_TODO_ACTIVO, EXISTENCIAS);
-    config = alternarModulo(config, 'inventario');
-    expect(itemActivo(config, 'inventario', STOCK)).toBe(false);
-    expect(subItemsVisibles({ rol: 'dev', permisos: {} }, 'inventario', config)).toEqual([]);
-    config = alternarModulo(config, 'inventario');
-    expect(itemActivo(config, 'inventario', STOCK)).toBe(true);
-    expect(itemActivo(config, 'inventario', EXISTENCIAS)).toBe(false);
+    config = alternarModulo(config, 'bodega');
+    expect(itemActivo(config, 'bodega', STOCK)).toBe(false);
+    expect(subItemsVisibles({ rol: 'dev', permisos: {} }, 'bodega', config)).toEqual([]);
+    config = alternarModulo(config, 'bodega');
+    expect(itemActivo(config, 'bodega', STOCK)).toBe(true);
+    expect(itemActivo(config, 'bodega', EXISTENCIAS)).toBe(false);
   });
 
   it('el sidebar no muestra lo inactivo a nadie, tampoco al Desarrollador', () => {
     const config = alternarItem(CONFIG_TODO_ACTIVO, EXISTENCIAS);
-    const operador = { rol: 'operador', permisos: { inventario: [STOCK, EXISTENCIAS] } };
-    expect(subItemsVisibles(operador, 'inventario', config).map((s) => s.path)).toEqual([STOCK]);
-    expect(subItemsVisibles({ rol: 'dev', permisos: {} }, 'inventario', config).map((s) => s.path)).not.toContain(EXISTENCIAS);
+    const operador = { rol: 'operador', permisos: { bodega: [STOCK, EXISTENCIAS] } };
+    expect(subItemsVisibles(operador, 'bodega', config).map((s) => s.path)).toEqual([STOCK]);
+    expect(subItemsVisibles({ rol: 'dev', permisos: {} }, 'bodega', config).map((s) => s.path)).not.toContain(EXISTENCIAS);
   });
 
   it('vistaActiva bloquea la ruta del ítem y sus subrutas; las vistas fuera de módulos siempre abren', () => {

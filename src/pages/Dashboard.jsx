@@ -107,17 +107,6 @@ import CargasConsignacion from '../components/modulos/operaciones/consignacion/c
 import SolicitudConsignacion from '../components/modulos/operaciones/consignacion/solicitudConsignacion/SolicitudConsignacion';
 import ResumenConsignacion from '../components/modulos/operaciones/consignacion/resumenConsignacion/ResumenConsignacion';
 
-// --- INVENTARIO ---
-import GeneralInventario from '../components/modulos/inventario/generalInventario/GeneralInventario';
-import ExistenciasInventario from '../components/modulos/inventario/existenciasInventario/ExistenciasInventario';
-import IngresosInventario from '../components/modulos/inventario/ingresosInventario/IngresosInventario';
-import EgresosInventario from '../components/modulos/inventario/egresosInventario/EgresosInventario';
-import TransitoInventario from '../components/modulos/inventario/transitoInventario/TransitoInventario';
-import HistorialInventario from '../components/modulos/inventario/historialInventario/HistorialInventario';
-import UnidadInventario from '../components/modulos/inventario/unidadInventario/UnidadInventario';
-import EscaneoInventario from '../components/modulos/inventario/escaneoInventario/EscaneoInventario';
-import InventarioPorCajas from '../components/modulos/inventario/inventarioCajas/InventarioPorCajas';
-
 // --- BODEGA ---
 import MaestroBodega from '../components/modulos/bodega/maestroBodega/MaestroBodega';
 import IngresoBodega from '../components/modulos/bodega/ingresoBodega/IngresoBodega';
@@ -556,17 +545,6 @@ const Dashboard = () => {
     '/consignacion/solicitudConsignacion': <SolicitudConsignacion />,
     '/consignacion/solicitudModificacionesConsignacion': <SolicitudModificaciones modulo="consignacion" />,
     '/consignacion/resumenConsignacion': <ResumenConsignacion />,
-
-    // ── Inventario ──
-    '/inventario/generalInventario': <GeneralInventario />,
-    '/inventario/existenciasInventario': <ExistenciasInventario />,
-    '/inventario/ingresosInventario': <IngresosInventario />,
-    '/inventario/egresosInventario': <EgresosInventario />,
-    '/inventario/transitoInventario': <TransitoInventario />,
-    '/inventario/historialInventario': <HistorialInventario />,
-    '/inventario/unidadInventario': <UnidadInventario />,
-    '/inventario/escaneoInventario': <EscaneoInventario />,
-    '/inventario/inventarioCajas': <InventarioPorCajas />,
 
     // ── Bodega ──
     '/bodega/maestroBodega': <MaestroBodega />,

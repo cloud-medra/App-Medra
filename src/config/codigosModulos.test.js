@@ -1,7 +1,7 @@
 // Códigos de módulos y de ítems: formato, unicidad, cobertura de todo el
 // menú (y Ajustes) y permanencia de los ya publicados.
 import { describe, it, expect } from 'vitest';
-import { CODIGOS_MODULOS, CODIGOS_ITEMS, codigoEntrada, codigoItem, ENTRADA_AJUSTES } from './codigosModulos';
+import { CODIGOS_MODULOS, CODIGOS_ITEMS, CODIGOS_RETIRADOS, codigoEntrada, codigoItem, ENTRADA_AJUSTES } from './codigosModulos';
 import { MODULES, AJUSTES_ITEMS } from './modulesConfig.jsx';
 import { GRUPOS_MENU, entradaDeItem } from './gruposMenu.jsx';
 
@@ -30,7 +30,7 @@ describe('códigos de módulos', () => {
   it('los códigos publicados no cambian', () => {
     expect(CODIGOS_MODULOS).toEqual({
       implantes: 'IMP', hemodinamia: 'HEM', consignacion: 'CON', documentos: 'DOC',
-      laboratorio: 'LAB', vacunatorio: 'VAC', bodega: 'BOD', inventario: 'INV',
+      laboratorio: 'LAB', vacunatorio: 'VAC', bodega: 'BOD',
       maestros: 'MAE', finanzas: 'FIN', usuarios: 'USR', administracion: 'HER',
       dashboard: 'DSH', ajustes: 'AJU', portalProveedores: 'POR', armadoKits: 'KIT',
     });
@@ -59,6 +59,14 @@ describe('códigos de ítems', () => {
   it('únicos entre sí y distintos de los códigos de módulo', () => {
     const todos = [...codigosModulo, ...Object.values(CODIGOS_ITEMS)];
     expect(new Set(todos).size).toBe(todos.length);
+  });
+
+  // Un código retirado (módulo o ítem eliminado) no se vuelve a usar.
+  it('ningún código activo repite uno retirado', () => {
+    const activos = [...codigosModulo, ...Object.values(CODIGOS_ITEMS)];
+    CODIGOS_RETIRADOS.forEach((c) => expect(activos, c).not.toContain(c));
+    // Ni las 3 letras de un módulo retirado como prefijo de un ítem activo.
+    Object.values(CODIGOS_ITEMS).forEach((c) => expect(CODIGOS_RETIRADOS, c).not.toContain(c.slice(0, 3)));
   });
 
   // Igual que los de módulos: permanentes. Uno nuevo se agrega aquí.
@@ -133,15 +141,6 @@ const PUBLICADOS = `
   /consignacion/solicitudConsignacion CONSOL
   /consignacion/solicitudModificacionesConsignacion CONMOD
   /consignacion/resumenConsignacion CONIPT
-  /inventario/generalInventario INVGEN
-  /inventario/existenciasInventario INVEXI
-  /inventario/ingresosInventario INVING
-  /inventario/egresosInventario INVEGR
-  /inventario/transitoInventario INVTRA
-  /inventario/historialInventario INVHIS
-  /inventario/unidadInventario INVUNI
-  /inventario/escaneoInventario INVESC
-  /inventario/inventarioCajas INVCAJ
   /bodega/maestroBodega BODKAR
   /bodega/ingresoBodega BODING
   /bodega/cargaInicialBodega BODINI

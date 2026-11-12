@@ -42,7 +42,6 @@ const STORAGE_KEY_ANTIGUA = '__fs_meter_min__'; // solo guardaba minimizado
 const COLECCIONES_CLAVE = [
   'maestros_codigos', 'maestros_empresas', 'maestros_prestadores', 'maestros_centros',
   'maestros_previsiones', 'maestros_convenios', 'maestros_recargos', 'maestros_pad',
-  'inventario_general', 'inventario_transito', 'inventario_egresos',
   'laboratorio_codigos', 'vacunatorio_codigos', 'usuarios', 'administracion_notas', 'cierres_periodos'
 ];
 const GRUPOS_CLAVE = [
