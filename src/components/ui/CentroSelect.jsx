@@ -88,9 +88,9 @@ const CentroSelect = ({ value, onChange, placeholder = "Seleccionar centro...", 
     <div className="relative w-full" ref={containerRef}>
       <div
         onClick={disabled ? undefined : handleToggle}
-        className={`w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 flex items-center justify-between focus-within:border-[#2383C2] ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario bg-white dark:bg-gray-900 text-tinta-principal flex items-center justify-between focus-within:border-[#2383C2] ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
-        <span className={`truncate ${!centroSeleccionado && !value ? 'text-gray-400' : ''}`}>
+        <span className={`truncate ${!centroSeleccionado && !value ? 'text-tinta-atenuada' : ''}`}>
           {/* Una gestión antigua guarda el nombre: se sigue mostrando aunque ese
               centro ya no se ofrezca (inactivo o sin "Usar en gestiones"). */}
           {centroSeleccionado ? centroSeleccionado.nombre : (valorFueraDeLista || placeholder)}
@@ -112,11 +112,11 @@ const CentroSelect = ({ value, onChange, placeholder = "Seleccionar centro...", 
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar por nombre..."
-              className="w-full text-[11px] bg-transparent outline-none text-gray-800 dark:text-gray-100 placeholder-gray-400"
+              className="w-full text-secundario bg-transparent outline-none text-tinta-principal placeholder:text-tinta-atenuada"
             />
           </div>
 
-          <ul className="overflow-y-auto max-h-44 text-[11px]">
+          <ul className="overflow-y-auto max-h-44 text-secundario">
             {centrosFiltrados.length > 0 ? (
               centrosFiltrados.map((centro) => {
                 const isSelected = value === centro.id || value === centro.nombre;
@@ -125,13 +125,13 @@ const CentroSelect = ({ value, onChange, placeholder = "Seleccionar centro...", 
                     key={centro.id}
                     onClick={() => handleSelect(centro)}
                     className={`px-2 py-1.5 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/60 ${
-                      isSelected ? 'bg-blue-50 dark:bg-blue-900/30 text-[#2383C2] font-semibold' : 'text-gray-700 dark:text-gray-200'
+                      isSelected ? 'bg-blue-50 dark:bg-blue-900/30 text-[#2383C2]' : 'text-tinta-principal'
                     }`}
                   >
                     <div className="flex flex-col truncate">
                       <span className="truncate">{centro.nombre}</span>
                       {centro.comentario && (
-                        <span className="text-[9px] text-gray-400 truncate">{centro.comentario}</span>
+                        <span className="text-pequeno text-tinta-atenuada truncate">{centro.comentario}</span>
                       )}
                     </div>
                     {isSelected && <Check size={12} className="text-[#2383C2] shrink-0 ml-1" />}
@@ -139,7 +139,7 @@ const CentroSelect = ({ value, onChange, placeholder = "Seleccionar centro...", 
                 );
               })
             ) : (
-              <li className="px-2 py-2 text-center text-gray-400 text-[10px]">
+              <li className="px-2 py-2 text-center text-tinta-atenuada text-pequeno">
                 No se encontraron coincidencias
               </li>
             )}

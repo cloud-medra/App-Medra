@@ -19,7 +19,7 @@ export const BuscadorConLimpiar = ({ value, onChange, placeholder, className = '
         value={value}
         onChange={e => onChange(e.target.value)}
         onKeyDown={e => { if (e.key === 'Escape' && value) { e.preventDefault(); limpiar(); } }}
-        className="w-full h-7 pl-7 pr-7 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]"
+        className="w-full h-7 pl-7 pr-7 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
         placeholder={placeholder}
       />
       {value && (

@@ -16,8 +16,9 @@ Foto del 06-11-2026, con las pantallas nuevas agregadas el 12-11-2026: las cifra
 | **Maestros: Códigos de barra** (nacida con tokens) | `maestros/codigosBarra/` (`CodigosBarra`, `AccionCodigoModal`, `CorregirCodigoModal`) | 09-11-2026 |
 | **Bodega: aviso de ítem del maestro** (nacido con tokens) | `bodega/shared/AvisoMaestroConProducto.jsx` | 09-11-2026 |
 | **Armado de Kits** (nacido con tokens) | `armadoKits/shared/` (`PantallaKits`, `PantallaConfiguracionKits`, `DetalleKit`, `FormKitModal`, `KitsEnTransito`, `DespachoKitModal`, `CompletarVencimientoModal`, `ReposicionKitModal`, `RevisarDevolucionKitModal`) | 09 y 10-11-2026 |
-| **Portal Proveedores: Órdenes de compra** | `portalProveedores/ordenesCompra/OrdenesCompra.jsx` (los hijos comunes `PaginacionSimple` y `BotonRestablecerAnchos` van con el módulo de componentes comunes) | 12-11-2026 |
+| **Portal Proveedores: Órdenes de compra** | `portalProveedores/ordenesCompra/OrdenesCompra.jsx` | 12-11-2026 |
 | **Piezas sueltas: acceso y páginas** | `components/LoginForm.jsx`, `pages/auth/CambiarPassword.jsx`, `pages/PlataformaExterna.jsx`, `pages/TestPage.jsx`, `pages/Dashboard.jsx` (texto de carga de `<main>`) | 12-11-2026 |
+| **Componentes comunes** | `components/ui/` (`ModalConfirm`, `Toast`, `BotonRestablecerAnchos`, `PaginacionSimple`, `BuscadorConLimpiar`, `CentroSelect`, `MultiSelectFiltro`, `TablaRedimensionable`, `bodymap/DetalleZona`, `bodymap/CuerpoCompleto`). Se ven con tokens también dentro de pantallas sin migrar | 12-11-2026 |
 
 Login y cambio de contraseña usan además los tokens `text-acceso-*` (portada de 30, título de 24 y cuerpo de 16 px; solo para pantallas de acceso). Conservan sus grises (`text-gray-*`) y no usan `text-tinta-*`: tienen fondo blanco fijo y la clase `.dark` se aplica a toda la página, así que con el tema oscuro guardado el texto quedaría claro sobre blanco. Los textos legales que abre el cambio de contraseña (`general/legales/`) van con el módulo General.
 
@@ -825,30 +826,6 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 | Archivo | Clases | <10 px | `font-num` | Cortes |
 |---|---:|---:|---:|---:|
 | `general/accesoModulo/AccesoRapidoModulo.jsx` | 8 | 0 | 0 | 2 |
-
-## comunes: ui
-
-10 archivos, 35 clases.
-
-### (raíz) (8 archivos, 26 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `components/ui/CentroSelect.jsx` | 6 | 1 | 0 | 4 |
-| `components/ui/MultiSelectFiltro.jsx` | 6 | 0 | 0 | 2 |
-| `components/ui/ModalConfirm.jsx` | 5 | 0 | 0 | 0 |
-| `components/ui/TablaRedimensionable.jsx` | 4 | 1 | 0 | 3 |
-| `components/ui/Toast.jsx` | 2 | 0 | 0 | 0 |
-| `components/ui/BotonRestablecerAnchos.jsx` | 1 | 0 | 0 | 0 |
-| `components/ui/BuscadorConLimpiar.jsx` | 1 | 0 | 0 | 0 |
-| `components/ui/PaginacionSimple.jsx` | 1 | 0 | 0 | 0 |
-
-### bodymap (2 archivos, 9 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `ui/bodymap/DetalleZona.jsx` | 5 | 0 | 0 | 0 |
-| `ui/bodymap/CuerpoCompleto.jsx` | 4 | 1 | 0 | 0 |
 
 ## dashboard
 

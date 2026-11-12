@@ -3,12 +3,12 @@ import CuerpoSVG from './CuerpoSVG';
 // Cuerpo completo: vista anterior y posterior lado a lado, del mismo tamaño
 // y alineadas, con la referencia discreta del lado del paciente (D / I).
 const Marca = ({ children, titulo }) => (
-  <span title={titulo} className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 select-none">{children}</span>
+  <span title={titulo} className="text-pequeno text-tinta-atenuada select-none">{children}</span>
 );
 
 const Vista = ({ vista, titulo, izquierda, derecha, zonas, lado, compacto }) => (
   <figure className="flex flex-col items-center gap-1.5 min-w-0">
-    <figcaption className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">{titulo}</figcaption>
+    <figcaption className="text-pequeno uppercase tracking-[0.12em] text-tinta-secundaria">{titulo}</figcaption>
     <div className="w-full flex items-center justify-center gap-1">
       <Marca titulo={izquierda === 'D' ? 'Lado derecho del paciente' : 'Lado izquierdo del paciente'}>{izquierda}</Marca>
       <CuerpoSVG vista={vista} zonas={zonas} lado={lado} titulo={`Cuerpo, vista ${titulo.toLowerCase()}`}

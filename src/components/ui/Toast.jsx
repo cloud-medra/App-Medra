@@ -5,25 +5,25 @@ const Toast = ({ message, type = 'success', isLeaving, onClose }) => {
   const styles = {
     success: {
       border: 'border-l-green-500',
-      text: 'text-gray-800 dark:text-gray-200',
+      text: 'text-tinta-principal',
       bar: 'bg-green-500',
       icon: <CheckCircle2 className="w-5 h-5 text-green-500 mr-3" />
     },
     error: {
       border: 'border-l-red-500',
-      text: 'text-gray-800 dark:text-gray-200',
+      text: 'text-tinta-principal',
       bar: 'bg-red-500',
       icon: <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
     },
     info: {
       border: 'border-l-blue-500',
-      text: 'text-gray-800 dark:text-gray-200',
+      text: 'text-tinta-principal',
       bar: 'bg-blue-500',
       icon: <Info className="w-5 h-5 text-blue-500 mr-3" />
     },
     warning: {
       border: 'border-l-amber-500',
-      text: 'text-gray-800 dark:text-gray-200',
+      text: 'text-tinta-principal',
       bar: 'bg-amber-500',
       icon: <AlertTriangle className="w-5 h-5 text-amber-500 mr-3" />
     }
@@ -40,7 +40,7 @@ const Toast = ({ message, type = 'success', isLeaving, onClose }) => {
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center flex-1">
           {current.icon}
-          <span className={`font-medium text-[13px] ${current.text}`}>{message}</span>
+          <span className={`text-subtitulo ${current.text}`}>{message}</span>
         </div>
 
         <button

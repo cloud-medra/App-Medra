@@ -36,12 +36,12 @@ export const TablaRedimensionable = ({
   return (
     <div className="overflow-auto">
       <table
-        className="text-left text-[10px] border-collapse"
+        className="text-left text-pequeno border-collapse"
         style={{ tableLayout: 'fixed', width: anchoTotal, minWidth: '100%' }}
       >
         <ColgroupRedimensionable columnas={columnas} anchos={anchos} relleno />
         <thead className="bg-slate-50 dark:bg-gray-900/60">
-          <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+          <tr className="text-pequeno text-tinta-secundaria uppercase">
             {columnas.map(col => (
               <ThRedimensionable
                 key={col.key}
@@ -60,7 +60,7 @@ export const TablaRedimensionable = ({
         <tbody>
           {filas.length === 0 ? (
             <tr>
-              <td colSpan={columnas.length + 1} className="px-3 py-4 text-center text-slate-400 dark:text-gray-500">
+              <td colSpan={columnas.length + 1} className="px-3 py-4 text-center text-tinta-atenuada">
                 {vacio}
               </td>
             </tr>
@@ -90,8 +90,8 @@ export const TablaRedimensionable = ({
         </tbody>
         {pie && indicePie > 0 && filas.length > 0 && (
           <tfoot>
-            <tr className="bg-slate-50 dark:bg-gray-900/60 font-bold">
-              <td colSpan={indicePie} className="px-2.5 py-1.5 border-t border-r border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-300 text-right truncate">
+            <tr className="bg-slate-50 dark:bg-gray-900/60 text-etiqueta">
+              <td colSpan={indicePie} className="px-2.5 py-1.5 border-t border-r border-slate-200 dark:border-gray-700 text-tinta-secundaria text-right truncate">
                 {pie.etiqueta}
               </td>
               <td className="px-2.5 py-1.5 border-t border-r border-slate-200 dark:border-gray-700 text-emerald-700 dark:text-emerald-400 truncate" title={String(pie.valor)}>

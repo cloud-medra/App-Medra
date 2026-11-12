@@ -47,20 +47,20 @@ const ModalConfirm = ({
           <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-4 ${currentStyle.bgIcon}`}>
             <IconComponent size={24} />
           </div>
-          <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{title}</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-6">{message}</p>
+          <h3 className="text-titulo-seccion text-tinta-principal">{title}</h3>
+          <p className="text-normal text-tinta-secundaria mt-2 mb-6">{message}</p>
         </div>
 
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+            className="flex-1 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 text-subtitulo text-tinta-secundaria hover:bg-gray-50 dark:hover:bg-gray-700 transition"
           >
             {cancelText}
           </button>
           <button
             onClick={() => { onConfirm(); onClose(); }}
-            className={`flex-1 py-2.5 rounded-lg font-medium transition ${currentStyle.btnConfirm}`}
+            className={`flex-1 py-2.5 rounded-lg text-subtitulo transition ${currentStyle.btnConfirm}`}
           >
             {confirmText}
           </button>
