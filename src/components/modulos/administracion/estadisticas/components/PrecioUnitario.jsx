@@ -5,7 +5,7 @@ import { formatoMonto } from './formato';
 // se usó con distintos precios, un ícono avisa la variación y el mínimo y el
 // máximo aparecen al pasar el mouse.
 const PrecioUnitario = ({ fila }) => {
-  if (fila.precio == null) return <span className="text-gray-400">—</span>;
+  if (fila.precio == null) return <span className="text-tinta-atenuada">—</span>;
   const varia = fila.precioMin != null && fila.precioMax != null;
   const texto = varia ? `Precio promedio. Varió entre ${formatoMonto(fila.precioMin)} y ${formatoMonto(fila.precioMax)} en el período.` : 'Precio unitario sin IVA';
   return (

@@ -43,15 +43,15 @@ const ANCHOS_CODIGOS = [
   { key: 'monto', ancho: 104, min: MIN }
 ];
 
-const th = 'px-3 py-1.5 font-semibold border-b border-r border-gray-200 dark:border-gray-700';
+const th = 'px-3 py-1.5 text-etiqueta border-b border-r border-gray-200 dark:border-gray-700';
 const td = 'px-3 py-1 border-b border-r border-gray-100 dark:border-gray-700/60 truncate';
 const num = `${td} text-right tabular-nums`;
 // La última fila no repite el borde inferior del recuadro.
-const CLASE_TABLA = 'text-[11.5px] border-collapse [&>tbody>tr:last-child>td]:border-b-0';
+const CLASE_TABLA = 'text-secundario border-collapse [&>tbody>tr:last-child>td]:border-b-0';
 
 const Seccion = ({ titulo, cantidad, children }) => (
   <section>
-    <h4 className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">{titulo} <span className="font-normal normal-case">({cantidad})</span></h4>
+    <h4 className="text-etiqueta uppercase tracking-wide text-tinta-secundaria mb-1.5">{titulo} <span className="normal-case">({cantidad})</span></h4>
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-x-auto">{children}</div>
   </section>
 );
@@ -64,7 +64,7 @@ const TablaAnchos = ({ columnas, anchos, onResize, encabezados, vacio, filas, ce
   return (
     <table className={CLASE_TABLA} style={{ tableLayout: 'fixed', width: anchoTotal, minWidth: '100%' }}>
       <ColgroupRedimensionable columnas={columnas} anchos={anchos} relleno />
-      <thead className="bg-gray-50 dark:bg-gray-900 text-[10px] uppercase text-gray-500 dark:text-gray-400">
+      <thead className="bg-gray-50 dark:bg-gray-900 text-pequeno uppercase text-tinta-secundaria">
         <tr>
           {columnas.map((col) => {
             const e = encabezados[col.key];
@@ -79,7 +79,7 @@ const TablaAnchos = ({ columnas, anchos, onResize, encabezados, vacio, filas, ce
         </tr>
       </thead>
       <tbody>
-        {filas.length === 0 && <tr><td colSpan={columnas.length + 1} className="py-6 text-center text-gray-400">{vacio}</td></tr>}
+        {filas.length === 0 && <tr><td colSpan={columnas.length + 1} className="py-6 text-center text-tinta-atenuada">{vacio}</td></tr>}
         {filas.map((f) => (
           <tr key={f.clave}>
             {columnas.map((col) => celdas[col.key](f))}
@@ -113,15 +113,15 @@ const TablaCruce = ({ titulo, filas, unidad, etiquetaActual, etiquetaAnterior, v
         }}
         celdas={{
           nombre: (f) => (
-            <td key="nombre" className={`${td} text-gray-800 dark:text-gray-100`} title={f.nombre}>
+            <td key="nombre" className={`${td} text-tinta-principal`} title={f.nombre}>
               <div className="truncate">{f.nombre}</div>
               <div className="h-1 mt-0.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden"><div className="h-full bg-[#2383C2] rounded-full" style={{ width: `${(f.actual / maximo) * 100}%` }} /></div>
             </td>
           ),
-          actual: (f) => <td key="actual" className={`${num} font-semibold text-gray-800 dark:text-gray-100`} title={formatoNumero(f.actual)}>{formatoNumero(f.actual)}</td>,
-          anterior: (f) => <td key="anterior" className={`${num} text-gray-500 dark:text-gray-400`} title={formatoNumero(f.anterior)}>{formatoNumero(f.anterior)}</td>,
+          actual: (f) => <td key="actual" className={`${num} text-etiqueta text-tinta-principal`} title={formatoNumero(f.actual)}>{formatoNumero(f.actual)}</td>,
+          anterior: (f) => <td key="anterior" className={`${num} text-tinta-secundaria`} title={formatoNumero(f.anterior)}>{formatoNumero(f.anterior)}</td>,
           variacion: (f) => <td key="variacion" className={num}><Variacion diferencia={f.diferencia} variacion={f.variacion} compacto /></td>,
-          monto: (f) => <td key="monto" className={`${num} text-gray-800 dark:text-gray-100`} title={formatoMonto(f.monto)}>{formatoMonto(f.monto)}</td>,
+          monto: (f) => <td key="monto" className={`${num} text-tinta-principal`} title={formatoMonto(f.monto)}>{formatoMonto(f.monto)}</td>,
         }}
       />
     </Seccion>
@@ -148,11 +148,11 @@ const TablaCodigosDetalle = ({ filas, ver, conMontos, anchos, onResize }) => {
           monto: { label: 'Monto' },
         }}
         celdas={{
-          codigo: (f) => <td key="codigo" className={`${td} ${f.sinCodigo ? 'italic text-amber-700 dark:text-amber-400' : 'font-semibold text-gray-800 dark:text-gray-100'}`} title={f.codigo}>{f.codigo}</td>,
-          descripcion: (f) => <td key="descripcion" className={`${td} text-gray-700 dark:text-gray-200`} title={f.descripcion}>{f.descripcion || '—'}</td>,
-          cantidad: (f) => <td key="cantidad" className={`${num} text-gray-800 dark:text-gray-100`} title={formatoNumero(f.actual)}>{formatoNumero(f.actual)}</td>,
-          precio: (f) => <td key="precio" className={`${num} text-gray-700 dark:text-gray-200`}><PrecioUnitario fila={f} /></td>,
-          monto: (f) => <td key="monto" className={`${num} font-semibold text-gray-800 dark:text-gray-100`} title={formatoMonto(f.monto)}>{formatoMonto(f.monto)}</td>,
+          codigo: (f) => <td key="codigo" className={`${td} ${f.sinCodigo ? 'italic text-amber-700 dark:text-amber-400' : 'text-etiqueta text-tinta-principal'}`} title={f.codigo}>{f.codigo}</td>,
+          descripcion: (f) => <td key="descripcion" className={`${td} text-tinta-principal`} title={f.descripcion}>{f.descripcion || '—'}</td>,
+          cantidad: (f) => <td key="cantidad" className={`${num} text-tinta-principal`} title={formatoNumero(f.actual)}>{formatoNumero(f.actual)}</td>,
+          precio: (f) => <td key="precio" className={`${num} text-tinta-principal`}><PrecioUnitario fila={f} /></td>,
+          monto: (f) => <td key="monto" className={`${num} text-etiqueta text-tinta-principal`} title={formatoMonto(f.monto)}>{formatoMonto(f.monto)}</td>,
         }}
       />
     </Seccion>
@@ -190,46 +190,46 @@ const PanelDetalle = ({ singular, fila, esCodigo, cruces, codigos, cargandoCodig
         </div>
         <header className="px-5 py-3.5 border-b border-gray-200 dark:border-gray-700 flex items-start gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#2383C2]">{singular}</p>
-            <h3 id="titulo-detalle-estadistica" className="text-[14px] font-bold text-gray-800 dark:text-gray-100 break-words">
-              {esCodigo ? <>{fila.codigo}{fila.descripcion && <span className="font-normal text-gray-600 dark:text-gray-300"> · {fila.descripcion}</span>}</> : fila.nombre}
+            <p className="text-pequeno uppercase tracking-wide text-[#2383C2]">{singular}</p>
+            <h3 id="titulo-detalle-estadistica" className="text-titulo-seccion text-tinta-principal break-words">
+              {esCodigo ? <>{fila.codigo}{fila.descripcion && <span className="text-tinta-secundaria"> · {fila.descripcion}</span>}</> : fila.nombre}
             </h3>
-            <p className="mt-1 text-[11.5px] text-gray-600 dark:text-gray-300">
+            <p className="mt-1 text-secundario text-tinta-secundaria">
               <b className="tabular-nums">{formatoNumero(fila.actual)}</b> {esCodigo ? 'unidades' : 'admisiones'} en {etiquetaActual}
               {comparar && (
                 <>
-                  <span className="text-gray-400"> · {formatoNumero(fila.anterior)} en {etiquetaAnterior} · </span>
+                  <span className="text-tinta-atenuada"> · {formatoNumero(fila.anterior)} en {etiquetaAnterior} · </span>
                   <Variacion diferencia={fila.diferencia} variacion={fila.variacion} compacto />
                 </>
               )}
-              {esCodigo && <span className="text-gray-500"> · {formatoNumero(fila.admisiones)} admisiones</span>}
+              {esCodigo && <span className="text-tinta-secundaria"> · {formatoNumero(fila.admisiones)} admisiones</span>}
             </p>
             {conMontos && (
-              <p className="mt-0.5 text-[11.5px] text-gray-600 dark:text-gray-300">
-                Monto <b className="tabular-nums text-gray-800 dark:text-gray-100">{formatoMonto(fila.monto)}</b>
+              <p className="mt-0.5 text-secundario text-tinta-secundaria">
+                Monto <b className="tabular-nums text-tinta-principal">{formatoMonto(fila.monto)}</b>
                 {comparar && (
                   <>
-                    <span className="text-gray-400"> · {formatoMonto(fila.montoAnterior)} en {etiquetaAnterior} · </span>
+                    <span className="text-tinta-atenuada"> · {formatoMonto(fila.montoAnterior)} en {etiquetaAnterior} · </span>
                     <Variacion diferencia={fila.montoDiferencia} variacion={fila.montoVariacion} compacto />
                   </>
                 )}
-                {esCodigo && fila.precio != null && <span className="text-gray-500"> · precio unit. <PrecioUnitario fila={fila} /></span>}
+                {esCodigo && fila.precio != null && <span className="text-tinta-secundaria"> · precio unit. <PrecioUnitario fila={fila} /></span>}
               </p>
             )}
           </div>
           {puedeExportar && (
-            <button type="button" onClick={onExportar} className="h-7 px-3 rounded-md border border-gray-300 dark:border-gray-600 text-[11.5px] font-semibold text-gray-700 dark:text-gray-200 hover:border-[#2383C2] hover:text-[#2383C2] inline-flex items-center gap-1.5 shrink-0">
+            <button type="button" onClick={onExportar} className="h-7 px-3 rounded-md border border-gray-300 dark:border-gray-600 text-etiqueta text-tinta-principal hover:border-[#2383C2] hover:text-[#2383C2] inline-flex items-center gap-1.5 shrink-0">
               <FileSpreadsheet size={13} /> Exportar
             </button>
           )}
-          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 text-gray-400 hover:text-gray-600 shrink-0"><X size={18} /></button>
+          <button type="button" onClick={onCerrar} aria-label="Cerrar" className="p-1 text-tinta-atenuada hover:text-tinta-secundaria shrink-0"><X size={18} /></button>
         </header>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {cruces.map((c) => (
             <TablaCruce key={c.titulo} titulo={c.titulo} filas={c.filas} unidad={unidad} etiquetaActual={etiquetaActual} etiquetaAnterior={etiquetaAnterior} ver={ver} conMontos={conMontos} comparar={comparar} anchos={cruce.anchos} onResize={cruce.handleResize} />
           ))}
           {!esCodigo && (cargandoCodigos
-            ? <p className="text-[11.5px] text-gray-400"><Loader2 size={13} className="inline animate-spin mr-1" />Cargando códigos…</p>
+            ? <p className="text-secundario text-tinta-atenuada"><Loader2 size={13} className="inline animate-spin mr-1" />Cargando códigos…</p>
             : codigos && <TablaCodigosDetalle filas={codigos} ver={ver} conMontos={conMontos} anchos={cods.anchos} onResize={cods.handleResize} />)}
         </div>
       </aside>

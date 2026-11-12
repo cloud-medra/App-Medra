@@ -24,8 +24,8 @@ const estable = (v) => JSON.stringify(v, (_k, x) => (x && typeof x === 'object' 
   ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, x[k]]))
   : x));
 const clonar = (v) => JSON.parse(JSON.stringify(v));
-const SELECT = 'h-8 max-w-[220px] px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-[12px] text-gray-700 dark:text-gray-200 disabled:opacity-50';
-const BOTON = 'h-8 px-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-[12px] font-semibold text-gray-700 dark:text-gray-200 inline-flex items-center gap-1.5 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40';
+const SELECT = 'h-8 max-w-[220px] px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-normal text-tinta-principal disabled:opacity-50';
+const BOTON = 'h-8 px-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-etiqueta text-tinta-principal inline-flex items-center gap-1.5 hover:border-[#2383C2] hover:text-[#2383C2] disabled:opacity-40';
 
 const ConfigurarCentro = ({ centro, filas, plantillas, usuarios, onVolver, onEditarUsuario }) => {
   const { showToast } = useToast();
@@ -129,7 +129,7 @@ const ConfigurarCentro = ({ centro, filas, plantillas, usuarios, onVolver, onEdi
         onSeguir={() => setSalida(null)}
       />
       <MarcoEdicionUsuario
-        migas={<><span className="uppercase tracking-wider font-semibold">Permisos por centro</span><span>/</span><span>Configurar</span></>}
+        migas={<><span className="uppercase tracking-wider text-etiqueta">Permisos por centro</span><span>/</span><span>Configurar</span></>}
         nombre={centro.nombre}
         detalle="Cada rol tiene su plantilla. Los usuarios reciben la de su rol (más sus excepciones); admin y dev tienen acceso total."
         chips={(
@@ -170,7 +170,7 @@ const ConfigurarCentro = ({ centro, filas, plantillas, usuarios, onVolver, onEdi
             icon: KeyRound,
             badge: conCambios.includes(rol)
               ? <CircleDot size={11} className="ml-1 text-amber-500" aria-label="Con cambios sin guardar" />
-              : !configurada(rol) && <span className="ml-1 text-[10px] font-bold px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">Sin configurar</span>,
+              : !configurada(rol) && <span className="ml-1 text-pequeno px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">Sin configurar</span>,
           })),
           { id: 'usuarios', label: `Ver usuarios (${usuariosDelCentro.length})`, icon: Users },
         ]}
@@ -185,25 +185,25 @@ const ConfigurarCentro = ({ centro, filas, plantillas, usuarios, onVolver, onEdi
           />
         ) : (
           <div className="h-full min-h-0 flex flex-col gap-2">
-            <label className="shrink-0 flex items-center gap-2 text-[11.5px] font-semibold text-gray-600 dark:text-gray-300">
+            <label className="shrink-0 flex items-center gap-2 text-etiqueta text-tinta-secundaria">
               Rol
               <select value={filtroRol} onChange={(e) => setFiltroRol(e.target.value)} aria-label="Filtrar usuarios por rol"
-                className="h-7 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] font-normal text-gray-800 dark:text-gray-100">
+                className="h-7 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal">
                 <option value="todos">Todos</option>
                 {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
             </label>
             <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               {usuariosFiltrados.length === 0 ? (
-                <p className="py-10 text-center text-[12px] text-gray-500">
+                <p className="py-10 text-center text-normal text-tinta-secundaria">
                   {usuariosDelCentro.length ? 'Ningún usuario de este centro tiene ese rol.' : 'Ningún usuario tiene asignado este centro.'}
                 </p>
               ) : (
-                <table className="w-full text-left text-[11.5px] border-separate border-spacing-0">
-                  <thead className="text-[10px] uppercase text-gray-500 dark:text-gray-400">
+                <table className="w-full text-left text-secundario border-separate border-spacing-0">
+                  <thead className="text-pequeno uppercase text-tinta-secundaria">
                     <tr>
                       {['Nombre', 'Usuario', 'Rol', 'Permisos personalizados', ''].map((h, i, arr) => (
-                        <th key={h || 'acciones'} className={`sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 font-semibold border-b border-gray-200 dark:border-gray-700 ${i < arr.length - 1 ? 'border-r' : ''}`}>{h}</th>
+                        <th key={h || 'acciones'} className={`sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 text-etiqueta border-b border-gray-200 dark:border-gray-700 ${i < arr.length - 1 ? 'border-r' : ''}`}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -213,17 +213,17 @@ const ConfigurarCentro = ({ centro, filas, plantillas, usuarios, onVolver, onEdi
                       const celda = 'px-3 py-1.5 border-b border-r border-gray-100 dark:border-gray-700/60';
                       return (
                         <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                          <td className={`${celda} font-medium text-gray-800 dark:text-gray-100`}>{u.nombreCompleto || u.email}</td>
-                          <td className={`${celda} text-gray-600 dark:text-gray-300`}>@{u.nombreUsuario}</td>
+                          <td className={`${celda} text-tinta-principal`}>{u.nombreCompleto || u.email}</td>
+                          <td className={`${celda} text-tinta-secundaria`}>@{u.nombreUsuario}</td>
                           <td className={celda}><span className="inline-flex items-center gap-1"><Shield size={11} className="text-[#2383C2]" />{labelRol(rolDeUsuario(u))}</span></td>
                           <td className={celda}>
                             {tieneExcepciones(u.excepciones)
-                              ? <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"><SlidersHorizontal size={10} /> +{n.agregados} / −{n.quitados}</span>
-                              : <span className="text-gray-400">No</span>}
+                              ? <span className="inline-flex items-center gap-1 text-pequeno px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400"><SlidersHorizontal size={10} /> +{n.agregados} / −{n.quitados}</span>
+                              : <span className="text-tinta-atenuada">No</span>}
                           </td>
                           <td className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-700/60 text-center">
                             <button type="button" onClick={() => conConfirmacion(() => onEditarUsuario?.(u.id))} title={`Editar a ${u.nombreCompleto}`}
-                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2383C2] hover:underline">
+                              className="inline-flex items-center gap-1 text-etiqueta text-[#2383C2] hover:underline">
                               <Pencil size={12} /> Editar
                             </button>
                           </td>

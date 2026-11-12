@@ -20,32 +20,32 @@ const BarrasTop = ({ filas, titulo, etiquetaActual, etiquetaAnterior, onSeleccio
   return (
     <div className="flex-1 min-h-0 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 min-w-0">
       <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-        <h3 className="text-[12px] font-semibold text-gray-800 dark:text-gray-100">{titulo}</h3>
+        <h3 className="text-titulo-seccion text-tinta-principal">{titulo}</h3>
         {opciones && opciones.length > 1 && (
-          <div className="inline-flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden text-[10.5px] font-semibold" role="group" aria-label="Ordenar Top 10 por">
+          <div className="inline-flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden text-pequeno" role="group" aria-label="Ordenar Top 10 por">
             {opciones.map((o) => (
               <button key={o.id} type="button" onClick={() => onMetrica(o.id)} aria-pressed={metrica === o.id}
-                className={`h-6 px-2 ${metrica === o.id ? 'bg-[#2383C2] text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:text-[#2383C2]'}`}>
+                className={`h-6 px-2 ${metrica === o.id ? 'bg-[#2383C2] text-white' : 'bg-white dark:bg-gray-900 text-tinta-secundaria hover:text-[#2383C2]'}`}>
                 {o.label}
               </button>
             ))}
           </div>
         )}
       </div>
-      <div className="flex items-center gap-3 mb-2 text-[10px] text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-3 mb-2 text-pequeno text-tinta-secundaria">
         <span className="inline-flex items-center gap-1"><i className="w-2.5 h-2.5 rounded-sm bg-[#2383C2] inline-block" />{etiquetaActual}</span>
         {comparar && <span className="inline-flex items-center gap-1"><i className="w-2.5 h-2.5 rounded-sm bg-[#2383C2]/20 inline-block" />{etiquetaAnterior}</span>}
       </div>
       {top.length === 0 ? (
-        <p className="text-[12px] text-gray-400 py-6 text-center">Sin datos en este período.</p>
+        <p className="text-normal text-tinta-atenuada py-6 text-center">Sin datos en este período.</p>
       ) : (
         <ol className="space-y-1.5">
           {top.map((f, i) => (
             <li key={f.clave}>
               <button type="button" onClick={() => onSeleccionar?.(f)} className="w-full text-left group" title={`${nombreDe(f)}: ${m.formato(f[metrica])}${comparar ? ` (${etiquetaAnterior}: ${m.formato(anteriorDe(f))})` : ''}`}>
-                <div className="flex items-baseline justify-between gap-2 text-[11px]">
-                  <span className="truncate text-gray-700 dark:text-gray-200 group-hover:text-[#2383C2]"><span className="text-gray-400 tabular-nums mr-1.5">{i + 1}.</span>{nombreDe(f)}</span>
-                  <span className="font-semibold tabular-nums text-gray-800 dark:text-gray-100 whitespace-nowrap">{m.formato(f[metrica])}</span>
+                <div className="flex items-baseline justify-between gap-2 text-secundario">
+                  <span className="truncate text-tinta-principal group-hover:text-[#2383C2]"><span className="text-tinta-atenuada tabular-nums mr-1.5">{i + 1}.</span>{nombreDe(f)}</span>
+                  <span className="text-etiqueta tabular-nums text-tinta-principal whitespace-nowrap">{m.formato(f[metrica])}</span>
                 </div>
                 <div className="relative h-1.5 mt-0.5 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
                   {comparar && <div className="absolute inset-y-0 left-0 rounded-full bg-[#2383C2]/20" style={{ width: `${(anteriorDe(f) / maximo) * 100}%` }} />}

@@ -22,7 +22,7 @@ export const FiltrosBusquedaOrigen = ({
       <input
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
-        className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2]"
+        className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2]"
         placeholder={placeholder}
       />
     </div>

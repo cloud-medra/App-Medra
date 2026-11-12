@@ -42,7 +42,7 @@ const MODOS = [
   { id: 'solo', label: 'Solo un mes' },
 ];
 
-const CLASE_SELECT = 'h-7 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] font-normal text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#2383C2] disabled:opacity-60';
+const CLASE_SELECT = 'h-7 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal focus:outline-none focus:border-[#2383C2] disabled:opacity-60';
 
 const fechaHora = (ts) => {
   const d = ts?.toDate ? ts.toDate() : null;
@@ -292,13 +292,13 @@ const Estadisticas = () => {
   const sinDatos = modulosVista.filter((m, i) => !datos.actual[i]);
 
   if (modulosPermitidos.length === 0) {
-    return <div className="p-8 text-center text-[13px] text-gray-500">No tienes permiso para ver las estadísticas de ningún módulo.</div>;
+    return <div className="p-8 text-center text-normal text-tinta-secundaria">No tienes permiso para ver las estadísticas de ningún módulo.</div>;
   }
 
   const estadoModulos = !cargando && docsActuales.length > 0 && (
-    <div className="flex flex-wrap gap-1.5 text-[11px]">
+    <div className="flex flex-wrap gap-1.5 text-secundario">
       {docsActuales.map((d) => (
-        <span key={d.modulo} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${d.definitivo ? 'bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300' : 'bg-[#2383C2]/10 border-[#2383C2]/30 text-[#1d6fa5] dark:text-blue-300'}`}>
+        <span key={d.modulo} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border ${d.definitivo ? 'bg-gray-50 border-gray-200 text-tinta-principal dark:bg-gray-900 dark:border-gray-700' : 'bg-[#2383C2]/10 border-[#2383C2]/30 text-[#1d6fa5] dark:text-blue-300'}`}>
           {d.definitivo ? <Lock size={11} /> : <Activity size={11} />}
           {BLOQUE.modulos.find((m) => m.id === d.modulo)?.nombre}: {d.definitivo ? 'Definitivo (período cerrado)' : 'En curso'}
         </span>
@@ -320,11 +320,11 @@ const Estadisticas = () => {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <span className="w-8 h-8 rounded-lg bg-[#2383C2] text-white flex items-center justify-center shrink-0"><BarChart3 size={16} /></span>
             <div className="min-w-0 mr-auto">
-              <h2 className="text-[14px] font-bold leading-tight text-gray-800 dark:text-gray-100">Estadísticas</h2>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">{BLOQUE.nombre} · admisiones distintas por período de imputación</p>
+              <h2 className="text-titulo-seccion text-tinta-principal">Estadísticas</h2>
+              <p className="text-secundario text-tinta-secundaria">{BLOQUE.nombre} · admisiones distintas por período de imputación</p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300">
+            <div className="flex flex-wrap items-center gap-1.5 text-etiqueta text-tinta-secundaria">
               <CalendarDays size={14} className="text-[#2383C2]" /> Período
               {/* Solo años y meses con estadísticas (índice de períodos) de los módulos a la vista */}
               <select aria-label="Año" value={anioVista} onChange={(e) => elegirAnio(e.target.value)} disabled={!puede.elegirPeriodo || anios.length === 0}
@@ -339,25 +339,25 @@ const Estadisticas = () => {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 sm:flex gap-px w-full sm:w-auto rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 bg-gray-300 dark:bg-gray-600 text-[11.5px] font-semibold" role="group" aria-label="Modo de comparación">
+            <div className="grid grid-cols-2 sm:flex gap-px w-full sm:w-auto rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 bg-gray-300 dark:bg-gray-600 text-etiqueta" role="group" aria-label="Modo de comparación">
               {MODOS.map((m) => (
                 <button key={m.id} type="button" onClick={() => elegirModo(m.id)} aria-pressed={modo === m.id}
-                  className={`h-7 px-3 whitespace-nowrap ${modo === m.id ? 'bg-[#2383C2] text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:text-[#2383C2]'}`}>
+                  className={`h-7 px-3 whitespace-nowrap ${modo === m.id ? 'bg-[#2383C2] text-white' : 'bg-white dark:bg-gray-900 text-tinta-secundaria hover:text-[#2383C2]'}`}>
                   {m.label}
                 </button>
               ))}
             </div>
 
             <button type="button" onClick={restablecer} disabled={esEstadoInicial || !periodoPorDefecto} title="Volver al mes en curso comparado con el mes anterior"
-              className="h-7 px-2.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] font-semibold text-gray-600 dark:text-gray-300 hover:border-[#2383C2] hover:text-[#2383C2] inline-flex items-center gap-1 disabled:opacity-40 disabled:hover:border-gray-300 disabled:hover:text-gray-600">
+              className="h-7 px-2.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-etiqueta text-tinta-secundaria hover:border-[#2383C2] hover:text-[#2383C2] inline-flex items-center gap-1 disabled:opacity-40 disabled:hover:border-gray-300 disabled:hover:text-tinta-secundaria">
               <RotateCcw size={12} /> Mes actual
             </button>
 
             {modulosPermitidos.length > 0 && (
-              <div className="grid grid-cols-2 sm:flex gap-px w-full sm:w-auto rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 bg-gray-300 dark:bg-gray-600 text-[11.5px] font-semibold" role="group" aria-label="Filtrar por módulo">
+              <div className="grid grid-cols-2 sm:flex gap-px w-full sm:w-auto rounded-md overflow-hidden border border-gray-300 dark:border-gray-600 bg-gray-300 dark:bg-gray-600 text-etiqueta" role="group" aria-label="Filtrar por módulo">
                 {[...(modulosPermitidos.length > 1 ? [{ id: 'todos', nombre: 'Todos' }] : []), ...modulosPermitidos].map((m) => (
                   <button key={m.id} type="button" onClick={() => { setFiltro(m.id); setSeleccion(null); }} aria-pressed={filtro === m.id || (modulosPermitidos.length === 1)}
-                    className={`h-7 px-3 whitespace-nowrap ${filtro === m.id || modulosPermitidos.length === 1 ? 'bg-[#2383C2] text-white' : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:text-[#2383C2]'}`}>
+                    className={`h-7 px-3 whitespace-nowrap ${filtro === m.id || modulosPermitidos.length === 1 ? 'bg-[#2383C2] text-white' : 'bg-white dark:bg-gray-900 text-tinta-secundaria hover:text-[#2383C2]'}`}>
                     {m.nombre}
                   </button>
                 ))}
@@ -366,8 +366,8 @@ const Estadisticas = () => {
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            <span className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-              <Clock size={13} /> Última actualización: <b className="text-gray-700 dark:text-gray-200">{fechaHora(ultimaActualizacion)}</b>
+            <span className="flex items-center gap-1.5 text-secundario text-tinta-secundaria">
+              <Clock size={13} /> Última actualización: <b className="text-tinta-principal">{fechaHora(ultimaActualizacion)}</b>
             </span>
             {estadoModulos}
           </div>
@@ -393,16 +393,16 @@ const Estadisticas = () => {
                   const Icono = ICONOS[d];
                   return (
                     <button key={d} type="button" role="tab" aria-selected={dimension === d} onClick={() => { setTab(d); setSeleccion(null); }}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold border-b-2 ${dimension === d ? 'border-[#2383C2] text-[#2383C2]' : 'border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}`}>
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-etiqueta border-b-2 ${dimension === d ? 'border-[#2383C2] text-[#2383C2]' : 'border-transparent text-tinta-secundaria hover:text-tinta-principal'}`}>
                       <Icono size={14} /> {DIMENSIONES[d].nombre}
-                      {kActual[d] != null && <span className={`ml-0.5 px-1.5 rounded-full text-[10px] ${dimension === d ? 'bg-[#2383C2]/10' : 'bg-gray-100 dark:bg-gray-700'}`}>{formatoNumero(kActual[d])}</span>}
+                      {kActual[d] != null && <span className={`ml-0.5 px-1.5 rounded-full text-pequeno ${dimension === d ? 'bg-[#2383C2]/10' : 'bg-gray-100 dark:bg-gray-700'}`}>{formatoNumero(kActual[d])}</span>}
                     </button>
                   );
                 })}
               </div>
               {puede.exportar && (
                 <button type="button" onClick={exportarTabla} disabled={filasVisibles.length === 0}
-                  className="ml-auto mb-1.5 h-7 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[11.5px] font-semibold inline-flex items-center gap-1.5 disabled:opacity-50">
+                  className="ml-auto mb-1.5 h-7 px-3 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta inline-flex items-center gap-1.5 disabled:opacity-50">
                   <FileSpreadsheet size={13} /> Exportar Excel
                 </button>
               )}
@@ -413,14 +413,14 @@ const Estadisticas = () => {
         {/* Contenido */}
         <div className="px-4 py-3 flex flex-col gap-3 lg:flex-1 lg:min-h-[340px]">
           {conCambios.map((d) => (
-            <div key={d.modulo} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-200 text-[11.5px]" role="status">
+            <div key={d.modulo} className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-lg border border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:border-amber-800 dark:text-amber-200 text-secundario" role="status">
               <AlertTriangle size={15} className="shrink-0" />
               <span className="flex-1 min-w-0">
                 Hay <b>{d.cambiosTrasCierre}</b> {d.cambiosTrasCierre === 1 ? 'cambio posterior' : 'cambios posteriores'} al cierre en {BLOQUE.modulos.find((m) => m.id === d.modulo)?.nombre}. Las estadísticas muestran los datos al momento del cierre.
               </span>
               {puede.recalcular && (
                 <button type="button" onClick={() => recalcular(d)} disabled={recalculando === d.modulo}
-                  className="h-7 px-3 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-semibold inline-flex items-center gap-1.5 disabled:opacity-60">
+                  className="h-7 px-3 rounded-md bg-amber-600 hover:bg-amber-700 text-white text-etiqueta inline-flex items-center gap-1.5 disabled:opacity-60">
                   {recalculando === d.modulo ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />} Recalcular período
                 </button>
               )}
@@ -428,7 +428,7 @@ const Estadisticas = () => {
           ))}
 
           {formatoAntiguo.length > 0 && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-900 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-200 text-[11.5px]" role="status">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 text-blue-900 dark:bg-blue-950/30 dark:border-blue-800 dark:text-blue-200 text-secundario" role="status">
               <Info size={15} className="shrink-0" />
               <span>
                 {formatoAntiguo.map((d) => BLOQUE.modulos.find((m) => m.id === d.modulo)?.nombre).join(', ')}: este período aún no tiene montos ni códigos calculados.
@@ -437,26 +437,26 @@ const Estadisticas = () => {
             </div>
           )}
 
-          {(errorIndice || error) && <div className="px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-[11.5px]">{errorIndice || error}</div>}
+          {(errorIndice || error) && <div className="px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 text-secundario">{errorIndice || error}</div>}
 
           {cargando ? (
-            <div className="py-20 text-center text-gray-400 text-[12px]"><Loader2 size={18} className="inline animate-spin mr-2" />Cargando estadísticas…</div>
+            <div className="py-20 text-center text-tinta-atenuada text-normal"><Loader2 size={18} className="inline animate-spin mr-2" />Cargando estadísticas…</div>
           ) : periodos.length === 0 ? (
-            <div className="py-16 text-center text-[12px] text-gray-500">
+            <div className="py-16 text-center text-normal text-tinta-secundaria">
               Aún no hay estadísticas calculadas. Se generan al imputar ítems en un período abierto (o con el script inicial para los períodos anteriores).
             </div>
           ) : (
             <>
               {sinDatos.length > 0 && filtro === 'todos' && (
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5"><Info size={13} /> Sin estadísticas en {etiquetaActual} para: {sinDatos.map((m) => BLOQUE.modulos.find((x) => x.id === m)?.nombre).join(', ')}.</p>
+                <p className="text-secundario text-tinta-secundaria flex items-center gap-1.5"><Info size={13} /> Sin estadísticas en {etiquetaActual} para: {sinDatos.map((m) => BLOQUE.modulos.find((x) => x.id === m)?.nombre).join(', ')}.</p>
               )}
 
               {!conPestanas ? (
-                <p className="py-10 text-center text-[12px] text-gray-400">No tienes permiso para ver el detalle por médico, cirugía o empresa.</p>
+                <p className="py-10 text-center text-normal text-tinta-atenuada">No tienes permiso para ver el detalle por médico, cirugía o empresa.</p>
               ) : (
                 <div className="flex flex-col lg:flex-row gap-3 lg:flex-1 lg:min-h-0">
                   {esCodigos && !codigosListos ? (
-                    <div className="flex-1 min-w-0 py-16 text-center text-gray-400 text-[12px] border border-gray-200 dark:border-gray-700 rounded-lg"><Loader2 size={16} className="inline animate-spin mr-2" />Cargando códigos…</div>
+                    <div className="flex-1 min-w-0 py-16 text-center text-tinta-atenuada text-normal border border-gray-200 dark:border-gray-700 rounded-lg"><Loader2 size={16} className="inline animate-spin mr-2" />Cargando códigos…</div>
                   ) : esCodigos ? (
                     <TablaCodigos
                       key={`${periodoVista}|${filtro}|${busqueda}|${orden.columna}|${orden.sentido}`}

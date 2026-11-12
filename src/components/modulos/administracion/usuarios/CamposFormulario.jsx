@@ -4,8 +4,8 @@ export const Tarjeta = ({ titulo, descripcion, children, className = '' }) => (
   <section className={`rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${className}`}>
     {(titulo || descripcion) && (
       <div className="px-5 py-3.5 border-b border-gray-100 dark:border-gray-700">
-        {titulo && <h3 className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">{titulo}</h3>}
-        {descripcion && <p className="text-[11.5px] text-gray-500 dark:text-gray-400 mt-0.5">{descripcion}</p>}
+        {titulo && <h3 className="text-subtitulo text-tinta-principal">{titulo}</h3>}
+        {descripcion && <p className="text-secundario text-tinta-secundaria mt-0.5">{descripcion}</p>}
       </div>
     )}
     <div className="p-5">{children}</div>
@@ -13,11 +13,11 @@ export const Tarjeta = ({ titulo, descripcion, children, className = '' }) => (
 );
 
 const ESTILO_INPUT =
-  'w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[12.5px] text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#2383C2] focus:ring-2 focus:ring-[#2383C2]/15 disabled:bg-gray-50 disabled:text-gray-500 dark:disabled:bg-gray-800/60 dark:disabled:text-gray-400';
+  'w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-normal text-tinta-principal focus:outline-none focus:border-[#2383C2] focus:ring-2 focus:ring-[#2383C2]/15 disabled:bg-gray-50 disabled:text-tinta-secundaria dark:disabled:bg-gray-800/60';
 
 export const Campo = ({ label, icon: Icon, ayuda, error, id, children }) => (
   <div>
-    <label htmlFor={id} className="block text-[11.5px] font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+    <label htmlFor={id} className="block text-etiqueta text-tinta-principal mb-1.5">
       {label}
     </label>
     <div className="relative">
@@ -25,9 +25,9 @@ export const Campo = ({ label, icon: Icon, ayuda, error, id, children }) => (
       {children}
     </div>
     {error ? (
-      <p className="text-[11px] text-red-600 dark:text-red-400 mt-1">{error}</p>
+      <p className="text-secundario text-red-600 dark:text-red-400 mt-1">{error}</p>
     ) : ayuda ? (
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">{ayuda}</p>
+      <p className="text-secundario text-tinta-atenuada mt-1">{ayuda}</p>
     ) : null}
   </div>
 );
@@ -51,7 +51,7 @@ export const CampoSelect = ({ label, icon, ayuda, error, id, opciones, ...props 
 // Interruptor Activo / Inactivo.
 export const CampoEstado = ({ activo, onChange, disabled }) => (
   <div>
-    <span className="block text-[11.5px] font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Estado</span>
+    <span className="block text-etiqueta text-tinta-principal mb-1.5">Estado</span>
     <div className="inline-flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden" role="radiogroup" aria-label="Estado del usuario">
       {[
         { valor: true, label: 'Activo', on: 'bg-green-600 text-white' },
@@ -64,14 +64,14 @@ export const CampoEstado = ({ activo, onChange, disabled }) => (
           aria-checked={activo === op.valor}
           disabled={disabled}
           onClick={() => onChange(op.valor)}
-          className={`h-9 px-4 text-[12px] font-semibold transition-colors ${
-            activo === op.valor ? op.on : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+          className={`h-9 px-4 text-etiqueta transition-colors ${
+            activo === op.valor ? op.on : 'bg-white dark:bg-gray-900 text-tinta-secundaria hover:bg-gray-50 dark:hover:bg-gray-800'
           }`}
         >
           {op.label}
         </button>
       ))}
     </div>
-    <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Se refleja en Listado Usuario (hoy no bloquea el ingreso).</p>
+    <p className="text-secundario text-tinta-atenuada mt-1">Se refleja en Listado Usuario (hoy no bloquea el ingreso).</p>
   </div>
 );

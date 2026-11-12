@@ -9,14 +9,14 @@ import AvatarUsuario from '../../../ui/AvatarUsuario';
 
 export const Chip = ({ tono = 'gris', icon: Icon, children }) => {
   const tonos = {
-    gris: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300',
+    gris: 'bg-gray-100 dark:bg-gray-700 text-tinta-secundaria',
     azul: 'bg-[#2383C2]/10 dark:bg-blue-950/40 text-[#2383C2] dark:text-blue-400',
     verde: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
     rojo: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
     ambar: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
   };
   return (
-    <span className={`inline-flex items-center gap-1 text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${tonos[tono]}`}>
+    <span className={`inline-flex items-center gap-1 text-pequeno px-2 py-0.5 rounded-full ${tonos[tono]}`}>
       {Icon && <Icon size={11} />}
       {children}
     </span>
@@ -46,12 +46,12 @@ const MarcoEdicionUsuario = ({
   <div className="h-full min-h-[560px] flex flex-col bg-slate-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
     {/* Encabezado fijo */}
     <header className="shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center gap-2 px-5 pt-3 text-[11px] text-gray-400 dark:text-gray-500">
+      <div className="flex items-center gap-2 px-5 pt-3 text-secundario text-tinta-atenuada">
         {onVolver && (
         <button
           type="button"
           onClick={onVolver}
-          className="p-1 -ml-1 rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
+          className="p-1 -ml-1 rounded-md border border-gray-200 dark:border-gray-700 text-tinta-secundaria hover:bg-gray-50 dark:hover:bg-gray-700/50 transition"
           title="Volver"
           aria-label="Volver"
         >
@@ -62,18 +62,18 @@ const MarcoEdicionUsuario = ({
       </div>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <AvatarUsuario nombre={nombre} fotoUrl={fotoUrl} className="w-11 h-11 bg-[#2383C2]/10 text-[#2383C2] text-[14px] font-bold" />
+          <AvatarUsuario nombre={nombre} fotoUrl={fotoUrl} className="w-11 h-11 bg-[#2383C2]/10 text-[#2383C2] text-titulo-seccion" />
           <div className="min-w-0">
-            <h2 className="text-[16px] font-semibold text-gray-900 dark:text-gray-50 truncate">{nombre || 'Nuevo usuario'}</h2>
+            <h2 className="text-titulo-seccion text-tinta-principal truncate">{nombre || 'Nuevo usuario'}</h2>
             <div className="flex flex-wrap items-center gap-2 mt-0.5">
-              {detalle && <span className="text-[12px] text-gray-500 dark:text-gray-400 truncate">{detalle}</span>}
+              {detalle && <span className="text-normal text-tinta-secundaria truncate">{detalle}</span>}
               {chips}
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2 ml-auto">
           {hayCambios && (
-            <span role="status" className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 px-2.5 py-1 rounded-md">
+            <span role="status" className="inline-flex items-center gap-1.5 text-etiqueta text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 px-2.5 py-1 rounded-md">
               <AlertTriangle size={13} /> Tienes cambios sin guardar
             </span>
           )}
@@ -83,7 +83,7 @@ const MarcoEdicionUsuario = ({
               type="button"
               onClick={onCancelar}
               disabled={guardando}
-              className="h-8 px-3.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-[12px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+              className="h-8 px-3.5 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-etiqueta text-tinta-principal hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -93,7 +93,7 @@ const MarcoEdicionUsuario = ({
               type="button"
               onClick={onGuardar}
               disabled={guardando || !puedeGuardar}
-              className="h-8 px-4 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[12px] font-semibold inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-8 px-4 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {guardando ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
               {guardando ? 'Guardando…' : textoGuardar}
@@ -114,10 +114,10 @@ const MarcoEdicionUsuario = ({
               disabled={t.deshabilitada}
               title={t.deshabilitada ? t.motivo : undefined}
               onClick={() => onTab(t.id)}
-              className={`relative inline-flex items-center gap-1.5 px-3.5 py-2.5 text-[12.5px] font-semibold border-b-2 -mb-px transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+              className={`relative inline-flex items-center gap-1.5 px-3.5 py-2.5 text-etiqueta border-b-2 -mb-px transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
                 activa
                   ? 'border-[#2383C2] text-[#2383C2] dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  : 'border-transparent text-tinta-secundaria hover:text-tinta-principal'
               }`}
             >
               {t.icon && <t.icon size={14} />}
@@ -142,13 +142,13 @@ export const ConfirmarSalida = ({ abierto, guardando, onGuardarYSalir, onSalir, 
       <div className="bg-white dark:bg-gray-800 w-full max-w-sm rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 bg-amber-50/60 dark:bg-amber-950/20">
           <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
-          <h3 id="titulo-confirmar-salida" className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">Cambios sin guardar</h3>
-          <button type="button" onClick={onSeguir} aria-label="Cerrar" className="ml-auto text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+          <h3 id="titulo-confirmar-salida" className="text-subtitulo text-tinta-principal">Cambios sin guardar</h3>
+          <button type="button" onClick={onSeguir} aria-label="Cerrar" className="ml-auto text-tinta-atenuada hover:text-tinta-secundaria transition">
             <X size={15} />
           </button>
         </div>
         <div className="px-4 py-3">
-          <p className="text-[12px] text-gray-600 dark:text-gray-300">
+          <p className="text-normal text-tinta-secundaria">
             Tienes cambios en este usuario que no se han guardado. ¿Qué deseas hacer antes de salir?
           </p>
         </div>
@@ -158,15 +158,15 @@ export const ConfirmarSalida = ({ abierto, guardando, onGuardarYSalir, onSalir, 
               type="button"
               onClick={onGuardarYSalir}
               disabled={guardando}
-              className="w-full h-8 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded-md font-semibold flex items-center justify-center gap-1.5 transition text-[12px] disabled:opacity-60"
+              className="w-full h-8 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded-md flex items-center justify-center gap-1.5 transition text-etiqueta disabled:opacity-60"
             >
               {guardando ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Guardar y salir
             </button>
           )}
-          <button type="button" onClick={onSalir} className="w-full h-8 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 rounded-md font-semibold transition text-[12px]">
+          <button type="button" onClick={onSalir} className="w-full h-8 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 rounded-md transition text-etiqueta">
             Salir sin guardar
           </button>
-          <button type="button" onClick={onSeguir} className="w-full h-8 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition text-[12px]">
+          <button type="button" onClick={onSeguir} className="w-full h-8 text-tinta-secundaria hover:text-tinta-principal transition text-normal">
             Seguir editando
           </button>
         </div>

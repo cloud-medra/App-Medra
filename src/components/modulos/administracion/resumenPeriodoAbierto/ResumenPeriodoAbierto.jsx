@@ -33,7 +33,7 @@ const MODULO_COLORES = [
   { bg: 'bg-cyan-600', text: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-200 dark:border-cyan-800/60', lightBg: 'bg-cyan-50/50 dark:bg-cyan-950/30' },
   { bg: 'bg-orange-600', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-200 dark:border-orange-800/60', lightBg: 'bg-orange-50/50 dark:bg-orange-950/30' },
   { bg: 'bg-purple-600', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-200 dark:border-purple-800/60', lightBg: 'bg-purple-50/50 dark:bg-purple-950/30' },
-  { bg: 'bg-slate-600', text: 'text-slate-600 dark:text-slate-400', border: 'border-slate-200 dark:border-gray-700', lightBg: 'bg-slate-50/50 dark:bg-gray-800/30' }
+  { bg: 'bg-slate-600', text: 'text-tinta-secundaria', border: 'border-slate-200 dark:border-gray-700', lightBg: 'bg-slate-50/50 dark:bg-gray-800/30' }
 ];
 
 const ResumenPeriodoAbierto = () => {
@@ -149,7 +149,7 @@ const ResumenPeriodoAbierto = () => {
     return (
       <div className="w-full h-64 flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-lg border border-slate-200 dark:border-gray-700 p-6 shadow-xs">
         <div className="w-8 h-8 border-2 border-[#2383C2] border-t-transparent rounded-full animate-spin mb-2.5" />
-        <p className="text-[11px] text-slate-500 font-medium">Cargando consolidado corporativo...</p>
+        <p className="text-secundario text-tinta-secundaria">Cargando consolidado corporativo...</p>
       </div>
     );
   }
@@ -157,14 +157,14 @@ const ResumenPeriodoAbierto = () => {
   if (!periodoAbiertoInfo || !resumenPorGrupo) {
     return (
       <div className="w-full bg-white dark:bg-gray-800 rounded-lg border border-slate-200 dark:border-gray-700 p-8 text-center flex flex-col items-center justify-center space-y-2.5 shadow-xs">
-        <div className="w-11 h-11 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center text-slate-400 dark:text-gray-400">
+        <div className="w-11 h-11 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center text-tinta-atenuada">
           <CalendarCheck size={22} />
         </div>
         <div>
-          <h3 className="text-[13px] font-bold text-slate-800 dark:text-gray-100 uppercase tracking-wide">
-            Sin Período Activo
+          <h3 className="text-titulo-seccion text-tinta-principal">
+            Sin período activo
           </h3>
-          <p className="text-[11px] text-slate-500 dark:text-gray-400 max-w-sm mt-1">
+          <p className="text-secundario text-tinta-secundaria max-w-sm mt-1">
             No se registra ningún período contable abierto para el año {anioActualStr}. Inicia un período desde la matriz de control para visualizar el resumen financiero.
           </p>
         </div>
@@ -183,20 +183,20 @@ const ResumenPeriodoAbierto = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[9px] uppercase tracking-wider font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded">
+              <span className="text-pequeno uppercase tracking-wider text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-800 px-2 py-0.5 rounded">
                 Estado de Período
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-gray-400 font-medium">
+              <span className="text-secundario text-tinta-secundaria">
                 Ejercicio {periodoAbiertoInfo.anio}
               </span>
             </div>
-            <h2 className="text-[15px] font-bold text-slate-800 dark:text-gray-100 uppercase tracking-wide mt-0.5">
+            <h2 className="text-titulo-seccion text-tinta-principal mt-0.5">
               Consolidado {periodoAbiertoInfo.mesNombre} {periodoAbiertoInfo.anio}
             </h2>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 px-3 py-1.5 rounded text-[11px] font-semibold text-slate-700 dark:text-gray-300">
+        <div className="flex items-center gap-2 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 px-3 py-1.5 rounded text-etiqueta text-tinta-principal">
           <Layers size={14} className="text-[#2383C2]" />
           <span>{periodoAbiertoInfo.totalModulosAbiertos} de {MODULOS.length} Módulos Activos</span>
         </div>
@@ -206,36 +206,36 @@ const ResumenPeriodoAbierto = () => {
       {ingresosCostos && (
         <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg p-3.5 shadow-xs flex flex-wrap items-center gap-x-6 gap-y-3">
           <div className="flex items-center gap-3 min-w-[220px]">
-            <div className="p-2.5 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-200 rounded">
+            <div className="p-2.5 bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-tinta-principal rounded">
               <Scale size={20} />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
+              <p className="text-pequeno text-tinta-secundaria uppercase tracking-wider">
                 Ingresos − costos del período
               </p>
-              <p className={`text-xl font-extrabold mt-0.5 tracking-tight ${ingresosCostos.diferencia > 0
+              <p className={`text-numero-indicador mt-0.5 ${ingresosCostos.diferencia > 0
                 ? 'text-emerald-700 dark:text-emerald-400'
-                : ingresosCostos.diferencia < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-800 dark:text-white'}`}
+                : ingresosCostos.diferencia < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-tinta-principal'}`}
               >
                 {ingresosCostos.diferencia < 0 ? '−' : ''}${Math.abs(ingresosCostos.diferencia).toLocaleString('es-CL')}
               </p>
             </div>
           </div>
 
-          <dl className="flex-1 min-w-[240px] grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px]">
+          <dl className="flex-1 min-w-[240px] grid grid-cols-1 sm:grid-cols-2 gap-3 text-secundario">
             <div>
-              <dt className="text-[9px] text-slate-500 dark:text-gray-400 uppercase font-bold">Ingresos · Consumos</dt>
-              <dd className="font-extrabold text-slate-900 dark:text-white">${ingresosCostos.ingresos.toLocaleString('es-CL')}</dd>
-              <dd className="text-[10px] text-slate-500 dark:text-gray-400">{ingresosCostos.modulosIngresos.join(' + ')}</dd>
+              <dt className="text-pequeno text-tinta-secundaria uppercase">Ingresos · Consumos</dt>
+              <dd className="text-etiqueta text-tinta-principal">${ingresosCostos.ingresos.toLocaleString('es-CL')}</dd>
+              <dd className="text-pequeno text-tinta-secundaria">{ingresosCostos.modulosIngresos.join(' + ')}</dd>
             </div>
             <div>
-              <dt className="text-[9px] text-slate-500 dark:text-gray-400 uppercase font-bold">Costos · Facturación</dt>
-              <dd className="font-extrabold text-slate-900 dark:text-white">${ingresosCostos.costos.toLocaleString('es-CL')}</dd>
-              <dd className="text-[10px] text-slate-500 dark:text-gray-400">{ingresosCostos.modulosCostos.join(' + ')}</dd>
+              <dt className="text-pequeno text-tinta-secundaria uppercase">Costos · Facturación</dt>
+              <dd className="text-etiqueta text-tinta-principal">${ingresosCostos.costos.toLocaleString('es-CL')}</dd>
+              <dd className="text-pequeno text-tinta-secundaria">{ingresosCostos.modulosCostos.join(' + ')}</dd>
             </div>
           </dl>
 
-          <p className="w-full text-[10px] text-slate-500 dark:text-gray-400">
+          <p className="w-full text-pequeno text-tinta-secundaria">
             Montos imputados del período abierto. No incluye Bodega (inventario).
           </p>
         </div>
@@ -251,17 +251,17 @@ const ResumenPeriodoAbierto = () => {
             {/* Monto Total del grupo */}
             <div className="p-3.5 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
+                <p className="text-pequeno text-tinta-secundaria uppercase tracking-wider">
                   {grupo.grupoNombre} · Monto Total
                 </p>
-                <p className="text-xl font-extrabold text-slate-800 dark:text-white mt-0.5 tracking-tight">
+                <p className="text-numero-indicador text-tinta-principal mt-0.5">
                   ${grupo.montoTotal.toLocaleString('es-CL')}
                 </p>
-                <p className="text-[10px] text-slate-500 dark:text-gray-400 font-medium mt-1">
+                <p className="text-pequeno text-tinta-secundaria mt-1">
                   {grupo.desgloseModulos.map(m => m.moduloNombre).join(' + ')}
                 </p>
               </div>
-              <div className="p-2.5 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-700 dark:text-gray-200 rounded">
+              <div className="p-2.5 bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-tinta-principal rounded">
                 <DollarSign size={20} />
               </div>
             </div>
@@ -269,7 +269,7 @@ const ResumenPeriodoAbierto = () => {
             {/* Desglose interno del grupo (% sobre el total del propio grupo) */}
             <div className="px-4 py-2 border-b border-slate-200 dark:border-gray-700 flex items-center gap-2 bg-slate-50/60 dark:bg-gray-900/40">
               <Layers size={12} className="text-[#2383C2]" />
-              <h3 className="text-[10px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wider">
+              <h3 className="text-pequeno text-tinta-principal uppercase tracking-wider">
                 Desglose {grupo.grupoNombre}
               </h3>
             </div>
@@ -283,33 +283,33 @@ const ResumenPeriodoAbierto = () => {
                 return (
                   <div
                     key={item.moduloId}
-                    className="p-3 hover:bg-slate-50/80 dark:hover:bg-gray-800/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px]"
+                    className="p-3 hover:bg-slate-50/80 dark:hover:bg-gray-800/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-secundario"
                   >
                     {/* Nombre y Estado */}
                     <div className="flex items-center gap-3 min-w-[180px]">
                       <span className={`w-2.5 h-2.5 rounded-full ${item.color.bg} shrink-0`} />
                       <div>
-                        <h4 className="font-bold text-slate-800 dark:text-gray-100 uppercase tracking-tight">
+                        <h4 className="text-etiqueta text-tinta-principal uppercase tracking-tight">
                           {item.moduloNombre}
                         </h4>
                         <div className="mt-0.5">
                           {item.estado === 'ABIERTO' && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700">
+                            <span className="inline-flex items-center gap-1 text-pequeno text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700">
                               <CheckCircle2 size={9} /> Abierto
                             </span>
                           )}
                           {item.estado === 'REABIERTO' && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-700">
+                            <span className="inline-flex items-center gap-1 text-pequeno text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded border border-amber-300 dark:border-amber-700">
                               <AlertCircle size={9} /> Reabierto
                             </span>
                           )}
                           {item.estado === 'CERRADO' && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold text-slate-700 dark:text-gray-300 bg-slate-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-slate-300 dark:border-gray-600">
+                            <span className="inline-flex items-center gap-1 text-pequeno text-tinta-principal bg-slate-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-slate-300 dark:border-gray-600">
                               <Lock size={9} /> Cerrado
                             </span>
                           )}
                           {item.estado === 'SIN_INICIAR' && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-medium text-slate-400 dark:text-gray-600 bg-slate-50 dark:bg-gray-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-gray-800">
+                            <span className="inline-flex items-center gap-1 text-pequeno text-tinta-atenuada bg-slate-50 dark:bg-gray-900 px-1.5 py-0.5 rounded border border-slate-200 dark:border-gray-800">
                               <Clock size={9} /> Sin Iniciar
                             </span>
                           )}
@@ -319,9 +319,9 @@ const ResumenPeriodoAbierto = () => {
 
                     {/* Barra de Proporción dentro del grupo */}
                     <div className="flex-1 max-w-[140px] hidden md:block">
-                      <div className="flex justify-between text-[10px] text-slate-500 dark:text-gray-400 mb-1">
+                      <div className="flex justify-between text-pequeno text-tinta-secundaria mb-1">
                         <span>Particip.</span>
-                        <span className="font-bold text-slate-700 dark:text-gray-200">{porcentaje}%</span>
+                        <span className="text-etiqueta text-tinta-principal">{porcentaje}%</span>
                       </div>
                       <div className="w-full bg-slate-100 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
                         <div
@@ -334,8 +334,8 @@ const ResumenPeriodoAbierto = () => {
                     {/* Monto */}
                     <div className="flex items-center justify-end text-right">
                       <div className="w-28">
-                        <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold">Monto Imputado</p>
-                        <p className="font-extrabold text-slate-900 dark:text-white">
+                        <p className="text-pequeno text-tinta-atenuada uppercase">Monto Imputado</p>
+                        <p className="text-etiqueta text-tinta-principal">
                           ${item.monto.toLocaleString('es-CL')}
                         </p>
                       </div>
@@ -370,7 +370,7 @@ const ResumenPeriodoAbierto = () => {
             >
               <div className="px-4 py-2.5 border-b border-slate-200 dark:border-gray-700 flex items-center gap-2 bg-slate-50 dark:bg-gray-900">
                 <History size={14} className="text-[#2383C2]" />
-                <h3 className="text-[11px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wider">
+                <h3 className="text-etiqueta text-tinta-principal uppercase tracking-wider">
                   {grupo.grupoNombre} · {periodoAbiertoInfo.mesNombre} vs. {mesAnteriorInfo ? `${mesAnteriorInfo.nombre} ${mesAnteriorInfo.anio}` : '—'}
                 </h3>
               </div>
@@ -385,39 +385,39 @@ const ResumenPeriodoAbierto = () => {
                   return (
                     <div
                       key={item.moduloId}
-                      className="p-3 hover:bg-slate-50/80 dark:hover:bg-gray-800/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px]"
+                      className="p-3 hover:bg-slate-50/80 dark:hover:bg-gray-800/60 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-secundario"
                     >
                       <div className="flex items-center gap-3 min-w-[150px]">
                         <span className={`w-2.5 h-2.5 rounded-full ${item.color.bg} shrink-0`} />
-                        <h4 className="font-bold text-slate-800 dark:text-gray-100 uppercase tracking-tight">
+                        <h4 className="text-etiqueta text-tinta-principal uppercase tracking-tight">
                           {item.moduloNombre}
                         </h4>
                       </div>
 
                       <div className="flex items-center justify-end gap-6 text-right">
                         <div className="w-24">
-                          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold">Mes Actual</p>
-                          <p className="font-extrabold text-slate-900 dark:text-white">
+                          <p className="text-pequeno text-tinta-atenuada uppercase">Mes Actual</p>
+                          <p className="text-etiqueta text-tinta-principal">
                             ${item.montoActual.toLocaleString('es-CL')}
                           </p>
                         </div>
 
                         <div className="w-24">
-                          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold">Mes Anterior</p>
-                          <p className="font-semibold text-slate-600 dark:text-gray-300">
+                          <p className="text-pequeno text-tinta-atenuada uppercase">Mes Anterior</p>
+                          <p className="text-etiqueta text-tinta-secundaria">
                             {enEspera ? '...' : `$${(item.montoAnterior ?? 0).toLocaleString('es-CL')}`}
                           </p>
                         </div>
 
                         <div className="w-28">
-                          <p className="text-[9px] text-slate-400 dark:text-gray-500 uppercase font-bold">Variación</p>
+                          <p className="text-pequeno text-tinta-atenuada uppercase">Variación</p>
                           {enEspera ? (
-                            <p className="text-[10px] text-slate-400 dark:text-gray-500 font-semibold">Cargando…</p>
+                            <p className="text-pequeno text-tinta-atenuada">Cargando…</p>
                           ) : sinDatoAnterior ? (
-                            <p className="text-[10px] text-slate-400 dark:text-gray-500 font-semibold">Sin datos del mes anterior</p>
+                            <p className="text-pequeno text-tinta-atenuada">Sin datos del mes anterior</p>
                           ) : (
-                            <p className={`inline-flex items-center gap-1 font-extrabold ${
-                              subiendo ? 'text-emerald-600 dark:text-emerald-400' : bajando ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-gray-400'
+                            <p className={`inline-flex items-center gap-1 text-etiqueta ${
+                              subiendo ? 'text-emerald-600 dark:text-emerald-400' : bajando ? 'text-rose-600 dark:text-rose-400' : 'text-tinta-secundaria'
                             }`}>
                               {subiendo && <ArrowUpRight size={13} />}
                               {bajando && <ArrowDownRight size={13} />}

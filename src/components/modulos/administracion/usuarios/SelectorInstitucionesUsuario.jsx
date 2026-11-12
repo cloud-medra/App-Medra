@@ -8,7 +8,7 @@ import { institucionesActivas, nombreVisible } from '../../maestros/institucione
 // ("inactiva") para poder quitarla.
 
 const CAJA = 'max-h-40 overflow-y-auto rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 p-2 flex flex-col gap-1';
-const OPCION = 'flex items-center gap-2 text-[12px] text-gray-700 dark:text-gray-200 cursor-pointer';
+const OPCION = 'flex items-center gap-2 text-normal text-tinta-principal cursor-pointer';
 
 const SelectorInstitucionesUsuario = ({ seleccionadas = [], onCambiar, disabled = false }) => {
   const { datos, cargado } = useCatalogo('instituciones');
@@ -19,23 +19,23 @@ const SelectorInstitucionesUsuario = ({ seleccionadas = [], onCambiar, disabled 
 
   return (
     <fieldset disabled={disabled}>
-      <legend className="block text-[11.5px] font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Instituciones</legend>
+      <legend className="block text-etiqueta text-tinta-principal mb-1.5">Instituciones</legend>
       {!cargado ? (
-        <p className="text-[11px] text-gray-400 dark:text-gray-500">Cargando instituciones…</p>
+        <p className="text-secundario text-tinta-atenuada">Cargando instituciones…</p>
       ) : opciones.length === 0 ? (
-        <p className="text-[11px] text-gray-500 dark:text-gray-400">No hay instituciones activas (Maestros → Instituciones).</p>
+        <p className="text-secundario text-tinta-secundaria">No hay instituciones activas (Maestros → Instituciones).</p>
       ) : (
         <div className={CAJA}>
           {opciones.map((i) => (
             <label key={i.id} className={OPCION} title={i.nombre}>
               <input type="checkbox" checked={seleccionadas.includes(i.id)} onChange={() => alternar(i.id)} className="accent-[#2383C2]" />
               <span className="truncate">{nombreVisible(i)}</span>
-              {i.activa === false && <span className="text-[10px] font-semibold uppercase text-red-600 dark:text-red-400">(inactiva)</span>}
+              {i.activa === false && <span className="text-pequeno uppercase text-red-600 dark:text-red-400">(inactiva)</span>}
             </label>
           ))}
         </div>
       )}
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+      <p className="text-secundario text-tinta-atenuada mt-1">
         Las que podrá elegir en el header. Sin ninguna marcada, ve todas las activas.
       </p>
     </fieldset>

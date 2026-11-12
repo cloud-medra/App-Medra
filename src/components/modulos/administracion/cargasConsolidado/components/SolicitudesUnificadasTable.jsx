@@ -86,9 +86,9 @@ const SolicitudesUnificadasTable = () => {
 
   return (
     <div className="flex-grow flex flex-col overflow-hidden">
-      <div className="px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-gray-700 bg-slate-50/60 dark:bg-gray-900/30 text-[10px]">
+      <div className="px-3 py-1.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-gray-700 bg-slate-50/60 dark:bg-gray-900/30 text-pequeno">
         <div className="flex items-center gap-3">
-          <span className="text-slate-500 dark:text-gray-400">{filas.length} fila{filas.length === 1 ? '' : 's'} · {seleccionados.size} seleccionado{seleccionados.size === 1 ? '' : 's'}</span>
+          <span className="text-tinta-secundaria">{filas.length} fila{filas.length === 1 ? '' : 's'} · {seleccionados.size} seleccionado{seleccionados.size === 1 ? '' : 's'}</span>
           <span className={`flex items-center gap-1 ${periodoImplantes ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
             {periodoImplantes ? <Unlock size={11} /> : <Lock size={11} />}
             Implantes: {periodoImplantes ? `${periodoImplantes.mes} ${periodoImplantes.anio}` : 'sin período abierto'}
@@ -106,7 +106,7 @@ const SolicitudesUnificadasTable = () => {
           type="button"
           onClick={handleExportarYMarcarSolicitado}
           disabled={exportando || seleccionados.size === 0}
-          className="h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded font-semibold flex items-center gap-1.5 transition text-[10.5px] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-7 px-3 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center gap-1.5 transition text-pequeno disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {exportando ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
           Exportar y Marcar Solicitado
@@ -129,14 +129,14 @@ const SolicitudesUnificadasTable = () => {
             type="button"
             onClick={restablecerAnchos}
             title="Restablecer ancho de columnas"
-            className="flex items-center gap-1 text-[9px] font-medium text-gray-400 hover:text-[#2383C2] dark:text-gray-500 dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
+            className="flex items-center gap-1 text-pequeno text-tinta-atenuada hover:text-[#2383C2] dark:hover:text-[#2383C2] transition px-1.5 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800"
           >
             <RotateCcw size={10} /> Restablecer columnas
           </button>
         </div>
 
         <table
-          className="text-left text-[10px] border-collapse"
+          className="text-left text-pequeno border-collapse"
           style={{ tableLayout: 'fixed', width: anchoTotalTabla, minWidth: anchoTotalTabla }}
         >
           <colgroup>
@@ -145,7 +145,7 @@ const SolicitudesUnificadasTable = () => {
             ))}
           </colgroup>
           <thead className="bg-slate-50 dark:bg-gray-900/60 sticky top-[22px] z-10">
-            <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+            <tr className="text-tinta-secundaria uppercase text-pequeno">
               {COLUMNAS.map(col => (
                 <th
                   key={col.key}
@@ -167,13 +167,13 @@ const SolicitudesUnificadasTable = () => {
           <tbody>
             {cargando ? (
               <tr>
-                <td colSpan={COLUMNAS.length} className="px-3 py-6 text-center text-slate-400 dark:text-gray-500">
+                <td colSpan={COLUMNAS.length} className="px-3 py-6 text-center text-tinta-atenuada">
                   <Loader2 size={14} className="animate-spin inline mr-1.5" /> Cargando candidatos...
                 </td>
               </tr>
             ) : filas.length === 0 ? (
               <tr>
-                <td colSpan={COLUMNAS.length} className="px-3 py-6 text-center text-slate-400 dark:text-gray-500">
+                <td colSpan={COLUMNAS.length} className="px-3 py-6 text-center text-tinta-atenuada">
                   Sin registros listos para solicitar
                 </td>
               </tr>
@@ -201,56 +201,56 @@ const SolicitudesUnificadasTable = () => {
                       />
                     </td>
                     <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60">
-                      <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold rounded border uppercase ${ORIGEN_BADGE_STYLE[fila.origen]}`}>
+                      <span className={`inline-block px-1.5 py-0.5 text-pequeno rounded border uppercase ${ORIGEN_BADGE_STYLE[fila.origen]}`}>
                         {ORIGEN_LABEL[fila.origen]}
                       </span>
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-semibold text-[#2383C2] whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-etiqueta text-[#2383C2] whitespace-nowrap overflow-hidden text-ellipsis">
                       {fila.gestionId}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal whitespace-nowrap overflow-hidden text-ellipsis">
                       {fila.paciente}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {fila.medico}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {formatearFechaTabla(fila.fecha)}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate">
                       {fila.empresa}
                     </td>
-                    <td className={`px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 whitespace-nowrap overflow-hidden text-ellipsis ${fila.esFilaGuia ? 'text-slate-500 dark:text-gray-400 italic' : 'font-num text-emerald-600 dark:text-emerald-400'}`}>
+                    <td className={`px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 whitespace-nowrap overflow-hidden text-ellipsis ${fila.esFilaGuia ? 'text-tinta-secundaria italic' : 'text-numero-tabla text-emerald-600 dark:text-emerald-400'}`}>
                       {fila.codigo}
                     </td>
                     <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 truncate" title={fila.descripcion}>
                       {fila.descripcion}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-slate-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {fila.cantidad}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 font-semibold whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 text-etiqueta whitespace-nowrap overflow-hidden text-ellipsis">
                       ${Number(fila.precio || 0).toLocaleString('es-CL')}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {fila.atributo}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {formatearFechaDeTimestamp(fila.fechaRegistro)}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {formatearFechaTabla(fila.fechaCarga)}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {fila.numGuia}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {fechaIngresoHoy}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {fila.lote}
                     </td>
-                    <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 whitespace-nowrap overflow-hidden text-ellipsis">
+                    <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60 text-tinta-secundaria whitespace-nowrap overflow-hidden text-ellipsis">
                       {fila.origen === ORIGEN.CONSIGNACION ? fila.vencimiento : formatearFechaTabla(fila.vencimiento)}
                     </td>
                   </tr>

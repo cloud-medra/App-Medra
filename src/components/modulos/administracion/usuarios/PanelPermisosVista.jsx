@@ -13,12 +13,12 @@ import { estadoMarcadoVista, esColumna } from './permisosGranularesUtils';
 
 const Casilla = ({ checked, disabled, onChange, origen, children }) => (
   <label
-    className={`flex items-start gap-2 text-[11px] leading-snug px-2 py-1.5 rounded-md border transition-colors ${
+    className={`flex items-start gap-2 text-secundario px-2 py-1.5 rounded-md border transition-colors ${
       disabled
-        ? 'border-transparent text-gray-300 dark:text-gray-600 cursor-not-allowed'
+        ? 'border-transparent text-tinta-atenuada cursor-not-allowed'
         : checked
-          ? 'border-[#2383C2]/20 bg-[#2383C2]/5 dark:bg-blue-950/30 text-gray-700 dark:text-gray-200 cursor-pointer'
-          : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
+          ? 'border-[#2383C2]/20 bg-[#2383C2]/5 dark:bg-blue-950/30 text-tinta-principal cursor-pointer'
+          : 'border-gray-200 dark:border-gray-700 text-tinta-secundaria hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
     }`}
   >
     <input type="checkbox" disabled={disabled} checked={checked} onChange={onChange} className="accent-[#2383C2] mt-0.5 shrink-0" />
@@ -32,7 +32,7 @@ const BotonTexto = ({ onClick, disabled, children }) => (
     type="button"
     onClick={onClick}
     disabled={disabled}
-    className="text-[10.5px] font-semibold text-[#2383C2] hover:underline disabled:text-gray-300 dark:disabled:text-gray-600 disabled:no-underline disabled:cursor-default"
+    className="text-pequeno text-[#2383C2] hover:underline disabled:text-tinta-atenuada disabled:no-underline disabled:cursor-default"
   >
     {children}
   </button>
@@ -51,19 +51,19 @@ const BloqueColumnas = ({ columnas, seccionEstado, deshabilitada, onAlternar, on
         <button
           type="button"
           onClick={() => setAbierto((v) => !v)}
-          className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 hover:text-[#2383C2] mr-auto"
+          className="flex items-center gap-1.5 text-etiqueta text-tinta-secundaria hover:text-[#2383C2] mr-auto"
         >
           {abierto ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
           <Columns3 size={13} className="text-gray-400" />
           Columnas de la tabla
-          <span className={`ml-1 text-[10px] font-bold px-1.5 rounded-full ${visibles === columnas.length ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}>
+          <span className={`ml-1 text-pequeno px-1.5 rounded-full ${visibles === columnas.length ? 'bg-gray-200 dark:bg-gray-700 text-tinta-secundaria' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'}`}>
             {visibles}/{columnas.length}
           </span>
         </button>
         <BotonTexto disabled={deshabilitada || visibles === columnas.length} onClick={() => onEstablecer(columnas.map(([k]) => k), true)}>
           Todas
         </BotonTexto>
-        <span className="text-gray-300 dark:text-gray-600 text-[10px]">·</span>
+        <span className="text-tinta-atenuada text-pequeno">·</span>
         <BotonTexto disabled={deshabilitada || visibles === 0} onClick={() => onEstablecer(columnas.map(([k]) => k), false)}>
           Ninguna
         </BotonTexto>
@@ -93,7 +93,7 @@ const PanelPermisosVista = ({
   if (!config || !vistaPermisos) return null;
   const secciones = Object.entries(config.sections || {});
   if (secciones.length === 0) {
-    return <p className="text-[11px] text-gray-400 dark:text-gray-500">Esta vista no tiene opciones adicionales: basta con habilitarla.</p>;
+    return <p className="text-secundario text-tinta-atenuada">Esta vista no tiene opciones adicionales: basta con habilitarla.</p>;
   }
 
   return (
@@ -110,7 +110,7 @@ const PanelPermisosVista = ({
 
           return (
             <div key={sectionKey} className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3">
-              <label className="flex items-center gap-2 text-[12px] font-semibold text-gray-800 dark:text-gray-100 cursor-pointer">
+              <label className="flex items-center gap-2 text-etiqueta text-tinta-principal cursor-pointer">
                 <input
                   type="checkbox"
                   checked={seccionEstado.visible}
@@ -118,7 +118,7 @@ const PanelPermisosVista = ({
                   className="accent-[#2383C2]"
                 />
                 {limpiarLabel(section.label).replace(/^Secci[oó]n:\s*/i, '')}
-                {deshabilitada && <span className="text-[10px] font-normal text-gray-400 dark:text-gray-500">(oculta)</span>}
+                {deshabilitada && <span className="text-pequeno text-tinta-atenuada">(oculta)</span>}
                 <MarcaOrigen origen={origen?.(sectionKey)} />
               </label>
 

@@ -47,11 +47,11 @@ const Contador = ({ marcados, total, className = '' }) => {
   const ninguno = marcados === 0;
   return (
     <span
-      className={`inline-flex items-center text-[10.5px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full ${
+      className={`inline-flex items-center text-pequeno tabular-nums px-1.5 py-0.5 rounded-full ${
         completo
           ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
           : ninguno
-            ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
+            ? 'bg-gray-100 dark:bg-gray-800 text-tinta-atenuada'
             : 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
       } ${className}`}
     >
@@ -128,10 +128,10 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
               onChange={(e) => setBusqueda(e.target.value)}
               placeholder="Buscar módulo, vista o permiso…"
               aria-label="Buscar permisos"
-              className="w-full h-8 pl-8 pr-7 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-[12px] text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2] focus:bg-white dark:focus:bg-gray-900"
+              className="w-full h-8 pl-8 pr-7 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-normal text-tinta-principal focus:outline-none focus:border-[#2383C2] focus:bg-white dark:focus:bg-gray-900"
             />
             {busqueda && (
-              <button type="button" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <button type="button" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda" className="absolute right-2 top-1/2 -translate-y-1/2 text-tinta-atenuada hover:text-tinta-secundaria">
                 <X size={13} />
               </button>
             )}
@@ -139,7 +139,7 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
         </div>
         <nav className="flex-1 overflow-y-auto p-2 flex flex-col gap-0.5" aria-label="Módulos">
           {modulosFiltrados.length === 0 && (
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 px-2 py-6 text-center">Sin resultados para “{busqueda}”.</p>
+            <p className="text-secundario text-tinta-atenuada px-2 py-6 text-center">Sin resultados para “{busqueda}”.</p>
           )}
           {modulosFiltrados.map(([key, modulo]) => {
             const c = contarPermisosModulo(key, modulo, estado, COMPONENT_MAPS);
@@ -159,16 +159,16 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
               >
                 <CuadritoIcono icon={modulo.icon} color={modulo.color} />
                 <span className="flex-1 min-w-0">
-                  <span className={`block text-[12px] truncate ${activo ? 'font-semibold text-[#2383C2] dark:text-blue-400' : 'font-medium text-gray-700 dark:text-gray-200'}`}>
+                  <span className={`block text-normal truncate ${activo ? 'text-[#2383C2] dark:text-blue-400' : 'text-tinta-principal'}`}>
                     {modulo.label}
                   </span>
-                  <span className="block text-[10.5px] text-gray-400 dark:text-gray-500">
+                  <span className="block text-pequeno text-tinta-atenuada">
                     {vistas}/{modulo.subItems.length} vistas
                   </span>
                 </span>
                 <span className="text-right shrink-0">
                   <Contador marcados={c.marcados} total={c.total} />
-                  <span className="block text-[9.5px] text-gray-400 dark:text-gray-500 mt-0.5">permisos</span>
+                  <span className="block text-pequeno text-tinta-atenuada mt-0.5">permisos</span>
                 </span>
               </button>
             );
@@ -179,7 +179,7 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
       {/* --- Columna derecha: contenido del módulo --- */}
       <section className="min-h-0 overflow-y-auto pr-1">
         {accesoTotalPorRol && (
-          <div className="mb-3 flex items-center gap-2 rounded-lg border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/30 px-3 py-2 text-[11.5px] text-blue-800 dark:text-blue-300">
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-950/30 px-3 py-2 text-secundario text-blue-800 dark:text-blue-300">
             <ShieldCheck size={15} className="shrink-0" />
             Este rol tiene acceso total al sistema: los permisos de abajo solo se aplican si se le asigna otro rol.
           </div>
@@ -195,19 +195,19 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
               <div className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3">
                 <CuadritoIcono icon={modulo.icon} color={modulo.color} />
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-[14px] font-semibold text-gray-800 dark:text-gray-100">{modulo.label}</h3>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  <h3 className="text-titulo-seccion text-tinta-principal">{modulo.label}</h3>
+                  <p className="text-secundario text-tinta-secundaria">
                     {seleccionadas.length} de {modulo.subItems.length} vistas habilitadas · {c.marcados} de {c.total} permisos
                   </p>
                 </div>
-                <label className="flex items-center gap-2 text-[11.5px] font-medium text-gray-700 dark:text-gray-200 cursor-pointer select-none">
+                <label className="flex items-center gap-2 text-secundario text-tinta-principal cursor-pointer select-none">
                   <input type="checkbox" checked={completo} onChange={() => handleModulo(moduloKey, modulo.subItems)} className="accent-[#2383C2]" />
                   Habilitar todo el módulo
                 </label>
               </div>
 
               {vistas.length === 0 && (
-                <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center py-6">Ninguna vista de este módulo coincide con la búsqueda.</p>
+                <p className="text-secundario text-tinta-atenuada text-center py-6">Ninguna vista de este módulo coincide con la búsqueda.</p>
               )}
 
               {vistas.map((sub) => {
@@ -236,11 +236,11 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
                         className="flex-1 min-w-0 flex items-center gap-2 text-left disabled:cursor-default group"
                       >
                         <CuadritoIcono icon={sub.icon} color={sub.color} tamano="sm" className={incluida ? '' : 'grayscale opacity-50'} />
-                        <span className={`text-[12.5px] truncate ${incluida ? 'font-semibold text-gray-800 dark:text-gray-100 group-enabled:group-hover:text-[#2383C2]' : 'text-gray-400 dark:text-gray-500'}`}>
+                        <span className={`text-normal truncate ${incluida ? 'text-tinta-principal group-enabled:group-hover:text-[#2383C2]' : 'text-tinta-atenuada'}`}>
                           {sub.label}
                         </span>
                         {procesos.length > 0 && incluida && (
-                          <span className="text-[10.5px] text-gray-400 dark:text-gray-500 shrink-0">
+                          <span className="text-pequeno text-tinta-atenuada shrink-0">
                             {procesos.filter(([p]) => estado.permisosGranulares[p]).length}/{procesos.length} pestañas
                           </span>
                         )}
@@ -248,9 +248,9 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
                       <MarcaOrigen origen={origen?.(claveMenu(moduloKey, path))} />
                       {incluida && insigniaVista?.(path)}
                       {configurable && <Contador marcados={cv.marcados} total={cv.total} />}
-                      {!configurable && <span className="text-[10.5px] text-gray-400 dark:text-gray-500">Sin opciones adicionales</span>}
+                      {!configurable && <span className="text-pequeno text-tinta-atenuada">Sin opciones adicionales</span>}
                       {incluida && configurable && (
-                        <button type="button" onClick={() => alternarAbierta(path)} aria-label={abierta ? 'Contraer' : 'Expandir'} className="text-gray-400 hover:text-[#2383C2]">
+                        <button type="button" onClick={() => alternarAbierta(path)} aria-label={abierta ? 'Contraer' : 'Expandir'} className="text-tinta-atenuada hover:text-[#2383C2]">
                           {abierta ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                         </button>
                       )}
@@ -262,7 +262,7 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
 
                         {procesos.length > 0 && (
                           <div className="flex flex-col gap-2">
-                            <span className="text-[10.5px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 flex items-center gap-1.5">
+                            <span className="text-pequeno uppercase tracking-wide text-tinta-atenuada flex items-center gap-1.5">
                               <Layers size={12} /> Pestañas
                             </span>
                             {procesos.map(([pPath, pConfig]) => {
@@ -284,14 +284,14 @@ const EditorPermisos = ({ estado, onCambiar, insigniaVista, pieVista, onAbrirVis
                                       disabled={!pIncluida || !pTieneSecciones}
                                       onClick={() => alternarAbierta(pPath)}
                                       aria-expanded={pAbierta}
-                                      className={`flex-1 min-w-0 text-left text-[12px] truncate disabled:cursor-default ${pIncluida ? 'font-medium text-gray-700 dark:text-gray-200 hover:text-[#2383C2]' : 'text-gray-400 dark:text-gray-500'}`}
+                                      className={`flex-1 min-w-0 text-left text-normal truncate disabled:cursor-default ${pIncluida ? 'text-tinta-principal hover:text-[#2383C2]' : 'text-tinta-atenuada'}`}
                                     >
                                       {pConfig.label.replace(/^Pestaña:\s*/, '')}
                                     </button>
                                     <MarcaOrigen origen={origen?.(claveVista(pPath))} />
                                     {pIncluida && insigniaVista?.(pPath)}
                                     {pTieneSecciones && pIncluida && (
-                                      <button type="button" onClick={() => alternarAbierta(pPath)} aria-label={pAbierta ? 'Contraer' : 'Expandir'} className="text-gray-400 hover:text-[#2383C2]">
+                                      <button type="button" onClick={() => alternarAbierta(pPath)} aria-label={pAbierta ? 'Contraer' : 'Expandir'} className="text-tinta-atenuada hover:text-[#2383C2]">
                                         {pAbierta ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
                                       </button>
                                     )}

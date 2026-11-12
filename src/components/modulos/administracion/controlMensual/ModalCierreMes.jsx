@@ -10,9 +10,9 @@ import { validarCierreMes } from './validarCierreMes';
 // así cada cierre empieza desde el paso 1 con los campos vacíos.
 const PASO = { CONFIRMAR: 'confirmar', ESCRIBIR: 'escribir', PROCESANDO: 'procesando', EXITO: 'exito', ERROR: 'error' };
 
-const claseInput = 'w-full p-1.5 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 text-[12px] font-num outline-none focus:border-[#2383C2] disabled:opacity-50';
-const claseBtnSecundario = 'px-3 py-1 bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-gray-300 rounded text-[10px] font-bold hover:bg-slate-300 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
-const claseBtnPrimario = 'px-3 py-1 bg-[#2383C2] hover:bg-blue-600 text-white rounded text-[10px] font-bold transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+const claseInput = 'w-full p-1.5 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal text-numero-tabla outline-none focus:border-[#2383C2] disabled:opacity-50';
+const claseBtnSecundario = 'px-3 py-1 bg-slate-200 dark:bg-gray-700 text-tinta-principal rounded text-pequeno hover:bg-slate-300 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+const claseBtnPrimario = 'px-3 py-1 bg-[#2383C2] hover:bg-blue-600 text-white rounded text-pequeno transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
 
 const ModalCierreMes = ({ solicitud, anio, onCancelar, onConfirmar }) => {
   const [paso, setPaso] = useState(PASO.CONFIRMAR);
@@ -66,15 +66,15 @@ const ModalCierreMes = ({ solicitud, anio, onCancelar, onConfirmar }) => {
       >
         <div className="flex items-center gap-2 text-[#2383C2] border-b border-slate-200 dark:border-gray-700 pb-2">
           <Lock size={18} />
-          <h3 id="titulo-cierre-mes" className="text-[13px] font-bold uppercase">Cerrar Período de Imputación</h3>
+          <h3 id="titulo-cierre-mes" className="text-subtitulo">Cerrar período de imputación</h3>
         </div>
 
         {paso === PASO.CONFIRMAR && (
           <>
-            <p className="text-[12px] text-slate-700 dark:text-gray-200 font-semibold">
+            <p className="text-etiqueta text-tinta-principal">
               ¿Deseas cerrar el mes de {periodoTexto}?
             </p>
-            <p className="text-[11px] text-slate-600 dark:text-gray-300">
+            <p className="text-secundario text-tinta-secundaria">
               Módulo(s): <strong>{nombresModulos}</strong>. Una vez cerrado, no se podrán ingresar ni modificar documentos en el período.
             </p>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-gray-700">
@@ -86,11 +86,11 @@ const ModalCierreMes = ({ solicitud, anio, onCancelar, onConfirmar }) => {
 
         {(paso === PASO.ESCRIBIR || procesando) && (
           <form onSubmit={confirmarCierre} autoComplete="off" className="space-y-3">
-            <p className="text-[11px] text-slate-600 dark:text-gray-300">
+            <p className="text-secundario text-tinta-secundaria">
               Para confirmar, escribe el año y el mes (número) del período que vas a cerrar.
             </p>
             <div className="grid grid-cols-2 gap-2">
-              <label className="text-[10px] font-bold text-slate-600 dark:text-gray-300 space-y-1">
+              <label className="text-pequeno text-tinta-secundaria space-y-1">
                 <span>Año</span>
                 <input
                   type="text"
@@ -105,7 +105,7 @@ const ModalCierreMes = ({ solicitud, anio, onCancelar, onConfirmar }) => {
                   className={claseInput}
                 />
               </label>
-              <label className="text-[10px] font-bold text-slate-600 dark:text-gray-300 space-y-1">
+              <label className="text-pequeno text-tinta-secundaria space-y-1">
                 <span>Mes</span>
                 <input
                   type="text"
@@ -123,13 +123,13 @@ const ModalCierreMes = ({ solicitud, anio, onCancelar, onConfirmar }) => {
             </div>
 
             {error && (
-              <p role="alert" className="flex items-start gap-1.5 text-[11px] text-red-600 dark:text-red-400">
+              <p role="alert" className="flex items-start gap-1.5 text-secundario text-red-600 dark:text-red-400">
                 <AlertCircle size={13} className="shrink-0 mt-px" /> {error}
               </p>
             )}
 
             {procesando && (
-              <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-gray-300">
+              <div className="flex items-center gap-2 text-secundario text-tinta-secundaria">
                 <Spinner size="sm" />
                 <span>Cerrando mes {periodoTexto}...</span>
               </div>
@@ -146,7 +146,7 @@ const ModalCierreMes = ({ solicitud, anio, onCancelar, onConfirmar }) => {
           <>
             <p
               role={paso === PASO.ERROR ? 'alert' : 'status'}
-              className={`flex items-start gap-1.5 text-[12px] font-semibold ${paso === PASO.EXITO ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
+              className={`flex items-start gap-1.5 text-etiqueta ${paso === PASO.EXITO ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
             >
               {paso === PASO.EXITO ? <CheckCircle size={15} className="shrink-0" /> : <AlertCircle size={15} className="shrink-0" />}
               {mensajeResultado}

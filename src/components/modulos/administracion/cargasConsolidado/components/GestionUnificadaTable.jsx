@@ -38,9 +38,9 @@ const GestionUnificadaTable = ({ filas, onAbrirDetalle }) => {
 
   return (
     <div className="flex-grow overflow-auto">
-      <table className="text-left text-[10.5px] border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
+      <table className="text-left text-pequeno border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
         <thead className="bg-slate-50 dark:bg-gray-900/60 sticky top-0 z-10">
-          <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+          <tr className="text-tinta-secundaria uppercase text-pequeno">
             {COLUMNAS.map(col => (
               <th
                 key={col.key}
@@ -56,7 +56,7 @@ const GestionUnificadaTable = ({ filas, onAbrirDetalle }) => {
         <tbody>
           {filas.length === 0 ? (
             <tr>
-              <td colSpan={COLUMNAS.length} className="px-3 py-6 text-center text-slate-400 dark:text-gray-500">
+              <td colSpan={COLUMNAS.length} className="px-3 py-6 text-center text-tinta-atenuada">
                 Sin registros para los filtros actuales
               </td>
             </tr>
@@ -69,43 +69,43 @@ const GestionUnificadaTable = ({ filas, onAbrirDetalle }) => {
                 title="Doble clic para ver el detalle"
               >
                 <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60">
-                  <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold rounded border uppercase ${ORIGEN_BADGE_STYLE[fila.origen]}`}>
+                  <span className={`inline-block px-1.5 py-0.5 text-pequeno rounded border uppercase ${ORIGEN_BADGE_STYLE[fila.origen]}`}>
                     {ORIGEN_LABEL[fila.origen]}
                   </span>
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-semibold text-[#2383C2] truncate">
+                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-etiqueta text-[#2383C2] truncate">
                   {fila.gestionId}
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate">
+                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate">
                   {fila.nombre}
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">
+                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">
                   {formatearFechaTabla(fila.fecha)}
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">
+                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate">
                   {fila.empresa}
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">
+                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate">
                   {fila.centro}
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">
+                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate">
                   {fila.atributo}
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">
+                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate">
                   {fila.estado === ESTADO_FINALIZADO
-                    ? <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${ESTADO_BADGE.FINALIZADO}`}>{fila.estado}</span>
+                    ? <span className={`text-pequeno px-1.5 py-0.5 rounded-full uppercase ${ESTADO_BADGE.FINALIZADO}`}>{fila.estado}</span>
                     : fila.estado}
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 font-medium">
+                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400">
                   {fila.costo ? `$${Number(fila.costo).toLocaleString('es-CL')}` : '-'}
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">
+                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">
                   {fila.solicitud}
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300" title="Período contable — puede no coincidir con la fecha">
+                <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria" title="Período contable — puede no coincidir con la fecha">
                   {formatearPeriodo(fila.periodoAnio, fila.periodoMes)}
                 </td>
-                <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">
+                <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate">
                   {fila.registradoPor}
                 </td>
               </tr>

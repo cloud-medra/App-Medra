@@ -308,7 +308,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
         onSeguir={() => setConfirmarSalida(false)}
       />
       <MarcoEdicionUsuario
-        migas={<><span className="uppercase tracking-wider font-semibold">Usuarios</span><span>/</span><span>Editar acceso</span></>}
+        migas={<><span className="uppercase tracking-wider text-etiqueta">Usuarios</span><span>/</span><span>Editar acceso</span></>}
         nombre={datos.nombreCompleto || usuario.nombreCompleto}
         fotoUrl={usuario.fotoPerfilUrl}
         detalle={usuario.email}
@@ -333,7 +333,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
             label: 'Permisos',
             icon: KeyRound,
             badge: pendientes.size > 0 && (
-              <span className="ml-1 text-[10px] font-bold px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" title="Vistas pendientes de revisión">
+              <span className="ml-1 text-pequeno px-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400" title="Vistas pendientes de revisión">
                 {pendientes.size}
               </span>
             ),
@@ -382,7 +382,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
                       <div className="flex-1 min-w-0"><CentroSelect todos value={datos.centroCostoId} onChange={(c) => cambiarCentro(c.id)} placeholder="Sin centro de costo" disabled={!plantillasCargadas} /></div>
                       {datos.centroCostoId && (
                         <button type="button" onClick={() => cambiarCentro(null)} title="Quitar centro de costo" aria-label="Quitar centro de costo"
-                          className="h-7 w-7 shrink-0 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 text-gray-500 hover:text-red-600 hover:border-red-300">
+                          className="h-7 w-7 shrink-0 inline-flex items-center justify-center rounded border border-gray-300 dark:border-gray-600 text-tinta-secundaria hover:text-red-600 hover:border-red-300">
                           <X size={13} />
                         </button>
                       )}
@@ -415,9 +415,9 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
 
               <Tarjeta titulo="Resumen de acceso" descripcion="Según los permisos actuales (incluye cambios sin guardar).">
                 {externo ? (
-                  <p className="text-[12px] text-gray-600 dark:text-gray-300">Usuario externo: sin módulos internos. En la pestaña Permisos se le asigna lo que verá de su empresa.</p>
+                  <p className="text-normal text-tinta-secundaria">Usuario externo: sin módulos internos. En la pestaña Permisos se le asigna lo que verá de su empresa.</p>
                 ) : accesoTotal ? (
-                  <p className="text-[12px] text-gray-600 dark:text-gray-300">Este rol tiene acceso total al sistema.</p>
+                  <p className="text-normal text-tinta-secundaria">Este rol tiene acceso total al sistema.</p>
                 ) : (
                   <dl className="grid grid-cols-2 gap-3">
                     {[
@@ -428,10 +428,10 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
                       ...(datos.centroCostoId ? [{ label: 'Personalizados', valor: `+${nExcepciones.agregados} / −${nExcepciones.quitados}`, icon: SlidersHorizontal, tono: nExcepciones.agregados + nExcepciones.quitados ? 'text-amber-600' : '' }] : []),
                     ].map((k) => (
                       <div key={k.label} className="rounded-md border border-gray-100 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-900/40 px-3 py-2.5">
-                        <dt className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                        <dt className="flex items-center gap-1.5 text-pequeno uppercase tracking-wide text-tinta-atenuada">
                           <k.icon size={12} /> {k.label}
                         </dt>
-                        <dd className={`text-[20px] font-semibold tabular-nums text-gray-800 dark:text-gray-100 ${k.tono || ''}`}>{k.valor}</dd>
+                        <dd className={`text-numero-indicador text-tinta-principal ${k.tono || ''}`}>{k.valor}</dd>
                       </div>
                     ))}
                   </dl>
@@ -440,7 +440,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
             </div>
           </div>
         ) : !plantillasCargadas ? (
-          <div className="h-full flex items-center justify-center text-[12px] text-gray-500 gap-2">
+          <div className="h-full flex items-center justify-center text-normal text-tinta-secundaria gap-2">
             {errorPlantillas ? 'No se pudieron cargar las plantillas de permisos.' : <><Spinner size="sm" /> Cargando plantillas de permisos…</>}
           </div>
         ) : (
@@ -463,7 +463,7 @@ const EditarUsuario = ({ usuario, usuarios = [], onVolver, onIrAPermisosCentro }
             accesoTotalPorRol={accesoTotal}
             origen={origen}
             insigniaVista={(path) => (pendientes.has(path) ? (
-              <span title="Recién habilitada con acceso total: revisa sus permisos" className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 shrink-0">
+              <span title="Recién habilitada con acceso total: revisa sus permisos" className="inline-flex items-center gap-1 text-pequeno px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 shrink-0">
                 <CircleDashed size={10} /> Pendiente de revisión
               </span>
             ) : null)}

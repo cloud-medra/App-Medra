@@ -9,13 +9,13 @@ import { administradoresDelCentro } from '../../../../../functions/solicitudes/d
 // Siempre las reciben, además, los desarrolladores.
 
 const CAJA = 'max-h-40 overflow-y-auto rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 p-2 flex flex-col gap-1';
-const OPCION = 'flex items-center gap-2 text-[12px] text-gray-700 dark:text-gray-200 cursor-pointer';
+const OPCION = 'flex items-center gap-2 text-normal text-tinta-principal cursor-pointer';
 
 export const CentrosAdministrados = ({ centros, seleccionados, onCambiar }) => {
   const alternar = (id) => onCambiar(seleccionados.includes(id) ? seleccionados.filter((c) => c !== id) : [...seleccionados, id]);
   return (
     <fieldset>
-      <legend className="block text-[11.5px] font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Centros que administra</legend>
+      <legend className="block text-etiqueta text-tinta-principal mb-1.5">Centros que administra</legend>
       <div className={CAJA}>
         {centros.map((c) => (
           <label key={c.id} className={OPCION}>
@@ -24,7 +24,7 @@ export const CentrosAdministrados = ({ centros, seleccionados, onCambiar }) => {
           </label>
         ))}
       </div>
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+      <p className="text-secundario text-tinta-atenuada mt-1">
         Recibe en Alertas las solicitudes de los usuarios de estos centros y puede aprobarlas o rechazarlas.
       </p>
     </fieldset>
@@ -39,13 +39,13 @@ export const AdministradoresAsignados = ({ usuarios, centroId, asignados, todos,
   });
   return (
     <fieldset>
-      <legend className="block text-[11.5px] font-semibold text-gray-700 dark:text-gray-300 mb-1.5">Administradores asignados</legend>
+      <legend className="block text-etiqueta text-tinta-principal mb-1.5">Administradores asignados</legend>
       {!centroId ? (
-        <p className="text-[11px] text-amber-700 dark:text-amber-400">Asígnale un centro de costo para elegir sus administradores.</p>
+        <p className="text-secundario text-amber-700 dark:text-amber-400">Asígnale un centro de costo para elegir sus administradores.</p>
       ) : (
         <>
           <div className={CAJA}>
-            <label className={`${OPCION} font-semibold`}>
+            <label className={`${OPCION} text-etiqueta`}>
               <input type="checkbox" checked={todos} onChange={(e) => onCambiar({ administradoresAsignados: [], todosLosAdministradoresDelCentro: e.target.checked })} className="accent-[#2383C2]" />
               Todos los administradores del centro
             </label>
@@ -55,9 +55,9 @@ export const AdministradoresAsignados = ({ usuarios, centroId, asignados, todos,
                 {a.nombreCompleto || a.email}
               </label>
             ))}
-            {!disponibles.length && <span className="text-[11px] text-gray-400">Este centro no tiene administradores activos.</span>}
+            {!disponibles.length && <span className="text-secundario text-tinta-atenuada">Este centro no tiene administradores activos.</span>}
           </div>
-          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+          <p className="text-secundario text-tinta-atenuada mt-1">
             {todos || !asignados.length
               ? 'Sus solicitudes llegan a todos los administradores del centro (y a los desarrolladores).'
               : 'Sus solicitudes llegan a estos administradores (y a los desarrolladores).'}

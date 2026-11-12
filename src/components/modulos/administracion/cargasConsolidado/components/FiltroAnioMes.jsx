@@ -9,19 +9,19 @@ const TODOS_LOS_MESES = 'TODOS';
 // calculadas (años/meses con datos reales) y se dispara el cambio.
 const FiltroAnioMes = ({ anio, setAnio, mes, setMes, aniosDisponibles, mesesDisponibles, cargandoAnios, labelCampo, sinTodosLosMeses = false }) => {
   return (
-    <div className="flex items-center gap-2 text-[10.5px]">
+    <div className="flex items-center gap-2 text-pequeno">
       {cargandoAnios ? (
-        <span className="flex items-center gap-1.5 text-slate-400 dark:text-gray-500">
+        <span className="flex items-center gap-1.5 text-tinta-atenuada">
           <Loader2 size={13} className="animate-spin" /> Buscando años con datos...
         </span>
       ) : (
         <>
-          <label className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 font-semibold">
+          <label className="flex items-center gap-1.5 text-tinta-secundaria text-etiqueta">
             Año{labelCampo ? ` (${labelCampo})` : ''}:
             <select
               value={anio}
               onChange={(e) => setAnio(e.target.value)}
-              className="h-7 px-2 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
+              className="h-7 px-2 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:ring-1 focus:ring-[#2383C2]"
             >
               <option value="">Seleccionar...</option>
               {aniosDisponibles.map(a => <option key={a} value={a}>{a}</option>)}
@@ -29,12 +29,12 @@ const FiltroAnioMes = ({ anio, setAnio, mes, setMes, aniosDisponibles, mesesDisp
           </label>
 
           {anio && (
-            <label className="flex items-center gap-1.5 text-slate-500 dark:text-gray-400 font-semibold">
+            <label className="flex items-center gap-1.5 text-tinta-secundaria text-etiqueta">
               Mes:
               <select
                 value={mes}
                 onChange={(e) => setMes(e.target.value)}
-                className="h-7 px-2 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 outline-none focus:ring-1 focus:ring-[#2383C2]"
+                className="h-7 px-2 border border-slate-300 dark:border-gray-600 rounded bg-white dark:bg-gray-900 text-tinta-principal outline-none focus:ring-1 focus:ring-[#2383C2]"
               >
                 {!sinTodosLosMeses && <option value={TODOS_LOS_MESES}>Todos los meses</option>}
                 {mesesDisponibles.map(m => {
@@ -46,7 +46,7 @@ const FiltroAnioMes = ({ anio, setAnio, mes, setMes, aniosDisponibles, mesesDisp
           )}
 
           {!anio && (
-            <span className="text-slate-400 dark:text-gray-500 italic">Elegí un año para ver los datos</span>
+            <span className="text-tinta-atenuada italic">Elegí un año para ver los datos</span>
           )}
         </>
       )}

@@ -43,7 +43,7 @@ const TablaCodigos = ({ filas, total, conMontos, comparar = true, etiquetaActual
       <BarraBusqueda busqueda={busqueda} onBuscar={onBuscar} placeholder="Buscar código o descripción…" total={filas.length} />
       <ZonaScroll>
         <table className={CLASE_TABLA}>
-          <thead className="bg-gray-50 dark:bg-gray-900 text-[10px] text-gray-500 dark:text-gray-400">
+          <thead className="bg-gray-50 dark:bg-gray-900 text-pequeno text-tinta-secundaria">
             <tr>
               <Encabezado columna="codigo" orden={orden} onOrdenar={onOrdenar} alinear="left">Código</Encabezado>
               {ver('descripcion') && <Encabezado columna="descripcion" orden={orden} onOrdenar={onOrdenar} alinear="left">Descripción</Encabezado>}
@@ -60,41 +60,41 @@ const TablaCodigos = ({ filas, total, conMontos, comparar = true, etiquetaActual
           </thead>
           <tbody>
             {filas.length === 0 && (
-              <tr><td colSpan={columnasVisibles} className="py-10 text-center text-gray-400">{busqueda ? 'Ningún código coincide con la búsqueda.' : 'Sin códigos en este período.'}</td></tr>
+              <tr><td colSpan={columnasVisibles} className="py-10 text-center text-tinta-atenuada">{busqueda ? 'Ningún código coincide con la búsqueda.' : 'Sin códigos en este período.'}</td></tr>
             )}
             {filasPagina.map((f) => (
               <tr key={f.clave} onClick={() => onSeleccionar(f)} aria-selected={seleccionada === f.clave}
                 className={`cursor-pointer ${seleccionada === f.clave ? 'bg-[#2383C2]/10' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'}`}>
                 <td className="px-3 py-1 border-b border-r last:border-r-0 border-gray-100 dark:border-gray-700/60 text-left whitespace-nowrap">
                   <button type="button" onClick={(e) => { e.stopPropagation(); onSeleccionar(f); }}
-                    className={`text-left font-semibold hover:text-[#2383C2] focus:outline-none focus-visible:underline ${f.sinCodigo ? 'text-amber-700 dark:text-amber-400 italic font-normal' : 'text-gray-800 dark:text-gray-100'}`}>{f.codigo}</button>
+                    className={`text-left text-etiqueta hover:text-[#2383C2] focus:outline-none focus-visible:underline ${f.sinCodigo ? 'text-amber-700 dark:text-amber-400 italic' : 'text-tinta-principal'}`}>{f.codigo}</button>
                 </td>
-                {ver('descripcion') && <td className="px-3 py-1 border-b border-r last:border-r-0 border-gray-100 dark:border-gray-700/60 text-left text-gray-700 dark:text-gray-200 max-w-[300px] truncate" title={f.descripcion}>{f.descripcion || '—'}</td>}
-                {ver('cantidad') && <td className={`${celda} font-semibold text-gray-800 dark:text-gray-100`}>{formatoNumero(f.actual)}</td>}
-                {ver('cantidadAnterior') && <td className={`${celda} text-gray-500 dark:text-gray-400`}>{formatoNumero(f.anterior)}</td>}
+                {ver('descripcion') && <td className="px-3 py-1 border-b border-r last:border-r-0 border-gray-100 dark:border-gray-700/60 text-left text-tinta-principal max-w-[300px] truncate" title={f.descripcion}>{f.descripcion || '—'}</td>}
+                {ver('cantidad') && <td className={`${celda} text-etiqueta text-tinta-principal`}>{formatoNumero(f.actual)}</td>}
+                {ver('cantidadAnterior') && <td className={`${celda} text-tinta-secundaria`}>{formatoNumero(f.anterior)}</td>}
                 {ver('diferencia') && <td className={`${celda} ${colorDiferencia(f.diferencia)}`}>{f.diferencia > 0 ? '+' : ''}{formatoNumero(f.diferencia)}</td>}
                 {ver('variacion') && <td className={celda}><Variacion diferencia={f.diferencia} variacion={f.variacion} compacto /></td>}
-                {ver('admisiones') && <td className={`${celda} text-gray-600 dark:text-gray-300`}>{formatoNumero(f.admisiones)}</td>}
-                {ver('precio') && <td className={`${celda} text-gray-700 dark:text-gray-200`}><PrecioUnitario fila={f} /></td>}
-                {ver('monto') && <td className={`${celda} font-semibold text-gray-800 dark:text-gray-100`}>{formatoMonto(f.monto)}</td>}
-                {ver('montoAnterior') && <td className={`${celda} text-gray-500 dark:text-gray-400`}>{formatoMonto(f.montoAnterior)}</td>}
+                {ver('admisiones') && <td className={`${celda} text-tinta-secundaria`}>{formatoNumero(f.admisiones)}</td>}
+                {ver('precio') && <td className={`${celda} text-tinta-principal`}><PrecioUnitario fila={f} /></td>}
+                {ver('monto') && <td className={`${celda} text-etiqueta text-tinta-principal`}>{formatoMonto(f.monto)}</td>}
+                {ver('montoAnterior') && <td className={`${celda} text-tinta-secundaria`}>{formatoMonto(f.montoAnterior)}</td>}
                 {ver('montoVariacion') && <td className={celda}><Variacion diferencia={f.montoDiferencia} variacion={f.montoVariacion} compacto /></td>}
               </tr>
             ))}
           </tbody>
           {total && (
-            <tfoot className="bg-gray-50 dark:bg-gray-900 font-semibold text-gray-800 dark:text-gray-100">
+            <tfoot className="bg-gray-50 dark:bg-gray-900 text-etiqueta text-tinta-principal">
               <tr>
                 <td className="px-3 py-1.5 border-t border-r last:border-r-0 border-gray-200 dark:border-gray-700">Total</td>
                 {ver('descripcion') && <td className="border-t border-r last:border-r-0 border-gray-200 dark:border-gray-700" />}
                 {ver('cantidad') && <td className={pie}>{formatoNumero(total.cantidad)}</td>}
-                {ver('cantidadAnterior') && <td className={`${pie} text-gray-500`}>{formatoNumero(total.cantidadAnterior)}</td>}
+                {ver('cantidadAnterior') && <td className={`${pie} text-tinta-secundaria`}>{formatoNumero(total.cantidadAnterior)}</td>}
                 {ver('diferencia') && <td className={pie}>{formatoNumero(total.cantidad - total.cantidadAnterior)}</td>}
                 {ver('variacion') && <td className={pie} />}
                 {ver('admisiones') && <td className={pie} title="Admisiones distintas del período">{formatoNumero(total.admisiones)}</td>}
                 {ver('precio') && <td className={pie} />}
                 {ver('monto') && <td className={pie}>{formatoMonto(total.monto)}</td>}
-                {ver('montoAnterior') && <td className={`${pie} text-gray-500`}>{formatoMonto(total.montoAnterior)}</td>}
+                {ver('montoAnterior') && <td className={`${pie} text-tinta-secundaria`}>{formatoMonto(total.montoAnterior)}</td>}
                 {ver('montoVariacion') && <td className={pie} />}
               </tr>
             </tfoot>

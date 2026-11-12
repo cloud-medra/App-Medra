@@ -36,16 +36,16 @@ const ImputadasUnificadasTable = ({ filas, encabezado }) => {
 
   return (
     <div className="flex-grow flex flex-col overflow-hidden">
-      <div className="px-3 py-1.5 flex items-center justify-between border-b border-slate-200 dark:border-gray-700 bg-slate-50/60 dark:bg-gray-900/30 text-[10px]">
+      <div className="px-3 py-1.5 flex items-center justify-between border-b border-slate-200 dark:border-gray-700 bg-slate-50/60 dark:bg-gray-900/30 text-pequeno">
         {encabezado ?? (<>
-        <span className="text-slate-500 dark:text-gray-400">{filas.length} registro{filas.length === 1 ? '' : 's'}</span>
-        <span className="font-bold text-emerald-700 dark:text-emerald-400">Total venta: ${totalVenta.toLocaleString('es-CL')}</span>
+        <span className="text-tinta-secundaria">{filas.length} registro{filas.length === 1 ? '' : 's'}</span>
+        <span className="text-etiqueta text-emerald-700 dark:text-emerald-400">Total venta: ${totalVenta.toLocaleString('es-CL')}</span>
         </>)}
       </div>
       <div className="flex-grow overflow-auto">
-        <table className="text-left text-[10.5px] border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
+        <table className="text-left text-pequeno border-collapse" style={{ tableLayout: 'fixed', width: '100%' }}>
           <thead className="bg-slate-50 dark:bg-gray-900/60 sticky top-0 z-10">
-            <tr className="text-slate-500 dark:text-gray-400 uppercase font-bold text-[9px]">
+            <tr className="text-tinta-secundaria uppercase text-pequeno">
               {COLUMNAS.map(col => (
                 <th
                   key={col.key}
@@ -61,7 +61,7 @@ const ImputadasUnificadasTable = ({ filas, encabezado }) => {
           <tbody>
             {filas.length === 0 ? (
               <tr>
-                <td colSpan={COLUMNAS.length} className="px-3 py-6 text-center text-slate-400 dark:text-gray-500">
+                <td colSpan={COLUMNAS.length} className="px-3 py-6 text-center text-tinta-atenuada">
                   Sin registros imputados
                 </td>
               </tr>
@@ -69,25 +69,25 @@ const ImputadasUnificadasTable = ({ filas, encabezado }) => {
               filas.map((fila) => (
                 <tr key={`${fila.origen}:${fila.id}`}>
                   <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60">
-                    <span className={`inline-block px-1.5 py-0.5 text-[9px] font-bold rounded border uppercase ${ORIGEN_BADGE_STYLE[fila.origen]}`}>
+                    <span className={`inline-block px-1.5 py-0.5 text-pequeno rounded border uppercase ${ORIGEN_BADGE_STYLE[fila.origen]}`}>
                       {ORIGEN_LABEL[fila.origen]}
                     </span>
                   </td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-semibold text-[#2383C2] truncate">{fila.gestionId}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate">{fila.paciente}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">{fila.medico}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">{formatearFechaTabla(fila.fecha)}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">{fila.empresa}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 font-num text-emerald-600 dark:text-emerald-400 truncate">{fila.codigo}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-700 dark:text-gray-200 truncate">{fila.referencia}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-slate-700 dark:text-gray-200">{fila.cantidad}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">${Number(fila.costoUnitario).toLocaleString('es-CL')}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 font-medium">${Number(fila.venta).toLocaleString('es-CL')}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 font-semibold">${Number(fila.total).toLocaleString('es-CL')}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300 truncate">{fila.lote}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">{fila.vencimiento ? formatearFechaTabla(fila.vencimiento) : '-'}</td>
-                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">{fila.estado}</td>
-                  <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60 text-slate-600 dark:text-gray-300">
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-etiqueta text-[#2383C2] truncate">{fila.gestionId}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate">{fila.paciente}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate">{fila.medico}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">{formatearFechaTabla(fila.fecha)}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate">{fila.empresa}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-numero-tabla text-emerald-600 dark:text-emerald-400 truncate">{fila.codigo}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-principal truncate">{fila.referencia}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-center text-tinta-principal">{fila.cantidad}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">${Number(fila.costoUnitario).toLocaleString('es-CL')}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400">${Number(fila.venta).toLocaleString('es-CL')}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-emerald-700 dark:text-emerald-400 text-etiqueta">${Number(fila.total).toLocaleString('es-CL')}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria truncate">{fila.lote}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">{fila.vencimiento ? formatearFechaTabla(fila.vencimiento) : '-'}</td>
+                  <td className="px-2.5 py-1.5 border-b border-r border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">{fila.estado}</td>
+                  <td className="px-2.5 py-1.5 border-b border-slate-100 dark:border-gray-700/60 text-tinta-secundaria">
                     {fila.periodoMes && fila.periodoAnio ? `${fila.periodoMes} ${fila.periodoAnio}` : '-'}
                   </td>
                 </tr>

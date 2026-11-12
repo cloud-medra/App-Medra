@@ -13,7 +13,7 @@ import {
 // el mes actual, hora de Chile) o, en Consumos y Facturas, de todo el año.
 // La sección `desglose` (por módulo, o la cuadratura de Bodega) se controla
 // con permisos granulares.
-const SELECT = 'px-2 py-1 text-xs rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200';
+const SELECT = 'px-2 py-1 text-normal rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal';
 
 const TotalFinanzas = ({ tipo }) => {
   const config = TOTALES_FINANZAS[tipo];
@@ -40,8 +40,8 @@ const TotalFinanzas = ({ tipo }) => {
     <div className="w-full max-w-3xl flex flex-col gap-3">
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg p-4 shadow-xs flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-sm font-bold text-slate-900 dark:text-gray-100">{config.titulo}</h1>
-          <p className="text-[11px] text-slate-500 dark:text-gray-400">{config.fuente}</p>
+          <h1 className="text-titulo-seccion text-tinta-principal">{config.titulo}</h1>
+          <p className="text-secundario text-tinta-secundaria">{config.fuente}</p>
         </div>
         <div className="flex items-center gap-2">
           <select aria-label="Año" value={anio} onChange={(e) => setAnio(e.target.value)} className={SELECT}>
@@ -65,21 +65,21 @@ const TotalFinanzas = ({ tipo }) => {
       ) : (
         <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-xs overflow-hidden">
           <div className="p-4 bg-slate-50 dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700">
-            <p className="text-[10px] font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
+            <p className="text-pequeno text-tinta-secundaria uppercase tracking-wider">
               Total · {nombrePeriodo}
             </p>
-            <p className="text-2xl font-extrabold text-slate-800 dark:text-white mt-0.5 font-num">
+            <p className="text-numero-indicador text-tinta-principal mt-0.5">
               {cargando ? '…' : errorEstados ? 'No disponible' : pesos(total.montoTotal)}
             </p>
             {!cargando && !errorEstados && !esBodega && (
-              <p className="text-[10px] text-slate-500 dark:text-gray-400 mt-1">
+              <p className="text-pequeno text-tinta-secundaria mt-1">
                 {total.cantidad.toLocaleString('es-CL')} documento(s) imputado(s)
               </p>
             )}
           </div>
 
           {sinAbrir && (
-            <p className="p-4 text-[11px] text-slate-500 dark:text-gray-400 flex items-center gap-2">
+            <p className="p-4 text-secundario text-tinta-secundaria flex items-center gap-2">
               <Info size={13} className="shrink-0" />
               {mes === TODO_EL_ANIO ? 'Ningún mes de este año' : 'Este mes'} no se abrió en Apertura y cierre de períodos: no hay montos.
             </p>
@@ -88,11 +88,11 @@ const TotalFinanzas = ({ tipo }) => {
           {verDesglose && !esBodega && !cargando && !errorEstados && !sinAbrir && (
             <div className="divide-y divide-slate-100 dark:divide-gray-700/60">
               {total.porModulo.map((m) => (
-                <div key={m.moduloId} className="flex items-center justify-between gap-3 px-4 py-2 text-[11px] text-slate-700 dark:text-gray-300">
-                  <span className="font-semibold">{m.nombre}</span>
+                <div key={m.moduloId} className="flex items-center justify-between gap-3 px-4 py-2 text-secundario text-tinta-principal">
+                  <span className="text-etiqueta">{m.nombre}</span>
                   <span className="flex items-center gap-3">
-                    <span className="text-[10px] text-slate-400 dark:text-gray-500 font-num">{m.cantidad.toLocaleString('es-CL')} doc.</span>
-                    <span className="w-32 text-right font-num font-semibold">{m.meses ? pesos(m.montoTotal) : 'Sin abrir'}</span>
+                    <span className="text-numero-tabla text-tinta-atenuada">{m.cantidad.toLocaleString('es-CL')} doc.</span>
+                    <span className="w-32 text-right text-numero-tabla">{m.meses ? pesos(m.montoTotal) : 'Sin abrir'}</span>
                   </span>
                 </div>
               ))}
@@ -102,14 +102,14 @@ const TotalFinanzas = ({ tipo }) => {
       )}
 
       {errorEstados && (
-        <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md px-3 py-2 flex items-center gap-2">
+        <p className="text-etiqueta text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md px-3 py-2 flex items-center gap-2">
           <AlertTriangle size={13} className="shrink-0" />
           No se pudo leer el estado de los períodos: el total no está disponible. Actualiza la página.
         </p>
       )}
 
       {total.conError && (
-        <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md px-3 py-2 flex items-center gap-2">
+        <p className="text-etiqueta text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 rounded-md px-3 py-2 flex items-center gap-2">
           <AlertTriangle size={13} className="shrink-0" />
           No se pudo leer parte de los datos ({total.porModulo.filter((m) => m.conError).map((m) => m.nombre).join(', ')}): el total puede estar incompleto. Actualiza la página.
         </p>

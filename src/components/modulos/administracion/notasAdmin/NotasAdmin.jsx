@@ -191,18 +191,18 @@ const NotasAdmin = () => {
       <div className="lg:col-span-5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm flex flex-col gap-4">
         <div className="border-b border-gray-100 dark:border-gray-700 pb-2 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-100 uppercase tracking-wide flex items-center gap-2">
+            <h3 className="text-titulo-seccion text-tinta-principal flex items-center gap-2">
               <PlusCircle size={16} className="text-[#2383C2]" />
-              {editandoId ? 'Editar Nota' : 'Administrador de Notas'}
+              {editandoId ? 'Editar nota' : 'Administrador de notas'}
             </h3>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+            <p className="text-secundario text-tinta-secundaria">
               {editandoId ? 'Modifica los campos deseados' : 'Crea notas de texto o listas interactivas para el panel.'}
             </p>
           </div>
           {editandoId && (
             <button
               onClick={resetFormulario}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1"
+              className="text-tinta-atenuada hover:text-tinta-secundaria p-1"
               title="Cancelar edición"
             >
               <X size={16} />
@@ -215,10 +215,10 @@ const NotasAdmin = () => {
             <button
               type="button"
               onClick={() => setTipo('texto')}
-              className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-1.5 text-etiqueta rounded transition-all ${
                 tipo === 'texto'
                   ? 'bg-white dark:bg-gray-800 text-[#2383C2] shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  : 'text-tinta-secundaria hover:text-tinta-principal'
               }`}
             >
               <AlignLeft size={14} /> Texto Libre
@@ -226,10 +226,10 @@ const NotasAdmin = () => {
             <button
               type="button"
               onClick={() => setTipo('checklist')}
-              className={`flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded transition-all ${
+              className={`flex items-center justify-center gap-1.5 py-1.5 text-etiqueta rounded transition-all ${
                 tipo === 'checklist'
                   ? 'bg-white dark:bg-gray-800 text-[#2383C2] shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                  : 'text-tinta-secundaria hover:text-tinta-principal'
               }`}
             >
               <CheckSquare size={14} /> Checklist
@@ -239,7 +239,7 @@ const NotasAdmin = () => {
 
         <form onSubmit={handleGuardarNota} className="flex flex-col gap-3">
           <div>
-            <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            <label className="block text-etiqueta text-tinta-secundaria mb-1">
               Título (Opcional)
             </label>
             <input
@@ -247,13 +247,13 @@ const NotasAdmin = () => {
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Ej: Tareas pendientes / Aviso"
-              className="w-full text-xs p-2 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2]"
+              className="w-full text-normal p-2 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-tinta-principal focus:outline-none focus:border-[#2383C2]"
             />
           </div>
 
           {tipo === 'texto' ? (
             <div>
-              <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
+              <label className="block text-etiqueta text-tinta-secundaria mb-1">
                 Contenido
               </label>
               <textarea
@@ -262,12 +262,12 @@ const NotasAdmin = () => {
                 onChange={(e) => setContenido(e.target.value)}
                 placeholder="Escribe el mensaje..."
                 required
-                className="w-full text-xs p-2 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2]"
+                className="w-full text-normal p-2 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-tinta-principal focus:outline-none focus:border-[#2383C2]"
               />
             </div>
           ) : (
             <div>
-              <label className="block text-[11px] font-semibold text-gray-600 dark:text-gray-300 mb-1">
+              <label className="block text-etiqueta text-tinta-secundaria mb-1">
                 Elementos de la lista
               </label>
               <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1">
@@ -278,13 +278,13 @@ const NotasAdmin = () => {
                       value={item}
                       onChange={(e) => handleItemChange(idx, e.target.value)}
                       placeholder={`Tarea ${idx + 1}`}
-                      className="w-full text-xs p-1.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-700 dark:text-gray-200 focus:outline-none focus:border-[#2383C2]"
+                      className="w-full text-normal p-1.5 rounded border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-tinta-principal focus:outline-none focus:border-[#2383C2]"
                     />
                     {items.length > 1 && (
                       <button
                         type="button"
                         onClick={() => eliminarItem(idx)}
-                        className="text-gray-400 hover:text-rose-500 p-1"
+                        className="text-tinta-atenuada hover:text-rose-500 p-1"
                       >
                         <X size={14} />
                       </button>
@@ -295,7 +295,7 @@ const NotasAdmin = () => {
               <button
                 type="button"
                 onClick={agregarItem}
-                className="mt-2 text-[11px] text-[#2383C2] hover:underline font-semibold flex items-center gap-1"
+                className="mt-2 text-etiqueta text-[#2383C2] hover:underline flex items-center gap-1"
               >
                 <Plus size={12} /> Añadir elemento
               </button>
@@ -304,13 +304,13 @@ const NotasAdmin = () => {
 
           <fieldset aria-describedby={errorRoles ? 'error-roles-nota' : undefined}>
             <div className="flex items-center justify-between mb-1">
-              <legend className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1">
+              <legend className="text-etiqueta text-tinta-secundaria flex items-center gap-1">
                 <Users size={12} /> Visible para <span className="text-rose-500">*</span>
               </legend>
               <button
                 type="button"
                 onClick={toggleTodos}
-                className="text-[10px] text-[#2383C2] hover:underline font-semibold"
+                className="text-pequeno text-[#2383C2] hover:underline"
               >
                 {roles.length === VALORES_ROLES_NOTA.length ? 'Quitar todos' : 'Todos'}
               </button>
@@ -323,7 +323,7 @@ const NotasAdmin = () => {
               }`}
             >
               {ROLES_NOTA.map((r) => (
-                <label key={r.value} className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-200 cursor-pointer select-none">
+                <label key={r.value} className="flex items-center gap-1.5 text-normal text-tinta-principal cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={roles.includes(r.value)}
@@ -334,7 +334,7 @@ const NotasAdmin = () => {
                 </label>
               ))}
               <span className="basis-full border-t border-gray-200 dark:border-gray-700" aria-hidden="true" />
-              <label className="flex items-center gap-1.5 text-xs text-violet-700 dark:text-violet-300 cursor-pointer select-none">
+              <label className="flex items-center gap-1.5 text-normal text-violet-700 dark:text-violet-300 cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={soloDev}
@@ -345,11 +345,11 @@ const NotasAdmin = () => {
               </label>
             </div>
             {errorRoles ? (
-              <p id="error-roles-nota" role="alert" className="text-[10.5px] text-rose-600 dark:text-rose-400 mt-1">
+              <p id="error-roles-nota" role="alert" className="text-pequeno text-rose-600 dark:text-rose-400 mt-1">
                 Debes elegir al menos un rol.
               </p>
             ) : (
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+              <p className="text-pequeno text-tinta-atenuada mt-1">
                 {soloDev
                   ? 'Nota privada: ningún otro rol la verá.'
                   : 'El rol Desarrollador siempre ve todas las notas.'}
@@ -374,7 +374,7 @@ const NotasAdmin = () => {
                 type="button"
                 onClick={resetFormulario}
                 disabled={cargando}
-                className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold px-3 py-2 rounded"
+                className="bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-tinta-principal text-etiqueta px-3 py-2 rounded"
               >
                 Cancelar
               </button>
@@ -382,7 +382,7 @@ const NotasAdmin = () => {
             <button
               type="submit"
               disabled={cargando}
-              className="bg-[#2383C2] hover:bg-[#1b6aa0] text-white text-xs font-bold px-4 py-2 rounded flex items-center gap-2 transition-colors disabled:opacity-50 min-w-[120px] justify-center"
+              className="bg-[#2383C2] hover:bg-[#1b6aa0] text-white text-etiqueta px-4 py-2 rounded flex items-center gap-2 transition-colors disabled:opacity-50 min-w-[120px] justify-center"
             >
               {cargando ? (
                 <>
@@ -402,19 +402,19 @@ const NotasAdmin = () => {
 
       <div className="lg:col-span-7 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm flex flex-col gap-3">
         <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-2">
-          <span className="text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
+          <span className="text-etiqueta text-tinta-principal uppercase tracking-wide">
             Notas Publicadas ({notas.length})
           </span>
         </div>
 
         <div className="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1">
           {cargandoNotas ? (
-            <div className="flex flex-col items-center justify-center py-12 gap-2 text-gray-400">
+            <div className="flex flex-col items-center justify-center py-12 gap-2 text-tinta-atenuada">
               <Spinner size="md" color="#2383C2" />
-              <span className="text-xs">Cargando notas...</span>
+              <span className="text-normal">Cargando notas...</span>
             </div>
           ) : notas.length === 0 ? (
-            <p className="text-xs text-gray-400 dark:text-gray-500 italic text-center py-8">
+            <p className="text-normal text-tinta-atenuada italic text-center py-8">
               No hay notas publicadas en el sistema.
             </p>
           ) : (
@@ -440,7 +440,7 @@ const NotasAdmin = () => {
                     {nota.titulo && (
                       <h4
                         style={visual.textoPropio ? { color: visual.texto.color } : undefined}
-                        className={`text-xs font-bold ${visual.textoPropio ? '' : 'text-gray-800 dark:text-gray-100'}`}
+                        className={`text-etiqueta ${visual.textoPropio ? '' : 'text-tinta-principal'}`}
                       >
                         {nota.titulo}
                       </h4>
@@ -452,7 +452,7 @@ const NotasAdmin = () => {
                       <button
                         onClick={() => moverNota(idx, 'arriba')}
                         disabled={idx === 0}
-                        className="p-1 text-gray-500 dark:text-gray-300 hover:text-[#2383C2] disabled:opacity-25 disabled:hover:text-gray-500 transition-colors"
+                        className="p-1 text-tinta-secundaria hover:text-[#2383C2] disabled:opacity-25 disabled:hover:text-tinta-secundaria transition-colors"
                         title="Mover arriba"
                       >
                         <ArrowUp size={13} />
@@ -460,7 +460,7 @@ const NotasAdmin = () => {
                       <button
                         onClick={() => moverNota(idx, 'abajo')}
                         disabled={idx === notas.length - 1}
-                        className="p-1 text-gray-500 dark:text-gray-300 hover:text-[#2383C2] disabled:opacity-25 disabled:hover:text-gray-500 transition-colors"
+                        className="p-1 text-tinta-secundaria hover:text-[#2383C2] disabled:opacity-25 disabled:hover:text-tinta-secundaria transition-colors"
                         title="Mover abajo"
                       >
                         <ArrowDown size={13} />
@@ -469,14 +469,14 @@ const NotasAdmin = () => {
 
                     <button
                       onClick={() => handleEditar(nota)}
-                      className="p-1 text-gray-400 hover:text-[#2383C2] dark:hover:text-sky-400 transition-colors"
+                      className="p-1 text-tinta-atenuada hover:text-[#2383C2] dark:hover:text-sky-400 transition-colors"
                       title="Editar"
                     >
                       <Edit2 size={13} />
                     </button>
                     <button
                       onClick={() => solicitarEliminacion(nota.id)}
-                      className="p-1 text-gray-400 hover:text-rose-500 transition-colors"
+                      className="p-1 text-tinta-atenuada hover:text-rose-500 transition-colors"
                       title="Eliminar"
                     >
                       <Trash2 size={13} />
@@ -490,7 +490,7 @@ const NotasAdmin = () => {
                       <li
                         key={i}
                         style={visual.texto}
-                        className={`text-[11px] flex items-center gap-2 ${visual.textoPropio ? '' : 'text-gray-600 dark:text-gray-300'}`}
+                        className={`text-secundario flex items-center gap-2 ${visual.textoPropio ? '' : 'text-tinta-secundaria'}`}
                       >
                         <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span>
                         <span>{item.texto}</span>
@@ -500,7 +500,7 @@ const NotasAdmin = () => {
                 ) : (
                   <p
                     style={visual.texto}
-                    className={`text-[11.5px] leading-relaxed whitespace-pre-wrap ${visual.textoPropio ? '' : 'text-gray-600 dark:text-gray-300'}`}
+                    className={`text-secundario whitespace-pre-wrap ${visual.textoPropio ? '' : 'text-tinta-secundaria'}`}
                   >
                     {nota.contenido}
                   </p>
@@ -508,13 +508,13 @@ const NotasAdmin = () => {
 
                 <div className="flex flex-wrap items-center gap-1" aria-label="Roles que ven la nota">
                   {esSoloDev(rolesDeNota(nota)) ? (
-                    <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded border flex items-center gap-1 bg-violet-50 dark:bg-violet-950/60 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300">
+                    <span className="text-pequeno px-1.5 py-0.5 rounded border flex items-center gap-1 bg-violet-50 dark:bg-violet-950/60 border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-300">
                       <Code2 size={10} /> Solo desarrolladores
                     </span>
                   ) : rolesDeNota(nota).map((rol) => (
                     <span
                       key={rol}
-                      className="text-[9px] font-semibold px-1.5 py-0.5 rounded border bg-white/80 dark:bg-gray-800/80 border-sky-200 dark:border-sky-800 text-[#2383C2] dark:text-sky-300"
+                      className="text-pequeno px-1.5 py-0.5 rounded border bg-white/80 dark:bg-gray-800/80 border-sky-200 dark:border-sky-800 text-[#2383C2] dark:text-sky-300"
                     >
                       {labelRolNota(rol)}
                     </span>
@@ -522,10 +522,10 @@ const NotasAdmin = () => {
                 </div>
 
                 <div
-                  className={`flex items-center justify-between border-t pt-1.5 mt-1 text-[9px] ${
+                  className={`flex items-center justify-between border-t pt-1.5 mt-1 text-pequeno ${
                     visual.fondoPropio
                       ? 'border-current/20 opacity-75'
-                      : 'border-gray-200/50 dark:border-gray-700/50 text-gray-400 dark:text-gray-500'
+                      : 'border-gray-200/50 dark:border-gray-700/50 text-tinta-atenuada'
                   }`}
                   style={visual.textoPropio ? { color: visual.texto.color } : undefined}
                 >

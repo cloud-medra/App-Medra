@@ -43,9 +43,9 @@ const GestionModulos = () => {
   if (!esDesarrollador(userData)) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center py-12 px-6 text-gray-400 dark:text-gray-500">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col items-center justify-center text-center py-12 px-6 text-tinta-atenuada">
           <Lock size={26} className="mb-2 opacity-60" />
-          <p className="text-xs">Solo el rol Desarrollador puede gestionar los módulos del sistema.</p>
+          <p className="text-normal">Solo el rol Desarrollador puede gestionar los módulos del sistema.</p>
         </div>
       </div>
     );
@@ -81,8 +81,8 @@ const GestionModulos = () => {
             <ToggleRight size={16} className="text-[#2383C2]" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Gestión de módulos</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <h3 className="text-titulo-seccion text-tinta-principal">Gestión de módulos</h3>
+            <p className="text-normal text-tinta-secundaria mt-0.5">
               Lo inactivo deja de aparecer en el sidebar y no se puede abrir, para todos los
               usuarios. Inactivar un módulo oculta todos sus ítems; al reactivarlo, cada ítem
               vuelve con el estado que tenía. Herramientas y este ítem no se pueden inactivar.
@@ -91,7 +91,7 @@ const GestionModulos = () => {
         </div>
 
         {!config ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-xs text-gray-400 dark:text-gray-500">
+          <div className="flex items-center justify-center gap-2 py-12 text-normal text-tinta-atenuada">
             <Loader2 size={14} className="animate-spin" /> Cargando módulos...
           </div>
         ) : (
@@ -102,7 +102,7 @@ const GestionModulos = () => {
                 <div key={mKey} className="rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
                   <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900/40">
                     <CuadritoIcono icon={modulo.icon} color={modulo.color} className={mActivo ? '' : 'grayscale opacity-60'} />
-                    <span className={`flex-grow text-sm font-medium truncate ${mActivo ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500 line-through'}`}>
+                    <span className={`flex-grow text-subtitulo truncate ${mActivo ? 'text-tinta-principal' : 'text-tinta-atenuada line-through'}`}>
                       {modulo.label}
                     </span>
                     {moduloProtegido(mKey) && <Lock size={12} className="text-gray-400 flex-shrink-0" />}
@@ -120,7 +120,7 @@ const GestionModulos = () => {
                       return (
                         <div key={sub.path} className={`flex items-center gap-2 py-1.5 min-w-0 ${mActivo ? '' : 'opacity-50'}`}>
                           <CuadritoIcono icon={sub.icon} color={sub.color} tamano="sm" className={iActivo ? '' : 'grayscale opacity-60'} />
-                          <span className={`flex-grow text-xs truncate ${iActivo ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500 line-through'}`}>
+                          <span className={`flex-grow text-normal truncate ${iActivo ? 'text-tinta-principal' : 'text-tinta-atenuada line-through'}`}>
                             {sub.label}
                           </span>
                           {protegido && <Lock size={11} className="text-gray-400 flex-shrink-0" />}
@@ -148,7 +148,7 @@ const GestionModulos = () => {
             type="button"
             onClick={() => setBorrador(null)}
             disabled={!hayCambios || saving}
-            className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors disabled:opacity-40"
+            className="flex items-center gap-2 text-normal text-tinta-secundaria hover:text-tinta-principal transition-colors disabled:opacity-40"
           >
             <RotateCcw size={13} /> Descartar cambios
           </button>
@@ -157,7 +157,7 @@ const GestionModulos = () => {
             type="button"
             onClick={handleGuardar}
             disabled={saving || !hayCambios}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2383C2] hover:bg-[#1a6aa0] text-white text-xs font-semibold shadow-sm transition-colors disabled:opacity-60"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#2383C2] hover:bg-[#1a6aa0] text-white text-etiqueta shadow-sm transition-colors disabled:opacity-60"
           >
             {savedMsg ? (
               <><Check size={14} /> Guardado</>

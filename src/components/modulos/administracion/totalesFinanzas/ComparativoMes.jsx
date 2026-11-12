@@ -13,7 +13,7 @@ import {
 // del mes actual contra los mismos días del mes pasado, por fecha del
 // documento (ver comparativoMes.js). Solo lectura. La sección `desglose`
 // (por módulo) se controla con permisos granulares.
-const SELECT = 'px-2 py-1 text-xs rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200';
+const SELECT = 'px-2 py-1 text-normal rounded-md border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-tinta-principal';
 
 const textoRango = (r) => (r.desde === r.hasta
   ? `${r.desde} de ${nombreMes(r.mes).toLowerCase()} ${r.anio}`
@@ -21,10 +21,10 @@ const textoRango = (r) => (r.desde === r.hasta
 
 const Diferencia = ({ actual, anterior }) => {
   const { monto, porcentaje } = diferencia(actual, anterior);
-  const color = monto > 0 ? 'text-emerald-700 dark:text-emerald-400' : monto < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-slate-600 dark:text-gray-300';
+  const color = monto > 0 ? 'text-emerald-700 dark:text-emerald-400' : monto < 0 ? 'text-rose-700 dark:text-rose-400' : 'text-tinta-secundaria';
   const Icono = monto < 0 ? TrendingDown : TrendingUp;
   return (
-    <span className={`inline-flex items-center gap-1.5 font-num font-bold ${color}`}>
+    <span className={`inline-flex items-center gap-1.5 text-numero-tabla ${color}`}>
       {monto !== 0 && <Icono size={13} />}
       {monto > 0 ? '+' : monto < 0 ? '−' : ''}{pesos(Math.abs(monto))} · {porcentajeTexto(porcentaje)}
     </span>
@@ -34,33 +34,33 @@ const Diferencia = ({ actual, anterior }) => {
 const TarjetaFuente = ({ fuente, datos, rangos, verDesglose }) => (
   <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg shadow-xs overflow-hidden">
     <div className="px-4 py-2.5 bg-slate-50 dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700">
-      <p className="text-xs font-bold text-slate-800 dark:text-gray-100">{fuente.titulo}</p>
-      <p className="text-[10px] text-slate-500 dark:text-gray-400">Por {fuente.etiquetaFecha}</p>
+      <p className="text-etiqueta text-tinta-principal">{fuente.titulo}</p>
+      <p className="text-pequeno text-tinta-secundaria">Por {fuente.etiquetaFecha}</p>
     </div>
     {!datos ? (
-      <p className="p-4 text-[11px] text-slate-400 dark:text-gray-500">Calculando…</p>
+      <p className="p-4 text-secundario text-tinta-atenuada">Calculando…</p>
     ) : (
       <>
-        <div className="divide-y divide-slate-100 dark:divide-gray-700/60 text-[11px]">
-          <div className="flex items-center justify-between gap-3 px-4 py-2 text-slate-700 dark:text-gray-300">
-            <span>Mes pasado <span className="text-slate-400 dark:text-gray-500">({textoRango(rangos.anterior)})</span></span>
-            <span className="font-num font-semibold">{pesos(datos.anterior)}</span>
+        <div className="divide-y divide-slate-100 dark:divide-gray-700/60 text-secundario">
+          <div className="flex items-center justify-between gap-3 px-4 py-2 text-tinta-principal">
+            <span>Mes pasado <span className="text-tinta-atenuada">({textoRango(rangos.anterior)})</span></span>
+            <span className="text-numero-tabla">{pesos(datos.anterior)}</span>
           </div>
-          <div className="flex items-center justify-between gap-3 px-4 py-2 text-slate-700 dark:text-gray-300">
-            <span>Mes actual <span className="text-slate-400 dark:text-gray-500">({textoRango(rangos.actual)})</span></span>
-            <span className="font-num font-semibold">{pesos(datos.actual)}</span>
+          <div className="flex items-center justify-between gap-3 px-4 py-2 text-tinta-principal">
+            <span>Mes actual <span className="text-tinta-atenuada">({textoRango(rangos.actual)})</span></span>
+            <span className="text-numero-tabla">{pesos(datos.actual)}</span>
           </div>
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-slate-50/60 dark:bg-gray-900/40">
-            <span className="font-bold uppercase tracking-wide text-slate-600 dark:text-gray-300">Diferencia</span>
+            <span className="text-etiqueta uppercase tracking-wide text-tinta-secundaria">Diferencia</span>
             <Diferencia actual={datos.actual} anterior={datos.anterior} />
           </div>
         </div>
         {verDesglose && (
           <div className="border-t border-slate-200 dark:border-gray-700 divide-y divide-slate-100 dark:divide-gray-700/60">
             {datos.porModulo.map((m) => (
-              <div key={m.moduloId} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-4 py-1.5 text-[10px] text-slate-600 dark:text-gray-400">
-                <span className="font-semibold">{MODULOS.find((x) => x.id === m.moduloId)?.nombre || m.moduloId}</span>
-                <span className="flex items-center gap-3 font-num">
+              <div key={m.moduloId} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-4 py-1.5 text-pequeno text-tinta-secundaria">
+                <span className="text-etiqueta">{MODULOS.find((x) => x.id === m.moduloId)?.nombre || m.moduloId}</span>
+                <span className="flex items-center gap-3 text-numero-tabla">
                   <span>{pesos(m.anterior.montoTotal)}</span>
                   <span>→ {pesos(m.actual.montoTotal)}</span>
                   <span className="w-20 text-right">{porcentajeTexto(diferencia(m.actual.montoTotal, m.anterior.montoTotal).porcentaje)}</span>
@@ -70,7 +70,7 @@ const TarjetaFuente = ({ fuente, datos, rangos, verDesglose }) => (
           </div>
         )}
         {datos.conError && (
-          <p className="px-4 py-2 text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 flex items-center gap-1.5">
+          <p className="px-4 py-2 text-pequeno text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 flex items-center gap-1.5">
             <AlertTriangle size={12} className="shrink-0" />
             No se pudo leer parte de los datos: el comparativo puede estar incompleto. Actualiza la página.
           </p>
@@ -94,12 +94,12 @@ const ComparativoMes = () => {
     <div className="w-full max-w-3xl flex flex-col gap-3">
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg p-4 shadow-xs flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-sm font-bold text-slate-900 dark:text-gray-100">Comparativo mensual</h1>
-          <p className="text-[11px] text-slate-500 dark:text-gray-400">
+          <h1 className="text-titulo-seccion text-tinta-principal">Comparativo mensual</h1>
+          <p className="text-secundario text-tinta-secundaria">
             Los mismos días de {nombreMes(rangos.anterior.mes).toLowerCase()} y {nombreMes(hoy.mes).toLowerCase()}, por fecha del documento (hasta hoy).
           </p>
         </div>
-        <div className="flex items-center gap-2 text-[11px] text-slate-600 dark:text-gray-300">
+        <div className="flex items-center gap-2 text-secundario text-tinta-secundaria">
           <label className="flex items-center gap-1">
             Desde
             <select aria-label="Desde" value={desde} onChange={(e) => setEleccion({ desde: Number(e.target.value), hasta })} className={SELECT}>
@@ -115,13 +115,13 @@ const ComparativoMes = () => {
         </div>
       </div>
 
-      <p className="text-[11px] text-slate-500 dark:text-gray-400 flex items-center gap-1.5 px-1">
+      <p className="text-secundario text-tinta-secundaria flex items-center gap-1.5 px-1">
         <Info size={12} className="shrink-0" />
         Los totales son por fecha del documento, por eso pueden diferir de los ítems Consumos y Facturas, que son por mes de imputación.
       </p>
 
       {rangos.anterior.ajustado && (
-        <p className="text-[11px] text-slate-500 dark:text-gray-400 flex items-center gap-1.5 px-1">
+        <p className="text-secundario text-tinta-secundaria flex items-center gap-1.5 px-1">
           <Info size={12} className="shrink-0" />
           {nombreMes(rangos.anterior.mes)} tiene {rangos.anterior.hasta} días: los días que no existen se toman como su último día ({textoRango(rangos.anterior)}).
         </p>

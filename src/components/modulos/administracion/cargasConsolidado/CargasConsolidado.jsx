@@ -96,18 +96,18 @@ const PestanaGestion = ({ filaSeleccionada, setFilaSeleccionada, setCargandoCons
             type="button"
             onClick={gestionData.actualizar}
             disabled={!gestionData.anio || gestionData.cargando}
-            className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded font-medium flex items-center gap-1 transition disabled:opacity-50"
+            className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-tinta-secundaria rounded flex items-center gap-1 transition disabled:opacity-50"
             title="Volver a leer los registros del año"
           >
             <RefreshCw size={12} /> Actualizar
           </button>
         </div>
         {!gestionData.anio ? (
-          <div className="flex-grow flex items-center justify-center text-slate-400 dark:text-gray-500 text-[10px]">
+          <div className="flex-grow flex items-center justify-center text-tinta-atenuada text-pequeno">
             Elegí un año para cargar los registros.
           </div>
         ) : gestionData.cargando ? (
-          <div className="flex-grow flex items-center justify-center text-slate-400 dark:text-gray-500 text-[10px]">
+          <div className="flex-grow flex items-center justify-center text-tinta-atenuada text-pequeno">
             <Loader2 size={14} className="animate-spin mr-1.5" /> Cargando registros...
           </div>
         ) : (
@@ -153,18 +153,18 @@ const PestanaImputadas = () => {
           type="button"
           onClick={imputadasData.actualizar}
           disabled={!imputadasData.anio || imputadasData.cargando}
-          className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 rounded font-medium flex items-center gap-1 transition disabled:opacity-50"
+          className="h-7 px-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-tinta-secundaria rounded flex items-center gap-1 transition disabled:opacity-50"
           title="Volver a leer los registros del año"
         >
           <RefreshCw size={12} /> Actualizar
         </button>
       </div>
       {!imputadasData.anio ? (
-        <div className="flex-grow flex items-center justify-center text-slate-400 dark:text-gray-500 text-[10px]">
+        <div className="flex-grow flex items-center justify-center text-tinta-atenuada text-pequeno">
           Elegí un año para cargar las imputadas.
         </div>
       ) : imputadasData.cargando ? (
-        <div className="flex-grow flex items-center justify-center text-slate-400 dark:text-gray-500 text-[10px]">
+        <div className="flex-grow flex items-center justify-center text-tinta-atenuada text-pequeno">
           <Loader2 size={14} className="animate-spin mr-1.5" /> Cargando imputadas...
         </div>
       ) : (
@@ -196,24 +196,24 @@ const CargasConsolidado = () => {
   const [filaSeleccionada, setFilaSeleccionada] = useState(null);
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {cargandoConsignacionDetalle && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">Procesando...</h3>
+            <h3 className="text-[#2383C2] text-subtitulo">Procesando...</h3>
           </div>
         </div>
       )}
 
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
-          Cargas Consolidado — Consignación + Implantes + Hemodinamia
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
+          Cargas consolidado — Consignación + Implantes + Hemodinamia
         </h2>
       </div>
 
       {tabsPermitidas.length === 0 ? (
-        <div className="flex-grow flex flex-col items-center justify-center text-center p-6 text-slate-500 dark:text-gray-400 text-[10px] gap-1.5">
+        <div className="flex-grow flex flex-col items-center justify-center text-center p-6 text-tinta-secundaria text-pequeno gap-1.5">
           <ShieldAlert size={22} className="text-amber-500" />
           Su perfil no tiene acceso a ninguna sección de Cargas Consolidado.
         </div>
@@ -229,9 +229,9 @@ const CargasConsolidado = () => {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md font-semibold transition text-[11px] border-b-2 ${isActive
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md transition text-etiqueta border-b-2 ${isActive
                       ? 'text-[#2383C2] border-[#2383C2]'
-                      : 'text-slate-500 dark:text-gray-400 border-transparent hover:text-slate-700 dark:hover:text-gray-200'
+                      : 'text-tinta-secundaria border-transparent hover:text-tinta-principal'
                       }`}
                   >
                     <TabIcon size={13} />

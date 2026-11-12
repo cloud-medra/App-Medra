@@ -349,7 +349,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
         onSeguir={() => setConfirmarDescartar(false)}
       />
       <MarcoEdicionUsuario
-        migas={<><span className="uppercase tracking-wider font-semibold">Usuarios</span><span>/</span><span>Crear usuario</span></>}
+        migas={<><span className="uppercase tracking-wider text-etiqueta">Usuarios</span><span>/</span><span>Crear usuario</span></>}
         nombre={formData.nombreCompleto}
         detalle={formData.email}
         chips={<>{externo && <Chip tono="ambar" icon={Building2}>Externo</Chip>}<Chip tono="azul" icon={Shield}>{labelRol(formData.rol)}</Chip>{formData.centroCostoId && <Chip icon={Building2}>{nombreCentro(formData.centroCostoId)}</Chip>}{estadoChip}</>}
@@ -363,7 +363,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
           <button
             type="button"
             onClick={handleFinalizarCreacion}
-            className="h-8 px-3.5 rounded-md border border-green-600 text-green-700 dark:text-green-400 text-[12px] font-semibold inline-flex items-center gap-1.5 hover:bg-green-50 dark:hover:bg-green-950/30"
+            className="h-8 px-3.5 rounded-md border border-green-600 text-green-700 dark:text-green-400 text-etiqueta inline-flex items-center gap-1.5 hover:bg-green-50 dark:hover:bg-green-950/30"
           >
             <RotateCcw size={13} /> Finalizar y crear otro
           </button>
@@ -418,7 +418,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
                     onCambiar={(lista) => setFormData((prev) => ({ ...prev, instituciones: lista }))}
                     disabled={!!usuarioId}
                   />
-                  {usuarioId && <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Para cambiarlas, edita el usuario desde Listado Usuario.</p>}
+                  {usuarioId && <p className="text-secundario text-tinta-atenuada mt-1">Para cambiarlas, edita el usuario desde Listado Usuario.</p>}
                 </div>}
                 {centroSinConfigurar && (
                   <div className="mt-4">
@@ -450,8 +450,8 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
             accesoTotalPorRol={accesoTotal}
             insigniaVista={(path) => (configurables.includes(path) ? (
               estadoCreacion.itemsFinalizados[path]
-                ? <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shrink-0"><CheckCircle2 size={10} /> Revisada</span>
-                : <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 shrink-0"><CircleDashed size={10} /> Por revisar</span>
+                ? <span className="inline-flex items-center gap-1 text-pequeno px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 shrink-0"><CheckCircle2 size={10} /> Revisada</span>
+                : <span className="inline-flex items-center gap-1 text-pequeno px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 shrink-0"><CircleDashed size={10} /> Por revisar</span>
             ) : null)}
             pieVista={(path) => (configurables.includes(path) && !estadoCreacion.itemsFinalizados[path] ? (
               <div className="flex justify-end">
@@ -459,7 +459,7 @@ const CrearUsuario = ({ resumeUsuarioId, onResumeConsumido, onIrAPermisosCentro 
                   type="button"
                   onClick={() => guardarPermisos(path)}
                   disabled={cargando}
-                  className="h-8 px-3.5 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[12px] font-semibold inline-flex items-center gap-1.5 disabled:opacity-50"
+                  className="h-8 px-3.5 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta inline-flex items-center gap-1.5 disabled:opacity-50"
                 >
                   <CheckCircle2 size={14} /> Guardar y marcar como revisada
                 </button>

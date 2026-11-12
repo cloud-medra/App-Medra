@@ -91,25 +91,25 @@ const ControlMensual = () => {
     switch (estado) {
       case 'ABIERTO':
         return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-pequeno bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
             <CheckCircle size={9} /> Abierto
           </span>
         );
       case 'REABIERTO':
         return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-pequeno bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
             <AlertCircle size={9} /> Reabierto
           </span>
         );
       case 'CERRADO':
         return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-700 dark:bg-gray-800 dark:text-gray-300 border border-slate-300 dark:border-gray-600">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-pequeno bg-slate-100 text-tinta-principal dark:bg-gray-800 border border-slate-300 dark:border-gray-600">
             <Lock size={9} /> Cerrado
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-slate-50 text-slate-400 dark:bg-gray-900 dark:text-gray-600 border border-slate-200 dark:border-gray-800">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-pequeno bg-slate-50 text-tinta-atenuada dark:bg-gray-900 border border-slate-200 dark:border-gray-800">
             Sin Iniciar
           </span>
         );
@@ -123,10 +123,10 @@ const ControlMensual = () => {
         <div className="flex items-center gap-2">
           <Calendar size={18} className="text-[#2383C2]" />
           <div>
-            <h2 className="text-[13px] font-bold text-slate-800 dark:text-gray-100 uppercase tracking-wide">
-              Control y Cierre de Períodos
+            <h2 className="text-titulo-seccion text-tinta-principal">
+              Control y cierre de períodos
             </h2>
-            <p className="text-[10px] text-slate-500 dark:text-gray-400">
+            <p className="text-pequeno text-tinta-secundaria">
               Matriz detallada de estado, documentos y montos imputados por módulo
             </p>
           </div>
@@ -137,18 +137,18 @@ const ControlMensual = () => {
             type="button"
             onClick={() => actualizarResumen()}
             disabled={cargandoResumen}
-            className="h-7 px-2 bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 dark:hover:bg-gray-600 text-slate-600 dark:text-gray-300 rounded text-[11px] font-medium flex items-center gap-1 transition disabled:opacity-50"
+            className="h-7 px-2 bg-slate-100 dark:bg-gray-700 hover:bg-slate-200 dark:hover:bg-gray-600 text-tinta-secundaria rounded text-secundario flex items-center gap-1 transition disabled:opacity-50"
             title="Volver a calcular documentos y montos (los meses abiertos se recalculan solos cada 5 minutos)"
           >
             <RefreshCw size={12} className={cargandoResumen ? 'animate-spin' : ''} /> Actualizar
           </button>
           <div className="flex items-center gap-1.5">
-            <label htmlFor="select-modulo" className="text-[11px] font-medium text-slate-600 dark:text-gray-300">Módulo:</label>
+            <label htmlFor="select-modulo" className="text-secundario text-tinta-secundaria">Módulo:</label>
             <select
               id="select-modulo"
               value={moduloFiltro}
               onChange={(e) => setModuloFiltro(e.target.value)}
-              className="h-7 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-2 font-bold outline-none focus:border-[#2383C2]"
+              className="h-7 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-etiqueta px-2 outline-none focus:border-[#2383C2]"
             >
               <option value="TODOS">Todos los Módulos</option>
               {MODULOS.map(m => (
@@ -158,14 +158,14 @@ const ControlMensual = () => {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <label htmlFor="select-anio" className="text-[11px] font-medium text-slate-600 dark:text-gray-300">Año:</label>
+            <label htmlFor="select-anio" className="text-secundario text-tinta-secundaria">Año:</label>
             <select
               id="select-anio"
               value={anioSeleccionado}
               onChange={(e) => setAnioSeleccionado(e.target.value)}
               disabled={hayMesAbierto}
               title={hayMesAbierto ? "No se puede cambiar el año mientras existan períodos en curso o con actividad." : ""}
-              className={`h-7 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-gray-100 rounded text-[11px] px-2 font-bold outline-none focus:border-[#2383C2] ${hayMesAbierto ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-gray-800' : ''
+              className={`h-7 border border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-tinta-principal rounded text-etiqueta px-2 outline-none focus:border-[#2383C2] ${hayMesAbierto ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-gray-800' : ''
                 }`}
             >
               {[anioActualNum, anioActualNum + 1].map(a => (
@@ -177,7 +177,7 @@ const ControlMensual = () => {
           <button
             onClick={() => setPanelAperturaAbierto(true)}
             disabled={procesandoAccion}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded text-[11px] font-bold shadow-xs transition h-7 cursor-pointer disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded text-etiqueta shadow-xs transition h-7 cursor-pointer disabled:opacity-50"
           >
             <Plus size={14} />
             Abrir Período
@@ -187,24 +187,24 @@ const ControlMensual = () => {
 
       <div className="flex-1 overflow-auto p-4">
         {cargando ? (
-          <div className="flex flex-col items-center justify-center h-64 text-slate-500">
+          <div className="flex flex-col items-center justify-center h-64 text-tinta-secundaria">
             <div className="w-8 h-8 border-2 border-[#2383C2] border-t-transparent rounded-full animate-spin mb-2" />
-            <p className="text-[11px]">Cargando consolidado de cierres...</p>
+            <p className="text-secundario">Cargando consolidado de cierres...</p>
           </div>
         ) : mesesIniciados.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-gray-800 rounded-lg border border-slate-200 dark:border-gray-700 text-center space-y-3">
             <Calendar size={36} className="text-slate-300 dark:text-gray-600" />
             <div>
-              <p className="text-[13px] font-bold text-slate-700 dark:text-gray-200">
+              <p className="text-subtitulo text-tinta-principal">
                 No hay meses abiertos para el año {anioSeleccionado}
               </p>
-              <p className="text-[11px] text-slate-400 dark:text-gray-500">
+              <p className="text-secundario text-tinta-atenuada">
                 Usa el botón "Abrir Período" para iniciar el flujo de un nuevo mes.
               </p>
             </div>
             <button
               onClick={() => setPanelAperturaAbierto(true)}
-              className="px-3 py-1.5 bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[11px] font-bold rounded shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta rounded shadow-xs transition flex items-center gap-1.5 cursor-pointer"
             >
               <Plus size={14} />
               Abrir Período
@@ -214,7 +214,7 @@ const ControlMensual = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg border border-slate-200 dark:border-gray-700 overflow-hidden shadow-xs min-w-max">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 dark:bg-gray-900/60 border-b border-slate-200 dark:border-gray-700 text-[9px] font-bold uppercase tracking-widest text-slate-500 dark:text-gray-400">
+                <tr className="bg-slate-50 dark:bg-gray-900/60 border-b border-slate-200 dark:border-gray-700 text-pequeno uppercase tracking-widest text-tinta-secundaria">
                   <th rowSpan={3} className="py-2.5 px-3 border-r border-slate-200 dark:border-gray-700 bg-slate-100 dark:bg-gray-900 sticky left-0 z-10 w-36">
                     Período
                   </th>
@@ -234,7 +234,7 @@ const ControlMensual = () => {
                   })}
                 </tr>
 
-                <tr className="bg-slate-100 dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 text-[10px] font-bold uppercase tracking-wider text-slate-700 dark:text-gray-200">
+                <tr className="bg-slate-100 dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 text-pequeno uppercase tracking-wider text-tinta-principal">
                   {modulosVisibles.map((mod) => {
                     const modIndex = MODULOS.findIndex(m => m.id === mod.id);
                     const colorConfig = MODULO_COLORES[modIndex % MODULO_COLORES.length];
@@ -254,7 +254,7 @@ const ControlMensual = () => {
                   })}
                 </tr>
 
-                <tr className="bg-slate-50 dark:bg-gray-900/60 border-b border-slate-200 dark:border-gray-700 text-[8px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
+                <tr className="bg-slate-50 dark:bg-gray-900/60 border-b border-slate-200 dark:border-gray-700 text-pequeno uppercase tracking-wider text-tinta-secundaria">
                   {modulosVisibles.map((mod) => (
                     <React.Fragment key={`sub_${mod.id}`}>
                       <th className="py-1.5 px-1.5 text-center border-r border-slate-100 dark:border-gray-800 w-24">Estado / Acción</th>
@@ -274,7 +274,7 @@ const ControlMensual = () => {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-slate-200 dark:divide-gray-700 text-[10px]">
+              <tbody className="divide-y divide-slate-200 dark:divide-gray-700 text-pequeno">
                 {mesesIniciados.map((mes) => {
                   const indexMesReal = MESES.findIndex(m => m.id === mes.id || m.nombre === mes.nombre);
                   let numeroMesReal = indexMesReal !== -1 ? indexMesReal + 1 : parseInt(mes.id, 10);
@@ -289,7 +289,7 @@ const ControlMensual = () => {
 
                   return (
                     <tr key={mes.id} className="hover:bg-slate-50/80 dark:hover:bg-gray-800/50 transition-colors">
-                      <td className="py-2 px-3 font-bold text-slate-800 dark:text-gray-100 border-r border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky left-0 z-10">
+                      <td className="py-2 px-3 text-etiqueta text-tinta-principal border-r border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky left-0 z-10">
                         <div className="flex items-center justify-between gap-1.5">
                           <span className="uppercase">
                             {numeroMesReal} {anioSeleccionado}
@@ -299,7 +299,7 @@ const ControlMensual = () => {
                               onClick={() => handleCerrarTodos(mes.id)}
                               disabled={procesandoAccion}
                               title={`Cerrar todos los módulos para el período ${numeroMesReal} ${anioSeleccionado}`}
-                              className="px-1 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-600 dark:text-gray-300 rounded text-[8px] font-bold flex items-center gap-0.5 transition cursor-pointer disabled:opacity-50 shrink-0"
+                              className="px-1 py-0.5 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-tinta-secundaria rounded text-pequeno flex items-center gap-0.5 transition cursor-pointer disabled:opacity-50 shrink-0"
                             >
                               <ShieldAlert size={9} className="text-amber-500" />
                               Cerrar Todos
@@ -381,11 +381,11 @@ const ControlMensual = () => {
                               </div>
                             </td>
 
-                            <td className={`py-2 px-1.5 border-r border-slate-100 dark:border-gray-800 text-right font-medium ${colorConfig.text} align-middle`}>
+                            <td className={`py-2 px-1.5 border-r border-slate-100 dark:border-gray-800 text-right ${colorConfig.text} align-middle`}>
                               {infoImputacion.cantidad.toLocaleString('es-CL')}
                             </td>
 
-                            <td className={`py-2 px-1.5 border-r border-slate-200 dark:border-gray-700 text-right font-bold ${colorConfig.text} align-middle`}>
+                            <td className={`py-2 px-1.5 border-r border-slate-200 dark:border-gray-700 text-right text-etiqueta ${colorConfig.text} align-middle`}>
                               ${infoImputacion.montoTotal.toLocaleString('es-CL')}
                             </td>
                           </React.Fragment>

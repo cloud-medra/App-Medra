@@ -28,9 +28,9 @@ const Pestana = ({ activa, onClick, children }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`px-3 py-1.5 text-[11px] font-semibold border-b-2 transition ${activa
+    className={`px-3 py-1.5 text-etiqueta border-b-2 transition ${activa
       ? 'border-[#2383C2] text-[#2383C2]'
-      : 'border-transparent text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'}`}
+      : 'border-transparent text-tinta-secundaria hover:text-tinta-principal'}`}
   >
     {children}
   </button>
@@ -57,8 +57,8 @@ const MisRecordatorios = ({ uid }) => {
     (err) => { console.error('Error al leer mis recordatorios:', err); setTareas([]); }
   ), [uid]);
 
-  if (tareas === null) return <p className="p-4 text-slate-400 flex items-center gap-1.5"><Loader2 size={13} className="animate-spin" /> Cargando…</p>;
-  if (tareas.length === 0) return <p className="p-4 text-slate-400">No tienes recordatorios asignados.</p>;
+  if (tareas === null) return <p className="p-4 text-tinta-atenuada flex items-center gap-1.5"><Loader2 size={13} className="animate-spin" /> Cargando…</p>;
+  if (tareas.length === 0) return <p className="p-4 text-tinta-atenuada">No tienes recordatorios asignados.</p>;
 
   return (
     <ul className="p-3 space-y-1.5 max-w-3xl">
@@ -67,16 +67,16 @@ const MisRecordatorios = ({ uid }) => {
         return (
           <li key={t.id} className="flex items-start gap-2 px-3 py-2 rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <div className="min-w-0 flex-grow">
-              <p className="font-semibold">{t.titulo}</p>
-              {t.descripcion && <p className="text-[10.5px] text-slate-500 dark:text-gray-400 whitespace-pre-wrap">{t.descripcion}</p>}
-              <p className="text-[10px] text-slate-400 mt-0.5">{textoDiasHora(t)}</p>
+              <p className="text-etiqueta">{t.titulo}</p>
+              {t.descripcion && <p className="text-pequeno text-tinta-secundaria whitespace-pre-wrap">{t.descripcion}</p>}
+              <p className="text-pequeno text-tinta-atenuada mt-0.5">{textoDiasHora(t)}</p>
             </div>
             {p ? (
-              <span className={`shrink-0 text-[10px] font-bold uppercase ${p.atrasadas ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+              <span className={`shrink-0 text-pequeno uppercase ${p.atrasadas ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
                 {p.atrasadas ? `Atrasada (${p.atrasadas})` : 'Pendiente hoy'}
               </span>
             ) : (
-              <span className="shrink-0 flex items-center gap-1 text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">
+              <span className="shrink-0 flex items-center gap-1 text-pequeno uppercase text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 size={11} /> Al día
               </span>
             )}
@@ -99,16 +99,16 @@ const HistorialTarea = ({ tarea, usuariosPorId }) => {
     return () => { vigente = false; };
   }, [tarea]);
 
-  if (error) return <p className="text-red-600 text-[10px]">{error}</p>;
-  if (filas === null) return <p className="text-slate-400 text-[10px] flex items-center gap-1"><Loader2 size={11} className="animate-spin" /> Cargando historial…</p>;
-  if (filas.length === 0) return <p className="text-slate-400 text-[10px]">Aún no se ha marcado como realizada.</p>;
+  if (error) return <p className="text-red-600 text-pequeno">{error}</p>;
+  if (filas === null) return <p className="text-tinta-atenuada text-pequeno flex items-center gap-1"><Loader2 size={11} className="animate-spin" /> Cargando historial…</p>;
+  if (filas.length === 0) return <p className="text-tinta-atenuada text-pequeno">Aún no se ha marcado como realizada.</p>;
   return (
-    <ul className="text-[10px] divide-y divide-slate-100 dark:divide-gray-700/60">
+    <ul className="text-pequeno divide-y divide-slate-100 dark:divide-gray-700/60">
       {filas.map((f) => (
         <li key={`${f.uid}_${f.id}`} className="py-1 flex gap-3">
-          <span className="font-num w-20 shrink-0">{formatoFecha(f.fecha)}</span>
+          <span className="text-numero-tabla w-20 shrink-0">{formatoFecha(f.fecha)}</span>
           <span className="flex-grow">{usuariosPorId.get(f.uid) ? nombreUsuario(usuariosPorId.get(f.uid)) : (f.usuarioNombre || f.uid)}</span>
-          <span className="text-slate-400">Realizado: {formatoHora(f.realizadoEn)}</span>
+          <span className="text-tinta-atenuada">Realizado: {formatoHora(f.realizadoEn)}</span>
         </li>
       ))}
     </ul>
@@ -136,30 +136,30 @@ const FormularioTarea = ({ inicial, usuarios, guardando, onGuardar, onCancelar }
     if (Object.keys(err).length === 0) onGuardar(form);
   };
 
-  const error = (campo) => errores[campo] && <p className="text-red-600 dark:text-red-400 text-[10px] mt-0.5">{errores[campo]}</p>;
+  const error = (campo) => errores[campo] && <p className="text-red-600 dark:text-red-400 text-pequeno mt-0.5">{errores[campo]}</p>;
 
   return (
     <form onSubmit={enviar} className="p-3 rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-2.5">
       <div>
-        <label htmlFor="rec-titulo" className="block font-semibold mb-0.5">Título</label>
+        <label htmlFor="rec-titulo" className="block text-etiqueta mb-0.5">Título</label>
         <input id="rec-titulo" value={form.titulo} maxLength={MAX_TITULO} onChange={(e) => setForm({ ...form, titulo: e.target.value })}
           placeholder="Ej: Revisar facturas" className="w-full h-7 px-2 rounded border border-slate-300 dark:border-gray-600 bg-transparent outline-none focus:border-[#2383C2]" />
         {error('titulo')}
       </div>
       <div>
-        <label htmlFor="rec-descripcion" className="block font-semibold mb-0.5">Descripción <span className="font-normal text-slate-400">(opcional)</span></label>
+        <label htmlFor="rec-descripcion" className="block text-etiqueta mb-0.5">Descripción <span className="text-tinta-atenuada">(opcional)</span></label>
         <textarea id="rec-descripcion" value={form.descripcion} maxLength={MAX_DESCRIPCION} rows={2} onChange={(e) => setForm({ ...form, descripcion: e.target.value })}
           className="w-full px-2 py-1 rounded border border-slate-300 dark:border-gray-600 bg-transparent outline-none focus:border-[#2383C2]" />
         {error('descripcion')}
       </div>
       <fieldset>
-        <legend className="font-semibold mb-1">Se repite los días</legend>
+        <legend className="text-etiqueta mb-1">Se repite los días</legend>
         <div className="flex flex-wrap gap-1">
           {DIAS_SEMANA.map((d) => (
             <button key={d.valor} type="button" aria-pressed={form.dias.includes(d.valor)} onClick={() => alternar('dias', d.valor)}
-              className={`px-2.5 py-1 rounded-full border text-[10.5px] font-semibold transition ${form.dias.includes(d.valor)
+              className={`px-2.5 py-1 rounded-full border text-pequeno transition ${form.dias.includes(d.valor)
                 ? 'bg-[#2383C2] border-[#2383C2] text-white'
-                : 'border-slate-300 dark:border-gray-600 text-slate-600 dark:text-gray-300 hover:border-[#2383C2]'}`}>
+                : 'border-slate-300 dark:border-gray-600 text-tinta-secundaria hover:border-[#2383C2]'}`}>
               {d.label}
             </button>
           ))}
@@ -167,12 +167,12 @@ const FormularioTarea = ({ inicial, usuarios, guardando, onGuardar, onCancelar }
         {error('dias')}
       </fieldset>
       <div>
-        <label htmlFor="rec-hora" className="block font-semibold mb-0.5">Hora <span className="font-normal text-slate-400">(opcional: aparece desde esa hora; sin hora, desde el inicio del día)</span></label>
+        <label htmlFor="rec-hora" className="block text-etiqueta mb-0.5">Hora <span className="text-tinta-atenuada">(opcional: aparece desde esa hora; sin hora, desde el inicio del día)</span></label>
         <div className="flex items-center gap-1.5">
           <input id="rec-hora" type="time" value={form.hora} onChange={(e) => setForm({ ...form, hora: e.target.value })}
             className="h-7 px-2 rounded border border-slate-300 dark:border-gray-600 bg-transparent outline-none focus:border-[#2383C2]" />
           {form.hora && (
-            <button type="button" onClick={() => setForm({ ...form, hora: '' })} className="text-[10px] text-slate-500 hover:text-red-600 underline">
+            <button type="button" onClick={() => setForm({ ...form, hora: '' })} className="text-pequeno text-tinta-secundaria hover:text-red-600 underline">
               Quitar hora
             </button>
           )}
@@ -180,7 +180,7 @@ const FormularioTarea = ({ inicial, usuarios, guardando, onGuardar, onCancelar }
         {error('hora')}
       </div>
       <fieldset>
-        <legend className="font-semibold mb-1">Usuarios asignados ({form.asignados.length})</legend>
+        <legend className="text-etiqueta mb-1">Usuarios asignados ({form.asignados.length})</legend>
         <div className="relative mb-1 max-w-xs">
           <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
           <input value={filtro} onChange={(e) => setFiltro(e.target.value)} placeholder="Buscar usuario…" aria-label="Buscar usuario"
@@ -192,9 +192,9 @@ const FormularioTarea = ({ inicial, usuarios, guardando, onGuardar, onCancelar }
             return (
               <label key={u.id} className="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-slate-50 dark:hover:bg-gray-700/40">
                 <input type="checkbox" checked={form.asignados.includes(u.id)} onChange={() => alternar('asignados', u.id)} />
-                <span className="flex-grow">{nombreUsuario(u)} <span className="text-slate-400">{u.email}</span></span>
+                <span className="flex-grow">{nombreUsuario(u)} <span className="text-tinta-atenuada">{u.email}</span></span>
                 {!recibe && (
-                  <span className="flex items-center gap-1 text-[9.5px] text-amber-600 dark:text-amber-400" title='Dale la pestaña "Mis recordatorios" en el formulario de usuarios'>
+                  <span className="flex items-center gap-1 text-pequeno text-amber-600 dark:text-amber-400" title='Dale la pestaña "Mis recordatorios" en el formulario de usuarios'>
                     <AlertTriangle size={10} /> Sin permiso: no lo verá
                   </span>
                 )}
@@ -205,7 +205,7 @@ const FormularioTarea = ({ inicial, usuarios, guardando, onGuardar, onCancelar }
         {error('asignados')}
       </fieldset>
       <div className="flex gap-2">
-        <button type="submit" disabled={guardando} className="h-7 px-3 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white font-semibold flex items-center gap-1.5 disabled:opacity-60">
+        <button type="submit" disabled={guardando} className="h-7 px-3 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta flex items-center gap-1.5 disabled:opacity-60">
           {guardando ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />} Guardar
         </button>
         <button type="button" onClick={onCancelar} className="h-7 px-3 rounded border border-slate-300 dark:border-gray-600 flex items-center gap-1.5">
@@ -300,33 +300,33 @@ const AdministrarRecordatorios = ({ userData }) => {
         />
       ) : (
         <button type="button" onClick={() => setEditando('nueva')}
-          className="h-7 px-3 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white font-semibold flex items-center gap-1.5">
+          className="h-7 px-3 rounded bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta flex items-center gap-1.5">
           <Plus size={13} /> Nuevo recordatorio
         </button>
       )}
 
       {tareas === null ? (
-        <p className="text-slate-400 flex items-center gap-1.5"><Loader2 size={13} className="animate-spin" /> Cargando…</p>
+        <p className="text-tinta-atenuada flex items-center gap-1.5"><Loader2 size={13} className="animate-spin" /> Cargando…</p>
       ) : lista.length === 0 ? (
-        <p className="text-slate-400">Aún no hay recordatorios.</p>
+        <p className="text-tinta-atenuada">Aún no hay recordatorios.</p>
       ) : (
         <ul className="space-y-1.5">
           {lista.map((t) => (
             <li key={t.id} className={`rounded-lg border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${t.activa === false ? 'opacity-60' : ''}`}>
               <div className="flex items-start gap-2 px-3 py-2">
                 <div className="min-w-0 flex-grow">
-                  <p className="font-semibold">
+                  <p className="text-etiqueta">
                     {t.titulo}
-                    {t.activa === false && <span className="ml-2 text-[9.5px] font-bold uppercase text-slate-400">Desactivado</span>}
+                    {t.activa === false && <span className="ml-2 text-pequeno uppercase text-tinta-atenuada">Desactivado</span>}
                   </p>
-                  {t.descripcion && <p className="text-[10.5px] text-slate-500 dark:text-gray-400 whitespace-pre-wrap">{t.descripcion}</p>}
-                  <p className="text-[10px] text-slate-400 mt-0.5">
+                  {t.descripcion && <p className="text-pequeno text-tinta-secundaria whitespace-pre-wrap">{t.descripcion}</p>}
+                  <p className="text-pequeno text-tinta-atenuada mt-0.5">
                     {textoDiasHora(t)} · {(t.asignados || []).map((uid) => nombreUsuario(usuariosPorId.get(uid) || { id: uid })).join(', ')}
                   </p>
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button type="button" onClick={() => setHistorialAbierto(historialAbierto === t.id ? null : t.id)} title="Historial de Realizados" aria-label={`Historial de ${t.titulo}`}
-                    className="p-1 rounded text-slate-500 hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700"><History size={13} /></button>
+                    className="p-1 rounded text-tinta-secundaria hover:text-[#2383C2] hover:bg-slate-100 dark:hover:bg-gray-700"><History size={13} /></button>
                   <button type="button" onClick={() => setEditando(t)} title="Editar" aria-label={`Editar ${t.titulo}`}
                     className="p-1 rounded text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30"><Pencil size={13} /></button>
                   <button type="button" onClick={() => alternarActiva(t)} title={t.activa === false ? 'Activar' : 'Desactivar'} aria-label={`${t.activa === false ? 'Activar' : 'Desactivar'} ${t.titulo}`}
@@ -360,10 +360,10 @@ const Recordatorios = () => {
   const actual = pestana || (verAdministrar ? 'administrar' : 'mis');
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-[11px] text-slate-700 dark:text-gray-200">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden text-secundario text-tinta-principal">
       <div className="px-3 py-2 flex items-center gap-1.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
         <BellRing size={15} className="text-[#2383C2]" />
-        <h2 className="text-[12px] font-bold">RECORDATORIOS</h2>
+        <h2 className="text-titulo-seccion text-tinta-principal">Recordatorios</h2>
       </div>
       {!verMis && !verAdministrar ? (
         <div className="p-6 flex items-center gap-2 text-amber-700 dark:text-amber-400">

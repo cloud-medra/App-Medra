@@ -22,6 +22,7 @@ Foto del 06-11-2026, con las pantallas nuevas agregadas el 12-11-2026: las cifra
 | **General** | `general/` (20 archivos: Ajustes, Perfil, foto de perfil, Soporte y tickets, textos legales, acceso rápido de módulos). Excepción: la inicial del avatar grande de Perfil (`text-5xl`), que es gráfica | 12-11-2026 |
 | **Bodega** | `bodega/` (38 archivos). Incluye compartidos que se ven también en Armado de Kits, Códigos de barra, Fibras (`TablaBodega`) e Inventario → Tránsito (`GestionTransitoModal`). Alertas numéricas: `text-numero-tabla` pasa a `text-etiqueta tabular-nums` | 12-11-2026 |
 | **Maestros** | `maestros/` (34 archivos, además de Códigos de barra ya migrado). Incluye `codigosMaestrosV2/ui/TablaCodigos` y `PanelLateral`, que se ven también en Soporte, Estadísticas y Solicitudes de modificaciones. Títulos que estaban escritos en mayúsculas pasaron a tipo oración | 12-11-2026 |
+| **Herramientas** | `administracion/` (46 archivos, además de Historial de imputaciones ya migrado). Valores de tarjetas de indicadores (Estadísticas, Resumen del período, Totales de Finanzas, ficha de usuario) con `text-numero-indicador` | 12-11-2026 |
 
 Login y cambio de contraseña usan además los tokens `text-acceso-*` (portada de 30, título de 24 y cuerpo de 16 px; solo para pantallas de acceso). Conservan sus grises (`text-gray-*`) y no usan `text-tinta-*`: tienen fondo blanco fijo y la clase `.dark` se aplica a toda la página, así que con el tema oscuro guardado el texto quedaría claro sobre blanco. Los textos legales que abre el cambio de contraseña (`general/legales/`) van con el módulo General.
 
@@ -395,110 +396,6 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 | Archivo | Clases | <10 px | `font-num` | Cortes |
 |---|---:|---:|---:|---:|
 | `vacunatorio/vizualizador/XmlDetallesDoc.jsx` | 25 | 3 | 0 | 4 |
-
-## administracion
-
-45 archivos, 759 clases.
-
-### usuarios (13 archivos, 177 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/usuarios/ListadoUsuario.jsx` | 47 | 8 | 0 | 1 |
-| `administracion/usuarios/MarcoEdicionUsuario.jsx` | 25 | 0 | 0 | 2 |
-| `administracion/usuarios/EditorPermisos.jsx` | 24 | 1 | 0 | 3 |
-| `administracion/usuarios/CamposFormulario.jsx` | 13 | 0 | 0 | 0 |
-| `administracion/usuarios/PanelPermisosVista.jsx` | 13 | 0 | 0 | 0 |
-| `administracion/usuarios/EditarUsuario.jsx` | 12 | 0 | 0 | 0 |
-| `administracion/usuarios/AsignacionAdministradores.jsx` | 10 | 0 | 0 | 0 |
-| `administracion/usuarios/CrearUsuario.jsx` | 10 | 0 | 0 | 0 |
-| `administracion/usuarios/BarraCentroCosto.jsx` | 8 | 0 | 0 | 0 |
-| `administracion/usuarios/SelectorInstitucionesUsuario.jsx` | 8 | 0 | 0 | 1 |
-| `administracion/usuarios/MarcarTodaLaVista.jsx` | 3 | 0 | 0 | 0 |
-| `administracion/usuarios/AvisoCentroSinConfigurar.jsx` | 2 | 0 | 0 | 0 |
-| `administracion/usuarios/MarcaOrigen.jsx` | 2 | 1 | 0 | 0 |
-
-### controlMensual (5 archivos, 133 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/controlMensual/ControlMensual.jsx` | 42 | 7 | 0 | 0 |
-| `administracion/controlMensual/MonthRow.jsx` | 31 | 1 | 5 | 0 |
-| `administracion/controlMensual/PanelAperturaPeriodo.jsx` | 22 | 2 | 0 | 0 |
-| `administracion/controlMensual/ModalCierreMes.jsx` | 21 | 0 | 1 | 0 |
-| `administracion/controlMensual/ModalesControlMensual.jsx` | 17 | 0 | 1 | 0 |
-
-### resumenPeriodoAbierto (2 archivos, 89 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/resumenPeriodoAbierto/ResumenPeriodoAbierto.jsx` | 68 | 11 | 0 | 0 |
-| `administracion/resumenPeriodoAbierto/BodegaPeriodoCard.jsx` | 21 | 0 | 2 | 0 |
-
-### estadisticas (8 archivos, 78 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/estadisticas/Estadisticas.jsx` | 30 | 0 | 0 | 2 |
-| `estadisticas/components/PanelDetalle.jsx` | 19 | 0 | 0 | 2 |
-| `estadisticas/components/BarrasTop.jsx` | 8 | 0 | 0 | 2 |
-| `estadisticas/components/TablaCodigos.jsx` | 6 | 0 | 0 | 4 |
-| `estadisticas/components/TarjetaIndicador.jsx` | 5 | 0 | 0 | 1 |
-| `estadisticas/components/TablaComun.jsx` | 4 | 0 | 0 | 1 |
-| `estadisticas/components/TablaDimension.jsx` | 4 | 0 | 0 | 3 |
-| `estadisticas/components/Variacion.jsx` | 2 | 0 | 0 | 0 |
-
-### cargasConsolidado (8 archivos, 58 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/cargasConsolidado/CargasConsolidado.jsx` | 14 | 0 | 0 | 0 |
-| `cargasConsolidado/components/SolicitudesUnificadasTable.jsx` | 14 | 3 | 1 | 17 |
-| `cargasConsolidado/components/ImputadasUnificadasTable.jsx` | 11 | 2 | 1 | 7 |
-| `cargasConsolidado/components/GestionUnificadaTable.jsx` | 9 | 3 | 0 | 7 |
-| `cargasConsolidado/components/OrigenFilterDropdown.jsx` | 5 | 0 | 0 | 0 |
-| `cargasConsolidado/components/FiltroAnioMes.jsx` | 3 | 0 | 0 | 0 |
-| `cargasConsolidado/components/FiltrosBusquedaOrigen.jsx` | 1 | 0 | 0 | 0 |
-| `cargasConsolidado/components/PaginacionSimple.jsx` | 1 | 0 | 0 | 0 |
-
-### notasAdmin (2 archivos, 58 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/notasAdmin/NotasAdmin.jsx` | 43 | 3 | 0 | 0 |
-| `administracion/notasAdmin/SelectorEstiloNota.jsx` | 15 | 1 | 0 | 1 |
-
-### totalesFinanzas (2 archivos, 45 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/totalesFinanzas/ComparativoMes.jsx` | 24 | 0 | 4 | 0 |
-| `administracion/totalesFinanzas/TotalFinanzas.jsx` | 21 | 0 | 3 | 0 |
-
-### alertas (1 archivos, 37 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/alertas/Alertas.jsx` | 37 | 0 | 0 | 2 |
-
-### permisosCentro (2 archivos, 36 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/permisosCentro/ConfigurarCentro.jsx` | 19 | 0 | 0 | 0 |
-| `administracion/permisosCentro/PermisosPorCentro.jsx` | 17 | 1 | 0 | 4 |
-
-### recordatorios (1 archivos, 36 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/recordatorios/Recordatorios.jsx` | 36 | 2 | 1 | 0 |
-
-### gestionModulos (1 archivos, 12 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `administracion/gestionModulos/GestionModulos.jsx` | 12 | 0 | 0 | 2 |
 
 ## inventario
 
