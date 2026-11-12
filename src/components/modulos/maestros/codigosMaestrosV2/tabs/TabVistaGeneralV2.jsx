@@ -65,22 +65,22 @@ const TabVistaGeneralV2 = ({ rutaVista = '/maestros/codigosMaestros/vistaGeneral
 
   const renderCelda = (col, item, index) => {
     switch (col.key) {
-      case 'numero': return <span className="text-gray-500 font-bold">{pag.pagina * pag.tamano + index + 1}</span>;
-      case 'codigo': return <span className="font-bold text-emerald-600 dark:text-emerald-400">{item.codigo || 'S/C'}</span>;
-      case 'referencia': return <span className="text-gray-700 dark:text-gray-200 font-medium" title={item.referencia}>{item.referencia}</span>;
+      case 'numero': return <span className="text-tinta-secundaria text-etiqueta">{pag.pagina * pag.tamano + index + 1}</span>;
+      case 'codigo': return <span className="text-etiqueta text-emerald-600 dark:text-emerald-400">{item.codigo || 'S/C'}</span>;
+      case 'referencia': return <span className="text-tinta-principal" title={item.referencia}>{item.referencia}</span>;
       case 'descEmpresa': return <span title={item.descriptorAuto}>{item.descriptorAuto || 'N/A'}</span>;
-      case 'empresa': return <span className="font-semibold text-gray-800 dark:text-gray-100" title={item.empresa}>{item.empresa}</span>;
+      case 'empresa': return <span className="text-etiqueta text-tinta-principal" title={item.empresa}>{item.empresa}</span>;
       case 'tipo': return item.tipo || 'N/A';
       case 'segmento': return item.segmento || 'N/A';
       case 'clase': return item.clase || 'N/A';
       case 'estado': return (
-        <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase ${item.estado === 'INACTIVO' ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400' : 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400'}`}>
+        <span className={`text-pequeno px-1.5 py-0.2 rounded-full uppercase ${item.estado === 'INACTIVO' ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400' : 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400'}`}>
           {item.estado || 'ACTIVO'}
         </span>
       );
-      case 'precioNeto': return <span className="font-bold">{formatearPrecio(item.precioNeto)}</span>;
-      case 'registradoPor': return <span className="text-gray-500 dark:text-gray-400" title={item.registradoPor}>{item.registradoPor || 'N/A'}</span>;
-      case 'fecha': return <span className="text-gray-500 dark:text-gray-400">{formatearFecha(item.fechaRegistro)}</span>;
+      case 'precioNeto': return <span className="text-etiqueta">{formatearPrecio(item.precioNeto)}</span>;
+      case 'registradoPor': return <span className="text-tinta-secundaria" title={item.registradoPor}>{item.registradoPor || 'N/A'}</span>;
+      case 'fecha': return <span className="text-tinta-secundaria">{formatearFecha(item.fechaRegistro)}</span>;
       case 'acciones': return (
         <div className="flex items-center justify-center gap-2">
           {puedeModificar && <BotonIcono icono={Pencil} tono="modificar" title="Modificar registro o precio" onClick={() => abrirPanel(item)} />}

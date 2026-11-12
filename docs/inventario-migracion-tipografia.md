@@ -21,6 +21,7 @@ Foto del 06-11-2026, con las pantallas nuevas agregadas el 12-11-2026: las cifra
 | **Componentes comunes** | `components/ui/` (`ModalConfirm`, `Toast`, `BotonRestablecerAnchos`, `PaginacionSimple`, `BuscadorConLimpiar`, `CentroSelect`, `MultiSelectFiltro`, `TablaRedimensionable`, `bodymap/DetalleZona`, `bodymap/CuerpoCompleto`). Se ven con tokens también dentro de pantallas sin migrar | 12-11-2026 |
 | **General** | `general/` (20 archivos: Ajustes, Perfil, foto de perfil, Soporte y tickets, textos legales, acceso rápido de módulos). Excepción: la inicial del avatar grande de Perfil (`text-5xl`), que es gráfica | 12-11-2026 |
 | **Bodega** | `bodega/` (38 archivos). Incluye compartidos que se ven también en Armado de Kits, Códigos de barra, Fibras (`TablaBodega`) e Inventario → Tránsito (`GestionTransitoModal`). Alertas numéricas: `text-numero-tabla` pasa a `text-etiqueta tabular-nums` | 12-11-2026 |
+| **Maestros** | `maestros/` (34 archivos, además de Códigos de barra ya migrado). Incluye `codigosMaestrosV2/ui/TablaCodigos` y `PanelLateral`, que se ven también en Soporte, Estadísticas y Solicitudes de modificaciones. Títulos que estaban escritos en mayúsculas pasaron a tipo oración | 12-11-2026 |
 
 Login y cambio de contraseña usan además los tokens `text-acceso-*` (portada de 30, título de 24 y cuerpo de 16 px; solo para pantallas de acceso). Conservan sus grises (`text-gray-*`) y no usan `text-tinta-*`: tienen fondo blanco fijo y la clase `.dark` se aplica a toda la página, así que con el tema oscuro guardado el texto quedaría claro sobre blanco. Los textos legales que abre el cambio de contraseña (`general/legales/`) van con el módulo General.
 
@@ -394,108 +395,6 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 | Archivo | Clases | <10 px | `font-num` | Cortes |
 |---|---:|---:|---:|---:|
 | `vacunatorio/vizualizador/XmlDetallesDoc.jsx` | 25 | 3 | 0 | 4 |
-
-## maestros
-
-33 archivos, 908 clases.
-
-### padMaestros (1 archivos, 124 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/padMaestros/PadMaestros.jsx` | 124 | 56 | 7 | 1 |
-
-### codigosMaestrosV2 (12 archivos, 123 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/codigosMaestrosV2/HistorialUso.jsx` | 18 | 0 | 0 | 0 |
-| `maestros/codigosMaestrosV2/PanelEdicionCodigo.jsx` | 16 | 0 | 0 | 2 |
-| `maestros/codigosMaestrosV2/PanelHistorial.jsx` | 15 | 0 | 0 | 2 |
-| `codigosMaestrosV2/ui/TablaCodigos.jsx` | 15 | 0 | 0 | 2 |
-| `codigosMaestrosV2/ui/Campos.jsx` | 13 | 0 | 0 | 2 |
-| `maestros/codigosMaestrosV2/CodigosMaestrosV2.jsx` | 12 | 0 | 0 | 1 |
-| `maestros/codigosMaestrosV2/PanelImportarExportar.jsx` | 10 | 0 | 0 | 1 |
-| `codigosMaestrosV2/tabs/TabVistaGeneralV2.jsx` | 7 | 1 | 0 | 0 |
-| `codigosMaestrosV2/tabs/TabSolicitudPreciosV2.jsx` | 6 | 0 | 0 | 0 |
-| `codigosMaestrosV2/tabs/TabConCodigoV2.jsx` | 5 | 1 | 0 | 0 |
-| `codigosMaestrosV2/tabs/TabPendientesV2.jsx` | 4 | 1 | 0 | 0 |
-| `codigosMaestrosV2/ui/BarraFiltros.jsx` | 2 | 0 | 0 | 0 |
-
-### recargosMaestros (2 archivos, 86 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/recargosMaestros/RecargosMaestrosDrawers.jsx` | 52 | 7 | 1 | 5 |
-| `maestros/recargosMaestros/RecargosMaestros.jsx` | 34 | 6 | 0 | 0 |
-
-### centrosMaestros (2 archivos, 82 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/centrosMaestros/CentrosMaestrosDrawers.jsx` | 52 | 7 | 1 | 5 |
-| `maestros/centrosMaestros/CentrosMaestros.jsx` | 30 | 5 | 0 | 0 |
-
-### prestadoresMaestro (2 archivos, 82 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/prestadoresMaestro/PrestadoresMaestrosDrawers.jsx` | 53 | 7 | 1 | 5 |
-| `maestros/prestadoresMaestro/PrestadoresMaestros.jsx` | 29 | 5 | 0 | 0 |
-
-### actualizacionPreciosMaestros (4 archivos, 75 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `actualizacionPreciosMaestros/components/DetalleImportacion.jsx` | 29 | 13 | 3 | 1 |
-| `maestros/actualizacionPreciosMaestros/ActualizacionPreciosMaestros.jsx` | 21 | 8 | 1 | 0 |
-| `actualizacionPreciosMaestros/components/HistorialImportaciones.jsx` | 13 | 5 | 2 | 2 |
-| `actualizacionPreciosMaestros/components/SelectorEmpresa.jsx` | 12 | 6 | 2 | 2 |
-
-### empresasMaestros (2 archivos, 75 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/empresasMaestros/EmpresasMaestrosDrawers.jsx` | 49 | 6 | 1 | 5 |
-| `maestros/empresasMaestros/EmpresasMaestros.jsx` | 26 | 4 | 0 | 0 |
-
-### conveniosMaestros (2 archivos, 74 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/conveniosMaestros/ConveniosMaestrosDrawers.jsx` | 48 | 6 | 1 | 5 |
-| `maestros/conveniosMaestros/ConveniosMaestros.jsx` | 26 | 4 | 0 | 0 |
-
-### previsionesMaestros (2 archivos, 74 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/previsionesMaestros/PrevisionesMaestrosDrawers.jsx` | 48 | 6 | 1 | 5 |
-| `maestros/previsionesMaestros/PrevisionesMaestros.jsx` | 26 | 4 | 0 | 0 |
-
-### zonasDiagnostico (1 archivos, 43 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/zonasDiagnostico/ZonasDiagnostico.jsx` | 43 | 0 | 0 | 3 |
-
-### institucionesMaestros (1 archivos, 26 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/institucionesMaestros/InstitucionesMaestros.jsx` | 26 | 3 | 0 | 0 |
-
-### calculadorMaestros (1 archivos, 25 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/calculadorMaestros/CalculadorMaestros.jsx` | 25 | 0 | 0 | 0 |
-
-### descripcionesOcultas (1 archivos, 19 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `maestros/descripcionesOcultas/DescripcionesOcultas.jsx` | 19 | 1 | 0 | 1 |
 
 ## administracion
 

@@ -137,14 +137,14 @@ const TabSolicitudPreciosV2 = ({ rutaVista = '/maestros/codigosMaestros/solicitu
           onChange={() => alternarFila(item.id)}
         />
       );
-      case 'codigo': return <span className="font-bold text-emerald-600 dark:text-emerald-400">{item.codigo}</span>;
-      case 'referencia': return <span className="text-gray-700 dark:text-gray-200 font-medium" title={item.referencia}>{item.referencia}</span>;
+      case 'codigo': return <span className="text-etiqueta text-emerald-600 dark:text-emerald-400">{item.codigo}</span>;
+      case 'referencia': return <span className="text-tinta-principal" title={item.referencia}>{item.referencia}</span>;
       case 'descripcion': return <span title={item.descripcion}>{item.descripcion || 'N/A'}</span>;
       case 'modulo': return <span title={textoModulos(item.modulos)}>{textoModulos(item.modulos)}</span>;
       case 'costo': return formatearPrecio(item.costo);
       case 'vecesCosto': return <span className="tabular-nums" title={item.vecesCosto ? String(item.vecesCosto) : undefined}>{formatearVecesCosto(item.vecesCosto)}</span>;
-      case 'venta': return <span className="font-bold">{formatearPrecio(item.venta)}</span>;
-      case 'fecha': return <span className="text-gray-500 dark:text-gray-400">{formatearFechaSolicitud(item.agregadoEl) || '—'}</span>;
+      case 'venta': return <span className="text-etiqueta">{formatearPrecio(item.venta)}</span>;
+      case 'fecha': return <span className="text-tinta-secundaria">{formatearFechaSolicitud(item.agregadoEl) || '—'}</span>;
       default: return null;
     }
   };
@@ -152,7 +152,7 @@ const TabSolicitudPreciosV2 = ({ rutaVista = '/maestros/codigosMaestros/solicitu
   return (
     <div className="h-full flex flex-col">
       <div className="shrink-0 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-gray-700">
-        <p className="text-[12px] text-slate-500 dark:text-gray-400">
+        <p className="text-normal text-tinta-secundaria">
           Referencias marcadas en Cargas para que TI actualice el precio en el sistema externo. Al descargar, las filas descargadas se quitan de la lista.
         </p>
         <div className="flex items-center gap-2">
@@ -177,8 +177,8 @@ const TabSolicitudPreciosV2 = ({ rutaVista = '/maestros/codigosMaestros/solicitu
         cargando={cargando}
         mensajeVacio="No hay referencias pendientes de enviar a TI."
       />
-      <div className="shrink-0 h-11 px-4 flex items-center border-t border-slate-200 dark:border-gray-700 text-[12px] text-slate-500 dark:text-gray-400">
-        <span className="font-medium text-slate-700 dark:text-gray-200 tabular-nums">{registros.length.toLocaleString('es-CL')}</span>
+      <div className="shrink-0 h-11 px-4 flex items-center border-t border-slate-200 dark:border-gray-700 text-normal text-tinta-secundaria">
+        <span className="text-tinta-principal tabular-nums">{registros.length.toLocaleString('es-CL')}</span>
         &nbsp;referencia{registros.length === 1 ? '' : 's'}
         {seleccion.size > 0 && <span className="ml-2">· {seleccion.size} seleccionada{seleccion.size === 1 ? '' : 's'}</span>}
       </div>

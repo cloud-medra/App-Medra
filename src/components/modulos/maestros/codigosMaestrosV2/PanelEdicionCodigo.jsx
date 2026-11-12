@@ -147,16 +147,16 @@ const PanelEdicionCodigo = ({ abierto, modo, registro, empresas, registros, user
 
   const encabezado = (
     <div>
-      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-gray-500">
+      <div className="flex items-center gap-1.5 text-secundario uppercase tracking-wider text-tinta-atenuada">
         <IconoModo size={12} /> {config.titulo}
       </div>
       <div className="mt-1.5 flex items-center gap-2 min-w-0">
-        <h3 className="text-[17px] font-semibold text-slate-900 dark:text-gray-50 tabular-nums truncate">
+        <h3 className="text-titulo-pagina text-tinta-principal tabular-nums truncate">
           {registro ? (registro.codigo || 'Sin código') : (form.codigo || 'Nuevo registro')}
         </h3>
         {insigniaEstado(registro, modo)}
       </div>
-      <p className="mt-0.5 text-[13px] text-slate-500 dark:text-gray-400 truncate" title={formEfectivo.descriptorAuto}>
+      <p className="mt-0.5 text-normal text-tinta-secundaria truncate" title={formEfectivo.descriptorAuto}>
         {formEfectivo.descriptorAuto || formEfectivo.referencia || 'Complete los datos del registro'}
       </p>
     </div>
@@ -164,16 +164,16 @@ const PanelEdicionCodigo = ({ abierto, modo, registro, empresas, registros, user
 
   const pie = (
     <div className="flex items-center justify-between gap-3">
-      <div className="min-w-0 text-[12px]">
+      <div className="min-w-0 text-normal">
         {sucio ? (
-          <span className="inline-flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400">
+          <span className="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-400">
             <span className="w-2 h-2 rounded-full bg-amber-500" />
             {config.crear ? 'Sin guardar' : `${numCambios} cambio${numCambios !== 1 ? 's' : ''} sin guardar`}
           </span>
         ) : (
-          <span className="text-slate-400 dark:text-gray-500">Sin cambios</span>
+          <span className="text-tinta-atenuada">Sin cambios</span>
         )}
-        <span className="hidden sm:inline ml-3 text-[11px] text-slate-400 dark:text-gray-500">
+        <span className="hidden sm:inline ml-3 text-secundario text-tinta-atenuada">
           <kbd>Ctrl+S</kbd> guardar · <kbd>Esc</kbd> cerrar
         </span>
       </div>
@@ -193,7 +193,7 @@ const PanelEdicionCodigo = ({ abierto, modo, registro, empresas, registros, user
         <Seccion titulo="Identificación">
           {visible('codigo') && (
             <Campo etiqueta={modo === 'asignarCodigo' ? 'Código definitivo' : 'Código'} requerido={config.requeridos.includes('codigo')} error={errorDe('codigo')} aviso={avisos.codigo} modificado={modificado('codigo')} htmlFor="cod-codigo" ancho="col-span-1">
-              <Entrada {...entrada('codigo')} onChange={(e) => set('codigo')(e.target.value.toUpperCase())} autoFocus={modo === 'asignarCodigo' || modo === 'nuevoConCodigo'} className="tabular-nums font-semibold" placeholder="Ej: 120345" />
+              <Entrada {...entrada('codigo')} onChange={(e) => set('codigo')(e.target.value.toUpperCase())} autoFocus={modo === 'asignarCodigo' || modo === 'nuevoConCodigo'} className="tabular-nums" placeholder="Ej: 120345" />
             </Campo>
           )}
           <Campo etiqueta="Referencia" requerido error={errorDe('referencia')} modificado={modificado('referencia')} htmlFor="cod-referencia" ancho={visible('codigo') ? 'col-span-1' : 'col-span-2'}>
@@ -227,7 +227,7 @@ const PanelEdicionCodigo = ({ abierto, modo, registro, empresas, registros, user
             </Campo>
           )}
           <Campo etiqueta="Fibra reutilizable" modificado={modificado('fibraReutilizable')} htmlFor="cod-fibraReutilizable" ayuda="Fibra de 5 o 10 usos: en Gestiones de Implantes se elige la fibra usada y se cuenta cada uso (Implantes → Fibras).">
-            <label className="flex items-center gap-2 h-9 text-[13px] text-slate-700 dark:text-gray-300 cursor-pointer">
+            <label className="flex items-center gap-2 h-9 text-normal text-tinta-principal cursor-pointer">
               <input
                 id="cod-fibraReutilizable"
                 type="checkbox"
@@ -261,13 +261,13 @@ const PanelEdicionCodigo = ({ abierto, modo, registro, empresas, registros, user
             ancho="col-span-1"
           >
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-slate-400">$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-normal text-tinta-atenuada">$</span>
               <Entrada
                 {...entrada('precioNeto')}
                 onChange={(e) => set('precioNeto')(formatearMiles(e.target.value.replace(/\D/g, '')))}
                 inputMode="numeric"
                 placeholder="0"
-                className="pl-6 text-right tabular-nums font-medium"
+                className="pl-6 text-right tabular-nums"
                 autoFocus={modo === 'modificarRegistro'}
               />
             </div>

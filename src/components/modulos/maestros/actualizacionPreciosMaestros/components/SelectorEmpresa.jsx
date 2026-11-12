@@ -29,15 +29,15 @@ const SelectorEmpresa = ({ empresas, cargando, empresa, onSeleccionar, bloqueado
             <Factory size={14} />
           </div>
           <div className="min-w-0">
-            <div className="font-bold text-[10.5px] text-slate-900 dark:text-gray-100 truncate">{empresa.nombre}</div>
-            <div className="text-[9px] text-slate-500 dark:text-gray-400 font-num">RUT: {empresa.rut || 'S/R'}</div>
+            <div className="text-pequeno text-tinta-principal truncate">{empresa.nombre}</div>
+            <div className="text-pequeno tabular-nums text-tinta-secundaria">RUT: {empresa.rut || 'S/R'}</div>
           </div>
         </div>
         <button
           type="button"
           onClick={() => { onSeleccionar(null); setBusqueda(''); }}
           disabled={bloqueado}
-          className="flex items-center gap-1 px-2 py-1 rounded text-[9px] font-bold bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-1 px-2 py-1 rounded text-pequeno bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 text-tinta-principal hover:bg-slate-100 dark:hover:bg-gray-700 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCw size={11} />
           <span>Cambiar</span>
@@ -57,7 +57,7 @@ const SelectorEmpresa = ({ empresas, cargando, empresa, onSeleccionar, bloqueado
         onBlur={() => setTimeout(() => setAbierto(false), 150)}
         placeholder="Buscar empresa por nombre o RUT..."
         autoComplete="off"
-        className="w-full h-6 pl-7 pr-6 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-[9.5px] text-slate-800 dark:text-gray-100 outline-none focus:border-[#2383C2]"
+        className="w-full h-6 pl-7 pr-6 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-pequeno text-tinta-principal outline-none focus:border-[#2383C2]"
       />
       {cargando && (
         <span className="absolute right-1.5 top-1">
@@ -68,7 +68,7 @@ const SelectorEmpresa = ({ empresas, cargando, empresa, onSeleccionar, bloqueado
       {abierto && !cargando && (
         <div className="absolute z-20 top-full left-0 right-0 mt-0.5 max-h-56 overflow-auto bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded shadow-lg">
           {sugerencias.length === 0 ? (
-            <div className="px-2 py-1.5 text-[9px] text-slate-400">
+            <div className="px-2 py-1.5 text-pequeno text-tinta-atenuada">
               {busqueda.trim() ? `No se encontraron empresas para «${busqueda.trim()}»` : 'No hay empresas registradas'}
             </div>
           ) : (
@@ -78,8 +78,8 @@ const SelectorEmpresa = ({ empresas, cargando, empresa, onSeleccionar, bloqueado
                 onMouseDown={() => { onSeleccionar(e); setAbierto(false); }}
                 className="px-2 py-1 border-b border-slate-100 dark:border-gray-700 last:border-0 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer flex items-center justify-between gap-2"
               >
-                <span className="text-[9.5px] font-semibold text-slate-800 dark:text-gray-200 truncate">{e.nombre}</span>
-                <span className="shrink-0 text-[8.5px] text-slate-400 font-num">
+                <span className="text-pequeno text-tinta-principal truncate">{e.nombre}</span>
+                <span className="shrink-0 text-pequeno tabular-nums text-tinta-atenuada">
                   {e.rut || 'S/R'}{e.estado === 'INACTIVO' ? ' · INACTIVA' : ''}
                 </span>
               </div>

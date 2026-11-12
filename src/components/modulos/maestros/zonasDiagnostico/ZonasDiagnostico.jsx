@@ -50,7 +50,7 @@ const fecha = (ts) => (ts?.toDate ? ts.toDate().toLocaleString('es-CL', { day: '
 
 export const EstadoZona = ({ estado }) => {
   const e = ESTILO_ESTADO[estado] || ESTILO_ESTADO[ESTADOS.SIN_ASIGNAR];
-  return <span className={`inline-flex text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap ${e.clase}`}>{e.texto}</span>;
+  return <span className={`inline-flex text-pequeno px-1.5 py-0.5 rounded-full whitespace-nowrap ${e.clase}`}>{e.texto}</span>;
 };
 
 const Modal = ({ titulo, onCerrar, children, ancho = 'max-w-3xl' }) => (
@@ -79,27 +79,27 @@ const EditorZonas = ({ entrada, onGuardar, onCerrar, guardando }) => {
   return (
     <Modal titulo="Asignar zonas" onCerrar={onCerrar}>
       <header className="shrink-0 px-5 py-3.5 border-b border-gray-200 dark:border-gray-700">
-        <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#2383C2]">Asignar zonas</p>
-        <h3 className="text-[13.5px] font-bold text-gray-800 dark:text-gray-100 break-words">{entrada.descripcion}</h3>
+        <p className="text-pequeno uppercase tracking-wide text-[#2383C2]">Asignar zonas</p>
+        <h3 className="text-subtitulo text-tinta-principal break-words">{entrada.descripcion}</h3>
         {entrada.estado === ESTADOS.SUGERIDA && (
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Sugerida automáticamente: revisa y guarda para confirmarla.</p>
+          <p className="text-secundario text-tinta-secundaria mt-0.5">Sugerida automáticamente: revisa y guarda para confirmarla.</p>
         )}
       </header>
       <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_260px] gap-4 p-5">
         <div className="flex flex-col gap-4">
-          <label className={`flex items-start gap-2 text-[11.5px] px-2 py-1.5 rounded-md border cursor-pointer ${sinZona ? 'border-violet-400/50 bg-violet-50 dark:bg-violet-900/20 text-gray-800 dark:text-gray-100' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'}`}>
+          <label className={`flex items-start gap-2 text-secundario px-2 py-1.5 rounded-md border cursor-pointer ${sinZona ? 'border-violet-400/50 bg-violet-50 dark:bg-violet-900/20 text-tinta-principal' : 'border-gray-200 dark:border-gray-700 text-tinta-secundaria hover:bg-gray-50 dark:hover:bg-gray-700/40'}`}>
             <input type="checkbox" checked={sinZona} onChange={alternarSinZona} className="accent-violet-600 mt-0.5" />
             <span>
-              <b className="font-semibold">{NOMBRE_SIN_ZONA_ESPECIFICA}</b>
-              <span className="block text-[10.5px] text-gray-500 dark:text-gray-400">Para diagnósticos sin zona fija (ej. biopsia, reparación de ligamento): cuenta como revisada.</span>
+              <b className="text-etiqueta">{NOMBRE_SIN_ZONA_ESPECIFICA}</b>
+              <span className="block text-pequeno text-tinta-secundaria">Para diagnósticos sin zona fija (ej. biopsia, reparación de ligamento): cuenta como revisada.</span>
             </span>
           </label>
           {GRUPOS.map((g) => (
             <fieldset key={g.titulo}>
-              <legend className="text-[10.5px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1.5">{g.titulo}</legend>
+              <legend className="text-pequeno uppercase tracking-wide text-tinta-secundaria mb-1.5">{g.titulo}</legend>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                 {g.zonas.map((z) => (
-                  <label key={z} className={`flex items-center gap-2 text-[11.5px] px-2 py-1.5 rounded-md border cursor-pointer ${zonas.includes(z) ? 'border-[#2383C2]/40 bg-[#2383C2]/5 text-gray-800 dark:text-gray-100' : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40'}`}>
+                  <label key={z} className={`flex items-center gap-2 text-secundario px-2 py-1.5 rounded-md border cursor-pointer ${zonas.includes(z) ? 'border-[#2383C2]/40 bg-[#2383C2]/5 text-tinta-principal' : 'border-gray-200 dark:border-gray-700 text-tinta-secundaria hover:bg-gray-50 dark:hover:bg-gray-700/40'}`}>
                     <input type="checkbox" checked={zonas.includes(z)} onChange={() => alternar(z)} className="accent-[#2383C2]" />
                     {zonaPorId(z).nombre}
                   </label>
@@ -107,13 +107,13 @@ const EditorZonas = ({ entrada, onGuardar, onCerrar, guardando }) => {
               </div>
             </fieldset>
           ))}
-          <label className="flex items-center gap-2 text-[11.5px] font-semibold text-gray-700 dark:text-gray-200">
+          <label className="flex items-center gap-2 text-etiqueta text-tinta-principal">
             Lateralidad
             <select value={lado} onChange={(e) => setLado(e.target.value)} aria-label="Lateralidad" disabled={sinZona}
-              className="disabled:opacity-50 h-8 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] font-normal text-gray-800 dark:text-gray-100">
+              className="disabled:opacity-50 h-8 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal">
               {LADOS.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
             </select>
-            <span className="font-normal text-[10.5px] text-gray-400">El "Lado" de cada gestión tiene prioridad.</span>
+            <span className="text-pequeno text-tinta-atenuada">El "Lado" de cada gestión tiene prioridad.</span>
           </label>
         </div>
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-slate-50/60 dark:bg-gray-900/40 p-2">
@@ -121,12 +121,12 @@ const EditorZonas = ({ entrada, onGuardar, onCerrar, guardando }) => {
         </div>
       </div>
       <footer className="shrink-0 px-5 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-2">
-        <span className="mr-auto text-[11px] text-gray-500 dark:text-gray-400">
+        <span className="mr-auto text-secundario text-tinta-secundaria">
           {resultado.length ? `Quedará Confirmada: ${resultado.map(nombreZona).join(', ')}` : 'Sin zonas: quedará "Sin asignar".'}
         </span>
-        <button type="button" onClick={onCerrar} className="h-8 px-3.5 rounded-md border border-gray-300 dark:border-gray-600 text-[12px] font-semibold text-gray-700 dark:text-gray-200">Cancelar</button>
+        <button type="button" onClick={onCerrar} className="h-8 px-3.5 rounded-md border border-gray-300 dark:border-gray-600 text-etiqueta text-tinta-principal">Cancelar</button>
         <button type="button" onClick={() => onGuardar(resultado, sinZona ? 'no_especificado' : lado)} disabled={guardando}
-          className="h-8 px-3.5 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-[12px] font-semibold inline-flex items-center gap-1.5 disabled:opacity-50">
+          className="h-8 px-3.5 rounded-md bg-[#2383C2] hover:bg-[#1d6fa5] text-white text-etiqueta inline-flex items-center gap-1.5 disabled:opacity-50">
           {guardando ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Guardar
         </button>
       </footer>
@@ -148,21 +148,21 @@ const Historial = ({ entrada, onCerrar }) => {
     <Modal titulo="Historial" onCerrar={onCerrar} ancho="max-w-lg">
       <header className="shrink-0 px-5 py-3.5 border-b border-gray-200 dark:border-gray-700 flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#2383C2]">Historial</p>
-          <h3 className="text-[13px] font-bold text-gray-800 dark:text-gray-100 break-words">{entrada.descripcion}</h3>
+          <p className="text-pequeno uppercase tracking-wide text-[#2383C2]">Historial</p>
+          <h3 className="text-subtitulo text-tinta-principal break-words">{entrada.descripcion}</h3>
         </div>
-        <button type="button" onClick={onCerrar} aria-label="Cerrar historial" className="p-1 text-gray-400 hover:text-gray-600"><X size={16} /></button>
+        <button type="button" onClick={onCerrar} aria-label="Cerrar historial" className="p-1 text-tinta-atenuada hover:text-tinta-secundaria"><X size={16} /></button>
       </header>
-      <div className="flex-1 overflow-y-auto p-4 text-[11.5px]">
-        {logs === null ? <p className="text-gray-400"><Loader2 size={13} className="inline animate-spin mr-1" />Cargando…</p>
-          : logs.length === 0 ? <p className="text-gray-400">Sin cambios registrados (creada automáticamente).</p>
+      <div className="flex-1 overflow-y-auto p-4 text-secundario">
+        {logs === null ? <p className="text-tinta-atenuada"><Loader2 size={13} className="inline animate-spin mr-1" />Cargando…</p>
+          : logs.length === 0 ? <p className="text-tinta-atenuada">Sin cambios registrados (creada automáticamente).</p>
             : (
               <ul className="flex flex-col gap-2">
                 {logs.map((l) => (
                   <li key={l.id} className="rounded-md border border-gray-200 dark:border-gray-700 px-3 py-2">
-                    <p className="font-semibold text-gray-700 dark:text-gray-200">{l.accion === 'CONFIRMACION' ? 'Confirmó la sugerencia' : 'Asignó zonas'} · {l.usuario}</p>
-                    <p className="text-gray-500 dark:text-gray-400">{fecha(l.fecha)}</p>
-                    <p className="text-gray-600 dark:text-gray-300 mt-1">{zonas(l.antes?.zonas)} ({nombreLado(l.antes?.lado)}) → <b>{zonas(l.despues?.zonas)}</b> ({nombreLado(l.despues?.lado)})</p>
+                    <p className="text-etiqueta text-tinta-principal">{l.accion === 'CONFIRMACION' ? 'Confirmó la sugerencia' : 'Asignó zonas'} · {l.usuario}</p>
+                    <p className="text-tinta-secundaria">{fecha(l.fecha)}</p>
+                    <p className="text-tinta-secundaria mt-1">{zonas(l.antes?.zonas)} ({nombreLado(l.antes?.lado)}) → <b>{zonas(l.despues?.zonas)}</b> ({nombreLado(l.despues?.lado)})</p>
                   </li>
                 ))}
               </ul>
@@ -229,7 +229,7 @@ const ZonasDiagnostico = ({ busquedaInicial = '' }) => {
   };
 
   const celda = 'px-3 py-1.5 border-b border-r last:border-r-0 border-gray-100 dark:border-gray-700/60';
-  const encabezado = 'sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 font-semibold whitespace-nowrap border-b border-r last:border-r-0 border-gray-200 dark:border-gray-700';
+  const encabezado = 'sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 text-etiqueta whitespace-nowrap border-b border-r last:border-r-0 border-gray-200 dark:border-gray-700';
   const columnas = COLUMNAS.filter((c) => c.fija || ver(c.key));
 
   return (
@@ -237,20 +237,20 @@ const ZonasDiagnostico = ({ busquedaInicial = '' }) => {
       <div className="shrink-0 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="w-8 h-8 rounded-lg bg-[#2383C2] text-white flex items-center justify-center shrink-0"><PersonStanding size={16} /></span>
         <div className="min-w-0 mr-auto">
-          <h2 className="text-[14px] font-bold leading-tight text-gray-800 dark:text-gray-100">Zonas por diagnóstico</h2>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">Zona del cuerpo de cada descripción de las gestiones de Implantes (Bodymap). Las descripciones nuevas aparecen solas.</p>
+          <h2 className="text-titulo-seccion text-tinta-principal">Zonas por diagnóstico</h2>
+          <p className="text-secundario text-tinta-secundaria">Zona del cuerpo de cada descripción de las gestiones de Implantes (Bodymap). Las descripciones nuevas aparecen solas.</p>
         </div>
         {entradas && (
-          <span className="flex items-center gap-2 text-[11px]">
+          <span className="flex items-center gap-2 text-secundario">
             <EstadoZona estado={ESTADOS.SIN_ASIGNAR} /> {cuenta(ESTADOS.SIN_ASIGNAR)}
             <EstadoZona estado={ESTADOS.SUGERIDA} /> {cuenta(ESTADOS.SUGERIDA)}
             <EstadoZona estado={ESTADOS.CONFIRMADA} /> {cuenta(ESTADOS.CONFIRMADA)}
-            <span className="text-gray-500 dark:text-gray-400">(de ellas, {(entradas || []).filter((e) => esSinZonaEspecifica(e.zonas)).length} sin zona específica)</span>
+            <span className="text-tinta-secundaria">(de ellas, {(entradas || []).filter((e) => esSinZonaEspecifica(e.zonas)).length} sin zona específica)</span>
           </span>
         )}
         {puede.filtrar && (
           <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)} aria-label="Filtrar por estado"
-            className="h-7 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] text-gray-800 dark:text-gray-100">
+            className="h-7 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal">
             <option value="todos">Todos los estados</option>
             <option value={ESTADOS.SIN_ASIGNAR}>Sin asignar</option>
             <option value={ESTADOS.SUGERIDA}>Sugerida</option>
@@ -262,18 +262,18 @@ const ZonasDiagnostico = ({ busquedaInicial = '' }) => {
           <div className="relative w-64 max-w-full">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar descripción…" aria-label="Buscar descripción"
-              className="w-full h-7 pl-8 pr-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#2383C2]" />
-            {busqueda && <button type="button" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#2383C2]"><X size={13} /></button>}
+              className="w-full h-7 pl-8 pr-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal focus:outline-none focus:border-[#2383C2]" />
+            {busqueda && <button type="button" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda" className="absolute right-2 top-1/2 -translate-y-1/2 text-tinta-atenuada hover:text-[#2383C2]"><X size={13} /></button>}
           </div>
         )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto">
         {entradas === null ? (
-          <p className="py-10 text-center text-[12px] text-gray-400"><Loader2 size={14} className="inline animate-spin mr-1" />Cargando…</p>
+          <p className="py-10 text-center text-normal text-tinta-atenuada"><Loader2 size={14} className="inline animate-spin mr-1" />Cargando…</p>
         ) : (
-          <table className="w-full text-left text-[11.5px] border-separate border-spacing-0 [&>tbody>tr:last-child>td]:border-b-0">
-            <thead className="text-[10px] uppercase text-gray-500 dark:text-gray-400">
+          <table className="w-full text-left text-secundario border-separate border-spacing-0 [&>tbody>tr:last-child>td]:border-b-0">
+            <thead className="text-pequeno uppercase text-tinta-secundaria">
               <tr>
                 {columnas.map((c) => <th key={c.key} className={`${encabezado} ${c.key === 'gestiones' ? 'text-right' : ''}`}>{c.label}</th>)}
                 <th className={`${encabezado} text-center`}>Acciones</th>
@@ -281,25 +281,25 @@ const ZonasDiagnostico = ({ busquedaInicial = '' }) => {
             </thead>
             <tbody>
               {lista.length === 0 && (
-                <tr><td colSpan={columnas.length + 1} className="py-10 text-center text-gray-400">{entradas.length ? 'Ninguna descripción coincide con el filtro.' : 'Aún no hay descripciones: se cargan con el script inicial y luego solas.'}</td></tr>
+                <tr><td colSpan={columnas.length + 1} className="py-10 text-center text-tinta-atenuada">{entradas.length ? 'Ninguna descripción coincide con el filtro.' : 'Aún no hay descripciones: se cargan con el script inicial y luego solas.'}</td></tr>
               )}
               {lista.map((e) => {
                 const sinZona = !e.zonas?.length;
                 return (
                   <tr key={e.id} data-estado={e.estado} className={sinZona ? 'bg-amber-50/70 dark:bg-amber-900/10' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30'}>
-                    <td className={`${celda} font-medium text-gray-800 dark:text-gray-100`}>
+                    <td className={`${celda} text-tinta-principal`}>
                       <span className="inline-flex items-center gap-1.5">{sinZona && <AlertTriangle size={12} className="text-amber-600 shrink-0" aria-label="Sin zona asignada" />}{e.descripcion}</span>
                     </td>
                     {ver('zonas') && (
                       <td className={celda}>
                         {sinZona ? <span className="text-amber-700 dark:text-amber-400">—</span> : (
                           <span className="flex flex-wrap gap-1">
-                            {e.zonas.map((z) => <span key={z} className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${z === SIN_ZONA_ESPECIFICA ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-200'}`}>{nombreZona(z)}</span>)}
+                            {e.zonas.map((z) => <span key={z} className={`text-pequeno px-1.5 py-0.5 rounded-full ${z === SIN_ZONA_ESPECIFICA ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' : 'bg-slate-100 dark:bg-gray-700 text-tinta-principal'}`}>{nombreZona(z)}</span>)}
                           </span>
                         )}
                       </td>
                     )}
-                    {ver('lado') && <td className={`${celda} text-gray-600 dark:text-gray-300 whitespace-nowrap`}>{nombreLado(e.lado)}</td>}
+                    {ver('lado') && <td className={`${celda} text-tinta-secundaria whitespace-nowrap`}>{nombreLado(e.lado)}</td>}
                     {ver('estado') && <td className={celda}><EstadoZona estado={e.estado} /></td>}
                     {ver('gestiones') && <td className={`${celda} text-right tabular-nums`}>{e.gestiones ?? 0}</td>}
                     <td className="px-3 py-1.5 border-b border-gray-100 dark:border-gray-700/60">
@@ -312,7 +312,7 @@ const ZonasDiagnostico = ({ busquedaInicial = '' }) => {
                           <button type="button" onClick={() => setEditando(e)} title="Asignar / corregir zonas" aria-label={`Editar ${e.descripcion}`} className="text-blue-600 dark:text-blue-400 hover:text-blue-800"><Pencil size={13} /></button>
                         )}
                         {puede.historial && (
-                          <button type="button" onClick={() => setHistorial(e)} title="Ver historial" aria-label={`Historial de ${e.descripcion}`} className="text-gray-500 hover:text-[#2383C2]"><History size={13} /></button>
+                          <button type="button" onClick={() => setHistorial(e)} title="Ver historial" aria-label={`Historial de ${e.descripcion}`} className="text-tinta-secundaria hover:text-[#2383C2]"><History size={13} /></button>
                         )}
                       </span>
                     </td>

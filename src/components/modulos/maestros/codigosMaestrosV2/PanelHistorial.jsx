@@ -48,21 +48,21 @@ const DetalleLog = ({ detalles = {} }) => {
   if (cambios.length === 0 && simples.length === 0) return null;
 
   return (
-    <dl className="mt-2 grid grid-cols-[minmax(0,auto)_1fr] gap-x-3 gap-y-1 text-[12px]">
+    <dl className="mt-2 grid grid-cols-[minmax(0,auto)_1fr] gap-x-3 gap-y-1 text-normal">
       {cambios.map((campo) => (
         <React.Fragment key={campo}>
-          <dt className="text-slate-500 dark:text-gray-400">{ETIQUETAS[campo] || campo}</dt>
-          <dd className="text-slate-700 dark:text-gray-200 min-w-0 break-words">
-            <span className="line-through decoration-slate-300 text-slate-400">{valorLegible(campo, detalles[`${campo}Anterior`])}</span>
+          <dt className="text-tinta-secundaria">{ETIQUETAS[campo] || campo}</dt>
+          <dd className="text-tinta-principal min-w-0 break-words">
+            <span className="line-through decoration-slate-300 text-tinta-atenuada">{valorLegible(campo, detalles[`${campo}Anterior`])}</span>
             {' → '}
-            <span className="font-medium">{valorLegible(campo, detalles[`${campo}Nuevo`])}</span>
+            <span className="">{valorLegible(campo, detalles[`${campo}Nuevo`])}</span>
           </dd>
         </React.Fragment>
       ))}
       {simples.map((campo) => (
         <React.Fragment key={campo}>
-          <dt className="text-slate-500 dark:text-gray-400">{ETIQUETAS[campo] || campo}</dt>
-          <dd className="text-slate-700 dark:text-gray-200 min-w-0 break-words">{valorLegible(campo, detalles[campo])}</dd>
+          <dt className="text-tinta-secundaria">{ETIQUETAS[campo] || campo}</dt>
+          <dd className="text-tinta-principal min-w-0 break-words">{valorLegible(campo, detalles[campo])}</dd>
         </React.Fragment>
       ))}
     </dl>
@@ -110,13 +110,13 @@ const PanelHistorial = ({ abierto, registro, onCerrar }) => {
   const enUso = pestana === 'uso';
   const encabezado = (
     <div>
-      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-gray-500">
+      <div className="flex items-center gap-1.5 text-secundario uppercase tracking-wider text-tinta-atenuada">
         <History size={12} /> Historial
       </div>
-      <h3 className={`mt-1.5 text-[17px] font-semibold text-slate-900 dark:text-gray-50 truncate ${enUso ? '' : 'tabular-nums'}`}>
+      <h3 className={`mt-1.5 text-titulo-pagina text-tinta-principal truncate ${enUso ? '' : 'tabular-nums'}`}>
         {enUso ? (registro?.referencia || 'Sin referencia') : (registro?.codigo || 'Sin código')}
       </h3>
-      <p className="mt-0.5 text-[13px] text-slate-500 dark:text-gray-400 truncate">
+      <p className="mt-0.5 text-normal text-tinta-secundaria truncate">
         {enUso
           ? (registro?.descriptorEmpresa || registro?.descriptorAuto || 'Sin descripción')
           : `${registro?.referencia} · ${registro?.empresa}`}
@@ -134,9 +134,9 @@ const PanelHistorial = ({ abierto, registro, onCerrar }) => {
             role="tab"
             aria-selected={pestana === id}
             onClick={() => setPestana(id)}
-            className={`py-2.5 -mb-px border-b-2 text-[12px] font-medium transition-colors ${pestana === id
-              ? 'border-[#2383C2] text-slate-900 dark:text-gray-50'
-              : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200'}`}
+            className={`py-2.5 -mb-px border-b-2 text-normal transition-colors ${pestana === id
+              ? 'border-[#2383C2] text-tinta-principal'
+              : 'border-transparent text-tinta-secundaria hover:text-tinta-principal'}`}
           >
             {texto}
           </button>
@@ -146,11 +146,11 @@ const PanelHistorial = ({ abierto, registro, onCerrar }) => {
         {pestana === 'uso' ? (
           <HistorialUso referencia={registro?.referencia} />
         ) : cargando ? (
-          <div className="flex flex-col items-center gap-2 py-16 text-[12px] text-slate-400"><Spinner size="sm" color="#2383C2" />Cargando historial…</div>
+          <div className="flex flex-col items-center gap-2 py-16 text-normal text-tinta-atenuada"><Spinner size="sm" color="#2383C2" />Cargando historial…</div>
         ) : error ? (
-          <p className="py-16 text-center text-[13px] text-red-600">{error}</p>
+          <p className="py-16 text-center text-normal text-red-600">{error}</p>
         ) : logs.length === 0 ? (
-          <p className="py-16 text-center text-[13px] text-slate-400">Este registro no tiene historial.</p>
+          <p className="py-16 text-center text-normal text-tinta-atenuada">Este registro no tiene historial.</p>
         ) : (
           <ol className="relative border-l border-slate-200 dark:border-gray-700 ml-1.5 space-y-5">
             {logs.map((log) => {
@@ -160,9 +160,9 @@ const PanelHistorial = ({ abierto, registro, onCerrar }) => {
                   <span className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-white dark:bg-gray-900 ring-2 ring-slate-300 dark:ring-gray-600" />
                   <div className="flex items-center justify-between gap-2">
                     <Insignia tono={accion.tono}>{accion.texto}</Insignia>
-                    <span className="text-[11px] text-slate-400 tabular-nums">{formatearFecha(log.fecha)}</span>
+                    <span className="text-secundario text-tinta-atenuada tabular-nums">{formatearFecha(log.fecha)}</span>
                   </div>
-                  <p className="mt-1 flex items-center gap-1 text-[12px] text-slate-500 dark:text-gray-400"><User size={12} />{log.usuario || '—'}</p>
+                  <p className="mt-1 flex items-center gap-1 text-normal text-tinta-secundaria"><User size={12} />{log.usuario || '—'}</p>
                   <DetalleLog detalles={log.detalles} />
                 </li>
               );

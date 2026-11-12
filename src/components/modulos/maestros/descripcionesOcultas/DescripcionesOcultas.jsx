@@ -41,10 +41,10 @@ const COLUMNAS = [
 const ESTADOS = {
   pendiente: { etiqueta: 'Pendiente', plural: 'Pendientes', insignia: 'bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/40 dark:text-amber-300 dark:border-amber-700/60', fila: 'bg-amber-50/70 dark:bg-amber-950/20' },
   visible: { etiqueta: 'Visible', plural: 'Visibles', insignia: 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700/60', fila: 'hover:bg-gray-50 dark:hover:bg-gray-700/30' },
-  oculta: { etiqueta: 'Oculta', plural: 'Ocultas', insignia: 'bg-gray-200 text-gray-700 border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600', fila: 'bg-slate-50/80 dark:bg-gray-900/30' },
+  oculta: { etiqueta: 'Oculta', plural: 'Ocultas', insignia: 'bg-gray-200 text-tinta-principal border-gray-300 dark:bg-gray-700 dark:border-gray-600', fila: 'bg-slate-50/80 dark:bg-gray-900/30' },
 };
 const Insignia = ({ estado }) => (
-  <span className={`inline-block px-1.5 py-px rounded border text-[9.5px] font-bold uppercase tracking-wide ${ESTADOS[estado].insignia}`}>
+  <span className={`inline-block px-1.5 py-px rounded border text-pequeno uppercase tracking-wide ${ESTADOS[estado].insignia}`}>
     {ESTADOS[estado].etiqueta}
   </span>
 );
@@ -124,7 +124,7 @@ const DescripcionesOcultas = () => {
   };
 
   const celda = 'px-3 py-1.5 border-b border-r last:border-r-0 border-gray-100 dark:border-gray-700/60';
-  const encabezado = 'sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 font-semibold whitespace-nowrap border-b border-r last:border-r-0 border-gray-200 dark:border-gray-700';
+  const encabezado = 'sticky top-0 z-10 bg-gray-50 dark:bg-gray-900 px-3 py-1.5 text-etiqueta whitespace-nowrap border-b border-r last:border-r-0 border-gray-200 dark:border-gray-700';
   const columnas = COLUMNAS.filter((c) => c.fija || ver(c.key));
 
   return (
@@ -132,14 +132,14 @@ const DescripcionesOcultas = () => {
       <div className="shrink-0 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="w-8 h-8 rounded-lg bg-[#2383C2] text-white flex items-center justify-center shrink-0"><EyeOff size={16} /></span>
         <div className="min-w-0 mr-auto">
-          <h2 className="text-[14px] font-bold leading-tight text-gray-800 dark:text-gray-100">Descripciones ocultas</h2>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400">Descripciones de Reporte Info que no se muestran en Implantes o Documentos. Las filas se siguen guardando; las descripciones nuevas aparecen solas, visibles y pendientes de revisión.</p>
+          <h2 className="text-titulo-seccion text-tinta-principal">Descripciones ocultas</h2>
+          <p className="text-secundario text-tinta-secundaria">Descripciones de Reporte Info que no se muestran en Implantes o Documentos. Las filas se siguen guardando; las descripciones nuevas aparecen solas, visibles y pendientes de revisión.</p>
         </div>
         {entradas && (
-          <span className="flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400" aria-label="Cantidad por estado">
+          <span className="flex flex-wrap items-center gap-1.5 text-secundario text-tinta-secundaria" aria-label="Cantidad por estado">
             {entradas.length} descripciones ·
             {ESTADOS_DESCRIPCION.map((s) => (
-              <span key={s} className={`px-1.5 py-px rounded border text-[10.5px] font-semibold ${ESTADOS[s].insignia}`}>
+              <span key={s} className={`px-1.5 py-px rounded border text-pequeno ${ESTADOS[s].insignia}`}>
                 {conteo[s]} {ESTADOS[s].plural.toLowerCase()}
               </span>
             ))}
@@ -147,7 +147,7 @@ const DescripcionesOcultas = () => {
         )}
         {puede.filtrar && (
           <select value={filtro} onChange={(e) => setFiltro(e.target.value)} aria-label="Filtrar descripciones"
-            className="h-7 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] text-gray-800 dark:text-gray-100">
+            className="h-7 px-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal">
             <option value="todas">Todas ({conEstado.length})</option>
             {ESTADOS_DESCRIPCION.map((s) => <option key={s} value={s}>{ESTADOS[s].plural} ({conteo[s]})</option>)}
           </select>
@@ -156,18 +156,18 @@ const DescripcionesOcultas = () => {
           <div className="relative w-64 max-w-full">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar descripción…" aria-label="Buscar descripción"
-              className="w-full h-7 pl-8 pr-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-[11.5px] text-gray-800 dark:text-gray-100 focus:outline-none focus:border-[#2383C2]" />
-            {busqueda && <button type="button" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#2383C2]"><X size={13} /></button>}
+              className="w-full h-7 pl-8 pr-7 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-secundario text-tinta-principal focus:outline-none focus:border-[#2383C2]" />
+            {busqueda && <button type="button" onClick={() => setBusqueda('')} aria-label="Limpiar búsqueda" className="absolute right-2 top-1/2 -translate-y-1/2 text-tinta-atenuada hover:text-[#2383C2]"><X size={13} /></button>}
           </div>
         )}
       </div>
 
       <div className="flex-1 min-h-0 overflow-auto">
         {entradas === null ? (
-          <p className="py-10 text-center text-[12px] text-gray-400"><Loader2 size={14} className="inline animate-spin mr-1" />Cargando…</p>
+          <p className="py-10 text-center text-normal text-tinta-atenuada"><Loader2 size={14} className="inline animate-spin mr-1" />Cargando…</p>
         ) : (
-          <table className="w-full text-left text-[11.5px] border-separate border-spacing-0 [&>tbody>tr:last-child>td]:border-b-0">
-            <thead className="text-[10px] uppercase text-gray-500 dark:text-gray-400">
+          <table className="w-full text-left text-secundario border-separate border-spacing-0 [&>tbody>tr:last-child>td]:border-b-0">
+            <thead className="text-pequeno uppercase text-tinta-secundaria">
               <tr>
                 {columnas.map((c) => (
                   <th key={c.key} className={`${encabezado} ${c.key === 'filas' ? 'text-right' : c.key === 'descripcion' ? '' : 'text-center w-40'}`}>
@@ -183,18 +183,18 @@ const DescripcionesOcultas = () => {
             </thead>
             <tbody>
               {lista.length === 0 && (
-                <tr><td colSpan={columnas.length} className="py-10 text-center text-gray-400">{entradas.length ? 'Ninguna descripción coincide con el filtro.' : 'Aún no hay descripciones: se cargan con el script inicial y luego solas.'}</td></tr>
+                <tr><td colSpan={columnas.length} className="py-10 text-center text-tinta-atenuada">{entradas.length ? 'Ninguna descripción coincide con el filtro.' : 'Aún no hay descripciones: se cargan con el script inicial y luego solas.'}</td></tr>
               )}
               {lista.map((e) => (
                 <tr key={e.id} data-estado={e.estado} className={ESTADOS[e.estado].fila}>
-                  <td className={`${celda} font-medium ${e.estado === 'oculta' ? 'text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-gray-100'}`}>
+                  <td className={`${celda} ${e.estado === 'oculta' ? 'text-tinta-secundaria' : 'text-tinta-principal'}`}>
                     <span className="flex items-center gap-2">
                       <Insignia estado={e.estado} />
                       <span className="min-w-0" data-descripcion>{e.descripcion}</span>
                       {e.estado === 'pendiente' && puede.editar && (
                         <button type="button" onClick={() => marcarRevisada(e)} disabled={guardando === `${e.id}|revisada`}
                           aria-label={`Marcar como revisada: ${e.descripcion}`} title="Dejarla visible y revisada"
-                          className="ml-auto shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700/60 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 disabled:opacity-50">
+                          className="ml-auto shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-emerald-300 dark:border-emerald-700/60 text-pequeno text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 disabled:opacity-50">
                           <Check size={11} />Marcar como revisada
                         </button>
                       )}
@@ -210,7 +210,7 @@ const DescripcionesOcultas = () => {
                           etiqueta={`Ocultar en ${m.nombre}: ${e.descripcion}`}
                           onCambiar={() => cambiar(e, m.campo, e[m.campo] !== true, m.nombre)}
                         />
-                        <span className={`text-[10px] w-12 text-left ${e[m.campo] === true ? 'text-[#2383C2] font-semibold' : 'text-gray-400'}`}>{e[m.campo] === true ? 'Oculta' : 'Visible'}</span>
+                        <span className={`text-pequeno w-12 text-left ${e[m.campo] === true ? 'text-[#2383C2]' : 'text-tinta-atenuada'}`}>{e[m.campo] === true ? 'Oculta' : 'Visible'}</span>
                       </span>
                     </td>
                   ))}

@@ -4,7 +4,7 @@ import { AlertCircle, AlertTriangle, ChevronDown, Lock } from 'lucide-react';
 // Controles de formulario de la vista nueva de Códigos. Editables con borde
 // y fondo blanco; solo lectura sin borde, fondo gris y candado.
 
-const BASE_CONTROL = 'w-full h-9 px-3 rounded-md text-[13px] text-slate-800 dark:text-gray-100 bg-white dark:bg-gray-950 border outline-none transition-colors placeholder:text-slate-400 dark:placeholder:text-gray-600';
+const BASE_CONTROL = 'w-full h-9 px-3 rounded-md text-normal text-tinta-principal bg-white dark:bg-gray-950 border outline-none transition-colors placeholder:text-tinta-atenuada';
 
 const claseControl = (error, extra = '') =>
   `${BASE_CONTROL} ${error
@@ -14,8 +14,8 @@ const claseControl = (error, extra = '') =>
 export const Seccion = ({ titulo, descripcion, children }) => (
   <section className="px-5 py-4 border-b border-slate-100 dark:border-gray-800 last:border-b-0">
     <div className="mb-3">
-      <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">{titulo}</h4>
-      {descripcion && <p className="mt-0.5 text-[12px] text-slate-400 dark:text-gray-500">{descripcion}</p>}
+      <h4 className="text-etiqueta uppercase tracking-wider text-tinta-secundaria">{titulo}</h4>
+      {descripcion && <p className="mt-0.5 text-normal text-tinta-atenuada">{descripcion}</p>}
     </div>
     <div className="grid grid-cols-2 gap-x-3 gap-y-3.5">{children}</div>
   </section>
@@ -23,18 +23,18 @@ export const Seccion = ({ titulo, descripcion, children }) => (
 
 export const Campo = ({ etiqueta, requerido, error, aviso, ayuda, ancho = 'col-span-2', modificado, htmlFor, children }) => (
   <div className={ancho}>
-    <label htmlFor={htmlFor} className="flex items-center gap-1.5 mb-1 text-[12px] font-medium text-slate-700 dark:text-gray-300">
+    <label htmlFor={htmlFor} className="flex items-center gap-1.5 mb-1 text-normal text-tinta-principal">
       {etiqueta}
       {requerido && <span className="text-red-500" aria-hidden>*</span>}
       {modificado && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" title="Modificado" />}
     </label>
     {children}
     {error ? (
-      <p className="mt-1 flex items-center gap-1 text-[11px] text-red-600 dark:text-red-400"><AlertCircle size={12} />{error}</p>
+      <p className="mt-1 flex items-center gap-1 text-secundario text-red-600 dark:text-red-400"><AlertCircle size={12} />{error}</p>
     ) : aviso ? (
-      <p className="mt-1 flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400"><AlertTriangle size={12} />{aviso}</p>
+      <p className="mt-1 flex items-center gap-1 text-secundario text-amber-600 dark:text-amber-400"><AlertTriangle size={12} />{aviso}</p>
     ) : ayuda ? (
-      <p className="mt-1 text-[11px] text-slate-400 dark:text-gray-500">{ayuda}</p>
+      <p className="mt-1 text-secundario text-tinta-atenuada">{ayuda}</p>
     ) : null}
   </div>
 );
@@ -56,7 +56,7 @@ export const Selector = ({ error, opciones, vacio = 'Seleccione…', className =
 export const SoloLectura = ({ valor, mono, title }) => (
   <div
     title={title}
-    className={`w-full min-h-9 px-3 py-2 rounded-md bg-slate-100 dark:bg-gray-800/70 text-[13px] text-slate-600 dark:text-gray-300 flex items-center gap-2 ${mono ? 'tabular-nums' : ''}`}
+    className={`w-full min-h-9 px-3 py-2 rounded-md bg-slate-100 dark:bg-gray-800/70 text-normal text-tinta-secundaria flex items-center gap-2 ${mono ? 'tabular-nums' : ''}`}
   >
     <Lock size={12} className="shrink-0 text-slate-400 dark:text-gray-500" />
     <span className="truncate">{valor || '—'}</span>
@@ -88,12 +88,12 @@ export const EntradaEmpresa = ({ value, onChange, empresas, error, id }) => {
             <li
               key={emp.id}
               onMouseDown={() => { onChange(emp.nombre.toUpperCase()); setAbierto(false); }}
-              className="px-3 py-1.5 text-[12px] uppercase truncate text-slate-700 dark:text-gray-200 hover:bg-slate-100 dark:hover:bg-gray-800 cursor-pointer"
+              className="px-3 py-1.5 text-normal uppercase truncate text-tinta-principal hover:bg-slate-100 dark:hover:bg-gray-800 cursor-pointer"
             >
               {emp.nombre}
             </li>
           )) : (
-            <li className="px-3 py-1.5 text-[12px] text-slate-400 italic">Sin coincidencias</li>
+            <li className="px-3 py-1.5 text-normal text-tinta-atenuada italic">Sin coincidencias</li>
           )}
         </ul>
       )}

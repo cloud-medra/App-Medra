@@ -6,8 +6,8 @@ import Spinner from '../../../ui/Spinner';
 
 const Bloque = ({ titulo, descripcion, children }) => (
   <section className="px-5 py-4 border-b border-slate-100 dark:border-gray-800">
-    <h4 className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400">{titulo}</h4>
-    {descripcion && <p className="mt-1 text-[12px] text-slate-500 dark:text-gray-400">{descripcion}</p>}
+    <h4 className="text-etiqueta uppercase tracking-wider text-tinta-secundaria">{titulo}</h4>
+    {descripcion && <p className="mt-1 text-normal text-tinta-secundaria">{descripcion}</p>}
     <div className="mt-3">{children}</div>
   </section>
 );
@@ -41,10 +41,10 @@ const PanelImportarExportar = ({
 
   const encabezado = (
     <div>
-      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-gray-500">
+      <div className="flex items-center gap-1.5 text-secundario uppercase tracking-wider text-tinta-atenuada">
         <Settings size={12} /> Importar y exportar
       </div>
-      <h3 className="mt-1.5 text-[17px] font-semibold text-slate-900 dark:text-gray-50">{titulo}</h3>
+      <h3 className="mt-1.5 text-titulo-pagina text-tinta-principal">{titulo}</h3>
     </div>
   );
 
@@ -74,16 +74,16 @@ const PanelImportarExportar = ({
           {importFile ? (
             <div className="flex items-center gap-2 px-3 h-10 rounded-md border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800/60">
               <FileSpreadsheet size={16} className="text-[#2383C2] shrink-0" />
-              <span className="flex-1 truncate text-[12px] text-slate-700 dark:text-gray-200">{importFile.name}</span>
+              <span className="flex-1 truncate text-normal text-tinta-principal">{importFile.name}</span>
               {!importing && (
-                <button type="button" onClick={() => onSelectFile(null)} title="Quitar archivo" className="p-1 text-slate-400 hover:text-slate-600"><X size={14} /></button>
+                <button type="button" onClick={() => onSelectFile(null)} title="Quitar archivo" className="p-1 text-tinta-atenuada hover:text-tinta-secundaria"><X size={14} /></button>
               )}
             </div>
           ) : (
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="w-full flex flex-col items-center gap-1 py-6 rounded-md border border-dashed border-slate-300 dark:border-gray-700 text-[12px] text-slate-500 hover:border-[#2383C2] hover:text-[#2383C2] transition-colors"
+              className="w-full flex flex-col items-center gap-1 py-6 rounded-md border border-dashed border-slate-300 dark:border-gray-700 text-normal text-tinta-secundaria hover:border-[#2383C2] hover:text-[#2383C2] transition-colors"
             >
               <Upload size={18} />
               Seleccionar archivo
@@ -96,11 +96,11 @@ const PanelImportarExportar = ({
             </Boton>
           </div>
           {progreso && (progreso.activo || progreso.finalizado) && (
-            <div className="mt-4 space-y-2 text-[12px]">
+            <div className="mt-4 space-y-2 text-normal">
               <div className="h-1.5 rounded-full bg-slate-100 dark:bg-gray-800 overflow-hidden">
                 <div className="h-full bg-[#2383C2] transition-all" style={{ width: `${porcentaje}%` }} />
               </div>
-              <p className="text-slate-500 tabular-nums">{progreso.procesadas} de {progreso.total} filas guardadas</p>
+              <p className="text-tinta-secundaria tabular-nums">{progreso.procesadas} de {progreso.total} filas guardadas</p>
               {[...(progreso.invalidas || []), ...(progreso.fallidas || [])].length > 0 && (
                 <ul className="max-h-40 overflow-y-auto rounded border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-2 space-y-0.5 text-amber-800 dark:text-amber-300">
                   {[...(progreso.invalidas || []), ...(progreso.fallidas || [])].map((f, i) => (

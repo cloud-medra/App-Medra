@@ -5,15 +5,15 @@ import { resumenUso } from '../../../../../functions/usoCodigos/nucleo.mjs';
 import { cargarUsoCodigo } from './accionesCodigos';
 import { FILAS_VISIBLES, MAX_CARACTERES_DESCRIPCION, fechaCorta, indicadoresUso } from './historialUsoVista';
 
-const BOTON_ENLACE = 'text-[11px] font-semibold text-[#2383C2] dark:text-[#369BCE] hover:underline';
-const CELDA_ENCABEZADO = 'px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-gray-400 border-b border-slate-200 dark:border-gray-700';
-const CELDA = 'px-3 py-2 align-top text-[12px]';
-const CELDA_NUMERO = `${CELDA} text-right tabular-nums text-slate-600 dark:text-gray-300`;
+const BOTON_ENLACE = 'text-etiqueta text-[#2383C2] dark:text-[#369BCE] hover:underline';
+const CELDA_ENCABEZADO = 'px-3 py-1.5 text-pequeno uppercase tracking-wider text-tinta-secundaria border-b border-slate-200 dark:border-gray-700';
+const CELDA = 'px-3 py-2 align-top text-normal';
+const CELDA_NUMERO = `${CELDA} text-right tabular-nums text-tinta-secundaria`;
 
 const Indicador = ({ etiqueta, valor }) => (
   <div className="flex flex-col justify-between gap-1 rounded-lg border border-slate-200 dark:border-gray-700 px-2.5 py-2">
-    <dt className="text-[11px] leading-tight text-slate-500 dark:text-gray-400">{etiqueta}</dt>
-    <dd className="text-[15px] font-semibold tabular-nums text-slate-900 dark:text-gray-50">{valor}</dd>
+    <dt className="text-secundario text-tinta-secundaria">{etiqueta}</dt>
+    <dd className="text-titulo-seccion tabular-nums text-tinta-principal">{valor}</dd>
   </div>
 );
 
@@ -22,7 +22,7 @@ const TextoRecortable = ({ texto }) => {
   const largo = String(texto).length > MAX_CARACTERES_DESCRIPCION;
   return (
     <>
-      <span className="block font-medium text-slate-700 dark:text-gray-200 whitespace-pre-wrap break-words">
+      <span className="block text-tinta-principal whitespace-pre-wrap break-words">
         {largo && !expandido ? `${String(texto).slice(0, MAX_CARACTERES_DESCRIPCION).trimEnd()}…` : texto}
       </span>
       {largo && (
@@ -42,11 +42,11 @@ const TarjetaTabla = ({ titulo, columnas, filas, renderFila }) => {
   return (
     <section aria-label={titulo} className="rounded-lg border border-slate-200 dark:border-gray-700 overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-3 py-2.5">
-        <h4 className="text-[13px] font-semibold text-slate-900 dark:text-gray-50">{titulo}</h4>
+        <h4 className="text-subtitulo text-tinta-principal">{titulo}</h4>
         <Insignia>{filas.length}</Insignia>
       </div>
       {filas.length === 0 ? (
-        <p className="px-3 pb-3 text-[12px] text-slate-400 dark:text-gray-500">Sin registros.</p>
+        <p className="px-3 pb-3 text-normal text-tinta-atenuada">Sin registros.</p>
       ) : (
         <table className="w-full table-fixed border-t border-slate-200 dark:border-gray-700">
           <thead className="bg-slate-50 dark:bg-gray-800/60">
@@ -83,7 +83,7 @@ const COLUMNAS_DESCRIPCIONES = [
 
 const filaMedico = (fila) => (
   <>
-    <td className={`${CELDA} font-medium text-slate-700 dark:text-gray-200 break-words`}>{fila.nombre}</td>
+    <td className={`${CELDA} text-tinta-principal break-words`}>{fila.nombre}</td>
     <td className={CELDA_NUMERO}>{fila.usos}</td>
     <td className={CELDA_NUMERO}>{fechaCorta(fila.ultimoUso)}</td>
   </>
@@ -93,7 +93,7 @@ const filaDescripcion = (fila) => (
   <>
     <td className={CELDA}><TextoRecortable texto={fila.nombre} /></td>
     <td className={CELDA_NUMERO}>{fila.usos}</td>
-    <td className={`${CELDA} text-[11px] leading-snug text-slate-500 dark:text-gray-400 break-words`}>{fila.medicos.join(', ') || '—'}</td>
+    <td className={`${CELDA} text-secundario text-tinta-secundaria break-words`}>{fila.medicos.join(', ') || '—'}</td>
   </>
 );
 
@@ -130,13 +130,13 @@ const HistorialUso = ({ referencia }) => {
   }, [referencia]);
 
   if (cargando) return <EsqueletoUso />;
-  if (error) return <p className="py-16 text-center text-[13px] text-red-600">{error}</p>;
+  if (error) return <p className="py-16 text-center text-normal text-red-600">{error}</p>;
   if (!uso) {
     return (
       <div className="flex flex-col items-center gap-2 py-16 text-center">
         <History size={24} className="text-slate-300 dark:text-gray-600" aria-hidden />
-        <p className="text-[13px] text-slate-500 dark:text-gray-400">Este código aún no tiene usos registrados</p>
-        <p className="text-[11px] text-slate-400 dark:text-gray-500">Se consideran las cargas vigentes de Implantes.</p>
+        <p className="text-normal text-tinta-secundaria">Este código aún no tiene usos registrados</p>
+        <p className="text-secundario text-tinta-atenuada">Se consideran las cargas vigentes de Implantes.</p>
       </div>
     );
   }
@@ -153,7 +153,7 @@ const HistorialUso = ({ referencia }) => {
       </dl>
       <TarjetaTabla titulo="Médicos" columnas={COLUMNAS_MEDICOS} filas={medicos} renderFila={filaMedico} />
       <TarjetaTabla titulo="Descripción / Nota Operatoria" columnas={COLUMNAS_DESCRIPCIONES} filas={descripciones} renderFila={filaDescripcion} />
-      <p className="text-[11px] text-slate-400 dark:text-gray-500">Se consideran las cargas vigentes de Implantes.</p>
+      <p className="text-secundario text-tinta-atenuada">Se consideran las cargas vigentes de Implantes.</p>
     </div>
   );
 };

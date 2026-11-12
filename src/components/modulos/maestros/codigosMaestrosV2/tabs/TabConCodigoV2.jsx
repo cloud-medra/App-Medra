@@ -111,23 +111,23 @@ const TabConCodigoV2 = ({ rutaVista = '/maestros/codigosMaestros/conCodigo' } = 
 
   const renderCelda = (col, item, index) => {
     switch (col.key) {
-      case 'numero': return <span className="text-gray-500 dark:text-gray-400 font-bold">{pag.pagina * pag.tamano + index + 1}</span>;
-      case 'codigo': return <span className="font-bold text-emerald-600 dark:text-emerald-400">{item.codigo}</span>;
-      case 'referencia': return <span className="text-gray-700 dark:text-gray-200 font-medium" title={item.referencia}>{item.referencia}</span>;
+      case 'numero': return <span className="text-tinta-secundaria text-etiqueta">{pag.pagina * pag.tamano + index + 1}</span>;
+      case 'codigo': return <span className="text-etiqueta text-emerald-600 dark:text-emerald-400">{item.codigo}</span>;
+      case 'referencia': return <span className="text-tinta-principal" title={item.referencia}>{item.referencia}</span>;
       case 'descEmpresa': return <span title={item.descriptorEmpresa}>{item.descriptorEmpresa}</span>;
       case 'empresa': return <span title={item.empresa}>{item.empresa}</span>;
       case 'tipo': return item.tipo;
       case 'segmento': return item.segmento;
       case 'clase': return item.clase;
-      case 'descriptorMaestro': return <span className="text-gray-500 dark:text-gray-400" title={item.descriptorAuto}>{item.descriptorAuto}</span>;
+      case 'descriptorMaestro': return <span className="text-tinta-secundaria" title={item.descriptorAuto}>{item.descriptorAuto}</span>;
       case 'precioNeto': return formatearPrecio(item.precioNeto);
       case 'estado': return (
-        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center gap-1 w-max">
+        <span className="text-pequeno px-1.5 py-0.5 rounded-full uppercase bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 flex items-center gap-1 w-max">
           <CheckCircle2 size={10} /> Con Código
         </span>
       );
-      case 'registradoPor': return <span className="text-gray-500 dark:text-gray-400" title={item.registradoPor}>{item.registradoPor || 'N/A'}</span>;
-      case 'fecha': return <span className="text-gray-500 dark:text-gray-400">{formatearFecha(item.fechaRegistro)}</span>;
+      case 'registradoPor': return <span className="text-tinta-secundaria" title={item.registradoPor}>{item.registradoPor || 'N/A'}</span>;
+      case 'fecha': return <span className="text-tinta-secundaria">{formatearFecha(item.fechaRegistro)}</span>;
       case 'acciones': return (
         <div className="flex justify-center gap-2">
           {puede.log && <BotonIcono icono={History} title="Ver historial" onClick={() => setHistorial({ abierto: true, registro: item })} />}

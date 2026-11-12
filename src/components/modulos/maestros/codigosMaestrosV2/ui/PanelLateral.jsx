@@ -46,7 +46,7 @@ const PanelLateral = ({
               type="button"
               onClick={onSolicitarCierre}
               title="Cerrar (Esc)"
-              className="shrink-0 -mr-1 p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+              className="shrink-0 -mr-1 p-1.5 rounded-md text-tinta-atenuada hover:text-tinta-principal hover:bg-slate-100 dark:hover:bg-gray-800 transition-colors"
             >
               <X size={16} />
             </button>

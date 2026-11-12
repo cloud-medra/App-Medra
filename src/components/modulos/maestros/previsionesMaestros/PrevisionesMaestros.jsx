@@ -414,27 +414,27 @@ const PrevisionesMaestros = () => {
   );
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {cargando && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">Procesando...</h3>
+            <h3 className="text-[#2383C2] text-subtitulo">Procesando...</h3>
           </div>
         </div>
       )}
 
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <ShieldCheck size={14} className="text-[#2383C2]" />
-          {editingId ? "EDITAR PREVISIÓN" : "REGISTRO DE PREVISIONES"}
+          {editingId ? "Editar previsión" : "Registro de previsiones"}
         </h2>
 
         {hasPermission(PATH_VISTA, "header", "btn_configuracion") && (
           <button
             onClick={handleAbrirConfiguracion}
-            className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-            title="Configuración de Previsiones (Importar/Exportar)"
+            className="p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            title="Configuración de previsiones (Importar/Exportar)"
           >
             <Settings size={15} />
           </button>
@@ -445,22 +445,22 @@ const PrevisionesMaestros = () => {
         <form onSubmit={handleGuardar} className="px-3 py-2 flex flex-wrap items-end gap-2.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/30 dark:bg-gray-800/20">
           {hasPermission(PATH_VISTA, "formulario_registro", "input_nombre") && (
             <div className="w-[240px]">
-              <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Nombre de la Previsión</label>
-              <input required value={formData.nombre} onChange={e => setFormData({ ...formData, nombre: e.target.value })} className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] dark:focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100" placeholder="Ej: FONASA" />
+              <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Nombre de la Previsión</label>
+              <input required value={formData.nombre} onChange={e => setFormData({ ...formData, nombre: e.target.value })} className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none focus:border-[#2383C2] dark:focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal" placeholder="Ej: FONASA" />
             </div>
           )}
 
           {hasPermission(PATH_VISTA, "formulario_registro", "input_comentario") && (
             <div className="w-[220px]">
-              <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Comentario</label>
-              <input value={formData.comentario} onChange={e => setFormData({ ...formData, comentario: e.target.value })} className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] dark:focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100" placeholder="Ej: Nota opcional" />
+              <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Comentario</label>
+              <input value={formData.comentario} onChange={e => setFormData({ ...formData, comentario: e.target.value })} className="w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none focus:border-[#2383C2] dark:focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal" placeholder="Ej: Nota opcional" />
             </div>
           )}
 
           {editingId && hasPermission(PATH_VISTA, "formulario_registro", "select_estado") && (
             <div className="w-[90px]">
-              <label className="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5">Estado</label>
-              <select value={formData.estado} onChange={e => setFormData({ ...formData, estado: e.target.value })} className="w-full h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+              <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Estado</label>
+              <select value={formData.estado} onChange={e => setFormData({ ...formData, estado: e.target.value })} className="w-full h-7 px-1.5 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal">
                 <option value="ACTIVO">ACTIVO</option>
                 <option value="INACTIVO">INACTIVO</option>
               </select>
@@ -469,13 +469,13 @@ const PrevisionesMaestros = () => {
 
           {((!editingId && hasPermission(PATH_VISTA, "formulario_registro", "btn_registrar")) ||
             (editingId && hasPermission(PATH_VISTA, "formulario_registro", "btn_actualizar"))) && (
-              <button type="submit" className={`h-7 px-3 rounded font-bold text-[11px] flex items-center gap-1.5 ${editingId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2383C2] hover:bg-[#369BCE]'} text-white transition`}>
+              <button type="submit" className={`h-7 px-3 rounded text-etiqueta flex items-center gap-1.5 ${editingId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2383C2] hover:bg-[#369BCE]'} text-white transition`}>
                 {editingId ? <><Save size={13} /> Actualizar</> : <><Plus size={13} /> Registrar</>}
               </button>
             )}
 
           {editingId && (
-            <button type="button" onClick={cancelarEdicion} className="h-7 px-3 bg-gray-200 dark:bg-gray-700 rounded font-bold text-[11px] text-gray-600 dark:text-gray-300 flex items-center gap-1.5 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+            <button type="button" onClick={cancelarEdicion} className="h-7 px-3 bg-gray-200 dark:bg-gray-700 rounded text-etiqueta text-tinta-secundaria flex items-center gap-1.5 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
               <X size={13} /> Cancelar
             </button>
           )}
@@ -487,7 +487,7 @@ const PrevisionesMaestros = () => {
           {hasPermission(PATH_VISTA, "barra_busqueda", "input_buscar") && (
             <div className="relative w-60">
               <Search className="absolute left-2 top-1.5 text-gray-400 dark:text-gray-500" size={13} />
-              <input value={busqueda} onChange={e => setBusqueda(e.target.value)} className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 focus:border-[#2383C2] dark:focus:border-[#2383C2]" placeholder="Buscar por nombre, comentario..." />
+              <input value={busqueda} onChange={e => setBusqueda(e.target.value)} className="w-full h-7 pl-7 pr-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none bg-white dark:bg-gray-900 text-tinta-principal focus:border-[#2383C2] dark:focus:border-[#2383C2]" placeholder="Buscar por nombre, comentario..." />
             </div>
           )}
         </div>
@@ -495,9 +495,9 @@ const PrevisionesMaestros = () => {
 
       {hasPermission(PATH_VISTA, "tabla_datos") && (
         <div className="flex-grow overflow-auto">
-          <table className="w-full text-left text-[11px] border-collapse">
+          <table className="w-full text-left text-secundario border-collapse">
             <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10">
-              <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+              <tr className="text-tinta-secundaria uppercase text-pequeno">
                 <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700 w-8 text-center">#</th>
                 {hasPermission(PATH_VISTA, "tabla_datos", "col_nombre") && <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Nombre de la Previsión</th>}
                 {hasPermission(PATH_VISTA, "tabla_datos", "col_comentario") && <th className="py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700">Comentario</th>}
@@ -510,23 +510,23 @@ const PrevisionesMaestros = () => {
             <tbody>
               {previsionesFiltradas.map((p, index) => (
                 <tr key={p.id} className="border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors">
-                  <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-500 dark:text-gray-400 font-bold text-center">{index + 1}</td>
-                  {hasPermission(PATH_VISTA, "tabla_datos", "col_nombre") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-700 dark:text-gray-200 font-medium">{p.nombre}</td>}
-                  {hasPermission(PATH_VISTA, "tabla_datos", "col_comentario") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-500 dark:text-gray-400">{p.comentario || '-'}</td>}
+                  <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria text-etiqueta text-center">{index + 1}</td>
+                  {hasPermission(PATH_VISTA, "tabla_datos", "col_nombre") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-principal">{p.nombre}</td>}
+                  {hasPermission(PATH_VISTA, "tabla_datos", "col_comentario") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria">{p.comentario || '-'}</td>}
                   {hasPermission(PATH_VISTA, "tabla_datos", "col_estado") && (
                     <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70">
-                      <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase ${p.estado === 'INACTIVO' ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400' : 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400'}`}>
+                      <span className={`text-pequeno px-1.5 py-0.2 rounded-full uppercase ${p.estado === 'INACTIVO' ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400' : 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400'}`}>
                         {p.estado || 'ACTIVO'}
                       </span>
                     </td>
                   )}
-                  {hasPermission(PATH_VISTA, "tabla_datos", "col_registrador") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-500 dark:text-gray-400">{p.registradoPor || 'N/A'}</td>}
-                  {hasPermission(PATH_VISTA, "tabla_datos", "col_fecha") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-gray-500 dark:text-gray-400">{formatearFecha(p.fechaRegistro)}</td>}
+                  {hasPermission(PATH_VISTA, "tabla_datos", "col_registrador") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria">{p.registradoPor || 'N/A'}</td>}
+                  {hasPermission(PATH_VISTA, "tabla_datos", "col_fecha") && <td className="py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70 text-tinta-secundaria">{formatearFecha(p.fechaRegistro)}</td>}
 
                   <td className="py-1 px-2 border-b border-gray-200 dark:border-gray-700 text-center">
                     <div className="flex justify-center gap-2">
                       {hasPermission(PATH_VISTA, "tabla_datos", "action_log") && (
-                        <button onClick={() => abrirHistorialLogs(p)} title="Ver Historial / Logs" className="text-gray-500 hover:text-[#2383C2] dark:hover:text-[#2383C2] transition">
+                        <button onClick={() => abrirHistorialLogs(p)} title="Ver Historial / Logs" className="text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] transition">
                           <History size={13} />
                         </button>
                       )}

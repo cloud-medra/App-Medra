@@ -22,22 +22,22 @@ const HistorialImportaciones = ({ historial, cargando }) => {
     <div className="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-gray-700 shadow-2xs">
       <div className="px-2.5 py-1.5 bg-slate-50/80 dark:bg-gray-900/60 border-b border-slate-200 dark:border-gray-700 flex items-center gap-1.5">
         <History size={13} className="text-[#2383C2]" />
-        <h3 className="text-[9.5px] font-bold text-slate-800 dark:text-gray-200 uppercase tracking-wide">
+        <h3 className="text-pequeno text-tinta-principal uppercase tracking-wide">
           Historial de importaciones
         </h3>
       </div>
 
       {cargando ? (
-        <div className="p-4 flex items-center justify-center gap-1.5 text-[9.5px] text-slate-400">
+        <div className="p-4 flex items-center justify-center gap-1.5 text-pequeno text-tinta-atenuada">
           <Spinner size="xs" color="#2383C2" />
           <span>Cargando historial…</span>
         </div>
       ) : historial.length === 0 ? (
-        <div className="p-4 text-center text-[9.5px] text-slate-400">Esta empresa aún no tiene importaciones de precios.</div>
+        <div className="p-4 text-center text-pequeno text-tinta-atenuada">Esta empresa aún no tiene importaciones de precios.</div>
       ) : (
         <div className="overflow-auto max-h-72">
-          <table className="w-full text-left text-[9px] border-collapse">
-            <thead className="bg-slate-100/70 dark:bg-gray-900 text-slate-600 dark:text-gray-400 uppercase font-bold text-[8.5px] sticky top-0">
+          <table className="w-full text-left text-pequeno border-collapse">
+            <thead className="bg-slate-100/70 dark:bg-gray-900 text-tinta-secundaria uppercase text-pequeno sticky top-0">
               <tr>
                 <th className={`${claseTh} w-5`}></th>
                 <th className={claseTh}>Fecha</th>
@@ -57,13 +57,13 @@ const HistorialImportaciones = ({ historial, cargando }) => {
                       onClick={() => setExpandida(abierta ? null : imp.id)}
                       className="border-b border-slate-100 dark:border-gray-700/60 hover:bg-slate-50 dark:hover:bg-gray-700/30 cursor-pointer"
                     >
-                      <td className="py-1 px-1.5 text-slate-400">{abierta ? <ChevronDown size={11} /> : <ChevronRight size={11} />}</td>
-                      <td className="py-1 px-1.5 font-num whitespace-nowrap">{formatearFecha(imp.fechaIso)}</td>
+                      <td className="py-1 px-1.5 text-tinta-atenuada">{abierta ? <ChevronDown size={11} /> : <ChevronRight size={11} />}</td>
+                      <td className="py-1 px-1.5 text-numero-tabla whitespace-nowrap">{formatearFecha(imp.fechaIso)}</td>
                       <td className="py-1 px-1.5">{imp.usuario}</td>
-                      <td className="py-1 px-1.5 text-slate-500 truncate max-w-[200px]" title={imp.archivo}>{imp.archivo}</td>
-                      <td className="py-1 px-1.5 text-center font-bold text-emerald-600 dark:text-emerald-400">{imp.totalActualizados}</td>
-                      <td className="py-1 px-1.5 text-center text-slate-500">{imp.totalOmitidos}</td>
-                      <td className={`py-1 px-1.5 text-center ${imp.totalErrores > 0 ? 'font-bold text-red-600 dark:text-red-400' : 'text-slate-500'}`}>{imp.totalErrores}</td>
+                      <td className="py-1 px-1.5 text-tinta-secundaria truncate max-w-[200px]" title={imp.archivo}>{imp.archivo}</td>
+                      <td className="py-1 px-1.5 text-center text-etiqueta text-emerald-600 dark:text-emerald-400">{imp.totalActualizados}</td>
+                      <td className="py-1 px-1.5 text-center text-tinta-secundaria">{imp.totalOmitidos}</td>
+                      <td className={`py-1 px-1.5 text-center ${imp.totalErrores > 0 ? 'text-etiqueta text-red-600 dark:text-red-400' : 'text-tinta-secundaria'}`}>{imp.totalErrores}</td>
                     </tr>
                     {abierta && (
                       <tr className="bg-slate-50/60 dark:bg-gray-900/40">
@@ -72,7 +72,7 @@ const HistorialImportaciones = ({ historial, cargando }) => {
                           <ul className="space-y-0.5 max-h-40 overflow-auto">
                             {(imp.cambios || []).map(c => (
                               <li key={c.id}>
-                                <span className="font-num font-bold">{c.referencia}</span>: {formatearPrecio(c.precioAnterior)} → <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatearPrecio(c.precioNuevo)}</span>
+                                <span className="text-numero-tabla">{c.referencia}</span>: {formatearPrecio(c.precioAnterior)} → <span className="text-emerald-600 dark:text-emerald-400">{formatearPrecio(c.precioNuevo)}</span>
                               </li>
                             ))}
                           </ul>

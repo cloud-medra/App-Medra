@@ -15,8 +15,8 @@ import {
 } from './instituciones';
 
 const PATH_VISTA = RUTA_INSTITUCIONES;
-const INPUT = 'w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-[11px] outline-none focus:border-[#2383C2] dark:focus:border-[#2383C2] bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100';
-const ETIQUETA = 'block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-0.5';
+const INPUT = 'w-full h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-secundario outline-none focus:border-[#2383C2] dark:focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal';
+const ETIQUETA = 'block text-pequeno text-tinta-secundaria uppercase mb-0.5';
 const CELDA = 'py-1 px-2 border-b border-r border-gray-200 dark:border-gray-700/70';
 const TH = 'py-1.5 px-2 border-b border-r border-gray-200 dark:border-gray-700';
 
@@ -174,25 +174,25 @@ const InstitucionesMaestros = () => {
     || (editingId && hasPermission(PATH_VISTA, 'formulario_registro', 'btn_actualizar'));
 
   return (
-    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-[11px]">
+    <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {cargando && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-3">
             <Spinner size="md" color="#2383C2" />
-            <h3 className="text-[#2383C2] font-bold text-[13px]">Procesando...</h3>
+            <h3 className="text-[#2383C2] text-subtitulo">Procesando...</h3>
           </div>
         </div>
       )}
 
       <div className="px-3 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/80">
-        <h2 className="text-[12px] font-bold text-gray-700 dark:text-gray-100 flex items-center gap-1.5">
+        <h2 className="text-titulo-seccion text-tinta-principal flex items-center gap-1.5">
           <Building2 size={14} className="text-[#2383C2]" />
-          {editingId ? 'EDITAR INSTITUCIÓN' : 'REGISTRO DE INSTITUCIONES'}
+          {editingId ? 'Editar institución' : 'Registro de instituciones'}
         </h2>
         <button
           type="button"
           onClick={refrescar}
-          className="p-1 rounded-md text-gray-500 hover:text-[#2383C2] dark:text-gray-400 dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          className="p-1 rounded-md text-tinta-secundaria hover:text-[#2383C2] dark:hover:text-[#2383C2] hover:bg-gray-100 dark:hover:bg-gray-700 transition"
           title="Actualizar (traer cambios de otros usuarios)"
         >
           <RefreshCw size={15} />
@@ -217,7 +217,7 @@ const InstitucionesMaestros = () => {
             </div>
           ))}
 
-          <label className="h-7 flex items-center gap-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+          <label className="h-7 flex items-center gap-1.5 text-etiqueta text-tinta-secundaria cursor-pointer select-none">
             <input
               type="checkbox"
               checked={formData.activa}
@@ -229,7 +229,7 @@ const InstitucionesMaestros = () => {
 
           {hasPermission(PATH_VISTA, 'formulario_registro', 'check_predeterminada') && (
             <label
-              className={`h-7 flex items-center gap-1.5 text-[11px] font-semibold select-none ${formData.activa ? 'text-gray-600 dark:text-gray-300 cursor-pointer' : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'}`}
+              className={`h-7 flex items-center gap-1.5 text-etiqueta select-none ${formData.activa ? 'text-tinta-secundaria cursor-pointer' : 'text-tinta-atenuada cursor-not-allowed'}`}
               title="Se selecciona automáticamente en el header si el usuario no eligió otra. Solo puede haber una."
             >
               <input
@@ -244,13 +244,13 @@ const InstitucionesMaestros = () => {
           )}
 
           {puedeEnviar && (
-            <button type="submit" className={`h-7 px-3 rounded font-bold text-[11px] flex items-center gap-1.5 ${editingId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2383C2] hover:bg-[#369BCE]'} text-white transition`}>
+            <button type="submit" className={`h-7 px-3 rounded text-etiqueta flex items-center gap-1.5 ${editingId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-[#2383C2] hover:bg-[#369BCE]'} text-white transition`}>
               {editingId ? <><Save size={13} /> Actualizar</> : <><Plus size={13} /> Registrar</>}
             </button>
           )}
 
           {editingId && (
-            <button type="button" onClick={cancelarEdicion} className="h-7 px-3 bg-gray-200 dark:bg-gray-700 rounded font-bold text-[11px] text-gray-600 dark:text-gray-300 flex items-center gap-1.5 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+            <button type="button" onClick={cancelarEdicion} className="h-7 px-3 bg-gray-200 dark:bg-gray-700 rounded text-etiqueta text-tinta-secundaria flex items-center gap-1.5 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
               <X size={13} /> Cancelar
             </button>
           )}
@@ -269,7 +269,7 @@ const InstitucionesMaestros = () => {
               aria-label="Buscar instituciones"
             />
           </div>
-          <span className="text-[10px] text-gray-500 dark:text-gray-400">
+          <span className="text-pequeno text-tinta-secundaria">
             {instituciones.filter((i) => i.activa !== false).length} activas de {instituciones.length}
           </span>
         </div>
@@ -277,9 +277,9 @@ const InstitucionesMaestros = () => {
 
       {hasPermission(PATH_VISTA, 'tabla_datos') && (
         <div className="flex-grow overflow-auto">
-          <table className="w-full text-left text-[11px] border-collapse">
+          <table className="w-full text-left text-secundario border-collapse">
             <thead className="bg-gray-100 dark:bg-gray-900 sticky top-0 z-10">
-              <tr className="text-gray-600 dark:text-gray-400 uppercase font-bold text-[10px]">
+              <tr className="text-tinta-secundaria uppercase text-pequeno">
                 <th className={`${TH} w-8 text-center`}>#</th>
                 {verNombre && <th className={TH}>Nombre</th>}
                 {verNombreCorto && <th className={TH}>Nombre corto</th>}
@@ -294,7 +294,7 @@ const InstitucionesMaestros = () => {
             <tbody>
               {filtradas.length === 0 && (
                 <tr>
-                  <td colSpan={2 + [verNombre, verNombreCorto, verRut, verCiudad, verDireccion, verContacto, verEstado].filter(Boolean).length} className="py-6 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={2 + [verNombre, verNombreCorto, verRut, verCiudad, verDireccion, verContacto, verEstado].filter(Boolean).length} className="py-6 text-center text-tinta-secundaria">
                     {instituciones.length === 0 ? 'Aún no hay instituciones registradas.' : 'Sin coincidencias.'}
                   </td>
                 </tr>
@@ -303,27 +303,27 @@ const InstitucionesMaestros = () => {
                 const activa = i.activa !== false;
                 return (
                   <tr key={i.id} className="border-l-2 border-transparent hover:border-[#2383C2] hover:bg-gray-50/80 dark:hover:bg-gray-700/40 transition-colors">
-                    <td className={`${CELDA} text-gray-500 dark:text-gray-400 font-bold text-center`}>{index + 1}</td>
+                    <td className={`${CELDA} text-tinta-secundaria text-etiqueta text-center`}>{index + 1}</td>
                     {verNombre && (
-                      <td className={`${CELDA} text-gray-700 dark:text-gray-200 font-medium`}>
+                      <td className={`${CELDA} text-tinta-principal`}>
                         {i.nombre}
                         {i.predeterminada && (
-                          <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300">Predeterminada</span>
+                          <span className="ml-1.5 text-pequeno px-1.5 py-0.5 rounded-full uppercase bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300">Predeterminada</span>
                         )}
                       </td>
                     )}
-                    {verNombreCorto && <td className={`${CELDA} text-gray-600 dark:text-gray-300`}>{i.nombreCorto || '-'}</td>}
-                    {verRut && <td className={`${CELDA} text-gray-500 dark:text-gray-400`}>{i.rut || '-'}</td>}
-                    {verCiudad && <td className={`${CELDA} text-gray-500 dark:text-gray-400`}>{i.ciudad || '-'}</td>}
-                    {verDireccion && <td className={`${CELDA} text-gray-500 dark:text-gray-400`}>{i.direccion || '-'}</td>}
+                    {verNombreCorto && <td className={`${CELDA} text-tinta-secundaria`}>{i.nombreCorto || '-'}</td>}
+                    {verRut && <td className={`${CELDA} text-tinta-secundaria`}>{i.rut || '-'}</td>}
+                    {verCiudad && <td className={`${CELDA} text-tinta-secundaria`}>{i.ciudad || '-'}</td>}
+                    {verDireccion && <td className={`${CELDA} text-tinta-secundaria`}>{i.direccion || '-'}</td>}
                     {verContacto && (
-                      <td className={`${CELDA} text-gray-500 dark:text-gray-400`}>
+                      <td className={`${CELDA} text-tinta-secundaria`}>
                         {[i.telefono, i.email].filter(Boolean).join(' · ') || '-'}
                       </td>
                     )}
                     {verEstado && (
                       <td className={CELDA}>
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${activa ? 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400'}`}>
+                        <span className={`text-pequeno px-1.5 py-0.5 rounded-full uppercase ${activa ? 'bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400'}`}>
                           {activa ? 'Activa' : 'Inactiva'}
                         </span>
                       </td>
@@ -336,12 +336,12 @@ const InstitucionesMaestros = () => {
                           </button>
                         )}
                         {activa && !i.predeterminada && hasPermission(PATH_VISTA, 'tabla_datos', 'action_predeterminada') && (
-                          <button type="button" onClick={() => marcarPredeterminada(i)} title="Marcar como predeterminada" aria-label={`Marcar ${i.nombre} como predeterminada`} className="text-gray-500 hover:text-amber-600 dark:hover:text-amber-400 transition">
+                          <button type="button" onClick={() => marcarPredeterminada(i)} title="Marcar como predeterminada" aria-label={`Marcar ${i.nombre} como predeterminada`} className="text-tinta-secundaria hover:text-amber-600 dark:hover:text-amber-400 transition">
                             <Star size={13} />
                           </button>
                         )}
                         {hasPermission(PATH_VISTA, 'tabla_datos', 'action_estado') && (
-                          <button type="button" onClick={() => alternarEstado(i)} title={activa ? 'Desactivar' : 'Activar'} aria-label={`${activa ? 'Desactivar' : 'Activar'} ${i.nombre}`} className={`${activa ? 'text-gray-500 hover:text-red-600 dark:hover:text-red-400' : 'text-green-600 hover:text-green-700 dark:text-green-400'} transition`}>
+                          <button type="button" onClick={() => alternarEstado(i)} title={activa ? 'Desactivar' : 'Activar'} aria-label={`${activa ? 'Desactivar' : 'Activar'} ${i.nombre}`} className={`${activa ? 'text-tinta-secundaria hover:text-red-600 dark:hover:text-red-400' : 'text-green-600 hover:text-green-700 dark:text-green-400'} transition`}>
                             <Power size={13} />
                           </button>
                         )}

@@ -447,10 +447,10 @@ const PadMaestros = () => {
 
   if (!tieneAcceso) {
     return (
-      <div className="w-full h-80 flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-4 text-center text-[10px]">
+      <div className="w-full h-80 flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700 p-4 text-center text-pequeno">
         <ShieldAlert size={24} className="text-amber-500 mb-1.5" />
-        <h3 className="font-bold text-slate-800 dark:text-gray-100">Acceso Insuficiente</h3>
-        <p className="text-slate-500 dark:text-gray-400 max-w-xs">
+        <h3 className="text-titulo-seccion text-tinta-principal">Acceso insuficiente</h3>
+        <p className="text-tinta-secundaria max-w-xs">
           No posee credenciales para la gestión de PAD Maestros.
         </p>
       </div>
@@ -458,7 +458,7 @@ const PadMaestros = () => {
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-slate-100/70 dark:bg-gray-900 text-[10px] overflow-hidden border border-slate-200 dark:border-gray-800 rounded-lg">
+    <div className="w-full h-full flex flex-col bg-slate-100/70 dark:bg-gray-900 text-pequeno overflow-hidden border border-slate-200 dark:border-gray-800 rounded-lg">
       
       {/* Header Compacto */}
       <div className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
@@ -468,10 +468,10 @@ const PadMaestros = () => {
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="text-[11px] font-bold text-slate-900 dark:text-gray-100 tracking-tight">
+              <h1 className="text-titulo-seccion text-tinta-principal">
                 Gestión de PADs
               </h1>
-              <span className="text-[8.5px] bg-slate-100 dark:bg-gray-700 font-num text-slate-600 dark:text-gray-300 px-1.5 py-0.2 rounded border border-slate-200 dark:border-gray-600 font-medium">
+              <span className="text-pequeno tabular-nums bg-slate-100 dark:bg-gray-700 text-tinta-secundaria px-1.5 py-0.2 rounded border border-slate-200 dark:border-gray-600">
                 MAESTROS / PAD
               </span>
             </div>
@@ -482,7 +482,7 @@ const PadMaestros = () => {
           {modo === 'REGISTRAR_NUEVO' ? (
             <button
               onClick={handleCancelarNuevoPad}
-              className="flex items-center gap-1 px-2.5 py-1 rounded text-[9.5px] font-bold transition cursor-pointer bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50"
+              className="flex items-center gap-1 px-2.5 py-1 rounded text-pequeno transition cursor-pointer bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/50"
             >
               <XCircle size={12} />
               <span>Cancelar</span>
@@ -490,7 +490,7 @@ const PadMaestros = () => {
           ) : puede.registrarNuevo && (
             <button
               onClick={handleIniciarNuevoPad}
-              className="flex items-center gap-1 px-2.5 py-1 rounded text-[9.5px] font-bold transition cursor-pointer bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100"
+              className="flex items-center gap-1 px-2.5 py-1 rounded text-pequeno transition cursor-pointer bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100"
             >
               <PlusCircle size={12} />
               <span>+ Registrar Nuevo PAD</span>
@@ -499,7 +499,7 @@ const PadMaestros = () => {
 
           <button
             onClick={() => { cargarPads(); cargarCatalogoMaestros(); }}
-            className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 rounded text-[9.5px] font-semibold transition cursor-pointer border border-slate-200 dark:border-gray-600"
+            className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-tinta-principal rounded text-pequeno transition cursor-pointer border border-slate-200 dark:border-gray-600"
           >
             <RefreshCw size={11} className={(cargandoPads || cargandoComponentes) ? "animate-spin" : ""} />
             <span>Sincronizar</span>
@@ -520,12 +520,12 @@ const PadMaestros = () => {
                 value={busquedaPad}
                 onChange={(e) => setBusquedaPad(e.target.value)}
                 placeholder="Buscar por código, ref, empresa..."
-                className="w-full h-6 pl-7 pr-1.5 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-[9.5px] text-slate-800 dark:text-gray-100 outline-none focus:border-[#2383C2]"
+                className="w-full h-6 pl-7 pr-1.5 bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-pequeno text-tinta-principal outline-none focus:border-[#2383C2]"
               />
             </div>
-            <div className="flex items-center justify-between mt-1.5 px-0.5 text-[8.5px] text-slate-500">
+            <div className="flex items-center justify-between mt-1.5 px-0.5 text-pequeno text-tinta-secundaria">
               <span>PADs encontrados: <strong>{padsFiltrados.length}</strong></span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+              <span className="text-emerald-600 dark:text-emerald-400 text-etiqueta">
                 Con detalle: {listaPads.filter(p => p.tieneComposicion).length}
               </span>
             </div>
@@ -533,12 +533,12 @@ const PadMaestros = () => {
 
           <div className="flex-grow overflow-auto divide-y divide-slate-100 dark:divide-gray-700/60">
             {cargandoPads ? (
-              <div className="h-full min-h-32 p-4 flex flex-col items-center justify-center text-slate-400 gap-1.5">
+              <div className="h-full min-h-32 p-4 flex flex-col items-center justify-center text-tinta-atenuada gap-1.5">
                 <Spinner size="sm" color="#2383C2" />
                 <span>Cargando PADs…</span>
               </div>
             ) : padsFiltrados.length === 0 ? (
-              <div className="p-4 text-center text-slate-400">
+              <div className="p-4 text-center text-tinta-atenuada">
                 No se encontraron registros.
               </div>
             ) : (
@@ -555,21 +555,21 @@ const PadMaestros = () => {
                     }`}
                   >
                     <div className="flex items-center justify-between mb-0.5">
-                      <span className="font-num font-bold text-emerald-600 dark:text-emerald-400 text-[9.5px]">
+                      <span className="text-pequeno tabular-nums text-emerald-600 dark:text-emerald-400">
                         {pad.codigo || pad.id}
                       </span>
-                      <span className="px-1 py-0.2 rounded text-[8px] font-bold bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300 uppercase">
+                      <span className="px-1 py-0.2 rounded text-pequeno bg-slate-100 dark:bg-gray-700 text-tinta-secundaria uppercase">
                         {pad.clasificacion || 'RODILLA'}
                       </span>
                     </div>
                     {/* Render de la Referencia/Descripción garantizado */}
-                    <div className="font-semibold text-slate-800 dark:text-gray-100 text-[9.5px] leading-tight line-clamp-2">
+                    <div className="text-tinta-principal text-pequeno line-clamp-2">
                       {pad.referencia}
                     </div>
-                    <div className="flex items-center justify-between mt-1 text-[8.5px] text-slate-400">
+                    <div className="flex items-center justify-between mt-1 text-pequeno text-tinta-atenuada">
                       <span className="truncate max-w-[110px]">{pad.empresa || 'S/E'}</span>
                       {pad.tieneComposicion ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0">✓ {pad.itemsCount} ítems</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 text-etiqueta shrink-0">✓ {pad.itemsCount} ítems</span>
                       ) : (
                         <span className="text-amber-500 shrink-0">Sin detalle</span>
                       )}
@@ -587,14 +587,14 @@ const PadMaestros = () => {
           {modo === 'REGISTRAR_NUEVO' ? (
             <div className="bg-white dark:bg-gray-800 rounded border border-emerald-300 dark:border-emerald-700 p-2 shadow-2xs space-y-1.5">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-gray-700 pb-1">
-                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
+                <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-pequeno">
                   <PlusCircle size={13} />
                   <span>Nuevo Registro de PAD</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleCancelarNuevoPad}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded text-[8.5px] font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
+                  className="flex items-center gap-1 px-2 py-0.5 rounded text-pequeno text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition cursor-pointer"
                 >
                   <XCircle size={11} />
                   <span>Cancelar</span>
@@ -603,19 +603,19 @@ const PadMaestros = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-1.5">
                 <div>
-                  <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Código PAD (ID) *</label>
+                  <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Código PAD (ID) *</label>
                   <input
                     type="text"
                     placeholder="Ej: PAD-ROD-01"
                     value={nuevoPadForm.codigo}
                     onChange={(e) => setNuevoPadForm({ ...nuevoPadForm, codigo: e.target.value })}
-                    className="w-full h-6 px-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-[9.5px] font-num font-bold outline-none focus:border-[#2383C2]"
+                    className="w-full h-6 px-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-pequeno tabular-nums outline-none focus:border-[#2383C2]"
                   />
                 </div>
 
                 {/* CAMPO CON AUTOCOMPLETADO: Referencia / Descripción del PAD */}
                 <div className="sm:col-span-2 relative">
-                  <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Referencia / Descripción del PAD *</label>
+                  <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Referencia / Descripción del PAD *</label>
                   <input
                     type="text"
                     placeholder="Ej: PAQUETE DE ARTROPLASTIA DE RODILLA COMPLETO"
@@ -624,13 +624,13 @@ const PadMaestros = () => {
                     onFocus={() => setMostrarSugerenciasPad(true)}
                     onBlur={() => setTimeout(() => setMostrarSugerenciasPad(false), 150)}
                     autoComplete="off"
-                    className="w-full h-6 px-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-[9.5px] font-semibold outline-none focus:border-[#2383C2]"
+                    className="w-full h-6 px-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-pequeno outline-none focus:border-[#2383C2]"
                   />
 
                   {mostrarSugerenciasPad && (
                     <div className="absolute z-20 top-full left-0 right-0 mt-0.5 max-h-40 overflow-auto bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded shadow-lg">
                       {sugerenciasPad.length === 0 ? (
-                        <div className="px-2 py-1.5 text-[9px] text-slate-400">
+                        <div className="px-2 py-1.5 text-pequeno text-tinta-atenuada">
                           Sin coincidencias (clase = PAD en maestros_codigos)
                         </div>
                       ) : (
@@ -641,14 +641,14 @@ const PadMaestros = () => {
                             className="px-2 py-1 border-b border-slate-100 dark:border-gray-700 last:border-0 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-num font-bold text-emerald-600 dark:text-emerald-400 text-[8.5px]">
+                              <span className="text-pequeno tabular-nums text-emerald-600 dark:text-emerald-400">
                                 {item.codigo || 'S/C'}
                               </span>
-                              <span className="text-[8px] text-slate-400">
+                              <span className="text-pequeno text-tinta-atenuada">
                                 {item.empresa || 'S/E'} · ${Number(item.precioNeto || 0).toLocaleString('es-ES')}
                               </span>
                             </div>
-                            <div className="text-[9px] font-semibold text-slate-800 dark:text-gray-200 leading-tight">
+                            <div className="text-pequeno text-tinta-principal">
                               {item.descriptorEmpresa || item.referencia || item.descriptorAuto}
                             </div>
                           </div>
@@ -659,11 +659,11 @@ const PadMaestros = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Clasificación *</label>
+                  <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Clasificación *</label>
                   <select
                     value={nuevoPadForm.clasificacion}
                     onChange={(e) => setNuevoPadForm({ ...nuevoPadForm, clasificacion: e.target.value })}
-                    className="w-full h-6 px-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-[9.5px] font-bold text-[#2383C2] outline-none cursor-pointer"
+                    className="w-full h-6 px-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-pequeno text-[#2383C2] outline-none cursor-pointer"
                   >
                     <option value="RODILLA">Rodilla</option>
                     <option value="CADERA">Cadera</option>
@@ -678,22 +678,22 @@ const PadMaestros = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Empresa / Clínica</label>
+                  <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Empresa / Clínica</label>
                   <input
                     type="text"
                     placeholder="Ej: CLINICA ALEMANA"
                     value={nuevoPadForm.empresa}
                     onChange={(e) => setNuevoPadForm({ ...nuevoPadForm, empresa: e.target.value })}
-                    className="w-full h-6 px-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-[9.5px] outline-none focus:border-[#2383C2]"
+                    className="w-full h-6 px-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-pequeno outline-none focus:border-[#2383C2]"
                   />
                 </div>
                 <div>
-                  <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">Precio Venta Net ($)</label>
+                  <label className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Precio Venta Net ($)</label>
                   <input
                     type="number"
                     value={nuevoPadForm.precioNeto}
                     onChange={(e) => setNuevoPadForm({ ...nuevoPadForm, precioNeto: e.target.value })}
-                    className="w-full h-6 px-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-[9.5px] font-bold text-emerald-600 outline-none"
+                    className="w-full h-6 px-1.5 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-pequeno text-emerald-600 outline-none"
                   />
                 </div>
               </div>
@@ -702,7 +702,7 @@ const PadMaestros = () => {
             <div className="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-gray-700 p-2 shadow-2xs">
               <div className="flex items-center justify-between mb-1.5 pb-1 border-b border-slate-100 dark:border-gray-700">
                 <div className="flex items-center gap-1.5">
-                  <span className="px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-950 text-[#2383C2] font-bold text-[8.5px]">
+                  <span className="px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-950 text-[#2383C2] text-pequeno">
                     PAD
                   </span>
                   <input
@@ -713,30 +713,30 @@ const PadMaestros = () => {
                       setPadSeleccionado(prev => ({ ...prev, referencia: val }));
                       setListaPads(prev => prev.map(p => p.id === padSeleccionado.id ? { ...p, referencia: val } : p));
                     }}
-                    className="text-[10.5px] font-bold text-slate-900 dark:text-gray-100 bg-transparent border-b border-dashed border-slate-300 hover:border-[#2383C2] focus:border-[#2383C2] outline-none w-80"
+                    className="text-pequeno text-tinta-principal bg-transparent border-b border-dashed border-slate-300 hover:border-[#2383C2] focus:border-[#2383C2] outline-none w-80"
                   />
                 </div>
-                <span className="font-num text-[9.5px] font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="text-pequeno tabular-nums text-emerald-600 dark:text-emerald-400">
                   ID: {padSeleccionado.codigo || padSeleccionado.id}
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[9.5px]">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-pequeno">
                 <div className="bg-slate-50 dark:bg-gray-900/60 p-1 rounded border border-slate-200/50 dark:border-gray-700/50">
-                  <span className="block text-[8px] font-bold text-slate-400 uppercase">Empresa</span>
+                  <span className="block text-pequeno text-tinta-atenuada uppercase">Empresa</span>
                   <input
                     type="text"
                     value={padSeleccionado.empresa || ''}
                     onChange={(e) => setPadSeleccionado({ ...padSeleccionado, empresa: e.target.value })}
-                    className="w-full bg-transparent font-semibold text-slate-800 dark:text-gray-200 outline-none text-[9.5px]"
+                    className="w-full bg-transparent text-tinta-principal outline-none text-pequeno"
                   />
                 </div>
                 <div className="bg-slate-50 dark:bg-gray-900/60 p-1 rounded border border-slate-200/50 dark:border-gray-700/50">
-                  <span className="block text-[8px] font-bold text-slate-400 uppercase">Clasificación</span>
+                  <span className="block text-pequeno text-tinta-atenuada uppercase">Clasificación</span>
                   <select
                     value={padSeleccionado.clasificacion || 'RODILLA'}
                     onChange={(e) => setPadSeleccionado({ ...padSeleccionado, clasificacion: e.target.value })}
-                    className="w-full bg-transparent font-bold text-[#2383C2] outline-none cursor-pointer text-[9.5px]"
+                    className="w-full bg-transparent text-[#2383C2] outline-none cursor-pointer text-pequeno"
                   >
                     <option value="RODILLA">Rodilla</option>
                     <option value="CADERA">Cadera</option>
@@ -747,17 +747,17 @@ const PadMaestros = () => {
                   </select>
                 </div>
                 <div className="bg-slate-50 dark:bg-gray-900/60 p-1 rounded border border-slate-200/50 dark:border-gray-700/50">
-                  <span className="block text-[8px] font-bold text-slate-400 uppercase">Precio Base</span>
-                  <span className="font-bold text-slate-900 dark:text-gray-100">${Number(padSeleccionado.precioNeto || 0).toLocaleString('es-ES')}</span>
+                  <span className="block text-pequeno text-tinta-atenuada uppercase">Precio Base</span>
+                  <span className="text-etiqueta text-tinta-principal">${Number(padSeleccionado.precioNeto || 0).toLocaleString('es-ES')}</span>
                 </div>
                 <div className="bg-slate-50 dark:bg-gray-900/60 p-1 rounded border border-slate-200/50 dark:border-gray-700/50">
-                  <span className="block text-[8px] font-bold text-slate-400 uppercase">Suma Detalle Ítems</span>
-                  <span className="font-bold text-[#2383C2]">${totalPrecioAcumulado.toLocaleString('es-ES')}</span>
+                  <span className="block text-pequeno text-tinta-atenuada uppercase">Suma Detalle Ítems</span>
+                  <span className="text-etiqueta text-[#2383C2]">${totalPrecioAcumulado.toLocaleString('es-ES')}</span>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="p-4 text-center bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded text-slate-400">
+            <div className="p-4 text-center bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded text-tinta-atenuada">
               Seleccione un PAD en la lista o haga clic en "+ Registrar Nuevo PAD".
             </div>
           )}
@@ -765,7 +765,7 @@ const PadMaestros = () => {
           {/* VINCULAR DETALLES */}
           {(modo === 'REGISTRAR_NUEVO' || padSeleccionado) && puede.agregarItem && (
             <div className="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-gray-700 p-2 shadow-2xs space-y-1">
-              <span className="block text-[9.5px] font-bold text-slate-800 dark:text-gray-200 uppercase tracking-wider">
+              <span className="block text-pequeno text-tinta-principal uppercase tracking-wider">
                 Añadir componentes al PAD
               </span>
 
@@ -784,7 +784,7 @@ const PadMaestros = () => {
                     onBlur={() => setTimeout(() => setMostrarSugerenciasComponente(false), 150)}
                     autoComplete="off"
                     placeholder="Buscar por código, referencia o descripción..."
-                    className="w-full h-6 pl-7 pr-6 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-[9.5px] text-slate-800 dark:text-gray-100 outline-none focus:border-[#2383C2]"
+                    className="w-full h-6 pl-7 pr-6 bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-pequeno text-tinta-principal outline-none focus:border-[#2383C2]"
                   />
                   {buscandoComponente && (
                     <span className="absolute right-1.5 top-1">
@@ -795,19 +795,19 @@ const PadMaestros = () => {
                   {mostrarSugerenciasComponente && (
                     <div className="absolute z-20 top-full left-0 right-0 mt-0.5 max-h-40 overflow-auto bg-white dark:bg-gray-800 border border-slate-300 dark:border-gray-600 rounded shadow-lg">
                       {errorComponentes ? (
-                        <div role="alert" className="px-2 py-1.5 text-[9px] text-red-600 dark:text-red-400">
+                        <div role="alert" className="px-2 py-1.5 text-pequeno text-red-600 dark:text-red-400">
                           No se pudo cargar el catálogo de componentes. Pulse "Sincronizar" para reintentar.
                         </div>
                       ) : terminoCorto ? (
-                        <div className="px-2 py-1.5 text-[9px] text-slate-400">
+                        <div className="px-2 py-1.5 text-pequeno text-tinta-atenuada">
                           Escriba al menos {MIN_CARACTERES_BUSQUEDA} caracteres para buscar.
                         </div>
                       ) : buscandoComponente ? (
-                        <div className="px-2 py-1.5 text-[9px] text-slate-400">
+                        <div className="px-2 py-1.5 text-pequeno text-tinta-atenuada">
                           Buscando…
                         </div>
                       ) : componentesFiltrados.length === 0 ? (
-                        <div className="px-2 py-1.5 text-[9px] text-slate-400">
+                        <div className="px-2 py-1.5 text-pequeno text-tinta-atenuada">
                           No se encontraron componentes para «{terminoComponente}»
                         </div>
                       ) : (
@@ -822,24 +822,24 @@ const PadMaestros = () => {
                             className="px-2 py-1 border-b border-slate-100 dark:border-gray-700 last:border-0 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-num font-bold text-emerald-600 dark:text-emerald-400 text-[8.5px]">
+                              <span className="text-pequeno tabular-nums text-emerald-600 dark:text-emerald-400">
                                 {comp.codigo || 'S/C'}
                               </span>
-                              <span className="text-[8px] text-slate-400">
+                              <span className="text-pequeno text-tinta-atenuada">
                                 {comp.clase || 'SIN CLASE'} · ${Number(comp.precioNeto || 0).toLocaleString('es-ES')}
                               </span>
                             </div>
-                            <div className="text-[9px] font-semibold text-slate-800 dark:text-gray-200 leading-tight">
-                              <span className="text-slate-400 font-normal">Ref:</span> {comp.referencia || 'N/A'}
+                            <div className="text-pequeno text-tinta-principal">
+                              <span className="text-tinta-atenuada">Ref:</span> {comp.referencia || 'N/A'}
                             </div>
-                            <div className="text-[9px] text-slate-600 dark:text-gray-400 leading-tight">
-                              <span className="text-slate-400">Desc:</span> {comp.descriptorEmpresa || comp.descriptorAuto || comp.descripcion || 'N/A'}
+                            <div className="text-pequeno text-tinta-secundaria">
+                              <span className="text-tinta-atenuada">Desc:</span> {comp.descriptorEmpresa || comp.descriptorAuto || comp.descripcion || 'N/A'}
                             </div>
                           </div>
                         ))
                       )}
                       {!errorComponentes && !terminoCorto && !buscandoComponente && componentesFiltrados.length > MAX_RESULTADOS_COMPONENTES && (
-                        <div className="px-2 py-1 text-[8.5px] text-slate-400 bg-slate-50 dark:bg-gray-900/60">
+                        <div className="px-2 py-1 text-pequeno text-tinta-atenuada bg-slate-50 dark:bg-gray-900/60">
                           Mostrando {MAX_RESULTADOS_COMPONENTES} de {componentesFiltrados.length} resultados. Afine la búsqueda para ver más.
                         </div>
                       )}
@@ -848,13 +848,13 @@ const PadMaestros = () => {
                 </div>
 
                 <div className="sm:col-span-2 flex items-center gap-1">
-                  <span className="text-[8.5px] font-bold text-slate-500">Cant:</span>
+                  <span className="text-pequeno text-tinta-secundaria">Cant:</span>
                   <input
                     type="number"
                     min="1"
                     value={cantidadInput}
                     onChange={(e) => setCantidadInput(e.target.value)}
-                    className="w-full h-6 px-1 text-center bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-[9.5px] font-bold outline-none focus:border-[#2383C2]"
+                    className="w-full h-6 px-1 text-center bg-slate-50 dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded text-pequeno outline-none focus:border-[#2383C2]"
                   />
                 </div>
 
@@ -862,7 +862,7 @@ const PadMaestros = () => {
                   <button
                     type="button"
                     onClick={handleAgregarItemAReceta}
-                    className="w-full h-6 bg-[#2383C2] hover:bg-[#1d6fa5] text-white font-bold rounded flex items-center justify-center gap-1 transition cursor-pointer text-[9.5px]"
+                    className="w-full h-6 bg-[#2383C2] hover:bg-[#1d6fa5] text-white rounded flex items-center justify-center gap-1 transition cursor-pointer text-pequeno"
                   >
                     <Plus size={11} />
                     <span>Agregar</span>
@@ -878,16 +878,16 @@ const PadMaestros = () => {
               <div className="px-2.5 py-1.5 bg-slate-50/80 dark:bg-gray-900/60 border-b border-slate-200 dark:border-gray-700 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <PackageCheck size={13} className="text-[#2383C2]" />
-                  <h3 className="text-[9.5px] font-bold text-slate-800 dark:text-gray-200 uppercase tracking-wide">
+                  <h3 className="text-pequeno text-tinta-principal uppercase tracking-wide">
                     Detalle de Componentes ({itemsPad.length} líneas)
                   </h3>
                 </div>
 
-                <div className="flex items-center gap-2 text-[9px]">
-                  <span className="text-slate-500">
-                    Unidades: <strong className="text-slate-800 dark:text-gray-200">{totalItemsCount}</strong>
+                <div className="flex items-center gap-2 text-pequeno">
+                  <span className="text-tinta-secundaria">
+                    Unidades: <strong className="text-tinta-principal">{totalItemsCount}</strong>
                   </span>
-                  <span className="px-2 py-0.2 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800">
+                  <span className="px-2 py-0.2 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-etiqueta border border-emerald-200 dark:border-emerald-800">
                     Monto Total: ${totalPrecioAcumulado.toLocaleString('es-ES')}
                   </span>
                 </div>
@@ -895,13 +895,13 @@ const PadMaestros = () => {
 
               <div className="flex-grow overflow-auto max-h-52">
                 {cargandoDetallePad ? (
-                  <div className="p-4 flex items-center justify-center gap-1.5 text-slate-400">
+                  <div className="p-4 flex items-center justify-center gap-1.5 text-tinta-atenuada">
                     <Spinner size="xs" color="#2383C2" />
                     <span>Cargando subcolección...</span>
                   </div>
                 ) : (
-                  <table className="w-full text-left text-[9px] border-collapse">
-                    <thead className="bg-slate-100/70 dark:bg-gray-900 text-slate-600 dark:text-gray-400 uppercase font-bold text-[8.5px] sticky top-0">
+                  <table className="w-full text-left text-pequeno border-collapse">
+                    <thead className="bg-slate-100/70 dark:bg-gray-900 text-tinta-secundaria uppercase text-pequeno sticky top-0">
                       <tr>
                         {verColumna('linea') && (
                           <th className="py-1 px-1.5 border-b border-r border-slate-200 dark:border-gray-700 w-5 text-center">#</th>
@@ -935,7 +935,7 @@ const PadMaestros = () => {
                     <tbody>
                       {itemsPad.length === 0 ? (
                         <tr>
-                          <td colSpan={columnasTabla.length} className="text-center py-5 text-slate-400">
+                          <td colSpan={columnasTabla.length} className="text-center py-5 text-tinta-atenuada">
                             <Info size={15} className="mx-auto mb-0.5 opacity-40" />
                             Sin componentes vinculados en este PAD.
                           </td>
@@ -944,30 +944,30 @@ const PadMaestros = () => {
                         itemsPad.map((item, idx) => (
                           <tr key={idx} className="border-b border-slate-100 dark:border-gray-700/60 hover:bg-slate-50/80 dark:hover:bg-gray-700/30 transition">
                             {verColumna('linea') && (
-                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 text-center text-slate-400 font-bold">{idx + 1}</td>
+                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 text-center text-tinta-atenuada text-etiqueta">{idx + 1}</td>
                             )}
                             {verColumna('clase') && (
                               <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700">
-                                <span className={`px-1 py-0.2 rounded text-[7.5px] font-bold ${claseBadgeCodigo(item.clase)}`}>
+                                <span className={`px-1 py-0.2 rounded text-pequeno ${claseBadgeCodigo(item.clase)}`}>
                                   {item.clase}
                                 </span>
                               </td>
                             )}
                             {verColumna('codigoRef') && (
-                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 font-num font-bold text-emerald-600 dark:text-emerald-400">{item.codigo}</td>
+                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 text-numero-tabla text-emerald-600 dark:text-emerald-400">{item.codigo}</td>
                             )}
                             {verColumna('descripcion') && (
-                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 font-semibold text-slate-800 dark:text-gray-200">
+                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 text-etiqueta text-tinta-principal">
                                 {item.descriptorEmpresa}
                               </td>
                             )}
                             {verColumna('referencia') && (
-                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 text-slate-600 dark:text-gray-400">
+                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 text-tinta-secundaria">
                                 {item.referencia}
                               </td>
                             )}
                             {verColumna('precioUnitario') && (
-                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 text-right font-medium">
+                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 text-right">
                                 ${item.precioNeto.toLocaleString('es-ES')}
                               </td>
                             )}
@@ -979,12 +979,12 @@ const PadMaestros = () => {
                                   value={item.cantidad}
                                   onChange={(e) => handleCambiarCantidad(idx, e.target.value)}
                                   disabled={!puede.cambiarCantidad}
-                                  className="disabled:opacity-60 w-10 h-4 px-0.5 text-center bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded font-bold outline-none focus:border-[#2383C2] text-[9px]"
+                                  className="disabled:opacity-60 w-10 h-4 px-0.5 text-center bg-white dark:bg-gray-900 border border-slate-300 dark:border-gray-600 rounded outline-none focus:border-[#2383C2] text-pequeno"
                                 />
                               </td>
                             )}
                             {verColumna('subtotal') && (
-                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 text-right font-bold text-slate-900 dark:text-gray-100">
+                              <td className="py-1 px-1.5 border-r border-slate-200 dark:border-gray-700 text-right text-etiqueta text-tinta-principal">
                                 ${item.subtotalNeto.toLocaleString('es-ES')}
                               </td>
                             )}
@@ -994,7 +994,7 @@ const PadMaestros = () => {
                                   <button
                                     type="button"
                                     onClick={() => handleRemoverItem(idx)}
-                                    className="text-slate-400 hover:text-red-600 transition cursor-pointer"
+                                    className="text-tinta-atenuada hover:text-red-600 transition cursor-pointer"
                                   >
                                     <Trash2 size={11} />
                                   </button>
@@ -1010,7 +1010,7 @@ const PadMaestros = () => {
               </div>
 
               <div className="p-2 bg-slate-50 dark:bg-gray-900/60 border-t border-slate-200 dark:border-gray-700 flex items-center justify-between">
-                <span className="text-[8.5px] text-slate-400">
+                <span className="text-pequeno text-tinta-atenuada">
                   Guarda los datos del PAD junto con su detalle de componentes.
                 </span>
                 <div className="flex items-center gap-1.5">
@@ -1018,7 +1018,7 @@ const PadMaestros = () => {
                     <button
                       type="button"
                       onClick={handleCancelarNuevoPad}
-                      className="px-3.5 py-1 bg-white hover:bg-red-50 dark:bg-gray-800 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 font-bold rounded border border-red-200 dark:border-red-800 flex items-center gap-1.5 transition cursor-pointer text-[9.5px]"
+                      className="px-3.5 py-1 bg-white hover:bg-red-50 dark:bg-gray-800 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded border border-red-200 dark:border-red-800 flex items-center gap-1.5 transition cursor-pointer text-pequeno"
                     >
                       <XCircle size={12} />
                       <span>Cancelar</span>
@@ -1029,7 +1029,7 @@ const PadMaestros = () => {
                     type="button"
                     onClick={handleGuardarPadCompleto}
                     disabled={guardando}
-                    className="px-3.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-2xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 text-[9.5px]"
+                    className="px-3.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded shadow-2xs flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 text-pequeno"
                   >
                     {guardando ? <Spinner size="xs" color="#ffffff" /> : <Save size={12} />}
                     <span>{modo === 'REGISTRAR_NUEVO' ? 'Guardar PAD' : 'Actualizar PAD'}</span>
