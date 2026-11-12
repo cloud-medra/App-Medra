@@ -149,12 +149,12 @@ const LoginForm = () => {
             />
           </div>
 
-          <h2 className="text-2xl font-bold mb-2">Iniciar Sesión</h2>
-          <p className="text-gray-500 mb-8">Ingresa tus credenciales para acceder al sistema.</p>
+          <h2 className="text-acceso-titulo mb-2">Iniciar sesión</h2>
+          <p className="text-acceso-cuerpo text-gray-500 mb-8">Ingresa tus credenciales para acceder al sistema.</p>
 
           <form onSubmit={enviar} className="space-y-4" noValidate>
             <div className="relative">
-              <label htmlFor="identificador" className="block text-sm font-medium mb-1">Usuario o correo</label>
+              <label htmlFor="identificador" className="block text-subtitulo mb-1">Usuario o correo</label>
               <div className="flex items-center">
                 <User className="absolute ml-3 text-gray-400" size={20} />
                 <input
@@ -164,15 +164,15 @@ const LoginForm = () => {
                   autoComplete="username"
                   autoCapitalize="none"
                   spellCheck={false}
-                  className="w-full p-3 pl-10 border border-gray-200 rounded-xl focus:ring-1 focus:ring-[#2383C2] focus:border-[#2383C2] outline-none transition-all"
+                  className="w-full p-3 pl-10 text-acceso-cuerpo border border-gray-200 rounded-xl focus:ring-1 focus:ring-[#2383C2] focus:border-[#2383C2] outline-none transition-all"
                   placeholder="Usuario o correo"
                 />
               </div>
-              {errors.identificador && <p className="text-red-500 text-xs mt-1">{errors.identificador.message}</p>}
+              {errors.identificador && <p className="text-red-500 text-normal mt-1">{errors.identificador.message}</p>}
             </div>
 
             <div className="relative">
-              <label htmlFor="password" className="block text-sm font-medium mb-1">Contraseña</label>
+              <label htmlFor="password" className="block text-subtitulo mb-1">Contraseña</label>
               <div className="flex items-center">
                 <Lock className="absolute ml-3 text-gray-400" size={20} />
                 <input
@@ -180,20 +180,20 @@ const LoginForm = () => {
                   id="password"
                   type="password"
                   autoComplete="current-password"
-                  className="w-full p-3 pl-10 border border-gray-200 rounded-xl focus:ring-1 focus:ring-[#2383C2] focus:border-[#2383C2] outline-none transition-all"
+                  className="w-full p-3 pl-10 text-acceso-cuerpo border border-gray-200 rounded-xl focus:ring-1 focus:ring-[#2383C2] focus:border-[#2383C2] outline-none transition-all"
                   placeholder="********"
                   onKeyUp={(e) => setCapsLockOn(e.getModifierState('CapsLock'))}
                 />
               </div>
               {capsLockOn && (
-                <p className="text-amber-600 text-xs mt-2 flex items-center gap-1 font-semibold">
+                <p className="text-amber-600 text-etiqueta mt-2 flex items-center gap-1">
                   ⚠️ ¡La tecla Bloq Mayús está activada!
                 </p>
               )}
             </div>
 
             {loginError && (
-              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
+              <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-subtitulo px-4 py-3 rounded-xl">
                 <AlertCircle size={16} className="shrink-0" />
                 <span>{loginError}</span>
               </div>
@@ -202,7 +202,7 @@ const LoginForm = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#2383C2] text-white p-3 rounded-xl font-bold hover:bg-[#369BCE] transition-all duration-200 mt-4 flex items-center justify-center gap-2 disabled:opacity-70"
+              className="w-full bg-[#2383C2] text-white p-3 rounded-xl text-titulo-seccion hover:bg-[#369BCE] transition-all duration-200 mt-4 flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {loading ? (
                 <>
@@ -217,14 +217,14 @@ const LoginForm = () => {
             <div className="mt-6 text-center space-y-2">
               <div className="relative flex items-center justify-center">
                 <div className="border-t border-gray-200 w-full absolute"></div>
-                <span className="bg-white px-3 text-xs text-gray-400 relative z-10">
+                <span className="bg-white px-3 text-normal text-gray-400 relative z-10">
                   ¿Olvidaste tu contraseña?
                 </span>
               </div>
               <div>
                 <Link
                   to="/recuperar-password"
-                  className="text-sm font-semibold text-[#2383C2] hover:underline"
+                  className="text-titulo-seccion text-[#2383C2] hover:underline"
                 >
                   Recuperar acceso
                 </Link>
@@ -243,10 +243,10 @@ const LoginForm = () => {
           </div>
 
           <div className="relative z-10">
-            <h2 className="text-3xl font-bold mb-4 leading-tight whitespace-nowrap">
+            <h2 className="text-acceso-portada mb-4 whitespace-nowrap">
               Gestiona tu operación
             </h2>
-            <p className="text-lg opacity-90">
+            <p className="text-acceso-cuerpo opacity-90">
               Accede a las herramientas del Sistema Integral Medra desde un solo lugar.
             </p>
           </div>
@@ -258,8 +258,8 @@ const LoginForm = () => {
           <div className="relative z-10 bg-white/10 backdrop-blur-sm border border-white/20 p-4 rounded-2xl flex items-center gap-4">
             <div className="text-white"><ShieldCheck size={32} /></div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wider">SISTEMA INTEGRAL MEDRA</p>
-              <p className="font-bold">Productividad garantizada</p>
+              <p className="text-etiqueta uppercase tracking-wider">SISTEMA INTEGRAL MEDRA</p>
+              <p className="text-titulo-seccion">Productividad garantizada</p>
             </div>
           </div>
         </div>
@@ -267,7 +267,7 @@ const LoginForm = () => {
       </div>
 
       {/* Pie de página, fuera de la tarjeta. El año se toma de la fecha actual. */}
-      <footer className="mt-6 text-center text-xs leading-relaxed text-gray-500">
+      <footer className="mt-6 text-center text-normal text-gray-500">
         <p>© {new Date().getFullYear()} Medra Sistema Integral. Todos los derechos reservados.</p>
         <p>
           Desarrollado por{' '}

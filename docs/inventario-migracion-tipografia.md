@@ -17,8 +17,9 @@ Foto del 06-11-2026, con las pantallas nuevas agregadas el 12-11-2026: las cifra
 | **Bodega: aviso de ítem del maestro** (nacido con tokens) | `bodega/shared/AvisoMaestroConProducto.jsx` | 09-11-2026 |
 | **Armado de Kits** (nacido con tokens) | `armadoKits/shared/` (`PantallaKits`, `PantallaConfiguracionKits`, `DetalleKit`, `FormKitModal`, `KitsEnTransito`, `DespachoKitModal`, `CompletarVencimientoModal`, `ReposicionKitModal`, `RevisarDevolucionKitModal`) | 09 y 10-11-2026 |
 | **Portal Proveedores: Órdenes de compra** | `portalProveedores/ordenesCompra/OrdenesCompra.jsx` (los hijos comunes `PaginacionSimple` y `BotonRestablecerAnchos` van con el módulo de componentes comunes) | 12-11-2026 |
+| **Piezas sueltas: acceso y páginas** | `components/LoginForm.jsx`, `pages/auth/CambiarPassword.jsx`, `pages/PlataformaExterna.jsx`, `pages/TestPage.jsx`, `pages/Dashboard.jsx` (texto de carga de `<main>`) | 12-11-2026 |
 
-En `pages/Dashboard.jsx`, lo que no es header ni sidebar sigue con tamaños escritos a mano en cada pantalla (la fuente ya es Inter en todo).
+Login y cambio de contraseña usan además los tokens `text-acceso-*` (portada de 30, título de 24 y cuerpo de 16 px; solo para pantallas de acceso). Conservan sus grises (`text-gray-*`) y no usan `text-tinta-*`: tienen fondo blanco fijo y la clase `.dark` se aplica a toda la página, así que con el tema oscuro guardado el texto quedaría claro sobre blanco. Los textos legales que abre el cambio de contraseña (`general/legales/`) van con el módulo General.
 
 `generales/AvanceInventario.jsx` no se migró porque está fuera de circulación (comentado en `ResumenGeneral.jsx`). Migrarlo solo si vuelve a usarse.
 
@@ -825,19 +826,6 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 |---|---:|---:|---:|---:|
 | `general/accesoModulo/AccesoRapidoModulo.jsx` | 8 | 0 | 0 | 2 |
 
-## comunes: pages
-
-4 archivos, 38 clases.
-
-### (raíz) (4 archivos, 38 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `pages/auth/CambiarPassword.jsx` | 21 | 0 | 0 | 1 |
-| `pages/PlataformaExterna.jsx` | 8 | 0 | 0 | 0 |
-| `pages/TestPage.jsx` | 8 | 0 | 0 | 0 |
-| `pages/Dashboard.jsx` | 1 | 0 | 0 | 12 |
-
 ## comunes: ui
 
 10 archivos, 35 clases.
@@ -861,16 +849,6 @@ Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores 
 |---|---:|---:|---:|---:|
 | `ui/bodymap/DetalleZona.jsx` | 5 | 0 | 0 | 0 |
 | `ui/bodymap/CuerpoCompleto.jsx` | 4 | 1 | 0 | 0 |
-
-## comunes: LoginForm
-
-1 archivos, 21 clases.
-
-### (raíz) (1 archivos, 21 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `components/LoginForm.jsx` | 21 | 0 | 0 | 1 |
 
 ## dashboard
 

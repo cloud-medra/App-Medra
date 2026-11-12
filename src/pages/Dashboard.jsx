@@ -1126,7 +1126,7 @@ const Dashboard = () => {
                   : 'Solo un administrador puede abrir esta vista.'}
               </div>
             ) : !modulosActivos && itemDeRuta(MODULES, activeView) ? (
-              <div className="text-center text-gray-400 dark:text-gray-500 text-xs">Cargando...</div>
+              <div className="text-center text-tinta-atenuada text-normal">Cargando...</div>
             ) : !vistaActiva(modulosActivos, MODULES, activeView) ? (
               <div className="text-center text-gray-500 dark:text-gray-400">
                 Este módulo no está activo.

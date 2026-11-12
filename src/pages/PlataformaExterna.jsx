@@ -14,8 +14,8 @@ import logoMedraOscuro from '../assets/logo/medra-logo-oscuro.svg';
 // Pantalla de un usuario externo: su empresa, los ítems de Portal Proveedores que tenga
 // asignados, Mi perfil y cambio de contraseña (las mismas de los internos). No lee ningún
 // dato interno. Un ítem nuevo del portal se agrega aquí (MODULOS_PARA_EXTERNOS).
-const BOTON = 'h-8 px-3 inline-flex items-center gap-1.5 rounded-md text-[12px] font-semibold transition-colors';
-const BOTON_INACTIVO = 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
+const BOTON = 'h-8 px-3 inline-flex items-center gap-1.5 rounded-md text-subtitulo transition-colors';
+const BOTON_INACTIVO = 'text-tinta-secundaria hover:bg-gray-100 dark:hover:bg-gray-700';
 const BOTON_ACTIVO = 'bg-[#2383C2]/10 text-[#2383C2]';
 
 const PlataformaExterna = () => {
@@ -65,18 +65,18 @@ const PlataformaExterna = () => {
         {vista === 'password' && <CambiarPasswordAjustes userData={userData} />}
         {vista === 'inicio' && (
           <div className="max-w-2xl rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5">
-            <h1 className="text-[15px] font-semibold text-gray-800 dark:text-gray-100">Hola, {userData?.nombreCompleto || 'usuario'}</h1>
-            <p className="mt-2 flex items-center gap-2 text-[13px] text-gray-600 dark:text-gray-300">
+            <h1 className="text-titulo-seccion text-tinta-principal">Hola, {userData?.nombreCompleto || 'usuario'}</h1>
+            <p className="mt-2 flex items-center gap-2 text-normal text-tinta-principal">
               <Building2 size={15} className="text-[#2383C2] shrink-0" />
-              Empresa: <span className="font-semibold">{cargando ? 'Cargando…' : nombre || 'Sin registro'}</span>
+              Empresa: <strong>{cargando ? 'Cargando…' : nombre || 'Sin registro'}</strong>
             </p>
             {!cargando && !activa ? (
-              <p role="alert" className="mt-4 flex items-start gap-2 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-[12.5px] text-amber-800 dark:text-amber-300">
+              <p role="alert" className="mt-4 flex items-start gap-2 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-normal text-amber-800 dark:text-amber-300">
                 <AlertTriangle size={15} className="shrink-0 mt-0.5" />
                 Tu empresa está desactivada. Contacta al administrador.
               </p>
             ) : (
-              <p className="mt-4 text-[12.5px] text-gray-500 dark:text-gray-400">{verOrdenes ? 'Consulta tus órdenes en el menú de arriba.' : 'Todavía no tienes módulos asignados.'}</p>
+              <p className="mt-4 text-normal text-tinta-secundaria">{verOrdenes ? 'Consulta tus órdenes en el menú de arriba.' : 'Todavía no tienes módulos asignados.'}</p>
             )}
           </div>
         )}

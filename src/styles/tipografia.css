@@ -73,6 +73,24 @@
   --text-etiqueta--line-height: 1rem;
   --text-etiqueta--font-weight: 600;
 
+  /* Pantallas de acceso (login y cambio de contraseña): son una portada a pantalla
+     completa, no la app densa, y con la escala de arriba (máx. 18 px) se verían
+     vacías. Decisión del usuario del 12-11-2026. No usar en pantallas internas. */
+  /* 30 px: título del panel de bienvenida */
+  --text-acceso-portada: 1.875rem;
+  --text-acceso-portada--line-height: 2.25rem;
+  --text-acceso-portada--font-weight: 700;
+
+  /* 24 px: título del formulario */
+  --text-acceso-titulo: 1.5rem;
+  --text-acceso-titulo--line-height: 2rem;
+  --text-acceso-titulo--font-weight: 700;
+
+  /* 16 px: párrafos y campos (16 px evita además el zoom automático en celulares) */
+  --text-acceso-cuerpo: 1rem;
+  --text-acceso-cuerpo--line-height: 1.5rem;
+  --text-acceso-cuerpo--font-weight: 400;
+
   /* Colores de texto: text-tinta-principal, -secundaria y -atenuada. */
   --color-tinta-principal: var(--tinta-principal);
   --color-tinta-secundaria: var(--tinta-secundaria);

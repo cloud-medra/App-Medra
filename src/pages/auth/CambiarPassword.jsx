@@ -140,7 +140,7 @@ const CambiarPassword = () => {
   };
 
   const RequirementItem = ({ valid, text }) => (
-    <div className={`flex items-center gap-2 text-xs ${valid ? 'text-green-600' : 'text-red-500'}`}>
+    <div className={`flex items-center gap-2 text-normal ${valid ? 'text-green-600' : 'text-red-500'}`}>
       {valid ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
       <span>{text}</span>
     </div>
@@ -150,8 +150,8 @@ const CambiarPassword = () => {
   // Datos personales).
   const CampoPerfil = ({ campo, icon: Icon, label }) => (
     <div>
-      <span className="block text-xs font-semibold text-gray-600 mb-1">{label}</span>
-      <div className="flex items-center gap-2 p-2.5 pl-3 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
+      <span className="block text-etiqueta text-gray-600 mb-1">{label}</span>
+      <div className="flex items-center gap-2 p-2.5 pl-3 text-subtitulo border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
         <Icon className="text-gray-400 shrink-0" size={16} />
         <span className="truncate">{perfil[campo] || '—'}</span>
       </div>
@@ -170,8 +170,8 @@ const CambiarPassword = () => {
     <div className="flex justify-center items-center min-h-screen bg-pattern p-4">
       {paso === 'form' ? (
         <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-100">
-          <h2 className="text-xl font-bold mb-2 text-[#2383C2]">Configura tu acceso</h2>
-          <p className="text-sm text-gray-600 mb-6">
+          <h2 className="text-titulo-pagina mb-2 text-[#2383C2]">Configura tu acceso</h2>
+          <p className="text-subtitulo text-gray-600 mb-6">
             Es tu primer ingreso. Revisa tus datos y define una nueva contraseña segura. Si algún dato está mal, después podrás solicitar el cambio en Ajustes → Datos personales.
           </p>
 
@@ -189,7 +189,7 @@ const CambiarPassword = () => {
                 placeholder="Nueva contraseña"
                 value={passwords.new}
                 onChange={(e) => setPasswords({ ...passwords, new: e.target.value })}
-                className="w-full p-2.5 pl-9 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-[#2383C2] focus:ring-1 focus:ring-[#2383C2]"
+                className="w-full p-2.5 pl-9 text-acceso-cuerpo border border-gray-200 rounded-lg focus:outline-none focus:border-[#2383C2] focus:ring-1 focus:ring-[#2383C2]"
               />
             </div>
 
@@ -207,7 +207,7 @@ const CambiarPassword = () => {
                 placeholder="Confirmar contraseña"
                 value={passwords.confirm}
                 onChange={(e) => setPasswords({ ...passwords, confirm: e.target.value })}
-                className={`w-full p-2.5 pl-9 text-sm border rounded-lg focus:outline-none focus:ring-1 ${
+                className={`w-full p-2.5 pl-9 text-acceso-cuerpo border rounded-lg focus:outline-none focus:ring-1 ${
                   passwords.confirm && passwords.new !== passwords.confirm
                     ? 'border-red-400 focus:border-red-400 focus:ring-red-400'
                     : 'border-gray-200 focus:border-[#2383C2] focus:ring-[#2383C2]'
@@ -219,7 +219,7 @@ const CambiarPassword = () => {
           <button
             onClick={handleUpdate}
             disabled={loading || !isFormValid}
-            className="w-full bg-[#2383C2] text-white p-3 rounded-lg font-bold hover:bg-[#369BCE] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-[#2383C2] text-white p-3 rounded-lg text-titulo-seccion hover:bg-[#369BCE] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -237,10 +237,10 @@ const CambiarPassword = () => {
             <PartyPopper className="text-[#2383C2]" size={26} />
           </div>
 
-          <h2 className="text-xl font-bold text-gray-800 mb-1">
+          <h2 className="text-titulo-pagina text-gray-800 mb-1">
             ¡Bienvenido{perfil.nombreCompleto ? `, ${perfil.nombreCompleto.split(' ')[0]}` : ''}!
           </h2>
-          <p className="text-sm text-gray-500 mb-6">
+          <p className="text-subtitulo text-gray-500 mb-6">
             Tu cuenta ya está lista. Antes de continuar, revisa lo siguiente.
           </p>
 
@@ -248,7 +248,7 @@ const CambiarPassword = () => {
             <button
               type="button"
               onClick={() => setModalAbierto('privacidad')}
-              className="flex items-center gap-2 text-sm text-gray-700 border border-gray-200 rounded-lg p-2.5 hover:border-[#2383C2] hover:text-[#2383C2] transition"
+              className="flex items-center gap-2 text-subtitulo text-gray-700 border border-gray-200 rounded-lg p-2.5 hover:border-[#2383C2] hover:text-[#2383C2] transition"
             >
               <ShieldCheck size={16} />
               Política de Privacidad
@@ -256,14 +256,14 @@ const CambiarPassword = () => {
             <button
               type="button"
               onClick={() => setModalAbierto('terminos')}
-              className="flex items-center gap-2 text-sm text-gray-700 border border-gray-200 rounded-lg p-2.5 hover:border-[#2383C2] hover:text-[#2383C2] transition"
+              className="flex items-center gap-2 text-subtitulo text-gray-700 border border-gray-200 rounded-lg p-2.5 hover:border-[#2383C2] hover:text-[#2383C2] transition"
             >
               <FileText size={16} />
               Términos de Servicio
             </button>
           </div>
 
-          <label className="flex items-start gap-2 text-left text-xs text-gray-600 mb-5 cursor-pointer">
+          <label className="flex items-start gap-2 text-left text-normal text-gray-600 mb-5 cursor-pointer">
             <input
               type="checkbox"
               checked={aceptaPoliticas}
@@ -279,7 +279,7 @@ const CambiarPassword = () => {
           <button
             onClick={handleFinalizar}
             disabled={!aceptaPoliticas}
-            className="w-full bg-[#2383C2] text-white p-3 rounded-lg font-bold hover:bg-[#369BCE] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-[#2383C2] text-white p-3 rounded-lg text-titulo-seccion hover:bg-[#369BCE] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             Finalizar
             <ArrowRight size={16} />
@@ -298,7 +298,7 @@ const CambiarPassword = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 shrink-0">
-              <h3 className="text-sm font-bold text-gray-800 flex items-center gap-2">
+              <h3 className="text-titulo-seccion text-gray-800 flex items-center gap-2">
                 {modalAbierto === 'privacidad' ? (
                   <>
                     <ShieldCheck size={16} className="text-[#2383C2]" />
@@ -326,7 +326,7 @@ const CambiarPassword = () => {
             <div className="px-5 py-3 border-t border-gray-100 flex justify-end shrink-0">
               <button
                 onClick={() => setModalAbierto(null)}
-                className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs font-bold transition"
+                className="px-4 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-etiqueta transition"
               >
                 Cerrar
               </button>

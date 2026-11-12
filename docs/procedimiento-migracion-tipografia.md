@@ -31,6 +31,9 @@ Cada clase trae tamaño, grosor e interlineado: no se le agrega `font-*` ni `lea
 | Todo lo que hoy mide menos de 10 px, y lo de 10 px | `text-pequeno` | 10 / 14 / 500 |
 | Números en tablas y calendarios | `text-numero-tabla` | 11 / 16 / 500, tabular |
 | Valores destacados de tarjetas de indicadores | `text-numero-indicador` | 13 / 18 / 700, tabular |
+| Solo pantallas de acceso (login, cambio de contraseña): portada, título y cuerpo | `text-acceso-portada`, `text-acceso-titulo`, `text-acceso-cuerpo` | 30 / 36 / 700, 24 / 32 / 700, 16 / 24 / 400 |
+
+Las pantallas de acceso tienen fondo blanco fijo: conservan sus `text-gray-*` y no usan `text-tinta-*`, que con el tema oscuro (clase `.dark` en toda la página) pondría el texto claro sobre blanco.
 
 ### Números y `font-num`
 
