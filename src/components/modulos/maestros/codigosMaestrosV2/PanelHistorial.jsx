@@ -113,7 +113,7 @@ const PanelHistorial = ({ abierto, registro, onCerrar }) => {
       <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-slate-400 dark:text-gray-500">
         <History size={12} /> Historial
       </div>
-      <h3 className={`mt-1.5 text-[17px] font-semibold text-slate-900 dark:text-gray-50 truncate ${enUso ? '' : 'font-mono'}`}>
+      <h3 className={`mt-1.5 text-[17px] font-semibold text-slate-900 dark:text-gray-50 truncate ${enUso ? '' : 'tabular-nums'}`}>
         {enUso ? (registro?.referencia || 'Sin referencia') : (registro?.codigo || 'Sin código')}
       </h3>
       <p className="mt-0.5 text-[13px] text-slate-500 dark:text-gray-400 truncate">

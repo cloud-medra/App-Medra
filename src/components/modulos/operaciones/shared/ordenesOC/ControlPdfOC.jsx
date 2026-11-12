@@ -28,15 +28,15 @@ export const ControlPdfOC = ({ oc, tienePdf, subiendo = null, abriendo = false, 
     >
       <input {...getInputProps()} />
       {subiendo ? (
-        <span className="flex items-center gap-1 text-[#2383C2] font-sans text-[10px]">
+        <span className="flex items-center gap-1 text-[#2383C2] text-[10px]">
           <Loader2 size={11} className="animate-spin" /> {subiendo.porcentaje}%
         </span>
       ) : tienePdf ? (
-        <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-sans text-[10px]" title="Tiene PDF">
+        <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 text-[10px]" title="Tiene PDF">
           <CheckCircle2 size={11} /> PDF
         </span>
       ) : (
-        <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-sans text-[10px]" title="Sin PDF">
+        <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 text-[10px]" title="Sin PDF">
           <FileText size={11} /> Sin PDF
         </span>
       )}

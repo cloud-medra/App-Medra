@@ -95,7 +95,7 @@ const EdicionComponent = ({ documento, onClose, onGuardar }) => {
   const inputClass = "w-full p-1 text-[11px] rounded border border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-200 font-semibold focus:outline-none focus:border-[#2383C2] focus:ring-1 focus:ring-[#2383C2] transition-colors";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
       <div className="bg-white dark:bg-gray-900 w-full max-w-7xl max-h-[92vh] rounded-xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-gray-800">
         
         {/* Modal Header */}

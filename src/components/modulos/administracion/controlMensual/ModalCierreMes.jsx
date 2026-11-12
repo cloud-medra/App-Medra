@@ -62,7 +62,7 @@ const ModalCierreMes = ({ solicitud, anio, onCancelar, onConfirmar }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="titulo-cierre-mes"
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 w-full max-w-md p-4 space-y-3 font-sans"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 w-full max-w-md p-4 space-y-3"
       >
         <div className="flex items-center gap-2 text-[#2383C2] border-b border-slate-200 dark:border-gray-700 pb-2">
           <Lock size={18} />

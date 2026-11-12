@@ -151,7 +151,7 @@ const PanelEdicionCodigo = ({ abierto, modo, registro, empresas, registros, user
         <IconoModo size={12} /> {config.titulo}
       </div>
       <div className="mt-1.5 flex items-center gap-2 min-w-0">
-        <h3 className="text-[17px] font-semibold text-slate-900 dark:text-gray-50 font-mono truncate">
+        <h3 className="text-[17px] font-semibold text-slate-900 dark:text-gray-50 tabular-nums truncate">
           {registro ? (registro.codigo || 'Sin código') : (form.codigo || 'Nuevo registro')}
         </h3>
         {insigniaEstado(registro, modo)}
@@ -174,7 +174,7 @@ const PanelEdicionCodigo = ({ abierto, modo, registro, empresas, registros, user
           <span className="text-slate-400 dark:text-gray-500">Sin cambios</span>
         )}
         <span className="hidden sm:inline ml-3 text-[11px] text-slate-400 dark:text-gray-500">
-          <kbd className="font-sans">Ctrl+S</kbd> guardar · <kbd className="font-sans">Esc</kbd> cerrar
+          <kbd>Ctrl+S</kbd> guardar · <kbd>Esc</kbd> cerrar
         </span>
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -193,7 +193,7 @@ const PanelEdicionCodigo = ({ abierto, modo, registro, empresas, registros, user
         <Seccion titulo="Identificación">
           {visible('codigo') && (
             <Campo etiqueta={modo === 'asignarCodigo' ? 'Código definitivo' : 'Código'} requerido={config.requeridos.includes('codigo')} error={errorDe('codigo')} aviso={avisos.codigo} modificado={modificado('codigo')} htmlFor="cod-codigo" ancho="col-span-1">
-              <Entrada {...entrada('codigo')} onChange={(e) => set('codigo')(e.target.value.toUpperCase())} autoFocus={modo === 'asignarCodigo' || modo === 'nuevoConCodigo'} className="font-mono font-semibold" placeholder="Ej: 120345" />
+              <Entrada {...entrada('codigo')} onChange={(e) => set('codigo')(e.target.value.toUpperCase())} autoFocus={modo === 'asignarCodigo' || modo === 'nuevoConCodigo'} className="tabular-nums font-semibold" placeholder="Ej: 120345" />
             </Campo>
           )}
           <Campo etiqueta="Referencia" requerido error={errorDe('referencia')} modificado={modificado('referencia')} htmlFor="cod-referencia" ancho={visible('codigo') ? 'col-span-1' : 'col-span-2'}>

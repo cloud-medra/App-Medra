@@ -52,7 +52,7 @@ const COLUMNAS = [
     titulo: (it, { ocPorItem }) => ocPorItem[it.id],
     celda: (it, { ocPorItem }) => (ocPorItem[it.id]
       ? <span className="text-slate-700 dark:text-gray-200 font-semibold">{ocPorItem[it.id]}</span>
-      : <span className="text-slate-400 dark:text-gray-500 font-sans">{itemRequiereOC(it) ? 'Pendiente' : '—'}</span>) },
+      : <span className="text-slate-400 dark:text-gray-500">{itemRequiereOC(it) ? 'Pendiente' : '—'}</span>) },
   { key: 'estadoCarga', label: 'Estado Carga', ancho: 105, min: 70,
     celda: it => {
       if (it.sinCodigo) return <span className="text-[9px] font-semibold text-red-600 dark:text-red-400">SIN CÓDIGO</span>;

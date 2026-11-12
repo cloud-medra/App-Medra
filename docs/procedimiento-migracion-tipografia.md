@@ -1,6 +1,6 @@
 # Procedimiento para migrar una pantalla a los tokens de tipografía
 
-Cada módulo se migra solo cuando el usuario lo indica. Tokens en `src/styles/tipografia.css`; fuente (Inter, subconjunto latin) en `src/styles/fuenteApp.css`. Pendientes y riesgos de espacio en [inventario-migracion-tipografia.md](inventario-migracion-tipografia.md).
+Desde el 12-11-2026 toda la app usa Inter (definida solo en `--font-sans`), así que la fuente ya no se migra. Lo que se migra por módulo, solo cuando el usuario lo indica, son tamaños, grosores, interlineados y colores de texto. Tokens en `src/styles/tipografia.css`; fuente (Inter, subconjunto latin) en `src/styles/fuenteApp.css`. Pendientes y riesgos de espacio en [inventario-migracion-tipografia.md](inventario-migracion-tipografia.md).
 
 ## Antes de modificar
 
@@ -10,11 +10,11 @@ Cada módulo se migra solo cuando el usuario lo indica. Tokens en `src/styles/ti
 
 ## Reglas (solo tipografía)
 
-Se reemplazan fuentes, tamaños, grosores, interlineados y colores de texto escritos a mano. No se cambian distribución, espaciados, íconos, colores de fondo ni comportamiento.
+Se reemplazan tamaños, grosores, interlineados y colores de texto escritos a mano. No se cambian distribución, espaciados, íconos, colores de fondo ni comportamiento.
 
 ### Fuente
 
-`font-app` va en la raíz de cada zona migrada, **nunca en un contenedor que también envuelva pantallas sin migrar**: se heredaría a ellas. En el armazón va en `<header>` y `<aside>`, no en la raíz de `Dashboard.jsx`. Lo que se monta fuera de esa raíz (modales, por ejemplo `BuscadorMenuModal`) lleva su propio `font-app`.
+No se agrega ninguna clase de fuente: Inter llega a todo desde `--font-sans` (`tipografia.css`). `font-app` es solo un sinónimo que conservan las pantallas migradas antes del 12-11-2026; no hace falta ponerlo ni quitarlo. Si aparece una familia escrita a mano (`font-sans`, `font-mono`, `font-serif`, `fontFamily`), se quita; en códigos se deja `tabular-nums`.
 
 ### Tamaño y grosor
 
@@ -34,9 +34,9 @@ Cada clase trae tamaño, grosor e interlineado: no se le agrega `font-*` ni `lea
 
 ### Números y `font-num`
 
-- `font-num` → `text-numero-tabla`: esa clase obliga a la fuente del sistema, y dejarla hace que los números no usen Inter.
+- `font-num` → `text-numero-tabla`. `font-num` ya solo aplica `tabular-nums` (no cambia la fuente), pero el token además fija tamaño y grosor.
 - Si el texto mide menos de 10 px → `text-pequeno tabular-nums`, porque manda la regla de los 10 px.
-- `font-mono` en códigos → `tabular-nums` con el token que corresponda.
+- Los códigos que antes iban en `font-mono` ya están en `tabular-nums` (12-11-2026): se les agrega el token que corresponda.
 
 ### Énfasis sin grosor a mano
 

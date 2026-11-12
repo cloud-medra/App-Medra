@@ -173,7 +173,7 @@ const ResumenPeriodoAbierto = () => {
   }
 
   return (
-    <div className="w-full flex flex-col space-y-3.5 font-sans">
+    <div className="w-full flex flex-col space-y-3.5">
       
       {/* Cabecera Ejecutivo-Corporativa */}
       <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 rounded-lg p-3.5 shadow-xs flex flex-wrap items-center justify-between gap-3 border-l-4 border-l-[#2383C2]">

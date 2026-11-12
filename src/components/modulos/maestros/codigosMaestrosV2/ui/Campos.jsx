@@ -56,7 +56,7 @@ export const Selector = ({ error, opciones, vacio = 'Seleccione…', className =
 export const SoloLectura = ({ valor, mono, title }) => (
   <div
     title={title}
-    className={`w-full min-h-9 px-3 py-2 rounded-md bg-slate-100 dark:bg-gray-800/70 text-[13px] text-slate-600 dark:text-gray-300 flex items-center gap-2 ${mono ? 'font-mono' : ''}`}
+    className={`w-full min-h-9 px-3 py-2 rounded-md bg-slate-100 dark:bg-gray-800/70 text-[13px] text-slate-600 dark:text-gray-300 flex items-center gap-2 ${mono ? 'tabular-nums' : ''}`}
   >
     <Lock size={12} className="shrink-0 text-slate-400 dark:text-gray-500" />
     <span className="truncate">{valor || '—'}</span>

@@ -206,7 +206,7 @@ const DetalleListasIngreso = ({
   };
 
   return (
-    <div className="relative flex flex-col h-full w-full bg-white dark:bg-gray-800 overflow-hidden font-sans">
+    <div className="relative flex flex-col h-full w-full bg-white dark:bg-gray-800 overflow-hidden">
       <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
           <button

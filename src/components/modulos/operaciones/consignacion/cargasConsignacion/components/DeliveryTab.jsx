@@ -347,7 +347,7 @@ const DeliveryTab = ({ registro, vinculoData, onVincular, deliveryEsHeredado = f
 
                             <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 bg-blue-50/30 dark:bg-blue-950/10 font-num text-blue-700 dark:text-blue-400 font-semibold">
                               {cargandoVinculos ? '...' : (vinculo?.codigo || (
-                                <span className="text-amber-600 dark:text-amber-400 font-sans font-normal">Sin vincular</span>
+                                <span className="text-amber-600 dark:text-amber-400 font-normal">Sin vincular</span>
                               ))}
                             </td>
                             <td className="px-2.5 py-1.5 border-r border-slate-100 dark:border-gray-700/60 bg-blue-50/30 dark:bg-blue-950/10 text-slate-700 dark:text-gray-200">

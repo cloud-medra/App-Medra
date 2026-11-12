@@ -85,7 +85,7 @@ const TicketPanel = ({ abierto, ticket, modo = 'usuario', userData, etiquetaModu
   const encabezado = (
     <div>
       <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-slate-400">
-        <span className="font-mono">{codigoTicket(ticket.numero)}</span>
+        <span className="tabular-nums">{codigoTicket(ticket.numero)}</span>
         <BadgeEstadoTicket estado={ticket.estado} />
       </div>
       <h3 className="mt-1.5 text-[16px] font-semibold text-slate-900 dark:text-gray-50 break-words">{ticket.titulo}</h3>

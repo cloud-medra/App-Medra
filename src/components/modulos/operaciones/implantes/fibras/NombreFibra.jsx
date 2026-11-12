@@ -7,7 +7,7 @@ const NombreFibra = ({ fibra, className = '', claseReferencia = 'font-bold text-
     <span className={`inline-flex items-baseline gap-1 min-w-0 ${className}`}>
       <span className={claseReferencia}>{fibra?.referencia || codigo}</span>
       {fibra?.referencia && codigo && (
-        <span className="font-mono text-[0.85em] font-normal text-gray-400 dark:text-gray-500">{codigo}</span>
+        <span className="tabular-nums text-[0.85em] font-normal text-gray-400 dark:text-gray-500">{codigo}</span>
       )}
     </span>
   );

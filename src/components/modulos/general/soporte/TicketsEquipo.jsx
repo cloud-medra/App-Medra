@@ -71,7 +71,7 @@ const TicketsEquipo = ({ userData }) => {
 
   const renderCelda = (col, t) => {
     switch (col.key) {
-      case 'numero': return <span className="font-mono font-semibold text-slate-700 dark:text-gray-200">{codigoTicket(t.numero)}</span>;
+      case 'numero': return <span className="tabular-nums font-semibold text-slate-700 dark:text-gray-200">{codigoTicket(t.numero)}</span>;
       case 'titulo': return <span title={t.titulo}>{t.titulo}</span>;
       case 'usuario': return <span title={t.creadoPorEmail}>{t.creadoPorNombre}</span>;
       case 'tipo': return <TipoTicket tipo={t.tipo} />;

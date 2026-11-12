@@ -94,7 +94,7 @@ const GestionTickets = () => {
   const renderCelda = (col, t) => {
     switch (col.key) {
       case 'numero': return (
-        <span className="inline-flex items-center gap-1.5 font-mono font-semibold text-slate-700 dark:text-gray-200">
+        <span className="inline-flex items-center gap-1.5 tabular-nums font-semibold text-slate-700 dark:text-gray-200">
           {t.pendienteGestor && <PuntoNovedad title="Sin revisar" />}
           {codigoTicket(t.numero)}
         </span>

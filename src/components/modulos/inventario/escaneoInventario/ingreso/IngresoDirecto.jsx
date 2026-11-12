@@ -199,7 +199,7 @@ const IngresoDirecto = () => {
                 >
                   <Barcode size={11} />
                   {c.clave}
-                  <span className="font-sans text-[9px] uppercase">{c.reasignar ? 'reasignar' : c.vinculoProductoId ? 'vinculado' : 'nuevo'}</span>
+                  <span className="text-[9px] uppercase">{c.reasignar ? 'reasignar' : c.vinculoProductoId ? 'vinculado' : 'nuevo'}</span>
                   <button type="button" onClick={() => handleQuitarCodigo(c.clave)} title="Quitar de la lista" className="p-0.5 rounded-full hover:bg-black/10">
                     <Trash2 size={11} />
                   </button>

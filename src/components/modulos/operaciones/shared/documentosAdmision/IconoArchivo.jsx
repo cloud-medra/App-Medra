@@ -11,7 +11,7 @@ export const IconoArchivo = ({ nombre, size = 22 }) => {
       <path d="M14.5 1.5V6a1 1 0 0 0 1 1H20" fill="none" stroke="#CBD5E1" strokeWidth="1" />
       {/* Banda de color con la extensión */}
       <rect x="2" y="12" width="16" height="7.5" rx="1.2" fill={color} />
-      <text x="10" y="17.6" textAnchor="middle" fontSize={etiqueta.length > 3 ? 4.6 : 5.6} fontWeight="700" fill="#fff" fontFamily="system-ui, sans-serif">
+      <text x="10" y="17.6" textAnchor="middle" fontSize={etiqueta.length > 3 ? 4.6 : 5.6} fontWeight="700" fill="#fff">
         {etiqueta}
       </text>
     </svg>

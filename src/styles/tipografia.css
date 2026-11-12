@@ -2,14 +2,20 @@
    Google Fonts; ver fuenteApp.css). Regla y uso en CLAUDE.md (Convenciones);
    procedimiento en docs/procedimiento-migracion-tipografia.md.
 
-   Definir los tokens no cambia ninguna pantalla:
-   - Tailwind genera una clase solo si alguna pantalla la usa.
-   - El navegador descarga la fuente solo si algún elemento la pide.
-   - --font-sans (la fuente global) no se toca: la migración es por archivo, y una
-     pantalla migrada lleva font-app en su raíz.
+   La fuente se define en un solo lugar: --font-sans, la fuente global de Tailwind
+   (la usa el html de base), así toda la app usa Inter sin poner clases. Decisión
+   del 12-11-2026; antes la migración de la fuente era por pantalla, con font-app.
+   - font-app queda como sinónimo de --font-sans (lo usan pantallas ya migradas);
+     no hace falta en pantallas nuevas.
+   - No se escriben otras familias (monoespaciada, serif ni fontFamily a mano):
+     los códigos y números usan Inter con tabular-nums.
+
+   Lo que sigue migrándose por módulo son los tamaños, grosores y colores: definir
+   los tokens no cambia ninguna pantalla, porque Tailwind genera una clase solo si
+   alguna pantalla la usa.
 
    Uso:
-     <section className="font-app text-tinta-principal">
+     <section className="text-tinta-principal">
        <h2 className="text-titulo-seccion">Médicos</h2>
        <p className="text-secundario text-tinta-secundaria">Último uso</p>
        <td className="text-numero-tabla">1.234</td>
@@ -19,7 +25,13 @@
    agrega font-semibold ni leading-* a mano. */
 
 @theme {
-  --font-app: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Única definición de la fuente. La lista de respaldo cubre los caracteres fuera
+     del subconjunto latin de Inter (ver fuenteApp.css). */
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-app: var(--font-sans);
+  /* El CSS base de Tailwind pone kbd, code, pre y samp en monoespaciada: también
+     usan Inter, sin clases sueltas en cada etiqueta. */
+  --default-mono-font-family: var(--font-sans);
 
   /* La escala parte de lo más usado hoy (app densa: 10 a 12 px en casi todo). No
      baja de 10 px: hoy hay textos de 8 y 9 px que al migrar deben pasar a

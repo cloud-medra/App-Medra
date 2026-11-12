@@ -287,7 +287,7 @@ const VinculacionCodigos = () => {
   const renderBadgeEstadoGeneral = (estado) => <EstadoProcesoBadge estado={estado} fallback="Proceso Iniciado" />;
 
   return (
-    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-xs overflow-hidden p-0 relative font-sans">
+    <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-xs overflow-hidden p-0 relative">
 
       {documentoSeleccionado ? (
         <DetalleDocumento

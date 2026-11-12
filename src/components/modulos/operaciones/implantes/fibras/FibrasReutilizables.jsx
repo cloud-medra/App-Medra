@@ -187,7 +187,7 @@ const FibrasReutilizables = () => {
 
   const celdas = (f) => ({
     referencia: <td className={`${TD} font-bold text-gray-800 dark:text-gray-100`}><span className="flex items-center gap-1">{f.referencia} <EtiquetaPerdida fibra={f} /></span></td>,
-    codigo: <td className={`${TD} font-mono text-[10px] text-gray-400 dark:text-gray-500`}>{f.codigoInterno}</td>,
+    codigo: <td className={`${TD} tabular-nums text-[10px] text-gray-400 dark:text-gray-500`}>{f.codigoInterno}</td>,
     descriptor: <td className={TD} title={f.descriptor}>{f.descriptor}</td>,
     lote: <td className={`${TD} font-num`}>{f.lote}</td>,
     vencimiento: (
@@ -249,7 +249,7 @@ const FibrasReutilizables = () => {
       {puede('tabla_fibras', 'action_cambiar_ubicacion') && (tarjeta.siguiente ? (
         <button type="button" onClick={() => pedirPonerEnUso(tarjeta.siguiente)} className="self-start h-7 px-2.5 rounded bg-teal-600 hover:bg-teal-700 text-white font-semibold flex items-center gap-1">
           {/* La tarjeta ya muestra la referencia: el botón solo distingue cuál de bodega. */}
-          <PlayCircle size={13} /> Poner en uso <span className="font-mono font-normal text-[10px] text-teal-100">{tarjeta.siguiente.codigoInterno}</span>
+          <PlayCircle size={13} /> Poner en uso <span className="tabular-nums font-normal text-[10px] text-teal-100">{tarjeta.siguiente.codigoInterno}</span>
         </button>
       ) : (
         <p className="text-[10px] text-gray-500 italic">Las de bodega están vencidas: no se pueden poner en uso.</p>

@@ -94,7 +94,7 @@ const HistorialModificaciones = ({ modulo, config, puedeCopiar }) => {
             <span className="font-semibold text-gray-800 dark:text-gray-100">{fecha(e.fecha)}</span>
             <span className="text-gray-500">por {e.usuario}</span>
             <span className="text-gray-500">{e.bloques?.length || 0} bloque(s) · {e.totalFilas || 0} cambio(s)</span>
-            <span className="text-gray-400 font-mono text-[11px]">{e.nombreArchivo}</span>
+            <span className="text-gray-400 tabular-nums text-[11px]">{e.nombreArchivo}</span>
             {puedeCopiar && (
               <button type="button" onClick={() => { descargarCopia(config, e); showToast('Copia descargada (no cambia ningún estado)', 'info'); }}
                 className="ml-auto inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">

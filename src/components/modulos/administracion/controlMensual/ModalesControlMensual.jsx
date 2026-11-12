@@ -26,7 +26,7 @@ export const ModalReapertura = ({
       className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px] flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === e.currentTarget) setModalReapertura(null); }}
     >
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 w-full max-w-md p-4 space-y-3 font-sans">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 w-full max-w-md p-4 space-y-3">
         <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 border-b border-slate-200 dark:border-gray-700 pb-2">
           <AlertTriangle size={18} />
           <h3 className="text-[13px] font-bold uppercase">Reapertura de Período Cerrado</h3>
@@ -73,7 +73,7 @@ export const ModalHistorial = ({ modalHistorial, setModalHistorial }) => {
       className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px] flex items-center justify-center p-4"
       onClick={(e) => { if (e.target === e.currentTarget) setModalHistorial(null); }}
     >
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 w-full max-w-lg p-4 space-y-3 font-sans">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-slate-200 dark:border-gray-700 w-full max-w-lg p-4 space-y-3">
         <div className="flex justify-between items-center border-b border-slate-200 dark:border-gray-700 pb-2">
           <div className="flex items-center gap-2 text-[#2383C2]">
             <History size={18} />

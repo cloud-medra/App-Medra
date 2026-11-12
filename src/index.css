@@ -144,8 +144,9 @@
     @apply transition-colors duration-300;
   }
 }
-/* Números y códigos: misma fuente del sistema, alineados en columnas y sin cero con barra. */
+/* Números y códigos: solo los alinea en columnas (dígitos del mismo ancho). Ya no
+   cambia la fuente: toda la app usa Inter (--font-sans en tipografia.css). Equivale
+   a tabular-nums; se conserva por sus usos existentes. */
 @utility font-num {
-  font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
 }

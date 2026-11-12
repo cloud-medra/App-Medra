@@ -59,7 +59,7 @@ const ContenidoPanelApertura = ({
 
     return (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[1px] flex justify-end">
-            <div className="w-full max-w-sm bg-white dark:bg-gray-800 h-full shadow-2xl border-l border-slate-200 dark:border-gray-700 flex flex-col font-sans animate-in slide-in-from-right duration-200">
+            <div className="w-full max-w-sm bg-white dark:bg-gray-800 h-full shadow-2xl border-l border-slate-200 dark:border-gray-700 flex flex-col animate-in slide-in-from-right duration-200">
 
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900">
                     <div className="flex items-center gap-2 text-[#2383C2]">

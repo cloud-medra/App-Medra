@@ -121,7 +121,7 @@ export const OrdenTab = ({
                             ))}
                           </span>
                         )
-                        : <span className="text-slate-400 dark:text-gray-500 font-sans">Pendiente</span>}
+                        : <span className="text-slate-400 dark:text-gray-500">Pendiente</span>}
                     </td>
                   </tr>
                 );

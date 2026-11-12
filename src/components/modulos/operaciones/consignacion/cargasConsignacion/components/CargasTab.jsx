@@ -211,7 +211,7 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
               className={`text-[10px] ${esCoincidente ? 'bg-blue-100/60 dark:bg-blue-900/30' : 'bg-blue-50/30 dark:bg-blue-950/10'}`}
               title={esCoincidente ? 'Este es el producto que corresponde a este ítem' : ''}
             >
-              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 font-sans font-normal text-slate-500 dark:text-gray-400 truncate" title="No lleva OC">
+              <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 font-normal text-slate-500 dark:text-gray-400 truncate" title="No lleva OC">
                 No lleva OC
               </td>
               <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 font-num text-emerald-600 dark:text-emerald-400 truncate" title={p.codigo || 'N/A'}>
@@ -306,7 +306,7 @@ const DesgloseGuia = ({ deliveryValor, referenciaDestacada, colSpanTotal, produc
             className={`text-[10px] ${esCoincidente ? 'bg-blue-100/60 dark:bg-blue-900/30' : 'bg-blue-50/30 dark:bg-blue-950/10'}`}
             title={esCoincidente ? 'Este es el producto que corresponde a este ítem' : ''}
           >
-            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 font-sans font-normal text-slate-500 dark:text-gray-400 truncate" title="No lleva OC">
+            <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 font-normal text-slate-500 dark:text-gray-400 truncate" title="No lleva OC">
               No lleva OC
             </td>
             <td className="px-2.5 py-1 border-b border-r border-slate-100 dark:border-gray-700/60 font-num text-emerald-600 dark:text-emerald-400 truncate" title={p.codigo || 'N/A'}>

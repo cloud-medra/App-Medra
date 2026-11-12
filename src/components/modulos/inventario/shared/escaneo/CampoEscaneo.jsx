@@ -52,7 +52,7 @@ const CampoEscaneo = ({ ref, onLectura, onEnterVacio, senal = null, mensaje = ''
           spellCheck={false}
           aria-label="Código de barras"
           placeholder={placeholder || 'Escanea o escribe un código y presiona Enter'}
-          className="flex-1 min-w-0 h-full bg-transparent outline-none text-[14px] font-num text-gray-800 dark:text-gray-100 placeholder:text-gray-400 placeholder:font-sans placeholder:text-[12px] disabled:opacity-50"
+          className="flex-1 min-w-0 h-full bg-transparent outline-none text-[14px] font-num text-gray-800 dark:text-gray-100 placeholder:text-gray-400 placeholder:text-[12px] disabled:opacity-50"
         />
         <button
           type="button"
