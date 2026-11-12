@@ -30,7 +30,7 @@ Login y cambio de contraseña usan además los tokens `text-acceso-*` (portada d
 
 **Inventario** no se migró: el módulo se eliminó el 12-11-2026 (lo reemplazó Bodega). Sus datos en Firestore (`inventario_*`, `inventarios_fisicos`) y sus reglas se conservan, sin pantalla.
 
-`generales/AvanceInventario.jsx` no se migró porque está fuera de circulación (comentado en `ResumenGeneral.jsx`). Migrarlo solo si vuelve a usarse.
+`generales/AvanceInventario.jsx` (avance del módulo Inventario, fuera de circulación) se eliminó junto con el módulo el 12-11-2026.
 
 ## Riesgos de espacio con Inter
 
@@ -62,12 +62,3 @@ Por revisar: desde el 12-11-2026 estas pantallas ya muestran Inter con sus tama�
 
 Cuenta en cada `.jsx`, sin tests ni `privado/`: **clases** = tamaños, grosores y familias escritos a mano; **<10 px** = textos de 8 a 9,5 px, que al migrar suben a `text-pequeno` (10 px); **`font-num`** = clase que se reemplaza por `text-numero-tabla` (desde el 12-11-2026 solo aplica `tabular-nums`; antes forzaba la fuente del sistema); **cortes** = `truncate` o `whitespace-nowrap`, donde un texto más ancho se corta en vez de pasar a otra línea.
 
-## dashboard
-
-1 archivos, 13 clases.
-
-### generales (1 archivos, 13 clases)
-
-| Archivo | Clases | <10 px | `font-num` | Cortes |
-|---|---:|---:|---:|---:|
-| `dashboard/generales/AvanceInventario.jsx` | 13 | 3 | 1 | 1 |

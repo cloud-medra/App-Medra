@@ -3,7 +3,7 @@ import { fechaCorta } from './lineasKit';
 
 export const Insignia = ({ color = 'gris', children, title }) => {
   const colores = {
-    gris: 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200',
+    gris: 'bg-gray-200 dark:bg-gray-700 text-tinta-principal',
     ambar: 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300',
     verde: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300',
     rojo: 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-300',

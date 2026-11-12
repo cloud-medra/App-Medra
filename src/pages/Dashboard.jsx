@@ -1098,7 +1098,7 @@ const Dashboard = () => {
                 onAbrir={(path) => setActiveView(path)}
               />
             ) : !puedeAbrirVista(userData, activeView) ? (
-              <div className="text-center text-gray-500 dark:text-gray-400">
+              <div className="text-center text-normal text-tinta-secundaria">
                 {RUTAS_SOLO_DESARROLLADOR.has(activeView)
                   ? 'Solo el rol Desarrollador puede abrir esta vista.'
                   : 'Solo un administrador puede abrir esta vista.'}
@@ -1106,11 +1106,11 @@ const Dashboard = () => {
             ) : !modulosActivos && itemDeRuta(MODULES, activeView) ? (
               <div className="text-center text-tinta-atenuada text-normal">Cargando...</div>
             ) : !vistaActiva(modulosActivos, MODULES, activeView) ? (
-              <div className="text-center text-gray-500 dark:text-gray-400">
+              <div className="text-center text-normal text-tinta-secundaria">
                 Este módulo no está activo.
               </div>
             ) : VIEW_MAP[activeView] || (
-              <div className="text-center text-gray-500 dark:text-gray-400">
+              <div className="text-center text-normal text-tinta-secundaria">
                 Vista no configurada
               </div>
             )}

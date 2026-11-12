@@ -7,9 +7,6 @@ import NuevoModuloCard from './generales/NuevoModuloCard';
 import AgendaCarrusel from './generales/AgendaCarrusel';
 import AtajosCard from './generales/AtajosCard';
 import PanelInicioCard from './panelInicio/PanelInicioCard';
-// AvanceInventario.jsx queda fuera de circulación a propósito (sin
-// eliminar el archivo); en su lugar va el widget de Accesos rápidos.
-// import AvanceInventario from './generales/AvanceInventario';
 
 const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -77,7 +74,6 @@ const ResumenGeneral = ({ userData, onAbrirAtajo }) => {
             handleYearChange={handleYearChange}
           />
 
-          {/* <AvanceInventario /> */}
           {/* Notas a la derecha; ocupa el alto que deja la agenda */}
           <div className="flex-1 min-h-[240px] flex flex-col overflow-hidden">
             <NuevoModuloCard />

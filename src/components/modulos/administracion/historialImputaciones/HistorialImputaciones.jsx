@@ -17,7 +17,7 @@ import { useHistorialImputacionesData } from './useHistorialImputacionesData';
 
 const formatoNumero = (n) => Number(n || 0).toLocaleString('es-CL');
 const claseBoton = 'font-app text-etiqueta h-7 px-2 rounded flex items-center gap-1 transition disabled:opacity-50 disabled:cursor-not-allowed';
-const botonGris = `${claseBoton} bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300`;
+const botonGris = `${claseBoton} bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-tinta-principal`;
 const botonActivo = `${claseBoton} bg-[#2383C2] hover:bg-[#1d6fa5] text-white`;
 
 const AvisoSinVenta = ({ cantidad }) => (
@@ -213,7 +213,7 @@ const HistorialImputaciones = () => {
                   onClick={() => setPestanaElegida(p.id)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-md transition border-b-2 ${activa
                     ? 'text-[#2383C2] border-[#2383C2]'
-                    : 'text-slate-500 dark:text-gray-400 border-transparent hover:text-slate-700 dark:hover:text-gray-200'}`}
+                    : 'text-tinta-secundaria border-transparent hover:text-tinta-principal'}`}
                 >
                   <Icono size={13} />
                   {p.label}

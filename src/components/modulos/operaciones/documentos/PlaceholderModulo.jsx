@@ -2,8 +2,8 @@ import { Construction } from 'lucide-react';
 
 // Plantilla compartida para secciones del módulo Documentos que ya tienen
 // ruta/ítem de menú propios pero cuya funcionalidad todavía no se implementa
-// (mismo criterio usado para AvanceInventario.jsx en el Dashboard: se deja
-// la navegación lista y un "Próximamente" visual, sin lógica de datos).
+// (se deja la navegación lista y un "Próximamente" visual, sin lógica de
+// datos).
 const PlaceholderModulo = ({ titulo, descripcion, Icon }) => (
   <div className="w-full h-full flex flex-col bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden text-secundario">
     <header className="bg-white dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 px-3 py-2 flex items-center gap-2">

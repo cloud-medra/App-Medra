@@ -6,7 +6,7 @@ Desde el 12-11-2026 toda la app usa Inter (definida solo en `--font-sans`), así
 
 1. Listar los archivos a tocar, con los componentes hijos que se muestran dentro de la zona.
 2. Por cada archivo, buscar quién más lo importa. Si es compartido con otros módulos y tiene tipografía propia, avisar qué otras pantallas cambiarían y **esperar confirmación**. Si no tiene tipografía propia, no se toca.
-3. No migrar archivos fuera de circulación (por ejemplo, `AvanceInventario.jsx`, comentado en `ResumenGeneral.jsx`).
+3. No migrar archivos fuera de circulación (código comentado o sin uso): se pregunta si eliminarlos.
 
 ## Reglas (solo tipografía)
 
