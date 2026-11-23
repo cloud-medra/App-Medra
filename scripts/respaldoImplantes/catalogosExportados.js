@@ -9,6 +9,13 @@
 //            DESCRIPTOR_AUTO, PRECIO_NETO, CX, OBSERVACION, REGISTRADO_POR,
 //            ESTADO (desde el 23-11-2026; un CSV anterior no la trae y
 //            entonces no se pueden quitar las inactivas).
+//   Sin código (useImportExportPendientes.js, .xlsx codigos_pendientes_…):
+//            REFERENCIA, DESCRIPTOR_EMPRESA, EMPRESA, TIPO, SEGMENTO, CLASE,
+//            DESCRIPTOR_AUTO, PRECIO_NETO, CX, OBSERVACION, ESTADO (sin CODIGO
+//            ni REGISTRADO_POR; ESTADO al final desde la rama
+//            feat/contingencia-codigos-sin-codigo). La vista general de Códigos
+//            Maestros es la suma de "Con código" y "Sin código": se pasan los
+//            dos archivos y unirCodigos los junta.
 //   Empresas (EmpresasMaestros.jsx): NOMBRE, RUT, ESTADO
 //   Centros  (CentrosMaestros.jsx):  NOMBRE, COMENTARIO, ESTADO, USAR_EN_GESTIONES
 //   Recargos (RecargosMaestros.jsx): DESDE, HASTA, VECES COSTO, COMENTARIO, ESTADO
@@ -48,15 +55,23 @@ const faltan = (filas, requeridas) => {
 export const COLUMNAS_CODIGOS = ['CODIGO', 'REFERENCIA', 'DESCRIPTOR_EMPRESA', 'EMPRESA', 'TIPO', 'SEGMENTO', 'CLASE',
   'DESCRIPTOR_AUTO', 'PRECIO_NETO', 'CX', 'OBSERVACION', 'REGISTRADO_POR'];
 
+// Columnas del export de la pestaña "Sin código" (sin CODIGO ni REGISTRADO_POR).
+const COLUMNAS_SIN_CODIGO = COLUMNAS_CODIGOS.filter((c) => !['CODIGO', 'REGISTRADO_POR'].includes(c));
+
 export const codigosDesdeFilas = (filasCrudas) => {
   const filas = normalizarFilas(filasCrudas);
-  const faltantes = faltan(filas, ['REFERENCIA', 'CODIGO', 'EMPRESA', 'PRECIO_NETO']);
+  // CODIGO es opcional: el export de "Sin código" no la trae (esos registros
+  // no tienen código; en Cargas quedan como "sin código", igual que aquí).
+  const faltantes = faltan(filas, ['REFERENCIA', 'EMPRESA', 'PRECIO_NETO']);
   if (filas.length && faltantes.length) throw new Error(`El archivo de códigos no trae las columnas: ${faltantes.join(', ')}`);
+  const esSinCodigo = filas.length > 0 && faltan(filas, ['CODIGO']).length > 0;
   const advertencias = [];
   if (filas.length && faltan(filas, ['ESTADO']).length) {
-    advertencias.push('El archivo de códigos no trae ESTADO (exportación anterior al 23-11-2026): no se pudieron quitar las inactivas. Vuelva a exportar desde la app.');
+    advertencias.push(esSinCodigo
+      ? 'El export de "Sin código" no trae ESTADO (exportación anterior al despliegue que la agrega): sus inactivas no se pudieron quitar. Vuelva a exportar desde la app.'
+      : 'El archivo de códigos no trae ESTADO (exportación anterior al 23-11-2026): no se pudieron quitar las inactivas. Vuelva a exportar desde la app.');
   }
-  const otrasFaltantes = faltan(filas, COLUMNAS_CODIGOS);
+  const otrasFaltantes = faltan(filas, esSinCodigo ? COLUMNAS_SIN_CODIGO : COLUMNAS_CODIGOS);
   if (filas.length && otrasFaltantes.length) advertencias.push(`Columnas que no vienen (quedan vacías): ${otrasFaltantes.join(', ')}. Expórtelo con un usuario que vea todas las columnas.`);
 
   let inactivas = 0;
@@ -88,6 +103,28 @@ const activos = (filasCrudas, requeridas, nombre, filtro = () => true) => {
   if (filas.length && faltantes.length) throw new Error(`El archivo de ${nombre} no trae las columnas: ${faltantes.join(', ')}`);
   const registros = filas.filter((f) => !esInactivo(f.ESTADO) && filtro(f));
   return { filas: registros, resumen: { leidas: filas.length, cargadas: registros.length } };
+};
+
+// Une los códigos de varios archivos (los exports de "Con código" y "Sin
+// código") y quita repetidos: un registro marcado como con código pero sin
+// código cae en las dos pestañas, y un archivo puede pasarse dos veces. Se
+// considera el mismo registro si coinciden código, referencia y empresa.
+// Primero van los que tienen código: si una referencia de una empresa está
+// con y sin código, la búsqueda de la plantilla encuentra la que tiene código.
+const claveCodigo = (r) => [r.codigo, r.referencia, r.empresa].map((v) => texto(v).toUpperCase()).join('|');
+export const unirCodigos = (listas) => {
+  const vistos = new Set();
+  const registros = [];
+  let repetidos = 0;
+  (listas || []).flat().forEach((r) => {
+    const k = claveCodigo(r);
+    if (vistos.has(k)) { repetidos += 1; return; }
+    vistos.add(k);
+    registros.push(r);
+  });
+  const conCodigo = registros.filter((r) => texto(r.codigo));
+  const sinCodigo = registros.filter((r) => !texto(r.codigo));
+  return { registros: [...conCodigo, ...sinCodigo], repetidos, sinCodigo: sinCodigo.length };
 };
 
 // Empresas activas con nombre, sin repetir, ordenadas.
@@ -214,7 +251,7 @@ export const valoresDistintos = (registros, campo) => [...new Set((registros || 
 // PROVISIONAL en Instrucciones, para reemplazarlo por el export oficial.
 // Reporte Info no tiene patrón: viene del Excel de la clínica.
 const PATRON_EXPORT = {
-  codigos: /^registros_con_codigo_\d{4}-\d{2}-\d{2}\.csv$/i,
+  codigos: /^(registros_con_codigo_\d{4}-\d{2}-\d{2}\.csv|codigos_pendientes_\d{4}-\d{2}-\d{2}\.xlsx)$/i,
   empresas: /^empresas_maestros_\d{4}-\d{2}-\d{2}\.(xlsx|csv)$/i,
   centros: /^centros_maestros_\d{4}-\d{2}-\d{2}\.(xlsx|csv)$/i,
   recargos: /^recargos_maestros_\d{4}-\d{2}-\d{2}\.(xlsx|csv)$/i,
