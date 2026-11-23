@@ -98,30 +98,23 @@ describe('campos editables de un ítem del sistema', () => {
     expect(camposEditablesItem({ tipo: 'NORMAL', sinCodigo: true })).toEqual(['cantidad', 'lote', 'vencimiento']);
     expect(camposEditablesItem({ tipo: 'PAD PADRE' })).toEqual(['cantidad']);
     expect(camposEditablesItem({ tipo: 'CONTENIDO PAD' })).toEqual(['cantidad', 'lote', 'vencimiento']);
-    expect(camposEditablesItem({ tipo: 'NORMAL', esFibra: true })).toEqual(['estadoCarga']);
-  });
-
-  it('marca las fibras al exportar', () => {
-    const { filasItems } = filasDesdeGestiones([{ gestionId: '1', empresa: 'A', fecha: '2026-11-01', cotizaciones: [{ items: [{ id: 'f', fibra: { codigoInterno: 'FIB-0001' } }, { id: 'n' }] }] }]);
-    expect(filasItems.map((f) => f.esFibra)).toEqual([true, false]);
   });
 });
 
 describe('catálogos', () => {
-  it('excluye inactivas y fibras, y cuenta referencias repetidas', () => {
+  it('excluye inactivas y cuenta referencias repetidas', () => {
     const { filas, referenciasUnicas, resumen } = catalogoReferencias([
       { referencia: 'B1', empresa: 'X', codigo: '1', precioNeto: '1500' },
       { referencia: 'a1', empresa: 'Y', codigo: '2' },
       { referencia: 'A1', empresa: 'X', codigo: '3' },
       { referencia: 'Z', empresa: 'X', estado: 'INACTIVO' },
-      { referencia: 'F', empresa: 'X', fibraReutilizable: true },
       { referencia: '', empresa: 'X' },
     ]);
     expect(filas.map((f) => f.clave)).toEqual(['a1|Y', 'A1|X', 'B1|X']);
     expect(filas.find((f) => f.referencia === 'B1')).toMatchObject({ precio: 1500, repeticiones: 1 });
     expect(filas.find((f) => f.referencia === 'A1').repeticiones).toBe(2);
     expect(referenciasUnicas).toEqual(['a1', 'B1']);
-    expect(resumen).toEqual({ usables: 3, inactivas: 1, fibras: 1, referenciasRepetidas: 1, clavesRepetidas: 0 });
+    expect(resumen).toEqual({ usables: 3, inactivas: 1, referenciasRepetidas: 1, clavesRepetidas: 0 });
   });
 
   it('empresas, centros y recargos con los filtros de la app', () => {

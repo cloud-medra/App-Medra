@@ -211,7 +211,7 @@ const main = async () => {
   console.log(`Mes exportado: ${leidos.mes.anio}-${leidos.mes.mes} · período: ${leidos.periodoTexto}`);
   console.log(`Gestiones: ${filasGestiones.length} exportadas + ${tamano.gestionesLibres} libres (hasta la fila ${filas.ultimaGestion})`);
   console.log(`Ítems: ${filasItems.length} exportados + ${tamano.itemsLibres} libres (hasta la fila ${filas.ultimaItem})`);
-  console.log(`Referencias: ${catalogo.resumen.usables} (excluidas: ${catalogo.resumen.inactivas} inactivas, ${catalogo.resumen.fibras} fibras). `
+  console.log(`Referencias: ${catalogo.resumen.usables} (excluidas: ${catalogo.resumen.inactivas} inactivas). `
     + `Referencias en más de una empresa: ${catalogo.resumen.referenciasRepetidas}; referencia+empresa repetidas: ${catalogo.resumen.clavesRepetidas}.`);
   console.log(`Lecturas de Firestore: ${args.demo ? '0 (demo)' : totalLecturas}`);
   console.log(borradas.length ? `Copias antiguas borradas: ${borradas.join(', ')}` : 'Sin copias antiguas que borrar.');

@@ -4,9 +4,26 @@
 
 Decisión del 23-11-2026: por ahora se usa una **plantilla** sin datos de pacientes, sin conexión a Firestore, sin credenciales y sin tarea programada. La exportación automática con datos del sistema (más abajo) queda para más adelante.
 
-La plantilla `respaldo_implantes_PLANTILLA.xlsm` tiene estas hojas: Instrucciones, Gestiones (1.000 filas), Ítems (4.000), Documentos (1.000), Cargados, Códigos, Empresas y Catálogos.
+La plantilla `respaldo_implantes_PLANTILLA.xlsm` tiene 13 hojas, en este orden:
+
+| # | Hoja | Qué tiene |
+|---|---|---|
+| 1 | Instrucciones | Cómo usarla, de dónde salen los catálogos y la fecha en que se cargaron |
+| 2 | Gestiones | 1.000 filas, con el botón "Mover cargados" |
+| 3 | Ítems | 4.000 filas |
+| 4 | Documentos | 1.000 filas |
+| 5 | Cargados | Gestiones ya cargadas, con el botón "Devolver a pendientes" |
+| 6 | Reporte Info | Admisiones de los últimos 60 días (autocompletado de Gestiones) |
+| 7 | Códigos | Maestro de Códigos (búsqueda por referencia en Ítems) |
+| 8 | Empresas | Desplegable de Empresa en Gestiones |
+| 9 | Centros | Desplegable de Centro en Gestiones |
+| 10 | Recargos | Rangos de recargo (veces costo y venta en Ítems) |
+| 11 | Previsiones | Desplegable de Previsión en Gestiones |
+| 12 | Convenios | Desplegable de Convenio en Gestiones |
+| 13 | Catálogos | Solo las listas fijas del sistema (estados, informe, lado, tipo de línea, SÍ/NO) |
+
 - Trae fórmulas, desplegables, alertas y los botones "Mover cargados" y "Devolver a pendientes".
-- Los catálogos (Códigos, Empresas, Centros y Recargos) se cargan desde los archivos que exporta la app.
+- Los catálogos (Reporte Info, Códigos, Empresas, Previsiones, Convenios, Centros y Recargos) se cargan desde los archivos que exporta la app o, en el caso de Reporte Info, desde el Excel de la clínica.
 - No lleva contraseña: se le pone en Excel antes de usarla, porque una vez usada tiene datos de pacientes.
 
 ### Regenerar con archivos nuevos (cuando cambien precios o referencias)
@@ -17,11 +34,16 @@ La plantilla `respaldo_implantes_PLANTILLA.xlsm` tiene estas hojas: Instruccione
    |---|---|---|
    | Códigos | Maestros → Codigos → pestaña "Con código" → Importar / Exportar → Exportar registros | `registros_con_codigo_AAAA-MM-DD.csv` |
    | Empresas | Maestros → Empresas → configuración → Exportar a Excel / CSV | `empresas_maestros_AAAA-MM-DD.xlsx` |
-   | Centros (opcional) | Maestros → Centros → configuración → Exportar | `centros_maestros_AAAA-MM-DD.xlsx` |
-   | Recargos (opcional) | Maestros → Recargos → configuración → Exportar | `recargos_maestros_AAAA-MM-DD.xlsx` |
+   | Centros | Maestros → Centros → configuración → Exportar (hoja Centros) | `centros_maestros_AAAA-MM-DD.xlsx` |
+   | Recargos | Maestros → Recargos → configuración → Exportar (hoja Recargos; las fórmulas de veces costo y venta la leen) | `recargos_maestros_AAAA-MM-DD.xlsx` |
+   | Reporte Info | El **Excel de la clínica** que se importa en Documentos → Reportes Info (uno o varios, por ejemplo uno por mes) | el nombre que tenga |
+   | Previsiones | Maestros → Previsiones → configuración → Exportar | `previsiones_maestros_AAAA-MM-DD.xlsx` |
+   | Convenios | Maestros → Convenios → configuración → Exportar | `convenios_maestros_AAAA-MM-DD.xlsx` |
+
+   - **Reporte Info:** el botón "Exportar" de Reportes Info **no trae Convenio**. Además exporta un mes a la vez y solo las columnas que el usuario ve. Sirve, pero Convenio queda vacío y el script lo avisa. Por eso conviene el archivo original de la clínica, que trae todas las columnas.
 
    - El CSV de Códigos debe exportarlo un usuario que vea **todas** las columnas, porque el export solo trae las visibles.
-   - Desde el 23-11-2026 el CSV trae también `ESTADO` y `FIBRA_REUTILIZABLE`. Con un CSV anterior el script avisa que no pudo quitar las inactivas ni las fibras.
+   - Desde el PR #9 el CSV trae también `ESTADO`, la única columna nueva y que va al final. Hace falta porque la pestaña "Con código" muestra las inactivas y no permite filtrarlas por estado; sin esa columna, la plantilla ofrecería códigos que el sistema no ofrece. Con un CSV anterior, el script avisa que no pudo quitar las inactivas.
 2. Dejar los archivos en una carpeta (por ejemplo `C:\Users\<usuario>\Documents\Medra\Contingencia`) y, desde la raíz del repo:
 
    ```powershell
@@ -29,15 +51,42 @@ La plantilla `respaldo_implantes_PLANTILLA.xlsm` tiene estas hojas: Instruccione
      --codigos  "C:\Users\<usuario>\Documents\Medra\Contingencia\registros_con_codigo_2026-11-23.csv" `
      --empresas "C:\Users\<usuario>\Documents\Medra\Contingencia\empresas_maestros_2026-11-23.xlsx" `
      --centros  "C:\Users\<usuario>\Documents\Medra\Contingencia\centros_maestros_2026-11-23.xlsx" `
-     --recargos "C:\Users\<usuario>\Documents\Medra\Contingencia\recargos_maestros_2026-11-23.xlsx"
+     --recargos "C:\Users\<usuario>\Documents\Medra\Contingencia\recargos_maestros_2026-11-23.xlsx" `
+     --reporte-info "C:\Users\<usuario>\Documents\Medra\Contingencia\reporte_clinica_octubre.xlsx" `
+     --reporte-info "C:\Users\<usuario>\Documents\Medra\Contingencia\reporte_clinica_noviembre.xlsx" `
+     --previsiones "C:\Users\<usuario>\Documents\Medra\Contingencia\previsiones_maestros_2026-11-23.xlsx" `
+     --convenios "C:\Users\<usuario>\Documents\Medra\Contingencia\convenios_maestros_2026-11-23.xlsx"
    ```
+
+   - `--reporte-info` se puede repetir. Se cargan solo las filas de los últimos **60 días**; con `--dias 90` (u otro número) se cambia el período.
+   - Sin `--previsiones` o `--convenios`, esas listas se arman con los valores distintos que aparecen en Reporte Info.
 
    Cada `--…` es opcional: el catálogo que no se indique queda vacío para pegarlo a mano. Acepta `.csv` y `.xlsx`.
 3. El script hace lo siguiente:
-   - quita las inactivas y las fibras de Códigos, las empresas inactivas y los centros que no se usan en Gestiones;
+   - quita las inactivas de Códigos, las empresas inactivas y los centros que no se usan en Gestiones;
    - reemplaza `respaldo_implantes_PLANTILLA.xlsm` en la carpeta de salida (tiene que estar cerrado en Excel);
    - muestra cuántos registros cargó de cada archivo.
 4. Volver a distribuir la plantilla nueva al equipo. Un archivo de contingencia **ya en uso** no se actualiza solo: sus catálogos se reemplazan pegando a mano, como explica su hoja Instrucciones.
+
+### Reporte Info y autocompletado en Gestiones
+
+La hoja Reporte Info tiene **una fila por admisión**, como la arma `reporteInfoDesdeFilas` (`catalogosExportados.js`). Toma los mismos campos que el sistema al escribir el ID en Gestiones (`handleIdChange` en `useGestionesImplantesData.js`):
+
+| Gestiones | Reporte Info |
+|---|---|
+| Convenio | "Convenio" |
+| Previsión | "Isapre" (no la columna "Previsión") |
+| Médico | "1° Cirujano" |
+| Descripción | "Descripción" |
+| Nombre | "Paciente" (el sistema no lo completa; se agregó a pedido) |
+
+- El sistema usa el primer registro de la admisión. La plantilla usa el primero por fecha y Cod.Artículo, y si un campo viene vacío, toma el del siguiente registro que lo tenga.
+- En Gestiones, las columnas ocultas AF a AK buscan la admisión, como texto, en Reporte Info. Las celdas visibles E y L a O muestran ese dato con `=AG3`, `=AH3`, etc.
+- Esas celdas están desbloqueadas: se puede escribir encima y solo cambia esa celda. El dato a mano se ve en letra azul cursiva.
+- Para volver al dato de Reporte Info, se copia la celda de otra fila.
+- "Mover cargados" restaura esas fórmulas al liberar una fila. "Devolver a pendientes" deja la fórmula donde el dato coincide con Reporte Info y el valor donde se había escrito a mano.
+- La columna **Alerta** (AE) avisa "Admisión no está en Reporte Info", y la Admisión se pinta naranja. También avisa "Convenio fuera de la lista" y "Previsión fuera de la lista".
+- Convenio y Previsión tienen desplegable (hojas Convenios y Previsiones) con estilo **advertencia**: Excel pregunta, pero deja usar el valor.
 
 ### Cómo se insertan las macros
 
@@ -70,9 +119,20 @@ exceljs no puede escribir macros. El script genera el `.xlsx` y llama a `macros/
 
 Las dos macros tienen una versión sin diálogos (`MoverCargadosAuto(quien)` y `DevolverGestionAuto(clave)`), que usa la prueba automática.
 
+### Probado: Reporte Info (Excel 16, datos ficticios)
+
+- **Datos:** un Excel "de la clínica" con 5 filas (dos de la misma admisión y una de agosto) y las exportaciones de Previsiones (con una inactiva) y Convenios.
+- **Carga:** quedaron 3 admisiones; la de agosto quedó fuera de los 60 días.
+- **Admisión en Reporte Info:** Nombre, Convenio, Previsión (Isapre), Médico y Descripción se completaron solos.
+- **Admisión que no está:** Alerta "Admisión no está en Reporte Info" y Admisión en naranja. Al escribir los datos a mano con una previsión que no está en la lista, se sumó "Previsión fuera de la lista".
+- **Médico escrito a mano** sobre una admisión encontrada: solo esa celda perdió la fórmula y quedó en cursiva; la fila siguiente siguió autocompletando.
+- **Mover cargados:** guardó los datos a mano y restauró las fórmulas en las filas liberadas.
+- **Devolver a pendientes:** dejó fórmula en lo autocompletado y el valor a mano en el Médico corregido.
+- Sin errores de fórmula.
+
 ### Probado (Excel 16, datos ficticios)
 
-Exportaciones ficticias con el formato de la app: 2.997 códigos (uno inactivo, una fibra, una referencia en dos empresas), 4 empresas (una inactiva), centros y recargos desordenados con uno inactivo.
+Exportaciones ficticias con el formato de la app: 2.997 códigos (uno inactivo, una referencia en dos empresas), 4 empresas (una inactiva), centros y recargos desordenados con uno inactivo. Se cargaron 2.996 códigos; veces costo se lee de la hoja Recargos (el rango inactivo se ignora).
 - Se cargaron 2.995 códigos, 3 empresas, 2 centros y 3 rangos, y `AccessVBOM` quedó como estaba.
 - Prueba con tres gestiones:
   1. Una con todo CARGADO o SIN CARGO.
@@ -87,7 +147,7 @@ Si el sistema se cae, el equipo trabaja en un Excel (`respaldo_implantes_AAAA-MM
 
 - las gestiones e ítems del mes abierto, como foto (`ORIGEN = SISTEMA`) en la que solo se pueden cambiar algunos campos (ver "Cambios en filas del sistema");
 - filas libres con fórmulas y validaciones para trabajar durante la caída (`ORIGEN = CONTINGENCIA`);
-- los catálogos (referencias activas sin fibras, empresas, centros, recargos y listas fijas) y una hoja de instrucciones para el equipo.
+- los catálogos (referencias activas, empresas, centros, recargos y listas fijas) y una hoja de instrucciones para el equipo.
 
 Archivos: `datosRespaldo.js` (lógica pura, con test), `libroRespaldo.js` (armado del Excel, con test), `datosDemo.js` (datos ficticios), `generarRespaldoImplantes.js` (lectura, cifrado y copias) y `generarPlantillaImplantes.js` (plantilla vacía). En este modo los catálogos se llenan solos, con la misma disposición de columnas que la plantilla.
 
@@ -186,7 +246,7 @@ Durante la caída se pueden actualizar algunos campos de lo ya registrado (filas
 | Hoja | Campos editables | Excepciones (igual que en Cargas) |
 |---|---|---|
 | Gestiones | Informe, Lado, Observación | — |
-| Ítems | Cantidad, Lote, Vencimiento, Estado carga | Sin Estado carga en PAD (padre y contenido) ni en líneas sin código; sin Lote ni Vencimiento en el PAD PADRE; en una fibra solo Estado carga |
+| Ítems | Cantidad, Lote, Vencimiento, Estado carga | Sin Estado carga en PAD (padre y contenido) ni en líneas sin código; sin Lote ni Vencimiento en el PAD PADRE |
 
 - Las celdas editables de una fila del sistema van en blanco, no en gris (`camposEditablesItem` y `CAMPOS_EDITABLES_GESTION` en `datosRespaldo.js`).
 - El valor exportado queda en columnas ocultas (`orig: …`). La columna **MODIFICADO** (fórmula) dice SÍ si alguno difiere, y cada celda cambiada se pinta ámbar. Si se vuelve a escribir el valor original, regresa a NO.
@@ -233,7 +293,7 @@ Script `functions/scripts/importarContingenciaImplantes.js`, como los demás scr
    - convenio, previsión, médico y descripción desde Reporte Info si vienen vacíos;
    - logs `CREACION` / `ITEM_CREADO` con `origen: 'CONTINGENCIA'`.
 7. **Idempotencia:** cada gestión e ítem nuevo guarda `idContingencia` (hash de la CLAVE y del N° de línea); una segunda corrida con el mismo archivo los reconoce y no duplica. Las modificaciones ya aplicadas tampoco se repiten (punto 4).
-8. **No hace:** Solicitud, imputación, OC ni fibras. Eso se hace en el sistema después de importar. La hoja Documentos es la lista de PDF por subir con Carga masiva.
+8. **No hace:** Solicitud, imputación ni OC. Eso se hace en el sistema después de importar. La hoja Documentos es la lista de PDF por subir con Carga masiva.
 
 ## Seguridad
 

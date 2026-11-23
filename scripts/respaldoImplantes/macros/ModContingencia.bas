@@ -30,6 +30,10 @@ Private Const G_N_ITEMS As Long = 18          ' R
 Private Const G_ORIGEN As Long = 22           ' V
 Private Const G_REGISTRADO As Long = 23       ' W
 Private Const G_COLUMNAS As Long = 26         ' hasta Z
+' Autocompletado desde Reporte Info: celda visible -> auxiliar con el dato de
+' Reporte Info (AUTOCOMPLETADO_GESTION en libroRespaldo.js). E=5->AG=33,
+' L=12->AH=34, M=13->AI=35, N=14->AJ=36, O=15->AK=37.
+Private Const G_AUTOCOMPLETADO As String = "5:33,12:34,13:35,14:36,15:37"
 
 ' Items
 Private Const I_LINEA As Long = 1             ' A
@@ -201,6 +205,7 @@ Public Function MoverCargadosAuto(ByVal quien As String) As String
     For Each fg In filasG
         wsG.Range(wsG.Cells(fg, 2), wsG.Cells(fg, G_ULTIMA_ENTRADA)).ClearContents
         wsG.Cells(fg, G_REGISTRADO).ClearContents
+        RestaurarAutocompletado wsG, CLng(fg)
     Next fg
 
     MoverCargadosAuto = filasG.Count & ";" & filasI.Count
@@ -283,9 +288,22 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     Dim r0 As Long
     r0 = filasC(1)
     For c = 2 To G_ULTIMA_ENTRADA
-        wsG.Cells(filaG, c).Value = wsC.Cells(r0, c + 2).Value
+        If AuxiliarDe(c) = 0 Then wsG.Cells(filaG, c).Value = wsC.Cells(r0, c + 2).Value
     Next c
     wsG.Cells(filaG, G_REGISTRADO).Value = wsC.Cells(r0, 20).Value
+    ' Autocompletado: si lo guardado es lo mismo que trae Reporte Info (o
+    ' está vacío), vuelve la fórmula; si se había escrito a mano, el valor.
+    RestaurarAutocompletado wsG, filaG
+    wsG.Calculate
+    Dim aux As Long
+    For c = 2 To G_ULTIMA_ENTRADA
+        aux = AuxiliarDe(c)
+        If aux > 0 Then
+            If Txt(wsC.Cells(r0, c + 2).Value) <> "" And Txt(wsC.Cells(r0, c + 2).Value) <> Txt(wsG.Cells(filaG, aux).Value) Then
+                wsG.Cells(filaG, c).Value = wsC.Cells(r0, c + 2).Value
+            End If
+        End If
+    Next c
 
     Dim rc As Long, ri As Long, padre As String
     For k = 1 To filasC.Count
@@ -380,6 +398,23 @@ Private Function Txt(ByVal v As Variant) As String
         Txt = Trim(CStr(v))
     End If
 End Function
+
+' Columna auxiliar (dato de Reporte Info) de una columna autocompletada, o 0.
+Private Function AuxiliarDe(ByVal columna As Long) As Long
+    Dim par As Variant
+    AuxiliarDe = 0
+    For Each par In Split(G_AUTOCOMPLETADO, ",")
+        If CLng(Split(par, ":")(0)) = columna Then AuxiliarDe = CLng(Split(par, ":")(1))
+    Next par
+End Function
+
+' Vuelve a poner en la fila las fórmulas del autocompletado (=AG3, =AH3...).
+Private Sub RestaurarAutocompletado(ByVal ws As Worksheet, ByVal fila As Long)
+    Dim par As Variant
+    For Each par In Split(G_AUTOCOMPLETADO, ",")
+        ws.Cells(fila, CLng(Split(par, ":")(0))).Formula = "=" & ws.Cells(fila, CLng(Split(par, ":")(1))).Address(False, False)
+    Next par
+End Sub
 
 ' Mismas opciones que pone el script al generar la planilla (sin contraseña).
 Private Sub Proteger(ByVal ws As Worksheet)

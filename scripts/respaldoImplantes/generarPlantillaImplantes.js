@@ -7,10 +7,12 @@
 // Uso (desde la raíz del repo; ver docs/respaldo-contingencia-implantes.md):
 //   node scripts/respaldoImplantes/generarPlantillaImplantes.js --salida "<carpeta>" \
 //     --codigos "<registros_con_codigo_AAAA-MM-DD.csv>" --empresas "<empresas_maestros_AAAA-MM-DD.xlsx>" \
-//     [--centros "<centros_maestros_….xlsx>"] [--recargos "<recargos_maestros_….xlsx>"] [--sin-macros]
+//     [--centros "<centros_maestros_….xlsx>"] [--recargos "<recargos_maestros_….xlsx>"] //     [--reporte-info "<Excel de la clínica>" (se puede repetir)] [--dias 60] //     [--previsiones "<previsiones_maestros_….xlsx>"] [--convenios "<convenios_maestros_….xlsx>"] [--sin-macros]
 //
 // Cada catálogo es opcional: el que no se indique queda vacío para pegarlo a
-// mano. Con --sin-macros se genera .xlsx más ModContingencia.bas para
+// mano. Reporte Info se carga solo con los últimos --dias días (60 por
+// defecto). Sin --previsiones / --convenios, esas listas se arman con los
+// valores distintos de Reporte Info. Con --sin-macros se genera .xlsx más ModContingencia.bas para
 // importarlo a mano. Las macros se insertan con Excel (macros/armarXlsm.ps1):
 // hace falta Excel instalado en este equipo.
 
@@ -21,10 +23,13 @@ import process from 'node:process';
 import { Buffer } from 'node:buffer';
 import { spawnSync } from 'node:child_process';
 import { construirLibro } from './libroRespaldo.js';
-import { datosPlantilla, fechaHoraChile, isoAFechaExcel, ARCHIVO_PLANTILLA, ARCHIVO_PLANTILLA_MACROS } from './datosRespaldo.js';
+import { datosPlantilla, fechaHoraChile, fechaISOChile, isoAFechaExcel, ARCHIVO_PLANTILLA, ARCHIVO_PLANTILLA_MACROS } from './datosRespaldo.js';
 import {
   leerArchivoExportado, codigosDesdeFilas, empresasDesdeFilas, centrosDesdeFilas, recargosDesdeFilas, fechaDesdeNombre,
+  reporteInfoDesdeFilas, previsionesDesdeFilas, conveniosDesdeFilas, valoresDistintos,
 } from './catalogosExportados.js';
+
+const DIAS_REPORTE_INFO = 60;
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const RAIZ = path.resolve(AQUI, '..', '..');
@@ -34,11 +39,21 @@ const ARMAR = path.join(AQUI, 'macros', 'armarXlsm.ps1');
 const salir = (mensaje) => { console.error(`\nERROR: ${mensaje}\n`); process.exit(1); };
 
 const leerArgumentos = (argv) => {
-  const args = { sinMacros: false };
-  const conValor = { '--salida': 'salida', '--codigos': 'codigos', '--empresas': 'empresas', '--centros': 'centros', '--recargos': 'recargos' };
+  const args = { sinMacros: false, reporteInfo: [], dias: DIAS_REPORTE_INFO };
+  const conValor = {
+    '--salida': 'salida', '--codigos': 'codigos', '--empresas': 'empresas', '--centros': 'centros', '--recargos': 'recargos',
+    '--previsiones': 'previsiones', '--convenios': 'convenios',
+  };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--sin-macros') args.sinMacros = true;
-    else if (conValor[argv[i]]) {
+    else if (argv[i] === '--reporte-info') {
+      if (!argv[i + 1]) salir('Falta el valor de --reporte-info.');
+      args.reporteInfo.push(path.resolve(argv[++i]));
+    } else if (argv[i] === '--dias') {
+      const n = Number(argv[++i]);
+      if (!Number.isInteger(n) || n < 1) salir('--dias debe ser un número entero mayor que 0.');
+      args.dias = n;
+    } else if (conValor[argv[i]]) {
       if (!argv[i + 1]) salir(`Falta el valor de ${argv[i]}.`);
       args[conValor[argv[i]]] = path.resolve(argv[++i]);
     } else salir(`Opción desconocida: ${argv[i]}`);
@@ -51,10 +66,19 @@ const LECTORES = {
   empresas: { nombre: 'Empresas', leer: empresasDesdeFilas },
   centros: { nombre: 'Centros', leer: centrosDesdeFilas },
   recargos: { nombre: 'Rangos de recargo', leer: recargosDesdeFilas },
+  previsiones: { nombre: 'Previsiones', leer: previsionesDesdeFilas },
+  convenios: { nombre: 'Convenios', leer: conveniosDesdeFilas },
+};
+
+// "AAAA-MM-DD" de hace `dias` días (hora de Chile).
+const desdeHaceDias = (dias) => {
+  const hoy = new Date(`${fechaISOChile()}T12:00:00Z`);
+  hoy.setUTCDate(hoy.getUTCDate() - dias);
+  return hoy.toISOString().slice(0, 10);
 };
 
 const detalleDe = (id, resumen) => {
-  if (id === 'codigos') return `${resumen.leidas} en el archivo; sin ${resumen.inactivas} inactivas ni ${resumen.fibras} fibras`;
+  if (id === 'codigos') return `${resumen.leidas} en el archivo; sin ${resumen.inactivas} inactivas`;
   return `${resumen.leidas} en el archivo; solo activos`;
 };
 
@@ -90,6 +114,31 @@ const main = async () => {
     if (fechaArchivo && (id === 'codigos' || !fecha)) fecha = isoAFechaExcel(fechaArchivo);
   }
 
+  // Reporte Info: uno o varios archivos (por ejemplo, un Excel por mes).
+  if (args.reporteInfo.length) {
+    const desde = desdeHaceDias(args.dias);
+    const filas = [];
+    for (const archivo of args.reporteInfo) filas.push(...await leerArchivoExportado(archivo));
+    const { registros, resumen, advertencias: avisos } = reporteInfoDesdeFilas(filas, { desde });
+    if (!registros.length) salir(`Reporte Info: ninguna fila desde el ${desde} (últimos ${args.dias} días). Revise las fechas del archivo o use --dias.`);
+    catalogos.reporteInfo = registros;
+    origen.reporteInfo = {
+      archivo: args.reporteInfo.map((a) => path.basename(a)).join(', '),
+      fecha: null,
+      cargadas: registros.length,
+      detalle: `admisiones desde el ${desde} (últimos ${args.dias} días); ${resumen.leidas} filas leídas, ${resumen.fueraDePeriodo} fuera del período`,
+    };
+    advertencias.push(...avisos.map((a) => `Reporte Info: ${a}`));
+    // Sin su exportación, Previsiones y Convenios salen de Reporte Info.
+    [['previsiones', 'prevision'], ['convenios', 'convenio']].forEach(([id, campo]) => {
+      if (catalogos[id]) return;
+      const lista = valoresDistintos(registros, campo);
+      if (!lista.length) return;
+      catalogos[id] = lista;
+      origen[id] = { archivo: 'valores distintos de Reporte Info', fecha: null, cargadas: lista.length, detalle: 'sin la exportación del maestro' };
+    });
+  }
+
   const { libro, filas } = await construirLibro(datosPlantilla(fechaHoraChile(), { catalogos, origen, fecha }));
   const xlsx = path.join(args.salida, ARCHIVO_PLANTILLA);
   const temporal = path.join(args.salida, `${path.parse(ARCHIVO_PLANTILLA).name}.tmp.xlsx`);
@@ -114,8 +163,8 @@ const main = async () => {
 
   console.log(`\nPlantilla generada: ${destino}`);
   console.log(`Filas preparadas: Gestiones hasta la fila ${filas.ultimaGestion}, Ítems hasta la ${filas.ultimaItem}, Documentos hasta la ${filas.ultimaDocumento}.`);
-  Object.entries(LECTORES).forEach(([id, { nombre }]) => {
-    console.log(origen[id] ? `${nombre}: ${origen[id].cargadas} cargados (${origen[id].detalle}).` : `${nombre}: vacío (para pegar a mano).`);
+  [['reporteInfo', 'Reporte Info'], ...Object.entries(LECTORES).map(([id, { nombre }]) => [id, nombre])].forEach(([id, nombre]) => {
+    console.log(origen[id] ? `${nombre}: ${origen[id].cargadas} cargados de ${origen[id].archivo} (${origen[id].detalle}).` : `${nombre}: vacío (para pegar a mano).`);
   });
   if (args.sinMacros) console.log('Sin macros: importe ModContingencia.bas a mano (ver el doc).');
   advertencias.forEach((a) => console.log(`AVISO — ${a}`));

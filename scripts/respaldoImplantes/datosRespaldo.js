@@ -200,7 +200,6 @@ export const filasDesdeGestiones = (gestiones) => {
         venta: numero(it.venta),
         sinCodigo: !!it.sinCodigo,
         recargoEncontrado: !!it.recargoEncontrado,
-        esFibra: Boolean(it.fibra?.codigoInterno || it.fibra?.id),
         idSistema: texto(it.id),
       });
     });
@@ -225,15 +224,13 @@ export const CAMPOS_EDITABLES_ITEM = Object.freeze(['cantidad', 'lote', 'vencimi
 // la pantalla Cargas:
 //   - Estado carga: no en PAD (padre ni contenido, su estado es PAD fijo) ni
 //     en líneas sin código (en Cargas no tienen selector).
-//   - Lote y vencimiento: no en el PAD PADRE (son "PAD") ni en una fibra
-//     (vienen de la fibra física).
-//   - Cantidad: no en una fibra (siempre 1 por uso).
+//   - Lote y vencimiento: no en el PAD PADRE (son "PAD").
 export const camposEditablesItem = (fila) => {
   const esPad = fila.tipo === TIPOS_LINEA.PAD_PADRE || fila.tipo === TIPOS_LINEA.CONTENIDO_PAD;
   return CAMPOS_EDITABLES_ITEM.filter((campo) => {
     if (campo === 'estadoCarga') return !esPad && !fila.sinCodigo;
-    if (campo === 'lote' || campo === 'vencimiento') return fila.tipo !== TIPOS_LINEA.PAD_PADRE && !fila.esFibra;
-    if (campo === 'cantidad') return !fila.esFibra;
+    if (campo === 'lote' || campo === 'vencimiento') return fila.tipo !== TIPOS_LINEA.PAD_PADRE;
+    if (campo === 'cantidad') return true;
     return false;
   });
 };
@@ -245,16 +242,13 @@ const normalizarRef = (r) => texto(r).toUpperCase();
 const porTexto = (a, b) => a.localeCompare(b, 'es');
 
 // Referencias del Maestro de Códigos que se pueden usar en la contingencia:
-// las activas (igual que el autocompletado de Cargas) y sin fibras
-// reutilizables (exigen elegir la fibra física, que no va en el respaldo).
+// las activas (igual que el autocompletado de Cargas).
 export const catalogoReferencias = (codigos) => {
   let inactivas = 0;
-  let fibras = 0;
   const usables = [];
   (codigos || []).forEach((c) => {
     if (!texto(c?.referencia)) return;
     if (!activo(c)) { inactivas += 1; return; }
-    if (c.fibraReutilizable === true) { fibras += 1; return; }
     usables.push(c);
   });
 
@@ -297,7 +291,6 @@ export const catalogoReferencias = (codigos) => {
     resumen: {
       usables: filas.length,
       inactivas,
-      fibras,
       referenciasRepetidas: [...repeticiones.values()].filter((n) => n > 1).length,
       clavesRepetidas,
     },
@@ -337,7 +330,9 @@ export const dimensionar = ({ gestionesMes, itemsMes, gestionesMesAnterior = 0 }
 // Filas de cada catálogo: lo que trae más margen, con un mínimo pensado para
 // la plantilla (se pegan desde las exportaciones de la app; el Maestro de
 // Códigos tiene ~3.000 referencias).
-export const MINIMO_CATALOGOS = Object.freeze({ referencias: 6000, empresas: 300, centros: 100, recargos: 50 });
+export const MINIMO_CATALOGOS = Object.freeze({
+  referencias: 6000, empresas: 300, centros: 100, recargos: 50, reporteInfo: 3000, previsiones: 200, convenios: 300,
+});
 export const dimensionarCatalogos = (cantidades) => Object.fromEntries(
   Object.entries(MINIMO_CATALOGOS).map(([k, minimo]) => [k, Math.max(minimo, Math.ceil((cantidades[k] || 0) * 1.5))]),
 );
@@ -348,7 +343,8 @@ export const ARCHIVO_PLANTILLA = 'respaldo_implantes_PLANTILLA.xlsx';
 export const ARCHIVO_PLANTILLA_MACROS = 'respaldo_implantes_PLANTILLA.xlsm';
 
 // Plantilla sin datos del sistema. `catalogos` (opcional): lo leído de los
-// archivos exportados desde la app ({ codigos, empresas, centros, recargos }
+// archivos exportados desde la app ({ codigos, empresas, centros, recargos,
+// reporteInfo, previsiones, convenios }
 // con sus registros), `origen` (archivo, fecha y conteos de cada uno, para
 // Instrucciones) y `fecha` (Date de los catálogos).
 export const datosPlantilla = (generadoEl, { catalogos = {}, origen = {}, fecha = null } = {}) => ({
@@ -360,11 +356,14 @@ export const datosPlantilla = (generadoEl, { catalogos = {}, origen = {}, fecha 
   catalogo: {
     filas: catalogos.codigos || [],
     referenciasUnicas: [],
-    resumen: { usables: (catalogos.codigos || []).length, inactivas: 0, fibras: 0, referenciasRepetidas: 0, clavesRepetidas: 0 },
+    resumen: { usables: (catalogos.codigos || []).length, inactivas: 0, referenciasRepetidas: 0, clavesRepetidas: 0 },
   },
   empresas: catalogos.empresas || [],
   centros: catalogos.centros || [],
   recargos: catalogos.recargos || [],
+  reporteInfo: catalogos.reporteInfo || [],
+  previsiones: catalogos.previsiones || [],
+  convenios: catalogos.convenios || [],
   origenCatalogos: origen,
   fechaCatalogos: fecha,
   tamano: { ...TAMANO_PLANTILLA },

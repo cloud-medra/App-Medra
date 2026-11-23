@@ -136,10 +136,10 @@ export const useImportExportConCodigo = ({ registros, userData, showToast, colBa
         'OBSERVACION',
         'REGISTRADO_POR',
         // Al final, para no mover las demás: la plantilla de contingencia de
-        // Implantes las usa para quitar inactivas y fibras. La importación
-        // masiva de este mismo CSV las ignora (lee por nombre de columna).
-        'ESTADO',
-        'FIBRA_REUTILIZABLE'
+        // Implantes la usa para quitar las inactivas (esta pantalla no filtra
+        // por estado). La importación masiva de este mismo CSV la ignora
+        // (lee por nombre de columna).
+        'ESTADO'
       ];
 
       const rows = registros.map((item) => [
@@ -156,8 +156,7 @@ export const useImportExportConCodigo = ({ registros, userData, showToast, colBa
         item.observacion || '',
         item.registradoPor || '',
         // Sin campo = activo (igual que esCodigoActivo en Cargas).
-        item.estado || 'ACTIVO',
-        item.fibraReutilizable === true ? 'SI' : 'NO'
+        item.estado || 'ACTIVO'
       ]);
 
       // Encabezado → columna de la tabla (CX y OBSERVACION no tienen columna

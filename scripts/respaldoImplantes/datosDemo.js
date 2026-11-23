@@ -23,9 +23,8 @@ export const datosDemo = ({ referencias = 3000, gestiones = 400, anio = '2026', 
     descriptorAuto: `PRODUCTO DEMO ${i}`,
     segmento: 'IMPLANTES',
     estado: i % 60 === 0 ? 'INACTIVO' : 'ACTIVO',
-    fibraReutilizable: i % 400 === 0,
   }));
-  const usables = codigos.filter((c) => c.estado === 'ACTIVO' && !c.fibraReutilizable);
+  const usables = codigos.filter((c) => c.estado === 'ACTIVO');
 
   const docs = Array.from({ length: gestiones }, (_, g) => {
     const dia = String(1 + (g % 22)).padStart(2, '0');
