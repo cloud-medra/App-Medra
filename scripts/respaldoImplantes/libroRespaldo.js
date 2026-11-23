@@ -56,7 +56,10 @@ const COLOR = {
   cambiado: 'FFFFEB9C',        // valor distinto del original
   aviso: 'FFFCE4D6',           // naranja: revisar (no bloquea)
   manual: 'FF1F4E79',          // letra del dato escrito a mano
+  vista: 'FFC6E0B4',           // verde: encabezado de la vista de carga (Ítems y Cargados)
 };
+// Borde que cierra la vista de carga (a la derecha de Estado carga).
+const BORDE_VISTA = { style: 'medium', color: { argb: 'FF375623' } };
 
 const relleno = (argb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
 const BORDE = { style: 'thin', color: { argb: 'FFBFBFBF' } };
@@ -115,49 +118,68 @@ const COLUMNAS_GESTIONES = [
 // Celdas de Gestiones que se autocompletan desde Reporte Info → su auxiliar.
 export const AUTOCOMPLETADO_GESTION = Object.freeze({ E: 'AG', L: 'AH', M: 'AI', N: 'AJ', O: 'AK' });
 
-const COLUMNAS_ITEMS = [
-  { l: 'A', titulo: 'N° línea', clase: 'formula', ancho: 8, ayuda: 'Fijo. Se usa en "Línea padre".' },
-  { l: 'B', titulo: 'CLAVE', clase: 'obligatorio', ancho: 34, ayuda: 'Gestión a la que pertenece (lista de Gestiones).' },
-  { l: 'C', titulo: 'Tipo de línea', clase: 'opcional', ancho: 16, ayuda: 'Vacío = NORMAL.' },
-  { l: 'D', titulo: 'Línea padre', clase: 'opcional', ancho: 9, ayuda: 'Solo CONTENIDO PAD (N° del PAD PADRE) y LOTE ADICIONAL (N° de la línea NORMAL).' },
-  { l: 'E', titulo: 'N° cotización', clase: 'obligatorio', ancho: 14, texto: true, ayuda: 'N° de la cotización del proveedor.' },
-  { l: 'F', titulo: 'Referencia', clase: 'obligatorio', ancho: 24, texto: true, ayuda: 'De la lista (se puede escribir). Si no existe queda "Sin código".' },
-  { l: 'G', titulo: 'Cantidad', clase: 'obligatorio', ancho: 9, campo: 'cantidad', original: 'AL', ayuda: 'Mayor que 0. En una referencia con lotes: la cantidad TOTAL.' },
-  { l: 'H', titulo: 'Lote', clase: 'opcional', ancho: 14, texto: true, campo: 'lote', original: 'AM', ayuda: 'Vacío = Sin lote.' },
-  { l: 'I', titulo: 'Vencimiento', clase: 'opcional', ancho: 12, fecha: true, campo: 'vencimiento', original: 'AN', ayuda: 'dd-mm-aaaa. Vacío = Sin fecha.' },
-  { l: 'J', titulo: 'Estado carga', clase: 'opcional', ancho: 13, campo: 'estadoCarga', original: 'AO', ayuda: 'Vacío = PENDIENTE. En PAD no se usa.' },
-  { l: 'K', titulo: 'Precio manual', clase: 'opcional', ancho: 12, pesos: true, ayuda: 'Opcional: reemplaza el precio del catálogo (ej. referencia sin código).' },
-  { l: 'L', titulo: 'Código', clase: 'formula', ancho: 12, ayuda: 'Del catálogo.' },
-  { l: 'M', titulo: 'Precio unitario', clase: 'formula', ancho: 12, pesos: true, ayuda: 'Catálogo o precio manual.' },
-  { l: 'N', titulo: 'Empresa producto', clase: 'formula', ancho: 22, ayuda: 'En rojo si no coincide con la empresa de la gestión.' },
-  { l: 'O', titulo: 'Clase', clase: 'formula', ancho: 10, ayuda: 'Del catálogo.' },
-  { l: 'P', titulo: 'Tipo', clase: 'formula', ancho: 12, ayuda: 'Del catálogo.' },
-  { l: 'Q', titulo: 'Descriptor', clase: 'formula', ancho: 30, ayuda: 'Del catálogo.' },
-  { l: 'R', titulo: 'Veces costo', clase: 'formula', ancho: 8, ayuda: 'Según rango de recargo.' },
-  { l: 'S', titulo: 'Total ítem', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Precio × cantidad.' },
-  { l: 'T', titulo: 'Venta', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Precio × veces costo × cantidad.' },
-  { l: 'U', titulo: 'Alerta', clase: 'formula', ancho: 40, ayuda: 'Problemas de la fila. Debe quedar vacía.' },
-  { l: 'V', titulo: 'ORIGEN', clase: 'formula', ancho: 14, ayuda: 'SISTEMA o CONTINGENCIA.' },
-  { l: 'W', titulo: 'Registrado por', clase: 'obligatorio', ancho: 18, ayuda: 'Quién la registró.' },
-  { l: 'X', titulo: 'ID sistema', clase: 'formula', ancho: 18, ayuda: 'Solo filas del sistema.' },
-  { l: 'Y', titulo: 'aux: tipo', clase: 'formula', oculta: true },
-  { l: 'Z', titulo: 'aux: estado', clase: 'formula', oculta: true },
-  { l: 'AA', titulo: 'aux: estado normalizado', clase: 'formula', oculta: true },
-  { l: 'AB', titulo: 'aux: empresa gestión', clase: 'formula', oculta: true },
-  { l: 'AC', titulo: 'aux: referencia buscada', clase: 'formula', oculta: true },
-  { l: 'AD', titulo: 'aux: fila catálogo', clase: 'formula', oculta: true },
-  { l: 'AE', titulo: 'aux: ambigua', clase: 'formula', oculta: true },
-  { l: 'AF', titulo: 'aux: fila padre', clase: 'formula', oculta: true },
-  { l: 'AG', titulo: 'aux: sin código', clase: 'formula', oculta: true },
-  { l: 'AH', titulo: 'aux: tramo recargo', clase: 'formula', oculta: true },
-  { l: 'AI', titulo: 'aux: recargo encontrado', clase: 'formula', oculta: true },
-  { l: 'AJ', titulo: 'aux: empresa no coincide', clase: 'formula', oculta: true },
-  { l: 'AK', titulo: 'MODIFICADO', clase: 'formula', ancho: 12, ayuda: 'Filas del sistema: SÍ si se cambió Cantidad, Lote, Vencimiento o Estado carga.' },
-  { l: 'AL', titulo: 'orig: Cantidad', clase: 'formula', oculta: true },
-  { l: 'AM', titulo: 'orig: Lote', clase: 'formula', oculta: true, texto: true },
-  { l: 'AN', titulo: 'orig: Vencimiento', clase: 'formula', oculta: true, fecha: true },
-  { l: 'AO', titulo: 'orig: Estado carga', clase: 'formula', oculta: true },
+// Letra de Excel de una columna (1 = A, 27 = AA).
+const letraColumna = (n) => (n > 26 ? letraColumna(Math.floor((n - 1) / 26)) : '') + String.fromCharCode(65 + ((n - 1) % 26));
+
+// Ítems se define por clave (`k`) y la letra sale de la posición: el orden
+// se puede cambiar aquí sin tocar las fórmulas, que usan I.<clave>. Las
+// macros buscan las columnas por su título (fila 2), así que un título
+// nuevo o cambiado también debe cambiarse en macros/ModContingencia.bas.
+// Orden (decisión del 23-11-2026): primero la "vista de carga" (VISTA_CARGA,
+// encabezado verde y congelada), lo que se revisa al cargar en el sistema;
+// después la línea completa y las auxiliares.
+const DEF_ITEMS = [
+  { k: 'linea', titulo: 'N° línea', clase: 'formula', ancho: 8, ayuda: 'Fijo. Se usa en "Línea padre".' },
+  { k: 'admision', titulo: 'Admisión', clase: 'formula', ancho: 11, texto: true, ayuda: 'Automática, de la CLAVE.' },
+  { k: 'fecha', titulo: 'Fecha', clase: 'formula', ancho: 11, fecha: true, ayuda: 'Automática, de la CLAVE.' },
+  { k: 'codigo', titulo: 'Código', clase: 'formula', ancho: 12, ayuda: 'Del catálogo. "No lleva OC" en CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO.' },
+  { k: 'cantidad', titulo: 'Cantidad', clase: 'obligatorio', ancho: 9, campo: 'cantidad', original: 'origCantidad', ayuda: 'Obligatoria. Mayor que 0. En una referencia con lotes: la cantidad TOTAL.' },
+  { k: 'venta', titulo: 'Venta', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Precio × veces costo × cantidad.' },
+  { k: 'estadoCarga', titulo: 'Estado carga', clase: 'opcional', ancho: 13, campo: 'estadoCarga', original: 'origEstadoCarga', ayuda: 'Vacío = PENDIENTE. En PAD no se usa.' },
+  { k: 'clave', titulo: 'CLAVE', clase: 'obligatorio', ancho: 34, ayuda: 'Gestión a la que pertenece (lista de Gestiones).' },
+  { k: 'tipoLinea', titulo: 'Tipo de línea', clase: 'opcional', ancho: 16, ayuda: 'Vacío = NORMAL.' },
+  { k: 'padre', titulo: 'Línea padre', clase: 'opcional', ancho: 9, ayuda: 'Solo CONTENIDO PAD (N° del PAD PADRE) y LOTE ADICIONAL (N° de la línea NORMAL).' },
+  { k: 'numCot', titulo: 'N° cotización', clase: 'obligatorio', ancho: 14, texto: true, ayuda: 'N° de la cotización del proveedor.' },
+  { k: 'referencia', titulo: 'Referencia', clase: 'obligatorio', ancho: 24, texto: true, ayuda: 'De la lista (se puede escribir). Si no existe queda "Sin código".' },
+  { k: 'codigoReal', titulo: 'Código real', clase: 'formula', ancho: 12, ayuda: 'Código del catálogo según la referencia, en TODAS las líneas (también CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO).' },
+  { k: 'lote', titulo: 'Lote', clase: 'opcional', ancho: 14, texto: true, campo: 'lote', original: 'origLote', ayuda: 'Vacío = Sin lote.' },
+  { k: 'vencimiento', titulo: 'Vencimiento', clase: 'opcional', ancho: 12, fecha: true, campo: 'vencimiento', original: 'origVencimiento', ayuda: 'dd-mm-aaaa. Vacío = Sin fecha.' },
+  { k: 'precioManual', titulo: 'Precio manual', clase: 'opcional', ancho: 12, pesos: true, ayuda: 'Opcional: reemplaza el precio del catálogo (ej. referencia sin código).' },
+  { k: 'precio', titulo: 'Precio unitario', clase: 'formula', ancho: 12, pesos: true, ayuda: 'Catálogo o precio manual.' },
+  { k: 'empresaProducto', titulo: 'Empresa producto', clase: 'formula', ancho: 22, ayuda: 'En rojo si no coincide con la empresa de la gestión.' },
+  { k: 'clase', titulo: 'Clase', clase: 'formula', ancho: 10, ayuda: 'Del catálogo.' },
+  { k: 'tipo', titulo: 'Tipo', clase: 'formula', ancho: 12, ayuda: 'Del catálogo.' },
+  { k: 'descriptor', titulo: 'Descriptor', clase: 'formula', ancho: 30, ayuda: 'Del catálogo.' },
+  { k: 'veces', titulo: 'Veces costo', clase: 'formula', ancho: 8, ayuda: 'Según rango de recargo.' },
+  { k: 'total', titulo: 'Total ítem', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Precio × cantidad.' },
+  { k: 'alerta', titulo: 'Alerta', clase: 'formula', ancho: 40, ayuda: 'Problemas de la fila. Debe quedar vacía.' },
+  { k: 'origen', titulo: 'ORIGEN', clase: 'formula', ancho: 14, ayuda: 'SISTEMA o CONTINGENCIA.' },
+  { k: 'registrado', titulo: 'Registrado por', clase: 'obligatorio', ancho: 18, ayuda: 'Quién la registró.' },
+  { k: 'idSistema', titulo: 'ID sistema', clase: 'formula', ancho: 18, ayuda: 'Solo filas del sistema.' },
+  { k: 'tipoEf', titulo: 'aux: tipo', clase: 'formula', oculta: true },
+  { k: 'estadoEf', titulo: 'aux: estado', clase: 'formula', oculta: true },
+  { k: 'estadoNorm', titulo: 'aux: estado normalizado', clase: 'formula', oculta: true },
+  { k: 'empresaGestion', titulo: 'aux: empresa gestión', clase: 'formula', oculta: true },
+  { k: 'refBuscada', titulo: 'aux: referencia buscada', clase: 'formula', oculta: true },
+  { k: 'filaCat', titulo: 'aux: fila catálogo', clase: 'formula', oculta: true },
+  { k: 'ambigua', titulo: 'aux: ambigua', clase: 'formula', oculta: true },
+  { k: 'filaPadre', titulo: 'aux: fila padre', clase: 'formula', oculta: true },
+  { k: 'sinCodigo', titulo: 'aux: sin código', clase: 'formula', oculta: true },
+  { k: 'tramo', titulo: 'aux: tramo recargo', clase: 'formula', oculta: true },
+  { k: 'recargoOk', titulo: 'aux: recargo encontrado', clase: 'formula', oculta: true },
+  { k: 'empresaNoCoincide', titulo: 'aux: empresa no coincide', clase: 'formula', oculta: true },
+  // Después de las auxiliares (ocultas); en pantalla queda junto a ID sistema.
+  { k: 'modificado', titulo: 'MODIFICADO', clase: 'formula', ancho: 12, ayuda: 'Filas del sistema: SÍ si se cambió Cantidad, Lote, Vencimiento o Estado carga.' },
+  { k: 'origCantidad', titulo: 'orig: Cantidad', clase: 'formula', oculta: true },
+  { k: 'origLote', titulo: 'orig: Lote', clase: 'formula', oculta: true, texto: true },
+  { k: 'origVencimiento', titulo: 'orig: Vencimiento', clase: 'formula', oculta: true, fecha: true },
+  { k: 'origEstadoCarga', titulo: 'orig: Estado carga', clase: 'formula', oculta: true },
 ];
+// Letra de cada columna de Ítems por clave (I.cantidad = 'E').
+export const I = Object.freeze(Object.fromEntries(DEF_ITEMS.map((c, i) => [c.k, letraColumna(i + 1)])));
+export const COLUMNAS_ITEMS = DEF_ITEMS.map((c) => ({ ...c, l: I[c.k], ...(c.original ? { original: I[c.original] } : {}) }));
+// Columnas de la vista de carga (las primeras de Ítems y de Cargados).
+export const VISTA_CARGA = Object.freeze(['N° línea', 'Admisión', 'Fecha', 'Código', 'Cantidad', 'Venta', 'Estado carga']);
 
 const COLUMNAS_REFERENCIAS = [
   { l: 'A', titulo: 'Clave búsqueda', ancho: 30, automatica: true },
@@ -185,17 +207,19 @@ const REF = { clave: 'A', codigo: 'B', referencia: 'O', empresa: 'E', tipo: 'F',
 
 // `ayudaEnNota`: columnas cuya ayuda va como nota del encabezado en vez de
 // la fila 1 (ahí van los botones de las macros).
-const prepararHoja = (hoja, columnas, { conAyuda = true, congelarColumnas = 0, ayudaEnNota = [] } = {}) => {
+// `vistaCarga`: cuántas columnas del inicio forman la vista de carga
+// (encabezado verde y borde grueso al final).
+const prepararHoja = (hoja, columnas, { conAyuda = true, congelarColumnas = 0, ayudaEnNota = [], vistaCarga = 0 } = {}) => {
   hoja.columns = columnas.map((c) => ({ key: c.l, width: c.ancho || 12, hidden: !!c.oculta }));
   const filaEnc = hoja.getRow(FILA_ENCABEZADO);
   const filaAyuda = hoja.getRow(FILA_AYUDA);
-  columnas.forEach((c) => {
+  columnas.forEach((c, i) => {
     const celda = filaEnc.getCell(c.l);
     celda.value = c.titulo;
     celda.font = { bold: true };
     celda.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-    celda.fill = relleno(COLOR[c.clase] || COLOR.formula);
-    celda.border = BORDES;
+    celda.fill = relleno(i < vistaCarga ? COLOR.vista : (COLOR[c.clase] || COLOR.formula));
+    celda.border = i === vistaCarga - 1 ? { ...BORDES, right: BORDE_VISTA } : BORDES;
     if (ayudaEnNota.includes(c.l)) {
       if (c.ayuda) celda.note = c.ayuda;
     } else if (conAyuda) {
@@ -508,40 +532,46 @@ const hojaNombres = (libro, nombreHoja, descripcion, registros, totalFilas) => {
 // La llena la macro "Mover cargados" (macros/MoverCargados.bas) con VALORES:
 // una fila por línea de ítem, con la cabecera de su gestión repetida, más
 // lo calculado (código, precio, recargo, venta…) y los auxiliares que hacen
-// falta para cargarla en el sistema o devolverla a pendientes. El orden de
-// estas columnas es el que usa la macro: si cambia aquí, cambia allá.
+// falta para cargarla en el sistema o devolverla a pendientes. La macro lee
+// y escribe cada columna por su TÍTULO (fila 2), así que el orden se puede
+// cambiar aquí; un título nuevo o cambiado debe cambiarse también en
+// macros/ModContingencia.bas (C_DESDE_ITEMS, G_DESDE_CARGADOS). Mismo orden
+// que Ítems: primero la vista de carga (`vista`), después la gestión
+// (`gestion`) y el resto de la línea.
 export const COLUMNAS_CARGADOS = [
-  { titulo: 'Movido el', ancho: 17, fechaHora: true },
-  { titulo: 'Movido por', ancho: 16 },
-  { titulo: 'CLAVE', ancho: 34 },
-  { titulo: 'Admisión', ancho: 12, texto: true },
-  { titulo: 'Fecha', ancho: 12, fecha: true },
-  { titulo: 'Empresa', ancho: 24 },
-  { titulo: 'Nombre paciente', ancho: 26 },
-  { titulo: 'Total cotización', ancho: 13, pesos: true },
-  { titulo: 'Informe', ancho: 11 },
-  { titulo: 'Centro', ancho: 13 },
-  { titulo: 'Atributo', ancho: 11 },
-  { titulo: 'Lado', ancho: 12 },
-  { titulo: 'Observación', ancho: 24 },
-  { titulo: 'Convenio', ancho: 14 },
-  { titulo: 'Previsión', ancho: 12 },
-  { titulo: 'Médico', ancho: 18 },
-  { titulo: 'Descripción', ancho: 24 },
-  { titulo: 'Estado sin ítems', ancho: 10 },
-  { titulo: 'Estado gestión', ancho: 12 },
-  { titulo: 'Registrado por (gestión)', ancho: 16 },
-  { titulo: 'N° línea (original)', ancho: 9 },
+  { titulo: 'N° línea (original)', ancho: 9, vista: true },
+  { titulo: 'Admisión', ancho: 11, texto: true, vista: true },
+  { titulo: 'Fecha', ancho: 11, fecha: true, vista: true },
+  { titulo: 'Código', ancho: 12, texto: true, vista: true },
+  { titulo: 'Cantidad', ancho: 9, vista: true },
+  { titulo: 'Venta', ancho: 12, pesos: true, vista: true },
+  { titulo: 'Estado carga', ancho: 12, vista: true },
+  { titulo: 'Movido el', ancho: 17, fechaHora: true, gestion: true },
+  { titulo: 'Movido por', ancho: 16, gestion: true },
+  { titulo: 'CLAVE', ancho: 34, gestion: true },
+  { titulo: 'Empresa', ancho: 24, gestion: true },
+  { titulo: 'Nombre paciente', ancho: 26, gestion: true },
+  { titulo: 'Total cotización', ancho: 13, pesos: true, gestion: true },
+  { titulo: 'Informe', ancho: 11, gestion: true },
+  { titulo: 'Centro', ancho: 13, gestion: true },
+  { titulo: 'Atributo', ancho: 11, gestion: true },
+  { titulo: 'Lado', ancho: 12, gestion: true },
+  { titulo: 'Observación', ancho: 24, gestion: true },
+  { titulo: 'Convenio', ancho: 14, gestion: true },
+  { titulo: 'Previsión', ancho: 12, gestion: true },
+  { titulo: 'Médico', ancho: 18, gestion: true },
+  { titulo: 'Descripción', ancho: 24, gestion: true },
+  { titulo: 'Estado sin ítems', ancho: 10, gestion: true },
+  { titulo: 'Estado gestión', ancho: 12, gestion: true },
+  { titulo: 'Registrado por (gestión)', ancho: 16, gestion: true },
   { titulo: 'Tipo de línea', ancho: 14 },
   { titulo: 'Línea padre (original)', ancho: 9 },
   { titulo: 'N° cotización', ancho: 13, texto: true },
   { titulo: 'Referencia', ancho: 20, texto: true },
-  { titulo: 'Cantidad', ancho: 9 },
+  { titulo: 'Código real', ancho: 12, texto: true },
   { titulo: 'Lote', ancho: 12, texto: true },
   { titulo: 'Vencimiento', ancho: 12, fecha: true },
-  { titulo: 'Estado carga', ancho: 12 },
   { titulo: 'Precio manual', ancho: 12, pesos: true },
-  { titulo: 'Código', ancho: 12, texto: true },
   { titulo: 'Precio unitario', ancho: 12, pesos: true },
   { titulo: 'Empresa producto', ancho: 22 },
   { titulo: 'Clase', ancho: 10 },
@@ -549,7 +579,6 @@ export const COLUMNAS_CARGADOS = [
   { titulo: 'Descriptor', ancho: 28 },
   { titulo: 'Veces costo', ancho: 8 },
   { titulo: 'Total ítem', ancho: 12, pesos: true },
-  { titulo: 'Venta', ancho: 12, pesos: true },
   { titulo: 'Sin código (1 = sí)', ancho: 8 },
   { titulo: 'Recargo encontrado (1 = sí)', ancho: 9 },
   { titulo: 'Alerta', ancho: 28 },
@@ -629,13 +658,14 @@ const hojaCargados = (libro) => {
   const hoja = libro.addWorksheet(H.CARG);
   hoja.columns = COLUMNAS_CARGADOS.map((c) => ({ width: c.ancho }));
   const enc = hoja.getRow(FILA_ENCABEZADO);
+  const nVista = COLUMNAS_CARGADOS.filter((c) => c.vista).length;
   COLUMNAS_CARGADOS.forEach((c, i) => {
     const celda = enc.getCell(i + 1);
     celda.value = c.titulo;
     celda.font = { bold: true };
     celda.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-    celda.fill = relleno(i < 20 ? COLOR.opcional : COLOR.formula);
-    celda.border = BORDES;
+    celda.fill = relleno(c.vista ? COLOR.vista : (c.gestion ? COLOR.opcional : COLOR.formula));
+    celda.border = i === nVista - 1 ? { ...BORDES, right: BORDE_VISTA } : BORDES;
     // Formato de columna: lo heredan las filas que escriba la macro.
     const col = hoja.getColumn(i + 1);
     if (c.fechaHora) col.numFmt = 'dd-mm-yyyy hh:mm';
@@ -643,12 +673,13 @@ const hojaCargados = (libro) => {
     if (c.pesos) col.numFmt = FORMATO_PESOS;
     if (c.texto) col.numFmt = '@';
   });
-  const ayuda = hoja.getCell('E1');
-  ayuda.value = 'Gestiones ya CARGADO (una fila por línea, como valores). Las mueve el botón "Mover cargados" de Gestiones. Para devolver una: seleccione cualquier celda de sus filas y use "Devolver a pendientes".';
+  // Después de la vista de carga (congelada): A1 lleva el botón.
+  const ayuda = hoja.getCell(1, nVista + 1);
+  ayuda.value = 'Gestiones ya CARGADO (una fila por línea, como valores). Las mueve el botón "Mover cargados" de Ítems. Para devolver una: seleccione cualquier celda de sus filas y use "Devolver a pendientes". En verde, la vista de carga.';
   ayuda.font = { italic: true, size: 9, color: { argb: 'FF595959' } };
   hoja.getRow(FILA_AYUDA).height = 30;
   enc.height = 42;
-  hoja.views = [{ state: 'frozen', xSplit: 4, ySplit: FILA_ENCABEZADO }];
+  hoja.views = [{ state: 'frozen', xSplit: nVista, ySplit: FILA_ENCABEZADO }];
   hoja.autoFilter = { from: { row: FILA_ENCABEZADO, column: 1 }, to: { row: FILA_ENCABEZADO, column: COLUMNAS_CARGADOS.length } };
   return hoja;
 };
@@ -700,72 +731,93 @@ const valoresGestionSistema = (g) => ({
 
 // Columnas comunes a todas las filas (también las del sistema): tipo,
 // estado, empresa de la gestión, padre, alerta.
+// Valores por clave de Ítems → por letra (para escribirFila).
+const porLetra = (valores) => Object.fromEntries(Object.entries(valores).map(([k, v]) => {
+  if (!I[k]) throw new Error(`Ítems no tiene la columna "${k}".`);
+  return [I[k], v];
+}));
+
+// Columnas comunes a todas las filas (también las del sistema): tipo,
+// estado, empresa de la gestión, padre, admisión y fecha, alerta.
+// `c.<clave>` = celda de esa columna en la fila r.
 const formulasItemComunes = (r, x) => {
-  const enLineas = (l) => `$${l}$${PRIMERA}:$${l}$${x.ultimaItem}`;
-  const esHija = `OR(Y${r}="CONTENIDO PAD",Y${r}="LOTE ADICIONAL")`;
-  const padreInvalido = `IF(${esHija},IF(AF${r}="",TRUE,OR(INDEX(${enLineas('B')},AF${r})<>B${r},INDEX(${enLineas('Y')},AF${r})<>IF(Y${r}="CONTENIDO PAD","PAD PADRE","NORMAL"))),D${r}<>"")`;
-  return {
-    Y: f(`IF(B${r}&C${r}&E${r}&F${r}&G${r}="","",IF(C${r}="","NORMAL",C${r}))`),
-    Z: f(`IF(Y${r}="","",IF(OR(Y${r}="PAD PADRE",Y${r}="CONTENIDO PAD"),"PAD",IF(J${r}="","PENDIENTE",J${r})))`),
-    AA: f(`IF(Z${r}="","",IF(OR(Z${r}="CARGADO",Z${r}="PAD",Z${r}="SIN CARGO"),"CARGADO",Z${r}))`),
-    AB: f(`IF(B${r}="","",IFERROR(INDEX(${x.gD},MATCH(B${r},${x.gA},0)),""))`),
-    AF: f(`IF(D${r}="","",IFERROR(MATCH(D${r},${enLineas('A')},0),""))`),
-    AJ: f(`IF(AND(OR(Y${r}="NORMAL",Y${r}="PAD PADRE"),AG${r}=0,N${r}<>"",AB${r}<>""),IF(UPPER(TRIM(N${r}))<>UPPER(TRIM(AB${r})),1,0),0)`),
-    U: f(`IF(Y${r}="","",`
-      + `IF(B${r}="","Falta CLAVE · ",IF(COUNTIF(${x.gA},B${r})=0,"CLAVE no existe · ",""))`
-      + `&IF(E${r}="","Falta N° cotización · ","")`
-      + `&IF(F${r}="","Falta referencia · ","")`
-      + `&IF(N(G${r})<=0,"Cantidad inválida · ","")`
+  const c = Object.fromEntries(Object.entries(I).map(([k, l]) => [k, `${l}${r}`]));
+  const enLineas = (k) => `$${I[k]}$${PRIMERA}:$${I[k]}$${x.ultimaItem}`;
+  const esHija = `OR(${c.tipoEf}="CONTENIDO PAD",${c.tipoEf}="LOTE ADICIONAL")`;
+  const padreInvalido = `IF(${esHija},IF(${c.filaPadre}="",TRUE,OR(INDEX(${enLineas('clave')},${c.filaPadre})<>${c.clave},INDEX(${enLineas('tipoEf')},${c.filaPadre})<>IF(${c.tipoEf}="CONTENIDO PAD","PAD PADRE","NORMAL"))),${c.padre}<>"")`;
+  // La CLAVE es admisión|empresa|AAAA-MM-DD (fórmula de Gestiones!A).
+  const fechaClave = `RIGHT(${c.clave},10)`;
+  return porLetra({
+    tipoEf: f(`IF(${c.clave}&${c.tipoLinea}&${c.numCot}&${c.referencia}&${c.cantidad}="","",IF(${c.tipoLinea}="","NORMAL",${c.tipoLinea}))`),
+    estadoEf: f(`IF(${c.tipoEf}="","",IF(OR(${c.tipoEf}="PAD PADRE",${c.tipoEf}="CONTENIDO PAD"),"PAD",IF(${c.estadoCarga}="","PENDIENTE",${c.estadoCarga})))`),
+    estadoNorm: f(`IF(${c.estadoEf}="","",IF(OR(${c.estadoEf}="CARGADO",${c.estadoEf}="PAD",${c.estadoEf}="SIN CARGO"),"CARGADO",${c.estadoEf}))`),
+    empresaGestion: f(`IF(${c.clave}="","",IFERROR(INDEX(${x.gD},MATCH(${c.clave},${x.gA},0)),""))`),
+    filaPadre: f(`IF(${c.padre}="","",IFERROR(MATCH(${c.padre},${enLineas('linea')},0),""))`),
+    empresaNoCoincide: f(`IF(AND(OR(${c.tipoEf}="NORMAL",${c.tipoEf}="PAD PADRE"),${c.sinCodigo}=0,${c.empresaProducto}<>"",${c.empresaGestion}<>""),IF(UPPER(TRIM(${c.empresaProducto}))<>UPPER(TRIM(${c.empresaGestion})),1,0),0)`),
+    admision: f(`IF(${c.clave}="","",IFERROR(LEFT(${c.clave},FIND("|",${c.clave})-1),""))`),
+    fecha: f(`IF(${c.clave}="","",IFERROR(DATE(LEFT(${fechaClave},4),MID(${fechaClave},6,2),RIGHT(${fechaClave},2)),""))`),
+    alerta: f(`IF(${c.tipoEf}="","",`
+      + `IF(${c.clave}="","Falta CLAVE · ",IF(COUNTIF(${x.gA},${c.clave})=0,"CLAVE no existe · ",""))`
+      + `&IF(${c.numCot}="","Falta N° cotización · ","")`
+      + `&IF(${c.referencia}="","Falta referencia · ","")`
+      + `&IF(N(${c.cantidad})<=0,"Cantidad inválida · ","")`
       // Una ambigua tampoco tiene código: se avisa solo como ambigua.
-      + `&IF(AND(AG${r}=1,AE${r}=0),"Sin código · ","")`
-      + `&IF(AE${r}=1,"Referencia ambigua: revise la empresa · ","")`
-      + `&IF(AJ${r}=1,"Empresa no coincide · ","")`
-      + `&IF(AND(AG${r}=0,AI${r}=0),"Sin rango de recargo · ","")`
+      + `&IF(AND(${c.sinCodigo}=1,${c.ambigua}=0),"Sin código · ","")`
+      + `&IF(${c.ambigua}=1,"Referencia ambigua: revise la empresa · ","")`
+      + `&IF(${c.empresaNoCoincide}=1,"Empresa no coincide · ","")`
+      + `&IF(AND(${c.sinCodigo}=0,${c.recargoOk}=0),"Sin rango de recargo · ","")`
       + `&IF(${padreInvalido},"Línea padre inválida · ","")`
-      + `&IF(AND(Y${r}="LOTE ADICIONAL",AF${r}<>""),IF(SUMIFS(${enLineas('G')},${enLineas('D')},D${r},${enLineas('Y')},"LOTE ADICIONAL")>INDEX(${enLineas('G')},AF${r}),"Lotes superan la cantidad · ",""),"")`
+      + `&IF(AND(${c.tipoEf}="LOTE ADICIONAL",${c.filaPadre}<>""),IF(SUMIFS(${enLineas('cantidad')},${enLineas('padre')},${c.padre},${enLineas('tipoEf')},"LOTE ADICIONAL")>INDEX(${enLineas('cantidad')},${c.filaPadre}),"Lotes superan la cantidad · ",""),"")`
       + ')'),
-  };
+  });
 };
 
 // Columnas del catálogo y montos (solo filas nuevas: las del sistema llevan
 // lo guardado).
 const formulasItemNuevas = (r, x) => {
-  const sinCobro = `OR(Y${r}="CONTENIDO PAD",Y${r}="LOTE ADICIONAL",Z${r}="SIN CARGO")`;
-  const delCatalogo = (l) => `IF(OR(Y${r}="",AD${r}=""),"",INDEX(${x.rCol(l)},AD${r})&"")`;
+  const c = Object.fromEntries(Object.entries(I).map(([k, l]) => [k, `${l}${r}`]));
+  const sinCobro = `OR(${c.tipoEf}="CONTENIDO PAD",${c.tipoEf}="LOTE ADICIONAL",${c.estadoEf}="SIN CARGO")`;
+  const delCatalogo = (l) => `IF(OR(${c.tipoEf}="",${c.filaCat}=""),"",INDEX(${x.rCol(l)},${c.filaCat})&"")`;
   return {
     ...formulasItemComunes(r, x),
-    // Referencia con ~ * ? escapados (COINCIDIR los toma como comodines).
-    AC: f(`SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(TRIM(F${r}),"~","~~"),"*","~*"),"?","~?")`),
-    // Fila en el catálogo: referencia + empresa de la gestión; si no hay,
-    // la referencia sola cuando es única.
-    AD: f(`IF(F${r}="","",IFERROR(MATCH(AC${r}&"|"&TRIM(AB${r}),${x.rCol(REF.clave)},0),IFERROR(IF(INDEX(${x.rCol(REF.repeticiones)},MATCH(AC${r},${x.rCol(REF.referencia)},0))=1,MATCH(AC${r},${x.rCol(REF.referencia)},0),""),"")))`),
-    AE: f(`IF(AND(F${r}<>"",AD${r}=""),IF(ISNUMBER(MATCH(AC${r},${x.rCol(REF.referencia)},0)),1,0),0)`),
-    AG: f(`IF(AND(OR(Y${r}="NORMAL",Y${r}="PAD PADRE"),Z${r}<>"SIN CARGO",L${r}=""),1,0)`),
-    // Rangos de recargo que contienen el precio (sin los INACTIVOS). Con
-    // CONTAR.SI.CONJUNTO no importa el orden en que se peguen los rangos.
-    AH: f(`IF(OR(Y${r}="",M${r}=""),"",COUNTIFS(${x.recargo.desde},"<="&M${r},${x.recargo.hasta},">="&M${r},${x.recargo.estado},"<>INACTIVO"))`),
-    AI: f(`IF(Y${r}="",1,IF(${sinCobro},1,IF(N(AH${r})>=1,1,0)))`),
-    L: f(`IF(Y${r}="","",IF(${sinCobro},"${CODIGO_SIN_OC}",IF(AD${r}="","",INDEX(${x.rCol(REF.codigo)},AD${r})&"")))`),
-    // El precio puede venir como texto si se pegó desde un CSV: *1 lo convierte.
-    M: f(`IF(Y${r}="","",IF(${sinCobro},0,IF(K${r}<>"",K${r},IF(AD${r}="",0,IFERROR(INDEX(${x.rCol(REF.precio)},AD${r})*1,0)))))`),
-    N: f(delCatalogo(REF.empresa)),
-    O: f(delCatalogo(REF.clase)),
-    P: f(delCatalogo(REF.tipo)),
-    Q: f(delCatalogo(REF.descriptor)),
-    R: f(`IF(Y${r}="","",IF(${sinCobro},1,IF(N(AH${r})>=1,SUMIFS(${x.recargo.veces},${x.recargo.desde},"<="&M${r},${x.recargo.hasta},">="&M${r},${x.recargo.estado},"<>INACTIVO")/AH${r},1)))`),
-    S: f(`IF(Y${r}="","",M${r}*G${r})`),
-    T: f(`IF(Y${r}="","",M${r}*R${r}*G${r})`),
-    V: f(`IF(Y${r}="","","CONTINGENCIA")`),
+    ...porLetra({
+      // Referencia con ~ * ? escapados (COINCIDIR los toma como comodines).
+      refBuscada: f(`SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(TRIM(${c.referencia}),"~","~~"),"*","~*"),"?","~?")`),
+      // Fila en el catálogo: referencia + empresa de la gestión; si no hay,
+      // la referencia sola cuando es única.
+      filaCat: f(`IF(${c.referencia}="","",IFERROR(MATCH(${c.refBuscada}&"|"&TRIM(${c.empresaGestion}),${x.rCol(REF.clave)},0),IFERROR(IF(INDEX(${x.rCol(REF.repeticiones)},MATCH(${c.refBuscada},${x.rCol(REF.referencia)},0))=1,MATCH(${c.refBuscada},${x.rCol(REF.referencia)},0),""),"")))`),
+      ambigua: f(`IF(AND(${c.referencia}<>"",${c.filaCat}=""),IF(ISNUMBER(MATCH(${c.refBuscada},${x.rCol(REF.referencia)},0)),1,0),0)`),
+      sinCodigo: f(`IF(AND(OR(${c.tipoEf}="NORMAL",${c.tipoEf}="PAD PADRE"),${c.estadoEf}<>"SIN CARGO",${c.codigo}=""),1,0)`),
+      // Rangos de recargo que contienen el precio (sin los INACTIVOS). Con
+      // CONTAR.SI.CONJUNTO no importa el orden en que se peguen los rangos.
+      tramo: f(`IF(OR(${c.tipoEf}="",${c.precio}=""),"",COUNTIFS(${x.recargo.desde},"<="&${c.precio},${x.recargo.hasta},">="&${c.precio},${x.recargo.estado},"<>INACTIVO"))`),
+      recargoOk: f(`IF(${c.tipoEf}="",1,IF(${sinCobro},1,IF(N(${c.tramo})>=1,1,0)))`),
+      codigo: f(`IF(${c.tipoEf}="","",IF(${sinCobro},"${CODIGO_SIN_OC}",IF(${c.filaCat}="","",INDEX(${x.rCol(REF.codigo)},${c.filaCat})&"")))`),
+      // Código del catálogo en toda línea, también en las que no se cobran
+      // (decisión del 23-11-2026): Código sigue con "No lleva OC".
+      codigoReal: f(delCatalogo(REF.codigo)),
+      // El precio puede venir como texto si se pegó desde un CSV: *1 lo convierte.
+      precio: f(`IF(${c.tipoEf}="","",IF(${sinCobro},0,IF(${c.precioManual}<>"",${c.precioManual},IF(${c.filaCat}="",0,IFERROR(INDEX(${x.rCol(REF.precio)},${c.filaCat})*1,0)))))`),
+      empresaProducto: f(delCatalogo(REF.empresa)),
+      clase: f(delCatalogo(REF.clase)),
+      tipo: f(delCatalogo(REF.tipo)),
+      descriptor: f(delCatalogo(REF.descriptor)),
+      veces: f(`IF(${c.tipoEf}="","",IF(${sinCobro},1,IF(N(${c.tramo})>=1,SUMIFS(${x.recargo.veces},${x.recargo.desde},"<="&${c.precio},${x.recargo.hasta},">="&${c.precio},${x.recargo.estado},"<>INACTIVO")/${c.tramo},1)))`),
+      total: f(`IF(${c.tipoEf}="","",${c.precio}*${c.cantidad})`),
+      venta: f(`IF(${c.tipoEf}="","",${c.precio}*${c.veces}*${c.cantidad})`),
+      origen: f(`IF(${c.tipoEf}="","","CONTINGENCIA")`),
+    }),
   };
 };
 
-const valoresItemSistema = (it) => ({
-  A: it.linea, B: it.clave, C: it.tipo, D: it.lineaPadre, E: it.numCotizacion, F: it.referencia,
-  G: it.cantidad, H: it.lote, I: it.vencimiento, J: it.estadoCarga,
-  L: it.codigo, M: it.precio, N: it.empresaVinculada, O: it.clase, P: it.tipoVinculado, Q: it.descriptorAuto,
-  R: it.vecesCosto, V: 'SISTEMA', X: it.idSistema,
+const valoresItemSistema = (it) => porLetra({
+  linea: it.linea, clave: it.clave, tipoLinea: it.tipo, padre: it.lineaPadre, numCot: it.numCotizacion, referencia: it.referencia,
+  cantidad: it.cantidad, lote: it.lote, vencimiento: it.vencimiento, estadoCarga: it.estadoCarga,
+  codigo: it.codigo, codigoReal: it.codigoReal ?? (it.codigo === CODIGO_SIN_OC ? '' : it.codigo),
+  precio: it.precio, empresaProducto: it.empresaVinculada, clase: it.clase, tipo: it.tipoVinculado, descriptor: it.descriptorAuto,
+  veces: it.vecesCosto, origen: 'SISTEMA', idSistema: it.idSistema,
   // Auxiliares con lo guardado (no se recalculan contra el catálogo de hoy).
-  AC: '', AD: '', AE: 0, AG: it.sinCodigo ? 1 : 0, AH: '', AI: it.recargoEncontrado || it.sinCodigo ? 1 : 0,
+  refBuscada: '', filaCat: '', ambigua: 0, sinCodigo: it.sinCodigo ? 1 : 0, tramo: '', recargoOk: it.recargoEncontrado || it.sinCodigo ? 1 : 0,
 });
 
 // --- Instrucciones ---------------------------------------------------------------
@@ -824,7 +876,7 @@ const MACROS_Y_BOTONES = [
   ['No son la Solicitud: no marcan nada como SOLICITADO ni imputan. La Solicitud se hace en el sistema cuando vuelva.'],
   [''],
   ['HOJA CARGADOS', 'seccion'],
-  ['Una fila por línea de ítem, con los datos de su gestión repetidos: es lo que hay que ingresar al sistema cuando vuelva (cabecera de la gestión, cada línea con su código, precio, recargo, total y venta, y quién lo registró y movió). Está protegida para no modificarla por error; use los filtros para verla por gestión.'],
+  ['Una fila por línea de ítem, con los datos de su gestión repetidos: es lo que hay que ingresar al sistema cuando vuelva (cabecera de la gestión, cada línea con su código, código real, precio, recargo, total y venta, y quién lo registró y movió). Empieza con la misma vista de carga que Ítems (en verde). Está protegida para no modificarla por error; use los filtros para verla por gestión.'],
 ];
 
 // Cómo actualizar los catálogos (solo plantilla).
@@ -847,6 +899,7 @@ const textoInstrucciones = (d) => [
   [''],
   ['COLORES DE LOS ENCABEZADOS', 'seccion'],
   ['Amarillo: obligatorio. Azul: opcional. Gris: automático (no se escribe). Una celda obligatoria vacía en una fila nueva se pinta de rojo.'],
+  ['Verde (Ítems y Cargados): la vista de carga, las primeras columnas, fijas al desplazarse: N° línea, Admisión, Fecha, Código, Cantidad, Venta y Estado carga. Es lo que se revisa al cargar en el sistema. Ahí se escriben solo Cantidad (obligatoria) y Estado carga; Admisión y Fecha salen de la CLAVE.'],
   [''],
   ['HOJA GESTIONES (una fila por admisión + empresa + fecha)', 'seccion'],
   ['1. Escriba Admisión (solo dígitos), Fecha (dd-mm-aaaa) y elija la Empresa (lista de la hoja Empresas). La CLAVE se arma sola: admisión|empresa|AAAA-MM-DD.'],
@@ -859,8 +912,9 @@ const textoInstrucciones = (d) => [
   ['5. Diferencia en rojo: la suma de los ítems no cuadra con el total de la cotización.'],
   [''],
   ['HOJA ÍTEMS (una fila por línea)', 'seccion'],
-  ['1. Elija la CLAVE de la gestión (lista). Primero debe existir la gestión en la hoja Gestiones.'],
+  ['1. Elija la CLAVE de la gestión (lista, a la derecha de la vista de carga). Primero debe existir la gestión en la hoja Gestiones. Admisión y Fecha de la vista de carga se llenan solas con ella.'],
   ['2. Escriba N° cotización, Referencia y Cantidad. Igual que en el sistema, al escribir la referencia se completan desde la hoja Códigos el código, precio, empresa, clase, tipo y descriptor, y se calculan veces costo (según la hoja Recargos), total y venta. Si la referencia existe para varias empresas, se usa la de la empresa de la gestión.'],
+  ['   Código y Código real: Código es el que va en la Solicitud ("No lleva OC" en CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO, como en el sistema). Código real es siempre el del catálogo según la referencia, también en esas líneas.'],
   ['3. Una referencia que no está en Códigos se puede escribir igual (Excel avisa): queda "Sin código" y la gestión INCOMPLETO, como en el sistema. Si conoce el precio, escríbalo en Precio manual.'],
   ['4. Tipos de línea:'],
   ['   NORMAL (o vacío): una referencia común.'],
@@ -997,10 +1051,10 @@ export const construirLibro = async (datosEntrada) => {
     ultimaItem,
     gA: enHoja(H.G, 'A', ultimaGestion),
     gD: enHoja(H.G, 'D', ultimaGestion),
-    iB: enHoja(H.I, 'B', ultimaItem),
-    iS: enHoja(H.I, 'S', ultimaItem),
-    iAA: enHoja(H.I, 'AA', ultimaItem),
-    iAG: enHoja(H.I, 'AG', ultimaItem),
+    iB: enHoja(H.I, I.clave, ultimaItem),
+    iS: enHoja(H.I, I.total, ultimaItem),
+    iAA: enHoja(H.I, I.estadoNorm, ultimaItem),
+    iAG: enHoja(H.I, I.sinCodigo, ultimaItem),
     rCol,
     recargo: { desde: recargos('A'), hasta: recargos('B'), veces: recargos('C'), estado: recargos('E') },
     ri: riCol,
@@ -1066,45 +1120,52 @@ export const construirLibro = async (datosEntrada) => {
   });
 
   // Ítems
-  // A1:B1 quedan para el botón "Mover cargados": su ayuda va como nota.
-  prepararHoja(hI, COLUMNAS_ITEMS, { congelarColumnas: 2, ayudaEnNota: ['A', 'B'] });
+  // A1:D1 quedan para el botón "Mover cargados": su ayuda va como nota.
+  // Congelada hasta Estado carga (la vista de carga).
+  prepararHoja(hI, COLUMNAS_ITEMS, {
+    congelarColumnas: VISTA_CARGA.length, vistaCarga: VISTA_CARGA.length,
+    ayudaEnNota: [I.linea, I.admision, I.fecha, I.codigo],
+  });
   filasItems.forEach((it, i) => {
     const r = PRIMERA + i;
     const valores = valoresItemSistema(it);
+    const c = (k) => `${I[k]}${r}`;
     escribirFila(hI, r, COLUMNAS_ITEMS, {
       ...valores,
       ...formulasItemComunes(r, x),
       // Totales con el precio y veces costo guardados: siguen a la cantidad
       // y a SIN CARGO si se editan en la caída (el importador los recalcula).
-      S: f(`IF(J${r}="SIN CARGO",0,M${r}*G${r})`),
-      T: f(`IF(J${r}="SIN CARGO",0,M${r}*R${r}*G${r})`),
-      ...camposDeCambio(COLUMNAS_ITEMS, r, valores, 'AK'),
+      ...porLetra({
+        total: f(`IF(${c('estadoCarga')}="SIN CARGO",0,${c('precio')}*${c('cantidad')})`),
+        venta: f(`IF(${c('estadoCarga')}="SIN CARGO",0,${c('precio')}*${c('veces')}*${c('cantidad')})`),
+      }),
+      ...camposDeCambio(COLUMNAS_ITEMS, r, valores, I.modificado),
     }, { sistema: true, editables: camposEditablesItem(it) });
   });
   let linea = datos.ultimaLinea || filasItems.length;
   for (let r = PRIMERA + filasItems.length; r <= ultimaItem; r += 1) {
     linea += 1;
-    escribirFila(hI, r, COLUMNAS_ITEMS, { A: linea, ...formulasItemNuevas(r, x) }, { sistema: false });
+    escribirFila(hI, r, COLUMNAS_ITEMS, { [I.linea]: linea, ...formulasItemNuevas(r, x) }, { sistema: false });
   }
-  const ri = (l) => `${l}${PRIMERA}:${l}${ultimaItem}`;
-  validar(hI, ri('B'), lista(x.gA, { errorTitle: 'CLAVE', error: 'Elija una CLAVE existente en la hoja Gestiones.' }));
-  validar(hI, ri('C'), lista(cat.E));
-  validar(hI, ri('D'), { type: 'whole', operator: 'greaterThanOrEqual', formulae: [1], error: 'N° de línea de la línea padre.' });
-  validar(hI, ri('F'), lista(rCol(REF.referencia), { errorStyle: 'warning', errorTitle: 'Referencia', error: 'No está en Códigos: quedará "Sin código". ¿Continuar?' }));
-  validar(hI, ri('G'), { type: 'decimal', operator: 'greaterThan', formulae: [0], error: 'Cantidad mayor que 0.' });
-  validar(hI, ri('I'), fechaValida);
-  validar(hI, ri('J'), lista(cat.B));
-  validar(hI, ri('K'), { type: 'decimal', operator: 'greaterThanOrEqual', formulae: [0], error: 'Monto mayor o igual a 0.' });
+  const ri = (k) => `${I[k]}${PRIMERA}:${I[k]}${ultimaItem}`;
+  validar(hI, ri('clave'), lista(x.gA, { errorTitle: 'CLAVE', error: 'Elija una CLAVE existente en la hoja Gestiones.' }));
+  validar(hI, ri('tipoLinea'), lista(cat.E));
+  validar(hI, ri('padre'), { type: 'whole', operator: 'greaterThanOrEqual', formulae: [1], error: 'N° de línea de la línea padre.' });
+  validar(hI, ri('referencia'), lista(rCol(REF.referencia), { errorStyle: 'warning', errorTitle: 'Referencia', error: 'No está en Códigos: quedará "Sin código". ¿Continuar?' }));
+  validar(hI, ri('cantidad'), { type: 'decimal', operator: 'greaterThan', formulae: [0], error: 'Cantidad mayor que 0.' });
+  validar(hI, ri('vencimiento'), fechaValida);
+  validar(hI, ri('estadoCarga'), lista(cat.B));
+  validar(hI, ri('precioManual'), { type: 'decimal', operator: 'greaterThanOrEqual', formulae: [0], error: 'Monto mayor o igual a 0.' });
   hI.addConditionalFormatting({
-    ref: ri('N'),
-    rules: [{ type: 'expression', priority: 1, formulae: [`$AJ${PRIMERA}=1`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { color: { argb: COLOR.textoError } } } }],
+    ref: ri('empresaProducto'),
+    rules: [{ type: 'expression', priority: 1, formulae: [`$${I.empresaNoCoincide}${PRIMERA}=1`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { color: { argb: COLOR.textoError } } } }],
   });
   hI.addConditionalFormatting({
-    ref: ri('U'),
-    rules: [{ type: 'expression', priority: 1, formulae: [`U${PRIMERA}<>""`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { bold: true, color: { argb: COLOR.textoError } } } }],
+    ref: ri('alerta'),
+    rules: [{ type: 'expression', priority: 1, formulae: [`${I.alerta}${PRIMERA}<>""`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { bold: true, color: { argb: COLOR.textoError } } } }],
   });
-  reglaObligatorio(hI, ['B', 'E', 'F', 'G', 'W'], 'V', PRIMERA, ultimaItem);
-  reglasCambio(hI, COLUMNAS_ITEMS, 'V', 'AK', PRIMERA, ultimaItem);
+  reglaObligatorio(hI, ['clave', 'numCot', 'referencia', 'cantidad', 'registrado'].map((k) => I[k]), I.origen, PRIMERA, ultimaItem);
+  reglasCambio(hI, COLUMNAS_ITEMS, I.origen, I.modificado, PRIMERA, ultimaItem);
 
   // Códigos: EMPRESA con la lista de Empresas; TIPO, SEGMENTO y CLASE con
   // las del sistema. Pegar el export borra la validación, así que además un

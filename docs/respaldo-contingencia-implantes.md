@@ -169,12 +169,19 @@ exceljs no puede escribir macros. El script genera el `.xlsx` y llama a `macros/
 
 ### Macros
 
-`ModContingencia.bas` sigue las columnas de `libroRespaldo.js` (`COLUMNAS_GESTIONES`, `COLUMNAS_ITEMS` y `COLUMNAS_CARGADOS`): si cambian allá, hay que cambiarlas acá.
+### Vista de carga y Código real (Ítems y Cargados)
+
+Desde el 23-11-2026 Ítems y Cargados empiezan con la **vista de carga**, lo que se revisa al cargar en el sistema: `N° línea | Admisión | Fecha | Código | Cantidad | Venta | Estado carga`. Encabezado verde, borde grueso al final y congelada hasta Estado carga. Después siguen CLAVE, Tipo de línea, Línea padre, N° cotización, Referencia, Código real, Lote, Vencimiento y el resto.
+- En Ítems, Admisión y Fecha son fórmulas (bloqueadas y ocultas) que salen de la CLAVE (`admisión|empresa|AAAA-MM-DD`); Fecha en `dd-mm-aaaa`. Se escriben Cantidad y Estado carga; Código y Venta siguen siendo fórmulas.
+- **Código real**: el código del catálogo según la referencia en **todas** las líneas, también CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO. **Código** no cambia: "No lleva OC" en esas líneas. Solicitud Implantes y Resumen siguen usando Código.
+- Ítems se define por clave en `DEF_ITEMS` (`libroRespaldo.js`): la letra sale de la posición y las fórmulas usan `I.<clave>`, así el orden se cambia en un solo lugar.
+
+`ModContingencia.bas` ubica las columnas de Ítems y Cargados **por el título** del encabezado (fila 2), no por la posición. Cambiar el orden en `COLUMNAS_ITEMS` o `COLUMNAS_CARGADOS` no toca la macro; cambiar o agregar un título sí (`I_ENTRADAS`, `C_DESDE_ITEMS`, `G_DESDE_CARGADOS`), y lo comprueba un test. Gestiones (`COLUMNAS_GESTIONES`) sigue por posición.
 
 **Mover cargados** (botón en la hoja Ítems, donde se trabaja el detalle; mueve la gestión completa):
 - Toma las gestiones con `ORIGEN = CONTINGENCIA` y Estado = CARGADO, la misma regla del sistema: todas sus líneas CARGADO, PAD o SIN CARGO.
 - Antes de mover, avisa cuántas gestiones e ítems son (y cuántos ítems tienen alerta), pide el nombre de quien mueve y la confirmación.
-- Escribe en Cargados **valores**, una fila por línea, con la cabecera de su gestión, lo calculado (código, precio, veces costo, total, venta, sin código, recargo encontrado) y el N° de línea y la línea padre originales.
+- Escribe en Cargados **valores**, una fila por línea, con la cabecera de su gestión, lo calculado (código, código real, precio, veces costo, total, venta, sin código, recargo encontrado) y el N° de línea y la línea padre originales.
 - En Gestiones e Ítems limpia solo las celdas que se escriben; las fórmulas quedan.
 
 **Devolver a pendientes** (hoja Cargados, con una celda de la gestión seleccionada):

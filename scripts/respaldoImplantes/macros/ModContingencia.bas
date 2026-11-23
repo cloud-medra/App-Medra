@@ -5,15 +5,17 @@ Attribute VB_Name = "ModContingencia"
 ' - Mover cargados: las gestiones de contingencia con Estado = CARGADO
 '   (todas sus lineas CARGADO, PAD o SIN CARGO; lo calcula la formula de la
 '   columna Estado) pasan a la hoja Cargados como VALORES, una fila por linea
-'   con la cabecera de su gestion, la fecha/hora y quien las movio. Sus filas
-'   en Gestiones e Items se limpian (solo las celdas que se escriben): las
-'   formulas quedan para reutilizarlas.
+'   con la cabecera de su gestion, la fecha/hora y quien las movio. Ademas se
+'   agregan a Solicitud Implantes y Resumen. Sus filas en Gestiones e Items
+'   se limpian (solo las celdas que se escriben): las formulas quedan.
 ' - Devolver a pendientes: vuelve una gestion de Cargados a filas libres de
 '   Gestiones e Items. Los N de linea son fijos por fila, asi que la linea
 '   padre se traduce del N original al N de la fila donde queda.
 '
-' Las columnas siguen a libroRespaldo.js (COLUMNAS_GESTIONES, COLUMNAS_ITEMS
-' y COLUMNAS_CARGADOS): si cambian alla, hay que cambiarlas aca.
+' Items y Cargados se leen POR EL TITULO de su encabezado (fila 2), no por
+' la posicion: el orden de sus columnas puede cambiar en libroRespaldo.js
+' (COLUMNAS_ITEMS, COLUMNAS_CARGADOS) sin tocar este modulo, mientras los
+' titulos sean los mismos. Gestiones (COLUMNAS_GESTIONES) usa posiciones.
 ' Este archivo se importa en Windows-1252: solo caracteres latinos (sin
 ' rayas largas ni flechas).
 Option Explicit
@@ -28,6 +30,7 @@ Private Const HOJA_RESUMEN As String = "Resumen"
 Private Const S_COLUMNAS As Long = 18          ' ... FECHA MOVIMIENTO (17), CLAVE (18)
 Private Const R_COLUMNAS As Long = 13          ' ... FECHA MOVIMIENTO (12), CLAVE (13)
 Private Const PRIMERA As Long = 3
+Private Const FILA_TITULOS As Long = 2
 ' Contraseña de protección de las hojas. En el repo queda solo el marcador:
 ' generarPlantillaImplantes.js lo reemplaza al armar el .xlsm con el valor de
 ' la variable de entorno RESPALDO_IMPLANTES_CLAVE_HOJAS.
@@ -44,26 +47,15 @@ Private Const G_COLUMNAS As Long = 26         ' hasta Z
 ' Reporte Info (AUTOCOMPLETADO_GESTION en libroRespaldo.js). E=5->AG=33,
 ' L=12->AH=34, M=13->AI=35, N=14->AJ=36, O=15->AK=37.
 Private Const G_AUTOCOMPLETADO As String = "5:33,12:34,13:35,14:36,15:37"
+' Columna de Cargados de cada columna de Gestiones que se escribe (B..P y W).
+Private Const G_DESDE_CARGADOS As String = "2:Admisión|3:Fecha|4:Empresa|5:Nombre paciente|6:Total cotización|7:Informe|8:Centro|9:Atributo|10:Lado|11:Observación|12:Convenio|13:Previsión|14:Médico|15:Descripción|16:Estado sin ítems|23:Registrado por (gestión)"
 
-' Items
-Private Const I_LINEA As Long = 1             ' A
-Private Const I_CLAVE As Long = 2             ' B
-Private Const I_TIPO As Long = 3              ' C
-Private Const I_PADRE As Long = 4             ' D
-Private Const I_ULTIMA_ENTRADA As Long = 11   ' B..K se escriben
-Private Const I_ALERTA As Long = 21           ' U
-Private Const I_ORIGEN As Long = 22           ' V
-Private Const I_REGISTRADO As Long = 23       ' W
-Private Const I_TIPO_EF As Long = 25          ' Y (vacio = NORMAL)
-Private Const I_ESTADO_EF As Long = 26        ' Z (PAD en lineas PAD)
-Private Const I_SIN_CODIGO As Long = 33       ' AG
-Private Const I_RECARGO As Long = 35          ' AI
-Private Const I_COLUMNAS As Long = 36         ' hasta AJ
-
-' Cargados
-Private Const C_COLUMNAS As Long = 44
-Private Const C_CLAVE As Long = 3
-Private Const C_LINEA As Long = 21
+' Items: celdas que se escriben (se limpian al mover y se llenan al devolver).
+Private Const I_ENTRADAS As String = "CLAVE|Tipo de línea|Línea padre|N° cotización|Referencia|Cantidad|Lote|Vencimiento|Estado carga|Precio manual|Registrado por"
+' Columna de Items de donde sale cada columna de Cargados, como Cargados>Items
+' (con '>': algunos títulos tienen ':'). Las de la gestión
+' salen de Gestiones; ver ValorGestion).
+Private Const C_DESDE_ITEMS As String = "N° línea (original)>N° línea|Tipo de línea>aux: tipo|Línea padre (original)>Línea padre|N° cotización>N° cotización|Referencia>Referencia|Código real>Código real|Cantidad>Cantidad|Lote>Lote|Vencimiento>Vencimiento|Estado carga>aux: estado|Precio manual>Precio manual|Código>Código|Precio unitario>Precio unitario|Empresa producto>Empresa producto|Clase>Clase|Tipo>Tipo|Descriptor>Descriptor|Veces costo>Veces costo|Total ítem>Total ítem|Venta>Venta|Sin código (1 = sí)>aux: sin código|Recargo encontrado (1 = sí)>aux: recargo encontrado|Alerta>Alerta|Registrado por (ítem)>Registrado por|ORIGEN>ORIGEN"
 
 ' ---------------------------------------------------------------------------
 ' Botones
@@ -91,8 +83,12 @@ Public Sub MoverCargados()
 
     Dim resultado As String
     resultado = MoverCargadosAuto(quien)
-    MsgBox "Listo: " & Split(resultado, ";")(0) & " gestión(es) y " & Split(resultado, ";")(1) & " ítem(s) movidos a Cargados." & vbCrLf & _
-           "Guarde el archivo (Ctrl+G).", vbInformation, "Mover cargados"
+    If Left(resultado, 5) = "ERROR" Then
+        MsgBox Mid(resultado, 7), vbExclamation, "Mover cargados"
+    Else
+        MsgBox "Listo: " & Split(resultado, ";")(0) & " gestión(es) y " & Split(resultado, ";")(1) & " ítem(s) movidos a Cargados." & vbCrLf & _
+               "Guarde el archivo (Ctrl+G).", vbInformation, "Mover cargados"
+    End If
 End Sub
 
 Public Sub DevolverAPendientes()
@@ -104,7 +100,7 @@ Public Sub DevolverAPendientes()
         Exit Sub
     End If
     Dim clave As String
-    clave = Txt(wsC.Cells(ActiveCell.Row, C_CLAVE).Value)
+    clave = Txt(wsC.Cells(ActiveCell.Row, Col(Titulos(wsC), "CLAVE")).Value)
     If clave = "" Then
         MsgBox "La fila seleccionada no tiene una gestión.", vbInformation, "Devolver a pendientes"
         Exit Sub
@@ -124,7 +120,7 @@ Public Sub DevolverAPendientes()
     End If
 End Sub
 
-' Crea los botones (una vez, al armar el .xlsm o tras importar este módulo a mano).
+' Crea los botones (una vez, al armar el .xlsm).
 Public Sub InstalarBotones()
     CrearBoton ThisWorkbook.Worksheets(HOJA_ITEMS), "btnMoverCargados", "Mover cargados", "MoverCargados", 150
     CrearBoton ThisWorkbook.Worksheets(HOJA_CARGADOS), "btnDevolverPendientes", "Devolver a pendientes", "DevolverAPendientes", 170
@@ -134,7 +130,7 @@ End Sub
 ' Lógica sin diálogos (también la usa la prueba automática)
 ' ---------------------------------------------------------------------------
 
-' Devuelve "gestiones;items".
+' Devuelve "gestiones;items" o "ERROR;mensaje".
 ' `fechaMovimiento` (opcional): para la prueba automática; el botón usa Now.
 Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMovimiento As Variant) As String
     Dim wsG As Worksheet, wsI As Worksheet, wsC As Worksheet
@@ -149,9 +145,13 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
         Exit Function
     End If
 
+    Dim ti As Object, tc As Object
+    Set ti = Titulos(wsI)
+    Set tc = Titulos(wsC)
+
     Dim gDatos As Variant, iDatos As Variant
     gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
-    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, I_LINEA), I_COLUMNAS)).Value
+    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, Col(ti, "N° línea")), UltimaColumna(wsI))).Value
 
     ' CLAVE -> índice de fila en gDatos
     Dim porClave As Object, fg As Variant
@@ -160,39 +160,35 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
         porClave(Txt(gDatos(fg - PRIMERA + 1, 1))) = fg - PRIMERA + 1
     Next fg
 
+    ' Cargados: una fila por ítem, cada columna según su título.
+    Dim nC As Long, tituloC As Variant, desdeItems As Object, par As Variant
+    nC = UltimaColumna(wsC)
+    Set desdeItems = CreateObject("Scripting.Dictionary")
+    For Each par In Split(C_DESDE_ITEMS, "|")
+        desdeItems(Split(par, ">")(0)) = Col(ti, Split(par, ">")(1))
+    Next par
+
     Dim salida() As Variant, k As Long, fi As Variant, gi As Long, ii As Long, c As Long, ahora As Date
-    ReDim salida(1 To filasI.Count, 1 To C_COLUMNAS)
+    ReDim salida(1 To filasI.Count, 1 To nC)
     If IsMissing(fechaMovimiento) Then ahora = Now Else ahora = CDate(fechaMovimiento)
+    Dim iClave As Long
+    iClave = Col(ti, "CLAVE")
     k = 0
     For Each fi In filasI
         k = k + 1
         ii = fi - PRIMERA + 1
-        gi = porClave(Txt(iDatos(ii, I_CLAVE)))
-        salida(k, 1) = ahora
-        salida(k, 2) = quien
-        salida(k, 3) = gDatos(gi, 1)                       ' CLAVE
-        For c = 2 To G_ULTIMA_ENTRADA                       ' Admisión .. Estado sin ítems
-            salida(k, c + 2) = gDatos(gi, c)
-        Next c
-        salida(k, 19) = gDatos(gi, G_ESTADO)
-        salida(k, 20) = gDatos(gi, G_REGISTRADO)
-        salida(k, 21) = iDatos(ii, I_LINEA)
-        salida(k, 22) = iDatos(ii, I_TIPO_EF)
-        salida(k, 23) = iDatos(ii, I_PADRE)
-        For c = 5 To 9                                      ' N° cotización .. Vencimiento
-            salida(k, c + 19) = iDatos(ii, c)
-        Next c
-        salida(k, 29) = iDatos(ii, I_ESTADO_EF)
-        salida(k, 30) = iDatos(ii, 11)                      ' Precio manual
-        For c = 12 To 20                                    ' Código .. Venta
-            salida(k, c + 19) = iDatos(ii, c)
-        Next c
-        salida(k, 40) = iDatos(ii, I_SIN_CODIGO)
-        salida(k, 41) = iDatos(ii, I_RECARGO)
-        salida(k, 42) = iDatos(ii, I_ALERTA)
-        salida(k, 43) = iDatos(ii, I_REGISTRADO)
-        salida(k, 44) = iDatos(ii, I_ORIGEN)
-        For c = 1 To C_COLUMNAS
+        gi = porClave(Txt(iDatos(ii, iClave)))
+        For c = 1 To nC
+            tituloC = Txt(wsC.Cells(FILA_TITULOS, c).Value)
+            If tituloC = "Movido el" Then
+                salida(k, c) = ahora
+            ElseIf tituloC = "Movido por" Then
+                salida(k, c) = quien
+            ElseIf desdeItems.Exists(tituloC) Then
+                salida(k, c) = iDatos(ii, desdeItems(tituloC))
+            Else
+                salida(k, c) = ValorGestion(gDatos, gi, tituloC)
+            End If
             If IsError(salida(k, c)) Then salida(k, c) = ""
         Next c
     Next fi
@@ -203,43 +199,49 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
     ReDim sol(1 To filasI.Count, 1 To S_COLUMNAS)
     ReDim res(1 To filasI.Count, 1 To R_COLUMNAS)
     fechaTxt = Format(ahora, "dd-mm-yyyy")
+    Dim iCodigo As Long, iDescriptor As Long, iCantidad As Long, iPrecio As Long, iTipo As Long
+    Dim iCot As Long, iLote As Long, iVenc As Long, iVenta As Long, iTipoEf As Long, iEstadoEf As Long
+    iCodigo = Col(ti, "Código"): iDescriptor = Col(ti, "Descriptor"): iCantidad = Col(ti, "Cantidad")
+    iPrecio = Col(ti, "Precio unitario"): iTipo = Col(ti, "Tipo"): iCot = Col(ti, "N° cotización")
+    iLote = Col(ti, "Lote"): iVenc = Col(ti, "Vencimiento"): iVenta = Col(ti, "Venta")
+    iTipoEf = Col(ti, "aux: tipo"): iEstadoEf = Col(ti, "aux: estado")
     k = 0
     For Each fi In filasI
         k = k + 1
         ii = fi - PRIMERA + 1
-        gi = porClave(Txt(iDatos(ii, I_CLAVE)))
-        tipoLinea = Txt(iDatos(ii, I_TIPO_EF))
-        sol(k, 1) = Txt(gDatos(gi, 2))                              ' ID
-        sol(k, 2) = OP(gDatos(gi, 5))                               ' PACIENTE
-        sol(k, 3) = OP(gDatos(gi, 14))                              ' MEDICO
-        sol(k, 4) = FechaTexto(gDatos(gi, 3))                       ' FECHA
-        sol(k, 5) = OP(gDatos(gi, 4))                               ' EMPRESA
-        sol(k, 6) = OP(iDatos(ii, 12))                              ' CODIGO
-        sol(k, 7) = OP(iDatos(ii, 17))                              ' DESCRIPCION
-        sol(k, 8) = Num(iDatos(ii, 7))                              ' CANTIDAD
-        sol(k, 9) = Num(iDatos(ii, 13))                             ' PRECIO
-        sol(k, 10) = OP(iDatos(ii, 16))                             ' ATRIBUTO (tipo del ítem)
-        sol(k, 11) = fechaTxt                                       ' FECHA REGISTRO
-        sol(k, 12) = FechaTexto(gDatos(gi, 3))                      ' FECHA CARGA
-        sol(k, 13) = OP(iDatos(ii, 5))                              ' N° COTIZACION
-        sol(k, 14) = fechaTxt                                       ' FECHA INGRESO
-        sol(k, 15) = LoteSistema(iDatos(ii, 8), tipoLinea)          ' LOTE
-        sol(k, 16) = VencimientoSistema(iDatos(ii, 9), tipoLinea)   ' VENCIMIENTO
-        sol(k, 17) = DateValue(ahora)                               ' FECHA MOVIMIENTO
-        sol(k, 18) = Txt(gDatos(gi, 1))                             ' CLAVE
-        res(k, 1) = fechaTxt                                        ' Ingreso
+        gi = porClave(Txt(iDatos(ii, iClave)))
+        tipoLinea = Txt(iDatos(ii, iTipoEf))
+        sol(k, 1) = Txt(gDatos(gi, 2))                                  ' ID
+        sol(k, 2) = OP(gDatos(gi, 5))                                   ' PACIENTE
+        sol(k, 3) = OP(gDatos(gi, 14))                                  ' MEDICO
+        sol(k, 4) = FechaTexto(gDatos(gi, 3))                           ' FECHA
+        sol(k, 5) = OP(gDatos(gi, 4))                                   ' EMPRESA
+        sol(k, 6) = OP(iDatos(ii, iCodigo))                             ' CODIGO ("No lleva OC" donde corresponde)
+        sol(k, 7) = OP(iDatos(ii, iDescriptor))                         ' DESCRIPCION
+        sol(k, 8) = Num(iDatos(ii, iCantidad))                          ' CANTIDAD
+        sol(k, 9) = Num(iDatos(ii, iPrecio))                            ' PRECIO
+        sol(k, 10) = OP(iDatos(ii, iTipo))                              ' ATRIBUTO (tipo del ítem)
+        sol(k, 11) = fechaTxt                                           ' FECHA REGISTRO
+        sol(k, 12) = FechaTexto(gDatos(gi, 3))                          ' FECHA CARGA
+        sol(k, 13) = OP(iDatos(ii, iCot))                               ' N° COTIZACION
+        sol(k, 14) = fechaTxt                                           ' FECHA INGRESO
+        sol(k, 15) = LoteSistema(iDatos(ii, iLote), tipoLinea)          ' LOTE
+        sol(k, 16) = VencimientoSistema(iDatos(ii, iVenc), tipoLinea)   ' VENCIMIENTO
+        sol(k, 17) = DateValue(ahora)                                   ' FECHA MOVIMIENTO
+        sol(k, 18) = Txt(gDatos(gi, 1))                                 ' CLAVE
+        res(k, 1) = fechaTxt                                            ' Ingreso
         res(k, 2) = IIf(Txt(gDatos(gi, 8)) = "", "PABELLON", Txt(gDatos(gi, 8)))  ' Area (centro)
-        res(k, 3) = OP(gDatos(gi, 13))                              ' Previsión
-        res(k, 4) = Txt(gDatos(gi, 2))                              ' Id
-        res(k, 5) = OP(iDatos(ii, 12))                              ' Cód
-        res(k, 6) = Num(iDatos(ii, 7))                              ' Cant
-        res(k, 7) = Num(iDatos(ii, 20))                             ' Venta
-        res(k, 8) = OP(gDatos(gi, 14))                              ' Médico
-        res(k, 9) = FechaTexto(gDatos(gi, 3))                       ' Fecha
-        res(k, 10) = OP(iDatos(ii, 17))                             ' Descripción
-        res(k, 11) = IIf(Txt(iDatos(ii, I_ESTADO_EF)) = "", "PENDIENTE", Txt(iDatos(ii, I_ESTADO_EF)))  ' Estado
-        res(k, 12) = DateValue(ahora)                               ' FECHA MOVIMIENTO
-        res(k, 13) = Txt(gDatos(gi, 1))                             ' CLAVE
+        res(k, 3) = OP(gDatos(gi, 13))                                  ' Previsión
+        res(k, 4) = Txt(gDatos(gi, 2))                                  ' Id
+        res(k, 5) = OP(iDatos(ii, iCodigo))                             ' Cód
+        res(k, 6) = Num(iDatos(ii, iCantidad))                          ' Cant
+        res(k, 7) = Num(iDatos(ii, iVenta))                             ' Venta
+        res(k, 8) = OP(gDatos(gi, 14))                                  ' Médico
+        res(k, 9) = FechaTexto(gDatos(gi, 3))                           ' Fecha
+        res(k, 10) = OP(iDatos(ii, iDescriptor))                        ' Descripción
+        res(k, 11) = IIf(Txt(iDatos(ii, iEstadoEf)) = "", "PENDIENTE", Txt(iDatos(ii, iEstadoEf)))  ' Estado
+        res(k, 12) = DateValue(ahora)                                   ' FECHA MOVIMIENTO
+        res(k, 13) = Txt(gDatos(gi, 1))                                 ' CLAVE
     Next fi
 
     Dim wsS As Worksheet, wsR As Worksheet
@@ -261,13 +263,15 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
     wsR.Range(wsR.Cells(filaR, 1), wsR.Cells(filaR + filasI.Count - 1, R_COLUMNAS)).Value = res
 
     Dim destino As Long
-    destino = UltimaFila(wsC, C_CLAVE) + 1
+    destino = UltimaFila(wsC, Col(tc, "CLAVE")) + 1
     If destino < PRIMERA Then destino = PRIMERA
-    wsC.Range(wsC.Cells(destino, 1), wsC.Cells(destino + filasI.Count - 1, C_COLUMNAS)).Value = salida
+    wsC.Range(wsC.Cells(destino, 1), wsC.Cells(destino + filasI.Count - 1, nC)).Value = salida
 
+    Dim entrada As Variant
     For Each fi In filasI
-        wsI.Range(wsI.Cells(fi, I_CLAVE), wsI.Cells(fi, I_ULTIMA_ENTRADA)).ClearContents
-        wsI.Cells(fi, I_REGISTRADO).ClearContents
+        For Each entrada In Split(I_ENTRADAS, "|")
+            wsI.Cells(fi, Col(ti, entrada)).ClearContents
+        Next entrada
     Next fi
     For Each fg In filasG
         wsG.Range(wsG.Cells(fg, 2), wsG.Cells(fg, G_ULTIMA_ENTRADA)).ClearContents
@@ -300,10 +304,14 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
         Exit Function
     End If
 
+    Dim ti As Object, tc As Object
+    Set ti = Titulos(wsI)
+    Set tc = Titulos(wsC)
+
     Application.Calculate
-    Dim gDatos As Variant, iDatos As Variant, r As Long, c As Long, libre As Boolean
+    Dim gDatos As Variant, iDatos As Variant, r As Long, c As Long, libre As Boolean, entrada As Variant
     gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
-    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, I_LINEA), I_COLUMNAS)).Value
+    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, Col(ti, "N° línea")), UltimaColumna(wsI))).Value
 
     Dim filaG As Long
     For r = 1 To UBound(gDatos, 1)
@@ -314,8 +322,9 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
         If filaG = 0 Then
             libre = (Txt(gDatos(r, G_REGISTRADO)) = "")
             For c = 2 To G_ULTIMA_ENTRADA
-                If Txt(gDatos(r, c)) <> "" Then libre = False
+                If Txt(gDatos(r, c)) <> "" And AuxiliarDe(c) = 0 Then libre = False
             Next c
+            If Txt(gDatos(r, 2)) <> "" Then libre = False
             If libre Then filaG = r + PRIMERA - 1
         End If
     Next r
@@ -327,10 +336,10 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     Dim filasI As New Collection
     For r = 1 To UBound(iDatos, 1)
         If filasI.Count = filasC.Count Then Exit For
-        libre = (Txt(iDatos(r, I_REGISTRADO)) = "")
-        For c = I_CLAVE To I_ULTIMA_ENTRADA
-            If Txt(iDatos(r, c)) <> "" Then libre = False
-        Next c
+        libre = True
+        For Each entrada In Split(I_ENTRADAS, "|")
+            If Txt(iDatos(r, Col(ti, entrada))) <> "" Then libre = False
+        Next entrada
         If libre Then filasI.Add r + PRIMERA - 1
     Next r
     If filasI.Count < filasC.Count Then
@@ -342,7 +351,7 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     Dim nueva As Object, k As Long
     Set nueva = CreateObject("Scripting.Dictionary")
     For k = 1 To filasC.Count
-        nueva(Txt(wsC.Cells(filasC(k), C_LINEA).Value)) = wsI.Cells(filasI(k), I_LINEA).Value
+        nueva(Txt(wsC.Cells(filasC(k), Col(tc, "N° línea (original)")).Value)) = wsI.Cells(filasI(k), Col(ti, "N° línea")).Value
     Next k
 
     Dim calculo As XlCalculation
@@ -352,42 +361,44 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     On Error GoTo Fallo
     Desproteger wsG: Desproteger wsI: Desproteger wsC
 
-    Dim r0 As Long
+    ' Gestión: cada columna que se escribe, desde su columna de Cargados.
+    Dim r0 As Long, par As Variant, colG As Long, valorC As Variant
     r0 = filasC(1)
-    For c = 2 To G_ULTIMA_ENTRADA
-        If AuxiliarDe(c) = 0 Then wsG.Cells(filaG, c).Value = wsC.Cells(r0, c + 2).Value
-    Next c
-    wsG.Cells(filaG, G_REGISTRADO).Value = wsC.Cells(r0, 20).Value
+    For Each par In Split(G_DESDE_CARGADOS, "|")
+        colG = CLng(Split(par, ":")(0))
+        If AuxiliarDe(colG) = 0 Then wsG.Cells(filaG, colG).Value = wsC.Cells(r0, Col(tc, Split(par, ":")(1))).Value
+    Next par
     ' Autocompletado: si lo guardado es lo mismo que trae Reporte Info (o
     ' está vacío), vuelve la fórmula; si se había escrito a mano, el valor.
     RestaurarAutocompletado wsG, filaG
     wsG.Calculate
-    Dim aux As Long
-    For c = 2 To G_ULTIMA_ENTRADA
-        aux = AuxiliarDe(c)
-        If aux > 0 Then
-            If Txt(wsC.Cells(r0, c + 2).Value) <> "" And Txt(wsC.Cells(r0, c + 2).Value) <> Txt(wsG.Cells(filaG, aux).Value) Then
-                wsG.Cells(filaG, c).Value = wsC.Cells(r0, c + 2).Value
-            End If
+    For Each par In Split(G_DESDE_CARGADOS, "|")
+        colG = CLng(Split(par, ":")(0))
+        If AuxiliarDe(colG) > 0 Then
+            valorC = wsC.Cells(r0, Col(tc, Split(par, ":")(1))).Value
+            If Txt(valorC) <> "" And Txt(valorC) <> Txt(wsG.Cells(filaG, AuxiliarDe(colG)).Value) Then wsG.Cells(filaG, colG).Value = valorC
         End If
-    Next c
+    Next par
 
+    ' Ítems: las celdas que se escriben, desde Cargados (la línea padre se
+    ' traduce al N° de la fila donde queda).
     Dim rc As Long, ri As Long, padre As String
     For k = 1 To filasC.Count
         rc = filasC(k)
         ri = filasI(k)
-        wsI.Cells(ri, I_CLAVE).Value = clave
-        wsI.Cells(ri, I_TIPO).Value = wsC.Cells(rc, 22).Value
-        padre = Txt(wsC.Cells(rc, 23).Value)
+        wsI.Cells(ri, Col(ti, "CLAVE")).Value = clave
+        wsI.Cells(ri, Col(ti, "Tipo de línea")).Value = wsC.Cells(rc, Col(tc, "Tipo de línea")).Value
+        padre = Txt(wsC.Cells(rc, Col(tc, "Línea padre (original)")).Value)
         If padre <> "" Then
-            If nueva.Exists(padre) Then wsI.Cells(ri, I_PADRE).Value = nueva(padre) Else wsI.Cells(ri, I_PADRE).Value = wsC.Cells(rc, 23).Value
+            If nueva.Exists(padre) Then wsI.Cells(ri, Col(ti, "Línea padre")).Value = nueva(padre) Else wsI.Cells(ri, Col(ti, "Línea padre")).Value = padre
         End If
-        For c = 5 To 9
-            wsI.Cells(ri, c).Value = wsC.Cells(rc, c + 19).Value
-        Next c
-        wsI.Cells(ri, 10).Value = wsC.Cells(rc, 29).Value   ' Estado carga
-        wsI.Cells(ri, 11).Value = wsC.Cells(rc, 30).Value   ' Precio manual
-        wsI.Cells(ri, I_REGISTRADO).Value = wsC.Cells(rc, 43).Value
+        For Each entrada In Split("N° cotización|Referencia|Cantidad|Lote|Vencimiento|Estado carga|Precio manual", "|")
+            wsI.Cells(ri, Col(ti, entrada)).Value = wsC.Cells(rc, Col(tc, entrada)).Value
+        Next entrada
+        ' En Cargados el estado de una línea PAD es "PAD" (lo calcula Ítems);
+        ' en Ítems esa celda va vacía, como al registrarla.
+        If Txt(wsC.Cells(rc, Col(tc, "Estado carga")).Value) = "PAD" Then wsI.Cells(ri, Col(ti, "Estado carga")).ClearContents
+        wsI.Cells(ri, Col(ti, "Registrado por")).Value = wsC.Cells(rc, Col(tc, "Registrado por (ítem)")).Value
     Next k
 
     For k = filasC.Count To 1 Step -1
@@ -434,20 +445,56 @@ Private Sub BuscarCargados(ByRef filasG As Collection, ByRef filasI As Collectio
     Next r
     If filasG.Count = 0 Then Exit Sub
 
-    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, I_LINEA), I_COLUMNAS)).Value
+    Dim ti As Object, iClave As Long, iOrigen As Long, iAlerta As Long
+    Set ti = Titulos(wsI)
+    iClave = Col(ti, "CLAVE"): iOrigen = Col(ti, "ORIGEN"): iAlerta = Col(ti, "Alerta")
+    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, Col(ti, "N° línea")), UltimaColumna(wsI))).Value
     For r = 1 To UBound(iDatos, 1)
-        If claves.Exists(Txt(iDatos(r, I_CLAVE))) And Txt(iDatos(r, I_ORIGEN)) = "CONTINGENCIA" Then
+        If claves.Exists(Txt(iDatos(r, iClave))) And Txt(iDatos(r, iOrigen)) = "CONTINGENCIA" Then
             filasI.Add r + PRIMERA - 1
-            If Txt(iDatos(r, I_ALERTA)) <> "" Then nAlertas = nAlertas + 1
+            If Txt(iDatos(r, iAlerta)) <> "" Then nAlertas = nAlertas + 1
         End If
     Next r
 End Sub
 
+' Valor de la gestión para una columna de Cargados (por su título).
+Private Function ValorGestion(ByVal gDatos As Variant, ByVal gi As Long, ByVal titulo As String) As Variant
+    Dim par As Variant
+    ValorGestion = ""
+    If titulo = "CLAVE" Then ValorGestion = gDatos(gi, 1): Exit Function
+    If titulo = "Estado gestión" Then ValorGestion = gDatos(gi, G_ESTADO): Exit Function
+    For Each par In Split(G_DESDE_CARGADOS, "|")
+        If Split(par, ":")(1) = titulo Then ValorGestion = gDatos(gi, CLng(Split(par, ":")(0))): Exit Function
+    Next par
+End Function
+
+' Títulos de la fila de encabezados -> N° de columna.
+Private Function Titulos(ByVal ws As Worksheet) As Object
+    Dim d As Object, c As Long, t As String
+    Set d = CreateObject("Scripting.Dictionary")
+    For c = 1 To UltimaColumna(ws)
+        t = Txt(ws.Cells(FILA_TITULOS, c).Value)
+        If t <> "" And Not d.Exists(t) Then d(t) = c
+    Next c
+    Set Titulos = d
+End Function
+
+' Columna de un título; si no existe, error claro (la planilla no coincide con la macro).
+Private Function Col(ByVal titulos As Object, ByVal titulo As String) As Long
+    If Not titulos.Exists(titulo) Then Err.Raise vbObjectError + 1, "ModContingencia", "No se encontró la columna """ & titulo & """: la planilla no coincide con la macro."
+    Col = titulos(titulo)
+End Function
+
+Private Function UltimaColumna(ByVal ws As Worksheet) As Long
+    UltimaColumna = ws.Cells(FILA_TITULOS, ws.Columns.Count).End(xlToLeft).Column
+End Function
+
 Private Function FilasDeClaveEnCargados(ByVal wsC As Worksheet, ByVal clave As String) As Collection
-    Dim filas As New Collection, r As Long, ultima As Long
-    ultima = UltimaFila(wsC, C_CLAVE)
+    Dim filas As New Collection, r As Long, ultima As Long, cClave As Long
+    cClave = Col(Titulos(wsC), "CLAVE")
+    ultima = UltimaFila(wsC, cClave)
     For r = PRIMERA To ultima
-        If Txt(wsC.Cells(r, C_CLAVE).Value) = clave Then filas.Add r
+        If Txt(wsC.Cells(r, cClave).Value) = clave Then filas.Add r
     Next r
     Set FilasDeClaveEnCargados = filas
 End Function
