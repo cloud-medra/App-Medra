@@ -36,7 +36,7 @@ import { construirLibro } from './libroRespaldo.js';
 import { datosPlantilla, fechaHoraChile, fechaISOChile, isoAFechaExcel, ARCHIVO_PLANTILLA } from './datosRespaldo.js';
 import {
   leerArchivoExportado, codigosDesdeFilas, empresasDesdeFilas, centrosDesdeFilas, recargosDesdeFilas, fechaDesdeNombre,
-  reporteInfoDesdeFilas, previsionesDesdeFilas, conveniosDesdeFilas, valoresDistintos,
+  reporteInfoDesdeFilas, previsionesDesdeFilas, conveniosDesdeFilas, valoresDistintos, esExportOficial,
 } from './catalogosExportados.js';
 
 const DIAS_REPORTE_INFO = 60;
@@ -116,8 +116,10 @@ const main = async () => {
     const { registros, resumen, advertencias: avisos = [] } = lector.leer(await leerArchivoExportado(args[id]));
     if (!registros.length) salir(`${lector.nombre}: el archivo ${args[id]} no trajo registros usables.`);
     catalogos[id] = registros;
-    const fechaArchivo = fechaDesdeNombre(path.basename(args[id]));
-    origen[id] = { archivo: path.basename(args[id]), fecha: fechaArchivo, cargadas: registros.length, detalle: detalleDe(id, resumen) };
+    const oficial = esExportOficial(id, path.basename(args[id]));
+    const fechaArchivo = oficial ? fechaDesdeNombre(path.basename(args[id])) : null;
+    origen[id] = { archivo: path.basename(args[id]), fecha: fechaArchivo, cargadas: registros.length, detalle: detalleDe(id, resumen), provisional: !oficial };
+    if (!oficial) advertencias.push(`${lector.nombre}: el archivo no es la exportación oficial de la app; queda marcado como PROVISIONAL en Instrucciones.`);
     advertencias.push(...avisos.map((a) => `${lector.nombre}: ${a}`));
     // Fecha de los catálogos: la del archivo de códigos (o la del primero que la traiga).
     if (fechaArchivo && (id === 'codigos' || !fecha)) fecha = isoAFechaExcel(fechaArchivo);
@@ -177,7 +179,8 @@ const main = async () => {
   console.log(`\nArchivo generado: ${destino}`);
   console.log(`Filas preparadas: Gestiones hasta la fila ${filas.ultimaGestion}, Ítems hasta la ${filas.ultimaItem}, Documentos hasta la ${filas.ultimaDocumento}.`);
   [['reporteInfo', 'Reporte Info'], ...Object.entries(LECTORES).map(([id, { nombre }]) => [id, nombre])].forEach(([id, nombre]) => {
-    console.log(origen[id] ? `${nombre}: ${origen[id].cargadas} cargados de ${origen[id].archivo} (${origen[id].detalle}).` : `${nombre}: vacío (para pegar a mano).`);
+    if (!origen[id]) console.log(`${nombre}: vacío (para pegar a mano).`);
+    else console.log(`${nombre}: ${origen[id].cargadas} cargados de ${origen[id].archivo} (${origen[id].detalle})${origen[id].provisional ? ' — PROVISIONAL' : ''}.`);
   });
   advertencias.forEach((a) => console.log(`AVISO — ${a}`));
   console.log('');

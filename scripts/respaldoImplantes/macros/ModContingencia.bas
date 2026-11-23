@@ -1,6 +1,6 @@
 Attribute VB_Name = "ModContingencia"
 ' Respaldo de contingencia de Implantes: botones "Mover cargados" (hoja
-' Gestiones) y "Devolver a pendientes" (hoja Cargados).
+' Items) y "Devolver a pendientes" (hoja Cargados).
 '
 ' - Mover cargados: las gestiones de contingencia con Estado = CARGADO
 '   (todas sus lineas CARGADO, PAD o SIN CARGO; lo calcula la formula de la
@@ -116,7 +116,7 @@ End Sub
 
 ' Crea los botones (una vez, al armar el .xlsm o tras importar este módulo a mano).
 Public Sub InstalarBotones()
-    CrearBoton ThisWorkbook.Worksheets(HOJA_GESTIONES), "btnMoverCargados", "Mover cargados", "MoverCargados", 150
+    CrearBoton ThisWorkbook.Worksheets(HOJA_ITEMS), "btnMoverCargados", "Mover cargados", "MoverCargados", 150
     CrearBoton ThisWorkbook.Worksheets(HOJA_CARGADOS), "btnDevolverPendientes", "Devolver a pendientes", "DevolverAPendientes", 170
 End Sub
 

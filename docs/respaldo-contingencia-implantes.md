@@ -13,18 +13,18 @@ Tiene 13 hojas, en este orden:
 | # | Hoja | Qué tiene |
 |---|---|---|
 | 1 | Instrucciones | Cómo usarla, de dónde salen los catálogos y la fecha en que se cargaron |
-| 2 | Gestiones | 1.000 filas, con el botón "Mover cargados" |
-| 3 | Ítems | 4.000 filas |
+| 2 | Gestiones | 1.000 filas |
+| 3 | Ítems | 4.000 filas, con el botón "Mover cargados" |
 | 4 | Documentos | 1.000 filas |
 | 5 | Cargados | Gestiones ya cargadas, con el botón "Devolver a pendientes" |
 | 6 | Reporte Info | Admisiones de los últimos 60 días (autocompletado de Gestiones) |
-| 7 | Códigos | Maestro de Códigos (búsqueda por referencia en Ítems) |
+| 7 | Códigos | Maestro de Códigos (búsqueda por referencia en Ítems). EMPRESA, TIPO, SEGMENTO y CLASE con desplegable y en rojo si el valor no está en su lista |
 | 8 | Empresas | Desplegable de Empresa en Gestiones |
 | 9 | Centros | Desplegable de Centro en Gestiones |
 | 10 | Recargos | Rangos de recargo (veces costo y venta en Ítems) |
 | 11 | Previsiones | Desplegable de Previsión en Gestiones |
 | 12 | Convenios | Desplegable de Convenio en Gestiones |
-| 13 | Catálogos | Solo las listas fijas del sistema (estados, informe, lado, tipo de línea, SÍ/NO) |
+| 13 | Catálogos | Solo las listas fijas del sistema (estados, informe, lado, tipo de línea, SÍ/NO, y Tipo, Segmento y Clase de Códigos) |
 
 - Trae fórmulas, desplegables, alertas y los botones "Mover cargados" y "Devolver a pendientes".
 - Los catálogos (Reporte Info, Códigos, Empresas, Previsiones, Convenios, Centros y Recargos) se cargan desde los archivos que exporta la app o, en el caso de Reporte Info, desde el Excel de la clínica.
@@ -76,6 +76,23 @@ Tiene 13 hojas, en este orden:
    - muestra cuántos registros cargó de cada archivo.
 4. Volver a distribuir la plantilla nueva al equipo. Un archivo de contingencia **ya en uso** no se actualiza solo: sus catálogos se reemplazan pegando a mano, como explica su hoja Instrucciones.
 
+### Controles de la hoja Códigos
+
+- EMPRESA tiene la lista de la hoja Empresas. TIPO, SEGMENTO y CLASE tienen las listas del sistema, importadas de `TIPOS_CODIGO` y `SEGMENTOS_CODIGO` (`camposCodigo.js`) y de `CLASES_CODIGO` (`clasesCodigo.js`):
+  - TIPO: COTIZACION, CONSIGNACION.
+  - SEGMENTO: IMPLANTES, CONSIGNACION, HEMODINAMIA.
+  - CLASE: IMPLANTE, INSUMOS, PAD, KIT. Es INSUMOS, en plural, como en el sistema.
+- Los desplegables avisan pero no bloquean, porque la importación masiva del sistema no valida estos campos y puede haber valores antiguos.
+- Pegar encima con "pegar todo" borra la validación. Por eso, además, un formato condicional pinta de rojo cualquier valor que no esté en su lista: el control funciona aunque se pegue encima. Con la lista vacía (por ejemplo, la hoja Empresas sin cargar) no se marca nada.
+
+### Catálogos provisionales
+
+Un archivo que no tiene el nombre de la exportación oficial de la app (por ejemplo `recargos_maestros_AAAA-MM-DD.xlsx`) se carga igual, pero queda marcado como **PROVISIONAL**:
+- en Instrucciones aparece "cargados de forma PROVISIONAL. Deben reemplazarse por la exportación oficial de la app", sin el nombre del archivo;
+- el script avisa al generar.
+
+El 23-11-2026 los Recargos se cargaron así, transcritos de un pantallazo de Maestros → Recargos (15 rangos, todos como ACTIVO). Hay que reemplazarlos por el export oficial.
+
 ### Reporte Info y autocompletado en Gestiones
 
 La hoja Reporte Info tiene **una fila por admisión**, como la arma `reporteInfoDesdeFilas` (`catalogosExportados.js`). Toma los mismos campos que el sistema al escribir el ID en Gestiones (`handleIdChange` en `useGestionesImplantesData.js`):
@@ -109,7 +126,7 @@ exceljs no puede escribir macros. El script genera el `.xlsx` y llama a `macros/
 
 `ModContingencia.bas` sigue las columnas de `libroRespaldo.js` (`COLUMNAS_GESTIONES`, `COLUMNAS_ITEMS` y `COLUMNAS_CARGADOS`): si cambian allá, hay que cambiarlas acá.
 
-**Mover cargados** (hoja Gestiones):
+**Mover cargados** (botón en la hoja Ítems, donde se trabaja el detalle; mueve la gestión completa):
 - Toma las gestiones con `ORIGEN = CONTINGENCIA` y Estado = CARGADO, la misma regla del sistema: todas sus líneas CARGADO, PAD o SIN CARGO.
 - Antes de mover, avisa cuántas gestiones e ítems son (y cuántos ítems tienen alerta), pide el nombre de quien mueve y la confirmación.
 - Escribe en Cargados **valores**, una fila por línea, con la cabecera de su gestión, lo calculado (código, precio, veces costo, total, venta, sin código, recargo encontrado) y el N° de línea y la línea padre originales.

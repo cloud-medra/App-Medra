@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   numeroExportado, normalizarFilas, codigosDesdeFilas, empresasDesdeFilas, centrosDesdeFilas, recargosDesdeFilas, fechaDesdeNombre,
-  reporteInfoDesdeFilas, previsionesDesdeFilas, conveniosDesdeFilas, valoresDistintos,
+  reporteInfoDesdeFilas, previsionesDesdeFilas, conveniosDesdeFilas, valoresDistintos, esExportOficial,
 } from './catalogosExportados.js';
 
 const codigo = (extra = {}) => ({
@@ -56,6 +56,15 @@ describe('lectura de exportaciones de la app', () => {
       { DESDE: 100, HASTA: 200, 'VECES COSTO': 1.5, ESTADO: 'ACTIVO' }, { DESDE: 0, HASTA: 99, 'VECES COSTO': 2, ESTADO: 'ACTIVO' },
       { DESDE: 0, HASTA: 99, 'VECES COSTO': 9, ESTADO: 'INACTIVO' },
     ]).registros.map((r) => [r.desde, r.vecesCosto])).toEqual([[0, 2], [100, 1.5]]);
+  });
+
+  it('reconoce la exportación oficial de cada maestro por su nombre', () => {
+    expect(esExportOficial('recargos', 'recargos_maestros_2026-11-23.xlsx')).toBe(true);
+    expect(esExportOficial('recargos', 'recargos_transcritos_de_pantalla.xlsx')).toBe(false);
+    expect(esExportOficial('codigos', 'registros_con_codigo_2026-11-23.csv')).toBe(true);
+    expect(esExportOficial('codigos', 'codigos (1).csv')).toBe(false);
+    // Reporte Info viene de la clínica: cualquier nombre vale.
+    expect(esExportOficial('reporteInfo', 'reporte_noviembre.xlsx')).toBe(true);
   });
 
   it('toma la fecha del nombre del archivo exportado', () => {

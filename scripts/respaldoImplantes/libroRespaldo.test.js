@@ -26,9 +26,13 @@ describe('plantilla', () => {
     const g = libro.getWorksheet('Gestiones');
     expect(g.getCell('A3').value.formula).toContain('TEXT(MONTH(C3),"00")');
     expect(libro.getWorksheet('Ítems').getCell('A3').value).toBe(1);
-    // A1:B1 libres para el botón; su ayuda va como nota del encabezado.
-    expect(g.getCell('A1').value).toBeNull();
-    expect(g.getCell('A2').note).toContain('admisión|empresa|AAAA-MM-DD');
+    // El botón "Mover cargados" va en Ítems: A1:B1 de Ítems libres (ayuda en
+    // nota) y Gestiones con su fila de ayuda normal.
+    expect(g.getCell('A1').value).toContain('admisión|empresa|AAAA-MM-DD');
+    const hojaItems = libro.getWorksheet('Ítems');
+    expect(hojaItems.getCell('A1').value).toBeNull();
+    expect(hojaItems.getCell('B1').value).toBeNull();
+    expect(hojaItems.getCell('B2').note).toContain('Gestión a la que pertenece');
 
     // Códigos: columnas del CSV de Códigos Maestros (con ESTADO) desde la B.
     const r = libro.getWorksheet('Códigos');
@@ -52,7 +56,26 @@ describe('plantilla', () => {
     const c = libro.getWorksheet('Catálogos');
     expect(c.getCell('A3').value).toBe('AGENDADO');
     expect(bloqueada(c.getCell('A3'))).toBe(true);
-    expect(c.getCell('H2').value).toBeNull();
+    // Listas de la hoja Códigos, las mismas del sistema.
+    expect(['G', 'H', 'I'].map((l) => c.getCell(`${l}2`).value)).toEqual(['Tipo (Códigos)', 'Segmento (Códigos)', 'Clase (Códigos)']);
+    expect([3, 4, 5, 6].map((n) => c.getCell(`I${n}`).value)).toEqual(['IMPLANTE', 'INSUMOS', 'PAD', 'KIT']);
+    expect([3, 4].map((n) => c.getCell(`G${n}`).value)).toEqual(['COTIZACION', 'CONSIGNACION']);
+    expect([3, 4, 5].map((n) => c.getCell(`H${n}`).value)).toEqual(['IMPLANTES', 'CONSIGNACION', 'HEMODINAMIA']);
+    expect(c.getCell('J2').value).toBeNull();
+
+    // Códigos: EMPRESA con la lista de Empresas; TIPO, SEGMENTO y CLASE con las
+    // del sistema. Avisan sin bloquear y, como pegar borra la validación,
+    // un formato condicional pinta en rojo lo que no está en la lista.
+    const ultimaEmpresa = 2 + MINIMO_CATALOGOS.empresas;
+    expect(r.dataValidations.find('E3')).toMatchObject({ type: 'list', errorStyle: 'warning', formulae: [`'Empresas'!$A$3:$A$${ultimaEmpresa}`] });
+    expect(r.dataValidations.find('F3')).toMatchObject({ type: 'list', errorStyle: 'warning', formulae: ["'Catálogos'!$G$3:$G$4"] });
+    expect(r.dataValidations.find('G3')).toMatchObject({ type: 'list', formulae: ["'Catálogos'!$H$3:$H$5"] });
+    expect(r.dataValidations.find('H3')).toMatchObject({ type: 'list', formulae: ["'Catálogos'!$I$3:$I$6"] });
+    const reglas = r.conditionalFormattings.map((cf) => [cf.ref, cf.rules[0].formulae[0]]);
+    expect(reglas).toEqual(expect.arrayContaining([
+      [`E3:E${ultimaRef}`, `AND(E3<>"",COUNTIF('Empresas'!$A$3:$A$${ultimaEmpresa},"?*")>0,COUNTIF('Empresas'!$A$3:$A$${ultimaEmpresa},E3)=0)`],
+      [`H3:H${ultimaRef}`, `AND(H3<>"",COUNTIF('Catálogos'!$I$3:$I$6,"?*")>0,COUNTIF('Catálogos'!$I$3:$I$6,H3)=0)`],
+    ]));
 
     // Centros y Recargos: hojas propias, vacías, con las columnas de su exportación.
     const cen = libro.getWorksheet('Centros');
@@ -137,6 +160,17 @@ describe('plantilla', () => {
     expect(g.dataValidations.find('M3')).toMatchObject({ type: 'list', errorStyle: 'warning', formulae: [`'Previsiones'!$A$3:$A$${2 + MINIMO_CATALOGOS.previsiones}`] });
     expect(g.dataValidations.find('L3')).toMatchObject({ type: 'list', errorStyle: 'warning' });
     expect(libro.getWorksheet('Previsiones').getCell('A3').value).toBe('ISAPRE A');
+  });
+
+  it('un catálogo que no viene del export oficial queda como PROVISIONAL en Instrucciones', async () => {
+    const datos = datosPlantilla('23-11-2026 10:00', {
+      catalogos: { recargos: [{ desde: 0, hasta: 351, vecesCosto: 7.5 }] },
+      origen: { recargos: { archivo: 'recargos_transcritos.xlsx', fecha: null, cargadas: 1, detalle: 'x', provisional: true } },
+    });
+    const libro = await releer((await construirLibro(datos)).libro);
+    const textos = libro.getWorksheet('Instrucciones').getColumn('A').values.filter(Boolean).join('\n');
+    expect(textos).toContain('Rangos de recargo: 1 cargados de forma PROVISIONAL. Deben reemplazarse por la exportación oficial de la app');
+    expect(textos).not.toContain('recargos_transcritos.xlsx');
   });
 
   it('los nombres de hoja coinciden con los que usan las macros', () => {

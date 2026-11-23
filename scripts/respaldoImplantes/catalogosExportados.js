@@ -209,6 +209,20 @@ export const valoresDistintos = (registros, campo) => [...new Set((registros || 
   .sort((a, b) => a.localeCompare(b, 'es'))
   .map((nombre) => ({ nombre, comentario: 'Desde Reporte Info', estado: 'ACTIVO' }));
 
+// Nombre con que la app descarga cada exportación. Un archivo con otro nombre
+// (por ejemplo, rangos transcritos a mano) se carga, pero queda marcado como
+// PROVISIONAL en Instrucciones, para reemplazarlo por el export oficial.
+// Reporte Info no tiene patrón: viene del Excel de la clínica.
+const PATRON_EXPORT = {
+  codigos: /^registros_con_codigo_\d{4}-\d{2}-\d{2}\.csv$/i,
+  empresas: /^empresas_maestros_\d{4}-\d{2}-\d{2}\.(xlsx|csv)$/i,
+  centros: /^centros_maestros_\d{4}-\d{2}-\d{2}\.(xlsx|csv)$/i,
+  recargos: /^recargos_maestros_\d{4}-\d{2}-\d{2}\.(xlsx|csv)$/i,
+  previsiones: /^previsiones_maestros_\d{4}-\d{2}-\d{2}\.(xlsx|csv)$/i,
+  convenios: /^convenios_maestros_\d{4}-\d{2}-\d{2}\.(xlsx|csv)$/i,
+};
+export const esExportOficial = (id, nombreArchivo) => !PATRON_EXPORT[id] || PATRON_EXPORT[id].test(texto(nombreArchivo));
+
 // Fecha del archivo para la plantilla: la del nombre (las exportaciones de
 // la app terminan en _AAAA-MM-DD) o, si no la trae, null.
 export const fechaDesdeNombre = (nombre) => texto(nombre).match(/(\d{4}-\d{2}-\d{2})/)?.[1] || null;

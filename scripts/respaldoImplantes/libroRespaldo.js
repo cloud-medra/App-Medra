@@ -23,6 +23,7 @@ import ExcelJS from 'exceljs';
 import {
   ESTADOS_GESTION, ESTADOS_CARGA, INFORMES, NOMBRES_LADO, SI_NO, LISTA_TIPOS_LINEA, CODIGO_SIN_OC,
   CAMPOS_EDITABLES_GESTION, camposEditablesItem, dimensionarCatalogos, isoAFechaExcel,
+  TIPOS_CODIGO, SEGMENTOS_CODIGO, CLASES_CODIGO,
 } from './datosRespaldo.js';
 
 const FILA_AYUDA = 1;
@@ -316,6 +317,10 @@ const LISTAS_FIJAS = [
   { l: 'D', titulo: 'Lado', valores: NOMBRES_LADO, ancho: 16 },
   { l: 'E', titulo: 'Tipo de línea', valores: LISTA_TIPOS_LINEA, ancho: 16 },
   { l: 'F', titulo: 'SÍ / NO', valores: SI_NO, ancho: 8 },
+  // Listas de la hoja Códigos (las mismas del sistema).
+  { l: 'G', titulo: 'Tipo (Códigos)', valores: TIPOS_CODIGO, ancho: 16 },
+  { l: 'H', titulo: 'Segmento (Códigos)', valores: SEGMENTOS_CODIGO, ancho: 18 },
+  { l: 'I', titulo: 'Clase (Códigos)', valores: CLASES_CODIGO, ancho: 14 },
 ];
 
 const encabezado = (celda, titulo) => {
@@ -714,9 +719,12 @@ const valoresItemSistema = (it) => ({
 // --- Instrucciones ---------------------------------------------------------------
 
 // Origen de los catálogos cargados por el script (plantilla).
-const lineaCatalogo = (nombre, o) => (o
-  ? `${nombre}: ${o.cargadas} cargadas del archivo ${o.archivo}${o.fecha ? ` (exportado el ${o.fecha})` : ''}${o.detalle ? `; ${o.detalle}` : ''}.`
-  : `${nombre}: vacío (se puede pegar a mano; ver "ACTUALIZAR LOS CATÁLOGOS").`);
+const lineaCatalogo = (nombre, o) => {
+  if (!o) return `${nombre}: vacío (se puede pegar a mano; ver "ACTUALIZAR LOS CATÁLOGOS").`;
+  // Cargado desde un archivo que no es la exportación oficial de la app.
+  if (o.provisional) return `${nombre}: ${o.cargadas} cargados de forma PROVISIONAL. Deben reemplazarse por la exportación oficial de la app (ver "ACTUALIZAR LOS CATÁLOGOS").`;
+  return `${nombre}: ${o.cargadas} cargadas del archivo ${o.archivo}${o.fecha ? ` (exportado el ${o.fecha})` : ''}${o.detalle ? `; ${o.detalle}` : ''}.`;
+};
 
 // Encabezado: la plantilla (catálogos del archivo exportado) o la
 // exportación del sistema (con datos y catálogos de Firestore).
@@ -754,7 +762,7 @@ const MACROS_Y_BOTONES = [
   ['3. Si el archivo está en una carpeta de red y Excel lo sigue bloqueando: Archivo → Opciones → Centro de confianza → Configuración del Centro de confianza → Ubicaciones de confianza → "Agregar nueva ubicación" con esa carpeta (marque "Las subcarpetas de esta ubicación también son de confianza").'],
   [''],
   ['BOTONES', 'seccion'],
-  ['"Mover cargados" (hoja Gestiones, arriba a la izquierda): busca las gestiones de contingencia con Estado = CARGADO (todas sus líneas CARGADO, PAD o SIN CARGO), le dice cuántas gestiones e ítems va a mover (y cuántos ítems tienen alerta), le pide su nombre y que confirme. Las copia a la hoja Cargados como valores, con fecha/hora y su nombre, y limpia esas filas en Gestiones e Ítems: las fórmulas quedan listas para volver a usarlas.'],
+  ['"Mover cargados" (hoja Ítems, arriba a la izquierda): busca las gestiones de contingencia con Estado = CARGADO (todas sus líneas CARGADO, PAD o SIN CARGO), le dice cuántas gestiones e ítems va a mover (y cuántos ítems tienen alerta), le pide su nombre y que confirme. Las copia a la hoja Cargados como valores, con fecha/hora y su nombre, y limpia esas filas en Gestiones e Ítems: las fórmulas quedan listas para volver a usarlas.'],
   ['"Devolver a pendientes" (hoja Cargados, arriba a la izquierda): seleccione cualquier celda de una fila de la gestión que quiere devolver y presione el botón. Confirma y la vuelve a filas libres de Gestiones e Ítems (con N° de línea nuevos; la Línea padre se ajusta sola) y la quita de Cargados. No se puede si en Gestiones ya hay una gestión con la misma CLAVE.'],
   ['Después de usar un botón, guarde el archivo (Ctrl+G). Los botones no se pueden deshacer con Ctrl+Z: para revertir, use el botón contrario.'],
   [''],
@@ -769,6 +777,7 @@ const ACTUALIZAR_CATALOGOS = [
   ['PREVISIONES y CONVENIOS (hojas Previsiones y Convenios, celda A3): Maestros → Previsiones (o Convenios) → botón de configuración → "Exportar a Excel / CSV". Filtre ESTADO = ACTIVO y copie NOMBRE, COMENTARIO y ESTADO.'],
   ['Lo normal es que el encargado regenere la plantilla con los archivos nuevos (ver docs/respaldo-contingencia-implantes.md, "Regenerar con archivos nuevos"). Si hay que hacerlo a mano en esta planilla:'],
   ['Pegue siempre con "Pegar valores" (Ctrl+Alt+V → Valores), SIN la fila de encabezados, y compruebe que las columnas del archivo son las mismas y en el mismo orden que la fila 2 donde pega. Para reemplazar un catálogo: seleccione los datos anteriores (sin encabezados), Supr, y pegue el nuevo.'],
+  ['En la hoja Códigos, EMPRESA tiene la lista de la hoja Empresas, y TIPO, SEGMENTO y CLASE las listas del sistema (hoja Catálogos). Como pegar borra los desplegables, un valor que no está en su lista se pinta de rojo igual: revíselo en el sistema.'],
   ['1. CÓDIGOS (hoja Códigos, celda B3): Maestros → Codigos → pestaña "Con código" → "Importar / Exportar" → "Exportar registros". Abra el CSV, copie desde A2 hasta la última fila y última columna (CODIGO … ESTADO) y pegue en Códigos!B3. Las INACTIVAS se ignoran solas. El CSV trae solo las columnas que el usuario puede ver: debe traer las 13.'],
   ['2. EMPRESAS (hoja Empresas, celda A3): Maestros → Empresas → botón de configuración (Importar/Exportar) → "Exportar a Excel / CSV". En el archivo, filtre ESTADO = ACTIVO y copie NOMBRE, RUT y ESTADO.'],
   ['3. CENTROS (hoja Centros, celda A3): Maestros → Centros → configuración → "Exportar a Excel / CSV". Filtre ESTADO = ACTIVO y USAR_EN_GESTIONES = SI y copie las 4 columnas.'],
@@ -936,8 +945,8 @@ export const construirLibro = async (datosEntrada) => {
     convenios,
   };
 
-  // Gestiones (A1:B1 quedan para el botón "Mover cargados": su ayuda va como nota).
-  prepararHoja(hG, COLUMNAS_GESTIONES, { congelarColumnas: 2, ayudaEnNota: ['A', 'B'] });
+  // Gestiones
+  prepararHoja(hG, COLUMNAS_GESTIONES, { congelarColumnas: 2 });
   filasGestiones.forEach((g, i) => {
     const r = PRIMERA + i;
     const valores = valoresGestionSistema(g);
@@ -993,7 +1002,8 @@ export const construirLibro = async (datosEntrada) => {
   });
 
   // Ítems
-  prepararHoja(hI, COLUMNAS_ITEMS, { congelarColumnas: 2 });
+  // A1:B1 quedan para el botón "Mover cargados": su ayuda va como nota.
+  prepararHoja(hI, COLUMNAS_ITEMS, { congelarColumnas: 2, ayudaEnNota: ['A', 'B'] });
   filasItems.forEach((it, i) => {
     const r = PRIMERA + i;
     const valores = valoresItemSistema(it);
@@ -1031,6 +1041,22 @@ export const construirLibro = async (datosEntrada) => {
   });
   reglaObligatorio(hI, ['B', 'E', 'F', 'G', 'W'], 'V', PRIMERA, ultimaItem);
   reglasCambio(hI, COLUMNAS_ITEMS, 'V', 'AK', PRIMERA, ultimaItem);
+
+  // Códigos: EMPRESA con la lista de Empresas; TIPO, SEGMENTO y CLASE con
+  // las del sistema. Pegar el export borra la validación, así que además un
+  // valor fuera de su lista se pinta de rojo (formato condicional, que sí
+  // sobrevive al pegado de valores). Con la lista vacía no se marca nada.
+  const hR = libro.getWorksheet(H.R);
+  const ultimaCodigo = PRIMERA + datos.filasCatalogos.referencias - 1;
+  const rr = (l) => `${l}${PRIMERA}:${l}${ultimaCodigo}`;
+  [['E', empresasNombres, 'Empresa', 'No está en la hoja Empresas.'], ['F', cat.G, 'Tipo', 'No es un tipo del sistema.'],
+    ['G', cat.H, 'Segmento', 'No es un segmento del sistema.'], ['H', cat.I, 'Clase', 'No es una clase del sistema.']].forEach(([l, listaRango, titulo, error]) => {
+    validar(hR, rr(l), lista(listaRango, { errorStyle: 'warning', errorTitle: titulo, error: `${error} ¿Usarlo igual?` }));
+    hR.addConditionalFormatting({
+      ref: rr(l),
+      rules: [{ type: 'expression', priority: 1, formulae: [fueraDeLista(`${l}${PRIMERA}`, listaRango)], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { bold: true, color: { argb: COLOR.textoError } } } }],
+    });
+  });
 
   // Documentos
   prepararHoja(hD, COLUMNAS_DOCUMENTOS, { congelarColumnas: 2 });

@@ -10,6 +10,12 @@
 
 import { ESTADO_CARGA_OPTIONS, CODIGO_SIN_OC } from '../../src/components/modulos/operaciones/implantes/gestionImplantes/components/Cargastab/cargasHelpers.js';
 import { LADOS, LADO_POR_DEFECTO } from '../../functions/bodymap/nucleo.mjs';
+// Mismas listas que el panel de edición de Códigos Maestros: si el sistema
+// agrega un valor, la plantilla lo toma al regenerarse.
+import { TIPOS_CODIGO, SEGMENTOS_CODIGO } from '../../src/components/modulos/maestros/codigosMaestrosV2/camposCodigo.js';
+import { CLASES_CODIGO } from '../../src/components/modulos/maestros/shared/codigos/clasesCodigo.js';
+
+export { TIPOS_CODIGO, SEGMENTOS_CODIGO, CLASES_CODIGO };
 
 export const PREFIJO_ARCHIVO = 'respaldo_implantes_';
 export const COPIAS_A_CONSERVAR = 3;
