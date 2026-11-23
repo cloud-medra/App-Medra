@@ -19,6 +19,11 @@ Attribute VB_Name = "ModContingencia"
 '   Cada libro solo acepta gestiones con fecha de su mes; la plantilla base
 '   (sin mes) no deja registrar.
 '
+' - Marcas de cambio en Códigos, Empresas y Recargos: la columna CAMBIO es
+'   una fórmula (NUEVO / MODIFICADO / BORRADO); FECHA CAMBIO la escribe
+'   RegistrarCambioCatalogo, llamada desde Workbook_SheetChange del módulo
+'   del libro (lo agrega macros/armarXlsm.ps1).
+'
 ' Items y Cargados se leen POR EL TITULO de su encabezado (fila 2), no por
 ' la posicion: el orden de sus columnas puede cambiar en libroRespaldo.js
 ' (COLUMNAS_ITEMS, COLUMNAS_CARGADOS) sin tocar este modulo, mientras los
@@ -46,6 +51,9 @@ Private Const PREFIJO_LIBRO As String = "respaldo_implantes_"
 ' Mensajes de la validación de Gestiones en un libro con mes (MENSAJES_LIBRO
 ' en libroRespaldo.js; la plantilla base trae el de "sin mes").
 Private Const MSJ_ADMISION As String = "Solo dígitos, sin puntos ni espacios."
+' Hojas con marcas de cambio: hoja:primera columna de datos:última:CAMBIO:FECHA CAMBIO
+' (MARCAS_CAMBIO en libroRespaldo.js; lo comprueba un test).
+Private Const MARCAS As String = "Códigos:2:14:17:18|Empresas:1:3:4:5|Recargos:1:5:6:7"
 Private Const MSJ_FECHA As String = "Este libro es de {MES}. Registra esta gestión en el libro del mes de su fecha (respaldo_implantes_AAAA-MM.xlsm)."
 Private Const S_COLUMNAS As Long = 18          ' ... FECHA MOVIMIENTO (17), CLAVE (18)
 Private Const R_COLUMNAS As Long = 13          ' ... FECHA MOVIMIENTO (12), CLAVE (13)
@@ -462,6 +470,47 @@ Fallo:
 End Function
 
 ' ---------------------------------------------------------------------------
+' Marcas de cambio en catálogos
+' ---------------------------------------------------------------------------
+
+' Al editar datos de Códigos, Empresas o Recargos: FECHA CAMBIO = hoy en las
+' filas que quedaron marcadas (NUEVO, MODIFICADO o BORRADO); vacía si la
+' fila volvió a su valor original. Solo mira las filas preparadas.
+Public Sub RegistrarCambioCatalogo(ByVal Sh As Object, ByVal Target As Range)
+    Dim par As Variant, partes As Variant, ws As Worksheet, zona As Range, area As Range
+    Dim colCambio As Long, colFecha As Long, ultima As Long, r As Long
+    For Each par In Split(MARCAS, "|")
+        partes = Split(par, ":")
+        If Sh.Name = partes(0) Then
+            Set ws = Sh
+            colCambio = CLng(partes(3))
+            colFecha = CLng(partes(4))
+            ultima = ws.Cells(ws.Rows.Count, colCambio).End(xlUp).Row
+            If ultima < PRIMERA Then Exit Sub
+            Set zona = Application.Intersect(Target, ws.Range(ws.Cells(PRIMERA, CLng(partes(1))), ws.Cells(ultima, CLng(partes(2)))))
+            If zona Is Nothing Then Exit Sub
+            Application.EnableEvents = False
+            On Error GoTo Fin
+            Desproteger ws
+            For Each area In zona.Areas
+                For r = area.Row To area.Row + area.Rows.Count - 1
+                    ws.Cells(r, colCambio).Calculate
+                    If Txt(ws.Cells(r, colCambio).Value) = "" Then
+                        ws.Cells(r, colFecha).ClearContents
+                    Else
+                        ws.Cells(r, colFecha).Value = Date
+                    End If
+                Next r
+            Next area
+Fin:
+            Proteger ws
+            Application.EnableEvents = True
+            Exit Sub
+        End If
+    Next par
+End Sub
+
+' ---------------------------------------------------------------------------
 ' Libro del mes
 ' ---------------------------------------------------------------------------
 
@@ -583,6 +632,9 @@ Public Function PrepararLibroDelMes(ByVal anio As Long, ByVal mes As Long) As St
 
     wsCat.Range(LIBRO_ANIO).Value = anio
     wsCat.Range(LIBRO_MES).Value = mes
+    ' Sin "Quitar información personal al guardar" (ver armarXlsm.ps1): si
+    ' no, cada guardado muestra una advertencia de privacidad.
+    ThisWorkbook.RemovePersonalInformation = False
     PrepararLibroDelMes = "OK"
 Fin:
     Proteger wsG: Proteger wsI: Proteger wsC: Proteger wsS: Proteger wsR: Proteger wsCat

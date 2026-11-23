@@ -333,9 +333,12 @@ export const dimensionar = ({ gestionesMes, itemsMes, gestionesMesAnterior = 0 }
 
 // Filas de cada catálogo: lo que trae más margen, con un mínimo pensado para
 // la plantilla (se pegan desde las exportaciones de la app; el Maestro de
-// Códigos tiene ~3.000 referencias).
+// Códigos tiene ~3.000 referencias). Reporte Info deja 10.000 filas: en el
+// libro del mes se pega a mano el Excel de la clínica, con varias filas por
+// admisión (decisión del 23-11-2026). Las filas preparadas viajan al libro
+// del mes siguiente, así que las agregadas a mano se reconocen siempre.
 export const MINIMO_CATALOGOS = Object.freeze({
-  referencias: 6000, empresas: 300, centros: 100, recargos: 50, reporteInfo: 3000, previsiones: 200, convenios: 300,
+  referencias: 6000, empresas: 300, centros: 100, recargos: 50, reporteInfo: 10000, previsiones: 200, convenios: 300,
 });
 export const dimensionarCatalogos = (cantidades) => Object.fromEntries(
   Object.entries(MINIMO_CATALOGOS).map(([k, minimo]) => [k, Math.max(minimo, Math.ceil((cantidades[k] || 0) * 1.5))]),

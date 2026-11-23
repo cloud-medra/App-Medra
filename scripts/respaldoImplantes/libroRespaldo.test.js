@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import ExcelJS from 'exceljs';
 import {
   construirLibro, COLUMNAS_CARGADOS, COLUMNAS_ITEMS, VISTA_CARGA, I, H, CELDAS_LIBRO, CELDAS_NUEVO_MES, MENSAJES_LIBRO, nombreLibroMes,
+  MARCAS_CAMBIO,
 } from './libroRespaldo.js';
 import { filasDesdeGestiones, catalogoReferencias, datosPlantilla, TAMANO_PLANTILLA, MINIMO_CATALOGOS } from './datosRespaldo.js';
 
@@ -59,8 +60,11 @@ describe('plantilla', () => {
 
     // Códigos: columnas del CSV de Códigos Maestros (con ESTADO) desde la B.
     const r = libro.getWorksheet('Códigos');
-    expect(r.getRow(2).values.slice(1)).toEqual(['Clave búsqueda', 'CODIGO', 'REFERENCIA', 'DESCRIPTOR_EMPRESA', 'EMPRESA', 'TIPO', 'SEGMENTO', 'CLASE',
-      'DESCRIPTOR_AUTO', 'PRECIO_NETO', 'CX', 'OBSERVACION', 'REGISTRADO_POR', 'ESTADO', 'Referencia usable', 'Veces repetida']);
+    const datosCodigos = ['CODIGO', 'REFERENCIA', 'DESCRIPTOR_EMPRESA', 'EMPRESA', 'TIPO', 'SEGMENTO', 'CLASE',
+      'DESCRIPTOR_AUTO', 'PRECIO_NETO', 'CX', 'OBSERVACION', 'REGISTRADO_POR', 'ESTADO'];
+    // Después de los datos: las automáticas, las marcas de cambio y lo original (oculto).
+    expect(r.getRow(2).values.slice(1)).toEqual(['Clave búsqueda', ...datosCodigos, 'Referencia usable', 'Veces repetida',
+      'CAMBIO', 'FECHA CAMBIO', ...datosCodigos.map((t) => `orig: ${t}`)]);
     const ultimaRef = 2 + MINIMO_CATALOGOS.referencias;
     // Las inactivas quedan fuera de la búsqueda.
     expect(r.getCell(`A${ultimaRef}`).value.formula).toContain(`UPPER(TRIM(N${ultimaRef}))<>"INACTIVO"`);
@@ -71,7 +75,7 @@ describe('plantilla', () => {
 
     // Empresas: hoja propia, desplegable de Gestiones.
     const e = libro.getWorksheet('Empresas');
-    expect(e.getRow(2).values.slice(1)).toEqual(['NOMBRE', 'RUT', 'ESTADO']);
+    expect(e.getRow(2).values.slice(1, 4)).toEqual(['NOMBRE', 'RUT', 'ESTADO']);
     expect(bloqueada(e.getCell('A3'))).toBe(false);
     expect(g.dataValidations.find('D3')).toMatchObject({ type: 'list', formulae: [`'Empresas'!$A$3:$A$${2 + MINIMO_CATALOGOS.empresas}`] });
 
@@ -107,7 +111,7 @@ describe('plantilla', () => {
     expect(bloqueada(cen.getCell('A3'))).toBe(false);
     expect(g.dataValidations.find('H3')).toMatchObject({ type: 'list', formulae: [`'Centros'!$A$3:$A$${2 + MINIMO_CATALOGOS.centros}`] });
     const rec = libro.getWorksheet('Recargos');
-    expect(rec.getRow(2).values.slice(1)).toEqual(['DESDE', 'HASTA', 'VECES COSTO', 'COMENTARIO', 'ESTADO']);
+    expect(rec.getRow(2).values.slice(1, 6)).toEqual(['DESDE', 'HASTA', 'VECES COSTO', 'COMENTARIO', 'ESTADO']);
     expect(bloqueada(rec.getCell('E52'))).toBe(false);
     // Veces costo y venta leen la hoja Recargos (por desde-hasta, sin los INACTIVOS).
     const it3 = libro.getWorksheet('Ítems');
@@ -279,7 +283,10 @@ describe('plantilla', () => {
     const ins = libro.getWorksheet('Instrucciones');
     expect(ins.getCell('A2').value.formula).toContain('PLANTILLA BASE (sin mes)');
     const textos = ins.getColumn('A').values.filter((v) => typeof v === 'string').join('\n');
-    expect(textos).toContain('UN LIBRO POR MES');
+    expect(textos).toContain('CÓMO SE TRABAJA MES A MES');
+    expect(textos).toContain('a fin de mes, desde el libro actual, cree el libro del mes siguiente'.replace('a fin', 'A fin'));
+    expect(textos).toContain('ACTUALIZAR REPORTE INFO');
+    expect(textos).toContain('AGREGAR O CORREGIR CATÁLOGOS');
     expect(textos).toContain('"Crear libro del mes"');
   });
 
@@ -307,6 +314,53 @@ describe('plantilla', () => {
     // Las validaciones de Excel aceptan hasta 255 caracteres.
     expect(MENSAJES_LIBRO.fecha('SEPTIEMBRE 2026').length).toBeLessThanOrEqual(255);
     expect(MENSAJES_LIBRO.base.length).toBeLessThanOrEqual(255);
+  });
+
+  it('marca los cambios en Códigos, Empresas y Recargos contra lo original', async () => {
+    const datos = datosPlantilla('x', {
+      catalogos: {
+        codigos: [{ codigo: '000123', referencia: 'REF-1', empresa: 'A', precio: 15000, tipo: 'COTIZACION' }],
+        empresas: [{ nombre: 'A', rut: '1-9', estado: 'ACTIVO' }],
+        recargos: [{ desde: 0, hasta: 50000, vecesCosto: 2, estado: 'ACTIVO' }],
+      },
+    });
+    const libro = await releer((await construirLibro(datos)).libro);
+    const r = libro.getWorksheet('Códigos');
+    // Lo original queda en columnas ocultas, una por dato (sin convertir a texto).
+    expect(['S3', 'T3', 'V3', 'W3', 'AA3', 'AE3'].map((c) => r.getCell(c).value)).toEqual(['000123', 'REF-1', 'A', 'COTIZACION', 15000, 'ACTIVO']);
+    expect(r.getColumn('S').hidden).toBe(true);
+    expect(r.getColumn('Q').hidden).toBe(false);
+    expect(r.getCell('S4').value).toBeNull();
+    expect(r.getCell('Q3').value.formula).toBe('IF(COUNTA(B3:N3)=0,IF(COUNTA(S3:AE3)=0,"","BORRADO"),IF(COUNTA(S3:AE3)=0,"NUEVO",IF(OR(B3<>S3,C3<>T3,D3<>U3,E3<>V3,F3<>W3,G3<>X3,H3<>Y3,I3<>Z3,J3<>AA3,K3<>AB3,L3<>AC3,M3<>AD3,N3<>AE3),"MODIFICADO","")))');
+    // Todas las filas preparadas: una fila nueva al final también se marca.
+    const ultima = 2 + MINIMO_CATALOGOS.referencias;
+    expect(r.getCell(`Q${ultima}`).value.formula).toContain(`COUNTA(B${ultima}:N${ultima})`);
+    expect(r.getCell(`R${ultima}`).numFmt).toBe('dd-mm-yyyy');
+    // Datos editables; marcas, original y fórmulas bloqueadas y ocultas.
+    expect(['B3', 'J3', 'N3', `C${ultima}`].map((c) => bloqueada(r.getCell(c)))).toEqual([false, false, false, false]);
+    expect(['A3', 'O3', 'Q3', 'R3', 'S3'].map((c) => bloqueada(r.getCell(c)))).toEqual([true, true, true, true, true]);
+    expect(r.getCell('Q3').protection.hidden).toBe(true);
+    const e = libro.getWorksheet('Empresas');
+    expect(e.getRow(2).values.slice(1)).toEqual(['NOMBRE', 'RUT', 'ESTADO', 'CAMBIO', 'FECHA CAMBIO', 'orig: NOMBRE', 'orig: RUT', 'orig: ESTADO']);
+    expect(e.getCell('F3').value).toBe('A');
+    expect(e.getCell('D3').value.formula).toContain('OR(A3<>F3,B3<>G3,C3<>H3)');
+    const rec = libro.getWorksheet('Recargos');
+    expect(rec.getRow(2).values.slice(1, 8)).toEqual(['DESDE', 'HASTA', 'VECES COSTO', 'COMENTARIO', 'ESTADO', 'CAMBIO', 'FECHA CAMBIO']);
+    expect(['H3', 'I3', 'J3'].map((c) => rec.getCell(c).value)).toEqual([0, 50000, 2]);
+    // Centros, Previsiones y Convenios: sin marcas.
+    expect(libro.getWorksheet('Centros').getCell('E2').value).toBeNull();
+    expect(Object.keys(MARCAS_CAMBIO)).toEqual(['Códigos', 'Empresas', 'Recargos']);
+  });
+
+  it('la macro de las marcas usa las mismas columnas', () => {
+    const bas = fs.readFileSync(new URL('./macros/ModContingencia.bas', import.meta.url), 'utf8');
+    const marcas = bas.match(/Private Const MARCAS As String = "([^"]*)"/)[1];
+    const n = (l) => [...l].reduce((s, ch) => s * 26 + ch.charCodeAt(0) - 64, 0);
+    const esperado = Object.entries(MARCAS_CAMBIO).map(([hoja, m]) => [hoja, n(m.desde), n(m.hasta), n(m.cambio), n(m.fecha)].join(':')).join('|');
+    expect(marcas).toBe(esperado);
+    const ps1 = fs.readFileSync(new URL('./macros/armarXlsm.ps1', import.meta.url), 'utf8');
+    expect(ps1).toContain('Workbook_SheetChange');
+    expect(ps1).toContain('RegistrarCambioCatalogo Sh, Target');
   });
 
   it('los nombres de hoja coinciden con los que usan las macros', () => {

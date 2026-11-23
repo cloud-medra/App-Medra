@@ -175,7 +175,8 @@ exceljs no puede escribir macros. El script genera el `.xlsx` y llama a `macros/
 
 Decisión del 23-11-2026, para que el archivo no crezca: un libro por mes, `respaldo_implantes_AAAA-MM.xlsm`.
 - **Crear:** hoja "Nuevo mes" → Año y Mes (1 a 12) → botón "Crear libro del mes" (macro `CrearLibroDelMes`). Valida año (2020 a 2100) y mes, y crea el libro en la carpeta del archivo abierto con `SaveCopyAs`, que conserva macros, bloqueo del proyecto VBA y protección. Después lo abre y corre en él `PrepararLibroDelMes`, que vacía Gestiones, Ítems (las celdas que se escriben; N° de línea y fórmulas quedan), Cargados, Solicitud Implantes y Resumen, restaura el autocompletado y escribe el año y el mes en Catálogos K3 y L3. Queda abierto en Gestiones.
-- **Se mantienen:** Códigos, Empresas, Centros, Recargos, Previsiones, Convenios, Reporte Info, Catálogos e Instrucciones, tal como estén en el libro desde el que se crea. Conviene crearlo desde la plantilla base recién regenerada.
+- **El libro del mes es el que manda** (aclaración del 23-11-2026): durante el mes ahí se agregan o corrigen los catálogos, y a fin de mes el libro siguiente se crea **desde ese mismo libro**. La plantilla base solo se usa para crear el primer libro; una plantilla regenerada no trae los cambios hechos en los libros.
+- **Se mantienen:** Códigos, Empresas, Centros, Recargos, Previsiones, Convenios, Reporte Info, Catálogos e Instrucciones, tal como estén en el libro desde el que se crea (con los cambios del mes y sus marcas), y todas sus filas preparadas.
 - **No se traspasan gestiones:** las pendientes se quedan en el libro de su mes. Todos los libros tienen las mismas columnas (sirve para el resumen anual).
 - **Repetido:** si ya existe el libro de ese año y mes en la carpeta (o hay uno abierto con ese nombre), no lo sobrescribe y avisa. Tampoco se crea desde un libro con filas exportadas del sistema.
 - **Solo fechas de su mes:** la Fecha de Gestiones tiene una validación que exige el año y el mes de Catálogos K3/L3; no depende de la fecha de hoy. El mensaje dice "Este libro es de NOVIEMBRE 2026. Registra esta gestión en el libro del mes de su fecha…". Excel no permite que el mensaje de una validación dependa del valor escrito, así que el mes que corresponde lo dice la Alerta.
@@ -191,6 +192,18 @@ Probado en Excel 16 (23-11-2026), en una carpeta de prueba que se borró al term
 - crear noviembre otra vez: "Ya existe el libro…";
 - libro de octubre 2026: acepta 15-10-2026 y rechaza 20-11-2026;
 - diciembre creado desde el libro de noviembre con datos: Gestiones, Ítems, Cargados, Solicitud y Resumen vacías, el autocompletado restaurado, las mismas columnas y todas las hojas protegidas; noviembre conservó su gestión.
+
+### Catálogos editables y marcas de cambio
+
+- **Edición con las hojas protegidas:** las celdas de datos de Códigos (B a N), Empresas, Centros, Recargos, Previsiones, Convenios y Reporte Info (A a G) están desbloqueadas en todas las filas preparadas. Para agregar se escribe en la primera fila vacía; no se insertan ni borran filas (bloqueado). Las fórmulas (Códigos A, O, P; Reporte Info H; las marcas) siguen bloqueadas y ocultas.
+- **Las búsquedas cubren todas las filas preparadas:** Ítems busca en Códigos, y los recargos, los desplegables de Gestiones (Empresa, Centro, Convenio, Previsión) y el autocompletado desde Reporte Info, sobre el rango completo. Una fila nueva se reconoce sin hacer nada. Filas preparadas (`MINIMO_CATALOGOS`): Códigos 6.000, Empresas 300, Centros 100, Recargos 50, Previsiones 200, Convenios 300 y Reporte Info 10.000 (subió de 3.000 porque se pega a mano el Excel de la clínica, con varias filas por admisión). Si un catálogo trae más, se dejan 1,5 veces lo cargado.
+- **Marcas (Códigos, Empresas y Recargos, `MARCAS_CAMBIO`):** a la derecha de los datos van CAMBIO, FECHA CAMBIO y una columna oculta `orig: …` por cada dato, con el valor que traía la plantilla.
+  - CAMBIO es una fórmula: NUEVO (fila sin original), MODIFICADO (alguna celda distinta de su original) o BORRADO (fila vaciada que tenía original). Se pinta verde, ámbar o rojo. Compara celda a celda y sin convertir a texto, así no depende del separador decimal del equipo. Excel compara textos sin distinguir mayúsculas, así que un cambio solo de mayúsculas no se marca.
+  - FECHA CAMBIO la escribe `RegistrarCambioCatalogo` (en `ModContingencia.bas`), llamada desde `Workbook_SheetChange`, que `armarXlsm.ps1` agrega al módulo del libro (ThisWorkbook o EsteLibro). Con las macros deshabilitadas queda vacía.
+  - Volver a escribir el valor original quita la marca y la fecha.
+  - Las marcas y los originales viajan con la copia al libro del mes siguiente; se reinician solo al regenerar la plantilla, después de pasar los cambios al Maestro de la app.
+- **Reporte Info:** Instrucciones explica cómo pegar uno nuevo en el libro del mes, columna por columna desde A3, con "Pegar valores". Se puede pegar con admisiones repetidas, porque se usa la primera de cada una.
+- **Advertencia de privacidad al guardar:** Excel dejaba activada en el libro la opción "Quitar información personal al guardar" (`RemovePersonalInformation`). Con macros, esa opción muestra en cada guardado "Ten cuidado: es posible que algunas partes del documento incluyan información personal…" y una macro que guarda queda esperando. `armarXlsm.ps1` y `PrepararLibroDelMes` la desactivan.
 
 ### Vista de carga y Código real (Ítems y Cargados)
 
