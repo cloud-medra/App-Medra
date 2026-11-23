@@ -108,6 +108,8 @@ describe('plantilla', () => {
     expect(textos).toContain('"Devolver a pendientes"');
     expect(textos).toContain('hoja Recargos, celda A3');
     expect(textos).toContain('hoja Centros, celda A3');
+    // Pasos para bloquear el proyecto VBA a mano (Excel no lo permite por automatización).
+    expect(textos).toContain('"Bloquear proyecto para visualización"');
     expect(textos.toLowerCase()).not.toContain('fibra');
   });
 

@@ -196,6 +196,9 @@ const main = async () => {
     else console.log(`${nombre}: ${origen[id].cargadas} cargados de ${origen[id].archivo} (${origen[id].detalle})${origen[id].provisional ? ' — PROVISIONAL' : ''}.`);
   });
   advertencias.forEach((a) => console.log(`AVISO — ${a}`));
+  // Excel no permite bloquear el proyecto VBA por automatización: se hace a
+  // mano después de cada regeneración (pasos en Instrucciones y en el doc).
+  console.log('PENDIENTE — Bloquee el proyecto VBA con la contraseña de las hojas: Alt+F11 → clic derecho en "VBAProject (respaldo_implantes.xlsm)" → Propiedades → Protección → "Bloquear proyecto para visualización". Pasos completos en la hoja Instrucciones.');
   console.log('');
 };
 

@@ -29,6 +29,21 @@ Tiene 14 hojas, en este orden:
 
 La hoja Documentos se eliminó el 23-11-2026 (no se usa).
 
+### Bloquear el proyecto VBA (a mano, después de cada regeneración)
+
+Las macros guardan la contraseña de las hojas. Para que no se vea con Alt+F11, hay que bloquear el proyecto VBA con esa misma contraseña.
+- Excel no ofrece una forma de hacerlo por automatización: no hay función para eso.
+- Las alternativas (simular teclas en el diálogo, o escribir la estructura cifrada del proyecto dentro del archivo) son frágiles o arriesgan dejar las macros inutilizables.
+- Por eso es un paso manual. El script lo recuerda al terminar, y la hoja Instrucciones repite los pasos:
+
+1. Abra respaldo_implantes.xlsm en Excel (no hace falta habilitar las macros) y presione Alt+F11.
+2. En el Explorador de proyectos (Ctrl+R si no se ve), haga clic derecho en "VBAProject (respaldo_implantes.xlsm)" → "Propiedades de VBAProject...".
+3. Pestaña "Protección": marque "Bloquear proyecto para visualización" y escriba la contraseña de las hojas (variable RESPALDO_IMPLANTES_CLAVE_HOJAS) en "Contraseña" y en "Confirmar contraseña". Aceptar.
+4. Cierre el editor, guarde (Ctrl+G) y cierre Excel. El bloqueo se aplica al volver a abrir.
+5. Compruebe: abra el archivo, Alt+F11 y doble clic en "VBAProject": debe pedir contraseña.
+
+Si se regenera el archivo, el bloqueo se pierde (el archivo es nuevo) y hay que repetir estos pasos.
+
 ### Protección de hojas y fórmulas ocultas
 
 - Todas las hojas están protegidas con contraseña. Toda celda con fórmula queda **Oculta**: al seleccionarla, la barra de fórmulas muestra solo el resultado.
@@ -36,7 +51,7 @@ La hoja Documentos se eliminó el 23-11-2026 (no se usa).
 - Los filtros, los desplegables y los botones funcionan con las hojas protegidas: las macros desprotegen y vuelven a proteger con la misma contraseña.
 - **La contraseña sale de la variable de entorno `RESPALDO_IMPLANTES_CLAVE_HOJAS`** (mínimo 8 caracteres, sin tildes ni caracteres especiales fuera de los comunes). Sin ella, el script no genera nada.
   - En el repo nunca está: el módulo VBA tiene el marcador `__CLAVE_HOJAS__` y el script lo reemplaza solo en la copia temporal con que arma el `.xlsm`.
-  - En el archivo queda el hash de la protección (SHA-512) y la contraseña dentro del módulo VBA, porque los botones necesitan desproteger (decisión del 23-11-2026). Quien abra el editor VBA (Alt+F11) puede verla; la protección de hojas de Excel es una barrera contra cambios por error, no una medida de seguridad fuerte.
+  - En el archivo queda el hash de la protección (SHA-512) y la contraseña dentro del módulo VBA, porque los botones necesitan desproteger (decisión del 23-11-2026). Para que no se vea con Alt+F11 se bloquea el proyecto VBA (sección anterior). Aun así, la protección de hojas de Excel es una barrera contra cambios por error, no una medida de seguridad fuerte.
 - Configurarla una vez, en PowerShell (después abrir una terminal nueva):
 
   ```powershell
