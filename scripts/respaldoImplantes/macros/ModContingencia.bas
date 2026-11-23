@@ -12,6 +12,13 @@ Attribute VB_Name = "ModContingencia"
 '   Gestiones e Items. Los N de linea son fijos por fila, asi que la linea
 '   padre se traduce del N original al N de la fila donde queda.
 '
+' - Crear libro del mes (hoja Nuevo mes): copia este libro como
+'   respaldo_implantes_AAAA-MM.xlsm en la misma carpeta, vacía Gestiones,
+'   Items, Cargados, Solicitud Implantes y Resumen, escribe el año y el mes
+'   del libro (Catálogos K3 y L3, CELDAS_LIBRO en libroRespaldo.js) y lo abre.
+'   Cada libro solo acepta gestiones con fecha de su mes; la plantilla base
+'   (sin mes) no deja registrar.
+'
 ' Items y Cargados se leen POR EL TITULO de su encabezado (fila 2), no por
 ' la posicion: el orden de sus columnas puede cambiar en libroRespaldo.js
 ' (COLUMNAS_ITEMS, COLUMNAS_CARGADOS) sin tocar este modulo, mientras los
@@ -27,6 +34,19 @@ Private Const HOJA_CARGADOS As String = "Cargados"
 ' COLUMNAS_RESUMEN en libroRespaldo.js). Encabezado en la fila 1.
 Private Const HOJA_SOLICITUD As String = "Solicitud Implantes"
 Private Const HOJA_RESUMEN As String = "Resumen"
+Private Const HOJA_CATALOGOS As String = "Catálogos"
+Private Const HOJA_NUEVO_MES As String = "Nuevo mes"
+' Mes del libro (Catálogos) y datos del libro a crear (Nuevo mes).
+Private Const LIBRO_ANIO As String = "K3"
+Private Const LIBRO_MES As String = "L3"
+Private Const NM_ANIO As String = "B5"
+Private Const NM_MES As String = "B6"
+Private Const MESES As String = "ENERO,FEBRERO,MARZO,ABRIL,MAYO,JUNIO,JULIO,AGOSTO,SEPTIEMBRE,OCTUBRE,NOVIEMBRE,DICIEMBRE"
+Private Const PREFIJO_LIBRO As String = "respaldo_implantes_"
+' Mensajes de la validación de Gestiones en un libro con mes (MENSAJES_LIBRO
+' en libroRespaldo.js; la plantilla base trae el de "sin mes").
+Private Const MSJ_ADMISION As String = "Solo dígitos, sin puntos ni espacios."
+Private Const MSJ_FECHA As String = "Este libro es de {MES}. Registra esta gestión en el libro del mes de su fecha (respaldo_implantes_AAAA-MM.xlsm)."
 Private Const S_COLUMNAS As Long = 18          ' ... FECHA MOVIMIENTO (17), CLAVE (18)
 Private Const R_COLUMNAS As Long = 13          ' ... FECHA MOVIMIENTO (12), CLAVE (13)
 Private Const PRIMERA As Long = 3
@@ -62,17 +82,23 @@ Private Const C_DESDE_ITEMS As String = "N° línea (original)>N° línea|Tipo d
 ' ---------------------------------------------------------------------------
 
 Public Sub MoverCargados()
-    Dim filasG As Collection, filasI As Collection, nAlertas As Long
-    BuscarCargados filasG, filasI, nAlertas
+    If LibroMes() = 0 Then
+        MsgBox "Esta es la plantilla base (sin mes): no tiene gestiones." & vbCrLf & "Cree el libro del mes en la hoja " & HOJA_NUEVO_MES & ".", vbExclamation, "Mover cargados"
+        Exit Sub
+    End If
+    Dim filasG As Collection, filasI As Collection, nAlertas As Long, nFuera As Long
+    BuscarCargados filasG, filasI, nAlertas, nFuera
+    Dim avisoFuera As String
+    If nFuera > 0 Then avisoFuera = vbCrLf & vbCrLf & nFuera & " gestión(es) CARGADO con fecha fuera del mes del libro (" & NombreLibro() & ") no se moverán: regístrelas en el libro de su mes (columna Alerta de Gestiones)."
     If filasG.Count = 0 Then
         MsgBox "No hay gestiones con Estado CARGADO para mover." & vbCrLf & _
-               "(Una gestión queda CARGADO cuando todas sus líneas están CARGADO, PAD o SIN CARGO.)", _
+               "(Una gestión queda CARGADO cuando todas sus líneas están CARGADO, PAD o SIN CARGO.)" & avisoFuera, _
                vbInformation, "Mover cargados"
         Exit Sub
     End If
 
     Dim aviso As String
-    aviso = "Se moverán " & filasG.Count & " gestión(es) y " & filasI.Count & " ítem(s) a la hoja Cargados."
+    aviso = "Se moverán " & filasG.Count & " gestión(es) y " & filasI.Count & " ítem(s) a la hoja Cargados." & avisoFuera
     If nAlertas > 0 Then aviso = aviso & vbCrLf & vbCrLf & "Atención: " & nAlertas & " de esos ítems tienen una alerta (columna Alerta de Ítems)."
     aviso = aviso & vbCrLf & vbCrLf & "Sus filas en Gestiones e Ítems quedarán libres para volver a usarlas." & vbCrLf & "¿Continuar?"
     If MsgBox(aviso, vbYesNo + vbQuestion + vbDefaultButton2, "Mover cargados") <> vbYes Then Exit Sub
@@ -124,13 +150,26 @@ End Sub
 Public Sub InstalarBotones()
     CrearBoton ThisWorkbook.Worksheets(HOJA_ITEMS), "btnMoverCargados", "Mover cargados", "MoverCargados", 150
     CrearBoton ThisWorkbook.Worksheets(HOJA_CARGADOS), "btnDevolverPendientes", "Devolver a pendientes", "DevolverAPendientes", 170
+    CrearBoton ThisWorkbook.Worksheets(HOJA_NUEVO_MES), "btnCrearLibroMes", "Crear libro del mes", "CrearLibroDelMes", 170, "A9"
+End Sub
+
+Public Sub CrearLibroDelMes()
+    Dim ws As Worksheet, resultado As String
+    Set ws = ThisWorkbook.Worksheets(HOJA_NUEVO_MES)
+    resultado = CrearLibroDelMesAuto(ws.Range(NM_ANIO).Value, ws.Range(NM_MES).Value, True)
+    If Left(resultado, 5) = "ERROR" Then
+        MsgBox Mid(resultado, 7), vbExclamation, "Crear libro del mes"
+    Else
+        MsgBox "Listo: se creó y se abrió el libro" & vbCrLf & Mid(resultado, 4) & vbCrLf & vbCrLf & _
+               "Registre ahí las gestiones de ese mes.", vbInformation, "Crear libro del mes"
+    End If
 End Sub
 
 ' ---------------------------------------------------------------------------
 ' Lógica sin diálogos (también la usa la prueba automática)
 ' ---------------------------------------------------------------------------
 
-' Devuelve "gestiones;items" o "ERROR;mensaje".
+' Devuelve "gestiones;items;fuera del mes" o "ERROR;mensaje".
 ' `fechaMovimiento` (opcional): para la prueba automática; el botón usa Now.
 Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMovimiento As Variant) As String
     Dim wsG As Worksheet, wsI As Worksheet, wsC As Worksheet
@@ -138,10 +177,14 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
     Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
     Set wsC = ThisWorkbook.Worksheets(HOJA_CARGADOS)
 
-    Dim filasG As Collection, filasI As Collection, nAlertas As Long
-    BuscarCargados filasG, filasI, nAlertas
+    If LibroMes() = 0 Then
+        MoverCargadosAuto = "ERROR;Esta es la plantilla base (sin mes): cree el libro del mes en la hoja " & HOJA_NUEVO_MES & "."
+        Exit Function
+    End If
+    Dim filasG As Collection, filasI As Collection, nAlertas As Long, nFuera As Long
+    BuscarCargados filasG, filasI, nAlertas, nFuera
     If filasG.Count = 0 Then
-        MoverCargadosAuto = "0;0"
+        MoverCargadosAuto = "0;0;" & nFuera
         Exit Function
     End If
 
@@ -279,7 +322,7 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
         RestaurarAutocompletado wsG, CLng(fg)
     Next fg
 
-    MoverCargadosAuto = filasG.Count & ";" & filasI.Count
+    MoverCargadosAuto = filasG.Count & ";" & filasI.Count & ";" & nFuera
 Fin:
     Proteger wsG: Proteger wsI: Proteger wsC: Proteger wsS: Proteger wsR
     Application.Calculation = calculo
@@ -419,17 +462,189 @@ Fallo:
 End Function
 
 ' ---------------------------------------------------------------------------
+' Libro del mes
+' ---------------------------------------------------------------------------
+
+' Crea respaldo_implantes_AAAA-MM.xlsm en la carpeta de este libro, como copia
+' (conserva macros, bloqueo del proyecto VBA y protección), y lo prepara.
+' Devuelve "OK;ruta" o "ERROR;mensaje". `abrir` = False lo deja cerrado.
+Public Function CrearLibroDelMesAuto(ByVal anio As Variant, ByVal mes As Variant, Optional ByVal abrir As Boolean = True) As String
+    If Not EsEntero(anio, 2020, 2100) Then
+        CrearLibroDelMesAuto = "ERROR;Escriba un año válido (2020 a 2100) en la hoja " & HOJA_NUEVO_MES & "."
+        Exit Function
+    End If
+    If Not EsEntero(mes, 1, 12) Then
+        CrearLibroDelMesAuto = "ERROR;Escriba un mes válido (1 a 12) en la hoja " & HOJA_NUEVO_MES & "."
+        Exit Function
+    End If
+    If ThisWorkbook.Path = "" Then
+        CrearLibroDelMesAuto = "ERROR;Guarde este archivo antes de crear el libro del mes."
+        Exit Function
+    End If
+    ' Las filas exportadas del sistema no se vacían con la macro.
+    If Application.WorksheetFunction.CountIf(ThisWorkbook.Worksheets(HOJA_GESTIONES).Columns(G_ORIGEN), "SISTEMA") > 0 Then
+        CrearLibroDelMesAuto = "ERROR;Este libro tiene filas exportadas del sistema: cree el libro del mes desde la plantilla base (respaldo_implantes.xlsm)."
+        Exit Function
+    End If
+
+    Dim nombre As String, destino As String, wb As Workbook, resultado As String
+    nombre = PREFIJO_LIBRO & CLng(anio) & "-" & Format(CLng(mes), "00") & ".xlsm"
+    destino = ThisWorkbook.Path & Application.PathSeparator & nombre
+    If Dir(destino) <> "" Then
+        CrearLibroDelMesAuto = "ERROR;Ya existe el libro " & nombre & " en esta carpeta: no se sobrescribe. Ábralo desde la carpeta."
+        Exit Function
+    End If
+    For Each wb In Application.Workbooks
+        If LCase(wb.Name) = LCase(nombre) Then
+            CrearLibroDelMesAuto = "ERROR;Hay un libro abierto con el nombre " & nombre & ": ciérrelo antes."
+            Exit Function
+        End If
+    Next wb
+
+    On Error GoTo Fallo
+    ThisWorkbook.SaveCopyAs destino
+    Set wb = Application.Workbooks.Open(destino)
+    resultado = Application.Run("'" & wb.Name & "'!PrepararLibroDelMes", CLng(anio), CLng(mes))
+    If Left(resultado, 2) <> "OK" Then
+        wb.Close False
+        Kill destino
+        CrearLibroDelMesAuto = resultado
+        Exit Function
+    End If
+    wb.Save
+    If abrir Then
+        wb.Activate
+        wb.Worksheets(HOJA_GESTIONES).Activate
+    Else
+        wb.Close False
+    End If
+    CrearLibroDelMesAuto = "OK;" & destino
+    Exit Function
+Fallo:
+    CrearLibroDelMesAuto = "ERROR;No se pudo crear " & nombre & ": " & Err.Description
+End Function
+
+' Corre en el libro nuevo (ThisWorkbook = la copia): vacía las hojas de
+' trabajo y escribe su año y mes. Devuelve "OK" o "ERROR;mensaje".
+Public Function PrepararLibroDelMes(ByVal anio As Long, ByVal mes As Long) As String
+    Dim wsG As Worksheet, wsI As Worksheet, wsC As Worksheet, wsS As Worksheet, wsR As Worksheet, wsCat As Worksheet
+    Set wsG = ThisWorkbook.Worksheets(HOJA_GESTIONES)
+    Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
+    Set wsC = ThisWorkbook.Worksheets(HOJA_CARGADOS)
+    Set wsS = ThisWorkbook.Worksheets(HOJA_SOLICITUD)
+    Set wsR = ThisWorkbook.Worksheets(HOJA_RESUMEN)
+    Set wsCat = ThisWorkbook.Worksheets(HOJA_CATALOGOS)
+
+    Dim calculo As XlCalculation
+    calculo = Application.Calculation
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    On Error GoTo Fallo
+    Desproteger wsG: Desproteger wsI: Desproteger wsC: Desproteger wsS: Desproteger wsR: Desproteger wsCat
+
+    ' Gestiones: las celdas que se escriben; el autocompletado vuelve a su fórmula.
+    Dim ultima As Long, c As Long, par As Variant, entrada As Variant, ti As Object
+    ultima = UltimaFila(wsG, 1)
+    If ultima >= PRIMERA Then
+        For c = 2 To G_ULTIMA_ENTRADA
+            If AuxiliarDe(c) = 0 Then wsG.Range(wsG.Cells(PRIMERA, c), wsG.Cells(ultima, c)).ClearContents
+        Next c
+        wsG.Range(wsG.Cells(PRIMERA, G_REGISTRADO), wsG.Cells(ultima, G_REGISTRADO)).ClearContents
+        For Each par In Split(G_AUTOCOMPLETADO, ",")
+            wsG.Range(wsG.Cells(PRIMERA, CLng(Split(par, ":")(0))), wsG.Cells(ultima, CLng(Split(par, ":")(0)))).FormulaR1C1 = "=RC" & CLng(Split(par, ":")(1))
+        Next par
+        ' Mensajes de la validación con el mes de este libro.
+        With wsG.Range(wsG.Cells(PRIMERA, 2), wsG.Cells(ultima, 2)).Validation
+            .ErrorTitle = "Admisión"
+            .ErrorMessage = MSJ_ADMISION
+        End With
+        With wsG.Range(wsG.Cells(PRIMERA, 3), wsG.Cells(ultima, 3)).Validation
+            .ErrorTitle = "Fecha"
+            .ErrorMessage = Replace(MSJ_FECHA, "{MES}", Split(MESES, ",")(mes - 1) & " " & anio)
+        End With
+    End If
+
+    ' Ítems: las celdas que se escriben (N° de línea y fórmulas quedan).
+    Set ti = Titulos(wsI)
+    ultima = UltimaFila(wsI, Col(ti, "N° línea"))
+    If ultima >= PRIMERA Then
+        For Each entrada In Split(I_ENTRADAS, "|")
+            wsI.Range(wsI.Cells(PRIMERA, Col(ti, entrada)), wsI.Cells(ultima, Col(ti, entrada))).ClearContents
+        Next entrada
+    End If
+
+    ' Cargados (datos desde la fila 3), Solicitud Implantes y Resumen (desde la 2).
+    ultima = UltimaFila(wsC, Col(Titulos(wsC), "CLAVE"))
+    If ultima >= PRIMERA Then wsC.Rows(PRIMERA & ":" & ultima).Delete
+    ultima = wsS.Cells(wsS.Rows.Count, S_COLUMNAS).End(xlUp).Row
+    If ultima >= 2 Then wsS.Rows("2:" & ultima).Delete
+    ultima = wsR.Cells(wsR.Rows.Count, R_COLUMNAS).End(xlUp).Row
+    If ultima >= 2 Then wsR.Rows("2:" & ultima).Delete
+
+    wsCat.Range(LIBRO_ANIO).Value = anio
+    wsCat.Range(LIBRO_MES).Value = mes
+    PrepararLibroDelMes = "OK"
+Fin:
+    Proteger wsG: Proteger wsI: Proteger wsC: Proteger wsS: Proteger wsR: Proteger wsCat
+    Application.Calculation = calculo
+    Application.ScreenUpdating = True
+    Application.Calculate
+    Exit Function
+Fallo:
+    PrepararLibroDelMes = "ERROR;No se pudo preparar el libro: " & Err.Description
+    Resume Fin
+End Function
+
+' Mes del libro (0 en la plantilla base) y su nombre ("NOVIEMBRE 2026").
+Private Function LibroMes() As Long
+    LibroMes = Val(Txt(ThisWorkbook.Worksheets(HOJA_CATALOGOS).Range(LIBRO_MES).Value))
+End Function
+
+Private Function LibroAnio() As Long
+    LibroAnio = Val(Txt(ThisWorkbook.Worksheets(HOJA_CATALOGOS).Range(LIBRO_ANIO).Value))
+End Function
+
+Private Function NombreLibro() As String
+    If LibroMes() < 1 Or LibroMes() > 12 Then Exit Function
+    NombreLibro = Split(MESES, ",")(LibroMes() - 1) & " " & LibroAnio()
+End Function
+
+' La fecha de una gestión es del mes del libro.
+Private Function EsDelMes(ByVal v As Variant) As Boolean
+    Dim d As Date
+    If IsError(v) Or IsEmpty(v) Then Exit Function
+    If VarType(v) = vbDate Then
+        d = v
+    ElseIf IsNumeric(v) Then
+        d = CDate(v)
+    Else
+        Exit Function
+    End If
+    EsDelMes = (Year(d) = LibroAnio() And Month(d) = LibroMes())
+End Function
+
+Private Function EsEntero(ByVal v As Variant, ByVal minimo As Long, ByVal maximo As Long) As Boolean
+    If IsError(v) Or IsEmpty(v) Then Exit Function
+    If Not IsNumeric(v) Then Exit Function
+    If CDbl(v) <> Int(CDbl(v)) Then Exit Function
+    EsEntero = (CDbl(v) >= minimo And CDbl(v) <= maximo)
+End Function
+
+' ---------------------------------------------------------------------------
 ' Auxiliares
 ' ---------------------------------------------------------------------------
 
-' Filas de Gestiones (de contingencia, Estado CARGADO, con ítems) y de sus ítems.
-Private Sub BuscarCargados(ByRef filasG As Collection, ByRef filasI As Collection, ByRef nAlertas As Long)
+' Filas de Gestiones (de contingencia, Estado CARGADO, con ítems y fecha del
+' mes del libro) y de sus ítems. nFuera: las CARGADO de otro mes (pegadas
+' saltándose la validación), que no se mueven.
+Private Sub BuscarCargados(ByRef filasG As Collection, ByRef filasI As Collection, ByRef nAlertas As Long, ByRef nFuera As Long)
     Dim wsG As Worksheet, wsI As Worksheet
     Set wsG = ThisWorkbook.Worksheets(HOJA_GESTIONES)
     Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
     Set filasG = New Collection
     Set filasI = New Collection
     nAlertas = 0
+    nFuera = 0
     Application.Calculate
 
     Dim gDatos As Variant, iDatos As Variant, r As Long, claves As Object
@@ -437,7 +652,9 @@ Private Sub BuscarCargados(ByRef filasG As Collection, ByRef filasI As Collectio
     gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
     For r = 1 To UBound(gDatos, 1)
         If Txt(gDatos(r, G_ORIGEN)) = "CONTINGENCIA" And Txt(gDatos(r, G_ESTADO)) = "CARGADO" And Val(Txt(gDatos(r, G_N_ITEMS))) > 0 Then
-            If Not claves.Exists(Txt(gDatos(r, 1))) Then
+            If Not EsDelMes(gDatos(r, 3)) Then
+                nFuera = nFuera + 1
+            ElseIf Not claves.Exists(Txt(gDatos(r, 1))) Then
                 claves(Txt(gDatos(r, 1))) = True
                 filasG.Add r + PRIMERA - 1
             End If
@@ -605,13 +822,13 @@ Private Sub Desproteger(ByVal ws As Worksheet)
     ws.Unprotect Password:=CLAVE_HOJAS
 End Sub
 
-Private Sub CrearBoton(ByVal ws As Worksheet, ByVal nombre As String, ByVal texto As String, ByVal accion As String, ByVal ancho As Double)
+Private Sub CrearBoton(ByVal ws As Worksheet, ByVal nombre As String, ByVal texto As String, ByVal accion As String, ByVal ancho As Double, Optional ByVal celda As String = "A1")
     Desproteger ws
     On Error Resume Next
     ws.Buttons(nombre).Delete
     On Error GoTo 0
     Dim b As Object
-    Set b = ws.Buttons.Add(ws.Range("A1").Left + 3, ws.Range("A1").Top + 3, ancho, 24)
+    Set b = ws.Buttons.Add(ws.Range(celda).Left + 3, ws.Range(celda).Top + 3, ancho, 24)
     b.Name = nombre
     b.Caption = texto
     b.OnAction = accion

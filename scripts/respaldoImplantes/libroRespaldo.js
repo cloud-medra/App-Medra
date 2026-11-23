@@ -38,8 +38,37 @@ export const H = {
   SOL: 'Solicitud Implantes', RES: 'Resumen',
   RI: 'Reporte Info', R: 'Códigos', E: 'Empresas',
   CEN: 'Centros', REC: 'Recargos', PREV: 'Previsiones', CONV: 'Convenios', C: 'Catálogos', INS: 'Instrucciones',
+  NM: 'Nuevo mes',
 };
 const ref = (hoja) => `'${hoja}'!`;
+
+// --- Libro del mes ------------------------------------------------------------
+// Un libro por mes (decisión del 23-11-2026): la plantilla base
+// (respaldo_implantes.xlsm) no tiene mes y no deja registrar; la macro
+// "Crear libro del mes" (hoja Nuevo mes) la copia como
+// respaldo_implantes_AAAA-MM.xlsm, vacía las hojas de trabajo y escribe el
+// año y el mes en estas celdas de Catálogos (bloqueadas). Las validaciones,
+// la alerta de Gestiones y la macro "Mover cargados" leen de aquí. La macro
+// usa las mismas celdas (LIBRO_ANIO, LIBRO_MES en ModContingencia.bas).
+export const CELDAS_LIBRO = Object.freeze({ meses: 'J', anio: 'K3', mes: 'L3', nombre: 'M3' });
+const MESES_LIBRO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+const L = {
+  anio: `${ref(H.C)}$K$3`,
+  mes: `${ref(H.C)}$L$3`,
+  nombre: `${ref(H.C)}$M$3`,
+  meses: `${ref(H.C)}$J$3:$J$14`,
+};
+const SIN_MES = `N(${L.anio})=0`;
+export const nombreLibroMes = ({ anio, mes }) => `${MESES_LIBRO[mes - 1]} ${anio}`;
+// Mensajes de las validaciones de Gestiones. La plantilla base trae los de
+// "sin mes"; la macro los cambia al crear el libro (y el modo con datos del
+// sistema los arma ya con su mes). Excel no permite un mensaje que dependa
+// del valor escrito: el mes de la fecha rechazada lo dice la columna Alerta.
+export const MENSAJES_LIBRO = Object.freeze({
+  base: 'Esta es la plantilla base (sin mes): no permite registrar. Cree el libro del mes en la hoja "Nuevo mes" (botón "Crear libro del mes").',
+  admision: 'Solo dígitos, sin puntos ni espacios.',
+  fecha: (nombre) => `Este libro es de ${nombre}. Registra esta gestión en el libro del mes de su fecha (respaldo_implantes_AAAA-MM.xlsm).`,
+});
 
 // Colores (ARGB).
 const COLOR = {
@@ -73,7 +102,7 @@ const FORMATO_PESOS = '#,##0';
 const COLUMNAS_GESTIONES = [
   { l: 'A', titulo: 'CLAVE', clase: 'formula', ancho: 34, ayuda: 'Automática: admisión|empresa|AAAA-MM-DD. Es la que se elige en Ítems.' },
   { l: 'B', titulo: 'Admisión', clase: 'obligatorio', ancho: 12, texto: true, ayuda: 'N° de admisión, solo dígitos.' },
-  { l: 'C', titulo: 'Fecha', clase: 'obligatorio', ancho: 12, fecha: true, ayuda: 'Fecha de la cirugía (dd-mm-aaaa).' },
+  { l: 'C', titulo: 'Fecha', clase: 'obligatorio', ancho: 12, fecha: true, ayuda: 'Fecha de la cirugía (dd-mm-aaaa). Solo del mes del libro.' },
   { l: 'D', titulo: 'Empresa', clase: 'obligatorio', ancho: 26, ayuda: 'Proveedor, de la lista.' },
   { l: 'E', titulo: 'Nombre paciente', clase: 'opcional', ancho: 28, ayuda: 'Se completa desde Reporte Info al escribir la admisión. Se puede escribir encima.' },
   { l: 'F', titulo: 'Total cotización', clase: 'opcional', ancho: 14, pesos: true, ayuda: 'Total que indica la cotización (se compara con la suma de los ítems).' },
@@ -338,7 +367,7 @@ const encabezado = (celda, titulo) => {
   celda.border = BORDES;
 };
 
-const hojaCatalogos = (libro) => {
+const hojaCatalogos = (libro, libroMes) => {
   const hoja = libro.addWorksheet(H.C);
   const rangos = {};
   hoja.getCell('A1').value = 'Listas fijas del sistema (no modificar).';
@@ -349,6 +378,17 @@ const hojaCatalogos = (libro) => {
     b.valores.forEach((v, i) => { hoja.getCell(`${b.l}${PRIMERA + i}`).value = v; });
     rangos[b.l] = `${ref(H.C)}$${b.l}$${PRIMERA}:$${b.l}$${PRIMERA + b.valores.length - 1}`;
   });
+  // Mes del libro (ver CELDAS_LIBRO). Vacío en la plantilla base.
+  [['J', 'Meses', 12], ['K', 'Libro: año', 10], ['L', 'Libro: mes', 10], ['M', 'Libro', 18]].forEach(([l, titulo, ancho]) => {
+    hoja.getColumn(l).width = ancho;
+    encabezado(hoja.getCell(`${l}${FILA_ENCABEZADO}`), titulo);
+  });
+  MESES_LIBRO.forEach((m, i) => { hoja.getCell(`J${PRIMERA + i}`).value = m; });
+  if (libroMes) {
+    hoja.getCell('K3').value = libroMes.anio;
+    hoja.getCell('L3').value = libroMes.mes;
+  }
+  hoja.getCell('M3').value = f('IF(N(K3)=0,"",INDEX($J$3:$J$14,L3)&" "&K3)');
 
   hoja.views = [{ state: 'frozen', ySplit: FILA_ENCABEZADO }];
   return { hoja, rangos };
@@ -704,10 +744,16 @@ const formulasGestion = (r, x) => ({
   AF: f(`IF(TRIM(B${r})="","",IFERROR(MATCH(TRIM(B${r}),${x.riBusqueda},0),""))`),
   ...Object.fromEntries(Object.entries(RI_COLUMNA).map(([aux, colRI]) => [aux, f(`IF(AF${r}="","",INDEX(${x.ri(colRI)},AF${r})&"")`)])),
   ...Object.fromEntries(Object.entries(AUTOCOMPLETADO_GESTION).map(([visible, aux]) => [visible, f(`${aux}${r}`)])),
-  AE: f(`IF(TRIM(B${r})="","",IF(AF${r}="","Admisión no está en Reporte Info · ","")`
+  // Lo pegado se salta la validación: la alerta avisa el mes del libro.
+  AE: f(`IF(B${r}&C${r}&D${r}="","",IF(${SIN_MES},"Plantilla base: no registre aquí (cree el libro del mes) · ","")`
+    + `&IF(${fueraDelMes(`C${r}`)},"Fecha fuera del mes del libro (es de "&INDEX(${L.meses},MONTH(C${r}))&" "&YEAR(C${r})&") · ","")`
+    + `&IF(AND(TRIM(B${r})<>"",AF${r}=""),"Admisión no está en Reporte Info · ","")`
     + `&IF(${fueraDeLista(`L${r}`, x.convenios)},"Convenio fuera de la lista · ","")`
     + `&IF(${fueraDeLista(`M${r}`, x.previsiones)},"Previsión fuera de la lista · ",""))`),
 });
+
+// Fecha escrita que no es del mes del libro (en la base, ninguna lo es).
+const fueraDelMes = (celda) => `AND(ISNUMBER(${celda}),${celda}<>"",OR(${SIN_MES},YEAR(${celda})<>${L.anio},MONTH(${celda})<>${L.mes}))`;
 
 // Estado, conteos y diferencia: iguales para filas del sistema y nuevas
 // (a una gestión del sistema se le pueden agregar ítems en la caída).
@@ -834,6 +880,7 @@ const lineaCatalogo = (nombre, o) => {
 // exportación del sistema (con datos y catálogos de Firestore).
 const encabezadoInstrucciones = (d) => (d.plantilla ? [
   ['RESPALDO DE CONTINGENCIA — IMPLANTES (PLANTILLA)', 'titulo'],
+  ['', 'libro'],
   [`Plantilla generada: ${d.generadoEl}. Filas preparadas: ${d.tamano.gestionesLibres} gestiones y ${d.tamano.itemsLibres} ítems.`],
   ['Catálogos actualizados al →', 'fecha'],
   [lineaCatalogo('Reporte Info', d.origenCatalogos?.reporteInfo)],
@@ -848,6 +895,7 @@ const encabezadoInstrucciones = (d) => (d.plantilla ? [
   ['Si el sistema no está disponible, registre aquí las gestiones y sus ítems. Cuando vuelva, lo registrado se carga en el sistema (ORIGEN = CONTINGENCIA).'],
 ] : [
   ['RESPALDO DE CONTINGENCIA — IMPLANTES', 'titulo'],
+  ['', 'libro'],
   [`Generado: ${d.generadoEl} (hora de Chile)`],
   [`Período abierto: ${d.periodoTexto}. Gestiones exportadas: mes ${d.mesExportado}.`],
   [`Catálogo de referencias actualizado al: ${d.generadoEl} (${d.catalogo.resumen.usables} referencias; sin ${d.catalogo.resumen.inactivas} inactivas).`],
@@ -858,6 +906,15 @@ const encabezadoInstrucciones = (d) => (d.plantilla ? [
   ['Las filas grises con ORIGEN = SISTEMA son una foto del sistema al generar el archivo: sirven de consulta y solo se pueden cambiar sus celdas blancas (ver "Cambios en lo que ya estaba en el sistema").'],
 ]);
 
+const LIBRO_DEL_MES = [
+  ['UN LIBRO POR MES', 'seccion'],
+  ['Hay un libro por mes, respaldo_implantes_AAAA-MM.xlsm, en la misma carpeta que la plantilla base. La plantilla base (respaldo_implantes.xlsm) no tiene mes y no permite registrar: solo sirve para crear los libros (si se intenta escribir en Gestiones, Excel lo rechaza y lo avisa).'],
+  ['Crear el libro de un mes: hoja "Nuevo mes" → escriba el Año y el Mes (1 a 12) → botón "Crear libro del mes". Crea una copia de este libro con los catálogos (Códigos, Empresas, Centros, Recargos, Previsiones, Convenios, Reporte Info y Catálogos) e Instrucciones, con Gestiones, Ítems, Cargados, Solicitud Implantes y Resumen vacías, y la abre. Si ya existe el libro de ese mes, no lo sobrescribe y avisa.'],
+  ['Las gestiones no se traspasan: las pendientes se quedan en el libro de su mes. Todos los libros tienen las mismas columnas.'],
+  ['Cada libro solo acepta gestiones con fecha de su mes (no importa la fecha de hoy: en noviembre se puede abrir el libro de octubre y registrar octubre). Al escribir otra fecha Excel la rechaza. Si se pega, la Fecha se pinta de rojo, la Alerta dice "Fecha fuera del mes del libro" (con el mes que corresponde) y "Mover cargados" no mueve esa gestión.'],
+  ['El mes del libro se ve aquí arriba, en el nombre del archivo y en la fila 1 de Gestiones.'],
+];
+
 const MACROS_Y_BOTONES = [
   ['HABILITAR LAS MACROS (para los botones)', 'seccion'],
   ['El archivo es .xlsm (con macros). Sin macros todo lo demás funciona igual (fórmulas, listas y alertas); solo los botones no.'],
@@ -866,8 +923,9 @@ const MACROS_Y_BOTONES = [
   ['3. Si el archivo está en una carpeta de red y Excel lo sigue bloqueando: Archivo → Opciones → Centro de confianza → Configuración del Centro de confianza → Ubicaciones de confianza → "Agregar nueva ubicación" con esa carpeta (marque "Las subcarpetas de esta ubicación también son de confianza").'],
   [''],
   ['BOTONES', 'seccion'],
-  ['"Mover cargados" (hoja Ítems, arriba a la izquierda): busca las gestiones de contingencia con Estado = CARGADO (todas sus líneas CARGADO, PAD o SIN CARGO), le dice cuántas gestiones e ítems va a mover (y cuántos ítems tienen alerta), le pide su nombre y que confirme. Las copia a la hoja Cargados como valores, con fecha/hora y su nombre, y limpia esas filas en Gestiones e Ítems: las fórmulas quedan listas para volver a usarlas.'],
+  ['"Mover cargados" (hoja Ítems, arriba a la izquierda): busca las gestiones de contingencia con Estado = CARGADO (todas sus líneas CARGADO, PAD o SIN CARGO) y fecha del mes del libro (las de otro mes no se mueven y lo avisa), le dice cuántas gestiones e ítems va a mover (y cuántos ítems tienen alerta), le pide su nombre y que confirme. Las copia a la hoja Cargados como valores, con fecha/hora y su nombre, y limpia esas filas en Gestiones e Ítems: las fórmulas quedan listas para volver a usarlas.'],
   ['"Devolver a pendientes" (hoja Cargados, arriba a la izquierda): seleccione cualquier celda de una fila de la gestión que quiere devolver y presione el botón. Confirma y la vuelve a filas libres de Gestiones e Ítems (con N° de línea nuevos; la Línea padre se ajusta sola) y la quita de Cargados. No se puede si en Gestiones ya hay una gestión con la misma CLAVE.'],
+  ['"Crear libro del mes" (hoja Nuevo mes): ver UN LIBRO POR MES.'],
   ['Después de usar un botón, guarde el archivo (Ctrl+G). Los botones no se pueden deshacer con Ctrl+Z: para revertir, use el botón contrario.'],
   [''],
   ['HOJAS SOLICITUD IMPLANTES Y RESUMEN', 'seccion'],
@@ -897,12 +955,14 @@ const ACTUALIZAR_CATALOGOS = [
 const textoInstrucciones = (d) => [
   ...encabezadoInstrucciones(d),
   [''],
+  ...LIBRO_DEL_MES,
+  [''],
   ['COLORES DE LOS ENCABEZADOS', 'seccion'],
   ['Amarillo: obligatorio. Azul: opcional. Gris: automático (no se escribe). Una celda obligatoria vacía en una fila nueva se pinta de rojo.'],
   ['Verde (Ítems y Cargados): la vista de carga, las primeras columnas, fijas al desplazarse: N° línea, Admisión, Fecha, Código, Cantidad, Venta y Estado carga. Es lo que se revisa al cargar en el sistema. Ahí se escriben solo Cantidad (obligatoria) y Estado carga; Admisión y Fecha salen de la CLAVE.'],
   [''],
   ['HOJA GESTIONES (una fila por admisión + empresa + fecha)', 'seccion'],
-  ['1. Escriba Admisión (solo dígitos), Fecha (dd-mm-aaaa) y elija la Empresa (lista de la hoja Empresas). La CLAVE se arma sola: admisión|empresa|AAAA-MM-DD.'],
+  ['1. Escriba Admisión (solo dígitos), Fecha (dd-mm-aaaa, del mes del libro) y elija la Empresa (lista de la hoja Empresas). La CLAVE se arma sola: admisión|empresa|AAAA-MM-DD.'],
   ['   Al escribir la admisión, Nombre, Convenio, Previsión, Médico y Descripción se completan solos desde la hoja Reporte Info, como en el sistema (la Previsión es la columna "Isapre" de Reporte Info).'],
   ['   Si la admisión no está en Reporte Info, la Admisión se pinta naranja y la columna Alerta dice "Admisión no está en Reporte Info": escriba esos datos a mano. Convenio y Previsión tienen lista; si escribe un valor que no está, Excel pregunta y Alerta lo avisa, pero se puede usar.'],
   ['   También se puede escribir encima de un dato autocompletado: queda en letra azul cursiva y solo cambia esa celda (las demás filas siguen autocompletando). Para volver al dato de Reporte Info, copie la misma celda de una fila de abajo y péguela.'],
@@ -966,6 +1026,11 @@ const hojaInstrucciones = (libro, datos) => {
     c.value = t;
     c.alignment = { wrapText: true, vertical: 'top' };
     if (estilo === 'titulo') c.font = { bold: true, size: 14 };
+    // Mes del libro (lo escribe la macro "Crear libro del mes" en Catálogos).
+    if (estilo === 'libro') {
+      c.value = f(`IF(${SIN_MES},"PLANTILLA BASE (sin mes): no se registra aquí. Cree el libro del mes en la hoja ""${H.NM}"".","LIBRO "&${L.nombre}&": solo acepta gestiones con fecha de ese mes.")`);
+      c.font = { bold: true, size: 12, color: { argb: COLOR.manual } };
+    }
     if (estilo === 'seccion') { c.font = { bold: true }; c.fill = relleno(COLOR.opcional); }
     if (estilo === 'fecha') {
       // Fecha de los catálogos: la del archivo exportado; editable si se
@@ -979,6 +1044,59 @@ const hojaInstrucciones = (libro, datos) => {
       fecha.border = BORDES;
       fecha.protection = { locked: false };
     }
+  });
+  return hoja;
+};
+
+// --- Hoja Nuevo mes ----------------------------------------------------------------
+// Año (B5) y mes (B6) del libro a crear; el botón "Crear libro del mes"
+// (macro CrearLibroDelMes, en A9) usa estas celdas (NM_ANIO y NM_MES en
+// ModContingencia.bas).
+export const CELDAS_NUEVO_MES = Object.freeze({ anio: 'B5', mes: 'B6' });
+
+const hojaNuevoMes = (libro) => {
+  const hoja = libro.addWorksheet(H.NM);
+  hoja.getColumn('A').width = 26;
+  hoja.getColumn('B').width = 44;
+  hoja.getColumn('C').width = 16;
+  const titulo = hoja.getCell('A1');
+  titulo.value = 'CREAR LIBRO DEL MES';
+  titulo.font = { bold: true, size: 14 };
+  const fila = (r, etiqueta, valor) => {
+    const a = hoja.getCell(`A${r}`);
+    a.value = etiqueta;
+    a.font = { bold: true };
+    a.alignment = { horizontal: 'right' };
+    if (valor !== undefined) hoja.getCell(`B${r}`).value = valor;
+  };
+  fila(3, 'Este libro:', f(`IF(${SIN_MES},"PLANTILLA BASE (sin mes)","LIBRO "&${L.nombre})`));
+  hoja.getCell('B3').font = { bold: true };
+  fila(5, 'Año del libro nuevo:');
+  fila(6, 'Mes (1 a 12):');
+  hoja.getCell('C6').value = f(`IF(AND(ISNUMBER(B6),B6>=1,B6<=12),INDEX(${L.meses},B6),"")`);
+  fila(7, 'Archivo que se creará:', f('IF(AND(ISNUMBER(B5),ISNUMBER(B6),B6>=1,B6<=12),"respaldo_implantes_"&B5&"-"&TEXT(B6,"00")&".xlsm","")'));
+  ['B5', 'B6'].forEach((c) => {
+    const celda = hoja.getCell(c);
+    celda.fill = relleno(COLOR.obligatorio);
+    celda.border = BORDES;
+    celda.alignment = { horizontal: 'left' };
+    celda.protection = { locked: false };
+  });
+  validar(hoja, 'B5', { type: 'whole', operator: 'between', formulae: [2020, 2100], errorTitle: 'Año', error: 'Escriba un año entre 2020 y 2100.' });
+  validar(hoja, 'B6', { type: 'whole', operator: 'between', formulae: [1, 12], errorTitle: 'Mes', error: 'Escriba un mes entre 1 y 12.' });
+  // A9: botón "Crear libro del mes" (lo crea la macro InstalarBotones).
+  hoja.getRow(9).height = 30;
+  [
+    'Crea en la misma carpeta de este archivo el libro respaldo_implantes_AAAA-MM.xlsm, copia de este (con sus macros y protección), y lo abre.',
+    'El libro nuevo trae los catálogos de este (Códigos, Empresas, Centros, Recargos, Previsiones, Convenios, Reporte Info y Catálogos) e Instrucciones; Gestiones, Ítems, Cargados, Solicitud Implantes y Resumen quedan vacías.',
+    'No se traspasan gestiones: las pendientes se quedan en el libro de su mes. Si el libro de ese mes ya existe, no se sobrescribe.',
+    'Cada libro solo acepta gestiones con fecha de su mes. Créelo desde la plantilla base recién regenerada para que traiga los catálogos al día.',
+  ].forEach((texto, i) => {
+    const c = hoja.getCell(`A${11 + i}`);
+    c.value = texto;
+    c.alignment = { wrapText: true, vertical: 'top' };
+    hoja.mergeCells(`A${11 + i}:C${11 + i}`);
+    hoja.getRow(11 + i).height = 32;
   });
   return hoja;
 };
@@ -1026,6 +1144,7 @@ export const construirLibro = async (datosEntrada) => {
   const ultimaItem = PRIMERA + filasItems.length + tamano.itemsLibres - 1;
 
   hojaInstrucciones(libro, datos);
+  const hNM = hojaNuevoMes(libro);
   const hG = libro.addWorksheet(H.G);
   const hI = libro.addWorksheet(H.I);
   const hC = hojaCargados(libro);
@@ -1044,7 +1163,7 @@ export const construirLibro = async (datosEntrada) => {
     datos.previsiones || [], datos.filasCatalogos.previsiones);
   const convenios = hojaNombres(libro, H.CONV, 'Convenios activos (desplegable de Convenio en Gestiones, solo avisa si el valor no está). Se regenera con el script; también se puede pegar desde A3 el archivo de Maestros → Convenios → Exportar (solo ACTIVOS).',
     datos.convenios || [], datos.filasCatalogos.convenios);
-  const { rangos: cat } = hojaCatalogos(libro);
+  const { rangos: cat } = hojaCatalogos(libro, datos.libroMes);
 
   const enHoja = (hoja, l, ultima) => `${ref(hoja)}$${l}$${PRIMERA}:$${l}$${ultima}`;
   const x = {
@@ -1064,7 +1183,18 @@ export const construirLibro = async (datosEntrada) => {
   };
 
   // Gestiones
-  prepararHoja(hG, COLUMNAS_GESTIONES, { congelarColumnas: 2 });
+  // A1:D1: el mes del libro ("LIBRO NOVIEMBRE 2026"); la ayuda de esas
+  // columnas va como nota del encabezado.
+  prepararHoja(hG, COLUMNAS_GESTIONES, { congelarColumnas: 2, ayudaEnNota: ['A', 'B', 'C', 'D'] });
+  hG.mergeCells('A1:D1');
+  const rotulo = hG.getCell('A1');
+  rotulo.value = f(`IF(${SIN_MES},"PLANTILLA BASE (sin mes): no se registra aquí. Cree el libro del mes en la hoja ""${H.NM}"".","LIBRO "&${L.nombre})`);
+  rotulo.font = { bold: true, size: 14, color: { argb: COLOR.ok } };
+  rotulo.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+  hG.addConditionalFormatting({
+    ref: 'A1:D1',
+    rules: [{ type: 'expression', priority: 1, formulae: [SIN_MES], style: { font: { bold: true, color: { argb: COLOR.textoError } }, fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } } } }],
+  });
   filasGestiones.forEach((g, i) => {
     const r = PRIMERA + i;
     const valores = valoresGestionSistema(g);
@@ -1076,8 +1206,27 @@ export const construirLibro = async (datosEntrada) => {
     escribirFila(hG, r, COLUMNAS_GESTIONES, formulasGestion(r, x), { sistema: false });
   }
   const rg = (l) => `${l}${PRIMERA}:${l}${ultimaGestion}`;
-  validar(hG, rg('B'), soloDigitos(`B${PRIMERA}`));
-  validar(hG, rg('C'), fechaValida);
+  // Admisión y Fecha exigen el mes del libro: en la plantilla base no se
+  // puede escribir ninguna, y sin ellas no hay CLAVE para Ítems. La fecha
+  // solo acepta días del mes del libro (no depende de la fecha de hoy).
+  const { libroMes } = datos;
+  const digitos = soloDigitos(`B${PRIMERA}`);
+  validar(hG, rg('B'), {
+    ...digitos,
+    formulae: [`AND(NOT(${SIN_MES}),${digitos.formulae[0]})`],
+    // Sin "Omitir blancos": con esa opción Excel no valida si la fórmula
+    // mira una celda vacía (el mes del libro, vacío en la plantilla base).
+    allowBlank: false,
+    errorTitle: libroMes ? 'Admisión' : 'Plantilla base',
+    error: libroMes ? MENSAJES_LIBRO.admision : MENSAJES_LIBRO.base,
+  });
+  validar(hG, rg('C'), {
+    type: 'custom',
+    allowBlank: false,
+    formulae: [`AND(NOT(${SIN_MES}),ISNUMBER(C${PRIMERA}),YEAR(C${PRIMERA})=${L.anio},MONTH(C${PRIMERA})=${L.mes})`],
+    errorTitle: libroMes ? 'Fecha' : 'Plantilla base',
+    error: libroMes ? MENSAJES_LIBRO.fecha(nombreLibroMes(libroMes)) : MENSAJES_LIBRO.base,
+  });
   validar(hG, rg('D'), lista(empresasNombres, { errorTitle: 'Empresa', error: 'Elija una empresa de la lista (hoja Empresas).' }));
   validar(hG, rg('F'), { type: 'decimal', operator: 'greaterThanOrEqual', formulae: [0], error: 'Monto mayor o igual a 0.' });
   validar(hG, rg('G'), lista(cat.C));
@@ -1114,9 +1263,19 @@ export const construirLibro = async (datosEntrada) => {
     ref: rg(l),
     rules: [{ type: 'expression', priority: 2, formulae: [`AND($V${PRIMERA}="CONTINGENCIA",${l}${PRIMERA}<>"",${l}${PRIMERA}&""<>${aux}${PRIMERA})`], style: { font: { italic: true, color: { argb: COLOR.manual } } } }],
   }));
+  const alertaRoja = `OR(ISNUMBER(SEARCH("Fecha fuera",AE${PRIMERA})),ISNUMBER(SEARCH("Plantilla base",AE${PRIMERA})))`;
   hG.addConditionalFormatting({
     ref: rg('AE'),
-    rules: [{ type: 'expression', priority: 1, formulae: [`AE${PRIMERA}<>""`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.aviso } }, font: { bold: true, color: { argb: 'FF7F4F00' } } } }],
+    rules: [
+      // Rojo: fecha fuera del mes o plantilla base (no se puede cargar así).
+      // Las dos reglas no se superponen: Excel puede igualar sus prioridades.
+      { type: 'expression', priority: 1, formulae: [alertaRoja], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { bold: true, color: { argb: COLOR.textoError } } } },
+      { type: 'expression', priority: 2, formulae: [`AND(AE${PRIMERA}<>"",NOT(${alertaRoja}))`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.aviso } }, font: { bold: true, color: { argb: 'FF7F4F00' } } } },
+    ],
+  });
+  hG.addConditionalFormatting({
+    ref: rg('C'),
+    rules: [{ type: 'expression', priority: 1, formulae: [fueraDelMes(`C${PRIMERA}`)], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { bold: true, color: { argb: COLOR.textoError } } } }],
   });
 
   // Ítems
@@ -1198,6 +1357,7 @@ export const construirLibro = async (datosEntrada) => {
   const clave = datos.claveHojas || '';
   for (const hoja of [hG, hI]) await hoja.protect(clave, OPCIONES_PROTECCION);
   for (const hoja of [hC, hSol, hRes]) await hoja.protect(clave, { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true, formatColumns: true, formatRows: true });
+  await hNM.protect(clave, { selectLockedCells: true, selectUnlockedCells: true });
   for (const nombre of [H.RI, H.R, H.E, H.CEN, H.REC, H.PREV, H.CONV, H.C, H.INS]) await libro.getWorksheet(nombre).protect(clave, { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true });
 
   return { libro, filas: { ultimaGestion, ultimaItem } };

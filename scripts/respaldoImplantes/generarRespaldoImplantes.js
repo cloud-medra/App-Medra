@@ -198,6 +198,8 @@ const main = async () => {
     generadoEl: fechaHoraChile(),
     periodoTexto: leidos.periodoTexto,
     mesExportado: `${leidos.mes.anio}-${leidos.mes.mes}`,
+    // Libro del mes exportado: solo acepta gestiones de ese mes.
+    libroMes: { anio: Number(leidos.mes.anio), mes: Number(leidos.mes.mes) },
     filasGestiones, filasItems, ultimaLinea, catalogo, tamano,
     empresas: listaEmpresas(leidos.empresas),
     centros: listaCentros(leidos.centros),

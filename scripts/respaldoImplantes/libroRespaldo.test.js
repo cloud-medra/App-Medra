@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import ExcelJS from 'exceljs';
-import { construirLibro, COLUMNAS_CARGADOS, COLUMNAS_ITEMS, VISTA_CARGA, I, H } from './libroRespaldo.js';
+import {
+  construirLibro, COLUMNAS_CARGADOS, COLUMNAS_ITEMS, VISTA_CARGA, I, H, CELDAS_LIBRO, CELDAS_NUEVO_MES, MENSAJES_LIBRO, nombreLibroMes,
+} from './libroRespaldo.js';
 import { filasDesdeGestiones, catalogoReferencias, datosPlantilla, TAMANO_PLANTILLA, MINIMO_CATALOGOS } from './datosRespaldo.js';
 
-const HOJAS = ['Instrucciones', 'Gestiones', 'Ítems', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
+const HOJAS = ['Instrucciones', 'Nuevo mes', 'Gestiones', 'Ítems', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
   'Previsiones', 'Convenios', 'Catálogos'];
 
 const releer = async (libro) => {
@@ -29,7 +31,7 @@ describe('plantilla', () => {
     expect(libro.getWorksheet('Ítems').getCell('A3').value).toBe(1);
     // El botón "Mover cargados" va en Ítems: A1:D1 de Ítems libres (ayuda en
     // nota) y Gestiones con su fila de ayuda normal.
-    expect(g.getCell('A1').value).toContain('admisión|empresa|AAAA-MM-DD');
+    expect(g.getCell('A2').note).toContain('admisión|empresa|AAAA-MM-DD');
     const hojaItems = libro.getWorksheet('Ítems');
     expect(['A1', 'B1', 'C1', 'D1'].map((c) => hojaItems.getCell(c).value)).toEqual([null, null, null, null]);
     expect(hojaItems.getCell('B2').note).toContain('de la CLAVE');
@@ -157,8 +159,8 @@ describe('plantilla', () => {
     expect(['A3', 'B3', 'C3', 'E3'].map((c) => libro.getWorksheet('Recargos').getCell(c).value)).toEqual([0, 50000, 2, 'ACTIVO']);
     const ins = libro.getWorksheet('Instrucciones');
     expect(ins.getColumn('A').values.filter(Boolean).join('\n')).toContain('Códigos: 1 cargadas del archivo registros_con_codigo_2026-11-23.csv (exportado el 2026-11-23)');
-    expect(ins.getCell('B3').value.toISOString()).toBe('2026-11-23T00:00:00.000Z');
-    expect(bloqueada(ins.getCell('B3'))).toBe(false);
+    expect(ins.getCell('B4').value.toISOString()).toBe('2026-11-23T00:00:00.000Z');
+    expect(bloqueada(ins.getCell('B4'))).toBe(false);
   });
 
   it('autocompleta desde Reporte Info, deja escribir encima y avisa', async () => {
@@ -245,6 +247,68 @@ describe('plantilla', () => {
     expect(bas).not.toMatch(/Documentos/);
   });
 
+  it('plantilla base: sin mes, no deja registrar y tiene la hoja Nuevo mes', async () => {
+    const libro = await releer((await construirLibro(datosPlantilla('x'))).libro);
+    const g = libro.getWorksheet('Gestiones');
+    const cat = libro.getWorksheet('Catálogos');
+    // Mes del libro vacío; meses en J.
+    expect(cat.getCell(CELDAS_LIBRO.anio).value).toBeNull();
+    expect(cat.getCell(CELDAS_LIBRO.mes).value).toBeNull();
+    expect([cat.getCell('J3').value, cat.getCell('J13').value]).toEqual(['ENERO', 'NOVIEMBRE']);
+    // Admisión y Fecha exigen un mes: la base rechaza todo, con su mensaje.
+    const vB = g.dataValidations.find('B3');
+    const vC = g.dataValidations.find('C10');
+    expect(vB.formulae[0]).toMatch(/^AND\(NOT\(N\('Catálogos'!\$K\$3\)=0\),AND\(ISNUMBER/);
+    expect(vC.formulae[0]).toBe("AND(NOT(N('Catálogos'!$K$3)=0),ISNUMBER(C3),YEAR(C3)='Catálogos'!$K$3,MONTH(C3)='Catálogos'!$L$3)");
+    expect([vB.error, vC.error]).toEqual([MENSAJES_LIBRO.base, MENSAJES_LIBRO.base]);
+    expect(vC.errorStyle).toBe('stop');
+    // Sin 'Omitir blancos': si no, Excel no valida con el mes vacío.
+    expect([vB.allowBlank, vC.allowBlank].map(Boolean)).toEqual([false, false]);
+    // Rótulo del libro (A1:D1) y alerta de fecha fuera del mes.
+    expect(g.getCell('A1').value.formula).toContain('PLANTILLA BASE (sin mes)');
+    expect(g.getCell('A1').value.formula).toContain("\"LIBRO \"&'Catálogos'!$M$3");
+    expect(g.getCell('AE3').value.formula).toContain('Fecha fuera del mes del libro (es de "&INDEX(\'Catálogos\'!$J$3:$J$14,MONTH(C3))');
+    expect(g.conditionalFormattings.some((cf) => cf.ref.startsWith('C3:') && cf.rules[0].formulae[0].includes("YEAR(C3)<>'Catálogos'!$K$3"))).toBe(true);
+    // Nuevo mes: año y mes editables, con validación; el resto protegido.
+    const nm = libro.getWorksheet('Nuevo mes');
+    expect([CELDAS_NUEVO_MES.anio, CELDAS_NUEVO_MES.mes].map((c) => bloqueada(nm.getCell(c)))).toEqual([false, false]);
+    expect(nm.dataValidations.find('B6')).toMatchObject({ type: 'whole', formulae: [1, 12] });
+    expect(nm.getCell('B7').value.formula).toContain('"respaldo_implantes_"&B5&"-"&TEXT(B6,"00")&".xlsm"');
+    expect(nm.sheetProtection).toMatchObject({ sheet: true });
+    // Instrucciones: el mes del libro arriba y cómo crear el libro.
+    const ins = libro.getWorksheet('Instrucciones');
+    expect(ins.getCell('A2').value.formula).toContain('PLANTILLA BASE (sin mes)');
+    const textos = ins.getColumn('A').values.filter((v) => typeof v === 'string').join('\n');
+    expect(textos).toContain('UN LIBRO POR MES');
+    expect(textos).toContain('"Crear libro del mes"');
+  });
+
+  it('con mes (modo con datos del sistema): escribe año y mes y el mensaje del mes', async () => {
+    const datos = { ...datosPlantilla('x'), libroMes: { anio: 2026, mes: 11 } };
+    const libro = await releer((await construirLibro(datos)).libro);
+    const cat = libro.getWorksheet('Catálogos');
+    expect([cat.getCell('K3').value, cat.getCell('L3').value]).toEqual([2026, 11]);
+    expect(cat.getCell('M3').value.formula).toBe('IF(N(K3)=0,"",INDEX($J$3:$J$14,L3)&" "&K3)');
+    const g = libro.getWorksheet('Gestiones');
+    expect(nombreLibroMes({ anio: 2026, mes: 11 })).toBe('NOVIEMBRE 2026');
+    expect(g.dataValidations.find('C3').error).toBe('Este libro es de NOVIEMBRE 2026. Registra esta gestión en el libro del mes de su fecha (respaldo_implantes_AAAA-MM.xlsm).');
+    expect(g.dataValidations.find('B3').error).toBe(MENSAJES_LIBRO.admision);
+  });
+
+  it('la macro usa las mismas celdas y mensajes del libro del mes', () => {
+    const bas = fs.readFileSync(new URL('./macros/ModContingencia.bas', import.meta.url), 'utf8');
+    const constante = (nombre) => bas.match(new RegExp(`Private Const ${nombre} As String = "([^"]*)"`))[1];
+    expect([constante('LIBRO_ANIO'), constante('LIBRO_MES')]).toEqual([CELDAS_LIBRO.anio, CELDAS_LIBRO.mes]);
+    expect([constante('NM_ANIO'), constante('NM_MES')]).toEqual([CELDAS_NUEVO_MES.anio, CELDAS_NUEVO_MES.mes]);
+    expect([constante('HOJA_CATALOGOS'), constante('HOJA_NUEVO_MES')]).toEqual([H.C, H.NM]);
+    expect(constante('MSJ_ADMISION')).toBe(MENSAJES_LIBRO.admision);
+    expect(constante('MSJ_FECHA').replace('{MES}', 'OCTUBRE 2026')).toBe(MENSAJES_LIBRO.fecha('OCTUBRE 2026'));
+    expect(constante('MESES').split(',')[9]).toBe('OCTUBRE');
+    // Las validaciones de Excel aceptan hasta 255 caracteres.
+    expect(MENSAJES_LIBRO.fecha('SEPTIEMBRE 2026').length).toBeLessThanOrEqual(255);
+    expect(MENSAJES_LIBRO.base.length).toBeLessThanOrEqual(255);
+  });
+
   it('los nombres de hoja coinciden con los que usan las macros', () => {
     expect([H.G, H.I, H.CARG]).toEqual(['Gestiones', 'Ítems', 'Cargados']);
   });
@@ -300,7 +364,7 @@ describe('construirLibro', () => {
     const { libro, filas } = await armar();
     expect(libro.worksheets.map((h) => h.name)).toEqual(HOJAS);
     expect(filas).toEqual({ ultimaGestion: 3 + 1 + 5 - 1, ultimaItem: 3 + 1 + 6 - 1 });
-    expect(libro.getWorksheet('Instrucciones').getCell('A4').value).toContain('Catálogo de referencias actualizado al: 23-11-2026 10:00');
+    expect(libro.getWorksheet('Instrucciones').getCell('A5').value).toContain('Catálogo de referencias actualizado al: 23-11-2026 10:00');
   });
 
   it('la fila del sistema es una foto bloqueada; la libre trae fórmulas y se escribe', async () => {
