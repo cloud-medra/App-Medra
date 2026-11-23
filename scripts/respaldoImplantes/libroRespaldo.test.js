@@ -107,7 +107,7 @@ describe('plantilla', () => {
 
     // Centros y Recargos: hojas propias, vacías, con las columnas de su exportación.
     const cen = libro.getWorksheet('Centros');
-    expect(cen.getRow(2).values.slice(1)).toEqual(['NOMBRE', 'COMENTARIO', 'ESTADO', 'USAR_EN_GESTIONES']);
+    expect(cen.getRow(2).values.slice(1, 5)).toEqual(['NOMBRE', 'COMENTARIO', 'ESTADO', 'USAR_EN_GESTIONES']);
     expect(bloqueada(cen.getCell('A3'))).toBe(false);
     expect(g.dataValidations.find('H3')).toMatchObject({ type: 'list', formulae: [`'Centros'!$A$3:$A$${2 + MINIMO_CATALOGOS.centros}`] });
     const rec = libro.getWorksheet('Recargos');
@@ -139,8 +139,12 @@ describe('plantilla', () => {
     expect(textos).toContain('Habilitar contenido');
     expect(textos).toContain('"Mover cargados"');
     expect(textos).toContain('"Devolver a pendientes"');
-    expect(textos).toContain('hoja Recargos, celda A3');
-    expect(textos).toContain('hoja Centros, celda A3');
+    // Dónde pegar cada catálogo y en qué orden.
+    expect(textos).toContain('PEGAR LOS CATÁLOGOS');
+    expect(textos).toContain('Recargos → celda A3: DESDE, HASTA, VECES COSTO, COMENTARIO, ESTADO');
+    expect(textos).toContain('Centros → celda A3: NOMBRE, COMENTARIO, ESTADO, USAR_EN_GESTIONES');
+    expect(textos).toContain('Códigos → celda B3: CODIGO, REFERENCIA');
+    expect(textos).toContain('FIJAR CATÁLOGOS COMO BASE');
     // Pasos para bloquear el proyecto VBA a mano (Excel no lo permite por automatización).
     expect(textos).toContain('"Bloquear proyecto para visualización"');
     expect(textos.toLowerCase()).not.toContain('fibra');
@@ -347,9 +351,13 @@ describe('plantilla', () => {
     const rec = libro.getWorksheet('Recargos');
     expect(rec.getRow(2).values.slice(1, 8)).toEqual(['DESDE', 'HASTA', 'VECES COSTO', 'COMENTARIO', 'ESTADO', 'CAMBIO', 'FECHA CAMBIO']);
     expect(['H3', 'I3', 'J3'].map((c) => rec.getCell(c).value)).toEqual([0, 50000, 2]);
-    // Centros, Previsiones y Convenios: sin marcas.
-    expect(libro.getWorksheet('Centros').getCell('E2').value).toBeNull();
-    expect(Object.keys(MARCAS_CAMBIO)).toEqual(['Códigos', 'Empresas', 'Recargos']);
+    // Centros también (lo fija el botón); Previsiones y Convenios, sin marcas.
+    expect(libro.getWorksheet('Centros').getRow(2).values.slice(1, 7)).toEqual(['NOMBRE', 'COMENTARIO', 'ESTADO', 'USAR_EN_GESTIONES', 'CAMBIO', 'FECHA CAMBIO']);
+    expect(libro.getWorksheet('Previsiones').getCell('D2').value).toBeNull();
+    expect(Object.keys(MARCAS_CAMBIO)).toEqual(['Códigos', 'Empresas', 'Centros', 'Recargos']);
+    // A1 de Códigos queda para el botón "Fijar catálogos como base".
+    expect(r.getCell('A1').value).toBeNull();
+    expect(r.getCell('B1').value).toContain('PEGAR LOS CATÁLOGOS');
   });
 
   it('la macro de las marcas usa las mismas columnas', () => {
@@ -361,6 +369,10 @@ describe('plantilla', () => {
     const ps1 = fs.readFileSync(new URL('./macros/armarXlsm.ps1', import.meta.url), 'utf8');
     expect(ps1).toContain('Workbook_SheetChange');
     expect(ps1).toContain('RegistrarCambioCatalogo Sh, Target');
+    expect(ps1).toContain('RemovePersonalInformation = $false');
+    // Botón que fija lo actual como original, con la confirmación pedida.
+    expect(bas).toContain('"btnFijarCatalogos", "Fijar catálogos como base", "FijarCatalogosBase"');
+    expect(bas).toContain('MsgBox("Se reiniciarán todas las marcas de cambio. ¿Continuar?"');
   });
 
   it('los nombres de hoja coinciden con los que usan las macros', () => {

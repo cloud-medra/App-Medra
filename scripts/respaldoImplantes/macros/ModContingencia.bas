@@ -19,7 +19,11 @@ Attribute VB_Name = "ModContingencia"
 '   Cada libro solo acepta gestiones con fecha de su mes; la plantilla base
 '   (sin mes) no deja registrar.
 '
-' - Marcas de cambio en Códigos, Empresas y Recargos: la columna CAMBIO es
+' - Fijar catálogos como base (botón en Códigos): lo que hay ahora en
+'   Códigos, Empresas, Centros y Recargos pasa a ser lo original y las
+'   marcas quedan vacías (después de pegar los catálogos, o de pasar los
+'   cambios al Maestro de la app).
+' - Marcas de cambio en Códigos, Empresas, Centros y Recargos: la columna CAMBIO es
 '   una fórmula (NUEVO / MODIFICADO / BORRADO); FECHA CAMBIO la escribe
 '   RegistrarCambioCatalogo, llamada desde Workbook_SheetChange del módulo
 '   del libro (lo agrega macros/armarXlsm.ps1).
@@ -41,6 +45,7 @@ Private Const HOJA_SOLICITUD As String = "Solicitud Implantes"
 Private Const HOJA_RESUMEN As String = "Resumen"
 Private Const HOJA_CATALOGOS As String = "Catálogos"
 Private Const HOJA_NUEVO_MES As String = "Nuevo mes"
+Private Const HOJA_CATALOGOS_CODIGOS As String = "Códigos"
 ' Mes del libro (Catálogos) y datos del libro a crear (Nuevo mes).
 Private Const LIBRO_ANIO As String = "K3"
 Private Const LIBRO_MES As String = "L3"
@@ -53,7 +58,8 @@ Private Const PREFIJO_LIBRO As String = "respaldo_implantes_"
 Private Const MSJ_ADMISION As String = "Solo dígitos, sin puntos ni espacios."
 ' Hojas con marcas de cambio: hoja:primera columna de datos:última:CAMBIO:FECHA CAMBIO
 ' (MARCAS_CAMBIO en libroRespaldo.js; lo comprueba un test).
-Private Const MARCAS As String = "Códigos:2:14:17:18|Empresas:1:3:4:5|Recargos:1:5:6:7"
+' Las columnas "orig: ..." empiezan justo después de FECHA CAMBIO.
+Private Const MARCAS As String = "Códigos:2:14:17:18|Empresas:1:3:4:5|Centros:1:4:5:6|Recargos:1:5:6:7"
 Private Const MSJ_FECHA As String = "Este libro es de {MES}. Registra esta gestión en el libro del mes de su fecha (respaldo_implantes_AAAA-MM.xlsm)."
 Private Const S_COLUMNAS As Long = 18          ' ... FECHA MOVIMIENTO (17), CLAVE (18)
 Private Const R_COLUMNAS As Long = 13          ' ... FECHA MOVIMIENTO (12), CLAVE (13)
@@ -159,6 +165,21 @@ Public Sub InstalarBotones()
     CrearBoton ThisWorkbook.Worksheets(HOJA_ITEMS), "btnMoverCargados", "Mover cargados", "MoverCargados", 150
     CrearBoton ThisWorkbook.Worksheets(HOJA_CARGADOS), "btnDevolverPendientes", "Devolver a pendientes", "DevolverAPendientes", 170
     CrearBoton ThisWorkbook.Worksheets(HOJA_NUEVO_MES), "btnCrearLibroMes", "Crear libro del mes", "CrearLibroDelMes", 170, "A9"
+    CrearBoton ThisWorkbook.Worksheets(HOJA_CATALOGOS_CODIGOS), "btnFijarCatalogos", "Fijar catálogos como base", "FijarCatalogosBase", 190
+End Sub
+
+Public Sub FijarCatalogosBase()
+    If MsgBox("Se reiniciarán todas las marcas de cambio. ¿Continuar?" & vbCrLf & vbCrLf & _
+              "Los datos que hay ahora en Códigos, Empresas, Centros y Recargos pasan a ser los originales: CAMBIO y FECHA CAMBIO quedan vacíos.", _
+              vbYesNo + vbQuestion + vbDefaultButton2, "Fijar catálogos como base") <> vbYes Then Exit Sub
+    Dim resultado As String
+    resultado = FijarCatalogosBaseAuto()
+    If Left(resultado, 5) = "ERROR" Then
+        MsgBox Mid(resultado, 7), vbExclamation, "Fijar catálogos como base"
+    Else
+        MsgBox "Listo. Filas con datos fijadas como base:" & vbCrLf & Replace(Mid(resultado, 4), "|", vbCrLf) & vbCrLf & vbCrLf & _
+               "Guarde el archivo (Ctrl+G).", vbInformation, "Fijar catálogos como base"
+    End If
 End Sub
 
 Public Sub CrearLibroDelMes()
@@ -509,6 +530,52 @@ Fin:
         End If
     Next par
 End Sub
+
+' Copia los datos actuales de cada hoja de MARCAS a sus columnas "orig: ..."
+' y borra FECHA CAMBIO: CAMBIO (fórmula) queda vacío en todas las filas.
+' Devuelve "OK;Códigos: n|Empresas: n|..." o "ERROR;mensaje".
+Public Function FijarCatalogosBaseAuto() As String
+    Dim par As Variant, partes As Variant, ws As Worksheet, ultima As Long, desde As Long, hasta As Long
+    Dim colCambio As Long, colFecha As Long, datos As Variant, r As Long, c As Long, conDatos As Long, resumen As String
+    Dim calculo As XlCalculation, eventos As Boolean
+    calculo = Application.Calculation
+    eventos = Application.EnableEvents
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+    On Error GoTo Fallo
+    For Each par In Split(MARCAS, "|")
+        partes = Split(par, ":")
+        Set ws = ThisWorkbook.Worksheets(CStr(partes(0)))
+        desde = CLng(partes(1)): hasta = CLng(partes(2)): colCambio = CLng(partes(3)): colFecha = CLng(partes(4))
+        ultima = ws.Cells(ws.Rows.Count, colCambio).End(xlUp).Row
+        conDatos = 0
+        If ultima >= PRIMERA Then
+            Desproteger ws
+            datos = ws.Range(ws.Cells(PRIMERA, desde), ws.Cells(ultima, hasta)).Value
+            ws.Range(ws.Cells(PRIMERA, colFecha + 1), ws.Cells(ultima, colFecha + 1 + hasta - desde)).Value = datos
+            ws.Range(ws.Cells(PRIMERA, colFecha), ws.Cells(ultima, colFecha)).ClearContents
+            Proteger ws
+            For r = 1 To UBound(datos, 1)
+                For c = 1 To UBound(datos, 2)
+                    If Txt(datos(r, c)) <> "" Then conDatos = conDatos + 1: Exit For
+                Next c
+            Next r
+        End If
+        resumen = resumen & IIf(resumen = "", "", "|") & partes(0) & ": " & conDatos
+    Next par
+    FijarCatalogosBaseAuto = "OK;" & resumen
+Fin:
+    If Not ws Is Nothing Then Proteger ws
+    Application.Calculation = calculo
+    Application.EnableEvents = eventos
+    Application.ScreenUpdating = True
+    Application.Calculate
+    Exit Function
+Fallo:
+    FijarCatalogosBaseAuto = "ERROR;No se pudieron fijar los catálogos: " & Err.Description
+    Resume Fin
+End Function
 
 ' ---------------------------------------------------------------------------
 ' Libro del mes

@@ -409,8 +409,12 @@ const hojaCodigos = (libro, catalogo, totalFilas) => {
     ...COLUMNAS_REFERENCIAS.map((c) => ({ ...c, clase: c.automatica ? 'formula' : 'opcional' })),
     ...columnasMarcas(marca, COLUMNAS_REFERENCIAS),
   ], { conAyuda: false, congelarColumnas: 3 });
-  hoja.getCell('A1').value = 'Maestro de Códigos. Para agregar un código, escríbalo en la primera fila vacía (desde la columna B); para corregir uno, escriba encima. CAMBIO marca lo NUEVO, MODIFICADO o BORRADO para pasarlo después al Maestro de la app. A, O, P, CAMBIO y FECHA CAMBIO son automáticas; las INACTIVAS no se usan.';
-  hoja.getCell('A1').font = { italic: true };
+  // A1: botón "Fijar catálogos como base" (macro FijarCatalogosBase); la
+  // descripción va a su derecha.
+  hoja.getRow(1).height = 30;
+  hoja.getCell('B1').value = 'Maestro de Códigos. Pegue desde B3 (ver Instrucciones, "PEGAR LOS CATÁLOGOS"). Para agregar un código, escríbalo en la primera fila vacía; para corregir uno, escriba encima. CAMBIO marca lo NUEVO, MODIFICADO o BORRADO. A, O, P, CAMBIO y FECHA CAMBIO son automáticas; las INACTIVAS no se usan.';
+  hoja.getCell('B1').font = { italic: true };
+  hoja.getCell('B1').alignment = { vertical: 'middle' };
   const ultima = PRIMERA + totalFilas - 1;
   for (let r = PRIMERA; r <= ultima; r += 1) {
     const fila = hoja.getRow(r);
@@ -435,11 +439,13 @@ const hojaCodigos = (libro, catalogo, totalFilas) => {
 
 // --- Marcas de cambio en catálogos ---------------------------------------------------
 // Decisión del 23-11-2026: el libro del mes es el que manda; durante el mes
-// se agregan o corrigen códigos, empresas y recargos, y el libro del mes
-// siguiente se crea desde él (copia). Para pasar después esos cambios al
-// Maestro de la app, cada hoja marca sus filas:
+// se agregan o corrigen códigos, empresas, centros y recargos, y el libro
+// del mes siguiente se crea desde él (copia). Para pasar después esos
+// cambios al Maestro de la app, cada hoja marca sus filas:
 //   - CAMBIO (fórmula): NUEVO, MODIFICADO o BORRADO, comparando cada celda
-//     con su valor al generar la plantilla (columnas ocultas "orig: …",
+//     con su valor original (columnas ocultas "orig: …": lo que traía la
+//     plantilla, o lo que había al usar el botón "Fijar catálogos como
+//     base", macro FijarCatalogosBase;
 //     una por dato, sin convertir a texto: así no depende del separador
 //     decimal del equipo). Volver al valor original quita la marca.
 //   - FECHA CAMBIO: la escribe la macro al editar la fila (evento
@@ -450,6 +456,7 @@ const hojaCodigos = (libro, catalogo, totalFilas) => {
 export const MARCAS_CAMBIO = Object.freeze({
   [H.R]: Object.freeze({ desde: 'B', hasta: 'N', cambio: 'Q', fecha: 'R', orig: 'S' }),
   [H.E]: Object.freeze({ desde: 'A', hasta: 'C', cambio: 'D', fecha: 'E', orig: 'F' }),
+  [H.CEN]: Object.freeze({ desde: 'A', hasta: 'D', cambio: 'E', fecha: 'F', orig: 'G' }),
   [H.REC]: Object.freeze({ desde: 'A', hasta: 'E', cambio: 'F', fecha: 'G', orig: 'H' }),
 });
 const numeroColumna = (l) => [...l].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0);
@@ -987,7 +994,7 @@ const encabezadoInstrucciones = (d) => (d.plantilla ? [
 const LIBRO_DEL_MES = [
   ['CÓMO SE TRABAJA MES A MES', 'seccion'],
   ['Hay un libro por mes, respaldo_implantes_AAAA-MM.xlsm, todos en la misma carpeta. El libro del mes es el que manda: ahí se registran las gestiones y ahí se agregan o corrigen los catálogos.'],
-  ['1. La primera vez: abra la plantilla base (respaldo_implantes.xlsm) → hoja "Nuevo mes" → escriba el Año y el Mes (1 a 12) → botón "Crear libro del mes". Se crea y se abre el libro de ese mes. La plantilla base solo sirve para esto: no permite registrar.'],
+  ['1. La primera vez, en la plantilla base (respaldo_implantes.xlsm): pegue los catálogos (ver "PEGAR LOS CATÁLOGOS"), presione "Fijar catálogos como base" y guarde. Después, hoja "Nuevo mes" → escriba el Año y el Mes (1 a 12) → botón "Crear libro del mes": se crea y se abre el libro de ese mes con los catálogos pegados. La plantilla base no permite registrar gestiones.'],
   ['2. Durante el mes trabaje en ese libro: registre las gestiones y, si hace falta, agregue o corrija códigos, empresas, recargos, centros, previsiones o convenios en sus hojas, y pegue un Reporte Info nuevo cuando quede desactualizado (ver más abajo).'],
   ['3. A fin de mes, desde el libro actual, cree el libro del mes siguiente: hoja "Nuevo mes" → Año y Mes siguientes → "Crear libro del mes". El libro nuevo trae los catálogos tal como quedaron (con todos los cambios del mes y sus marcas) e Instrucciones, con Gestiones, Ítems, Cargados, Solicitud Implantes y Resumen vacías.'],
   ['4. Las gestiones no se traspasan: las pendientes se terminan en el libro de su mes. Si ya existe el libro del mes que pidió, no se sobrescribe y lo avisa.'],
@@ -997,8 +1004,8 @@ const LIBRO_DEL_MES = [
   ['AGREGAR O CORREGIR CATÁLOGOS (en el libro del mes)', 'seccion'],
   ['Códigos, Empresas, Centros, Recargos, Previsiones y Convenios se pueden editar con las hojas protegidas: para agregar, escriba en la primera fila vacía (las filas siguientes ya están preparadas); para corregir, escriba encima. No inserte ni borre filas (está bloqueado): para quitar un dato, borre el contenido de sus celdas o márquelo INACTIVO en ESTADO.'],
   ['Las búsquedas, los desplegables y las alertas reconocen solas las filas nuevas: una referencia agregada en Códigos ya se encuentra en Ítems (código, precio, recargo y venta), y una empresa agregada aparece en el desplegable de Gestiones.'],
-  ['En Códigos, Empresas y Recargos la columna CAMBIO marca cada fila NUEVO (verde), MODIFICADO (ámbar) o BORRADO (rojo) respecto de lo que traía la plantilla, y FECHA CAMBIO guarda el día del último cambio (solo con las macros habilitadas). Si vuelve a escribir el valor original, la marca se quita. Las marcas pasan al libro del mes siguiente.'],
-  ['Para actualizar el sistema: filtre CAMBIO (NUEVO, MODIFICADO, BORRADO) y haga esos cambios en el Maestro de la app (Maestros → Codigos, Empresas o Recargos).'],
+  ['En Códigos, Empresas, Centros y Recargos la columna CAMBIO marca cada fila NUEVO (verde), MODIFICADO (ámbar) o BORRADO (rojo) respecto de lo original (lo que había al usar "Fijar catálogos como base"), y FECHA CAMBIO guarda el día del último cambio (solo con las macros habilitadas). Si vuelve a escribir el valor original, la marca se quita. Las marcas pasan al libro del mes siguiente.'],
+  ['Para actualizar el sistema: filtre CAMBIO (NUEVO, MODIFICADO, BORRADO) y haga esos cambios en el Maestro de la app (Maestros → Codigos, Empresas, Centros o Recargos). Después presione "Fijar catálogos como base" en el libro del mes para reiniciar las marcas.'],
   [''],
   ['ACTUALIZAR REPORTE INFO (en el libro del mes)', 'seccion'],
   ['Reporte Info trae las admisiones con que se armó el libro y con el tiempo queda desactualizado: si una admisión nueva no se autocompleta (Alerta "Admisión no está en Reporte Info"), pegue un Reporte Info más reciente.'],
@@ -1033,17 +1040,24 @@ const MACROS_Y_BOTONES = [
 
 // Cómo actualizar los catálogos (solo plantilla).
 const ACTUALIZAR_CATALOGOS = [
-  ['REEMPLAZAR UN CATÁLOGO COMPLETO DESDE LA APP (opcional)', 'seccion'],
-  ['Lo normal es editar los catálogos a mano en el libro del mes (ver arriba). Si prefiere reemplazar uno completo con la exportación de la app (por ejemplo, después de pasar los cambios marcados al Maestro), hágalo en el libro del mes:'],
-  ['Pegue siempre con "Pegar valores" (Ctrl+Alt+V → Valores), SIN la fila de encabezados, y compruebe que las columnas del archivo son las mismas y en el mismo orden que la fila 2 donde pega. Para reemplazar un catálogo: seleccione los datos anteriores (sin encabezados), Supr, y pegue el nuevo. En Códigos, Empresas y Recargos lo pegado queda marcado en CAMBIO respecto de la plantilla.'],
-  ['En la hoja Códigos, EMPRESA tiene la lista de la hoja Empresas, y TIPO, SEGMENTO y CLASE las listas del sistema (hoja Catálogos). Como pegar borra los desplegables, un valor que no está en su lista se pinta de rojo igual: revíselo en el sistema.'],
-  ['1. CÓDIGOS (hoja Códigos, celda B3): Maestros → Codigos → pestaña "Con código" → "Importar / Exportar" → "Exportar registros". Abra el CSV, copie desde A2 hasta la última fila y última columna (CODIGO … ESTADO) y pegue en Códigos!B3. Las INACTIVAS se ignoran solas. El CSV trae solo las columnas que el usuario puede ver: debe traer las 13.'],
-  ['2. EMPRESAS (hoja Empresas, celda A3): Maestros → Empresas → botón de configuración (Importar/Exportar) → "Exportar a Excel / CSV". En el archivo, filtre ESTADO = ACTIVO y copie NOMBRE, RUT y ESTADO.'],
-  ['3. CENTROS (hoja Centros, celda A3): Maestros → Centros → configuración → "Exportar a Excel / CSV". Filtre ESTADO = ACTIVO y USAR_EN_GESTIONES = SI y copie las 4 columnas.'],
-  ['4. RECARGOS (hoja Recargos, celda A3): Maestros → Recargos → configuración → "Exportar a Excel / CSV". Copie las 5 columnas (DESDE, HASTA, VECES COSTO, COMENTARIO, ESTADO); los INACTIVOS se ignoran solos y el orden no importa.'],
-  ['5. PREVISIONES y CONVENIOS (hojas Previsiones y Convenios, celda A3): Maestros → Previsiones (o Convenios) → botón de configuración → "Exportar a Excel / CSV". Filtre ESTADO = ACTIVO y copie NOMBRE, COMENTARIO y ESTADO.'],
-  ['6. Escriba la fecha en "Catálogos actualizados al" (arriba) y guarde.'],
-  ['La plantilla base la regenera el encargado con el script (docs/respaldo-contingencia-implantes.md). Una plantilla regenerada no trae los cambios hechos en los libros del mes: solo se usa para empezar de nuevo.'],
+  ['PEGAR LOS CATÁLOGOS', 'seccion'],
+  ['Se pegan a mano, con las hojas protegidas: las celdas de datos están desbloqueadas y las fórmulas, validaciones y protección no se dañan. Pegue SIN la fila de encabezados, desde la celda indicada, con las columnas en este orden (el de la fila 2 de cada hoja):'],
+  ['• Códigos → celda B3: CODIGO, REFERENCIA, DESCRIPTOR_EMPRESA, EMPRESA, TIPO, SEGMENTO, CLASE, DESCRIPTOR_AUTO, PRECIO_NETO, CX, OBSERVACION, REGISTRADO_POR, ESTADO (13 columnas; el CSV de Maestros → Codigos → "Con código" → "Exportar registros" viene así: copie desde A2 hasta ESTADO). La columna A es automática: no pegue en ella.'],
+  ['• Empresas → celda A3: NOMBRE, RUT, ESTADO (Maestros → Empresas → Exportar; solo las ACTIVAS).'],
+  ['• Centros → celda A3: NOMBRE, COMENTARIO, ESTADO, USAR_EN_GESTIONES (Maestros → Centros → Exportar; solo ACTIVOS con USAR_EN_GESTIONES = SI).'],
+  ['• Recargos → celda A3: DESDE, HASTA, VECES COSTO, COMENTARIO, ESTADO (Maestros → Recargos → Exportar; el orden de las filas no importa y los INACTIVOS se ignoran).'],
+  ['• Previsiones → celda A3: NOMBRE, COMENTARIO, ESTADO. • Convenios → celda A3: NOMBRE, COMENTARIO, ESTADO (Maestros → Previsiones / Convenios → Exportar; solo los ACTIVOS).'],
+  ['• Reporte Info → celda A3: Admisión, Fecha, Paciente, Convenio, Previsión (la columna "Isapre" del archivo), 1° Cirujano, Descripción (7 columnas; ver "ACTUALIZAR REPORTE INFO"). La columna H es automática.'],
+  ['Use "Pegar valores" (Ctrl+Alt+V → Valores): conserva los formatos de la hoja (texto, fechas, montos). El pegado normal (Ctrl+V) también funciona y no borra los desplegables. No pegue en columnas grises ni inserte filas (está bloqueado). Para reemplazar un catálogo: seleccione los datos anteriores (sin encabezados), Supr, y pegue el nuevo.'],
+  ['Códigos con ceros a la izquierda (ej. 000123): Excel los convierte en número al abrir un CSV con doble clic. Si los hay, abra el CSV con Datos → Desde texto/CSV y marque la columna CODIGO como Texto antes de copiar.'],
+  ['En Códigos, EMPRESA tiene la lista de la hoja Empresas, y TIPO, SEGMENTO y CLASE las listas del sistema (hoja Catálogos): un valor que no está en su lista se pinta de rojo. Revíselo en el sistema.'],
+  ['Después de pegar: presione "Fijar catálogos como base" (hoja Códigos, arriba a la izquierda), escriba la fecha en "Catálogos actualizados al" (arriba) y guarde.'],
+  [''],
+  ['FIJAR CATÁLOGOS COMO BASE (botón en la hoja Códigos)', 'seccion'],
+  ['Toma lo que hay ahora en Códigos, Empresas, Centros y Recargos como valores originales y deja vacías todas las marcas CAMBIO y FECHA CAMBIO. Pide confirmación antes ("Se reiniciarán todas las marcas de cambio. ¿Continuar?").'],
+  ['Úselo después de pegar los catálogos por primera vez, y cada vez que haya pasado los cambios marcados al Maestro de la app. Desde ahí, solo lo que cambie después queda marcado.'],
+  [''],
+  ['La plantilla base la regenera el encargado con el script (docs/respaldo-contingencia-implantes.md): sale con los catálogos vacíos, para pegarlos. Una plantilla regenerada no trae los cambios hechos en los libros del mes.'],
 ];
 
 const textoInstrucciones = (d) => [
@@ -1248,7 +1262,7 @@ export const construirLibro = async (datosEntrada) => {
   const { col: rCol } = hojaCodigos(libro, datos.catalogo, datos.filasCatalogos.referencias);
   const { nombres: empresasNombres } = hojaEmpresas(libro, datos.empresas, datos.filasCatalogos.empresas);
   const centros = hojaMaestro(libro, H.CEN, COLUMNAS_CENTROS,
-    'Centros activos que se usan en Gestiones (desplegable de Centro). Se regenera con el script; también se puede pegar desde A3 el archivo de Maestros → Centros → Exportar (solo ACTIVOS con USAR_EN_GESTIONES = SI).',
+    'Centros activos que se usan en Gestiones (desplegable de Centro). Pegue desde A3 el archivo de Maestros → Centros → Exportar (solo ACTIVOS con USAR_EN_GESTIONES = SI) o escriba en la primera fila vacía. CAMBIO marca lo NUEVO, MODIFICADO o BORRADO.',
     filasCentros(datos.centros), datos.filasCatalogos.centros);
   const recargos = hojaMaestro(libro, H.REC, COLUMNAS_RECARGOS,
     'Rangos de recargo (veces costo según el precio). Para agregar un rango, escríbalo en la primera fila vacía; para corregirlo, escriba encima. CAMBIO marca lo NUEVO, MODIFICADO o BORRADO para pasarlo después al Maestro de la app. Los INACTIVOS no se usan y el orden no importa.',
