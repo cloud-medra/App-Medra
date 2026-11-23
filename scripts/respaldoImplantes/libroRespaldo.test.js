@@ -3,10 +3,11 @@ import ExcelJS from 'exceljs';
 import { construirLibro } from './libroRespaldo.js';
 import { filasDesdeGestiones, catalogoReferencias } from './datosRespaldo.js';
 
-const armar = async () => {
+const armar = async ({ itemsExtra = [] } = {}) => {
   const { filasGestiones, filasItems, ultimaLinea } = filasDesdeGestiones([{
     refPath: 'implantes_gestiones/2026/mes/11/dia/01/admision/1/empresa/A/detalles/a', gestionId: '00123', empresa: 'A', fecha: '2026-11-01', estado: 'PENDIENTE',
-    cotizaciones: [{ items: [{ id: 'i1', referencia: 'R1', codigo: '10', precio: 100, cantidad: 2, totalItem: 200, venta: 300, vecesCosto: 1.5, recargoEncontrado: true, estadoCarga: 'CARGADO' }] }],
+    informe: 'PENDIENTE', observacion: 'OBS',
+    cotizaciones: [{ items: [{ id: 'i1', referencia: 'R1', codigo: '10', precio: 100, cantidad: 2, lote: 'L1', totalItem: 200, venta: 300, vecesCosto: 1.5, recargoEncontrado: true, estadoCarga: 'CARGADO' }, ...itemsExtra] }],
   }]);
   const { libro, filas } = await construirLibro({
     generadoEl: '23-11-2026 10:00', periodoTexto: 'noviembre 2026 (ABIERTO)', mesExportado: '2026-11',
@@ -53,6 +54,39 @@ describe('construirLibro', () => {
     expect(it_.getCell('AD4').value.formula).toContain('MATCH');
     expect(it_.getColumn('AD').hidden).toBe(true);
     expect(it_.getCell('F4').protection?.locked ?? true).toBe(false);
+  });
+
+  it('en las filas del sistema deja cambiar solo los campos acordados y guarda el original', async () => {
+    const { libro } = await armar({
+      itemsExtra: [
+        { id: 'p', esPad: true, referencia: 'PAD1', codigo: '20', cantidad: 1, lote: 'PAD', vencimiento: 'PAD', estadoCarga: 'PAD' },
+        { id: 'f', referencia: 'FIB', codigo: '30', cantidad: 1, lote: 'LF', fibra: { codigoInterno: 'FIB-0001' }, estadoCarga: 'PENDIENTE' },
+      ],
+    });
+    const bloqueada = (celda) => celda.protection?.locked ?? true;
+    const g = libro.getWorksheet('Gestiones');
+    expect(['G3', 'J3', 'K3'].map((c) => bloqueada(g.getCell(c)))).toEqual([false, false, false]);
+    expect(['B3', 'D3', 'E3', 'P3'].map((c) => bloqueada(g.getCell(c)))).toEqual([true, true, true, true]);
+    expect(g.getCell('AB3').value).toBe('PENDIENTE');
+    expect(g.getCell('AD3').value).toBe('OBS');
+    expect(g.getCell('AA3').value.formula).toBe('IF(OR(G3<>AB3,J3<>AC3,K3<>AD3),"SÍ","NO")');
+    expect(g.getColumn('AA').hidden).toBe(false);
+    expect(g.getColumn('AB').hidden).toBe(true);
+
+    const it_ = libro.getWorksheet('Ítems');
+    // Línea normal: Cantidad, Lote, Vencimiento y Estado carga.
+    expect(['G3', 'H3', 'I3', 'J3'].map((c) => bloqueada(it_.getCell(c)))).toEqual([false, false, false, false]);
+    expect(['F3', 'L3', 'M3', 'E3'].map((c) => bloqueada(it_.getCell(c)))).toEqual([true, true, true, true]);
+    expect(it_.getCell('AL3').value).toBe(2);
+    expect(it_.getCell('AM3').value).toBe('L1');
+    expect(it_.getCell('AO3').value).toBe('CARGADO');
+    expect(it_.getCell('AK3').value.formula).toBe('IF(OR(G3<>AL3,H3<>AM3,I3<>AN3,J3<>AO3),"SÍ","NO")');
+    expect(it_.getCell('S3').value.formula).toBe('IF(J3="SIN CARGO",0,M3*G3)');
+    // PAD PADRE: solo Cantidad. Fibra: solo Estado carga.
+    expect(['G4', 'H4', 'I4', 'J4'].map((c) => bloqueada(it_.getCell(c)))).toEqual([false, true, true, true]);
+    expect(['G5', 'H5', 'I5', 'J5'].map((c) => bloqueada(it_.getCell(c)))).toEqual([true, true, true, false]);
+    // El filtro llega hasta MODIFICADO (después de las auxiliares ocultas).
+    expect(JSON.stringify(it_.autoFilter)).toContain('AK2');
   });
 
   it('valida con listas de los catálogos y protege las hojas', async () => {

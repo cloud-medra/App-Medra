@@ -2,10 +2,13 @@
 // partir de los datos ya preparados en datosRespaldo.js.
 //
 // Decisiones (aprobadas al diseñarlo):
-//   - Fórmulas solo con INDICE/COINCIDIR, CONTAR.SI(.CONJUNTO), SUMAR.SI y
-//     SI.ERROR: funcionan en Excel 2010+, LibreOffice y Google Sheets (sin
-//     BUSCARX ni UNIRCADENAS). exceljs las escribe en inglés; cada programa
-//     las muestra en su idioma.
+//   - Se usa en Microsoft Excel (único probado; LibreOffice no se usa).
+//     Fórmulas solo con INDICE/COINCIDIR, CONTAR.SI(.CONJUNTO), SUMAR.SI y
+//     SI.ERROR, sin BUSCARX ni UNIRCADENAS: abren en cualquier Excel 2010+.
+//     exceljs las escribe en inglés; Excel las muestra en su idioma.
+//   - En las filas del sistema se pueden editar solo algunos campos
+//     (`campo` en la columna; cuáles por fila en camposEditablesItem). El
+//     valor original queda en columnas ocultas y MODIFICADO compara contra él.
 //   - Fila 1 = ayuda, fila 2 = encabezados (con filtro), datos desde la 3.
 //   - Las filas exportadas (SISTEMA) son una foto bloqueada: valores
 //     guardados, sin fórmulas de catálogo. Las filas vacías traen fórmulas
@@ -19,6 +22,7 @@
 import ExcelJS from 'exceljs';
 import {
   ESTADOS_GESTION, ESTADOS_CARGA, INFORMES, NOMBRES_LADO, SI_NO, LISTA_TIPOS_LINEA, CODIGO_SIN_OC,
+  CAMPOS_EDITABLES_GESTION, camposEditablesItem,
 } from './datosRespaldo.js';
 
 const FILA_AYUDA = 1;
@@ -39,6 +43,8 @@ const COLOR = {
   textoError: 'FF9C0006',
   ok: 'FF006100',
   okFondo: 'FFC6EFCE',
+  editableSistema: 'FFFFFFFF', // celda editable de una fila del sistema
+  cambiado: 'FFFFEB9C',        // valor distinto del original
 };
 
 const relleno = (argb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
@@ -57,11 +63,11 @@ const COLUMNAS_GESTIONES = [
   { l: 'D', titulo: 'Empresa', clase: 'obligatorio', ancho: 26, ayuda: 'Proveedor, de la lista.' },
   { l: 'E', titulo: 'Nombre paciente', clase: 'opcional', ancho: 28, ayuda: 'En MAYÚSCULAS.' },
   { l: 'F', titulo: 'Total cotización', clase: 'opcional', ancho: 14, pesos: true, ayuda: 'Total que indica la cotización (se compara con la suma de los ítems).' },
-  { l: 'G', titulo: 'Informe', clase: 'opcional', ancho: 12, ayuda: 'Vacío = PENDIENTE.' },
+  { l: 'G', titulo: 'Informe', clase: 'opcional', ancho: 12, campo: 'informe', original: 'AB', ayuda: 'Vacío = PENDIENTE.' },
   { l: 'H', titulo: 'Centro', clase: 'opcional', ancho: 16, ayuda: 'Vacío = PABELLON.' },
   { l: 'I', titulo: 'Atributo', clase: 'opcional', ancho: 12, ayuda: 'Vacío = IMPLANTES.' },
-  { l: 'J', titulo: 'Lado', clase: 'opcional', ancho: 14, ayuda: 'Vacío = No especificado.' },
-  { l: 'K', titulo: 'Observación', clase: 'opcional', ancho: 30, ayuda: 'Nota libre. Si se usó una fibra, anótela aquí.' },
+  { l: 'J', titulo: 'Lado', clase: 'opcional', ancho: 14, campo: 'lado', original: 'AC', ayuda: 'Vacío = No especificado.' },
+  { l: 'K', titulo: 'Observación', clase: 'opcional', ancho: 30, campo: 'observacion', original: 'AD', ayuda: 'Nota libre. Si se usó una fibra, anótela aquí.' },
   { l: 'L', titulo: 'Convenio', clase: 'opcional', ancho: 16, ayuda: 'Opcional: al reimportar se completa desde Reporte Info.' },
   { l: 'M', titulo: 'Previsión', clase: 'opcional', ancho: 14, ayuda: 'Opcional (Isapre/Fonasa).' },
   { l: 'N', titulo: 'Médico', clase: 'opcional', ancho: 22, ayuda: 'Opcional (1° cirujano).' },
@@ -77,6 +83,12 @@ const COLUMNAS_GESTIONES = [
   { l: 'X', titulo: 'ID sistema', clase: 'formula', ancho: 18, ayuda: 'Solo filas del sistema.' },
   { l: 'Y', titulo: 'aux: primer estado', clase: 'formula', oculta: true },
   { l: 'Z', titulo: 'aux: líneas sin código', clase: 'formula', oculta: true },
+  // Después de las auxiliares (ocultas) para no mover sus letras; en
+  // pantalla queda junto a ID sistema.
+  { l: 'AA', titulo: 'MODIFICADO', clase: 'formula', ancho: 12, ayuda: 'Filas del sistema: SÍ si se cambió Informe, Lado u Observación.' },
+  { l: 'AB', titulo: 'orig: Informe', clase: 'formula', oculta: true },
+  { l: 'AC', titulo: 'orig: Lado', clase: 'formula', oculta: true },
+  { l: 'AD', titulo: 'orig: Observación', clase: 'formula', oculta: true },
 ];
 
 const COLUMNAS_ITEMS = [
@@ -86,10 +98,10 @@ const COLUMNAS_ITEMS = [
   { l: 'D', titulo: 'Línea padre', clase: 'opcional', ancho: 9, ayuda: 'Solo CONTENIDO PAD (N° del PAD PADRE) y LOTE ADICIONAL (N° de la línea NORMAL).' },
   { l: 'E', titulo: 'N° cotización', clase: 'obligatorio', ancho: 14, texto: true, ayuda: 'N° de la cotización del proveedor.' },
   { l: 'F', titulo: 'Referencia', clase: 'obligatorio', ancho: 24, texto: true, ayuda: 'De la lista (se puede escribir). Si no existe queda "Sin código".' },
-  { l: 'G', titulo: 'Cantidad', clase: 'obligatorio', ancho: 9, ayuda: 'Mayor que 0. En una referencia con lotes: la cantidad TOTAL.' },
-  { l: 'H', titulo: 'Lote', clase: 'opcional', ancho: 14, texto: true, ayuda: 'Vacío = Sin lote.' },
-  { l: 'I', titulo: 'Vencimiento', clase: 'opcional', ancho: 12, fecha: true, ayuda: 'dd-mm-aaaa. Vacío = Sin fecha.' },
-  { l: 'J', titulo: 'Estado carga', clase: 'opcional', ancho: 13, ayuda: 'Vacío = PENDIENTE. En PAD no se usa.' },
+  { l: 'G', titulo: 'Cantidad', clase: 'obligatorio', ancho: 9, campo: 'cantidad', original: 'AL', ayuda: 'Mayor que 0. En una referencia con lotes: la cantidad TOTAL.' },
+  { l: 'H', titulo: 'Lote', clase: 'opcional', ancho: 14, texto: true, campo: 'lote', original: 'AM', ayuda: 'Vacío = Sin lote.' },
+  { l: 'I', titulo: 'Vencimiento', clase: 'opcional', ancho: 12, fecha: true, campo: 'vencimiento', original: 'AN', ayuda: 'dd-mm-aaaa. Vacío = Sin fecha.' },
+  { l: 'J', titulo: 'Estado carga', clase: 'opcional', ancho: 13, campo: 'estadoCarga', original: 'AO', ayuda: 'Vacío = PENDIENTE. En PAD no se usa.' },
   { l: 'K', titulo: 'Precio manual', clase: 'opcional', ancho: 12, pesos: true, ayuda: 'Opcional: reemplaza el precio del catálogo (ej. referencia sin código).' },
   { l: 'L', titulo: 'Código', clase: 'formula', ancho: 12, ayuda: 'Del catálogo.' },
   { l: 'M', titulo: 'Precio unitario', clase: 'formula', ancho: 12, pesos: true, ayuda: 'Catálogo o precio manual.' },
@@ -116,6 +128,11 @@ const COLUMNAS_ITEMS = [
   { l: 'AH', titulo: 'aux: tramo recargo', clase: 'formula', oculta: true },
   { l: 'AI', titulo: 'aux: recargo encontrado', clase: 'formula', oculta: true },
   { l: 'AJ', titulo: 'aux: empresa no coincide', clase: 'formula', oculta: true },
+  { l: 'AK', titulo: 'MODIFICADO', clase: 'formula', ancho: 12, ayuda: 'Filas del sistema: SÍ si se cambió Cantidad, Lote, Vencimiento o Estado carga.' },
+  { l: 'AL', titulo: 'orig: Cantidad', clase: 'formula', oculta: true },
+  { l: 'AM', titulo: 'orig: Lote', clase: 'formula', oculta: true, texto: true },
+  { l: 'AN', titulo: 'orig: Vencimiento', clase: 'formula', oculta: true, fecha: true },
+  { l: 'AO', titulo: 'orig: Estado carga', clase: 'formula', oculta: true },
 ];
 
 const COLUMNAS_DOCUMENTOS = [
@@ -168,8 +185,11 @@ const prepararHoja = (hoja, columnas, { conAyuda = true, congelarColumnas = 0 } 
   filaEnc.height = 30;
   filaAyuda.height = conAyuda ? 48 : 18;
   hoja.views = [{ state: 'frozen', xSplit: congelarColumnas, ySplit: FILA_ENCABEZADO }];
-  const visibles = columnas.filter((c) => !c.oculta);
-  hoja.autoFilter = { from: { row: FILA_ENCABEZADO, column: 1 }, to: { row: FILA_ENCABEZADO, column: visibles.length } };
+  // El filtro llega hasta la última columna visible (puede haber ocultas en
+  // medio, como las auxiliares antes de MODIFICADO).
+  let ultimaVisible = 0;
+  columnas.forEach((c, i) => { if (!c.oculta) ultimaVisible = i + 1; });
+  hoja.autoFilter = { from: { row: FILA_ENCABEZADO, column: 1 }, to: { row: FILA_ENCABEZADO, column: ultimaVisible } };
 };
 
 // Formatos por columna en un rango de filas (texto, fecha, pesos) y bloqueo.
@@ -180,14 +200,39 @@ const formatearCelda = (celda, col, { bloqueada }) => {
   celda.protection = { locked: bloqueada };
 };
 
-const escribirFila = (hoja, numeroFila, columnas, valores, { sistema }) => {
+// `editables` (solo filas del sistema): campos que esa fila deja cambiar.
+// Esas celdas quedan desbloqueadas y en blanco (no grises) para que se note.
+const escribirFila = (hoja, numeroFila, columnas, valores, { sistema, editables = [] }) => {
   const fila = hoja.getRow(numeroFila);
   columnas.forEach((col) => {
     const celda = fila.getCell(col.l);
     const v = valores[col.l];
     if (v !== undefined && v !== null && v !== '') celda.value = v;
-    formatearCelda(celda, col, { bloqueada: sistema || col.clase === 'formula' });
-    if (sistema && !col.oculta) celda.fill = relleno(COLOR.sistema);
+    const editableEnSistema = sistema && col.campo && editables.includes(col.campo);
+    formatearCelda(celda, col, { bloqueada: editableEnSistema ? false : (sistema || col.clase === 'formula') });
+    if (sistema && !col.oculta) celda.fill = relleno(editableEnSistema ? COLOR.editableSistema : COLOR.sistema);
+  });
+};
+
+// Valores originales (columnas ocultas) y MODIFICADO de una fila del sistema.
+const camposDeCambio = (columnas, r, valoresSistema, colModificado) => {
+  const conOriginal = columnas.filter((c) => c.original);
+  const valores = Object.fromEntries(conOriginal.map((c) => [c.original, valoresSistema[c.l]]));
+  const comparaciones = conOriginal.map((c) => `${c.l}${r}<>${c.original}${r}`).join(',');
+  valores[colModificado] = f(`IF(OR(${comparaciones}),"SÍ","NO")`);
+  return valores;
+};
+
+// Fondo ámbar en cada celda editable cuyo valor difiere del original, y
+// MODIFICADO = SÍ en negrita.
+const reglasCambio = (hoja, columnas, colOrigen, colModificado, desde, hasta) => {
+  columnas.filter((c) => c.original).forEach((c) => hoja.addConditionalFormatting({
+    ref: `${c.l}${desde}:${c.l}${hasta}`,
+    rules: [{ type: 'expression', priority: 1, formulae: [`AND($${colOrigen}${desde}="SISTEMA",${c.l}${desde}<>$${c.original}${desde})`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.cambiado } } } }],
+  }));
+  hoja.addConditionalFormatting({
+    ref: `${colModificado}${desde}:${colModificado}${hasta}`,
+    rules: [{ type: 'expression', priority: 1, formulae: [`${colModificado}${desde}="SÍ"`], style: { font: { bold: true }, fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.cambiado } } } }],
   });
 };
 
@@ -373,7 +418,7 @@ const valoresItemSistema = (it) => ({
   A: it.linea, B: it.clave, C: it.tipo, D: it.lineaPadre, E: it.numCotizacion, F: it.referencia,
   G: it.cantidad, H: it.lote, I: it.vencimiento, J: it.estadoCarga,
   L: it.codigo, M: it.precio, N: it.empresaVinculada, O: it.clase, P: it.tipoVinculado, Q: it.descriptorAuto,
-  R: it.vecesCosto, S: it.totalItem, T: it.venta, V: 'SISTEMA', X: it.idSistema,
+  R: it.vecesCosto, V: 'SISTEMA', X: it.idSistema,
   // Auxiliares con lo guardado (no se recalculan contra el catálogo de hoy).
   AC: '', AD: '', AE: 0, AG: it.sinCodigo ? 1 : 0, AH: '', AI: it.recargoEncontrado || it.sinCodigo ? 1 : 0,
 });
@@ -389,7 +434,7 @@ const textoInstrucciones = (d) => [
   [''],
   ['PARA QUÉ SIRVE', 'seccion'],
   ['Si el sistema no está disponible, registre aquí las gestiones y sus ítems. Cuando vuelva, este archivo se reimporta: solo se cargan las filas con ORIGEN = CONTINGENCIA.'],
-  ['Las filas grises con ORIGEN = SISTEMA son una foto del sistema al generar el archivo: sirven de consulta y están bloqueadas.'],
+  ['Las filas grises con ORIGEN = SISTEMA son una foto del sistema al generar el archivo: sirven de consulta y solo se pueden cambiar sus celdas blancas (ver "Cambios en lo que ya estaba en el sistema").'],
   [''],
   ['COLORES DE LOS ENCABEZADOS', 'seccion'],
   ['Amarillo: obligatorio. Azul: opcional. Gris: automático (no se escribe). Una celda obligatoria vacía en una fila nueva se pinta de rojo.'],
@@ -412,7 +457,12 @@ const textoInstrucciones = (d) => [
   ['   LOTE ADICIONAL: cuando una referencia viene en varios lotes. La línea NORMAL lleva la cantidad TOTAL y su lote; cada LOTE ADICIONAL indica cuántas unidades son de otro lote, con "Línea padre" = N° de la línea NORMAL. No se cobra de nuevo; la suma de los lotes adicionales no puede superar la cantidad total.'],
   ['   Ejemplo PAD: línea 120 PAD PADRE "PAD-RODILLA"; líneas 121 y 122 CONTENIDO PAD con Línea padre 120.'],
   ['5. La columna Alerta debe quedar vacía. Avisos: Falta CLAVE / CLAVE no existe · Falta N° cotización · Falta referencia · Cantidad inválida · Sin código · Referencia ambigua (la referencia existe para varias empresas y ninguna es la de la gestión) · Empresa no coincide · Sin rango de recargo · Línea padre inválida · Lotes superan la cantidad.'],
-  ['6. Se pueden agregar ítems a una gestión exportada del sistema (eligiendo su CLAVE), pero no modificar sus filas grises: esos cambios se hacen en el sistema al volver.'],
+  ['6. Se pueden agregar ítems a una gestión exportada del sistema eligiendo su CLAVE.'],
+  [''],
+  ['CAMBIOS EN LO QUE YA ESTABA EN EL SISTEMA (filas grises)', 'seccion'],
+  ['En las filas del sistema solo se pueden cambiar las celdas blancas: en Gestiones, Informe, Lado y Observación; en Ítems, Estado carga, Lote, Vencimiento y Cantidad. Lo demás está bloqueado.'],
+  ['Algunas líneas no dejan cambiar todo, igual que en el sistema: en PAD y en líneas sin código no se cambia el Estado carga; en el PAD PADRE no se cambian Lote ni Vencimiento; en una fibra no se cambian Lote, Vencimiento ni Cantidad.'],
+  ['La celda cambiada se pinta ámbar y la columna MODIFICADO pasa a SÍ. Para deshacer un cambio, vuelva a escribir el valor original. Al reimportar se aplican solo las filas con MODIFICADO = SÍ; las gestiones que ya estaban SOLICITADAS no se tocan y quedan en el informe para hacerlas a mano.'],
   [''],
   ['FIBRAS REUTILIZABLES', 'seccion'],
   ['Las fibras no están en el catálogo (exigen elegir la fibra física FIB-xxxx). Si usa una, anote en Observación de la gestión: FIBRA, referencia, código FIB y lote. Se carga en el sistema al volver.'],
@@ -421,11 +471,11 @@ const textoInstrucciones = (d) => [
   ['Registre cada PDF guardado durante la caída: admisión, nombre del archivo y carpeta. Al volver se suben con Carga masiva de documentos y se marca "¿Subido al sistema?" = SÍ.'],
   [''],
   ['QUÉ NO HACER', 'seccion'],
-  ['No cambie los N° de línea ni las columnas grises. No borre filas del sistema. No haga la Solicitud ni la imputación durante la caída: se hacen en el sistema después de reimportar.'],
+  ['No cambie los N° de línea. No borre filas del sistema. No haga la Solicitud ni la imputación durante la caída: se hacen en el sistema después de reimportar.'],
   ['No ordene las hojas (están protegidas para no romper fórmulas); use los filtros.'],
   [''],
-  ['LIBREOFFICE', 'seccion'],
-  ['Si al abrir no aparecen valores calculados, use Datos → Calcular → Recálculo incondicional (Ctrl+Mayús+F9).'],
+  ['PROGRAMA', 'seccion'],
+  ['Ábralo con Microsoft Excel: es el único probado. Pide la contraseña al abrir.'],
   [''],
   ['SEGURIDAD', 'seccion'],
   ['Contiene datos de pacientes. No lo envíe por correo ni WhatsApp, no lo deje en Descargas ni en el escritorio y no lo imprima. Al terminar la contingencia y reimportar, borre las copias locales.'],
@@ -463,7 +513,7 @@ export const construirLibro = async (datos) => {
   const libro = new ExcelJS.Workbook();
   libro.creator = 'Medra — respaldo de contingencia';
   libro.created = new Date();
-  // Recalcular todo al abrir (Excel y LibreOffice): el archivo se guarda sin
+  // Recalcular todo al abrir: el archivo se guarda sin
   // resultados de fórmulas.
   libro.calcProperties.fullCalcOnLoad = true;
 
@@ -496,7 +546,10 @@ export const construirLibro = async (datos) => {
   prepararHoja(hG, COLUMNAS_GESTIONES, { congelarColumnas: 2 });
   filasGestiones.forEach((g, i) => {
     const r = PRIMERA + i;
-    escribirFila(hG, r, COLUMNAS_GESTIONES, { ...valoresGestionSistema(g), ...formulasEstadoGestion(r, x) }, { sistema: true });
+    const valores = valoresGestionSistema(g);
+    escribirFila(hG, r, COLUMNAS_GESTIONES, {
+      ...valores, ...formulasEstadoGestion(r, x), ...camposDeCambio(COLUMNAS_GESTIONES, r, valores, 'AA'),
+    }, { sistema: true, editables: CAMPOS_EDITABLES_GESTION });
   });
   for (let r = PRIMERA + filasGestiones.length; r <= ultimaGestion; r += 1) {
     escribirFila(hG, r, COLUMNAS_GESTIONES, formulasGestion(r, x), { sistema: false });
@@ -526,12 +579,22 @@ export const construirLibro = async (datos) => {
     ],
   });
   reglaObligatorio(hG, ['B', 'C', 'D', 'W'], 'V', PRIMERA, ultimaGestion);
+  reglasCambio(hG, COLUMNAS_GESTIONES, 'V', 'AA', PRIMERA, ultimaGestion);
 
   // Ítems
   prepararHoja(hI, COLUMNAS_ITEMS, { congelarColumnas: 2 });
   filasItems.forEach((it, i) => {
     const r = PRIMERA + i;
-    escribirFila(hI, r, COLUMNAS_ITEMS, { ...valoresItemSistema(it), ...formulasItemComunes(r, x) }, { sistema: true });
+    const valores = valoresItemSistema(it);
+    escribirFila(hI, r, COLUMNAS_ITEMS, {
+      ...valores,
+      ...formulasItemComunes(r, x),
+      // Totales con el precio y veces costo guardados: siguen a la cantidad
+      // y a SIN CARGO si se editan en la caída (el importador los recalcula).
+      S: f(`IF(J${r}="SIN CARGO",0,M${r}*G${r})`),
+      T: f(`IF(J${r}="SIN CARGO",0,M${r}*R${r}*G${r})`),
+      ...camposDeCambio(COLUMNAS_ITEMS, r, valores, 'AK'),
+    }, { sistema: true, editables: camposEditablesItem(it) });
   });
   let linea = datos.ultimaLinea || filasItems.length;
   for (let r = PRIMERA + filasItems.length; r <= ultimaItem; r += 1) {
@@ -556,6 +619,7 @@ export const construirLibro = async (datos) => {
     rules: [{ type: 'expression', priority: 1, formulae: [`U${PRIMERA}<>""`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { bold: true, color: { argb: COLOR.textoError } } } }],
   });
   reglaObligatorio(hI, ['B', 'E', 'F', 'G', 'W'], 'V', PRIMERA, ultimaItem);
+  reglasCambio(hI, COLUMNAS_ITEMS, 'V', 'AK', PRIMERA, ultimaItem);
 
   // Documentos
   prepararHoja(hD, COLUMNAS_DOCUMENTOS, { congelarColumnas: 2 });

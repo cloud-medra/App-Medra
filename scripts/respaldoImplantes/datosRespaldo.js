@@ -200,6 +200,7 @@ export const filasDesdeGestiones = (gestiones) => {
         venta: numero(it.venta),
         sinCodigo: !!it.sinCodigo,
         recargoEncontrado: !!it.recargoEncontrado,
+        esFibra: Boolean(it.fibra?.codigoInterno || it.fibra?.id),
         idSistema: texto(it.id),
       });
     });
@@ -210,6 +211,31 @@ export const filasDesdeGestiones = (gestiones) => {
   filasItems.forEach((f) => { if (f.linea === null || f.linea === undefined) { siguiente += 1; f.linea = siguiente; } });
 
   return { filasGestiones, filasItems, ultimaLinea: siguiente };
+};
+
+// --- Edición de filas del sistema ---------------------------------------------
+// En una caída se pueden actualizar algunos campos de lo ya registrado (decisión
+// del 23-11-2026). El resto de la fila sigue bloqueado. El importador aplica
+// estos cambios por ID de sistema.
+
+export const CAMPOS_EDITABLES_GESTION = Object.freeze(['informe', 'lado', 'observacion']);
+export const CAMPOS_EDITABLES_ITEM = Object.freeze(['cantidad', 'lote', 'vencimiento', 'estadoCarga']);
+
+// Campos editables de un ítem del sistema, con las mismas restricciones que
+// la pantalla Cargas:
+//   - Estado carga: no en PAD (padre ni contenido, su estado es PAD fijo) ni
+//     en líneas sin código (en Cargas no tienen selector).
+//   - Lote y vencimiento: no en el PAD PADRE (son "PAD") ni en una fibra
+//     (vienen de la fibra física).
+//   - Cantidad: no en una fibra (siempre 1 por uso).
+export const camposEditablesItem = (fila) => {
+  const esPad = fila.tipo === TIPOS_LINEA.PAD_PADRE || fila.tipo === TIPOS_LINEA.CONTENIDO_PAD;
+  return CAMPOS_EDITABLES_ITEM.filter((campo) => {
+    if (campo === 'estadoCarga') return !esPad && !fila.sinCodigo;
+    if (campo === 'lote' || campo === 'vencimiento') return fila.tipo !== TIPOS_LINEA.PAD_PADRE && !fila.esFibra;
+    if (campo === 'cantidad') return !fila.esFibra;
+    return false;
+  });
 };
 
 // --- Catálogos --------------------------------------------------------------

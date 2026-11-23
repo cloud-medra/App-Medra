@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   fechaExcelAISO, isoAFechaExcel, periodoARuta, mesDesdeTexto, mesAnterior, periodoAbiertoDe, claveGestion,
   tipoLineaDe, filasDesdeGestiones, catalogoReferencias, listaEmpresas, listaCentros, listaRecargos,
-  dimensionar, copiasABorrar, nombreArchivo, fechaISOChile, MINIMO_LIBRES, TIPOS_LINEA,
+  dimensionar, copiasABorrar, nombreArchivo, fechaISOChile, MINIMO_LIBRES, TIPOS_LINEA, camposEditablesItem,
 } from './datosRespaldo.js';
 
 describe('fechas', () => {
@@ -87,6 +87,22 @@ describe('gestiones e ítems', () => {
     const lineas = filasItems.map((f) => f.linea);
     expect(new Set(lineas).size).toBe(lineas.length);
     expect(ultimaLinea).toBe(Math.max(...lineas));
+  });
+});
+
+describe('campos editables de un ítem del sistema', () => {
+  it('sigue las restricciones de Cargas', () => {
+    expect(camposEditablesItem({ tipo: 'NORMAL' })).toEqual(['cantidad', 'lote', 'vencimiento', 'estadoCarga']);
+    expect(camposEditablesItem({ tipo: 'LOTE ADICIONAL' })).toEqual(['cantidad', 'lote', 'vencimiento', 'estadoCarga']);
+    expect(camposEditablesItem({ tipo: 'NORMAL', sinCodigo: true })).toEqual(['cantidad', 'lote', 'vencimiento']);
+    expect(camposEditablesItem({ tipo: 'PAD PADRE' })).toEqual(['cantidad']);
+    expect(camposEditablesItem({ tipo: 'CONTENIDO PAD' })).toEqual(['cantidad', 'lote', 'vencimiento']);
+    expect(camposEditablesItem({ tipo: 'NORMAL', esFibra: true })).toEqual(['estadoCarga']);
+  });
+
+  it('marca las fibras al exportar', () => {
+    const { filasItems } = filasDesdeGestiones([{ gestionId: '1', empresa: 'A', fecha: '2026-11-01', cotizaciones: [{ items: [{ id: 'f', fibra: { codigoInterno: 'FIB-0001' } }, { id: 'n' }] }] }]);
+    expect(filasItems.map((f) => f.esFibra)).toEqual([true, false]);
   });
 });
 
