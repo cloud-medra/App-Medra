@@ -36,3 +36,6 @@ functions/.env.*
 
 # Registros de reparaciones de producción (traen admisiones): no se suben
 registros-privados/
+
+# Respaldo de contingencia de Implantes (datos de pacientes): nunca se sube
+respaldo_implantes*.xlsx
