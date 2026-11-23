@@ -32,7 +32,11 @@ const PRIMERA = 3;
 
 // Nombres de hoja: las macros (macros/MoverCargados.bas) usan los mismos.
 export const H = {
-  G: 'Gestiones', I: 'Ítems', D: 'Documentos', CARG: 'Cargados', RI: 'Reporte Info', R: 'Códigos', E: 'Empresas',
+  G: 'Gestiones', I: 'Ítems', D: 'Documentos', CARG: 'Cargados',
+  // Mismos nombres que las dos hojas del Excel de Solicitud de la app
+  // (config.hojaSolicitud de modulosGestion.js y "Resumen"; lo comprueba el test).
+  SOL: 'Solicitud Implantes', RES: 'Resumen',
+  RI: 'Reporte Info', R: 'Códigos', E: 'Empresas',
   CEN: 'Centros', REC: 'Recargos', PREV: 'Previsiones', CONV: 'Convenios', C: 'Catálogos', INS: 'Instrucciones',
 };
 const ref = (hoja) => `'${hoja}'!`;
@@ -573,6 +577,74 @@ export const COLUMNAS_CARGADOS = [
   { titulo: 'ORIGEN', ancho: 13 },
 ];
 
+// --- Hojas Solicitud Implantes y Resumen --------------------------------------------
+// Las mismas columnas, en el mismo orden y con los mismos valores que las dos
+// hojas del Excel de Solicitud de la app (construirFilasExcelSolicitud en
+// shared/solicitud/useSolicitudGestionesData.js): fechas como texto
+// dd-mm-aaaa, cantidades y montos como número, vacíos como "P". Las llena
+// la macro "Mover cargados" (acumulativo) y "Devolver a pendientes" quita
+// las filas de la gestión por la CLAVE. Al final, FECHA MOVIMIENTO y CLAVE
+// (decisión del 23-11-2026): las columnas de la app quedan idénticas para
+// copiarlas tal cual. Encabezado en la fila 1 y datos desde la 2, como el
+// archivo de la app. El orden lo usa la macro: si cambia aquí, cambia allá.
+export const COLUMNAS_SOLICITUD = [
+  { titulo: 'ID', ancho: 11, texto: true },
+  { titulo: 'PACIENTE', ancho: 28 },
+  { titulo: 'MEDICO', ancho: 24 },
+  { titulo: 'FECHA', ancho: 11, texto: true },
+  { titulo: 'EMPRESA', ancho: 24 },
+  { titulo: 'CODIGO', ancho: 12, texto: true },
+  { titulo: 'DESCRIPCION', ancho: 36 },
+  { titulo: 'CANTIDAD', ancho: 10 },
+  { titulo: 'PRECIO', ancho: 12 },
+  { titulo: 'ATRIBUTO', ancho: 13 },
+  { titulo: 'FECHA REGISTRO', ancho: 14, texto: true },
+  { titulo: 'FECHA CARGA', ancho: 12, texto: true },
+  { titulo: 'N° COTIZACION', ancho: 14, texto: true },
+  { titulo: 'FECHA INGRESO', ancho: 13, texto: true },
+  { titulo: 'LOTE', ancho: 12, texto: true },
+  { titulo: 'VENCIMIENTO', ancho: 13, texto: true },
+  { titulo: 'FECHA MOVIMIENTO', ancho: 16, fecha: true },
+  { titulo: 'CLAVE', ancho: 34 },
+];
+export const COLUMNAS_RESUMEN = [
+  { titulo: 'Ingreso', ancho: 11, texto: true },
+  { titulo: 'Area', ancho: 14 },
+  { titulo: 'Previsión', ancho: 16 },
+  { titulo: 'Id', ancho: 11, texto: true },
+  { titulo: 'Cód', ancho: 12, texto: true },
+  { titulo: 'Cant', ancho: 7 },
+  { titulo: 'Venta', ancho: 12 },
+  { titulo: 'Médico', ancho: 24 },
+  { titulo: 'Fecha', ancho: 11, texto: true },
+  { titulo: 'Descripción', ancho: 36 },
+  { titulo: 'Estado', ancho: 12 },
+  { titulo: 'FECHA MOVIMIENTO', ancho: 16, fecha: true },
+  { titulo: 'CLAVE', ancho: 34 },
+];
+
+const hojaSolicitud = (libro, nombre, columnas) => {
+  const hoja = libro.addWorksheet(nombre);
+  hoja.columns = columnas.map((c) => ({ width: c.ancho }));
+  const enc = hoja.getRow(1);
+  columnas.forEach((c, i) => {
+    const celda = enc.getCell(i + 1);
+    celda.value = c.titulo;
+    celda.font = { bold: true };
+    // Las dos agregadas (FECHA MOVIMIENTO y CLAVE) en gris: no son del archivo de la app.
+    celda.fill = relleno(i >= columnas.length - 2 ? COLOR.formula : COLOR.opcional);
+    celda.border = BORDES;
+    // Formato de columna, que heredan las filas que escribe la macro: texto
+    // para que "102030" y "23-11-2026" no se conviertan en número o fecha.
+    const col = hoja.getColumn(i + 1);
+    if (c.texto) col.numFmt = '@';
+    if (c.fecha) col.numFmt = FORMATO_FECHA;
+  });
+  hoja.views = [{ state: 'frozen', ySplit: 1 }];
+  hoja.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columnas.length } };
+  return hoja;
+};
+
 const hojaCargados = (libro) => {
   const hoja = libro.addWorksheet(H.CARG);
   hoja.columns = COLUMNAS_CARGADOS.map((c) => ({ width: c.ancho }));
@@ -766,6 +838,11 @@ const MACROS_Y_BOTONES = [
   ['"Devolver a pendientes" (hoja Cargados, arriba a la izquierda): seleccione cualquier celda de una fila de la gestión que quiere devolver y presione el botón. Confirma y la vuelve a filas libres de Gestiones e Ítems (con N° de línea nuevos; la Línea padre se ajusta sola) y la quita de Cargados. No se puede si en Gestiones ya hay una gestión con la misma CLAVE.'],
   ['Después de usar un botón, guarde el archivo (Ctrl+G). Los botones no se pueden deshacer con Ctrl+Z: para revertir, use el botón contrario.'],
   [''],
+  ['HOJAS SOLICITUD IMPLANTES Y RESUMEN', 'seccion'],
+  ['Son las mismas dos hojas del Excel que descarga el sistema al hacer la Solicitud: mismas columnas, mismo orden y mismos valores (fechas como texto dd-mm-aaaa). Cada vez que se presiona "Mover cargados" se agregan al final las líneas de las gestiones movidas; nunca se borra lo anterior. FECHA INGRESO, Ingreso y FECHA REGISTRO llevan la fecha del movimiento.'],
+  ['Al final tienen dos columnas que no están en el archivo del sistema: FECHA MOVIMIENTO (el día en que se movió) y CLAVE (la gestión). Para copiar al sistema, use las columnas anteriores. "Devolver a pendientes" quita de estas hojas las filas de esa gestión.'],
+  ['No son la Solicitud: no marcan nada como SOLICITADO ni imputan. La Solicitud se hace en el sistema cuando vuelva.'],
+  [''],
   ['HOJA CARGADOS', 'seccion'],
   ['Una fila por línea de ítem, con los datos de su gestión repetidos: es lo que hay que ingresar al sistema cuando vuelva (cabecera de la gestión, cada línea con su código, precio, recargo, total y venta, y quién lo registró y movió). Está protegida para no modificarla por error; use los filtros para verla por gestión.'],
 ];
@@ -913,6 +990,8 @@ export const construirLibro = async (datosEntrada) => {
   const hI = libro.addWorksheet(H.I);
   const hD = libro.addWorksheet(H.D);
   const hC = hojaCargados(libro);
+  const hSol = hojaSolicitud(libro, H.SOL, COLUMNAS_SOLICITUD);
+  const hRes = hojaSolicitud(libro, H.RES, COLUMNAS_RESUMEN);
   const { col: riCol } = hojaReporteInfo(libro, datos.reporteInfo || [], datos.filasCatalogos.reporteInfo);
   const { col: rCol } = hojaCodigos(libro, datos.catalogo, datos.filasCatalogos.referencias);
   const { nombres: empresasNombres } = hojaEmpresas(libro, datos.empresas, datos.filasCatalogos.empresas);
@@ -1078,7 +1157,7 @@ export const construirLibro = async (datosEntrada) => {
   // se puede quitar en Revisar → Desproteger hoja si hiciera falta. Las
   // macros la quitan y la vuelven a poner con las mismas opciones.
   for (const hoja of [hG, hI, hD]) await hoja.protect('', OPCIONES_PROTECCION);
-  await hC.protect('', { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true, formatColumns: true, formatRows: true });
+  for (const hoja of [hC, hSol, hRes]) await hoja.protect('', { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true, formatColumns: true, formatRows: true });
   for (const nombre of [H.RI, H.R, H.E, H.CEN, H.REC, H.PREV, H.CONV, H.C, H.INS]) await libro.getWorksheet(nombre).protect('', { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true });
 
   return { libro, filas: { ultimaGestion, ultimaItem, ultimaDocumento } };

@@ -21,6 +21,12 @@ Option Explicit
 Private Const HOJA_GESTIONES As String = "Gestiones"
 Private Const HOJA_ITEMS As String = "Ítems"
 Private Const HOJA_CARGADOS As String = "Cargados"
+' Las dos hojas del Excel de Solicitud de la app (COLUMNAS_SOLICITUD y
+' COLUMNAS_RESUMEN en libroRespaldo.js). Encabezado en la fila 1.
+Private Const HOJA_SOLICITUD As String = "Solicitud Implantes"
+Private Const HOJA_RESUMEN As String = "Resumen"
+Private Const S_COLUMNAS As Long = 18          ' ... FECHA MOVIMIENTO (17), CLAVE (18)
+Private Const R_COLUMNAS As Long = 13          ' ... FECHA MOVIMIENTO (12), CLAVE (13)
 Private Const PRIMERA As Long = 3
 
 ' Gestiones (A = 1)
@@ -125,7 +131,8 @@ End Sub
 ' ---------------------------------------------------------------------------
 
 ' Devuelve "gestiones;items".
-Public Function MoverCargadosAuto(ByVal quien As String) As String
+' `fechaMovimiento` (opcional): para la prueba automática; el botón usa Now.
+Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMovimiento As Variant) As String
     Dim wsG As Worksheet, wsI As Worksheet, wsC As Worksheet
     Set wsG = ThisWorkbook.Worksheets(HOJA_GESTIONES)
     Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
@@ -151,7 +158,7 @@ Public Function MoverCargadosAuto(ByVal quien As String) As String
 
     Dim salida() As Variant, k As Long, fi As Variant, gi As Long, ii As Long, c As Long, ahora As Date
     ReDim salida(1 To filasI.Count, 1 To C_COLUMNAS)
-    ahora = Now
+    If IsMissing(fechaMovimiento) Then ahora = Now Else ahora = CDate(fechaMovimiento)
     k = 0
     For Each fi In filasI
         k = k + 1
@@ -186,12 +193,68 @@ Public Function MoverCargadosAuto(ByVal quien As String) As String
         Next c
     Next fi
 
+    ' Filas de las hojas Solicitud Implantes y Resumen (como la Solicitud de
+    ' la app; ver construirFilasExcelSolicitud). Fechas como texto dd-mm-aaaa.
+    Dim sol() As Variant, res() As Variant, fechaTxt As String, tipoLinea As String
+    ReDim sol(1 To filasI.Count, 1 To S_COLUMNAS)
+    ReDim res(1 To filasI.Count, 1 To R_COLUMNAS)
+    fechaTxt = Format(ahora, "dd-mm-yyyy")
+    k = 0
+    For Each fi In filasI
+        k = k + 1
+        ii = fi - PRIMERA + 1
+        gi = porClave(Txt(iDatos(ii, I_CLAVE)))
+        tipoLinea = Txt(iDatos(ii, I_TIPO_EF))
+        sol(k, 1) = Txt(gDatos(gi, 2))                              ' ID
+        sol(k, 2) = OP(gDatos(gi, 5))                               ' PACIENTE
+        sol(k, 3) = OP(gDatos(gi, 14))                              ' MEDICO
+        sol(k, 4) = FechaTexto(gDatos(gi, 3))                       ' FECHA
+        sol(k, 5) = OP(gDatos(gi, 4))                               ' EMPRESA
+        sol(k, 6) = OP(iDatos(ii, 12))                              ' CODIGO
+        sol(k, 7) = OP(iDatos(ii, 17))                              ' DESCRIPCION
+        sol(k, 8) = Num(iDatos(ii, 7))                              ' CANTIDAD
+        sol(k, 9) = Num(iDatos(ii, 13))                             ' PRECIO
+        sol(k, 10) = OP(iDatos(ii, 16))                             ' ATRIBUTO (tipo del ítem)
+        sol(k, 11) = fechaTxt                                       ' FECHA REGISTRO
+        sol(k, 12) = FechaTexto(gDatos(gi, 3))                      ' FECHA CARGA
+        sol(k, 13) = OP(iDatos(ii, 5))                              ' N° COTIZACION
+        sol(k, 14) = fechaTxt                                       ' FECHA INGRESO
+        sol(k, 15) = LoteSistema(iDatos(ii, 8), tipoLinea)          ' LOTE
+        sol(k, 16) = VencimientoSistema(iDatos(ii, 9), tipoLinea)   ' VENCIMIENTO
+        sol(k, 17) = DateValue(ahora)                               ' FECHA MOVIMIENTO
+        sol(k, 18) = Txt(gDatos(gi, 1))                             ' CLAVE
+        res(k, 1) = fechaTxt                                        ' Ingreso
+        res(k, 2) = IIf(Txt(gDatos(gi, 8)) = "", "PABELLON", Txt(gDatos(gi, 8)))  ' Area (centro)
+        res(k, 3) = OP(gDatos(gi, 13))                              ' Previsión
+        res(k, 4) = Txt(gDatos(gi, 2))                              ' Id
+        res(k, 5) = OP(iDatos(ii, 12))                              ' Cód
+        res(k, 6) = Num(iDatos(ii, 7))                              ' Cant
+        res(k, 7) = Num(iDatos(ii, 20))                             ' Venta
+        res(k, 8) = OP(gDatos(gi, 14))                              ' Médico
+        res(k, 9) = FechaTexto(gDatos(gi, 3))                       ' Fecha
+        res(k, 10) = OP(iDatos(ii, 17))                             ' Descripción
+        res(k, 11) = IIf(Txt(iDatos(ii, I_ESTADO_EF)) = "", "PENDIENTE", Txt(iDatos(ii, I_ESTADO_EF)))  ' Estado
+        res(k, 12) = DateValue(ahora)                               ' FECHA MOVIMIENTO
+        res(k, 13) = Txt(gDatos(gi, 1))                             ' CLAVE
+    Next fi
+
+    Dim wsS As Worksheet, wsR As Worksheet
+    Set wsS = ThisWorkbook.Worksheets(HOJA_SOLICITUD)
+    Set wsR = ThisWorkbook.Worksheets(HOJA_RESUMEN)
+
     Dim calculo As XlCalculation
     calculo = Application.Calculation
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
     On Error GoTo Fallo
-    Desproteger wsG: Desproteger wsI: Desproteger wsC
+    Desproteger wsG: Desproteger wsI: Desproteger wsC: Desproteger wsS: Desproteger wsR
+
+    ' Acumulativo: se agrega debajo de lo que ya hay (encabezado en la fila 1).
+    Dim filaS As Long, filaR As Long
+    filaS = wsS.Cells(wsS.Rows.Count, S_COLUMNAS).End(xlUp).Row + 1
+    filaR = wsR.Cells(wsR.Rows.Count, R_COLUMNAS).End(xlUp).Row + 1
+    wsS.Range(wsS.Cells(filaS, 1), wsS.Cells(filaS + filasI.Count - 1, S_COLUMNAS)).Value = sol
+    wsR.Range(wsR.Cells(filaR, 1), wsR.Cells(filaR + filasI.Count - 1, R_COLUMNAS)).Value = res
 
     Dim destino As Long
     destino = UltimaFila(wsC, C_CLAVE) + 1
@@ -210,7 +273,7 @@ Public Function MoverCargadosAuto(ByVal quien As String) As String
 
     MoverCargadosAuto = filasG.Count & ";" & filasI.Count
 Fin:
-    Proteger wsG: Proteger wsI: Proteger wsC
+    Proteger wsG: Proteger wsI: Proteger wsC: Proteger wsS: Proteger wsR
     Application.Calculation = calculo
     Application.ScreenUpdating = True
     Exit Function
@@ -326,6 +389,8 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     For k = filasC.Count To 1 Step -1
         wsC.Rows(filasC(k)).Delete
     Next k
+    QuitarFilasDeClave ThisWorkbook.Worksheets(HOJA_SOLICITUD), S_COLUMNAS, clave
+    QuitarFilasDeClave ThisWorkbook.Worksheets(HOJA_RESUMEN), R_COLUMNAS, clave
 
     DevolverGestionAuto = "OK;" & filaG & ";" & filasC.Count
 Fin:
@@ -396,6 +461,69 @@ Private Function Txt(ByVal v As Variant) As String
         Txt = ""
     Else
         Txt = Trim(CStr(v))
+    End If
+End Function
+
+' Quita (de abajo hacia arriba) las filas de una gestión en Solicitud
+' Implantes o Resumen, buscando su CLAVE en la última columna.
+Private Sub QuitarFilasDeClave(ByVal ws As Worksheet, ByVal colClave As Long, ByVal clave As String)
+    Dim r As Long
+    Desproteger ws
+    For r = ws.Cells(ws.Rows.Count, colClave).End(xlUp).Row To 2 Step -1
+        If Txt(ws.Cells(r, colClave).Value) = clave Then ws.Rows(r).Delete
+    Next r
+    Proteger ws
+End Sub
+
+' Valor o "P" si está vacío (como el Excel de Solicitud de la app).
+Private Function OP(ByVal v As Variant) As String
+    OP = Txt(v)
+    If OP = "" Then OP = "P"
+End Function
+
+' Número (0 si está vacío o no es número), como "|| 0" en la app.
+Private Function Num(ByVal v As Variant) As Variant
+    If IsError(v) Then
+        Num = 0
+    ElseIf IsNumeric(v) And Not IsEmpty(v) Then
+        Num = CDbl(v)
+    Else
+        Num = 0
+    End If
+End Function
+
+' Fecha como texto dd-mm-aaaa (formatearFechaExcel de la app); un texto que
+' no es fecha ("Sin fecha", "PAD") queda tal cual.
+Private Function FechaTexto(ByVal v As Variant) As String
+    If IsError(v) Or IsEmpty(v) Then
+        FechaTexto = ""
+    ElseIf VarType(v) = vbDate Then
+        FechaTexto = Format(v, "dd-mm-yyyy")
+    ElseIf IsNumeric(v) Then
+        FechaTexto = Format(CDate(v), "dd-mm-yyyy")
+    Else
+        FechaTexto = Trim(CStr(v))
+    End If
+End Function
+
+' Lote y vencimiento como los guarda el sistema al cargar: el PAD PADRE
+' lleva "PAD"; el contenido del PAD, "P" y vacío; las demás líneas,
+' "Sin lote" y "Sin fecha" si no se escribieron.
+Private Function LoteSistema(ByVal v As Variant, ByVal tipoLinea As String) As String
+    LoteSistema = Txt(v)
+    If tipoLinea = "PAD PADRE" Then
+        LoteSistema = "PAD"
+    ElseIf LoteSistema = "" Then
+        If tipoLinea = "CONTENIDO PAD" Then LoteSistema = "P" Else LoteSistema = "Sin lote"
+    End If
+End Function
+
+Private Function VencimientoSistema(ByVal v As Variant, ByVal tipoLinea As String) As String
+    VencimientoSistema = FechaTexto(v)
+    If tipoLinea = "PAD PADRE" Then
+        VencimientoSistema = "PAD"
+    ElseIf VencimientoSistema = "" And tipoLinea <> "CONTENIDO PAD" Then
+        VencimientoSistema = "Sin fecha"
     End If
 End Function
 

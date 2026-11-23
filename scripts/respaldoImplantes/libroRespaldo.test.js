@@ -3,7 +3,7 @@ import ExcelJS from 'exceljs';
 import { construirLibro, COLUMNAS_CARGADOS, H } from './libroRespaldo.js';
 import { filasDesdeGestiones, catalogoReferencias, datosPlantilla, TAMANO_PLANTILLA, MINIMO_CATALOGOS } from './datosRespaldo.js';
 
-const HOJAS = ['Instrucciones', 'Gestiones', 'Ítems', 'Documentos', 'Cargados', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
+const HOJAS = ['Instrucciones', 'Gestiones', 'Ítems', 'Documentos', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
   'Previsiones', 'Convenios', 'Catálogos'];
 
 const releer = async (libro) => {
@@ -171,6 +171,13 @@ describe('plantilla', () => {
     const textos = libro.getWorksheet('Instrucciones').getColumn('A').values.filter(Boolean).join('\n');
     expect(textos).toContain('Rangos de recargo: 1 cargados de forma PROVISIONAL. Deben reemplazarse por la exportación oficial de la app');
     expect(textos).not.toContain('recargos_transcritos.xlsx');
+  });
+
+  it('Solicitud Implantes y Resumen: mismas columnas que la app, más FECHA MOVIMIENTO y CLAVE', async () => {
+    const libro = await releer((await construirLibro(datosPlantilla('x'))).libro);
+    expect(libro.getWorksheet('Solicitud Implantes').getRow(1).values.slice(1)).toEqual(['ID', 'PACIENTE', 'MEDICO', 'FECHA', 'EMPRESA', 'CODIGO', 'DESCRIPCION', 'CANTIDAD', 'PRECIO', 'ATRIBUTO', 'FECHA REGISTRO', 'FECHA CARGA', 'N° COTIZACION', 'FECHA INGRESO', 'LOTE', 'VENCIMIENTO', 'FECHA MOVIMIENTO', 'CLAVE']);
+    expect(libro.getWorksheet('Resumen').getRow(1).values.slice(1)).toEqual(['Ingreso', 'Area', 'Previsión', 'Id', 'Cód', 'Cant', 'Venta', 'Médico', 'Fecha', 'Descripción', 'Estado', 'FECHA MOVIMIENTO', 'CLAVE']);
+    expect(libro.getWorksheet('Resumen').views[0]).toMatchObject({ state: 'frozen', ySplit: 1 });
   });
 
   it('los nombres de hoja coinciden con los que usan las macros', () => {
