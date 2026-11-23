@@ -10,6 +10,12 @@
 
 import { ESTADO_CARGA_OPTIONS, CODIGO_SIN_OC } from '../../src/components/modulos/operaciones/implantes/gestionImplantes/components/Cargastab/cargasHelpers.js';
 import { LADOS, LADO_POR_DEFECTO } from '../../functions/bodymap/nucleo.mjs';
+// Mismas listas que el panel de edición de Códigos Maestros: si el sistema
+// agrega un valor, la plantilla lo toma al regenerarse.
+import { TIPOS_CODIGO, SEGMENTOS_CODIGO } from '../../src/components/modulos/maestros/codigosMaestrosV2/camposCodigo.js';
+import { CLASES_CODIGO } from '../../src/components/modulos/maestros/shared/codigos/clasesCodigo.js';
+
+export { TIPOS_CODIGO, SEGMENTOS_CODIGO, CLASES_CODIGO };
 
 export const PREFIJO_ARCHIVO = 'respaldo_implantes_';
 export const COPIAS_A_CONSERVAR = 3;
@@ -21,7 +27,6 @@ export const ESTADOS_GESTION = ['AGENDADO', 'PENDIENTE', 'REVISAR', 'S/COTIZACIO
 export const ESTADOS_CARGA = ESTADO_CARGA_OPTIONS;
 export const INFORMES = ['PENDIENTE', 'DISPONIBLE', 'NO APLICA'];
 export const NOMBRES_LADO = LADOS.map((l) => l.nombre);
-export const SI_NO = ['SÍ', 'NO'];
 export { CODIGO_SIN_OC };
 
 export const TIPOS_LINEA = Object.freeze({
@@ -36,7 +41,7 @@ export const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'ju
 
 // Filas vacías mínimas, para que el respaldo sirva aunque se exporte a
 // comienzo de mes (con pocas gestiones todavía).
-export const MINIMO_LIBRES = Object.freeze({ gestiones: 100, items: 300, documentos: 200 });
+export const MINIMO_LIBRES = Object.freeze({ gestiones: 100, items: 300 });
 // Ítems por gestión si el mes todavía no tiene ítems para estimarlo.
 export const ITEMS_POR_GESTION_POR_DEFECTO = 4;
 
@@ -212,6 +217,29 @@ export const filasDesdeGestiones = (gestiones) => {
   return { filasGestiones, filasItems, ultimaLinea: siguiente };
 };
 
+// --- Edición de filas del sistema ---------------------------------------------
+// En una caída se pueden actualizar algunos campos de lo ya registrado (decisión
+// del 23-11-2026). El resto de la fila sigue bloqueado. El importador aplica
+// estos cambios por ID de sistema.
+
+export const CAMPOS_EDITABLES_GESTION = Object.freeze(['informe', 'lado', 'observacion']);
+export const CAMPOS_EDITABLES_ITEM = Object.freeze(['cantidad', 'lote', 'vencimiento', 'estadoCarga']);
+
+// Campos editables de un ítem del sistema, con las mismas restricciones que
+// la pantalla Cargas:
+//   - Estado carga: no en PAD (padre ni contenido, su estado es PAD fijo) ni
+//     en líneas sin código (en Cargas no tienen selector).
+//   - Lote y vencimiento: no en el PAD PADRE (son "PAD").
+export const camposEditablesItem = (fila) => {
+  const esPad = fila.tipo === TIPOS_LINEA.PAD_PADRE || fila.tipo === TIPOS_LINEA.CONTENIDO_PAD;
+  return CAMPOS_EDITABLES_ITEM.filter((campo) => {
+    if (campo === 'estadoCarga') return !esPad && !fila.sinCodigo;
+    if (campo === 'lote' || campo === 'vencimiento') return fila.tipo !== TIPOS_LINEA.PAD_PADRE;
+    if (campo === 'cantidad') return true;
+    return false;
+  });
+};
+
 // --- Catálogos --------------------------------------------------------------
 
 const activo = (doc) => texto(doc?.estado ?? 'ACTIVO').toUpperCase() !== 'INACTIVO';
@@ -219,16 +247,13 @@ const normalizarRef = (r) => texto(r).toUpperCase();
 const porTexto = (a, b) => a.localeCompare(b, 'es');
 
 // Referencias del Maestro de Códigos que se pueden usar en la contingencia:
-// las activas (igual que el autocompletado de Cargas) y sin fibras
-// reutilizables (exigen elegir la fibra física, que no va en el respaldo).
+// las activas (igual que el autocompletado de Cargas).
 export const catalogoReferencias = (codigos) => {
   let inactivas = 0;
-  let fibras = 0;
   const usables = [];
   (codigos || []).forEach((c) => {
     if (!texto(c?.referencia)) return;
     if (!activo(c)) { inactivas += 1; return; }
-    if (c.fibraReutilizable === true) { fibras += 1; return; }
     usables.push(c);
   });
 
@@ -271,7 +296,6 @@ export const catalogoReferencias = (codigos) => {
     resumen: {
       usables: filas.length,
       inactivas,
-      fibras,
       referenciasRepetidas: [...repeticiones.values()].filter((n) => n > 1).length,
       clavesRepetidas,
     },
@@ -304,9 +328,51 @@ export const dimensionar = ({ gestionesMes, itemsMes, gestionesMesAnterior = 0 }
   return {
     gestionesLibres: Math.max(2 * baseGestiones, MINIMO_LIBRES.gestiones),
     itemsLibres: Math.max(2 * baseItems, MINIMO_LIBRES.items),
-    documentosLibres: Math.max(2 * baseGestiones, MINIMO_LIBRES.documentos),
   };
 };
+
+// Filas de cada catálogo: lo que trae más margen, con un mínimo pensado para
+// la plantilla (se pegan desde las exportaciones de la app; el Maestro de
+// Códigos tiene ~3.000 referencias).
+export const MINIMO_CATALOGOS = Object.freeze({
+  referencias: 6000, empresas: 300, centros: 100, recargos: 50, reporteInfo: 3000, previsiones: 200, convenios: 300,
+});
+export const dimensionarCatalogos = (cantidades) => Object.fromEntries(
+  Object.entries(MINIMO_CATALOGOS).map(([k, minimo]) => [k, Math.max(minimo, Math.ceil((cantidades[k] || 0) * 1.5))]),
+);
+
+// Plantilla vacía: filas preparadas fijas (no hay volumen real que medir).
+export const TAMANO_PLANTILLA = Object.freeze({ gestionesLibres: 1000, itemsLibres: 4000 });
+// Único archivo que deja el script en la carpeta de contingencia
+// (decisión del 23-11-2026: nada de copias, pruebas ni archivos sueltos).
+export const ARCHIVO_PLANTILLA = 'respaldo_implantes.xlsm';
+
+// Plantilla sin datos del sistema. `catalogos` (opcional): lo leído de los
+// archivos exportados desde la app ({ codigos, empresas, centros, recargos,
+// reporteInfo, previsiones, convenios }
+// con sus registros), `origen` (archivo, fecha y conteos de cada uno, para
+// Instrucciones) y `fecha` (Date de los catálogos).
+export const datosPlantilla = (generadoEl, { catalogos = {}, origen = {}, fecha = null } = {}) => ({
+  plantilla: true,
+  generadoEl,
+  filasGestiones: [],
+  filasItems: [],
+  ultimaLinea: 0,
+  catalogo: {
+    filas: catalogos.codigos || [],
+    referenciasUnicas: [],
+    resumen: { usables: (catalogos.codigos || []).length, inactivas: 0, referenciasRepetidas: 0, clavesRepetidas: 0 },
+  },
+  empresas: catalogos.empresas || [],
+  centros: catalogos.centros || [],
+  recargos: catalogos.recargos || [],
+  reporteInfo: catalogos.reporteInfo || [],
+  previsiones: catalogos.previsiones || [],
+  convenios: catalogos.convenios || [],
+  origenCatalogos: origen,
+  fechaCatalogos: fecha,
+  tamano: { ...TAMANO_PLANTILLA },
+});
 
 export const nombreArchivo = (fechaISO) => `${PREFIJO_ARCHIVO}${fechaISO}.xlsx`;
 

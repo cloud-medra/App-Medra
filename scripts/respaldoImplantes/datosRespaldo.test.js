@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   fechaExcelAISO, isoAFechaExcel, periodoARuta, mesDesdeTexto, mesAnterior, periodoAbiertoDe, claveGestion,
   tipoLineaDe, filasDesdeGestiones, catalogoReferencias, listaEmpresas, listaCentros, listaRecargos,
-  dimensionar, copiasABorrar, nombreArchivo, fechaISOChile, MINIMO_LIBRES, TIPOS_LINEA,
+  dimensionar, copiasABorrar, nombreArchivo, fechaISOChile, MINIMO_LIBRES, TIPOS_LINEA, camposEditablesItem,
+  dimensionarCatalogos, MINIMO_CATALOGOS,
 } from './datosRespaldo.js';
 
 describe('fechas', () => {
@@ -90,21 +91,30 @@ describe('gestiones e ítems', () => {
   });
 });
 
+describe('campos editables de un ítem del sistema', () => {
+  it('sigue las restricciones de Cargas', () => {
+    expect(camposEditablesItem({ tipo: 'NORMAL' })).toEqual(['cantidad', 'lote', 'vencimiento', 'estadoCarga']);
+    expect(camposEditablesItem({ tipo: 'LOTE ADICIONAL' })).toEqual(['cantidad', 'lote', 'vencimiento', 'estadoCarga']);
+    expect(camposEditablesItem({ tipo: 'NORMAL', sinCodigo: true })).toEqual(['cantidad', 'lote', 'vencimiento']);
+    expect(camposEditablesItem({ tipo: 'PAD PADRE' })).toEqual(['cantidad']);
+    expect(camposEditablesItem({ tipo: 'CONTENIDO PAD' })).toEqual(['cantidad', 'lote', 'vencimiento']);
+  });
+});
+
 describe('catálogos', () => {
-  it('excluye inactivas y fibras, y cuenta referencias repetidas', () => {
+  it('excluye inactivas y cuenta referencias repetidas', () => {
     const { filas, referenciasUnicas, resumen } = catalogoReferencias([
       { referencia: 'B1', empresa: 'X', codigo: '1', precioNeto: '1500' },
       { referencia: 'a1', empresa: 'Y', codigo: '2' },
       { referencia: 'A1', empresa: 'X', codigo: '3' },
       { referencia: 'Z', empresa: 'X', estado: 'INACTIVO' },
-      { referencia: 'F', empresa: 'X', fibraReutilizable: true },
       { referencia: '', empresa: 'X' },
     ]);
     expect(filas.map((f) => f.clave)).toEqual(['a1|Y', 'A1|X', 'B1|X']);
     expect(filas.find((f) => f.referencia === 'B1')).toMatchObject({ precio: 1500, repeticiones: 1 });
     expect(filas.find((f) => f.referencia === 'A1').repeticiones).toBe(2);
     expect(referenciasUnicas).toEqual(['a1', 'B1']);
-    expect(resumen).toEqual({ usables: 3, inactivas: 1, fibras: 1, referenciasRepetidas: 1, clavesRepetidas: 0 });
+    expect(resumen).toEqual({ usables: 3, inactivas: 1, referenciasRepetidas: 1, clavesRepetidas: 0 });
   });
 
   it('empresas, centros y recargos con los filtros de la app', () => {
@@ -118,13 +128,20 @@ describe('catálogos', () => {
   });
 });
 
+describe('tamaño de los catálogos', () => {
+  it('deja margen sobre lo que trae y respeta el mínimo de la plantilla', () => {
+    expect(dimensionarCatalogos({})).toEqual(MINIMO_CATALOGOS);
+    expect(dimensionarCatalogos({ referencias: 5000, empresas: 10 })).toMatchObject({ referencias: 7500, empresas: MINIMO_CATALOGOS.empresas });
+  });
+});
+
 describe('tamaño y copias', () => {
   it('deja al menos el doble del volumen del mes (o del anterior, si fue mayor)', () => {
-    expect(dimensionar({ gestionesMes: 300, itemsMes: 1200 })).toEqual({ gestionesLibres: 600, itemsLibres: 2400, documentosLibres: 600 });
+    expect(dimensionar({ gestionesMes: 300, itemsMes: 1200 })).toEqual({ gestionesLibres: 600, itemsLibres: 2400 });
     // Comienzo de mes: manda el mes anterior, con la proporción de ítems del actual.
-    expect(dimensionar({ gestionesMes: 10, itemsMes: 30, gestionesMesAnterior: 400 })).toEqual({ gestionesLibres: 800, itemsLibres: 2400, documentosLibres: 800 });
+    expect(dimensionar({ gestionesMes: 10, itemsMes: 30, gestionesMesAnterior: 400 })).toEqual({ gestionesLibres: 800, itemsLibres: 2400 });
     expect(dimensionar({ gestionesMes: 0, itemsMes: 0 })).toEqual({
-      gestionesLibres: MINIMO_LIBRES.gestiones, itemsLibres: MINIMO_LIBRES.items, documentosLibres: MINIMO_LIBRES.documentos,
+      gestionesLibres: MINIMO_LIBRES.gestiones, itemsLibres: MINIMO_LIBRES.items,
     });
   });
 
