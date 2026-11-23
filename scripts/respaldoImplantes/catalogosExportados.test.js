@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   numeroExportado, normalizarFilas, codigosDesdeFilas, empresasDesdeFilas, centrosDesdeFilas, recargosDesdeFilas, fechaDesdeNombre,
-  reporteInfoDesdeFilas, previsionesDesdeFilas, conveniosDesdeFilas, valoresDistintos, esExportOficial,
+  reporteInfoDesdeFilas, previsionesDesdeFilas, conveniosDesdeFilas, valoresDistintos, esExportOficial, unirCodigos,
 } from './catalogosExportados.js';
 
 const codigo = (extra = {}) => ({
@@ -58,7 +58,27 @@ describe('lectura de exportaciones de la app', () => {
     ]).registros.map((r) => [r.desde, r.vecesCosto])).toEqual([[0, 2], [100, 1.5]]);
   });
 
+  it('lee el export de "Sin código" (sin CODIGO, REGISTRADO_POR ni ESTADO)', () => {
+    const fila = { REFERENCIA: 'PEND-1', DESCRIPTOR_EMPRESA: 'D', EMPRESA: 'A', TIPO: 'COTIZACION', SEGMENTO: 'IMPLANTES', CLASE: 'IMPLANTE',
+      DESCRIPTOR_AUTO: 'PEND-1 D', PRECIO_NETO: 9000, CX: '', OBSERVACION: '' };
+    const { registros, resumen, advertencias } = codigosDesdeFilas([fila]);
+    expect(registros).toEqual([expect.objectContaining({ codigo: '', referencia: 'PEND-1', empresa: 'A', precio: 9000 })]);
+    expect(resumen).toMatchObject({ leidas: 1, cargadas: 1, inactivas: 0 });
+    // Solo avisa que no trae ESTADO; no reclama CODIGO ni REGISTRADO_POR.
+    expect(advertencias).toEqual(['El export de "Sin código" no trae ESTADO: sus inactivas no se pudieron quitar.']);
+  });
+
+  it('une Con código y Sin código sin repetidos, con los que tienen código primero', () => {
+    const con = [{ codigo: '1', referencia: 'R1', empresa: 'A' }, { codigo: '', referencia: 'R9', empresa: 'A' }];
+    const sin = [{ codigo: '', referencia: 'r9 ', empresa: 'a' }, { codigo: '', referencia: 'R2', empresa: 'B' }, { codigo: '', referencia: 'R1', empresa: 'A' }];
+    const { registros, repetidos, sinCodigo } = unirCodigos([con, sin]);
+    expect(registros.map((x) => `${x.codigo}|${x.referencia}`)).toEqual(['1|R1', '|R9', '|R2', '|R1']);
+    expect(repetidos).toBe(1);
+    expect(sinCodigo).toBe(3);
+  });
+
   it('reconoce la exportación oficial de cada maestro por su nombre', () => {
+    expect(esExportOficial('codigos', 'codigos_pendientes_2026-11-23.xlsx')).toBe(true);
     expect(esExportOficial('recargos', 'recargos_maestros_2026-11-23.xlsx')).toBe(true);
     expect(esExportOficial('recargos', 'recargos_transcritos_de_pantalla.xlsx')).toBe(false);
     expect(esExportOficial('codigos', 'registros_con_codigo_2026-11-23.csv')).toBe(true);

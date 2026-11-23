@@ -70,7 +70,8 @@ Si se regenera el archivo, el bloqueo se pierde (el archivo es nuevo) y hay que 
 
    | Catálogo | Dónde se exporta | Archivo |
    |---|---|---|
-   | Códigos | Maestros → Codigos → pestaña "Con código" → Importar / Exportar → Exportar registros | `registros_con_codigo_AAAA-MM-DD.csv` |
+   | Códigos (con código) | Maestros → Codigos → pestaña "Con código" → Importar / Exportar → Exportar registros | `registros_con_codigo_AAAA-MM-DD.csv` |
+   | Códigos (sin código) | Maestros → Codigos → pestaña "Sin código" → Importar / Exportar → Exportar | `codigos_pendientes_AAAA-MM-DD.xlsx` |
    | Empresas | Maestros → Empresas → configuración → Exportar a Excel / CSV | `empresas_maestros_AAAA-MM-DD.xlsx` |
    | Centros | Maestros → Centros → configuración → Exportar (hoja Centros) | `centros_maestros_AAAA-MM-DD.xlsx` |
    | Recargos | Maestros → Recargos → configuración → Exportar (hoja Recargos; las fórmulas de veces costo y venta la leen) | `recargos_maestros_AAAA-MM-DD.xlsx` |
@@ -88,6 +89,7 @@ Si se regenera el archivo, el bloqueo se pierde (el archivo es nuevo) y hay que 
    $d = "$env:USERPROFILE\Downloads"
    node scripts/respaldoImplantes/generarPlantillaImplantes.js `
      --codigos  "$d\registros_con_codigo_2026-11-23.csv" `
+     --codigos  "$d\codigos_pendientes_2026-11-23.xlsx" `
      --empresas "$d\empresas_maestros_2026-11-23.xlsx" `
      --centros  "$d\centros_maestros_2026-11-23.xlsx" `
      --recargos "$d\recargos_maestros_2026-11-23.xlsx" `
@@ -126,6 +128,15 @@ Un archivo que no tiene el nombre de la exportación oficial de la app (por ejem
 - el script avisa al generar.
 
 El 23-11-2026 los Recargos se cargaron así, transcritos de un pantallazo de Maestros → Recargos (15 rangos, todos como ACTIVO). Hay que reemplazarlos por el export oficial.
+
+### Códigos: "Con código" + "Sin código"
+
+La vista general de Códigos Maestros no se puede exportar, pero es exactamente la suma de las pestañas "Con código" (registros con código o con la marca `tieneCodigo`) y "Sin código" (registros sin código). Por eso:
+- `--codigos` se puede repetir y se pasan los dos exports.
+- El script los une (`unirCodigos`) y quita repetidos: un registro marcado como con código pero con el código vacío aparece en las dos pestañas. Se considera el mismo registro si coinciden código, referencia y empresa.
+- Van primero los que tienen código, así una referencia que está con y sin código en la misma empresa encuentra la que tiene código.
+- Las referencias sin código **sí van en la plantilla**: Cargas las ofrece al escribir la referencia (el autocompletado solo exige que estén activas), y al elegirlas la línea queda "sin código" y la gestión INCOMPLETO. En la plantilla pasa lo mismo: se completan empresa, precio y descriptor, y la alerta dice "Sin código".
+- El export de "Sin código" no trae ESTADO (`useImportExportPendientes.js`), así que sus inactivas no se pueden quitar; el script lo avisa.
 
 ### Reporte Info y autocompletado en Gestiones
 
