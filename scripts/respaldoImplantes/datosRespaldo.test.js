@@ -3,6 +3,7 @@ import {
   fechaExcelAISO, isoAFechaExcel, periodoARuta, mesDesdeTexto, mesAnterior, periodoAbiertoDe, claveGestion,
   tipoLineaDe, filasDesdeGestiones, catalogoReferencias, listaEmpresas, listaCentros, listaRecargos,
   dimensionar, copiasABorrar, nombreArchivo, fechaISOChile, MINIMO_LIBRES, TIPOS_LINEA, camposEditablesItem,
+  dimensionarCatalogos, MINIMO_CATALOGOS,
 } from './datosRespaldo.js';
 
 describe('fechas', () => {
@@ -131,6 +132,13 @@ describe('catálogos', () => {
       { desde: 0, hasta: 99, vecesCosto: 2, estado: 'ACTIVO' },
       { desde: 0, hasta: 99, vecesCosto: 9, estado: 'INACTIVO' },
     ])).toEqual([{ desde: 0, hasta: 99, vecesCosto: 2 }, { desde: 100, hasta: 200, vecesCosto: 1.5 }]);
+  });
+});
+
+describe('tamaño de los catálogos', () => {
+  it('deja margen sobre lo que trae y respeta el mínimo de la plantilla', () => {
+    expect(dimensionarCatalogos({})).toEqual(MINIMO_CATALOGOS);
+    expect(dimensionarCatalogos({ referencias: 5000, empresas: 10 })).toMatchObject({ referencias: 7500, empresas: MINIMO_CATALOGOS.empresas });
   });
 });
 

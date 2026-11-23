@@ -1,7 +1,58 @@
 import { describe, it, expect } from 'vitest';
 import ExcelJS from 'exceljs';
 import { construirLibro } from './libroRespaldo.js';
-import { filasDesdeGestiones, catalogoReferencias } from './datosRespaldo.js';
+import { filasDesdeGestiones, catalogoReferencias, datosPlantilla, TAMANO_PLANTILLA, MINIMO_CATALOGOS } from './datosRespaldo.js';
+
+const releer = async (libro) => {
+  const leido = new ExcelJS.Workbook();
+  await leido.xlsx.load(await libro.xlsx.writeBuffer());
+  return leido;
+};
+
+describe('plantilla vacía', () => {
+  it('trae las hojas sin datos, filas preparadas y catálogos listos para pegar', async () => {
+    const { libro: armado, filas } = await construirLibro(datosPlantilla('23-11-2026 10:00'));
+    const libro = await releer(armado);
+    expect(libro.worksheets.map((h) => h.name)).toEqual(['Instrucciones', 'Gestiones', 'Ítems', 'Documentos', 'Referencias', 'Catálogos']);
+    expect(filas.ultimaGestion).toBe(2 + TAMANO_PLANTILLA.gestionesLibres);
+    expect(filas.ultimaItem).toBe(2 + TAMANO_PLANTILLA.itemsLibres);
+    const bloqueada = (celda) => celda.protection?.locked ?? true;
+
+    // Sin filas del sistema: la primera fila ya es de contingencia.
+    const g = libro.getWorksheet('Gestiones');
+    expect(g.getCell('A3').value.formula).toContain('TEXT(MONTH(C3),"00")');
+    expect(libro.getWorksheet('Ítems').getCell('A3').value).toBe(1);
+
+    // Referencias: encabezados del CSV de Códigos Maestros desde la B; A y N automáticas.
+    const r = libro.getWorksheet('Referencias');
+    expect(r.getRow(2).values.slice(1)).toEqual(['Clave búsqueda', 'CODIGO', 'REFERENCIA', 'DESCRIPTOR_EMPRESA', 'EMPRESA', 'TIPO', 'SEGMENTO', 'CLASE',
+      'DESCRIPTOR_AUTO', 'PRECIO_NETO', 'CX', 'OBSERVACION', 'REGISTRADO_POR', 'Veces repetida']);
+    const ultimaRef = 2 + MINIMO_CATALOGOS.referencias;
+    expect(r.getCell(`A${ultimaRef}`).value.formula).toBe(`IF(C${ultimaRef}="","",TRIM(C${ultimaRef})&"|"&TRIM(E${ultimaRef}))`);
+    expect([bloqueada(r.getCell('A3')), bloqueada(r.getCell('B3')), bloqueada(r.getCell('M3')), bloqueada(r.getCell('N3'))]).toEqual([true, false, false, true]);
+
+    // Catálogos: listas fijas bloqueadas; maestros vacíos, desbloqueados y con las columnas de su exportación.
+    const c = libro.getWorksheet('Catálogos');
+    expect(c.getCell('A3').value).toBe('AGENDADO');
+    expect(bloqueada(c.getCell('A3'))).toBe(true);
+    expect(['H', 'I', 'J', 'L', 'M', 'N', 'O', 'Q', 'R', 'S', 'T', 'U'].map((l) => c.getCell(`${l}2`).value)).toEqual([
+      'NOMBRE', 'RUT', 'ESTADO', 'NOMBRE', 'COMENTARIO', 'ESTADO', 'USAR_EN_GESTIONES', 'DESDE', 'HASTA', 'VECES COSTO', 'COMENTARIO', 'ESTADO']);
+    expect(c.getCell('H3').value).toBeNull();
+    expect(bloqueada(c.getCell('H3'))).toBe(false);
+    expect(bloqueada(c.getCell('U52'))).toBe(false);
+
+    // Recargo por CONTAR.SI.CONJUNTO (sin depender del orden) e ignorando INACTIVO.
+    expect(libro.getWorksheet('Ítems').getCell('AH3').value.formula).toContain(`COUNTIFS('Catálogos'!$Q$3:$Q$52,"<="&M3`);
+    expect(libro.getWorksheet('Ítems').getCell('AH3').value.formula).toContain('"<>INACTIVO"');
+
+    // Instrucciones: cómo llenar los catálogos y celda para la fecha.
+    const ins = libro.getWorksheet('Instrucciones');
+    const textos = ins.getColumn('A').values.filter(Boolean).join('\n');
+    expect(textos).toContain('Maestros → Codigos → pestaña "Con código"');
+    expect(textos).toContain('Catálogos!Q3');
+    expect(bloqueada(ins.getCell('B3'))).toBe(false);
+  });
+});
 
 const armar = async ({ itemsExtra = [] } = {}) => {
   const { filasGestiones, filasItems, ultimaLinea } = filasDesdeGestiones([{
@@ -93,7 +144,7 @@ describe('construirLibro', () => {
     const { libro } = await armar();
     const g = libro.getWorksheet('Gestiones');
     const it_ = libro.getWorksheet('Ítems');
-    expect(g.dataValidations.find('D4')).toMatchObject({ type: 'list', formulae: ["'Catálogos'!$H$3:$H$3"] });
+    expect(g.dataValidations.find('D4')).toMatchObject({ type: 'list', formulae: ["'Catálogos'!$H$3:$H$302"] });
     expect(it_.dataValidations.find('B5')).toMatchObject({ type: 'list', formulae: ["'Gestiones'!$A$3:$A$8"] });
     expect(it_.dataValidations.find('F5')).toMatchObject({ type: 'list', errorStyle: 'warning' });
     expect(g.sheetProtection).toMatchObject({ sheet: true, autoFilter: true });

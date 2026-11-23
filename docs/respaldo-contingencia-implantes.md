@@ -1,12 +1,38 @@
 # Respaldo de contingencia de Implantes
 
+## Plantilla vacía (lo que se usa hoy)
+
+Decisión del 23-11-2026: por ahora se usa solo una **plantilla vacía**, sin conexión a Firestore, sin credenciales y sin tarea programada. La exportación automática (resto de este documento) queda para más adelante.
+
+```powershell
+node scripts/respaldoImplantes/generarPlantillaImplantes.js --salida "C:\Users\<usuario>\Documents\Medra\Contingencia"
+```
+
+- Genera `respaldo_implantes_PLANTILLA.xlsx` (reemplaza el que haya en la carpeta), sin datos y sin contraseña. La contraseña se le pone en Excel antes de usarla, porque una vez usada tiene datos de pacientes.
+- Misma estructura que el respaldo: Instrucciones, Gestiones (1.000 filas), Ítems (4.000), Documentos (1.000), Referencias y Catálogos, con fórmulas, desplegables y alertas.
+- **Catálogos vacíos para pegar** desde las exportaciones que ya tiene la app. Cada bloque tiene las mismas columnas, en el mismo orden, que el archivo exportado:
+
+  | Catálogo | Dónde se exporta en la app | Se pega en |
+  |---|---|---|
+  | Referencias (hasta 6.000) | Maestros → Codigos → pestaña "Con código" → Importar / Exportar → Exportar registros (CSV) | Referencias!B3 |
+  | Empresas (300) | Maestros → Empresas → configuración → Exportar a Excel / CSV | Catálogos!H3 |
+  | Centros (100) | Maestros → Centros → configuración → Exportar a Excel / CSV | Catálogos!L3 |
+  | Rangos de recargo (50) | Maestros → Recargos → configuración → Exportar a Excel / CSV | Catálogos!Q3 |
+
+  La hoja Instrucciones explica el paso a paso: filtrar los inactivos antes de copiar, borrar las fibras y anotar la fecha de los catálogos.
+- El CSV de Códigos trae solo las columnas que el usuario puede ver (`useImportExportConCodigo.js`): hay que exportarlo con un usuario que vea las 12. Las columnas A y N de Referencias están bloqueadas, así que un CSV con columnas de más no se deja pegar.
+- El recargo se busca con `CONTAR.SI.CONJUNTO`/`SUMAR.SI.CONJUNTO` sobre desde-hasta: no importa el orden en que se peguen los rangos y se ignoran los INACTIVOS. El precio pegado como texto se convierte a número.
+- Probado en Excel 16: abre en ~2 s; pegar 3.000 referencias y recalcular, 0,2 s; sin errores de fórmula.
+
+## Respaldo con datos del sistema (para más adelante)
+
 Si el sistema se cae, el equipo trabaja en un Excel (`respaldo_implantes_AAAA-MM-DD.xlsx`) y después esas filas se reimportan. El script `scripts/respaldoImplantes/generarRespaldoImplantes.js` genera el archivo con:
 
 - las gestiones e ítems del mes abierto, como foto (`ORIGEN = SISTEMA`) en la que solo se pueden cambiar algunos campos (ver "Cambios en filas del sistema");
 - filas libres con fórmulas y validaciones para trabajar durante la caída (`ORIGEN = CONTINGENCIA`);
 - los catálogos (referencias activas sin fibras, empresas, centros, recargos y listas fijas) y una hoja de instrucciones para el equipo.
 
-Archivos: `datosRespaldo.js` (lógica pura, con test), `libroRespaldo.js` (armado del Excel, con test), `datosDemo.js` (datos ficticios) y `generarRespaldoImplantes.js` (lectura, cifrado y copias).
+Archivos: `datosRespaldo.js` (lógica pura, con test), `libroRespaldo.js` (armado del Excel, con test), `datosDemo.js` (datos ficticios), `generarRespaldoImplantes.js` (lectura, cifrado y copias) y `generarPlantillaImplantes.js` (plantilla vacía). En este modo los catálogos se llenan solos, con la misma disposición de columnas que la plantilla.
 
 ## Requisitos (una sola vez)
 

@@ -22,7 +22,7 @@
 import ExcelJS from 'exceljs';
 import {
   ESTADOS_GESTION, ESTADOS_CARGA, INFORMES, NOMBRES_LADO, SI_NO, LISTA_TIPOS_LINEA, CODIGO_SIN_OC,
-  CAMPOS_EDITABLES_GESTION, camposEditablesItem,
+  CAMPOS_EDITABLES_GESTION, camposEditablesItem, dimensionarCatalogos,
 } from './datosRespaldo.js';
 
 const FILA_AYUDA = 1;
@@ -148,18 +148,28 @@ const COLUMNAS_DOCUMENTOS = [
   { l: 'J', titulo: 'Alerta', clase: 'formula', ancho: 34, ayuda: 'Aviso si la admisión no está en Gestiones.' },
 ];
 
+// De la B a la M, las mismas columnas y en el mismo orden que "Exportar
+// registros" de Códigos Maestros → Con código (useImportExportConCodigo.js):
+// el CSV se pega tal cual en B3. A y N son automáticas (bloqueadas: si el
+// CSV trae más columnas de las esperadas, Excel no deja pegar encima).
 const COLUMNAS_REFERENCIAS = [
-  { l: 'A', titulo: 'Clave búsqueda', ancho: 30 },
-  { l: 'B', titulo: 'Referencia', ancho: 24 },
-  { l: 'C', titulo: 'Código', ancho: 12 },
-  { l: 'D', titulo: 'Empresa', ancho: 24 },
-  { l: 'E', titulo: 'Precio neto', ancho: 12, pesos: true },
-  { l: 'F', titulo: 'Clase', ancho: 10 },
-  { l: 'G', titulo: 'Tipo', ancho: 12 },
-  { l: 'H', titulo: 'Descriptor auto', ancho: 40 },
-  { l: 'I', titulo: 'Segmento', ancho: 14 },
-  { l: 'J', titulo: 'Veces repetida', ancho: 9 },
+  { l: 'A', titulo: 'Clave búsqueda', ancho: 30, automatica: true },
+  { l: 'B', titulo: 'CODIGO', ancho: 12, texto: true },
+  { l: 'C', titulo: 'REFERENCIA', ancho: 24, texto: true },
+  { l: 'D', titulo: 'DESCRIPTOR_EMPRESA', ancho: 30 },
+  { l: 'E', titulo: 'EMPRESA', ancho: 24 },
+  { l: 'F', titulo: 'TIPO', ancho: 12 },
+  { l: 'G', titulo: 'SEGMENTO', ancho: 13 },
+  { l: 'H', titulo: 'CLASE', ancho: 10 },
+  { l: 'I', titulo: 'DESCRIPTOR_AUTO', ancho: 40 },
+  { l: 'J', titulo: 'PRECIO_NETO', ancho: 12, pesos: true },
+  { l: 'K', titulo: 'CX', ancho: 8 },
+  { l: 'L', titulo: 'OBSERVACION', ancho: 20 },
+  { l: 'M', titulo: 'REGISTRADO_POR', ancho: 18 },
+  { l: 'N', titulo: 'Veces repetida', ancho: 9, automatica: true },
 ];
+// Columna de cada dato en Referencias (para las fórmulas de Ítems).
+const REF = { clave: 'A', codigo: 'B', referencia: 'C', empresa: 'E', tipo: 'F', clase: 'H', descriptor: 'I', precio: 'J', repeticiones: 'N' };
 
 // --- Utilidades de hoja -----------------------------------------------------
 
@@ -270,41 +280,83 @@ const reglaObligatorio = (hoja, columnas, colOrigen, desde, hasta) => {
 
 // --- Hoja Catálogos -----------------------------------------------------------
 
-const BLOQUES_CATALOGO = (d) => [
+// Listas fijas del sistema (bloqueadas).
+const LISTAS_FIJAS = [
   { l: 'A', titulo: 'Estado gestión', valores: ESTADOS_GESTION, ancho: 16 },
   { l: 'B', titulo: 'Estado carga', valores: ESTADOS_CARGA, ancho: 14 },
   { l: 'C', titulo: 'Informe', valores: INFORMES, ancho: 12 },
   { l: 'D', titulo: 'Lado', valores: NOMBRES_LADO, ancho: 16 },
   { l: 'E', titulo: 'Tipo de línea', valores: LISTA_TIPOS_LINEA, ancho: 16 },
   { l: 'F', titulo: 'SÍ / NO', valores: SI_NO, ancho: 8 },
-  { l: 'H', titulo: 'Empresas', valores: d.empresas, ancho: 30 },
-  { l: 'I', titulo: 'Centros', valores: d.centros, ancho: 22 },
-  { l: 'K', titulo: 'Recargo desde', valores: d.recargos.map((r) => r.desde), ancho: 13, pesos: true },
-  { l: 'L', titulo: 'Recargo hasta', valores: d.recargos.map((r) => r.hasta), ancho: 13, pesos: true },
-  { l: 'M', titulo: 'Veces costo', valores: d.recargos.map((r) => r.vecesCosto), ancho: 10 },
-  { l: 'O', titulo: 'Referencias (únicas)', valores: d.catalogo.referenciasUnicas, ancho: 26 },
 ];
 
-const hojaCatalogos = (libro, datos) => {
+// Maestros que se pegan desde el sistema: cada bloque tiene las mismas
+// columnas, en el mismo orden, que "Exportar a Excel / CSV" de su pantalla
+// (EmpresasMaestros, CentrosMaestros y RecargosMaestros .jsx), así se pega
+// el archivo exportado desde la primera columna del bloque.
+const MAESTROS_CATALOGO = [
+  {
+    id: 'empresas', titulo: 'EMPRESAS — pegar en H3 (Maestros → Empresas → Exportar)', columnas: [
+      { l: 'H', titulo: 'NOMBRE', ancho: 30 }, { l: 'I', titulo: 'RUT', ancho: 14 }, { l: 'J', titulo: 'ESTADO', ancho: 10 },
+    ],
+  },
+  {
+    id: 'centros', titulo: 'CENTROS — pegar en L3 (Maestros → Centros → Exportar)', columnas: [
+      { l: 'L', titulo: 'NOMBRE', ancho: 22 }, { l: 'M', titulo: 'COMENTARIO', ancho: 20 }, { l: 'N', titulo: 'ESTADO', ancho: 10 }, { l: 'O', titulo: 'USAR_EN_GESTIONES', ancho: 12 },
+    ],
+  },
+  {
+    id: 'recargos', titulo: 'RANGOS DE RECARGO — pegar en Q3 (Maestros → Recargos → Exportar)', columnas: [
+      { l: 'Q', titulo: 'DESDE', ancho: 12, pesos: true }, { l: 'R', titulo: 'HASTA', ancho: 12, pesos: true }, { l: 'S', titulo: 'VECES COSTO', ancho: 10 },
+      { l: 'T', titulo: 'COMENTARIO', ancho: 16 }, { l: 'U', titulo: 'ESTADO', ancho: 10 },
+    ],
+  },
+];
+
+// Filas de los maestros en el modo exportación (ya filtrados: todos activos).
+const valoresMaestro = (datos) => ({
+  empresas: datos.empresas.map((nombre) => ({ H: nombre, J: 'ACTIVO' })),
+  centros: datos.centros.map((nombre) => ({ L: nombre, N: 'ACTIVO', O: 'SI' })),
+  recargos: datos.recargos.map((r) => ({ Q: r.desde, R: r.hasta, S: r.vecesCosto, U: 'ACTIVO' })),
+});
+
+const encabezado = (celda, titulo) => {
+  celda.value = titulo;
+  celda.font = { bold: true };
+  celda.fill = relleno(COLOR.formula);
+  celda.border = BORDES;
+};
+
+const hojaCatalogos = (libro, datos, filas) => {
   const hoja = libro.addWorksheet(H.C);
-  const bloques = BLOQUES_CATALOGO(datos);
-  hoja.getCell('A1').value = 'Listas de los desplegables. No modificar: se regeneran con el script.';
-  hoja.getCell('A1').font = { italic: true };
   const rangos = {};
-  bloques.forEach((b) => {
+  hoja.getCell('A1').value = 'Listas fijas del sistema (no modificar).';
+  hoja.getCell('A1').font = { italic: true };
+  LISTAS_FIJAS.forEach((b) => {
     hoja.getColumn(b.l).width = b.ancho;
-    const enc = hoja.getCell(`${b.l}${FILA_ENCABEZADO}`);
-    enc.value = b.titulo;
-    enc.font = { bold: true };
-    enc.fill = relleno(COLOR.formula);
-    enc.border = BORDES;
-    b.valores.forEach((v, i) => {
-      const c = hoja.getCell(`${b.l}${PRIMERA + i}`);
-      c.value = v;
-      if (b.pesos) c.numFmt = FORMATO_PESOS;
+    encabezado(hoja.getCell(`${b.l}${FILA_ENCABEZADO}`), b.titulo);
+    b.valores.forEach((v, i) => { hoja.getCell(`${b.l}${PRIMERA + i}`).value = v; });
+    rangos[b.l] = `${ref(H.C)}$${b.l}$${PRIMERA}:$${b.l}$${PRIMERA + b.valores.length - 1}`;
+  });
+
+  const valores = valoresMaestro(datos);
+  MAESTROS_CATALOGO.forEach((m) => {
+    const ultima = PRIMERA + filas[m.id] - 1;
+    const titulo = hoja.getCell(`${m.columnas[0].l}1`);
+    titulo.value = m.titulo;
+    titulo.font = { bold: true, color: { argb: 'FF1F4E79' } };
+    m.columnas.forEach((c) => {
+      hoja.getColumn(c.l).width = c.ancho;
+      encabezado(hoja.getCell(`${c.l}${FILA_ENCABEZADO}`), c.titulo);
+      for (let r = PRIMERA; r <= ultima; r += 1) {
+        const celda = hoja.getCell(`${c.l}${r}`);
+        const v = valores[m.id][r - PRIMERA]?.[c.l];
+        if (v !== undefined) celda.value = v;
+        if (c.pesos) celda.numFmt = FORMATO_PESOS;
+        celda.protection = { locked: false };
+      }
+      rangos[c.l] = `${ref(H.C)}$${c.l}$${PRIMERA}:$${c.l}$${ultima}`;
     });
-    const ultima = PRIMERA + Math.max(b.valores.length, 1) - 1;
-    rangos[b.l] = `${ref(H.C)}$${b.l}$${PRIMERA}:$${b.l}$${ultima}`;
   });
   hoja.views = [{ state: 'frozen', ySplit: FILA_ENCABEZADO }];
   return { hoja, rangos };
@@ -312,18 +364,29 @@ const hojaCatalogos = (libro, datos) => {
 
 // --- Hoja Referencias -------------------------------------------------------------
 
-const hojaReferencias = (libro, catalogo) => {
+const hojaReferencias = (libro, catalogo, totalFilas) => {
   const hoja = libro.addWorksheet(H.R);
-  prepararHoja(hoja, COLUMNAS_REFERENCIAS.map((c) => ({ ...c, clase: 'formula' })), { conAyuda: false, congelarColumnas: 2 });
-  hoja.getCell('A1').value = 'Maestro de Códigos: solo referencias activas, sin fibras reutilizables. No modificar.';
+  prepararHoja(hoja, COLUMNAS_REFERENCIAS.map((c) => ({ ...c, clase: c.automatica ? 'formula' : 'opcional' })), { conAyuda: false, congelarColumnas: 3 });
+  hoja.getCell('A1').value = 'Maestro de Códigos: pegar desde B3 el CSV de Códigos Maestros → Con código → Exportar registros (ver Instrucciones). A y N son automáticas.';
   hoja.getCell('A1').font = { italic: true };
-  catalogo.filas.forEach((r, i) => {
-    const fila = hoja.getRow(PRIMERA + i);
-    fila.values = { A: r.clave, B: r.referencia, C: r.codigo, D: r.empresa, E: r.precio, F: r.clase, G: r.tipo, H: r.descriptorAuto, I: r.segmento, J: r.repeticiones };
-    fila.getCell('C').numFmt = '@';
-    fila.getCell('E').numFmt = FORMATO_PESOS;
-  });
-  const ultima = PRIMERA + Math.max(catalogo.filas.length, 1) - 1;
+  const ultima = PRIMERA + totalFilas - 1;
+  for (let r = PRIMERA; r <= ultima; r += 1) {
+    const fila = hoja.getRow(r);
+    const dato = catalogo.filas[r - PRIMERA];
+    if (dato) {
+      fila.getCell('B').value = dato.codigo;
+      fila.getCell('C').value = dato.referencia;
+      fila.getCell('E').value = dato.empresa;
+      fila.getCell('F').value = dato.tipo;
+      fila.getCell('G').value = dato.segmento;
+      fila.getCell('H').value = dato.clase;
+      fila.getCell('I').value = dato.descriptorAuto;
+      fila.getCell('J').value = dato.precio;
+    }
+    fila.getCell('A').value = f(`IF(C${r}="","",TRIM(C${r})&"|"&TRIM(E${r}))`);
+    fila.getCell('N').value = f(`IF(C${r}="","",COUNTIF($C$${PRIMERA}:$C$${ultima},C${r}))`);
+    COLUMNAS_REFERENCIAS.forEach((c) => formatearCelda(fila.getCell(c.l), c, { bloqueada: !!c.automatica }));
+  }
   const col = (l) => `${ref(H.R)}$${l}$${PRIMERA}:$${l}$${ultima}`;
   return { hoja, col };
 };
@@ -396,18 +459,21 @@ const formulasItemNuevas = (r, x) => {
     AC: f(`SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(TRIM(F${r}),"~","~~"),"*","~*"),"?","~?")`),
     // Fila en el catálogo: referencia + empresa de la gestión; si no hay,
     // la referencia sola cuando es única.
-    AD: f(`IF(F${r}="","",IFERROR(MATCH(AC${r}&"|"&TRIM(AB${r}),${x.rCol('A')},0),IFERROR(IF(INDEX(${x.rCol('J')},MATCH(AC${r},${x.rCol('B')},0))=1,MATCH(AC${r},${x.rCol('B')},0),""),"")))`),
-    AE: f(`IF(AND(F${r}<>"",AD${r}=""),IF(ISNUMBER(MATCH(AC${r},${x.rCol('B')},0)),1,0),0)`),
+    AD: f(`IF(F${r}="","",IFERROR(MATCH(AC${r}&"|"&TRIM(AB${r}),${x.rCol(REF.clave)},0),IFERROR(IF(INDEX(${x.rCol(REF.repeticiones)},MATCH(AC${r},${x.rCol(REF.referencia)},0))=1,MATCH(AC${r},${x.rCol(REF.referencia)},0),""),"")))`),
+    AE: f(`IF(AND(F${r}<>"",AD${r}=""),IF(ISNUMBER(MATCH(AC${r},${x.rCol(REF.referencia)},0)),1,0),0)`),
     AG: f(`IF(AND(OR(Y${r}="NORMAL",Y${r}="PAD PADRE"),Z${r}<>"SIN CARGO",L${r}=""),1,0)`),
-    AH: f(`IF(OR(Y${r}="",M${r}=""),"",IFERROR(MATCH(M${r},${x.cK},1),""))`),
-    AI: f(`IF(Y${r}="",1,IF(${sinCobro},1,IF(AH${r}="",0,IF(M${r}<=INDEX(${x.cL},AH${r}),1,0))))`),
-    L: f(`IF(Y${r}="","",IF(${sinCobro},"${CODIGO_SIN_OC}",IF(AD${r}="","",INDEX(${x.rCol('C')},AD${r})&"")))`),
-    M: f(`IF(Y${r}="","",IF(${sinCobro},0,IF(K${r}<>"",K${r},IF(AD${r}="",0,INDEX(${x.rCol('E')},AD${r})))))`),
-    N: f(delCatalogo('D')),
-    O: f(delCatalogo('F')),
-    P: f(delCatalogo('G')),
-    Q: f(delCatalogo('H')),
-    R: f(`IF(Y${r}="","",IF(${sinCobro},1,IF(AI${r}=1,INDEX(${x.cM},AH${r}),1)))`),
+    // Rangos de recargo que contienen el precio (sin los INACTIVOS). Con
+    // CONTAR.SI.CONJUNTO no importa el orden en que se peguen los rangos.
+    AH: f(`IF(OR(Y${r}="",M${r}=""),"",COUNTIFS(${x.recargo.desde},"<="&M${r},${x.recargo.hasta},">="&M${r},${x.recargo.estado},"<>INACTIVO"))`),
+    AI: f(`IF(Y${r}="",1,IF(${sinCobro},1,IF(N(AH${r})>=1,1,0)))`),
+    L: f(`IF(Y${r}="","",IF(${sinCobro},"${CODIGO_SIN_OC}",IF(AD${r}="","",INDEX(${x.rCol(REF.codigo)},AD${r})&"")))`),
+    // El precio puede venir como texto si se pegó desde un CSV: *1 lo convierte.
+    M: f(`IF(Y${r}="","",IF(${sinCobro},0,IF(K${r}<>"",K${r},IF(AD${r}="",0,IFERROR(INDEX(${x.rCol(REF.precio)},AD${r})*1,0)))))`),
+    N: f(delCatalogo(REF.empresa)),
+    O: f(delCatalogo(REF.clase)),
+    P: f(delCatalogo(REF.tipo)),
+    Q: f(delCatalogo(REF.descriptor)),
+    R: f(`IF(Y${r}="","",IF(${sinCobro},1,IF(N(AH${r})>=1,SUMIFS(${x.recargo.veces},${x.recargo.desde},"<="&M${r},${x.recargo.hasta},">="&M${r},${x.recargo.estado},"<>INACTIVO")/AH${r},1)))`),
     S: f(`IF(Y${r}="","",M${r}*G${r})`),
     T: f(`IF(Y${r}="","",M${r}*R${r}*G${r})`),
     V: f(`IF(Y${r}="","","CONTINGENCIA")`),
@@ -425,7 +491,17 @@ const valoresItemSistema = (it) => ({
 
 // --- Instrucciones ---------------------------------------------------------------
 
-const textoInstrucciones = (d) => [
+// Encabezado: la plantilla vacía (catálogos por pegar) o la exportación del
+// sistema (con datos y catálogos ya cargados).
+const encabezadoInstrucciones = (d) => (d.plantilla ? [
+  ['RESPALDO DE CONTINGENCIA — IMPLANTES (PLANTILLA)', 'titulo'],
+  [`Plantilla generada: ${d.generadoEl}. Filas preparadas: ${d.tamano.gestionesLibres} gestiones, ${d.tamano.itemsLibres} ítems y ${d.tamano.documentosLibres} documentos; hasta ${d.filasCatalogos.referencias} referencias.`],
+  ['Catálogos actualizados al (escriba la fecha cada vez que los pegue) →', 'fecha'],
+  [''],
+  ['PARA QUÉ SIRVE', 'seccion'],
+  ['Si el sistema no está disponible, registre aquí las gestiones y sus ítems. Cuando vuelva, lo registrado se carga en el sistema (ORIGEN = CONTINGENCIA).'],
+  ['Antes de usarla hay que pegar los catálogos (ver "CÓMO LLENAR LOS CATÁLOGOS" al final). Hágalo con el sistema funcionando, guarde la plantilla con los catálogos y repítalo cuando cambien precios o referencias.'],
+] : [
   ['RESPALDO DE CONTINGENCIA — IMPLANTES', 'titulo'],
   [`Generado: ${d.generadoEl} (hora de Chile)`],
   [`Período abierto: ${d.periodoTexto}. Gestiones exportadas: mes ${d.mesExportado}.`],
@@ -435,6 +511,24 @@ const textoInstrucciones = (d) => [
   ['PARA QUÉ SIRVE', 'seccion'],
   ['Si el sistema no está disponible, registre aquí las gestiones y sus ítems. Cuando vuelva, este archivo se reimporta: solo se cargan las filas con ORIGEN = CONTINGENCIA.'],
   ['Las filas grises con ORIGEN = SISTEMA son una foto del sistema al generar el archivo: sirven de consulta y solo se pueden cambiar sus celdas blancas (ver "Cambios en lo que ya estaba en el sistema").'],
+]);
+
+// Cómo pegar cada catálogo desde las exportaciones de la app (solo plantilla).
+const COMO_LLENAR_CATALOGOS = [
+  ['CÓMO LLENAR LOS CATÁLOGOS (con el sistema funcionando)', 'seccion'],
+  ['Pegue siempre con "Pegar valores" (Ctrl+Alt+V → Valores). Copie los datos SIN la fila de encabezados y compruebe que las columnas del archivo exportado son las mismas, en el mismo orden, que los encabezados de la fila 2 donde pega.'],
+  ['1. REFERENCIAS (hoja Referencias, celda B3). En el sistema: Maestros → Codigos → pestaña "Con código" → botón "Importar / Exportar" → "Exportar registros". Antes de exportar, si la tabla deja filtrar por Estado, deje solo ACTIVO. Se descarga un CSV: ábralo con doble clic, copie desde A2 hasta la última fila y pegue en Referencias!B3.'],
+  ['   El CSV trae solo las columnas que el usuario puede ver: debe traer las 12 (CODIGO … REGISTRADO_POR). Si falta alguna, expórtelo con un usuario que las vea todas (si no, Excel no deja pegar o las columnas quedan corridas).'],
+  ['   Borre después las filas de fibras reutilizables (no se usan en la contingencia). Las referencias "Sin código" no hace falta pegarlas: en la contingencia quedan como "Sin código", igual que en el sistema.'],
+  ['2. EMPRESAS (hoja Catálogos, celda H3). Maestros → Empresas → botón de configuración (Importar/Exportar) → "Exportar a Excel / CSV". En el archivo, filtre ESTADO = ACTIVO, copie NOMBRE, RUT y ESTADO (sin encabezado) y pegue en Catálogos!H3.'],
+  ['3. CENTROS (hoja Catálogos, celda L3). Maestros → Centros → configuración → "Exportar a Excel / CSV". Filtre ESTADO = ACTIVO y USAR_EN_GESTIONES = SI, copie las 4 columnas y pegue en Catálogos!L3.'],
+  ['4. RANGOS DE RECARGO (hoja Catálogos, celda Q3). Maestros → Recargos → configuración → "Exportar a Excel / CSV". Copie las 5 columnas (DESDE, HASTA, VECES COSTO, COMENTARIO, ESTADO) y pegue en Catálogos!Q3. Los INACTIVOS se ignoran solos y el orden no importa.'],
+  ['5. Escriba la fecha en "Catálogos actualizados al" (arriba), guarde y póngale contraseña: Archivo → Información → Proteger libro → Cifrar con contraseña.'],
+  ['Para reemplazar un catálogo: seleccione las celdas pegadas antes (sin los encabezados), presione Supr y pegue el nuevo.'],
+];
+
+const textoInstrucciones = (d) => [
+  ...encabezadoInstrucciones(d),
   [''],
   ['COLORES DE LOS ENCABEZADOS', 'seccion'],
   ['Amarillo: obligatorio. Azul: opcional. Gris: automático (no se escribe). Una celda obligatoria vacía en una fila nueva se pinta de rojo.'],
@@ -457,12 +551,16 @@ const textoInstrucciones = (d) => [
   ['   LOTE ADICIONAL: cuando una referencia viene en varios lotes. La línea NORMAL lleva la cantidad TOTAL y su lote; cada LOTE ADICIONAL indica cuántas unidades son de otro lote, con "Línea padre" = N° de la línea NORMAL. No se cobra de nuevo; la suma de los lotes adicionales no puede superar la cantidad total.'],
   ['   Ejemplo PAD: línea 120 PAD PADRE "PAD-RODILLA"; líneas 121 y 122 CONTENIDO PAD con Línea padre 120.'],
   ['5. La columna Alerta debe quedar vacía. Avisos: Falta CLAVE / CLAVE no existe · Falta N° cotización · Falta referencia · Cantidad inválida · Sin código · Referencia ambigua (la referencia existe para varias empresas y ninguna es la de la gestión) · Empresa no coincide · Sin rango de recargo · Línea padre inválida · Lotes superan la cantidad.'],
-  ['6. Se pueden agregar ítems a una gestión exportada del sistema eligiendo su CLAVE.'],
-  [''],
-  ['CAMBIOS EN LO QUE YA ESTABA EN EL SISTEMA (filas grises)', 'seccion'],
-  ['En las filas del sistema solo se pueden cambiar las celdas blancas: en Gestiones, Informe, Lado y Observación; en Ítems, Estado carga, Lote, Vencimiento y Cantidad. Lo demás está bloqueado.'],
-  ['Algunas líneas no dejan cambiar todo, igual que en el sistema: en PAD y en líneas sin código no se cambia el Estado carga; en el PAD PADRE no se cambian Lote ni Vencimiento; en una fibra no se cambian Lote, Vencimiento ni Cantidad.'],
-  ['La celda cambiada se pinta ámbar y la columna MODIFICADO pasa a SÍ. Para deshacer un cambio, vuelva a escribir el valor original. Al reimportar se aplican solo las filas con MODIFICADO = SÍ; las gestiones que ya estaban SOLICITADAS no se tocan y quedan en el informe para hacerlas a mano.'],
+  ...(d.plantilla ? [
+    ['6. Si el ítem es de una gestión que ya estaba en el sistema, regístrela igual en la hoja Gestiones (misma admisión, empresa y fecha) y cargue aquí solo lo nuevo.'],
+  ] : [
+    ['6. Se pueden agregar ítems a una gestión exportada del sistema eligiendo su CLAVE.'],
+    [''],
+    ['CAMBIOS EN LO QUE YA ESTABA EN EL SISTEMA (filas grises)', 'seccion'],
+    ['En las filas del sistema solo se pueden cambiar las celdas blancas: en Gestiones, Informe, Lado y Observación; en Ítems, Estado carga, Lote, Vencimiento y Cantidad. Lo demás está bloqueado.'],
+    ['Algunas líneas no dejan cambiar todo, igual que en el sistema: en PAD y en líneas sin código no se cambia el Estado carga; en el PAD PADRE no se cambian Lote ni Vencimiento; en una fibra no se cambian Lote, Vencimiento ni Cantidad.'],
+    ['La celda cambiada se pinta ámbar y la columna MODIFICADO pasa a SÍ. Para deshacer un cambio, vuelva a escribir el valor original. Al reimportar se aplican solo las filas con MODIFICADO = SÍ; las gestiones que ya estaban SOLICITADAS no se tocan y quedan en el informe para hacerlas a mano.'],
+  ]),
   [''],
   ['FIBRAS REUTILIZABLES', 'seccion'],
   ['Las fibras no están en el catálogo (exigen elegir la fibra física FIB-xxxx). Si usa una, anote en Observación de la gestión: FIBRA, referencia, código FIB y lote. Se carga en el sistema al volver.'],
@@ -471,25 +569,36 @@ const textoInstrucciones = (d) => [
   ['Registre cada PDF guardado durante la caída: admisión, nombre del archivo y carpeta. Al volver se suben con Carga masiva de documentos y se marca "¿Subido al sistema?" = SÍ.'],
   [''],
   ['QUÉ NO HACER', 'seccion'],
-  ['No cambie los N° de línea. No borre filas del sistema. No haga la Solicitud ni la imputación durante la caída: se hacen en el sistema después de reimportar.'],
+  [`No cambie los N° de línea.${d.plantilla ? '' : ' No borre filas del sistema.'} No haga la Solicitud ni la imputación durante la caída: se hacen en el sistema después de cargar lo registrado.`],
   ['No ordene las hojas (están protegidas para no romper fórmulas); use los filtros.'],
   [''],
   ['PROGRAMA', 'seccion'],
   ['Ábralo con Microsoft Excel: es el único probado. Pide la contraseña al abrir.'],
   [''],
   ['SEGURIDAD', 'seccion'],
-  ['Contiene datos de pacientes. No lo envíe por correo ni WhatsApp, no lo deje en Descargas ni en el escritorio y no lo imprima. Al terminar la contingencia y reimportar, borre las copias locales.'],
+  ['Una vez usado contiene datos de pacientes: con contraseña siempre. No lo envíe por correo ni WhatsApp, no lo deje en Descargas ni en el escritorio y no lo imprima. Al terminar la contingencia y cargar lo registrado, borre las copias locales.'],
+  ...(d.plantilla ? [[''], ...COMO_LLENAR_CATALOGOS] : []),
 ];
 
 const hojaInstrucciones = (libro, datos) => {
   const hoja = libro.addWorksheet(H.INS);
   hoja.getColumn('A').width = 150;
+  hoja.getColumn('B').width = 16;
   textoInstrucciones(datos).forEach(([t, estilo], i) => {
     const c = hoja.getCell(`A${i + 1}`);
     c.value = t;
     c.alignment = { wrapText: true, vertical: 'top' };
     if (estilo === 'titulo') c.font = { bold: true, size: 14 };
     if (estilo === 'seccion') { c.font = { bold: true }; c.fill = relleno(COLOR.opcional); }
+    if (estilo === 'fecha') {
+      // Celda para que el equipo anote cuándo pegó los catálogos.
+      c.font = { bold: true };
+      const fecha = hoja.getCell(`B${i + 1}`);
+      fecha.numFmt = FORMATO_FECHA;
+      fecha.fill = relleno(COLOR.obligatorio);
+      fecha.border = BORDES;
+      fecha.protection = { locked: false };
+    }
   });
   return hoja;
 };
@@ -507,9 +616,19 @@ const OPCIONES_PROTECCION = {
  *   filasGestiones, filasItems, ultimaLinea,     (filasDesdeGestiones)
  *   catalogo, empresas, centros, recargos,      (catálogos)
  *   tamano: { gestionesLibres, itemsLibres, documentosLibres }
+ *   plantilla: true en la plantilla vacía (catálogos por pegar)
  * }
  */
-export const construirLibro = async (datos) => {
+export const construirLibro = async (datosEntrada) => {
+  const datos = {
+    ...datosEntrada,
+    filasCatalogos: dimensionarCatalogos({
+      referencias: datosEntrada.catalogo.filas.length,
+      empresas: datosEntrada.empresas.length,
+      centros: datosEntrada.centros.length,
+      recargos: datosEntrada.recargos.length,
+    }),
+  };
   const libro = new ExcelJS.Workbook();
   libro.creator = 'Medra — respaldo de contingencia';
   libro.created = new Date();
@@ -526,8 +645,8 @@ export const construirLibro = async (datos) => {
   const hG = libro.addWorksheet(H.G);
   const hI = libro.addWorksheet(H.I);
   const hD = libro.addWorksheet(H.D);
-  const { col: rCol } = hojaReferencias(libro, datos.catalogo);
-  const { rangos: cat } = hojaCatalogos(libro, datos);
+  const { col: rCol } = hojaReferencias(libro, datos.catalogo, datos.filasCatalogos.referencias);
+  const { rangos: cat } = hojaCatalogos(libro, datos, datos.filasCatalogos);
 
   const enHoja = (hoja, l, ultima) => `${ref(hoja)}$${l}$${PRIMERA}:$${l}$${ultima}`;
   const x = {
@@ -539,7 +658,7 @@ export const construirLibro = async (datos) => {
     iAA: enHoja(H.I, 'AA', ultimaItem),
     iAG: enHoja(H.I, 'AG', ultimaItem),
     rCol,
-    cK: cat.K, cL: cat.L, cM: cat.M,
+    recargo: { desde: cat.Q, hasta: cat.R, veces: cat.S, estado: cat.U },
   };
 
   // Gestiones
@@ -560,7 +679,7 @@ export const construirLibro = async (datos) => {
   validar(hG, rg('D'), lista(cat.H, { errorTitle: 'Empresa', error: 'Elija una empresa de la lista.' }));
   validar(hG, rg('F'), { type: 'decimal', operator: 'greaterThanOrEqual', formulae: [0], error: 'Monto mayor o igual a 0.' });
   validar(hG, rg('G'), lista(cat.C));
-  validar(hG, rg('H'), lista(cat.I));
+  validar(hG, rg('H'), lista(cat.L));
   validar(hG, rg('J'), lista(cat.D));
   validar(hG, rg('P'), lista(cat.A));
   hG.addConditionalFormatting({
@@ -605,7 +724,7 @@ export const construirLibro = async (datos) => {
   validar(hI, ri('B'), lista(x.gA, { errorTitle: 'CLAVE', error: 'Elija una CLAVE existente en la hoja Gestiones.' }));
   validar(hI, ri('C'), lista(cat.E));
   validar(hI, ri('D'), { type: 'whole', operator: 'greaterThanOrEqual', formulae: [1], error: 'N° de línea de la línea padre.' });
-  validar(hI, ri('F'), lista(cat.O, { errorStyle: 'warning', errorTitle: 'Referencia', error: 'No está en el catálogo: quedará "Sin código". ¿Continuar?' }));
+  validar(hI, ri('F'), lista(rCol(REF.referencia), { errorStyle: 'warning', errorTitle: 'Referencia', error: 'No está en el catálogo: quedará "Sin código". ¿Continuar?' }));
   validar(hI, ri('G'), { type: 'decimal', operator: 'greaterThan', formulae: [0], error: 'Cantidad mayor que 0.' });
   validar(hI, ri('I'), fechaValida);
   validar(hI, ri('J'), lista(cat.B));

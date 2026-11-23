@@ -334,6 +334,31 @@ export const dimensionar = ({ gestionesMes, itemsMes, gestionesMesAnterior = 0 }
   };
 };
 
+// Filas de cada catálogo: lo que trae más margen, con un mínimo pensado para
+// la plantilla (se pegan desde las exportaciones de la app; el Maestro de
+// Códigos tiene ~3.000 referencias).
+export const MINIMO_CATALOGOS = Object.freeze({ referencias: 6000, empresas: 300, centros: 100, recargos: 50 });
+export const dimensionarCatalogos = (cantidades) => Object.fromEntries(
+  Object.entries(MINIMO_CATALOGOS).map(([k, minimo]) => [k, Math.max(minimo, Math.ceil((cantidades[k] || 0) * 1.5))]),
+);
+
+// Plantilla vacía: filas preparadas fijas (no hay volumen real que medir).
+export const TAMANO_PLANTILLA = Object.freeze({ gestionesLibres: 1000, itemsLibres: 4000, documentosLibres: 1000 });
+export const ARCHIVO_PLANTILLA = 'respaldo_implantes_PLANTILLA.xlsx';
+
+export const datosPlantilla = (generadoEl) => ({
+  plantilla: true,
+  generadoEl,
+  filasGestiones: [],
+  filasItems: [],
+  ultimaLinea: 0,
+  catalogo: { filas: [], referenciasUnicas: [], resumen: { usables: 0, inactivas: 0, fibras: 0, referenciasRepetidas: 0, clavesRepetidas: 0 } },
+  empresas: [],
+  centros: [],
+  recargos: [],
+  tamano: { ...TAMANO_PLANTILLA },
+});
+
 export const nombreArchivo = (fechaISO) => `${PREFIJO_ARCHIVO}${fechaISO}.xlsx`;
 
 const PATRON_COPIA = /^respaldo_implantes_\d{4}-\d{2}-\d{2}\.xlsx$/;
