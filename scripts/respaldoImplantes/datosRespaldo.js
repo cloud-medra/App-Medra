@@ -339,8 +339,9 @@ export const dimensionarCatalogos = (cantidades) => Object.fromEntries(
 
 // Plantilla vacía: filas preparadas fijas (no hay volumen real que medir).
 export const TAMANO_PLANTILLA = Object.freeze({ gestionesLibres: 1000, itemsLibres: 4000, documentosLibres: 1000 });
-export const ARCHIVO_PLANTILLA = 'respaldo_implantes_PLANTILLA.xlsx';
-export const ARCHIVO_PLANTILLA_MACROS = 'respaldo_implantes_PLANTILLA.xlsm';
+// Único archivo que deja el script en la carpeta de contingencia
+// (decisión del 23-11-2026: nada de copias, pruebas ni archivos sueltos).
+export const ARCHIVO_PLANTILLA = 'respaldo_implantes.xlsm';
 
 // Plantilla sin datos del sistema. `catalogos` (opcional): lo leído de los
 // archivos exportados desde la app ({ codigos, empresas, centros, recargos,

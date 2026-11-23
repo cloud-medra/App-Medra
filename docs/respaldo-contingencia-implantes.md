@@ -4,7 +4,11 @@
 
 Decisión del 23-11-2026: por ahora se usa una **plantilla** sin datos de pacientes, sin conexión a Firestore, sin credenciales y sin tarea programada. La exportación automática con datos del sistema (más abajo) queda para más adelante.
 
-La plantilla `respaldo_implantes_PLANTILLA.xlsm` tiene 13 hojas, en este orden:
+Es **un solo archivo**: `C:\Users\<usuario>\Documents\Medra\Contingencia\respaldo_implantes.xlsm`.
+- Se reemplaza cada vez que se regenera.
+- En esa carpeta no quedan copias, pruebas ni archivos intermedios: el script los arma en una carpeta temporal del sistema y la borra al terminar, también si algo falla.
+
+Tiene 13 hojas, en este orden:
 
 | # | Hoja | Qué tiene |
 |---|---|---|
@@ -44,19 +48,23 @@ La plantilla `respaldo_implantes_PLANTILLA.xlsm` tiene 13 hojas, en este orden:
 
    - El CSV de Códigos debe exportarlo un usuario que vea **todas** las columnas, porque el export solo trae las visibles.
    - Desde el PR #9 el CSV trae también `ESTADO`, la única columna nueva y que va al final. Hace falta porque la pestaña "Con código" muestra las inactivas y no permite filtrarlas por estado; sin esa columna, la plantilla ofrecería códigos que el sistema no ofrece. Con un CSV anterior, el script avisa que no pudo quitar las inactivas.
-2. Dejar los archivos en una carpeta (por ejemplo `C:\Users\<usuario>\Documents\Medra\Contingencia`) y, desde la raíz del repo:
+2. Usar los archivos donde quedaron al descargarlos (por ejemplo, Descargas). **No los copie a la carpeta Contingencia**, que solo debe tener `respaldo_implantes.xlsm`. Desde la raíz del repo:
 
    ```powershell
-   node scripts/respaldoImplantes/generarPlantillaImplantes.js --salida "C:\Users\<usuario>\Documents\Medra\Contingencia" `
-     --codigos  "C:\Users\<usuario>\Documents\Medra\Contingencia\registros_con_codigo_2026-11-23.csv" `
-     --empresas "C:\Users\<usuario>\Documents\Medra\Contingencia\empresas_maestros_2026-11-23.xlsx" `
-     --centros  "C:\Users\<usuario>\Documents\Medra\Contingencia\centros_maestros_2026-11-23.xlsx" `
-     --recargos "C:\Users\<usuario>\Documents\Medra\Contingencia\recargos_maestros_2026-11-23.xlsx" `
-     --reporte-info "C:\Users\<usuario>\Documents\Medra\Contingencia\reporte_clinica_octubre.xlsx" `
-     --reporte-info "C:\Users\<usuario>\Documents\Medra\Contingencia\reporte_clinica_noviembre.xlsx" `
-     --previsiones "C:\Users\<usuario>\Documents\Medra\Contingencia\previsiones_maestros_2026-11-23.xlsx" `
-     --convenios "C:\Users\<usuario>\Documents\Medra\Contingencia\convenios_maestros_2026-11-23.xlsx"
+   $d = "$env:USERPROFILE\Downloads"
+   node scripts/respaldoImplantes/generarPlantillaImplantes.js `
+     --codigos  "$d\registros_con_codigo_2026-11-23.csv" `
+     --empresas "$d\empresas_maestros_2026-11-23.xlsx" `
+     --centros  "$d\centros_maestros_2026-11-23.xlsx" `
+     --recargos "$d\recargos_maestros_2026-11-23.xlsx" `
+     --reporte-info "$d\reporte_clinica_octubre.xlsx" `
+     --reporte-info "$d\reporte_clinica_noviembre.xlsx" `
+     --previsiones "$d\previsiones_maestros_2026-11-23.xlsx" `
+     --convenios "$d\convenios_maestros_2026-11-23.xlsx"
    ```
+
+   - El archivo sale siempre en `Documents\Medra\Contingencia\respaldo_implantes.xlsm` del usuario. `--salida "<carpeta>"` cambia la carpeta (debe estar fuera del repo).
+   - Después de generar, borre los archivos exportados de Descargas: Reporte Info tiene datos de pacientes.
 
    - `--reporte-info` se puede repetir. Se cargan solo las filas de los últimos **60 días**; con `--dias 90` (u otro número) se cambia el período.
    - Sin `--previsiones` o `--convenios`, esas listas se arman con los valores distintos que aparecen en Reporte Info.
@@ -64,7 +72,7 @@ La plantilla `respaldo_implantes_PLANTILLA.xlsm` tiene 13 hojas, en este orden:
    Cada `--…` es opcional: el catálogo que no se indique queda vacío para pegarlo a mano. Acepta `.csv` y `.xlsx`.
 3. El script hace lo siguiente:
    - quita las inactivas de Códigos, las empresas inactivas y los centros que no se usan en Gestiones;
-   - reemplaza `respaldo_implantes_PLANTILLA.xlsm` en la carpeta de salida (tiene que estar cerrado en Excel);
+   - reemplaza `respaldo_implantes.xlsm`. Si está abierto en Excel, no lo toca, avisa "ciérrelo en Excel y vuelva a intentarlo" y no deja archivos sueltos (comprobado);
    - muestra cuántos registros cargó de cada archivo.
 4. Volver a distribuir la plantilla nueva al equipo. Un archivo de contingencia **ya en uso** no se actualiza solo: sus catálogos se reemplazan pegando a mano, como explica su hoja Instrucciones.
 
@@ -94,13 +102,8 @@ exceljs no puede escribir macros. El script genera el `.xlsx` y llama a `macros/
 
 - Importar VBA por automatización exige "Confiar en el acceso al modelo de objetos de proyectos de VBA" (`AccessVBOM`). El script lo activa **solo mientras arma el archivo** y después deja el valor que había.
 - Excel vuelve a escribir esa opción al cerrarse, así que el script espera a que su propia instancia de Excel termine (sin tocar otros Excel abiertos), restaura el valor y lo vuelve a comprobar.
-- Los botones apuntan al libro donde están: una copia renombrada (`contingencia_2026-11-23.xlsm`) usa sus propias macros (comprobado).
-
-**Alternativa manual** (`--sin-macros`): genera `respaldo_implantes_PLANTILLA.xlsx` y `ModContingencia.bas`. Luego, en Excel:
-
-1. Abrir el `.xlsx` → Alt+F11 (editor de VBA) → Archivo → Importar archivo… → `ModContingencia.bas`.
-2. Cerrar el editor → Alt+F8 → `InstalarBotones` → Ejecutar.
-3. Archivo → Guardar como → tipo "Libro de Excel habilitado para macros (*.xlsm)".
+- Los botones apuntan al libro donde están: una copia renombrada usa sus propias macros (comprobado).
+- Si Excel no logra armar el archivo, el script falla, informa el error y deja intacto el `respaldo_implantes.xlsm` anterior.
 
 ### Macros
 
