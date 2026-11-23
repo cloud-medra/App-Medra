@@ -345,17 +345,28 @@ export const dimensionarCatalogos = (cantidades) => Object.fromEntries(
 // Plantilla vacía: filas preparadas fijas (no hay volumen real que medir).
 export const TAMANO_PLANTILLA = Object.freeze({ gestionesLibres: 1000, itemsLibres: 4000, documentosLibres: 1000 });
 export const ARCHIVO_PLANTILLA = 'respaldo_implantes_PLANTILLA.xlsx';
+export const ARCHIVO_PLANTILLA_MACROS = 'respaldo_implantes_PLANTILLA.xlsm';
 
-export const datosPlantilla = (generadoEl) => ({
+// Plantilla sin datos del sistema. `catalogos` (opcional): lo leído de los
+// archivos exportados desde la app ({ codigos, empresas, centros, recargos }
+// con sus registros), `origen` (archivo, fecha y conteos de cada uno, para
+// Instrucciones) y `fecha` (Date de los catálogos).
+export const datosPlantilla = (generadoEl, { catalogos = {}, origen = {}, fecha = null } = {}) => ({
   plantilla: true,
   generadoEl,
   filasGestiones: [],
   filasItems: [],
   ultimaLinea: 0,
-  catalogo: { filas: [], referenciasUnicas: [], resumen: { usables: 0, inactivas: 0, fibras: 0, referenciasRepetidas: 0, clavesRepetidas: 0 } },
-  empresas: [],
-  centros: [],
-  recargos: [],
+  catalogo: {
+    filas: catalogos.codigos || [],
+    referenciasUnicas: [],
+    resumen: { usables: (catalogos.codigos || []).length, inactivas: 0, fibras: 0, referenciasRepetidas: 0, clavesRepetidas: 0 },
+  },
+  empresas: catalogos.empresas || [],
+  centros: catalogos.centros || [],
+  recargos: catalogos.recargos || [],
+  origenCatalogos: origen,
+  fechaCatalogos: fecha,
   tamano: { ...TAMANO_PLANTILLA },
 });
 

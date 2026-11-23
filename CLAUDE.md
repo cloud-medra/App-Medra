@@ -149,7 +149,7 @@ Medra: SPA interna de una clínica para implantes, hemodinamia, consignación, d
 ### Comandos
 - Build `npm run build`; lint `npm run lint`; tests `npm test` o `npx vitest run <ruta> --testTimeout=30000` (si fallan por timeout o no arrancan los workers, de a uno).
   - Correr vitest desde PowerShell: desde Git Bash la ruta queda con `c:` y `C:` a la vez, vitest carga dos copias de sí mismo y todo test falla con `Cannot read properties of undefined (reading 'config')`.
-- Plantilla de contingencia de Implantes (lo que se usa hoy; vacía, sin Firestore): `node scripts/respaldoImplantes/generarPlantillaImplantes.js --salida <carpeta fuera del repo>`.
+- Plantilla de contingencia de Implantes (lo que se usa hoy; sin Firestore, `.xlsm` con macros armado con Excel): `node scripts/respaldoImplantes/generarPlantillaImplantes.js --salida <carpeta fuera del repo> --codigos <csv> --empresas <xlsx>` (ver el doc).
 - Respaldo de contingencia de Implantes con datos (para más adelante; Excel cifrado con el mes abierto y los catálogos): `node scripts/respaldoImplantes/generarRespaldoImplantes.js --salida <carpeta fuera del repo>` (`--contar` estima lecturas; `--demo` sin Firestore). Exige `RESPALDO_IMPLANTES_CLAVE`. Ver `docs/respaldo-contingencia-implantes.md`.
 - Deploy (siempre `--project workcraft-491b7`, tras `npm run build`): hosting `npx firebase-tools deploy --only hosting`; Firestore `--only firestore:rules,firestore:indexes`; Storage `--only storage`; Functions por tandas (ver Reglas), nunca `npm run deploy`.
 

@@ -1,28 +1,85 @@
 # Respaldo de contingencia de Implantes
 
-## Plantilla vacía (lo que se usa hoy)
+## Plantilla (lo que se usa hoy)
 
-Decisión del 23-11-2026: por ahora se usa solo una **plantilla vacía**, sin conexión a Firestore, sin credenciales y sin tarea programada. La exportación automática (resto de este documento) queda para más adelante.
+Decisión del 23-11-2026: por ahora se usa una **plantilla** sin datos de pacientes, sin conexión a Firestore, sin credenciales y sin tarea programada. La exportación automática con datos del sistema (más abajo) queda para más adelante.
 
-```powershell
-node scripts/respaldoImplantes/generarPlantillaImplantes.js --salida "C:\Users\<usuario>\Documents\Medra\Contingencia"
-```
+La plantilla `respaldo_implantes_PLANTILLA.xlsm` tiene estas hojas: Instrucciones, Gestiones (1.000 filas), Ítems (4.000), Documentos (1.000), Cargados, Códigos, Empresas y Catálogos.
+- Trae fórmulas, desplegables, alertas y los botones "Mover cargados" y "Devolver a pendientes".
+- Los catálogos (Códigos, Empresas, Centros y Recargos) se cargan desde los archivos que exporta la app.
+- No lleva contraseña: se le pone en Excel antes de usarla, porque una vez usada tiene datos de pacientes.
 
-- Genera `respaldo_implantes_PLANTILLA.xlsx` (reemplaza el que haya en la carpeta), sin datos y sin contraseña. La contraseña se le pone en Excel antes de usarla, porque una vez usada tiene datos de pacientes.
-- Misma estructura que el respaldo: Instrucciones, Gestiones (1.000 filas), Ítems (4.000), Documentos (1.000), Referencias y Catálogos, con fórmulas, desplegables y alertas.
-- **Catálogos vacíos para pegar** desde las exportaciones que ya tiene la app. Cada bloque tiene las mismas columnas, en el mismo orden, que el archivo exportado:
+### Regenerar con archivos nuevos (cuando cambien precios o referencias)
 
-  | Catálogo | Dónde se exporta en la app | Se pega en |
-  |---|---|---|
-  | Referencias (hasta 6.000) | Maestros → Codigos → pestaña "Con código" → Importar / Exportar → Exportar registros (CSV) | Referencias!B3 |
-  | Empresas (300) | Maestros → Empresas → configuración → Exportar a Excel / CSV | Catálogos!H3 |
-  | Centros (100) | Maestros → Centros → configuración → Exportar a Excel / CSV | Catálogos!L3 |
-  | Rangos de recargo (50) | Maestros → Recargos → configuración → Exportar a Excel / CSV | Catálogos!Q3 |
+1. En la app, exportar los maestros. Los nombres de archivo ya traen la fecha, y el script la usa como fecha de los catálogos:
 
-  La hoja Instrucciones explica el paso a paso: filtrar los inactivos antes de copiar, borrar las fibras y anotar la fecha de los catálogos.
-- El CSV de Códigos trae solo las columnas que el usuario puede ver (`useImportExportConCodigo.js`): hay que exportarlo con un usuario que vea las 12. Las columnas A y N de Referencias están bloqueadas, así que un CSV con columnas de más no se deja pegar.
-- El recargo se busca con `CONTAR.SI.CONJUNTO`/`SUMAR.SI.CONJUNTO` sobre desde-hasta: no importa el orden en que se peguen los rangos y se ignoran los INACTIVOS. El precio pegado como texto se convierte a número.
-- Probado en Excel 16: abre en ~2 s; pegar 3.000 referencias y recalcular, 0,2 s; sin errores de fórmula.
+   | Catálogo | Dónde se exporta | Archivo |
+   |---|---|---|
+   | Códigos | Maestros → Codigos → pestaña "Con código" → Importar / Exportar → Exportar registros | `registros_con_codigo_AAAA-MM-DD.csv` |
+   | Empresas | Maestros → Empresas → configuración → Exportar a Excel / CSV | `empresas_maestros_AAAA-MM-DD.xlsx` |
+   | Centros (opcional) | Maestros → Centros → configuración → Exportar | `centros_maestros_AAAA-MM-DD.xlsx` |
+   | Recargos (opcional) | Maestros → Recargos → configuración → Exportar | `recargos_maestros_AAAA-MM-DD.xlsx` |
+
+   - El CSV de Códigos debe exportarlo un usuario que vea **todas** las columnas, porque el export solo trae las visibles.
+   - Desde el 23-11-2026 el CSV trae también `ESTADO` y `FIBRA_REUTILIZABLE`. Con un CSV anterior el script avisa que no pudo quitar las inactivas ni las fibras.
+2. Dejar los archivos en una carpeta (por ejemplo `C:\Users\<usuario>\Documents\Medra\Contingencia`) y, desde la raíz del repo:
+
+   ```powershell
+   node scripts/respaldoImplantes/generarPlantillaImplantes.js --salida "C:\Users\<usuario>\Documents\Medra\Contingencia" `
+     --codigos  "C:\Users\<usuario>\Documents\Medra\Contingencia\registros_con_codigo_2026-11-23.csv" `
+     --empresas "C:\Users\<usuario>\Documents\Medra\Contingencia\empresas_maestros_2026-11-23.xlsx" `
+     --centros  "C:\Users\<usuario>\Documents\Medra\Contingencia\centros_maestros_2026-11-23.xlsx" `
+     --recargos "C:\Users\<usuario>\Documents\Medra\Contingencia\recargos_maestros_2026-11-23.xlsx"
+   ```
+
+   Cada `--…` es opcional: el catálogo que no se indique queda vacío para pegarlo a mano. Acepta `.csv` y `.xlsx`.
+3. El script hace lo siguiente:
+   - quita las inactivas y las fibras de Códigos, las empresas inactivas y los centros que no se usan en Gestiones;
+   - reemplaza `respaldo_implantes_PLANTILLA.xlsm` en la carpeta de salida (tiene que estar cerrado en Excel);
+   - muestra cuántos registros cargó de cada archivo.
+4. Volver a distribuir la plantilla nueva al equipo. Un archivo de contingencia **ya en uso** no se actualiza solo: sus catálogos se reemplazan pegando a mano, como explica su hoja Instrucciones.
+
+### Cómo se insertan las macros
+
+exceljs no puede escribir macros. El script genera el `.xlsx` y llama a `macros/armarXlsm.ps1`, que abre el archivo en Excel, importa `macros/ModContingencia.bas`, crea los botones con su macro `InstalarBotones` y lo guarda como `.xlsm`. Por eso hace falta Excel instalado en el equipo donde se corre.
+
+- Importar VBA por automatización exige "Confiar en el acceso al modelo de objetos de proyectos de VBA" (`AccessVBOM`). El script lo activa **solo mientras arma el archivo** y después deja el valor que había.
+- Excel vuelve a escribir esa opción al cerrarse, así que el script espera a que su propia instancia de Excel termine (sin tocar otros Excel abiertos), restaura el valor y lo vuelve a comprobar.
+- Los botones apuntan al libro donde están: una copia renombrada (`contingencia_2026-11-23.xlsm`) usa sus propias macros (comprobado).
+
+**Alternativa manual** (`--sin-macros`): genera `respaldo_implantes_PLANTILLA.xlsx` y `ModContingencia.bas`. Luego, en Excel:
+
+1. Abrir el `.xlsx` → Alt+F11 (editor de VBA) → Archivo → Importar archivo… → `ModContingencia.bas`.
+2. Cerrar el editor → Alt+F8 → `InstalarBotones` → Ejecutar.
+3. Archivo → Guardar como → tipo "Libro de Excel habilitado para macros (*.xlsm)".
+
+### Macros
+
+`ModContingencia.bas` sigue las columnas de `libroRespaldo.js` (`COLUMNAS_GESTIONES`, `COLUMNAS_ITEMS` y `COLUMNAS_CARGADOS`): si cambian allá, hay que cambiarlas acá.
+
+**Mover cargados** (hoja Gestiones):
+- Toma las gestiones con `ORIGEN = CONTINGENCIA` y Estado = CARGADO, la misma regla del sistema: todas sus líneas CARGADO, PAD o SIN CARGO.
+- Antes de mover, avisa cuántas gestiones e ítems son (y cuántos ítems tienen alerta), pide el nombre de quien mueve y la confirmación.
+- Escribe en Cargados **valores**, una fila por línea, con la cabecera de su gestión, lo calculado (código, precio, veces costo, total, venta, sin código, recargo encontrado) y el N° de línea y la línea padre originales.
+- En Gestiones e Ítems limpia solo las celdas que se escriben; las fórmulas quedan.
+
+**Devolver a pendientes** (hoja Cargados, con una celda de la gestión seleccionada):
+- Vuelve la gestión a la primera fila libre de Gestiones y a filas libres de Ítems, y la quita de Cargados.
+- Como el N° de línea es fijo por fila, traduce la línea padre del número original al de la fila donde queda.
+- No devuelve una gestión si su CLAVE ya existe en Gestiones.
+
+Las dos macros tienen una versión sin diálogos (`MoverCargadosAuto(quien)` y `DevolverGestionAuto(clave)`), que usa la prueba automática.
+
+### Probado (Excel 16, datos ficticios)
+
+Exportaciones ficticias con el formato de la app: 2.997 códigos (uno inactivo, una fibra, una referencia en dos empresas), 4 empresas (una inactiva), centros y recargos desordenados con uno inactivo.
+- Se cargaron 2.995 códigos, 3 empresas, 2 centros y 3 rangos, y `AccessVBOM` quedó como estaba.
+- Prueba con tres gestiones:
+  1. Una con todo CARGADO o SIN CARGO.
+  2. Una con estados mezclados.
+  3. Una con PAD PADRE, dos líneas de contenido, una placa y un lote adicional.
+- "Mover cargados" movió 2 gestiones y 8 ítems como valores, sin fórmulas. Dejó la gestión con estados mezclados y limpió las demás filas, que quedaron con sus fórmulas.
+- "Devolver a pendientes" devolvió la del PAD con la línea padre traducida (6→1 y 9→6). Volvió a quedar CARGADO, sin alertas ni errores de fórmula.
 
 ## Respaldo con datos del sistema (para más adelante)
 
