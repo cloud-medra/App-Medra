@@ -58,14 +58,22 @@ describe('lectura de exportaciones de la app', () => {
     ]).registros.map((r) => [r.desde, r.vecesCosto])).toEqual([[0, 2], [100, 1.5]]);
   });
 
-  it('lee el export de "Sin código" (sin CODIGO, REGISTRADO_POR ni ESTADO)', () => {
+  it('lee el export de "Sin código" (sin CODIGO ni REGISTRADO_POR) y quita sus inactivas por ESTADO', () => {
+    const base = { DESCRIPTOR_EMPRESA: 'D', EMPRESA: 'A', TIPO: 'COTIZACION', SEGMENTO: 'IMPLANTES', CLASE: 'IMPLANTE', DESCRIPTOR_AUTO: 'X', PRECIO_NETO: 1, CX: '', OBSERVACION: '' };
+    const conEstado = codigosDesdeFilas([{ REFERENCIA: 'P1', ...base, ESTADO: 'ACTIVO' }, { REFERENCIA: 'P2', ...base, ESTADO: 'INACTIVO' }]);
+    expect(conEstado.registros.map((r) => r.referencia)).toEqual(['P1']);
+    expect(conEstado.resumen.inactivas).toBe(1);
+    expect(conEstado.advertencias).toEqual([]);
+  });
+
+  it('avisa si el export de "Sin código" es anterior y no trae ESTADO', () => {
     const fila = { REFERENCIA: 'PEND-1', DESCRIPTOR_EMPRESA: 'D', EMPRESA: 'A', TIPO: 'COTIZACION', SEGMENTO: 'IMPLANTES', CLASE: 'IMPLANTE',
       DESCRIPTOR_AUTO: 'PEND-1 D', PRECIO_NETO: 9000, CX: '', OBSERVACION: '' };
     const { registros, resumen, advertencias } = codigosDesdeFilas([fila]);
     expect(registros).toEqual([expect.objectContaining({ codigo: '', referencia: 'PEND-1', empresa: 'A', precio: 9000 })]);
     expect(resumen).toMatchObject({ leidas: 1, cargadas: 1, inactivas: 0 });
     // Solo avisa que no trae ESTADO; no reclama CODIGO ni REGISTRADO_POR.
-    expect(advertencias).toEqual(['El export de "Sin código" no trae ESTADO: sus inactivas no se pudieron quitar.']);
+    expect(advertencias).toEqual(['El export de "Sin código" no trae ESTADO (exportación anterior al despliegue que la agrega): sus inactivas no se pudieron quitar. Vuelva a exportar desde la app.']);
   });
 
   it('une Con código y Sin código sin repetidos, con los que tienen código primero', () => {

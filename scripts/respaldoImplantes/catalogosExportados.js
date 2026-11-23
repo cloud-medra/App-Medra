@@ -11,8 +11,9 @@
 //            entonces no se pueden quitar las inactivas).
 //   Sin código (useImportExportPendientes.js, .xlsx codigos_pendientes_…):
 //            REFERENCIA, DESCRIPTOR_EMPRESA, EMPRESA, TIPO, SEGMENTO, CLASE,
-//            DESCRIPTOR_AUTO, PRECIO_NETO, CX, OBSERVACION (sin CODIGO, sin
-//            REGISTRADO_POR y sin ESTADO). La vista general de Códigos
+//            DESCRIPTOR_AUTO, PRECIO_NETO, CX, OBSERVACION, ESTADO (sin CODIGO
+//            ni REGISTRADO_POR; ESTADO al final desde la rama
+//            feat/contingencia-codigos-sin-codigo). La vista general de Códigos
 //            Maestros es la suma de "Con código" y "Sin código": se pasan los
 //            dos archivos y unirCodigos los junta.
 //   Empresas (EmpresasMaestros.jsx): NOMBRE, RUT, ESTADO
@@ -67,7 +68,7 @@ export const codigosDesdeFilas = (filasCrudas) => {
   const advertencias = [];
   if (filas.length && faltan(filas, ['ESTADO']).length) {
     advertencias.push(esSinCodigo
-      ? 'El export de "Sin código" no trae ESTADO: sus inactivas no se pudieron quitar.'
+      ? 'El export de "Sin código" no trae ESTADO (exportación anterior al despliegue que la agrega): sus inactivas no se pudieron quitar. Vuelva a exportar desde la app.'
       : 'El archivo de códigos no trae ESTADO (exportación anterior al 23-11-2026): no se pudieron quitar las inactivas. Vuelva a exportar desde la app.');
   }
   const otrasFaltantes = faltan(filas, esSinCodigo ? COLUMNAS_SIN_CODIGO : COLUMNAS_CODIGOS);

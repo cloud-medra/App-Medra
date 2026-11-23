@@ -136,7 +136,7 @@ La vista general de Códigos Maestros no se puede exportar, pero es exactamente 
 - El script los une (`unirCodigos`) y quita repetidos: un registro marcado como con código pero con el código vacío aparece en las dos pestañas. Se considera el mismo registro si coinciden código, referencia y empresa.
 - Van primero los que tienen código, así una referencia que está con y sin código en la misma empresa encuentra la que tiene código.
 - Las referencias sin código **sí van en la plantilla**: Cargas las ofrece al escribir la referencia (el autocompletado solo exige que estén activas), y al elegirlas la línea queda "sin código" y la gestión INCOMPLETO. En la plantilla pasa lo mismo: se completan empresa, precio y descriptor, y la alerta dice "Sin código".
-- El export de "Sin código" no trae ESTADO (`useImportExportPendientes.js`), así que sus inactivas no se pueden quitar; el script lo avisa.
+- El export de "Sin código" trae ESTADO al final desde la rama `feat/contingencia-codigos-sin-codigo` (`useImportExportPendientes.js`, igual que "Con código"). Con un export anterior a ese despliegue sus inactivas no se pueden quitar y el script lo avisa.
 
 ### Reporte Info y autocompletado en Gestiones
 
