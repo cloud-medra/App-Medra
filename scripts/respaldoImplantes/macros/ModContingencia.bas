@@ -28,6 +28,10 @@ Private Const HOJA_RESUMEN As String = "Resumen"
 Private Const S_COLUMNAS As Long = 18          ' ... FECHA MOVIMIENTO (17), CLAVE (18)
 Private Const R_COLUMNAS As Long = 13          ' ... FECHA MOVIMIENTO (12), CLAVE (13)
 Private Const PRIMERA As Long = 3
+' Contraseña de protección de las hojas. En el repo queda solo el marcador:
+' generarPlantillaImplantes.js lo reemplaza al armar el .xlsm con el valor de
+' la variable de entorno RESPALDO_IMPLANTES_CLAVE_HOJAS.
+Private Const CLAVE_HOJAS As String = "__CLAVE_HOJAS__"
 
 ' Gestiones (A = 1)
 Private Const G_ULTIMA_ENTRADA As Long = 16   ' B..P se escriben
@@ -544,14 +548,14 @@ Private Sub RestaurarAutocompletado(ByVal ws As Worksheet, ByVal fila As Long)
     Next par
 End Sub
 
-' Mismas opciones que pone el script al generar la planilla (sin contraseña).
+' Mismas opciones que pone el script al generar la planilla.
 Private Sub Proteger(ByVal ws As Worksheet)
-    ws.Protect Password:="", DrawingObjects:=False, Contents:=True, Scenarios:=False, _
+    ws.Protect Password:=CLAVE_HOJAS, DrawingObjects:=False, Contents:=True, Scenarios:=False, _
                AllowFormattingColumns:=True, AllowFormattingRows:=True, AllowFiltering:=True
 End Sub
 
 Private Sub Desproteger(ByVal ws As Worksheet)
-    ws.Unprotect Password:=""
+    ws.Unprotect Password:=CLAVE_HOJAS
 End Sub
 
 Private Sub CrearBoton(ByVal ws As Worksheet, ByVal nombre As String, ByVal texto As String, ByVal accion As String, ByVal ancho As Double)

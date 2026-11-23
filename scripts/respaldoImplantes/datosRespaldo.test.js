@@ -137,11 +137,11 @@ describe('tamaño de los catálogos', () => {
 
 describe('tamaño y copias', () => {
   it('deja al menos el doble del volumen del mes (o del anterior, si fue mayor)', () => {
-    expect(dimensionar({ gestionesMes: 300, itemsMes: 1200 })).toEqual({ gestionesLibres: 600, itemsLibres: 2400, documentosLibres: 600 });
+    expect(dimensionar({ gestionesMes: 300, itemsMes: 1200 })).toEqual({ gestionesLibres: 600, itemsLibres: 2400 });
     // Comienzo de mes: manda el mes anterior, con la proporción de ítems del actual.
-    expect(dimensionar({ gestionesMes: 10, itemsMes: 30, gestionesMesAnterior: 400 })).toEqual({ gestionesLibres: 800, itemsLibres: 2400, documentosLibres: 800 });
+    expect(dimensionar({ gestionesMes: 10, itemsMes: 30, gestionesMesAnterior: 400 })).toEqual({ gestionesLibres: 800, itemsLibres: 2400 });
     expect(dimensionar({ gestionesMes: 0, itemsMes: 0 })).toEqual({
-      gestionesLibres: MINIMO_LIBRES.gestiones, itemsLibres: MINIMO_LIBRES.items, documentosLibres: MINIMO_LIBRES.documentos,
+      gestionesLibres: MINIMO_LIBRES.gestiones, itemsLibres: MINIMO_LIBRES.items,
     });
   });
 

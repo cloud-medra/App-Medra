@@ -47,6 +47,12 @@ const BAS = path.join(AQUI, 'macros', 'ModContingencia.bas');
 const ARMAR = path.join(AQUI, 'macros', 'armarXlsm.ps1');
 const CARPETA_POR_DEFECTO = path.join(os.homedir(), 'Documents', 'Medra', 'Contingencia');
 
+// Contraseña de protección de las hojas: solo desde la variable de entorno
+// (nunca en el repo). En el .xlsm queda su hash y, para que los botones
+// puedan desproteger, dentro del módulo VBA (decisión del 23-11-2026).
+const VARIABLE_CLAVE_HOJAS = 'RESPALDO_IMPLANTES_CLAVE_HOJAS';
+const LARGO_MINIMO_CLAVE_HOJAS = 8;
+
 const salir = (mensaje) => { console.error(`\nERROR: ${mensaje}\n`); process.exit(1); };
 
 const leerArgumentos = (argv) => {
@@ -94,8 +100,11 @@ const detalleDe = (id, resumen) => {
 
 // El .bas se importa en Windows-1252 con CRLF. Latin-1 coincide con
 // Windows-1252 en los caracteres del español; cualquier otro se rechaza.
-const basParaExcel = async () => {
-  const contenido = (await fs.readFile(BAS, 'utf8')).replace(/\r?\n/g, '\r\n');
+const basParaExcel = async (claveHojas) => {
+  const original = await fs.readFile(BAS, 'utf8');
+  if (!original.includes('__CLAVE_HOJAS__')) throw new Error('ModContingencia.bas no tiene el marcador __CLAVE_HOJAS__.');
+  // En VBA las comillas dentro de un texto se escriben dobles.
+  const contenido = original.replace('__CLAVE_HOJAS__', claveHojas.replace(/"/g, '""')).replace(/\r?\n/g, '\r\n');
   const raro = [...contenido].find((ch) => ch.charCodeAt(0) > 0xff);
   if (raro) throw new Error(`ModContingencia.bas tiene un carácter que no es Windows-1252: "${raro}"`);
   return Buffer.from(contenido, 'latin1');
@@ -103,6 +112,10 @@ const basParaExcel = async () => {
 
 const main = async () => {
   const args = leerArgumentos(process.argv.slice(2));
+  const claveHojas = process.env[VARIABLE_CLAVE_HOJAS] || '';
+  if (!claveHojas) salir(`Falta la variable ${VARIABLE_CLAVE_HOJAS} con la contraseña de protección de las hojas (ver el doc).`);
+  if (claveHojas.length < LARGO_MINIMO_CLAVE_HOJAS) salir(`La contraseña de ${VARIABLE_CLAVE_HOJAS} debe tener al menos ${LARGO_MINIMO_CLAVE_HOJAS} caracteres.`);
+  if ([...claveHojas].some((ch) => ch.charCodeAt(0) > 0xff)) salir(`La contraseña de ${VARIABLE_CLAVE_HOJAS} solo puede tener letras, números y signos comunes.`);
   const rel = path.relative(RAIZ, args.salida);
   if (rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel))) salir('La carpeta de salida debe estar fuera del repositorio.');
   await fs.mkdir(args.salida, { recursive: true });
@@ -150,7 +163,7 @@ const main = async () => {
     });
   }
 
-  const { libro, filas } = await construirLibro(datosPlantilla(fechaHoraChile(), { catalogos, origen, fecha }));
+  const { libro, filas } = await construirLibro({ ...datosPlantilla(fechaHoraChile(), { catalogos, origen, fecha }), claveHojas });
   const destino = path.join(args.salida, ARCHIVO_PLANTILLA);
   // Todo lo intermedio en una carpeta temporal del sistema, borrada al final.
   const temporal = await fs.mkdtemp(path.join(os.tmpdir(), 'medra-contingencia-'));
@@ -159,7 +172,7 @@ const main = async () => {
     const bas = path.join(temporal, 'ModContingencia.bas');
     const xlsm = path.join(temporal, ARCHIVO_PLANTILLA);
     await fs.writeFile(xlsx, Buffer.from(await libro.xlsx.writeBuffer()));
-    await fs.writeFile(bas, await basParaExcel());
+    await fs.writeFile(bas, await basParaExcel(claveHojas));
     const r = spawnSync('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ARMAR, '-Xlsx', xlsx, '-Bas', bas, '-Xlsm', xlsm], { encoding: 'utf8' });
     if (r.status !== 0 || !String(r.stdout).includes('OK')) {
       throw new Error(`No se pudo armar el .xlsm con Excel:\n${r.stdout || ''}${r.stderr || ''}`);
@@ -177,7 +190,7 @@ const main = async () => {
   }
 
   console.log(`\nArchivo generado: ${destino}`);
-  console.log(`Filas preparadas: Gestiones hasta la fila ${filas.ultimaGestion}, Ítems hasta la ${filas.ultimaItem}, Documentos hasta la ${filas.ultimaDocumento}.`);
+  console.log(`Filas preparadas: Gestiones hasta la fila ${filas.ultimaGestion}, Ítems hasta la ${filas.ultimaItem}.`);
   [['reporteInfo', 'Reporte Info'], ...Object.entries(LECTORES).map(([id, { nombre }]) => [id, nombre])].forEach(([id, nombre]) => {
     if (!origen[id]) console.log(`${nombre}: vacío (para pegar a mano).`);
     else console.log(`${nombre}: ${origen[id].cargadas} cargados de ${origen[id].archivo} (${origen[id].detalle})${origen[id].provisional ? ' — PROVISIONAL' : ''}.`);

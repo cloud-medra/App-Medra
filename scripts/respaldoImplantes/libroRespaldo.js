@@ -21,7 +21,7 @@
 
 import ExcelJS from 'exceljs';
 import {
-  ESTADOS_GESTION, ESTADOS_CARGA, INFORMES, NOMBRES_LADO, SI_NO, LISTA_TIPOS_LINEA, CODIGO_SIN_OC,
+  ESTADOS_GESTION, ESTADOS_CARGA, INFORMES, NOMBRES_LADO, LISTA_TIPOS_LINEA, CODIGO_SIN_OC,
   CAMPOS_EDITABLES_GESTION, camposEditablesItem, dimensionarCatalogos, isoAFechaExcel,
   TIPOS_CODIGO, SEGMENTOS_CODIGO, CLASES_CODIGO,
 } from './datosRespaldo.js';
@@ -32,7 +32,7 @@ const PRIMERA = 3;
 
 // Nombres de hoja: las macros (macros/MoverCargados.bas) usan los mismos.
 export const H = {
-  G: 'Gestiones', I: 'Ítems', D: 'Documentos', CARG: 'Cargados',
+  G: 'Gestiones', I: 'Ítems', CARG: 'Cargados',
   // Mismos nombres que las dos hojas del Excel de Solicitud de la app
   // (config.hojaSolicitud de modulosGestion.js y "Resumen"; lo comprueba el test).
   SOL: 'Solicitud Implantes', RES: 'Resumen',
@@ -159,25 +159,6 @@ const COLUMNAS_ITEMS = [
   { l: 'AO', titulo: 'orig: Estado carga', clase: 'formula', oculta: true },
 ];
 
-const COLUMNAS_DOCUMENTOS = [
-  { l: 'A', titulo: 'N°', clase: 'formula', ancho: 6, ayuda: 'Fijo.' },
-  { l: 'B', titulo: 'Admisión', clase: 'obligatorio', ancho: 12, texto: true, ayuda: 'N° de admisión, solo dígitos.' },
-  { l: 'C', titulo: 'Nombre del archivo', clase: 'obligatorio', ancho: 40, ayuda: 'Tal como quedó guardado (ej. 102030 - JUAN PEREZ - OC.pdf).' },
-  { l: 'D', titulo: 'Descripción / tipo', clase: 'opcional', ancho: 24, ayuda: 'Libre: cotización, OC, guía, informe…' },
-  { l: 'E', titulo: 'Carpeta', clase: 'obligatorio', ancho: 40, ayuda: 'Dónde quedó guardado el archivo.' },
-  { l: 'F', titulo: 'Fecha', clase: 'opcional', ancho: 12, fecha: true, ayuda: 'dd-mm-aaaa.' },
-  { l: 'G', titulo: '¿Subido al sistema?', clase: 'opcional', ancho: 12, ayuda: 'SÍ / NO. Vacío = NO.' },
-  { l: 'H', titulo: 'ORIGEN', clase: 'formula', ancho: 14, ayuda: 'Automático.' },
-  { l: 'I', titulo: 'Registrado por', clase: 'obligatorio', ancho: 18, ayuda: 'Quién lo registró.' },
-  { l: 'J', titulo: 'Alerta', clase: 'formula', ancho: 34, ayuda: 'Aviso si la admisión no está en Gestiones.' },
-];
-
-// De la B a la N, las mismas columnas y en el mismo orden que "Exportar
-// registros" de Códigos Maestros → Con código (useImportExportConCodigo.js):
-// el CSV se pega tal cual en B3. A, O y P son automáticas (bloqueadas: si
-// el CSV trae más columnas de las esperadas, Excel no deja pegar encima).
-// Las filas INACTIVAS quedan fuera de la búsqueda (A y O vacías), así que el
-// CSV se puede pegar completo.
 const COLUMNAS_REFERENCIAS = [
   { l: 'A', titulo: 'Clave búsqueda', ancho: 30, automatica: true },
   { l: 'B', titulo: 'CODIGO', ancho: 12, texto: true },
@@ -320,11 +301,10 @@ const LISTAS_FIJAS = [
   { l: 'C', titulo: 'Informe', valores: INFORMES, ancho: 12 },
   { l: 'D', titulo: 'Lado', valores: NOMBRES_LADO, ancho: 16 },
   { l: 'E', titulo: 'Tipo de línea', valores: LISTA_TIPOS_LINEA, ancho: 16 },
-  { l: 'F', titulo: 'SÍ / NO', valores: SI_NO, ancho: 8 },
   // Listas de la hoja Códigos (las mismas del sistema).
-  { l: 'G', titulo: 'Tipo (Códigos)', valores: TIPOS_CODIGO, ancho: 16 },
-  { l: 'H', titulo: 'Segmento (Códigos)', valores: SEGMENTOS_CODIGO, ancho: 18 },
-  { l: 'I', titulo: 'Clase (Códigos)', valores: CLASES_CODIGO, ancho: 14 },
+  { l: 'F', titulo: 'Tipo (Códigos)', valores: TIPOS_CODIGO, ancho: 16 },
+  { l: 'G', titulo: 'Segmento (Códigos)', valores: SEGMENTOS_CODIGO, ancho: 18 },
+  { l: 'H', titulo: 'Clase (Códigos)', valores: CLASES_CODIGO, ancho: 14 },
 ];
 
 const encabezado = (celda, titulo) => {
@@ -802,7 +782,7 @@ const lineaCatalogo = (nombre, o) => {
 // exportación del sistema (con datos y catálogos de Firestore).
 const encabezadoInstrucciones = (d) => (d.plantilla ? [
   ['RESPALDO DE CONTINGENCIA — IMPLANTES (PLANTILLA)', 'titulo'],
-  [`Plantilla generada: ${d.generadoEl}. Filas preparadas: ${d.tamano.gestionesLibres} gestiones, ${d.tamano.itemsLibres} ítems y ${d.tamano.documentosLibres} documentos.`],
+  [`Plantilla generada: ${d.generadoEl}. Filas preparadas: ${d.tamano.gestionesLibres} gestiones y ${d.tamano.itemsLibres} ítems.`],
   ['Catálogos actualizados al →', 'fecha'],
   [lineaCatalogo('Reporte Info', d.origenCatalogos?.reporteInfo)],
   [lineaCatalogo('Códigos', d.origenCatalogos?.codigos)],
@@ -819,7 +799,7 @@ const encabezadoInstrucciones = (d) => (d.plantilla ? [
   [`Generado: ${d.generadoEl} (hora de Chile)`],
   [`Período abierto: ${d.periodoTexto}. Gestiones exportadas: mes ${d.mesExportado}.`],
   [`Catálogo de referencias actualizado al: ${d.generadoEl} (${d.catalogo.resumen.usables} referencias; sin ${d.catalogo.resumen.inactivas} inactivas).`],
-  [`Filas exportadas: ${d.filasGestiones.length} gestiones y ${d.filasItems.length} ítems. Filas libres: ${d.tamano.gestionesLibres} gestiones, ${d.tamano.itemsLibres} ítems y ${d.tamano.documentosLibres} documentos.`],
+  [`Filas exportadas: ${d.filasGestiones.length} gestiones y ${d.filasItems.length} ítems. Filas libres: ${d.tamano.gestionesLibres} gestiones y ${d.tamano.itemsLibres} ítems.`],
   [''],
   ['PARA QUÉ SIRVE', 'seccion'],
   ['Si el sistema no está disponible, registre aquí las gestiones y sus ítems. Cuando vuelva, este archivo se reimporta: solo se cargan las filas con ORIGEN = CONTINGENCIA.'],
@@ -902,12 +882,10 @@ const textoInstrucciones = (d) => [
   [''],
   ...MACROS_Y_BOTONES,
   [''],
-  ['HOJA DOCUMENTOS', 'seccion'],
-  ['Registre cada PDF guardado durante la caída: admisión, nombre del archivo y carpeta. Al volver se suben con Carga masiva de documentos y se marca "¿Subido al sistema?" = SÍ.'],
-  [''],
   ['QUÉ NO HACER', 'seccion'],
   [`No cambie los N° de línea.${d.plantilla ? '' : ' No borre filas del sistema.'} No haga la Solicitud ni la imputación durante la caída: se hacen en el sistema después de cargar lo registrado.`],
   ['No ordene las hojas (están protegidas para no romper fórmulas); use los filtros.'],
+  ['Las hojas están protegidas con contraseña y las fórmulas están ocultas: al seleccionar una celda calculada se ve solo el resultado. Se escribe solo en las celdas que no son grises; los filtros, los desplegables y los botones funcionan igual.'],
   [''],
   ['PROGRAMA', 'seccion'],
   ['Ábralo con Microsoft Excel: es el único probado.'],
@@ -955,7 +933,8 @@ const OPCIONES_PROTECCION = {
  *   generadoEl, periodoTexto, mesExportado,
  *   filasGestiones, filasItems, ultimaLinea,     (filasDesdeGestiones)
  *   catalogo, empresas, centros, recargos,      (catálogos)
- *   tamano: { gestionesLibres, itemsLibres, documentosLibres }
+ *   tamano: { gestionesLibres, itemsLibres }
+ *   claveHojas: contraseña de protección de las hojas (variable de entorno)
  *   plantilla: true en la plantilla (sin datos del sistema)
  *   origenCatalogos, fechaCatalogos: de dónde salieron (plantilla)
  * }
@@ -983,12 +962,10 @@ export const construirLibro = async (datosEntrada) => {
   const { filasGestiones, filasItems, tamano } = datos;
   const ultimaGestion = PRIMERA + filasGestiones.length + tamano.gestionesLibres - 1;
   const ultimaItem = PRIMERA + filasItems.length + tamano.itemsLibres - 1;
-  const ultimaDocumento = PRIMERA + tamano.documentosLibres - 1;
 
   hojaInstrucciones(libro, datos);
   const hG = libro.addWorksheet(H.G);
   const hI = libro.addWorksheet(H.I);
-  const hD = libro.addWorksheet(H.D);
   const hC = hojaCargados(libro);
   const hSol = hojaSolicitud(libro, H.SOL, COLUMNAS_SOLICITUD);
   const hRes = hojaSolicitud(libro, H.RES, COLUMNAS_RESUMEN);
@@ -1128,8 +1105,8 @@ export const construirLibro = async (datosEntrada) => {
   const hR = libro.getWorksheet(H.R);
   const ultimaCodigo = PRIMERA + datos.filasCatalogos.referencias - 1;
   const rr = (l) => `${l}${PRIMERA}:${l}${ultimaCodigo}`;
-  [['E', empresasNombres, 'Empresa', 'No está en la hoja Empresas.'], ['F', cat.G, 'Tipo', 'No es un tipo del sistema.'],
-    ['G', cat.H, 'Segmento', 'No es un segmento del sistema.'], ['H', cat.I, 'Clase', 'No es una clase del sistema.']].forEach(([l, listaRango, titulo, error]) => {
+  [['E', empresasNombres, 'Empresa', 'No está en la hoja Empresas.'], ['F', cat.F, 'Tipo', 'No es un tipo del sistema.'],
+    ['G', cat.G, 'Segmento', 'No es un segmento del sistema.'], ['H', cat.H, 'Clase', 'No es una clase del sistema.']].forEach(([l, listaRango, titulo, error]) => {
     validar(hR, rr(l), lista(listaRango, { errorStyle: 'warning', errorTitle: titulo, error: `${error} ¿Usarlo igual?` }));
     hR.addConditionalFormatting({
       ref: rr(l),
@@ -1137,28 +1114,22 @@ export const construirLibro = async (datosEntrada) => {
     });
   });
 
-  // Documentos
-  prepararHoja(hD, COLUMNAS_DOCUMENTOS, { congelarColumnas: 2 });
-  const gB = enHoja(H.G, 'B', ultimaGestion);
-  for (let r = PRIMERA; r <= ultimaDocumento; r += 1) {
-    escribirFila(hD, r, COLUMNAS_DOCUMENTOS, {
-      A: r - PRIMERA + 1,
-      H: f(`IF(B${r}&C${r}&E${r}="","","CONTINGENCIA")`),
-      J: f(`IF(B${r}="","",IF(COUNTIF(${gB},B${r})=0,"Admisión no está en Gestiones",""))`),
-    }, { sistema: false });
-  }
-  const rd = (l) => `${l}${PRIMERA}:${l}${ultimaDocumento}`;
-  validar(hD, rd('B'), soloDigitos(`B${PRIMERA}`));
-  validar(hD, rd('F'), fechaValida);
-  validar(hD, rd('G'), lista(cat.F));
-  reglaObligatorio(hD, ['B', 'C', 'E', 'I'], 'H', PRIMERA, ultimaDocumento);
+  // Fórmulas ocultas (decisión del 23-11-2026): toda celda con fórmula queda
+  // "Oculta", así con la hoja protegida la barra muestra solo el resultado.
+  // Las que ya estaban bloqueadas siguen bloqueadas; las del autocompletado
+  // de Gestiones (E, L-O) siguen desbloqueadas para escribir encima.
+  libro.worksheets.forEach((hoja) => hoja.eachRow({ includeEmpty: false }, (fila) => fila.eachCell({ includeEmpty: false }, (celda) => {
+    if (celda.formula) celda.protection = { locked: celda.protection?.locked ?? true, hidden: true };
+  })));
 
-  // Protección sin contraseña: evita escribir en lo automático por error;
-  // se puede quitar en Revisar → Desproteger hoja si hiciera falta. Las
-  // macros la quitan y la vuelven a poner con las mismas opciones.
-  for (const hoja of [hG, hI, hD]) await hoja.protect('', OPCIONES_PROTECCION);
-  for (const hoja of [hC, hSol, hRes]) await hoja.protect('', { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true, formatColumns: true, formatRows: true });
-  for (const nombre of [H.RI, H.R, H.E, H.CEN, H.REC, H.PREV, H.CONV, H.C, H.INS]) await libro.getWorksheet(nombre).protect('', { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true });
+  // Protección con contraseña (datos.claveHojas, de una variable de
+  // entorno; en el archivo queda solo su hash). Las macros la quitan y la
+  // vuelven a poner con las mismas opciones (la contraseña se inserta en el
+  // módulo VBA al armar el .xlsm).
+  const clave = datos.claveHojas || '';
+  for (const hoja of [hG, hI]) await hoja.protect(clave, OPCIONES_PROTECCION);
+  for (const hoja of [hC, hSol, hRes]) await hoja.protect(clave, { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true, formatColumns: true, formatRows: true });
+  for (const nombre of [H.RI, H.R, H.E, H.CEN, H.REC, H.PREV, H.CONV, H.C, H.INS]) await libro.getWorksheet(nombre).protect(clave, { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true });
 
-  return { libro, filas: { ultimaGestion, ultimaItem, ultimaDocumento } };
+  return { libro, filas: { ultimaGestion, ultimaItem } };
 };

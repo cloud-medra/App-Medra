@@ -202,6 +202,8 @@ const main = async () => {
     empresas: listaEmpresas(leidos.empresas),
     centros: listaCentros(leidos.centros),
     recargos: listaRecargos(leidos.recargos),
+    // Sin macros: la protección usa la misma variable si existe.
+    claveHojas: process.env.RESPALDO_IMPLANTES_CLAVE_HOJAS || '',
   });
   const { destino, bytes } = await guardarCifrado(libro, carpeta, clave);
   const borradas = await rotarCopias(carpeta);

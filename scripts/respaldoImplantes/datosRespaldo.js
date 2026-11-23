@@ -27,7 +27,6 @@ export const ESTADOS_GESTION = ['AGENDADO', 'PENDIENTE', 'REVISAR', 'S/COTIZACIO
 export const ESTADOS_CARGA = ESTADO_CARGA_OPTIONS;
 export const INFORMES = ['PENDIENTE', 'DISPONIBLE', 'NO APLICA'];
 export const NOMBRES_LADO = LADOS.map((l) => l.nombre);
-export const SI_NO = ['SÍ', 'NO'];
 export { CODIGO_SIN_OC };
 
 export const TIPOS_LINEA = Object.freeze({
@@ -42,7 +41,7 @@ export const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'ju
 
 // Filas vacías mínimas, para que el respaldo sirva aunque se exporte a
 // comienzo de mes (con pocas gestiones todavía).
-export const MINIMO_LIBRES = Object.freeze({ gestiones: 100, items: 300, documentos: 200 });
+export const MINIMO_LIBRES = Object.freeze({ gestiones: 100, items: 300 });
 // Ítems por gestión si el mes todavía no tiene ítems para estimarlo.
 export const ITEMS_POR_GESTION_POR_DEFECTO = 4;
 
@@ -329,7 +328,6 @@ export const dimensionar = ({ gestionesMes, itemsMes, gestionesMesAnterior = 0 }
   return {
     gestionesLibres: Math.max(2 * baseGestiones, MINIMO_LIBRES.gestiones),
     itemsLibres: Math.max(2 * baseItems, MINIMO_LIBRES.items),
-    documentosLibres: Math.max(2 * baseGestiones, MINIMO_LIBRES.documentos),
   };
 };
 
@@ -344,7 +342,7 @@ export const dimensionarCatalogos = (cantidades) => Object.fromEntries(
 );
 
 // Plantilla vacía: filas preparadas fijas (no hay volumen real que medir).
-export const TAMANO_PLANTILLA = Object.freeze({ gestionesLibres: 1000, itemsLibres: 4000, documentosLibres: 1000 });
+export const TAMANO_PLANTILLA = Object.freeze({ gestionesLibres: 1000, itemsLibres: 4000 });
 // Único archivo que deja el script en la carpeta de contingencia
 // (decisión del 23-11-2026: nada de copias, pruebas ni archivos sueltos).
 export const ARCHIVO_PLANTILLA = 'respaldo_implantes.xlsm';

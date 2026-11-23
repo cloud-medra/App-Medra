@@ -8,23 +8,42 @@ Es **un solo archivo**: `C:\Users\<usuario>\Documents\Medra\Contingencia\respald
 - Se reemplaza cada vez que se regenera.
 - En esa carpeta no quedan copias, pruebas ni archivos intermedios: el script los arma en una carpeta temporal del sistema y la borra al terminar, también si algo falla.
 
-Tiene 13 hojas, en este orden:
+Tiene 14 hojas, en este orden:
 
 | # | Hoja | Qué tiene |
 |---|---|---|
 | 1 | Instrucciones | Cómo usarla, de dónde salen los catálogos y la fecha en que se cargaron |
 | 2 | Gestiones | 1.000 filas |
 | 3 | Ítems | 4.000 filas, con el botón "Mover cargados" |
-| 4 | Documentos | 1.000 filas |
-| 5 | Cargados | Gestiones ya cargadas, con el botón "Devolver a pendientes" |
-| 6 | Reporte Info | Admisiones de los últimos 60 días (autocompletado de Gestiones) |
-| 7 | Códigos | Maestro de Códigos (búsqueda por referencia en Ítems). EMPRESA, TIPO, SEGMENTO y CLASE con desplegable y en rojo si el valor no está en su lista |
-| 8 | Empresas | Desplegable de Empresa en Gestiones |
-| 9 | Centros | Desplegable de Centro en Gestiones |
-| 10 | Recargos | Rangos de recargo (veces costo y venta en Ítems) |
-| 11 | Previsiones | Desplegable de Previsión en Gestiones |
-| 12 | Convenios | Desplegable de Convenio en Gestiones |
-| 13 | Catálogos | Solo las listas fijas del sistema (estados, informe, lado, tipo de línea, SÍ/NO, y Tipo, Segmento y Clase de Códigos) |
+| 4 | Cargados | Gestiones ya cargadas, con el botón "Devolver a pendientes" |
+| 5 | Solicitud Implantes | Como la hoja del Excel de Solicitud de la app; se llena al mover (acumulativo) |
+| 6 | Resumen | Como la hoja Resumen del Excel de Solicitud; se llena al mover (acumulativo) |
+| 7 | Reporte Info | Admisiones de los últimos 60 días (autocompletado de Gestiones) |
+| 8 | Códigos | Maestro de Códigos (búsqueda por referencia en Ítems). EMPRESA, TIPO, SEGMENTO y CLASE con desplegable y en rojo si el valor no está en su lista |
+| 9 | Empresas | Desplegable de Empresa en Gestiones |
+| 10 | Centros | Desplegable de Centro en Gestiones |
+| 11 | Recargos | Rangos de recargo (veces costo y venta en Ítems) |
+| 12 | Previsiones | Desplegable de Previsión en Gestiones |
+| 13 | Convenios | Desplegable de Convenio en Gestiones |
+| 14 | Catálogos | Solo las listas fijas del sistema (estados, informe, lado, tipo de línea, y Tipo, Segmento y Clase de Códigos) |
+
+La hoja Documentos se eliminó el 23-11-2026 (no se usa).
+
+### Protección de hojas y fórmulas ocultas
+
+- Todas las hojas están protegidas con contraseña. Toda celda con fórmula queda **Oculta**: al seleccionarla, la barra de fórmulas muestra solo el resultado.
+- Las celdas donde se escribe o se pega siguen desbloqueadas. Las fórmulas del autocompletado de Gestiones (E, L a O) quedan desbloqueadas y ocultas, para poder escribir encima.
+- Los filtros, los desplegables y los botones funcionan con las hojas protegidas: las macros desprotegen y vuelven a proteger con la misma contraseña.
+- **La contraseña sale de la variable de entorno `RESPALDO_IMPLANTES_CLAVE_HOJAS`** (mínimo 8 caracteres, sin tildes ni caracteres especiales fuera de los comunes). Sin ella, el script no genera nada.
+  - En el repo nunca está: el módulo VBA tiene el marcador `__CLAVE_HOJAS__` y el script lo reemplaza solo en la copia temporal con que arma el `.xlsm`.
+  - En el archivo queda el hash de la protección (SHA-512) y la contraseña dentro del módulo VBA, porque los botones necesitan desproteger (decisión del 23-11-2026). Quien abra el editor VBA (Alt+F11) puede verla; la protección de hojas de Excel es una barrera contra cambios por error, no una medida de seguridad fuerte.
+- Configurarla una vez, en PowerShell (después abrir una terminal nueva):
+
+  ```powershell
+  [Environment]::SetEnvironmentVariable('RESPALDO_IMPLANTES_CLAVE_HOJAS', '<contraseña>', 'User')
+  ```
+
+  Guárdela también en el gestor de contraseñas de la clínica. Si se pierde, basta definir una nueva y regenerar el archivo. Para desproteger una hoja a mano (Revisar → Desproteger hoja) se usa esa misma contraseña.
 
 - Trae fórmulas, desplegables, alertas y los botones "Mover cargados" y "Devolver a pendientes".
 - Los catálogos (Reporte Info, Códigos, Empresas, Previsiones, Convenios, Centros y Recargos) se cargan desde los archivos que exporta la app o, en el caso de Reporte Info, desde el Excel de la clínica.
@@ -277,7 +296,7 @@ Durante la caída se pueden actualizar algunos campos de lo ya registrado (filas
 Solo en **Microsoft Excel** (es el programa que se usa; LibreOffice no se probó ni se usa).
 
 - Excel 16, datos ficticios con ~3.000 referencias, 400 gestiones y 1.463 ítems (más 880 y 3.220 filas libres): abre en ~2 s, recalcula en 0,1 s y sin errores de fórmula.
-- Filas de contingencia probadas: normal, PAD con contenido, lote adicional que supera la cantidad, referencia inexistente, referencia ambigua, empresa distinta, línea padre inválida y Documentos.
+- Filas de contingencia probadas: normal, PAD con contenido, lote adicional que supera la cantidad, referencia inexistente, referencia ambigua, empresa distinta y línea padre inválida.
 - Filas del sistema: al cambiar cantidad, estado carga y observación, MODIFICADO pasa a SÍ, la celda se pinta, se actualizan total y suma de la gestión, y al restaurar vuelve a NO. Referencia y empresa siguen bloqueadas.
 
 ## Reimportación (propuesta, sin implementar)
@@ -313,7 +332,7 @@ Script `functions/scripts/importarContingenciaImplantes.js`, como los demás scr
    - convenio, previsión, médico y descripción desde Reporte Info si vienen vacíos;
    - logs `CREACION` / `ITEM_CREADO` con `origen: 'CONTINGENCIA'`.
 7. **Idempotencia:** cada gestión e ítem nuevo guarda `idContingencia` (hash de la CLAVE y del N° de línea); una segunda corrida con el mismo archivo los reconoce y no duplica. Las modificaciones ya aplicadas tampoco se repiten (punto 4).
-8. **No hace:** Solicitud, imputación ni OC. Eso se hace en el sistema después de importar. La hoja Documentos es la lista de PDF por subir con Carga masiva.
+8. **No hace:** Solicitud, imputación ni OC. Eso se hace en el sistema después de importar.
 
 ## Seguridad
 

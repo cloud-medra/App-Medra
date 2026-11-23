@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
 import ExcelJS from 'exceljs';
 import { construirLibro, COLUMNAS_CARGADOS, H } from './libroRespaldo.js';
 import { filasDesdeGestiones, catalogoReferencias, datosPlantilla, TAMANO_PLANTILLA, MINIMO_CATALOGOS } from './datosRespaldo.js';
 
-const HOJAS = ['Instrucciones', 'Gestiones', 'Ítems', 'Documentos', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
+const HOJAS = ['Instrucciones', 'Gestiones', 'Ítems', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
   'Previsiones', 'Convenios', 'Catálogos'];
 
 const releer = async (libro) => {
@@ -57,24 +58,25 @@ describe('plantilla', () => {
     expect(c.getCell('A3').value).toBe('AGENDADO');
     expect(bloqueada(c.getCell('A3'))).toBe(true);
     // Listas de la hoja Códigos, las mismas del sistema.
-    expect(['G', 'H', 'I'].map((l) => c.getCell(`${l}2`).value)).toEqual(['Tipo (Códigos)', 'Segmento (Códigos)', 'Clase (Códigos)']);
-    expect([3, 4, 5, 6].map((n) => c.getCell(`I${n}`).value)).toEqual(['IMPLANTE', 'INSUMOS', 'PAD', 'KIT']);
-    expect([3, 4].map((n) => c.getCell(`G${n}`).value)).toEqual(['COTIZACION', 'CONSIGNACION']);
-    expect([3, 4, 5].map((n) => c.getCell(`H${n}`).value)).toEqual(['IMPLANTES', 'CONSIGNACION', 'HEMODINAMIA']);
-    expect(c.getCell('J2').value).toBeNull();
+    // Sin la lista SÍ/NO (solo la usaba la hoja Documentos, eliminada).
+    expect(['E', 'F', 'G', 'H'].map((l) => c.getCell(`${l}2`).value)).toEqual(['Tipo de línea', 'Tipo (Códigos)', 'Segmento (Códigos)', 'Clase (Códigos)']);
+    expect([3, 4, 5, 6].map((n) => c.getCell(`H${n}`).value)).toEqual(['IMPLANTE', 'INSUMOS', 'PAD', 'KIT']);
+    expect([3, 4].map((n) => c.getCell(`F${n}`).value)).toEqual(['COTIZACION', 'CONSIGNACION']);
+    expect([3, 4, 5].map((n) => c.getCell(`G${n}`).value)).toEqual(['IMPLANTES', 'CONSIGNACION', 'HEMODINAMIA']);
+    expect(c.getCell('I2').value).toBeNull();
 
     // Códigos: EMPRESA con la lista de Empresas; TIPO, SEGMENTO y CLASE con las
     // del sistema. Avisan sin bloquear y, como pegar borra la validación,
     // un formato condicional pinta en rojo lo que no está en la lista.
     const ultimaEmpresa = 2 + MINIMO_CATALOGOS.empresas;
     expect(r.dataValidations.find('E3')).toMatchObject({ type: 'list', errorStyle: 'warning', formulae: [`'Empresas'!$A$3:$A$${ultimaEmpresa}`] });
-    expect(r.dataValidations.find('F3')).toMatchObject({ type: 'list', errorStyle: 'warning', formulae: ["'Catálogos'!$G$3:$G$4"] });
-    expect(r.dataValidations.find('G3')).toMatchObject({ type: 'list', formulae: ["'Catálogos'!$H$3:$H$5"] });
-    expect(r.dataValidations.find('H3')).toMatchObject({ type: 'list', formulae: ["'Catálogos'!$I$3:$I$6"] });
+    expect(r.dataValidations.find('F3')).toMatchObject({ type: 'list', errorStyle: 'warning', formulae: ["'Catálogos'!$F$3:$F$4"] });
+    expect(r.dataValidations.find('G3')).toMatchObject({ type: 'list', formulae: ["'Catálogos'!$G$3:$G$5"] });
+    expect(r.dataValidations.find('H3')).toMatchObject({ type: 'list', formulae: ["'Catálogos'!$H$3:$H$6"] });
     const reglas = r.conditionalFormattings.map((cf) => [cf.ref, cf.rules[0].formulae[0]]);
     expect(reglas).toEqual(expect.arrayContaining([
       [`E3:E${ultimaRef}`, `AND(E3<>"",COUNTIF('Empresas'!$A$3:$A$${ultimaEmpresa},"?*")>0,COUNTIF('Empresas'!$A$3:$A$${ultimaEmpresa},E3)=0)`],
-      [`H3:H${ultimaRef}`, `AND(H3<>"",COUNTIF('Catálogos'!$I$3:$I$6,"?*")>0,COUNTIF('Catálogos'!$I$3:$I$6,H3)=0)`],
+      [`H3:H${ultimaRef}`, `AND(H3<>"",COUNTIF('Catálogos'!$H$3:$H$6,"?*")>0,COUNTIF('Catálogos'!$H$3:$H$6,H3)=0)`],
     ]));
 
     // Centros y Recargos: hojas propias, vacías, con las columnas de su exportación.
@@ -180,6 +182,40 @@ describe('plantilla', () => {
     expect(libro.getWorksheet('Resumen').views[0]).toMatchObject({ state: 'frozen', ySplit: 1 });
   });
 
+  it('oculta todas las fórmulas y protege las hojas con la contraseña recibida', async () => {
+    const { libro: armado } = await construirLibro({ ...datosPlantilla('x'), claveHojas: 'ClaveDePrueba1' });
+    const libro = await releer(armado);
+    // Toda celda con fórmula queda oculta; las bloqueadas siguen bloqueadas y
+    // las del autocompletado de Gestiones (E, L-O) siguen desbloqueadas.
+    const ocultas = [];
+    libro.worksheets.forEach((hoja) => hoja.eachRow((fila) => fila.eachCell((celda) => {
+      if (celda.formula) ocultas.push(celda.protection?.hidden === true);
+    })));
+    expect(ocultas.length).toBeGreaterThan(1000);
+    expect(ocultas.every(Boolean)).toBe(true);
+    const g = libro.getWorksheet('Gestiones');
+    expect(g.getCell('A3').protection).toMatchObject({ hidden: true });
+    expect(g.getCell('A3').protection.locked ?? true).toBe(true);
+    expect(g.getCell('E3').protection).toMatchObject({ locked: false, hidden: true });
+    expect(g.getCell('B3').protection).toMatchObject({ locked: false });
+    expect(g.getCell('B3').protection.hidden).toBeFalsy();
+    // Contraseña: en el archivo queda solo su hash, en todas las hojas.
+    libro.worksheets.forEach((hoja) => {
+      expect(hoja.sheetProtection).toMatchObject({ sheet: true, algorithmName: 'SHA-512' });
+      expect(hoja.sheetProtection.hashValue).toBeTruthy();
+    });
+    expect(JSON.stringify(libro.worksheets.map((h) => h.sheetProtection))).not.toContain('ClaveDePrueba1');
+  });
+
+  it('la macro usa la contraseña desde un marcador (nunca escrita en el repo)', () => {
+    const bas = fs.readFileSync(new URL('./macros/ModContingencia.bas', import.meta.url), 'utf8');
+    expect(bas).toContain('Private Const CLAVE_HOJAS As String = "__CLAVE_HOJAS__"');
+    expect(bas).toContain('ws.Unprotect Password:=CLAVE_HOJAS');
+    expect(bas).toContain('ws.Protect Password:=CLAVE_HOJAS');
+    expect(bas).not.toMatch(/Protect Password:=""/);
+    expect(bas).not.toMatch(/Documentos/);
+  });
+
   it('los nombres de hoja coinciden con los que usan las macros', () => {
     expect([H.G, H.I, H.CARG]).toEqual(['Gestiones', 'Ítems', 'Cargados']);
   });
@@ -197,7 +233,7 @@ const armar = async ({ itemsExtra = [] } = {}) => {
     filasGestiones, filasItems, ultimaLinea,
     catalogo: catalogoReferencias([{ referencia: 'R1', empresa: 'A', codigo: '10', precioNeto: 100 }]),
     empresas: ['A'], centros: ['PABELLON'], recargos: [{ desde: 0, hasta: 1000, vecesCosto: 1.5 }],
-    tamano: { gestionesLibres: 5, itemsLibres: 6, documentosLibres: 4 },
+    tamano: { gestionesLibres: 5, itemsLibres: 6 },
   });
   // Ida y vuelta: el archivo generado se puede volver a leer.
   const leido = new ExcelJS.Workbook();
@@ -209,7 +245,7 @@ describe('construirLibro', () => {
   it('crea las hojas en orden y dimensiona las filas libres', async () => {
     const { libro, filas } = await armar();
     expect(libro.worksheets.map((h) => h.name)).toEqual(HOJAS);
-    expect(filas).toEqual({ ultimaGestion: 3 + 1 + 5 - 1, ultimaItem: 3 + 1 + 6 - 1, ultimaDocumento: 3 + 4 - 1 });
+    expect(filas).toEqual({ ultimaGestion: 3 + 1 + 5 - 1, ultimaItem: 3 + 1 + 6 - 1 });
     expect(libro.getWorksheet('Instrucciones').getCell('A4').value).toContain('Catálogo de referencias actualizado al: 23-11-2026 10:00');
   });
 
