@@ -33,6 +33,7 @@ import process from 'node:process';
 import { Buffer } from 'node:buffer';
 import { spawnSync } from 'node:child_process';
 import { construirLibro } from './libroRespaldo.js';
+import { quitarComentariosVba } from './macros/quitarComentariosVba.js';
 import { datosPlantilla, fechaHoraChile, fechaISOChile, isoAFechaExcel, ARCHIVO_PLANTILLA } from './datosRespaldo.js';
 import {
   leerArchivoExportado, codigosDesdeFilas, empresasDesdeFilas, centrosDesdeFilas, recargosDesdeFilas, fechaDesdeNombre,
@@ -109,7 +110,8 @@ const basParaExcel = async (claveHojas) => {
   const original = await fs.readFile(BAS, 'utf8');
   if (!original.includes('__CLAVE_HOJAS__')) throw new Error('ModContingencia.bas no tiene el marcador __CLAVE_HOJAS__.');
   // En VBA las comillas dentro de un texto se escriben dobles.
-  const contenido = original.replace('__CLAVE_HOJAS__', claveHojas.replace(/"/g, '""')).replace(/\r?\n/g, '\r\n');
+  // El libro va sin comentarios en el VBA (decisión del 24-11-2026).
+  const contenido = quitarComentariosVba(original).replace('__CLAVE_HOJAS__', claveHojas.replace(/"/g, '""')).replace(/\r?\n/g, '\r\n');
   const raro = [...contenido].find((ch) => ch.charCodeAt(0) > 0xff);
   if (raro) throw new Error(`ModContingencia.bas tiene un carácter que no es Windows-1252: "${raro}"`);
   return Buffer.from(contenido, 'latin1');

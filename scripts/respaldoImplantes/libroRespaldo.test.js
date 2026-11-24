@@ -468,9 +468,11 @@ describe('construirLibro', () => {
     expect(g.getCell('H2').value).toBe('Estado');
     expect(g.getCell('H3').value.formula).toContain('COUNTIFS');
     expect(g.getCell('H4').value.formula).toContain('IF(Q4="","AGENDADO",Q4)');
+    // FINALIZADO: sin ítems en Ítems y con líneas en Cargados (columna CLAVE).
+    expect(g.getCell('H4').value.formula).toContain(`IF(COUNTIF('Cargados'!$J:$J,A4)>0,"FINALIZADO",`);
     // Fila entera (A:AE) con color según el Estado.
     const colores = g.conditionalFormattings.find((cf) => cf.ref === 'A3:AE8');
-    expect(colores.rules.map((x) => x.formulae[0])).toEqual(['OR($H3="CARGADO")', 'OR($H3="AGENDADO")', 'OR($H3="PENDIENTE")', 'OR($H3="INCOMPLETO",$H3="REVISAR",$H3="S/COTIZACION")']);
+    expect(colores.rules.map((x) => x.formulae[0])).toEqual(['OR($H3="CARGADO",$H3="FINALIZADO")', 'OR($H3="AGENDADO")', 'OR($H3="PENDIENTE")', 'OR($H3="INCOMPLETO",$H3="REVISAR",$H3="S/COTIZACION")']);
     expect(colores.rules[0].style.fill.bgColor.argb).toBe('FFE2EFDA');
     // Fila libre: CLAVE con AAAA-MM-DD armado sin depender del idioma de Excel.
     expect(g.getCell('A4').value.formula).toContain('TEXT(MONTH(C4),"00")');

@@ -75,6 +75,7 @@ Private Const MSJ_FECHA As String = "Este libro es de {MES}. Registra esta gesti
 Private Const S_COLUMNAS As Long = 18          ' ... FECHA MOVIMIENTO (17), CLAVE (18)
 Private Const R_COLUMNAS As Long = 13          ' ... FECHA MOVIMIENTO (12), CLAVE (13)
 Private Const PRIMERA As Long = 3
+Private Const ORIGEN_CARGADOS As String = "CARGADO"
 Private Const FILA_TITULOS As Long = 2
 ' Contraseña de protección de las hojas. En el repo queda solo el marcador:
 ' generarPlantillaImplantes.js lo reemplaza al armar el .xlsm con el valor de
@@ -133,7 +134,8 @@ Public Sub MoverCargados()
     Dim aviso As String
     aviso = "Se moverán " & filasG.Count & " gestión(es) y " & filasI.Count & " ítem(s) a la hoja Cargados." & avisoFuera
     If nAlertas > 0 Then aviso = aviso & vbCrLf & vbCrLf & "Atención: " & nAlertas & " de esos ítems tienen una alerta (columna Alerta de Ítems)."
-    aviso = aviso & vbCrLf & vbCrLf & "Sus filas en Gestiones e Ítems quedarán libres para volver a usarlas." & vbCrLf & "¿Continuar?"
+    aviso = aviso & vbCrLf & vbCrLf & "Sus líneas en Ítems quedarán libres. Las gestiones se quedan en Gestiones con Estado FINALIZADO." & vbCrLf & _
+            "Además se guardará, junto a este libro, un Excel con Solicitud Implantes y Resumen de lo movido." & vbCrLf & vbCrLf & "¿Continuar?"
     If MsgBox(aviso, vbYesNo + vbQuestion + vbDefaultButton2, "Mover cargados") <> vbYes Then Exit Sub
 
     Dim quien As String
@@ -145,28 +147,36 @@ Public Sub MoverCargados()
     If Left(resultado, 5) = "ERROR" Then
         MsgBox Mid(resultado, 7), vbExclamation, "Mover cargados"
     Else
-        MsgBox "Listo: " & Split(resultado, ";")(0) & " gestión(es) y " & Split(resultado, ";")(1) & " ítem(s) movidos a Cargados." & vbCrLf & _
-               "Guarde el archivo (Ctrl+G).", vbInformation, "Mover cargados"
+        Dim partes As Variant, archivo As String
+        partes = Split(resultado, ";")
+        If UBound(partes) >= 3 Then archivo = partes(3)
+        If Left(archivo, 6) = "ERROR:" Then
+            archivo = "No se pudo guardar el Excel de Solicitud: " & Mid(archivo, 7)
+        ElseIf archivo <> "" Then
+            archivo = "Excel de Solicitud guardado en:" & vbCrLf & archivo
+        End If
+        MsgBox "Listo: " & partes(0) & " gestión(es) y " & partes(1) & " ítem(s) movidos a Cargados." & vbCrLf & vbCrLf & _
+               archivo & vbCrLf & vbCrLf & "Guarde el archivo (Ctrl+G).", vbInformation, "Mover cargados"
     End If
 End Sub
 
+' Pide la CLAVE de la gestión a devolver (por defecto, la de la fila
+' seleccionada en Cargados) y devuelve todas sus líneas a Ítems.
 Public Sub DevolverAPendientes()
-    Dim wsC As Worksheet
+    Dim wsC As Worksheet, sugerida As String
     Set wsC = ThisWorkbook.Worksheets(HOJA_CARGADOS)
-    If Not ActiveSheet Is wsC Or ActiveCell.Row < PRIMERA Then
-        MsgBox "En la hoja Cargados, seleccione una celda de una fila de la gestión que quiere devolver y vuelva a presionar el botón.", _
-               vbInformation, "Devolver a pendientes"
-        Exit Sub
-    End If
+    If ActiveSheet Is wsC And ActiveCell.Row >= PRIMERA Then sugerida = Txt(wsC.Cells(ActiveCell.Row, Col(Titulos(wsC), "CLAVE")).Value)
     Dim clave As String
-    clave = Txt(wsC.Cells(ActiveCell.Row, Col(Titulos(wsC), "CLAVE")).Value)
-    If clave = "" Then
-        MsgBox "La fila seleccionada no tiene una gestión.", vbInformation, "Devolver a pendientes"
-        Exit Sub
-    End If
+    clave = Trim(InputBox("CLAVE de la gestión que vuelve a Ítems (admisión|empresa|AAAA-MM-DD)." & vbCrLf & vbCrLf & _
+                          "Por defecto, la de la fila seleccionada en Cargados. Se devuelven todas sus líneas.", "Devolver a pendientes", sugerida))
+    If clave = "" Then Exit Sub
     Dim filas As Collection
     Set filas = FilasDeClaveEnCargados(wsC, clave)
-    If MsgBox("Se devolverá la gestión" & vbCrLf & clave & vbCrLf & "con " & filas.Count & " línea(s) a Gestiones e Ítems." & vbCrLf & vbCrLf & "¿Continuar?", _
+    If filas.Count = 0 Then
+        MsgBox "La CLAVE" & vbCrLf & clave & vbCrLf & "no está en la hoja Cargados.", vbExclamation, "Devolver a pendientes"
+        Exit Sub
+    End If
+    If MsgBox("Se devolverá la gestión" & vbCrLf & clave & vbCrLf & "con " & filas.Count & " línea(s) a Ítems." & vbCrLf & vbCrLf & "¿Continuar?", _
               vbYesNo + vbQuestion + vbDefaultButton2, "Devolver a pendientes") <> vbYes Then Exit Sub
 
     Dim resultado As String
@@ -174,7 +184,7 @@ Public Sub DevolverAPendientes()
     If Left(resultado, 5) = "ERROR" Then
         MsgBox Mid(resultado, 7), vbExclamation, "Devolver a pendientes"
     Else
-        MsgBox "Listo: la gestión volvió a Gestiones (fila " & Split(resultado, ";")(1) & ") con " & Split(resultado, ";")(2) & " línea(s) en Ítems." & vbCrLf & _
+        MsgBox "Listo: la gestión (fila " & Split(resultado, ";")(1) & " de Gestiones) volvió con " & Split(resultado, ";")(2) & " línea(s) a Ítems." & vbCrLf & _
                "Guarde el archivo (Ctrl+G).", vbInformation, "Devolver a pendientes"
     End If
 End Sub
@@ -275,6 +285,8 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
                 salida(k, c) = ahora
             ElseIf tituloC = "Movido por" Then
                 salida(k, c) = quien
+            ElseIf tituloC = "ORIGEN" Then
+                salida(k, c) = ORIGEN_CARGADOS
             ElseIf desdeItems.Exists(tituloC) Then
                 salida(k, c) = iDatos(ii, desdeItems(tituloC))
             Else
@@ -365,15 +377,10 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
         Next entrada
         FormulasDefectoItem wsI, ti, CLng(fi), CLng(fi)
     Next fi
-    For Each fg In filasG
-        ' Sin tocar Estado (H), que es fórmula.
-        wsG.Range(wsG.Cells(fg, 2), wsG.Cells(fg, G_ESTADO - 1)).ClearContents
-        wsG.Range(wsG.Cells(fg, G_ESTADO + 1), wsG.Cells(fg, G_ULTIMA_ENTRADA)).ClearContents
-        wsG.Cells(fg, G_REGISTRADO).ClearContents
-        RestaurarAutocompletado wsG, CLng(fg)
-    Next fg
+    ' La gestión se queda en Gestiones: sin ítems y con líneas en Cargados,
+    ' su Estado pasa a FINALIZADO (fórmula de la columna Estado).
 
-    MoverCargadosAuto = filasG.Count & ";" & filasI.Count & ";" & nFuera
+    MoverCargadosAuto = filasG.Count & ";" & filasI.Count & ";" & nFuera & ";" & ExportarSolicitud(sol, res, filasI.Count, ahora)
 Fin:
     Proteger wsG: Proteger wsI: Proteger wsC: Proteger wsS: Proteger wsR
     Application.Calculation = calculo
@@ -383,6 +390,53 @@ Fallo:
     MoverCargadosAuto = "ERROR;" & Err.Description
     Resume Fin
 End Function
+
+' Excel aparte, junto a este libro, con las hojas Solicitud Implantes y
+' Resumen de lo que se acaba de mover (solo valores). Devuelve la ruta o
+' "ERROR:mensaje".
+Private Function ExportarSolicitud(ByVal sol As Variant, ByVal res As Variant, ByVal n As Long, ByVal ahora As Date) As String
+    Dim nb As Workbook, eventos As Boolean, ruta As String, base As String, k As Long
+    eventos = Application.EnableEvents
+    On Error GoTo Fallo
+    Application.EnableEvents = False
+    base = ThisWorkbook.Path & Application.PathSeparator & "Solicitud_Implantes_" & Format(ahora, "yyyy-mm-dd_hhnn")
+    ruta = base & ".xlsx"
+    k = 1
+    Do While Dir(ruta) <> ""
+        k = k + 1
+        ruta = base & "_" & k & ".xlsx"
+    Loop
+    Set nb = Application.Workbooks.Add(xlWBATWorksheet)
+    CopiarHojaSolicitud nb.Worksheets(1), ThisWorkbook.Worksheets(HOJA_SOLICITUD), HOJA_SOLICITUD, sol, n, S_COLUMNAS
+    CopiarHojaSolicitud nb.Worksheets.Add(After:=nb.Worksheets(1)), ThisWorkbook.Worksheets(HOJA_RESUMEN), HOJA_RESUMEN, res, n, R_COLUMNAS
+    nb.Worksheets(1).Activate
+    nb.SaveAs Filename:=ruta, FileFormat:=xlOpenXMLWorkbook
+    nb.Close False
+    ExportarSolicitud = ruta
+Fin:
+    Application.EnableEvents = eventos
+    Exit Function
+Fallo:
+    ExportarSolicitud = "ERROR:" & Err.Description
+    If Not nb Is Nothing Then nb.Close False
+    Resume Fin
+End Function
+
+' Encabezado (fila 1 de la hoja del libro) y las filas movidas, como valores.
+Private Sub CopiarHojaSolicitud(ByVal destino As Worksheet, ByVal origen As Worksheet, ByVal nombre As String, ByVal datos As Variant, ByVal n As Long, ByVal columnas As Long)
+    destino.Name = nombre
+    destino.Range(destino.Cells(1, 1), destino.Cells(1, columnas)).Value = origen.Range(origen.Cells(1, 1), origen.Cells(1, columnas)).Value
+    destino.Rows(1).Font.Bold = True
+    ' Columnas de texto como Texto: si no, Excel convierte "02-11-2026" en
+    ' fecha (y puede leerla como mes-día) y "00123" en número.
+    Dim j As Long
+    For j = 1 To columnas
+        If VarType(datos(1, j)) = vbString Then destino.Columns(j).NumberFormat = "@"
+    Next j
+    destino.Columns(columnas - 1).NumberFormat = "dd-mm-yyyy"
+    destino.Range(destino.Cells(2, 1), destino.Cells(n + 1, columnas)).Value = datos
+    destino.Range(destino.Cells(1, 1), destino.Cells(n + 1, columnas)).Columns.AutoFit
+End Sub
 
 ' Devuelve "OK;filaGestion;lineas" o "ERROR;mensaje".
 Public Function DevolverGestionAuto(ByVal clave As String) As String
@@ -407,12 +461,17 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
     iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, Col(ti, "N° línea")), UltimaColumna(wsI))).Value
 
-    Dim filaG As Long
+    ' La gestión normalmente sigue en Gestiones (FINALIZADO): se usa esa fila.
+    ' Si no está (movida con una versión anterior), va a la primera libre.
+    Dim filaG As Long, existe As Boolean
     For r = 1 To UBound(gDatos, 1)
         If Txt(gDatos(r, 1)) = clave Then
-            DevolverGestionAuto = "ERROR;En Gestiones ya hay una gestión con la CLAVE " & clave & " (fila " & (r + PRIMERA - 1) & "). Cámbiela o bórrela antes de devolver."
-            Exit Function
+            filaG = r + PRIMERA - 1
+            existe = True
+            Exit For
         End If
+    Next r
+    For r = 1 To UBound(gDatos, 1)
         If filaG = 0 Then
             libre = (Txt(gDatos(r, G_REGISTRADO)) = "")
             For c = 2 To G_ULTIMA_ENTRADA
@@ -457,9 +516,11 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     ' Escribir N° guía no debe volver a traer la guía (TraerGuia).
     Application.EnableEvents = False
 
-    ' Gestión: cada columna que se escribe, desde su columna de Cargados.
+    ' Gestión (solo si no estaba en Gestiones): cada columna que se escribe,
+    ' desde su columna de Cargados.
     Dim r0 As Long, par As Variant, colG As Long, valorC As Variant
     r0 = filasC(1)
+    If Not existe Then
     For Each par In Split(G_DESDE_CARGADOS, "|")
         colG = CLng(Split(par, ":")(0))
         If AuxiliarDe(colG) = 0 Then wsG.Cells(filaG, colG).Value = wsC.Cells(r0, Col(tc, Split(par, ":")(1))).Value
@@ -475,6 +536,7 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
             If Txt(valorC) <> "" And Txt(valorC) <> Txt(wsG.Cells(filaG, AuxiliarDe(colG)).Value) Then wsG.Cells(filaG, colG).Value = valorC
         End If
     Next par
+    End If
 
     ' Ítems: las celdas que se escriben, desde Cargados (la línea padre se
     ' traduce al N° de la fila donde queda).

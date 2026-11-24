@@ -744,6 +744,14 @@ const hojaGuias = (libro) => {
   return hoja;
 };
 
+// Textos de los botones (Instrucciones y ayuda de Cargados). Exportados para
+// actualizar con ellos un libro que ya tiene datos.
+export const TEXTOS_MACROS = Object.freeze({
+  mover: "\"Mover cargados\" (hoja Ítems, arriba a la izquierda): busca las gestiones con Estado = CARGADO (todas sus líneas CARGADO, CONTENIDO o SIN CARGO) y fecha del mes del libro (las de otro mes no se mueven y lo avisa), le dice cuántas gestiones e ítems va a mover (y cuántos ítems tienen alerta), le pide su nombre y que confirme. Copia las líneas a la hoja Cargados como valores (ORIGEN = CARGADO), con fecha/hora y su nombre, y limpia esas filas en Ítems. La gestión se queda en Gestiones con Estado FINALIZADO (fila verde). Además guarda, junto a este libro, un Excel Solicitud_Implantes_AAAA-MM-DD_HHMM.xlsx solo con las hojas Solicitud Implantes y Resumen de lo que se movió (valores, sin fórmulas ni macros).",
+  devolver: "\"Devolver a pendientes\" (hoja Cargados, arriba a la izquierda): pide la CLAVE de la gestión (por defecto, la de la fila seleccionada en Cargados), confirma y devuelve todas sus líneas a filas libres de Ítems (con N° de línea nuevos; la Línea padre se ajusta sola), las quita de Cargados, Solicitud Implantes y Resumen. La gestión sigue en su fila de Gestiones y vuelve a calcular su Estado.",
+  cargados: "Líneas ya CARGADO (una fila por línea, como valores; la gestión sigue en Gestiones como FINALIZADO). Las mueve el botón \"Mover cargados\" de Ítems. Para devolver una gestión: botón \"Devolver a pendientes\" y escriba o confirme su CLAVE. En verde, la vista de carga.",
+});
+
 // --- Hoja Cargados -----------------------------------------------------------------
 // La llena la macro "Mover cargados" (macros/MoverCargados.bas) con VALORES:
 // una fila por línea de ítem, con la cabecera de su gestión repetida, más
@@ -802,6 +810,8 @@ export const COLUMNAS_CARGADOS = [
   { titulo: 'Registrado por (ítem)', ancho: 16 },
   { titulo: 'ORIGEN', ancho: 13 },
 ];
+
+export const LETRA_CLAVE_CARGADOS = letraColumna(COLUMNAS_CARGADOS.findIndex((c) => c.titulo === 'CLAVE') + 1);
 
 // --- Hojas Solicitud Implantes y Resumen --------------------------------------------
 // Las mismas columnas, en el mismo orden y con los mismos valores que las dos
@@ -902,7 +912,7 @@ const hojaCargados = (libro) => {
   });
   // Después de la vista de carga (congelada): A1 lleva el botón.
   const ayuda = hoja.getCell(1, nVista + 1);
-  ayuda.value = 'Gestiones ya CARGADO (una fila por línea, como valores). Las mueve el botón "Mover cargados" de Ítems. Para devolver una: seleccione cualquier celda de sus filas y use "Devolver a pendientes". En verde, la vista de carga.';
+  ayuda.value = TEXTOS_MACROS.cargados;
   ayuda.font = { italic: true, size: 9, color: { argb: 'FF595959' } };
   hoja.getRow(FILA_AYUDA).height = 30;
   enc.height = 42;
@@ -942,8 +952,9 @@ const formulasGestion = (r, x) => ({
 });
 
 // Color de la fila de Gestiones según su Estado (fondos claros).
+export const ESTADO_FINALIZADO = 'FINALIZADO';
 export const COLORES_ESTADO_GESTION = Object.freeze([
-  [['CARGADO'], 'FFE2EFDA'],                         // verde claro
+  [['CARGADO', ESTADO_FINALIZADO], 'FFE2EFDA'],     // verde claro
   [['AGENDADO'], 'FFDDEBF7'],                        // azul claro
   [['PENDIENTE'], 'FFFFF2CC'],                       // amarillo claro
   [['INCOMPLETO', 'REVISAR', 'S/COTIZACION'], 'FFFCE4D6'], // naranja claro: hay que revisar
@@ -954,11 +965,14 @@ const fueraDelMes = (celda) => `AND(ISNUMBER(${celda}),${celda}<>"",OR(${SIN_MES
 
 // Estado, conteos y diferencia: iguales para filas del sistema y nuevas
 // (a una gestión del sistema se le pueden agregar ítems en la caída).
+// Estado FINALIZADO (decisión del 24-11-2026): la gestión no tiene ítems en
+// Ítems pero sí líneas en Cargados ("Mover cargados" ya no la saca de
+// Gestiones). Si después se le agregan ítems, vuelve a la regla normal.
 const formulasEstadoGestion = (r, x) => ({
   R: f(`IF(A${r}="","",COUNTIF(${x.iB},A${r}))`),
   Y: f(`IF(N(R${r})=0,"",INDEX(${x.iAA},MATCH(A${r},${x.iB},0)))`),
   Z: f(`IF(N(R${r})=0,0,COUNTIFS(${x.iB},A${r},${x.iAG},1))`),
-  H: f(`IF(A${r}="","",IF(N(R${r})=0,IF(Q${r}="","AGENDADO",Q${r}),IF(Z${r}>0,"INCOMPLETO",IF(COUNTIFS(${x.iB},A${r},${x.iAA},Y${r})=R${r},Y${r},"INCOMPLETO"))))`),
+  H: f(`IF(A${r}="","",IF(N(R${r})=0,IF(COUNTIF(${x.cargadosClave},A${r})>0,"${ESTADO_FINALIZADO}",IF(Q${r}="","AGENDADO",Q${r})),IF(Z${r}>0,"INCOMPLETO",IF(COUNTIFS(${x.iB},A${r},${x.iAA},Y${r})=R${r},Y${r},"INCOMPLETO"))))`),
   S: f(`IF(A${r}="","",SUMIF(${x.iB},A${r},${x.iS}))`),
   T: f(`IF(OR(A${r}="",F${r}=""),"",F${r}-S${r})`),
 });
@@ -1150,8 +1164,8 @@ const MACROS_Y_BOTONES = [
   ['3. Si el archivo está en una carpeta de red y Excel lo sigue bloqueando: Archivo → Opciones → Centro de confianza → Configuración del Centro de confianza → Ubicaciones de confianza → "Agregar nueva ubicación" con esa carpeta (marque "Las subcarpetas de esta ubicación también son de confianza").'],
   [''],
   ['BOTONES', 'seccion'],
-  ['"Mover cargados" (hoja Ítems, arriba a la izquierda): busca las gestiones de contingencia con Estado = CARGADO (todas sus líneas CARGADO, CONTENIDO o SIN CARGO) y fecha del mes del libro (las de otro mes no se mueven y lo avisa), le dice cuántas gestiones e ítems va a mover (y cuántos ítems tienen alerta), le pide su nombre y que confirme. Las copia a la hoja Cargados como valores, con fecha/hora y su nombre, y limpia esas filas en Gestiones e Ítems: las fórmulas quedan listas para volver a usarlas.'],
-  ['"Devolver a pendientes" (hoja Cargados, arriba a la izquierda): seleccione cualquier celda de una fila de la gestión que quiere devolver y presione el botón. Confirma y la vuelve a filas libres de Gestiones e Ítems (con N° de línea nuevos; la Línea padre se ajusta sola) y la quita de Cargados. No se puede si en Gestiones ya hay una gestión con la misma CLAVE.'],
+  [TEXTOS_MACROS.mover],
+  [TEXTOS_MACROS.devolver],
   ['"Crear libro del mes" (hoja Nuevo mes): ver CÓMO SE TRABAJA MES A MES.'],
   ['Después de usar un botón, guarde el archivo (Ctrl+G). Los botones no se pueden deshacer con Ctrl+Z: para revertir, use el botón contrario.'],
   [''],
@@ -1412,6 +1426,8 @@ export const construirLibro = async (datosEntrada) => {
     gD: enHoja(H.G, 'D', ultimaGestion),
     gT: enHoja(H.G, 'T', ultimaGestion),
     gJ: enHoja(H.G, 'J', ultimaGestion),
+    // Columna CLAVE de Cargados, entera (la hoja crece con cada movimiento).
+    cargadosClave: `${ref(H.CARG)}$${LETRA_CLAVE_CARGADOS}:$${LETRA_CLAVE_CARGADOS}`,
     iB: enHoja(H.I, I.clave, ultimaItem),
     iS: enHoja(H.I, I.total, ultimaItem),
     iAA: enHoja(H.I, I.estadoNorm, ultimaItem),
@@ -1492,7 +1508,7 @@ export const construirLibro = async (datosEntrada) => {
     ref: rg('H'),
     rules: [
       { type: 'expression', priority: 1, formulae: [`H${PRIMERA}="INCOMPLETO"`], style: { font: { bold: true, color: { argb: COLOR.textoError } } } },
-      { type: 'expression', priority: 2, formulae: [`H${PRIMERA}="CARGADO"`], style: { font: { bold: true, color: { argb: COLOR.ok } } } },
+      { type: 'expression', priority: 2, formulae: [`OR(H${PRIMERA}="CARGADO",H${PRIMERA}="${ESTADO_FINALIZADO}")`], style: { font: { bold: true, color: { argb: COLOR.ok } } } },
     ],
   });
   // 2. Fila entera (columnas visibles A:AE) con color según el Estado
