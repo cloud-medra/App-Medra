@@ -3,11 +3,12 @@ Attribute VB_Name = "ModContingencia"
 ' Items) y "Devolver a pendientes" (hoja Cargados).
 '
 ' - Mover cargados: las gestiones de contingencia con Estado = CARGADO
-'   (todas sus lineas CARGADO, PAD o SIN CARGO; lo calcula la formula de la
+'   (todas sus lineas CARGADO, CONTENIDO o SIN CARGO; lo calcula la formula de la
 '   columna Estado) pasan a la hoja Cargados como VALORES, una fila por linea
 '   con la cabecera de su gestion, la fecha/hora y quien las movio. Ademas se
 '   agregan a Solicitud Implantes y Resumen. Sus filas en Gestiones e Items
-'   se limpian (solo las celdas que se escriben): las formulas quedan.
+'   se limpian (solo las celdas que se escriben): las formulas quedan, y
+'   Lote, Vencimiento y Estado carga vuelven a su valor automatico.
 ' - Devolver a pendientes: vuelve una gestion de Cargados a filas libres de
 '   Gestiones e Items. Los N de linea son fijos por fila, asi que la linea
 '   padre se traduce del N original al N de la fila donde queda.
@@ -85,7 +86,13 @@ Private Const G_AUTOCOMPLETADO As String = "5:33,12:34,13:35,14:36,15:37"
 Private Const G_DESDE_CARGADOS As String = "2:Admisión|3:Fecha|4:Empresa|5:Nombre paciente|6:Total cotización|7:Informe|8:Centro|9:Atributo|10:Lado|11:Observación|12:Convenio|13:Previsión|14:Médico|15:Descripción|16:Estado sin ítems|23:Registrado por (gestión)"
 
 ' Items: celdas que se escriben (se limpian al mover y se llenan al devolver).
-Private Const I_ENTRADAS As String = "CLAVE|Tipo de línea|Línea padre|N° cotización|Referencia|Cantidad|Lote|Vencimiento|Estado carga|Precio manual|Registrado por"
+Private Const I_ENTRADAS As String = "CLAVE|Tipo de línea|Línea padre|N° cotización|Referencia|Cantidad (ingresar)|Lote|Vencimiento|Estado carga|Precio manual|Registrado por"
+' Items: celdas que se escriben pero traen un valor automático según el tipo
+' de línea (valoresPorTipo en libroRespaldo.js): PAD PADRE -> Lote y
+' Vencimiento "PAD"; CONTENIDO PAD -> Estado carga "CONTENIDO". Al limpiar
+' una fila vuelven a su fórmula (FormulasDefectoItem).
+Private Const VALOR_PAD As String = "PAD"
+Private Const ESTADO_CONTENIDO As String = "CONTENIDO"
 ' Columna de Items de donde sale cada columna de Cargados, como Cargados>Items
 ' (con '>': algunos títulos tienen ':'). Las de la gestión
 ' salen de Gestiones; ver ValorGestion).
@@ -106,7 +113,7 @@ Public Sub MoverCargados()
     If nFuera > 0 Then avisoFuera = vbCrLf & vbCrLf & nFuera & " gestión(es) CARGADO con fecha fuera del mes del libro (" & NombreLibro() & ") no se moverán: regístrelas en el libro de su mes (columna Alerta de Gestiones)."
     If filasG.Count = 0 Then
         MsgBox "No hay gestiones con Estado CARGADO para mover." & vbCrLf & _
-               "(Una gestión queda CARGADO cuando todas sus líneas están CARGADO, PAD o SIN CARGO.)" & avisoFuera, _
+               "(Una gestión queda CARGADO cuando todas sus líneas están CARGADO, CONTENIDO o SIN CARGO.)" & avisoFuera, _
                vbInformation, "Mover cargados"
         Exit Sub
     End If
@@ -344,6 +351,7 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
         For Each entrada In Split(I_ENTRADAS, "|")
             wsI.Cells(fi, Col(ti, entrada)).ClearContents
         Next entrada
+        FormulasDefectoItem wsI, ti, CLng(fi), CLng(fi)
     Next fi
     For Each fg In filasG
         wsG.Range(wsG.Cells(fg, 2), wsG.Cells(fg, G_ULTIMA_ENTRADA)).ClearContents
@@ -454,7 +462,7 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
 
     ' Ítems: las celdas que se escriben, desde Cargados (la línea padre se
     ' traduce al N° de la fila donde queda).
-    Dim rc As Long, ri As Long, padre As String
+    Dim rc As Long, ri As Long, padre As String, tipo As String
     For k = 1 To filasC.Count
         rc = filasC(k)
         ri = filasI(k)
@@ -464,12 +472,23 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
         If padre <> "" Then
             If nueva.Exists(padre) Then wsI.Cells(ri, Col(ti, "Línea padre")).Value = nueva(padre) Else wsI.Cells(ri, Col(ti, "Línea padre")).Value = padre
         End If
-        For Each entrada In Split("N° cotización|Referencia|Cantidad|Lote|Vencimiento|Estado carga|Precio manual", "|")
+        For Each entrada In Split("N° cotización|Referencia|Lote|Vencimiento|Estado carga|Precio manual", "|")
             wsI.Cells(ri, Col(ti, entrada)).Value = wsC.Cells(rc, Col(tc, entrada)).Value
         Next entrada
-        ' En Cargados el estado de una línea PAD es "PAD" (lo calcula Ítems);
-        ' en Ítems esa celda va vacía, como al registrarla.
-        If Txt(wsC.Cells(rc, Col(tc, "Estado carga")).Value) = "PAD" Then wsI.Cells(ri, Col(ti, "Estado carga")).ClearContents
+        wsI.Cells(ri, Col(ti, "Cantidad (ingresar)")).Value = wsC.Cells(rc, Col(tc, "Cantidad")).Value
+        ' Lo que era automático (PAD del PAD PADRE, CONTENIDO del contenido)
+        ' vuelve a su fórmula, como al registrarla. "PAD" en Estado carga es de
+        ' libros anteriores (el PAD tenía estado fijo): queda vacío = PENDIENTE.
+        tipo = Txt(wsC.Cells(rc, Col(tc, "Tipo de línea")).Value)
+        If tipo = "PAD PADRE" Then
+            If Txt(wsI.Cells(ri, Col(ti, "Lote")).Value) = VALOR_PAD Then FormulaDefecto wsI, ti, ri, "Lote"
+            If Txt(wsI.Cells(ri, Col(ti, "Vencimiento")).Value) = VALOR_PAD Then FormulaDefecto wsI, ti, ri, "Vencimiento"
+        End If
+        If tipo = "CONTENIDO PAD" Then
+            FormulaDefecto wsI, ti, ri, "Estado carga"
+        ElseIf Txt(wsI.Cells(ri, Col(ti, "Estado carga")).Value) = "PAD" Then
+            wsI.Cells(ri, Col(ti, "Estado carga")).ClearContents
+        End If
         wsI.Cells(ri, Col(ti, "Registrado por")).Value = wsC.Cells(rc, Col(tc, "Registrado por (ítem)")).Value
     Next k
 
@@ -687,6 +706,7 @@ Public Function PrepararLibroDelMes(ByVal anio As Long, ByVal mes As Long) As St
         For Each entrada In Split(I_ENTRADAS, "|")
             wsI.Range(wsI.Cells(PRIMERA, Col(ti, entrada)), wsI.Cells(ultima, Col(ti, entrada))).ClearContents
         Next entrada
+        FormulasDefectoItem wsI, ti, PRIMERA, ultima
     End If
 
     ' Cargados (datos desde la fila 3), Solicitud Implantes y Resumen (desde la 2).
@@ -930,6 +950,31 @@ Private Sub RestaurarAutocompletado(ByVal ws As Worksheet, ByVal fila As Long)
         ws.Cells(fila, CLng(Split(par, ":")(0))).Formula = "=" & ws.Cells(fila, CLng(Split(par, ":")(1))).Address(False, False)
     Next par
 End Sub
+
+' Fórmulas de los valores automáticos de Ítems (valoresPorTipo en
+' libroRespaldo.js) en las filas desde..hasta: Lote y Vencimiento "PAD" en el
+' PAD PADRE, Estado carga "CONTENIDO" en el CONTENIDO PAD.
+Private Sub FormulasDefectoItem(ByVal ws As Worksheet, ByVal ti As Object, ByVal desde As Long, ByVal hasta As Long)
+    Dim f As Variant
+    For Each f In Split("Lote|Vencimiento|Estado carga", "|")
+        ws.Range(ws.Cells(desde, Col(ti, f)), ws.Cells(hasta, Col(ti, f))).Formula = FormulaDefectoTexto(ws, ti, desde, CStr(f))
+    Next f
+End Sub
+
+Private Sub FormulaDefecto(ByVal ws As Worksheet, ByVal ti As Object, ByVal fila As Long, ByVal titulo As String)
+    ws.Cells(fila, Col(ti, titulo)).Formula = FormulaDefectoTexto(ws, ti, fila, titulo)
+End Sub
+
+' Fórmula (en inglés, con la fila relativa) del valor automático de una columna.
+Private Function FormulaDefectoTexto(ByVal ws As Worksheet, ByVal ti As Object, ByVal fila As Long, ByVal titulo As String) As String
+    Dim tipo As String
+    tipo = ws.Cells(fila, Col(ti, "Tipo de línea")).Address(False, False)
+    If titulo = "Estado carga" Then
+        FormulaDefectoTexto = "=IF(" & tipo & "=""CONTENIDO PAD"",""" & ESTADO_CONTENIDO & ""","""")"
+    Else
+        FormulaDefectoTexto = "=IF(" & tipo & "=""PAD PADRE"",""" & VALOR_PAD & ""","""")"
+    End If
+End Function
 
 ' Mismas opciones que pone el script al generar la planilla.
 Private Sub Proteger(ByVal ws As Worksheet)

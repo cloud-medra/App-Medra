@@ -227,13 +227,13 @@ export const CAMPOS_EDITABLES_ITEM = Object.freeze(['cantidad', 'lote', 'vencimi
 
 // Campos editables de un ítem del sistema, con las mismas restricciones que
 // la pantalla Cargas:
-//   - Estado carga: no en PAD (padre ni contenido, su estado es PAD fijo) ni
-//     en líneas sin código (en Cargas no tienen selector).
+//   - Estado carga: no en el CONTENIDO PAD (su estado es CONTENIDO fijo) ni
+//     en líneas sin código (en Cargas no tienen selector). El PAD PADRE sí
+//     (decisión del 24-11-2026).
 //   - Lote y vencimiento: no en el PAD PADRE (son "PAD").
 export const camposEditablesItem = (fila) => {
-  const esPad = fila.tipo === TIPOS_LINEA.PAD_PADRE || fila.tipo === TIPOS_LINEA.CONTENIDO_PAD;
   return CAMPOS_EDITABLES_ITEM.filter((campo) => {
-    if (campo === 'estadoCarga') return !esPad && !fila.sinCodigo;
+    if (campo === 'estadoCarga') return fila.tipo !== TIPOS_LINEA.CONTENIDO_PAD && !fila.sinCodigo;
     if (campo === 'lote' || campo === 'vencimiento') return fila.tipo !== TIPOS_LINEA.PAD_PADRE;
     if (campo === 'cantidad') return true;
     return false;

@@ -162,17 +162,20 @@ const DEF_ITEMS = [
   { k: 'admision', titulo: 'Admisión', clase: 'formula', ancho: 11, texto: true, ayuda: 'Automática, de la CLAVE.' },
   { k: 'fecha', titulo: 'Fecha', clase: 'formula', ancho: 11, fecha: true, ayuda: 'Automática, de la CLAVE.' },
   { k: 'codigo', titulo: 'Código', clase: 'formula', ancho: 12, ayuda: 'Del catálogo. "No lleva OC" en CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO.' },
-  { k: 'cantidad', titulo: 'Cantidad', clase: 'obligatorio', ancho: 9, campo: 'cantidad', original: 'origCantidad', ayuda: 'Obligatoria. Mayor que 0. En una referencia con lotes: la cantidad TOTAL.' },
+  // La cantidad se escribe en "Cantidad (ingresar)", junto a Referencia
+  // (decisión del 24-11-2026); aquí se muestra, como Admisión y Fecha.
+  { k: 'cantidad', titulo: 'Cantidad', clase: 'formula', ancho: 9, ayuda: 'Automática: la de "Cantidad (ingresar)".' },
   { k: 'venta', titulo: 'Venta', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Precio × veces costo × cantidad.' },
-  { k: 'estadoCarga', titulo: 'Estado carga', clase: 'opcional', ancho: 13, campo: 'estadoCarga', original: 'origEstadoCarga', ayuda: 'Vacío = PENDIENTE. En PAD no se usa.' },
+  { k: 'estadoCarga', titulo: 'Estado carga', clase: 'opcional', ancho: 13, campo: 'estadoCarga', original: 'origEstadoCarga', ayuda: 'Vacío = PENDIENTE. Se cambia en NORMAL y PAD PADRE; CONTENIDO PAD dice CONTENIDO (automático).' },
   { k: 'clave', titulo: 'CLAVE', clase: 'obligatorio', ancho: 34, ayuda: 'Gestión a la que pertenece (lista de Gestiones).' },
   { k: 'tipoLinea', titulo: 'Tipo de línea', clase: 'opcional', ancho: 16, ayuda: 'Vacío = NORMAL.' },
   { k: 'padre', titulo: 'Línea padre', clase: 'opcional', ancho: 9, ayuda: 'Solo CONTENIDO PAD (N° del PAD PADRE) y LOTE ADICIONAL (N° de la línea NORMAL).' },
   { k: 'numCot', titulo: 'N° cotización', clase: 'obligatorio', ancho: 14, texto: true, ayuda: 'N° de la cotización del proveedor.' },
   { k: 'referencia', titulo: 'Referencia', clase: 'obligatorio', ancho: 24, texto: true, ayuda: 'De la lista (se puede escribir). Si no existe queda "Sin código".' },
+  { k: 'cantidadIngreso', titulo: 'Cantidad (ingresar)', clase: 'obligatorio', ancho: 10, campo: 'cantidad', original: 'origCantidad', ayuda: 'Obligatoria. Mayor que 0. En una referencia con lotes: la cantidad TOTAL. Se ve también en Cantidad (E).' },
   { k: 'codigoReal', titulo: 'Código real', clase: 'formula', ancho: 12, ayuda: 'Código del catálogo según la referencia, en TODAS las líneas (también CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO).' },
-  { k: 'lote', titulo: 'Lote', clase: 'opcional', ancho: 14, texto: true, campo: 'lote', original: 'origLote', ayuda: 'Vacío = Sin lote.' },
-  { k: 'vencimiento', titulo: 'Vencimiento', clase: 'opcional', ancho: 12, fecha: true, campo: 'vencimiento', original: 'origVencimiento', ayuda: 'dd-mm-aaaa. Vacío = Sin fecha.' },
+  { k: 'lote', titulo: 'Lote', clase: 'opcional', ancho: 14, texto: true, campo: 'lote', original: 'origLote', ayuda: 'Vacío = Sin lote. PAD PADRE: PAD (automático).' },
+  { k: 'vencimiento', titulo: 'Vencimiento', clase: 'opcional', ancho: 12, fecha: true, campo: 'vencimiento', original: 'origVencimiento', ayuda: 'dd-mm-aaaa. Vacío = Sin fecha. PAD PADRE: PAD (automático).' },
   { k: 'precioManual', titulo: 'Precio manual', clase: 'opcional', ancho: 12, pesos: true, ayuda: 'Opcional: reemplaza el precio del catálogo (ej. referencia sin código).' },
   { k: 'precio', titulo: 'Precio unitario', clase: 'formula', ancho: 12, pesos: true, ayuda: 'Catálogo o precio manual.' },
   { k: 'empresaProducto', titulo: 'Empresa producto', clase: 'formula', ancho: 22, ayuda: 'En rojo si no coincide con la empresa de la gestión.' },
@@ -198,7 +201,7 @@ const DEF_ITEMS = [
   { k: 'recargoOk', titulo: 'aux: recargo encontrado', clase: 'formula', oculta: true },
   { k: 'empresaNoCoincide', titulo: 'aux: empresa no coincide', clase: 'formula', oculta: true },
   // Después de las auxiliares (ocultas); en pantalla queda junto a ID sistema.
-  { k: 'modificado', titulo: 'MODIFICADO', clase: 'formula', ancho: 12, ayuda: 'Filas del sistema: SÍ si se cambió Cantidad, Lote, Vencimiento o Estado carga.' },
+  { k: 'modificado', titulo: 'MODIFICADO', clase: 'formula', ancho: 12, ayuda: 'Filas del sistema: SÍ si se cambió Cantidad (ingresar), Lote, Vencimiento o Estado carga.' },
   { k: 'origCantidad', titulo: 'orig: Cantidad', clase: 'formula', oculta: true },
   { k: 'origLote', titulo: 'orig: Lote', clase: 'formula', oculta: true, texto: true },
   { k: 'origVencimiento', titulo: 'orig: Vencimiento', clase: 'formula', oculta: true, fecha: true },
@@ -209,6 +212,18 @@ export const I = Object.freeze(Object.fromEntries(DEF_ITEMS.map((c, i) => [c.k, 
 export const COLUMNAS_ITEMS = DEF_ITEMS.map((c) => ({ ...c, l: I[c.k], ...(c.original ? { original: I[c.original] } : {}) }));
 // Columnas de la vista de carga (las primeras de Ítems y de Cargados).
 export const VISTA_CARGA = Object.freeze(['N° línea', 'Admisión', 'Fecha', 'Código', 'Cantidad', 'Venta', 'Estado carga']);
+
+// Valores automáticos por tipo de línea (decisión del 24-11-2026): el PAD
+// PADRE lleva Lote y Vencimiento "PAD" (como lo guarda el sistema) y el
+// CONTENIDO PAD, Estado carga "CONTENIDO". Son fórmulas en celdas que se
+// escriben: la macro usa las mismas (FormulasDefectoItem en ModContingencia.bas).
+export const VALOR_PAD = 'PAD';
+export const ESTADO_CONTENIDO = 'CONTENIDO';
+const valoresPorTipo = (c) => ({
+  lote: f(`IF(${c.tipoLinea}="PAD PADRE","${VALOR_PAD}","")`),
+  vencimiento: f(`IF(${c.tipoLinea}="PAD PADRE","${VALOR_PAD}","")`),
+  estadoCarga: f(`IF(${c.tipoLinea}="CONTENIDO PAD","${ESTADO_CONTENIDO}","")`),
+});
 
 const COLUMNAS_REFERENCIAS = [
   { l: 'A', titulo: 'Clave búsqueda', ancho: 30, automatica: true },
@@ -358,6 +373,8 @@ const LISTAS_FIJAS = [
   { l: 'F', titulo: 'Tipo (Códigos)', valores: TIPOS_CODIGO, ancho: 16 },
   { l: 'G', titulo: 'Segmento (Códigos)', valores: SEGMENTOS_CODIGO, ancho: 18 },
   { l: 'H', titulo: 'Clase (Códigos)', valores: CLASES_CODIGO, ancho: 14 },
+  // Lista de Estado carga de una línea CONTENIDO PAD (ver ESTADO_CONTENIDO).
+  { l: 'I', titulo: 'Estado contenido PAD', valores: [ESTADO_CONTENIDO], ancho: 14 },
 ];
 
 const encabezado = (celda, titulo) => {
@@ -879,9 +896,14 @@ const formulasItemComunes = (r, x) => {
   // La CLAVE es admisión|empresa|AAAA-MM-DD (fórmula de Gestiones!A).
   const fechaClave = `RIGHT(${c.clave},10)`;
   return porLetra({
-    tipoEf: f(`IF(${c.clave}&${c.tipoLinea}&${c.numCot}&${c.referencia}&${c.cantidad}="","",IF(${c.tipoLinea}="","NORMAL",${c.tipoLinea}))`),
-    estadoEf: f(`IF(${c.tipoEf}="","",IF(OR(${c.tipoEf}="PAD PADRE",${c.tipoEf}="CONTENIDO PAD"),"PAD",IF(${c.estadoCarga}="","PENDIENTE",${c.estadoCarga})))`),
-    estadoNorm: f(`IF(${c.estadoEf}="","",IF(OR(${c.estadoEf}="CARGADO",${c.estadoEf}="PAD",${c.estadoEf}="SIN CARGO"),"CARGADO",${c.estadoEf}))`),
+    // Cantidad (vista de carga) = la escrita en "Cantidad (ingresar)".
+    cantidad: f(`IF(${c.cantidadIngreso}="","",${c.cantidadIngreso})`),
+    tipoEf: f(`IF(${c.clave}&${c.tipoLinea}&${c.numCot}&${c.referencia}&${c.cantidadIngreso}="","",IF(${c.tipoLinea}="","NORMAL",${c.tipoLinea}))`),
+    // Estado carga (decisión del 24-11-2026): se cambia en NORMAL, PAD PADRE
+    // (y LOTE ADICIONAL); el CONTENIDO PAD es siempre CONTENIDO y cuenta como
+    // cargado. "PAD" queda por las filas del sistema que lo traen.
+    estadoEf: f(`IF(${c.tipoEf}="","",IF(${c.tipoEf}="CONTENIDO PAD","${ESTADO_CONTENIDO}",IF(${c.estadoCarga}="","PENDIENTE",${c.estadoCarga})))`),
+    estadoNorm: f(`IF(${c.estadoEf}="","",IF(OR(${c.estadoEf}="CARGADO",${c.estadoEf}="PAD",${c.estadoEf}="${ESTADO_CONTENIDO}",${c.estadoEf}="SIN CARGO"),"CARGADO",${c.estadoEf}))`),
     empresaGestion: f(`IF(${c.clave}="","",IFERROR(INDEX(${x.gD},MATCH(${c.clave},${x.gA},0)),""))`),
     filaPadre: f(`IF(${c.padre}="","",IFERROR(MATCH(${c.padre},${enLineas('linea')},0),""))`),
     empresaNoCoincide: f(`IF(AND(OR(${c.tipoEf}="NORMAL",${c.tipoEf}="PAD PADRE"),${c.sinCodigo}=0,${c.empresaProducto}<>"",${c.empresaGestion}<>""),IF(UPPER(TRIM(${c.empresaProducto}))<>UPPER(TRIM(${c.empresaGestion})),1,0),0)`),
@@ -898,6 +920,8 @@ const formulasItemComunes = (r, x) => {
       + `&IF(${c.empresaNoCoincide}=1,"Empresa no coincide · ","")`
       + `&IF(AND(${c.sinCodigo}=0,${c.recargoOk}=0),"Sin rango de recargo · ","")`
       + `&IF(${padreInvalido},"Línea padre inválida · ","")`
+      // Lote o vencimiento escrito antes de cambiar la línea a PAD PADRE.
+      + `&IF(AND(${c.tipoEf}="PAD PADRE",OR(AND(${c.lote}<>"",${c.lote}<>"${VALOR_PAD}"),AND(${c.vencimiento}<>"",${c.vencimiento}<>"${VALOR_PAD}"))),"PAD PADRE: Lote y Vencimiento deben ser PAD · ","")`
       + `&IF(AND(${c.tipoEf}="LOTE ADICIONAL",${c.filaPadre}<>""),IF(SUMIFS(${enLineas('cantidad')},${enLineas('padre')},${c.padre},${enLineas('tipoEf')},"LOTE ADICIONAL")>INDEX(${enLineas('cantidad')},${c.filaPadre}),"Lotes superan la cantidad · ",""),"")`
       + ')'),
   });
@@ -937,13 +961,17 @@ const formulasItemNuevas = (r, x) => {
       total: f(`IF(${c.tipoEf}="","",${c.precio}*${c.cantidad})`),
       venta: f(`IF(${c.tipoEf}="","",${c.precio}*${c.veces}*${c.cantidad})`),
       origen: f(`IF(${c.tipoEf}="","","CONTINGENCIA")`),
+      // Valores automáticos según el tipo de línea (se puede escribir encima
+      // donde corresponde; las macros vuelven a poner estas fórmulas al
+      // limpiar o devolver una fila: ver FormulasDefectoItem en la macro).
+      ...valoresPorTipo(c),
     }),
   };
 };
 
 const valoresItemSistema = (it) => porLetra({
   linea: it.linea, clave: it.clave, tipoLinea: it.tipo, padre: it.lineaPadre, numCot: it.numCotizacion, referencia: it.referencia,
-  cantidad: it.cantidad, lote: it.lote, vencimiento: it.vencimiento, estadoCarga: it.estadoCarga,
+  cantidadIngreso: it.cantidad, lote: it.lote, vencimiento: it.vencimiento, estadoCarga: it.estadoCarga,
   codigo: it.codigo, codigoReal: it.codigoReal ?? (it.codigo === CODIGO_SIN_OC ? '' : it.codigo),
   precio: it.precio, empresaProducto: it.empresaVinculada, clase: it.clase, tipo: it.tipoVinculado, descriptor: it.descriptorAuto,
   veces: it.vecesCosto, origen: 'SISTEMA', idSistema: it.idSistema,
@@ -1024,7 +1052,7 @@ const MACROS_Y_BOTONES = [
   ['3. Si el archivo está en una carpeta de red y Excel lo sigue bloqueando: Archivo → Opciones → Centro de confianza → Configuración del Centro de confianza → Ubicaciones de confianza → "Agregar nueva ubicación" con esa carpeta (marque "Las subcarpetas de esta ubicación también son de confianza").'],
   [''],
   ['BOTONES', 'seccion'],
-  ['"Mover cargados" (hoja Ítems, arriba a la izquierda): busca las gestiones de contingencia con Estado = CARGADO (todas sus líneas CARGADO, PAD o SIN CARGO) y fecha del mes del libro (las de otro mes no se mueven y lo avisa), le dice cuántas gestiones e ítems va a mover (y cuántos ítems tienen alerta), le pide su nombre y que confirme. Las copia a la hoja Cargados como valores, con fecha/hora y su nombre, y limpia esas filas en Gestiones e Ítems: las fórmulas quedan listas para volver a usarlas.'],
+  ['"Mover cargados" (hoja Ítems, arriba a la izquierda): busca las gestiones de contingencia con Estado = CARGADO (todas sus líneas CARGADO, CONTENIDO o SIN CARGO) y fecha del mes del libro (las de otro mes no se mueven y lo avisa), le dice cuántas gestiones e ítems va a mover (y cuántos ítems tienen alerta), le pide su nombre y que confirme. Las copia a la hoja Cargados como valores, con fecha/hora y su nombre, y limpia esas filas en Gestiones e Ítems: las fórmulas quedan listas para volver a usarlas.'],
   ['"Devolver a pendientes" (hoja Cargados, arriba a la izquierda): seleccione cualquier celda de una fila de la gestión que quiere devolver y presione el botón. Confirma y la vuelve a filas libres de Gestiones e Ítems (con N° de línea nuevos; la Línea padre se ajusta sola) y la quita de Cargados. No se puede si en Gestiones ya hay una gestión con la misma CLAVE.'],
   ['"Crear libro del mes" (hoja Nuevo mes): ver CÓMO SE TRABAJA MES A MES.'],
   ['Después de usar un botón, guarde el archivo (Ctrl+G). Los botones no se pueden deshacer con Ctrl+Z: para revertir, use el botón contrario.'],
@@ -1067,7 +1095,7 @@ const textoInstrucciones = (d) => [
   [''],
   ['COLORES DE LOS ENCABEZADOS', 'seccion'],
   ['Amarillo: obligatorio. Azul: opcional. Gris: automático (no se escribe). Una celda obligatoria vacía en una fila nueva se pinta de rojo.'],
-  ['Verde (Ítems y Cargados): la vista de carga, las primeras columnas, fijas al desplazarse: N° línea, Admisión, Fecha, Código, Cantidad, Venta y Estado carga. Es lo que se revisa al cargar en el sistema. Ahí se escriben solo Cantidad (obligatoria) y Estado carga; Admisión y Fecha salen de la CLAVE.'],
+  ['Verde (Ítems y Cargados): la vista de carga, las primeras columnas, fijas al desplazarse: N° línea, Admisión, Fecha, Código, Cantidad, Venta y Estado carga. Es lo que se revisa al cargar en el sistema. Ahí se escribe solo Estado carga; Admisión y Fecha salen de la CLAVE y Cantidad de "Cantidad (ingresar)" (junto a Referencia), donde se escribe.'],
   [''],
   ['HOJA GESTIONES (una fila por admisión + empresa + fecha)', 'seccion'],
   ['1. Escriba Admisión (solo dígitos), Fecha (dd-mm-aaaa, del mes del libro) y elija la Empresa (lista de la hoja Empresas). La CLAVE se arma sola: admisión|empresa|AAAA-MM-DD.'],
@@ -1076,29 +1104,29 @@ const textoInstrucciones = (d) => [
   ['   También se puede escribir encima de un dato autocompletado: queda en letra azul cursiva y solo cambia esa celda (las demás filas siguen autocompletando). Para volver al dato de Reporte Info, copie la misma celda de una fila de abajo y péguela.'],
   ['2. Complete Registrado por (su nombre) y, si los tiene, Nombre, Total cotización y los demás datos.'],
   ['3. La misma admisión con otra empresa u otra fecha es otra fila. Una CLAVE repetida se pinta de rojo: no la duplique.'],
-  ['4. Estado se calcula solo: con alguna línea sin código = INCOMPLETO; si todas las líneas tienen el mismo estado de carga, ese estado (PAD y SIN CARGO cuentan como CARGADO); si se mezclan, INCOMPLETO. Sin ítems: el "Estado sin ítems" (vacío = AGENDADO).'],
+  ['4. Estado se calcula solo: con alguna línea sin código = INCOMPLETO; si todas las líneas tienen el mismo estado de carga, ese estado (CONTENIDO y SIN CARGO cuentan como CARGADO); si se mezclan, INCOMPLETO. Sin ítems: el "Estado sin ítems" (vacío = AGENDADO).'],
   ['5. Diferencia en rojo: la suma de los ítems no cuadra con el total de la cotización.'],
   [''],
   ['HOJA ÍTEMS (una fila por línea)', 'seccion'],
   ['1. Elija la CLAVE de la gestión (lista, a la derecha de la vista de carga). Primero debe existir la gestión en la hoja Gestiones. Admisión y Fecha de la vista de carga se llenan solas con ella.'],
-  ['2. Escriba N° cotización, Referencia y Cantidad. Igual que en el sistema, al escribir la referencia se completan desde la hoja Códigos el código, precio, empresa, clase, tipo y descriptor, y se calculan veces costo (según la hoja Recargos), total y venta. Si la referencia existe para varias empresas, se usa la de la empresa de la gestión.'],
+  ['2. Escriba N° cotización, Referencia y la cantidad en "Cantidad (ingresar)" (a la derecha de Referencia; la columna Cantidad de la vista de carga la muestra sola). Igual que en el sistema, al escribir la referencia se completan desde la hoja Códigos el código, precio, empresa, clase, tipo y descriptor, y se calculan veces costo (según la hoja Recargos), total y venta. Si la referencia existe para varias empresas, se usa la de la empresa de la gestión.'],
   ['   Código y Código real: Código es el que va en la Solicitud ("No lleva OC" en CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO, como en el sistema). Código real es siempre el del catálogo según la referencia, también en esas líneas.'],
   ['3. Una referencia que no está en Códigos se puede escribir igual (Excel avisa): queda "Sin código" y la gestión INCOMPLETO, como en el sistema. Si conoce el precio, escríbalo en Precio manual.'],
   ['4. Tipos de línea:'],
   ['   NORMAL (o vacío): una referencia común.'],
-  ['   PAD PADRE: la referencia del PAD (clase PAD). Lote y vencimiento no se usan.'],
-  ['   CONTENIDO PAD: cada producto dentro del PAD. En "Línea padre" ponga el N° de línea del PAD PADRE. No se cobra (código "No lleva OC", precio 0).'],
+  ['   PAD PADRE: la referencia del PAD (clase PAD). Lote y Vencimiento dicen PAD solos (no se escriben). Su Estado carga sí se cambia (PENDIENTE, CARGADO…), como en una línea NORMAL.'],
+  ['   CONTENIDO PAD: cada producto dentro del PAD. En "Línea padre" ponga el N° de línea del PAD PADRE. No se cobra (código "No lleva OC", precio 0). Estado carga dice CONTENIDO solo (no se cambia) y cuenta como cargado.'],
   ['   LOTE ADICIONAL: cuando una referencia viene en varios lotes. La línea NORMAL lleva la cantidad TOTAL y su lote; cada LOTE ADICIONAL indica cuántas unidades son de otro lote, con "Línea padre" = N° de la línea NORMAL. No se cobra de nuevo; la suma de los lotes adicionales no puede superar la cantidad total.'],
   ['   Ejemplo PAD: línea 120 PAD PADRE "PAD-RODILLA"; líneas 121 y 122 CONTENIDO PAD con Línea padre 120.'],
-  ['5. La columna Alerta debe quedar vacía. Avisos: Falta CLAVE / CLAVE no existe · Falta N° cotización · Falta referencia · Cantidad inválida · Sin código · Referencia ambigua (la referencia existe para varias empresas y ninguna es la de la gestión) · Empresa no coincide · Sin rango de recargo · Línea padre inválida · Lotes superan la cantidad.'],
+  ['5. La columna Alerta debe quedar vacía. Avisos: Falta CLAVE / CLAVE no existe · Falta N° cotización · Falta referencia · Cantidad inválida · Sin código · Referencia ambigua (la referencia existe para varias empresas y ninguna es la de la gestión) · Empresa no coincide · Sin rango de recargo · Línea padre inválida · Lotes superan la cantidad · PAD PADRE: Lote y Vencimiento deben ser PAD (se escribió un lote o fecha antes de elegir PAD PADRE: bórrelos y copie la celda de una fila vacía de abajo para que vuelva a decir PAD).'],
   ...(d.plantilla ? [
     ['6. Si el ítem es de una gestión que ya estaba en el sistema, regístrela igual en la hoja Gestiones (misma admisión, empresa y fecha) y cargue aquí solo lo nuevo.'],
   ] : [
     ['6. Se pueden agregar ítems a una gestión exportada del sistema eligiendo su CLAVE.'],
     [''],
     ['CAMBIOS EN LO QUE YA ESTABA EN EL SISTEMA (filas grises)', 'seccion'],
-    ['En las filas del sistema solo se pueden cambiar las celdas blancas: en Gestiones, Informe, Lado y Observación; en Ítems, Estado carga, Lote, Vencimiento y Cantidad. Lo demás está bloqueado.'],
-    ['Algunas líneas no dejan cambiar todo, igual que en el sistema: en PAD y en líneas sin código no se cambia el Estado carga; en el PAD PADRE no se cambian Lote ni Vencimiento.'],
+    ['En las filas del sistema solo se pueden cambiar las celdas blancas: en Gestiones, Informe, Lado y Observación; en Ítems, Estado carga, Lote, Vencimiento y Cantidad (ingresar). Lo demás está bloqueado.'],
+    ['Algunas líneas no dejan cambiar todo, igual que en el sistema: en CONTENIDO PAD y en líneas sin código no se cambia el Estado carga; en el PAD PADRE no se cambian Lote ni Vencimiento.'],
     ['La celda cambiada se pinta ámbar y la columna MODIFICADO pasa a SÍ. Para deshacer un cambio, vuelva a escribir el valor original. Al reimportar se aplican solo las filas con MODIFICADO = SÍ; las gestiones que ya estaban SOLICITADAS no se tocan y quedan en el informe para hacerlas a mano.'],
   ]),
   [''],
@@ -1419,9 +1447,21 @@ export const construirLibro = async (datosEntrada) => {
   validar(hI, ri('tipoLinea'), lista(cat.E));
   validar(hI, ri('padre'), { type: 'whole', operator: 'greaterThanOrEqual', formulae: [1], error: 'N° de línea de la línea padre.' });
   validar(hI, ri('referencia'), lista(rCol(REF.referencia), { errorStyle: 'warning', errorTitle: 'Referencia', error: 'No está en Códigos: quedará "Sin código". ¿Continuar?' }));
-  validar(hI, ri('cantidad'), { type: 'decimal', operator: 'greaterThan', formulae: [0], error: 'Cantidad mayor que 0.' });
-  validar(hI, ri('vencimiento'), fechaValida);
-  validar(hI, ri('estadoCarga'), lista(cat.B));
+  validar(hI, ri('cantidadIngreso'), { type: 'decimal', operator: 'greaterThan', formulae: [0], error: 'Cantidad mayor que 0.' });
+  // PAD PADRE: Lote y Vencimiento son "PAD" (automático), no se escriben.
+  // CONTENIDO PAD: Estado carga es CONTENIDO (su lista solo trae ese valor).
+  const tipoFila = `$${I.tipoLinea}${PRIMERA}`;
+  const noPadPadre = `${tipoFila}<>"PAD PADRE"`;
+  const msjPadPadre = 'En un PAD PADRE el Lote y el Vencimiento son PAD (automático).';
+  validar(hI, ri('lote'), { type: 'custom', formulae: [noPadPadre], errorTitle: 'PAD PADRE', error: msjPadPadre });
+  const [desde, hasta] = fechaValida.formulae.map((d) => `DATE(${d.getUTCFullYear()},${d.getUTCMonth() + 1},${d.getUTCDate()})`);
+  const venc = `${I.vencimiento}${PRIMERA}`;
+  validar(hI, ri('vencimiento'), {
+    type: 'custom',
+    formulae: [`AND(${noPadPadre},ISNUMBER(${venc}),${venc}>=${desde},${venc}<=${hasta})`],
+    errorTitle: 'Vencimiento', error: `${fechaValida.error} ${msjPadPadre}`,
+  });
+  validar(hI, ri('estadoCarga'), lista(`IF(${tipoFila}="CONTENIDO PAD",${cat.I},${cat.B})`, { errorTitle: 'Estado carga', error: 'Elija de la lista. En CONTENIDO PAD el estado es CONTENIDO (automático).' }));
   validar(hI, ri('precioManual'), { type: 'decimal', operator: 'greaterThanOrEqual', formulae: [0], error: 'Monto mayor o igual a 0.' });
   hI.addConditionalFormatting({
     ref: ri('empresaProducto'),
@@ -1431,7 +1471,7 @@ export const construirLibro = async (datosEntrada) => {
     ref: ri('alerta'),
     rules: [{ type: 'expression', priority: 1, formulae: [`${I.alerta}${PRIMERA}<>""`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { bold: true, color: { argb: COLOR.textoError } } } }],
   });
-  reglaObligatorio(hI, ['clave', 'numCot', 'referencia', 'cantidad', 'registrado'].map((k) => I[k]), I.origen, PRIMERA, ultimaItem);
+  reglaObligatorio(hI, ['clave', 'numCot', 'referencia', 'cantidadIngreso', 'registrado'].map((k) => I[k]), I.origen, PRIMERA, ultimaItem);
   reglasCambio(hI, COLUMNAS_ITEMS, I.origen, I.modificado, PRIMERA, ultimaItem);
 
   // Códigos: EMPRESA con la lista de Empresas; TIPO, SEGMENTO y CLASE con

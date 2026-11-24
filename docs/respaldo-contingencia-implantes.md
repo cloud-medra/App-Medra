@@ -210,15 +210,18 @@ Probado en Excel 16 (23-11-2026), en una carpeta de prueba que se borró al term
 
 ### Vista de carga y Código real (Ítems y Cargados)
 
-Desde el 23-11-2026 Ítems y Cargados empiezan con la **vista de carga**, lo que se revisa al cargar en el sistema: `N° línea | Admisión | Fecha | Código | Cantidad | Venta | Estado carga`. Encabezado verde, borde grueso al final y congelada hasta Estado carga. Después siguen CLAVE, Tipo de línea, Línea padre, N° cotización, Referencia, Código real, Lote, Vencimiento y el resto.
-- En Ítems, Admisión y Fecha son fórmulas (bloqueadas y ocultas) que salen de la CLAVE (`admisión|empresa|AAAA-MM-DD`); Fecha en `dd-mm-aaaa`. Se escriben Cantidad y Estado carga; Código y Venta siguen siendo fórmulas.
+Desde el 23-11-2026 Ítems y Cargados empiezan con la **vista de carga**, lo que se revisa al cargar en el sistema: `N° línea | Admisión | Fecha | Código | Cantidad | Venta | Estado carga`. Encabezado verde, borde grueso al final y congelada hasta Estado carga. Después siguen CLAVE, Tipo de línea, Línea padre, N° cotización, Referencia, Cantidad (ingresar), Código real, Lote, Vencimiento y el resto.
+- En Ítems, Admisión y Fecha son fórmulas (bloqueadas y ocultas) que salen de la CLAVE (`admisión|empresa|AAAA-MM-DD`); Fecha en `dd-mm-aaaa`. Se escribe Estado carga; Código y Venta siguen siendo fórmulas.
+- Desde el 24-11-2026 la cantidad se escribe en **Cantidad (ingresar)**, justo después de Referencia; Cantidad (E, vista de carga) es una fórmula que la muestra, como Admisión y Fecha. En las filas del sistema la celda editable y su original (`orig: Cantidad`) son los de Cantidad (ingresar).
+- **Valores automáticos por tipo de línea** (24-11-2026; `valoresPorTipo` en `libroRespaldo.js`, `FormulasDefectoItem` en la macro): PAD PADRE → Lote y Vencimiento "PAD"; CONTENIDO PAD → Estado carga "CONTENIDO". Son fórmulas en celdas que se escriben (como el autocompletado de Gestiones); la validación no deja escribir Lote/Vencimiento en un PAD PADRE ni otro estado en un CONTENIDO PAD (su lista solo trae CONTENIDO, Catálogos I3). Las macros vuelven a poner las fórmulas al limpiar una fila (Mover cargados, Crear libro del mes) y al devolverla.
+- **Estado carga**: se cambia en NORMAL y en PAD PADRE (antes el PAD tenía estado fijo "PAD"); el CONTENIDO PAD es CONTENIDO y cuenta como cargado. Una gestión queda CARGADO cuando todas sus líneas están CARGADO, CONTENIDO o SIN CARGO (también "PAD", que traen las filas del sistema).
 - **Código real**: el código del catálogo según la referencia en **todas** las líneas, también CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO. **Código** no cambia: "No lleva OC" en esas líneas. Solicitud Implantes y Resumen siguen usando Código.
 - Ítems se define por clave en `DEF_ITEMS` (`libroRespaldo.js`): la letra sale de la posición y las fórmulas usan `I.<clave>`, así el orden se cambia en un solo lugar.
 
 `ModContingencia.bas` ubica las columnas de Ítems y Cargados **por el título** del encabezado (fila 2), no por la posición. Cambiar el orden en `COLUMNAS_ITEMS` o `COLUMNAS_CARGADOS` no toca la macro; cambiar o agregar un título sí (`I_ENTRADAS`, `C_DESDE_ITEMS`, `G_DESDE_CARGADOS`), y lo comprueba un test. Gestiones (`COLUMNAS_GESTIONES`) sigue por posición.
 
 **Mover cargados** (botón en la hoja Ítems, donde se trabaja el detalle; mueve la gestión completa):
-- Toma las gestiones con `ORIGEN = CONTINGENCIA` y Estado = CARGADO, la misma regla del sistema: todas sus líneas CARGADO, PAD o SIN CARGO. Solo las de fecha del mes del libro; en la plantilla base no hace nada.
+- Toma las gestiones con `ORIGEN = CONTINGENCIA` y Estado = CARGADO, la misma regla del sistema: todas sus líneas CARGADO, CONTENIDO o SIN CARGO (o "PAD" en filas del sistema). Solo las de fecha del mes del libro; en la plantilla base no hace nada.
 - Antes de mover, avisa cuántas gestiones e ítems son (y cuántos ítems tienen alerta), pide el nombre de quien mueve y la confirmación.
 - Escribe en Cargados **valores**, una fila por línea, con la cabecera de su gestión, lo calculado (código, código real, precio, veces costo, total, venta, sin código, recargo encontrado) y el N° de línea y la línea padre originales.
 - En Gestiones e Ítems limpia solo las celdas que se escriben; las fórmulas quedan.
@@ -357,7 +360,7 @@ Durante la caída se pueden actualizar algunos campos de lo ya registrado (filas
 | Hoja | Campos editables | Excepciones (igual que en Cargas) |
 |---|---|---|
 | Gestiones | Informe, Lado, Observación | — |
-| Ítems | Cantidad, Lote, Vencimiento, Estado carga | Sin Estado carga en PAD (padre y contenido) ni en líneas sin código; sin Lote ni Vencimiento en el PAD PADRE |
+| Ítems | Cantidad (ingresar), Lote, Vencimiento, Estado carga | Sin Estado carga en el CONTENIDO PAD ni en líneas sin código; sin Lote ni Vencimiento en el PAD PADRE |
 
 - Las celdas editables de una fila del sistema van en blanco, no en gris (`camposEditablesItem` y `CAMPOS_EDITABLES_GESTION` en `datosRespaldo.js`).
 - El valor exportado queda en columnas ocultas (`orig: …`). La columna **MODIFICADO** (fórmula) dice SÍ si alguno difiere, y cada celda cambiada se pinta ámbar. Si se vuelve a escribir el valor original, regresa a NO.

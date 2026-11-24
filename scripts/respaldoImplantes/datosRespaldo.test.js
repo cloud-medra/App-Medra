@@ -96,7 +96,7 @@ describe('campos editables de un ítem del sistema', () => {
     expect(camposEditablesItem({ tipo: 'NORMAL' })).toEqual(['cantidad', 'lote', 'vencimiento', 'estadoCarga']);
     expect(camposEditablesItem({ tipo: 'LOTE ADICIONAL' })).toEqual(['cantidad', 'lote', 'vencimiento', 'estadoCarga']);
     expect(camposEditablesItem({ tipo: 'NORMAL', sinCodigo: true })).toEqual(['cantidad', 'lote', 'vencimiento']);
-    expect(camposEditablesItem({ tipo: 'PAD PADRE' })).toEqual(['cantidad']);
+    expect(camposEditablesItem({ tipo: 'PAD PADRE' })).toEqual(['cantidad', 'estadoCarga']);
     expect(camposEditablesItem({ tipo: 'CONTENIDO PAD' })).toEqual(['cantidad', 'lote', 'vencimiento']);
   });
 });
