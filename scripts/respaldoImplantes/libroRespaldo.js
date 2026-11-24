@@ -39,6 +39,7 @@ export const H = {
   RI: 'Reporte Info', R: 'Códigos', E: 'Empresas',
   CEN: 'Centros', REC: 'Recargos', PREV: 'Previsiones', CONV: 'Convenios', C: 'Catálogos', INS: 'Instrucciones',
   NM: 'Nuevo mes',
+  GUIAS: 'Guías',
 };
 const ref = (hoja) => `'${hoja}'!`;
 
@@ -113,7 +114,7 @@ const COLUMNAS_GESTIONES = [
   // estas posiciones (G_ESTADO, G_AUTOCOMPLETADO, G_DESDE_CARGADOS).
   { l: 'H', titulo: 'Estado', clase: 'formula', ancho: 14, ayuda: 'Automático, misma regla del sistema. La fila se colorea según el Estado.' },
   { l: 'I', titulo: 'Centro', clase: 'opcional', ancho: 16, ayuda: 'Vacío = PABELLON.' },
-  { l: 'J', titulo: 'Atributo', clase: 'opcional', ancho: 12, ayuda: 'Vacío = IMPLANTES.' },
+  { l: 'J', titulo: 'Atributo', clase: 'opcional', ancho: 14, ayuda: 'Segmento, de la lista (Catálogos): IMPLANTES, CONSIGNACION o HEMODINAMIA. Vacío = IMPLANTES. Solo CONSIGNACION trae guías en Ítems.' },
   { l: 'K', titulo: 'Lado', clase: 'opcional', ancho: 14, campo: 'lado', original: 'AC', ayuda: 'Vacío = No especificado.' },
   { l: 'L', titulo: 'Observación', clase: 'opcional', ancho: 30, campo: 'observacion', original: 'AD', ayuda: 'Nota libre.' },
   { l: 'M', titulo: 'Convenio', clase: 'opcional', ancho: 16, ayuda: 'Desde Reporte Info. A mano: de la lista (avisa si no está).' },
@@ -172,11 +173,12 @@ const DEF_ITEMS = [
   { k: 'venta', titulo: 'Venta', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Precio × veces costo × cantidad.' },
   { k: 'estadoCarga', titulo: 'Estado carga', clase: 'opcional', ancho: 13, campo: 'estadoCarga', original: 'origEstadoCarga', ayuda: 'Vacío = PENDIENTE. Se cambia en NORMAL y PAD PADRE; CONTENIDO PAD dice CONTENIDO (automático).' },
   { k: 'clave', titulo: 'CLAVE', clase: 'obligatorio', ancho: 34, ayuda: 'Gestión a la que pertenece (lista de Gestiones).' },
-  { k: 'tipoLinea', titulo: 'Tipo de línea', clase: 'obligatorio', ancho: 16, ayuda: 'NORMAL, PAD PADRE, CONTENIDO PAD o LOTE ADICIONAL. En rojo si falta (vacío se toma como NORMAL).' },
+  { k: 'tipoLinea', titulo: 'Tipo de línea', clase: 'obligatorio', ancho: 16, ayuda: 'NORMAL, PAD PADRE, CONTENIDO PAD, LOTE ADICIONAL o CONTENIDO GUÍA (lo pone la guía). En rojo si falta (vacío se toma como NORMAL).' },
   { k: 'padre', titulo: 'Línea padre', clase: 'opcional', ancho: 9, ayuda: 'Solo CONTENIDO PAD (N° del PAD PADRE) y LOTE ADICIONAL (N° de la línea NORMAL).' },
   { k: 'numCot', titulo: 'N° cotización', clase: 'obligatorio', ancho: 14, texto: true, ayuda: 'N° de la cotización del proveedor.' },
   { k: 'referencia', titulo: 'Referencia', clase: 'obligatorio', ancho: 24, texto: true, ayuda: 'De la lista (se puede escribir). Si no existe queda "Sin código".' },
   { k: 'cantidadIngreso', titulo: 'Cantidad (ingresar)', clase: 'obligatorio', ancho: 10, campo: 'cantidad', original: 'origCantidad', ayuda: 'Obligatoria. Mayor que 0. En una referencia con lotes: la cantidad TOTAL. Se ve también en Cantidad (E).' },
+  { k: 'numGuia', titulo: 'N° guía', clase: 'opcional', ancho: 12, texto: true, ayuda: 'Consignación: escriba el N° de guía en una fila vacía y se llenan, desde esa fila hacia abajo, las líneas de esa guía (hoja Guías) como CONTENIDO GUÍA.' },
   { k: 'codigoReal', titulo: 'Código real', clase: 'formula', ancho: 12, ayuda: 'Código del catálogo según la referencia, en TODAS las líneas (también CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO).' },
   { k: 'lote', titulo: 'Lote', clase: 'obligatorio', ancho: 14, texto: true, campo: 'lote', original: 'origLote', ayuda: 'En rojo si falta: escriba el lote o "Sin lote". PAD PADRE: PAD (automático).' },
   { k: 'vencimiento', titulo: 'Vencimiento', clase: 'obligatorio', ancho: 12, fecha: true, campo: 'vencimiento', original: 'origVencimiento', ayuda: 'dd-mm-aaaa o "Sin fecha". En rojo si falta. PAD PADRE: PAD (automático).' },
@@ -228,10 +230,17 @@ export const VISTA_CARGA = Object.freeze(['N° línea', 'Admisión', 'Fecha', 'C
 export const VALOR_PAD = 'PAD';
 export const ESTADO_CONTENIDO = 'CONTENIDO';
 export const SIN_FECHA = 'Sin fecha';
+// Línea de una guía de consignación (decisión del 24-11-2026): "No lleva OC",
+// precio 0 y Estado carga CONTENIDO, sin línea padre. Solo existe en la
+// contingencia (el sistema no tiene este tipo). La llena la macro TraerGuia.
+export const TIPO_CONTENIDO_GUIA = 'CONTENIDO GUÍA';
+// Segmento (Atributo de la gestión) que permite traer guías.
+export const SEGMENTO_CONSIGNACION = 'CONSIGNACION';
+const esContenido = (celdaTipo) => `OR(${celdaTipo}="CONTENIDO PAD",${celdaTipo}="${TIPO_CONTENIDO_GUIA}")`;
 const valoresPorTipo = (c) => ({
   lote: f(`IF(${c.tipoLinea}="PAD PADRE","${VALOR_PAD}","")`),
   vencimiento: f(`IF(${c.tipoLinea}="PAD PADRE","${VALOR_PAD}","")`),
-  estadoCarga: f(`IF(${c.tipoLinea}="CONTENIDO PAD","${ESTADO_CONTENIDO}","")`),
+  estadoCarga: f(`IF(${esContenido(c.tipoLinea)},"${ESTADO_CONTENIDO}","")`),
 });
 
 const COLUMNAS_REFERENCIAS = [
@@ -377,7 +386,7 @@ const LISTAS_FIJAS = [
   { l: 'B', titulo: 'Estado carga', valores: ESTADOS_CARGA, ancho: 14 },
   { l: 'C', titulo: 'Informe', valores: INFORMES, ancho: 12 },
   { l: 'D', titulo: 'Lado', valores: NOMBRES_LADO, ancho: 16 },
-  { l: 'E', titulo: 'Tipo de línea', valores: LISTA_TIPOS_LINEA, ancho: 16 },
+  { l: 'E', titulo: 'Tipo de línea', valores: [...LISTA_TIPOS_LINEA, TIPO_CONTENIDO_GUIA], ancho: 16 },
   // Listas de la hoja Códigos (las mismas del sistema).
   { l: 'F', titulo: 'Tipo (Códigos)', valores: TIPOS_CODIGO, ancho: 16 },
   { l: 'G', titulo: 'Segmento (Códigos)', valores: SEGMENTOS_CODIGO, ancho: 18 },
@@ -701,6 +710,40 @@ const hojaNombres = (libro, nombreHoja, descripcion, registros, totalFilas) => {
   return `${ref(nombreHoja)}$A$${PRIMERA}:$A$${ultima}`;
 };
 
+// --- Hoja Guías ---------------------------------------------------------------------
+// Detalle de las guías de despacho de consignación (decisión del 24-11-2026),
+// una fila por línea de guía. Se pegan desde A3 (el Excel que descargará
+// Consignación → Ingreso de guías). La macro TraerGuia lee estas columnas por
+// posición (GU_* en ModContingencia.bas).
+export const COLUMNAS_GUIAS = [
+  { l: 'A', titulo: 'N° guía', ancho: 12, texto: true },
+  { l: 'B', titulo: 'Referencia', ancho: 22, texto: true },
+  { l: 'C', titulo: 'Código', ancho: 14, texto: true },
+  { l: 'D', titulo: 'Delivery', ancho: 14, texto: true },
+  { l: 'E', titulo: 'Cantidad', ancho: 9 },
+  { l: 'F', titulo: 'Lote', ancho: 16, texto: true },
+  { l: 'G', titulo: 'Vencimiento', ancho: 12, fecha: true },
+  { l: 'H', titulo: 'Descripción', ancho: 40 },
+];
+
+// Sin fila por fila (serán muchas): el formato y el desbloqueo van por
+// columna, que Excel aplica a toda celda nueva de la columna.
+const hojaGuias = (libro) => {
+  const hoja = libro.addWorksheet(H.GUIAS);
+  prepararHoja(hoja, COLUMNAS_GUIAS.map((c) => ({ ...c, clase: 'opcional' })), { conAyuda: false, congelarColumnas: 1 });
+  hoja.getCell('A1').value = 'Guías de consignación: pegue desde A3 el detalle (N° guía, Referencia, Código, Delivery, Cantidad, Lote, Vencimiento, Descripción). En Ítems, al escribir un N° guía en una gestión de CONSIGNACION se traen sus líneas.';
+  hoja.getCell('A1').font = { italic: true };
+  COLUMNAS_GUIAS.forEach((c) => {
+    const col = hoja.getColumn(c.l);
+    if (c.texto) col.numFmt = '@';
+    if (c.fecha) col.numFmt = FORMATO_FECHA;
+    col.protection = { locked: false };
+  });
+  // Ayuda y encabezados quedan bloqueados.
+  [FILA_AYUDA, FILA_ENCABEZADO].forEach((n) => COLUMNAS_GUIAS.forEach((c) => { hoja.getCell(`${c.l}${n}`).protection = { locked: true }; }));
+  return hoja;
+};
+
 // --- Hoja Cargados -----------------------------------------------------------------
 // La llena la macro "Mover cargados" (macros/MoverCargados.bas) con VALORES:
 // una fila por línea de ítem, con la cabecera de su gestión repetida, más
@@ -740,6 +783,7 @@ export const COLUMNAS_CARGADOS = [
   { titulo: 'Tipo de línea', ancho: 14 },
   { titulo: 'Línea padre (original)', ancho: 9 },
   { titulo: 'N° cotización', ancho: 13, texto: true },
+  { titulo: 'N° guía', ancho: 12, texto: true },
   { titulo: 'Referencia', ancho: 20, texto: true },
   { titulo: 'Código real', ancho: 12, texto: true },
   { titulo: 'Lote', ancho: 12, texto: true },
@@ -953,7 +997,7 @@ const formulasItemComunes = (r, x) => {
     // Estado carga (decisión del 24-11-2026): se cambia en NORMAL, PAD PADRE
     // (y LOTE ADICIONAL); el CONTENIDO PAD es siempre CONTENIDO y cuenta como
     // cargado. "PAD" queda por las filas del sistema que lo traen.
-    estadoEf: f(`IF(${c.tipoEf}="","",IF(${c.tipoEf}="CONTENIDO PAD","${ESTADO_CONTENIDO}",IF(${c.estadoCarga}="","PENDIENTE",${c.estadoCarga})))`),
+    estadoEf: f(`IF(${c.tipoEf}="","",IF(${esContenido(c.tipoEf)},"${ESTADO_CONTENIDO}",IF(${c.estadoCarga}="","PENDIENTE",${c.estadoCarga})))`),
     estadoNorm: f(`IF(${c.estadoEf}="","",IF(OR(${c.estadoEf}="CARGADO",${c.estadoEf}="PAD",${c.estadoEf}="${ESTADO_CONTENIDO}",${c.estadoEf}="SIN CARGO"),"CARGADO",${c.estadoEf}))`),
     empresaGestion: f(`IF(${c.clave}="","",IFERROR(INDEX(${x.gD},MATCH(${c.clave},${x.gA},0)),""))`),
     // Vacía si la gestión no tiene Total cotización (Gestiones T vacía).
@@ -973,6 +1017,7 @@ const formulasItemComunes = (r, x) => {
       + `&IF(${c.empresaNoCoincide}=1,"Empresa no coincide · ","")`
       + `&IF(AND(${c.sinCodigo}=0,${c.recargoOk}=0),"Sin rango de recargo · ","")`
       + `&IF(${padreInvalido},"Línea padre inválida · ","")`
+      + `&IF(AND(${c.tipoEf}="${TIPO_CONTENIDO_GUIA}",${c.empresaGestion}<>""),IF(IFERROR(INDEX(${x.gJ},MATCH(${c.clave},${x.gA},0))&"","")<>"${SEGMENTO_CONSIGNACION}","Guía en gestión que no es de CONSIGNACION · ",""),"")`
       // Lote o vencimiento escrito antes de cambiar la línea a PAD PADRE.
       + `&IF(AND(${c.tipoEf}="PAD PADRE",OR(AND(${c.lote}<>"",${c.lote}<>"${VALOR_PAD}"),AND(${c.vencimiento}<>"",${c.vencimiento}<>"${VALOR_PAD}"))),"PAD PADRE: Lote y Vencimiento deben ser PAD · ","")`
       + `&IF(AND(${c.tipoEf}="LOTE ADICIONAL",${c.filaPadre}<>""),IF(SUMIFS(${enLineas('cantidad')},${enLineas('padre')},${c.padre},${enLineas('tipoEf')},"LOTE ADICIONAL")>INDEX(${enLineas('cantidad')},${c.filaPadre}),"Lotes superan la cantidad · ",""),"")`
@@ -984,7 +1029,7 @@ const formulasItemComunes = (r, x) => {
 // lo guardado).
 const formulasItemNuevas = (r, x) => {
   const c = Object.fromEntries(Object.entries(I).map(([k, l]) => [k, `${l}${r}`]));
-  const sinCobro = `OR(${c.tipoEf}="CONTENIDO PAD",${c.tipoEf}="LOTE ADICIONAL",${c.estadoEf}="SIN CARGO")`;
+  const sinCobro = `OR(${c.tipoEf}="CONTENIDO PAD",${c.tipoEf}="${TIPO_CONTENIDO_GUIA}",${c.tipoEf}="LOTE ADICIONAL",${c.estadoEf}="SIN CARGO")`;
   const delCatalogo = (l) => `IF(OR(${c.tipoEf}="",${c.filaCat}=""),"",INDEX(${x.rCol(l)},${c.filaCat})&"")`;
   return {
     ...formulasItemComunes(r, x),
@@ -1173,6 +1218,7 @@ const textoInstrucciones = (d) => [
   ['   Ejemplo PAD: línea 120 PAD PADRE "PAD-RODILLA"; líneas 121 y 122 CONTENIDO PAD con Línea padre 120.'],
   ['   Colores: Estado carga en verde (CARGADO, CONTENIDO, SIN CARGO), rojo (PENDIENTE o vacío) y naranja (REVISAR, S/COTIZACION). Total ítem y Venta en naranja: la suma de Total ítem de la gestión no coincide con su Total cotización (la diferencia está en Gestiones, columna Diferencia): revise precios y cantidades.'],
   ['   Vencimiento: una fecha (dd-mm-aaaa) o "Sin fecha" si el producto no la trae.'],
+  ['   GUÍAS DE CONSIGNACIÓN: pegue el detalle de las guías en la hoja Guías. En una gestión con Atributo CONSIGNACION, escriba en Ítems la CLAVE y el N° guía en una fila vacía (si quiere, también N° cotización y Registrado por): desde esa fila hacia abajo se llena una línea por cada línea de la guía, como CONTENIDO GUÍA ("No lleva OC", precio 0, Estado carga CONTENIDO), con su referencia, cantidad, lote y vencimiento. Necesita tantas filas vacías como líneas tenga la guía; si no las hay, o la guía no está en la hoja Guías, o la gestión no es de CONSIGNACION, avisa y no escribe nada.'],
   ['5. La columna Alerta debe quedar vacía. Avisos: Falta CLAVE / CLAVE no existe · Falta N° cotización · Falta referencia · Cantidad inválida · Sin código · Referencia ambigua (la referencia existe para varias empresas y ninguna es la de la gestión) · Empresa no coincide · Sin rango de recargo · Línea padre inválida · Lotes superan la cantidad · PAD PADRE: Lote y Vencimiento deben ser PAD (se escribió un lote o fecha antes de elegir PAD PADRE: bórrelos y copie la celda de una fila vacía de abajo para que vuelva a decir PAD).'],
   ...(d.plantilla ? [
     ['6. Si el ítem es de una gestión que ya estaba en el sistema, regístrela igual en la hoja Gestiones (misma admisión, empresa y fecha) y cargue aquí solo lo nuevo.'],
@@ -1341,6 +1387,7 @@ export const construirLibro = async (datosEntrada) => {
   const hC = hojaCargados(libro);
   const hSol = hojaSolicitud(libro, H.SOL, COLUMNAS_SOLICITUD);
   const hRes = hojaSolicitud(libro, H.RES, COLUMNAS_RESUMEN);
+  hojaGuias(libro);
   const { col: riCol } = hojaReporteInfo(libro, datos.reporteInfo || [], datos.filasCatalogos.reporteInfo);
   const { col: rCol } = hojaCodigos(libro, datos.catalogo, datos.filasCatalogos.referencias);
   const { nombres: empresasNombres } = hojaEmpresas(libro, datos.empresas, datos.filasCatalogos.empresas);
@@ -1364,6 +1411,7 @@ export const construirLibro = async (datosEntrada) => {
     gA: enHoja(H.G, 'A', ultimaGestion),
     gD: enHoja(H.G, 'D', ultimaGestion),
     gT: enHoja(H.G, 'T', ultimaGestion),
+    gJ: enHoja(H.G, 'J', ultimaGestion),
     iB: enHoja(H.I, I.clave, ultimaItem),
     iS: enHoja(H.I, I.total, ultimaItem),
     iAA: enHoja(H.I, I.estadoNorm, ultimaItem),
@@ -1425,6 +1473,7 @@ export const construirLibro = async (datosEntrada) => {
   validar(hG, rg('F'), { type: 'decimal', operator: 'greaterThanOrEqual', formulae: [0], error: 'Monto mayor o igual a 0.' });
   validar(hG, rg('G'), lista(cat.C));
   validar(hG, rg('I'), lista(centros('A')));
+  validar(hG, rg('J'), lista(cat.G, { errorTitle: 'Atributo', error: 'Elija un segmento de la lista (hoja Catálogos).' }));
   validar(hG, rg('K'), lista(cat.D));
   validar(hG, rg('Q'), lista(cat.A));
   validar(hG, rg('W'), listaRegistradoPor(cat.registrado));
@@ -1532,7 +1581,7 @@ export const construirLibro = async (datosEntrada) => {
     formulae: [`AND(${noPadPadre},OR(${venc}="${SIN_FECHA}",AND(ISNUMBER(${venc}),${venc}>=${desde},${venc}<=${hasta})))`],
     errorTitle: 'Vencimiento', error: `Escriba una fecha válida (dd-mm-aaaa) o "${SIN_FECHA}". ${msjPadPadre}`,
   });
-  validar(hI, ri('estadoCarga'), lista(`IF(${tipoFila}="CONTENIDO PAD",${cat.I},${cat.B})`, { errorTitle: 'Estado carga', error: 'Elija de la lista. En CONTENIDO PAD el estado es CONTENIDO (automático).' }));
+  validar(hI, ri('estadoCarga'), lista(`IF(${esContenido(tipoFila)},${cat.I},${cat.B})`, { errorTitle: 'Estado carga', error: 'Elija de la lista. En CONTENIDO PAD y CONTENIDO GUÍA el estado es CONTENIDO (automático).' }));
   validar(hI, ri('precioManual'), { type: 'decimal', operator: 'greaterThanOrEqual', formulae: [0], error: 'Monto mayor o igual a 0.' });
   hI.addConditionalFormatting({
     ref: ri('empresaProducto'),
@@ -1592,7 +1641,7 @@ export const construirLibro = async (datosEntrada) => {
   await hNM.protect(clave, { selectLockedCells: true, selectUnlockedCells: true });
   // Mismas opciones con que vuelven a proteger las macros (Proteger en
   // ModContingencia.bas), que editan Catálogos y las hojas con marcas.
-  for (const nombre of [H.RI, H.R, H.E, H.CEN, H.REC, H.PREV, H.CONV, H.C, H.INS]) {
+  for (const nombre of [H.GUIAS, H.RI, H.R, H.E, H.CEN, H.REC, H.PREV, H.CONV, H.C, H.INS]) {
     await libro.getWorksheet(nombre).protect(clave, { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true, formatColumns: true, formatRows: true });
   }
 

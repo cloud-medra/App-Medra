@@ -47,6 +47,16 @@ Private Const HOJA_RESUMEN As String = "Resumen"
 Private Const HOJA_CATALOGOS As String = "Catálogos"
 Private Const HOJA_NUEVO_MES As String = "Nuevo mes"
 Private Const HOJA_CATALOGOS_CODIGOS As String = "Códigos"
+' Guías de consignación (COLUMNAS_GUIAS en libroRespaldo.js): A N° guía,
+' B Referencia, C Código, D Delivery, E Cantidad, F Lote, G Vencimiento,
+' H Descripción. Datos desde la fila 3.
+Private Const HOJA_GUIAS As String = "Guías"
+Private Const GU_COLUMNAS As Long = 8
+Private Const TIPO_CONTENIDO_GUIA As String = "CONTENIDO GUÍA"
+Private Const SEGMENTO_CONSIGNACION As String = "CONSIGNACION"
+' Celdas de la fila de la guía que se pueden escribir antes de traerla (se
+' copian a las demás líneas).
+Private Const ANTES_DE_GUIA As String = "CLAVE|N° guía|N° cotización|Registrado por"
 ' Mes del libro (Catálogos) y datos del libro a crear (Nuevo mes).
 Private Const LIBRO_ANIO As String = "K3"
 Private Const LIBRO_MES As String = "L3"
@@ -75,6 +85,7 @@ Private Const CLAVE_HOJAS As String = "__CLAVE_HOJAS__"
 ' Estado va en H, junto a Informe (24-11-2026): B..G e I..Q se escriben.
 Private Const G_ULTIMA_ENTRADA As Long = 17   ' Q (Estado sin ítems)
 Private Const G_ESTADO As Long = 8            ' H (fórmula, no se limpia)
+Private Const G_ATRIBUTO As Long = 10         ' J (segmento: CONSIGNACION trae guías)
 Private Const G_N_ITEMS As Long = 18          ' R
 Private Const G_ORIGEN As Long = 22           ' V
 Private Const G_REGISTRADO As Long = 23       ' W
@@ -87,7 +98,7 @@ Private Const G_AUTOCOMPLETADO As String = "5:33,13:34,14:35,15:36,16:37"
 Private Const G_DESDE_CARGADOS As String = "2:Admisión|3:Fecha|4:Empresa|5:Nombre paciente|6:Total cotización|7:Informe|9:Centro|10:Atributo|11:Lado|12:Observación|13:Convenio|14:Previsión|15:Médico|16:Descripción|17:Estado sin ítems|23:Registrado por (gestión)"
 
 ' Items: celdas que se escriben (se limpian al mover y se llenan al devolver).
-Private Const I_ENTRADAS As String = "CLAVE|Tipo de línea|Línea padre|N° cotización|Referencia|Cantidad (ingresar)|Lote|Vencimiento|Estado carga|Precio manual|Registrado por"
+Private Const I_ENTRADAS As String = "CLAVE|Tipo de línea|Línea padre|N° cotización|Referencia|Cantidad (ingresar)|N° guía|Lote|Vencimiento|Estado carga|Precio manual|Registrado por"
 ' Items: celdas que se escriben pero traen un valor automático según el tipo
 ' de línea (valoresPorTipo en libroRespaldo.js): PAD PADRE -> Lote y
 ' Vencimiento "PAD"; CONTENIDO PAD -> Estado carga "CONTENIDO". Al limpiar
@@ -97,7 +108,7 @@ Private Const ESTADO_CONTENIDO As String = "CONTENIDO"
 ' Columna de Items de donde sale cada columna de Cargados, como Cargados>Items
 ' (con '>': algunos títulos tienen ':'). Las de la gestión
 ' salen de Gestiones; ver ValorGestion).
-Private Const C_DESDE_ITEMS As String = "N° línea (original)>N° línea|Tipo de línea>aux: tipo|Línea padre (original)>Línea padre|N° cotización>N° cotización|Referencia>Referencia|Código real>Código real|Cantidad>Cantidad|Lote>Lote|Vencimiento>Vencimiento|Estado carga>aux: estado|Precio manual>Precio manual|Código>Código|Precio unitario>Precio unitario|Empresa producto>Empresa producto|Clase>Clase|Tipo>Tipo|Descriptor>Descriptor|Veces costo>Veces costo|Total ítem>Total ítem|Venta>Venta|Sin código (1 = sí)>aux: sin código|Recargo encontrado (1 = sí)>aux: recargo encontrado|Alerta>Alerta|Registrado por (ítem)>Registrado por|ORIGEN>ORIGEN"
+Private Const C_DESDE_ITEMS As String = "N° línea (original)>N° línea|Tipo de línea>aux: tipo|Línea padre (original)>Línea padre|N° cotización>N° cotización|N° guía>N° guía|Referencia>Referencia|Código real>Código real|Cantidad>Cantidad|Lote>Lote|Vencimiento>Vencimiento|Estado carga>aux: estado|Precio manual>Precio manual|Código>Código|Precio unitario>Precio unitario|Empresa producto>Empresa producto|Clase>Clase|Tipo>Tipo|Descriptor>Descriptor|Veces costo>Veces costo|Total ítem>Total ítem|Venta>Venta|Sin código (1 = sí)>aux: sin código|Recargo encontrado (1 = sí)>aux: recargo encontrado|Alerta>Alerta|Registrado por (ítem)>Registrado por|ORIGEN>ORIGEN"
 
 ' ---------------------------------------------------------------------------
 ' Botones
@@ -443,6 +454,8 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     Application.Calculation = xlCalculationManual
     On Error GoTo Fallo
     Desproteger wsG: Desproteger wsI: Desproteger wsC
+    ' Escribir N° guía no debe volver a traer la guía (TraerGuia).
+    Application.EnableEvents = False
 
     ' Gestión: cada columna que se escribe, desde su columna de Cargados.
     Dim r0 As Long, par As Variant, colG As Long, valorC As Variant
@@ -475,7 +488,7 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
         If padre <> "" Then
             If nueva.Exists(padre) Then wsI.Cells(ri, Col(ti, "Línea padre")).Value = nueva(padre) Else wsI.Cells(ri, Col(ti, "Línea padre")).Value = padre
         End If
-        For Each entrada In Split("N° cotización|Referencia|Lote|Vencimiento|Estado carga|Precio manual", "|")
+        For Each entrada In Split("N° cotización|N° guía|Referencia|Lote|Vencimiento|Estado carga|Precio manual", "|")
             wsI.Cells(ri, Col(ti, entrada)).Value = wsC.Cells(rc, Col(tc, entrada)).Value
         Next entrada
         wsI.Cells(ri, Col(ti, "Cantidad (ingresar)")).Value = wsC.Cells(rc, Col(tc, "Cantidad")).Value
@@ -487,7 +500,7 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
             If Txt(wsI.Cells(ri, Col(ti, "Lote")).Value) = VALOR_PAD Then FormulaDefecto wsI, ti, ri, "Lote"
             If Txt(wsI.Cells(ri, Col(ti, "Vencimiento")).Value) = VALOR_PAD Then FormulaDefecto wsI, ti, ri, "Vencimiento"
         End If
-        If tipo = "CONTENIDO PAD" Or Txt(wsI.Cells(ri, Col(ti, "Estado carga")).Value) = "PAD" Then
+        If tipo = "CONTENIDO PAD" Or tipo = TIPO_CONTENIDO_GUIA Or Txt(wsI.Cells(ri, Col(ti, "Estado carga")).Value) = "PAD" Then
             FormulaDefecto wsI, ti, ri, "Estado carga"
         End If
         ' Lo que volvió vacío también queda con su fórmula (como una fila libre).
@@ -505,12 +518,131 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
 
     DevolverGestionAuto = "OK;" & filaG & ";" & filasC.Count
 Fin:
+    Application.EnableEvents = True
     Proteger wsG: Proteger wsI: Proteger wsC
     Application.Calculation = calculo
     Application.ScreenUpdating = True
     Exit Function
 Fallo:
     DevolverGestionAuto = "ERROR;" & Err.Description
+    Resume Fin
+End Function
+
+' ---------------------------------------------------------------------------
+' Guías de consignación
+' ---------------------------------------------------------------------------
+
+' Evento (Workbook_SheetChange, lo agrega armarXlsm.ps1): al escribir un N°
+' guía en Ítems trae las líneas de esa guía. Una sola celda por vez: un
+' pegado de varias no trae nada.
+Public Sub TraerGuia(ByVal Sh As Object, ByVal Target As Range)
+    If Sh.Name <> HOJA_ITEMS Then Exit Sub
+    If Target.Cells.Count <> 1 Or Target.Row < PRIMERA Then Exit Sub
+    Dim colGuia As Long
+    colGuia = Col(Titulos(Sh), "N° guía")
+    If Target.Column <> colGuia Or Txt(Target.Value) = "" Then Exit Sub
+    Dim resultado As String
+    resultado = TraerGuiaAuto(Target.Row)
+    If Left(resultado, 6) = "ERROR;" Then MsgBox Mid(resultado, 7), vbExclamation, "Traer guía"
+End Sub
+
+' Llena, desde la fila de la guía hacia abajo, una línea CONTENIDO GUÍA por
+' cada línea de la guía en la hoja Guías. Devuelve "OK;líneas" o
+' "ERROR;mensaje" (no escribe nada si hay error).
+Public Function TraerGuiaAuto(ByVal fila As Long) As String
+    Dim wsI As Worksheet, wsG As Worksheet, wsGu As Worksheet, ti As Object
+    Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
+    Set wsG = ThisWorkbook.Worksheets(HOJA_GESTIONES)
+    Set wsGu = ThisWorkbook.Worksheets(HOJA_GUIAS)
+    Set ti = Titulos(wsI)
+
+    Dim guia As String, clave As String
+    guia = Txt(wsI.Cells(fila, Col(ti, "N° guía")).Value)
+    If guia = "" Then TraerGuiaAuto = "ERROR;Escriba el N° de guía.": Exit Function
+    clave = Txt(wsI.Cells(fila, Col(ti, "CLAVE")).Value)
+
+    ' Si ya tiene CLAVE, la gestión debe ser de consignación.
+    If clave <> "" Then
+        Dim fg As Variant
+        fg = Application.Match(clave, wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), 1)), 0)
+        If Not IsError(fg) Then
+            If UCase(Txt(wsG.Cells(PRIMERA + CLng(fg) - 1, G_ATRIBUTO).Value)) <> SEGMENTO_CONSIGNACION Then
+                TraerGuiaAuto = "ERROR;La gestión " & clave & " no es de " & SEGMENTO_CONSIGNACION & ". Cambie su Atributo en Gestiones y vuelva a escribir el N° de guía."
+                Exit Function
+            End If
+        End If
+    End If
+
+    ' Líneas de la guía.
+    Dim ultimaGu As Long, datos As Variant, k As Long, lineas As New Collection
+    ultimaGu = wsGu.Cells(wsGu.Rows.Count, 1).End(xlUp).Row
+    If ultimaGu < PRIMERA Then
+        TraerGuiaAuto = "ERROR;La hoja " & HOJA_GUIAS & " está vacía: pegue ahí el detalle de las guías."
+        Exit Function
+    End If
+    datos = wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(ultimaGu, GU_COLUMNAS)).Value
+    For k = 1 To UBound(datos, 1)
+        If UCase(Txt(datos(k, 1))) = UCase(guia) Then lineas.Add k
+    Next k
+    If lineas.Count = 0 Then
+        TraerGuiaAuto = "ERROR;La guía " & guia & " no está en la hoja " & HOJA_GUIAS & "."
+        Exit Function
+    End If
+
+    ' Filas libres: la de la guía (solo con lo de ANTES_DE_GUIA) y las de abajo.
+    Dim ultimaI As Long, r As Long, entrada As Variant, permitido As Boolean, p As Variant
+    ultimaI = UltimaFila(wsI, Col(ti, "N° línea"))
+    If fila + lineas.Count - 1 > ultimaI Then
+        TraerGuiaAuto = "ERROR;La guía " & guia & " tiene " & lineas.Count & " líneas y no caben desde la fila " & fila & "."
+        Exit Function
+    End If
+    For r = fila To fila + lineas.Count - 1
+        For Each entrada In Split(I_ENTRADAS, "|")
+            permitido = False
+            If r = fila Then
+                For Each p In Split(ANTES_DE_GUIA, "|")
+                    If p = entrada Then permitido = True
+                Next p
+            End If
+            If Not permitido And Txt(wsI.Cells(r, Col(ti, entrada)).Value) <> "" Then
+                TraerGuiaAuto = "ERROR;La guía " & guia & " tiene " & lineas.Count & " líneas: hacen falta " & lineas.Count & " filas vacías desde la fila " & fila & ", pero la fila " & r & " ya tiene datos (" & entrada & "). Escriba la guía en una fila vacía con espacio debajo."
+                Exit Function
+            End If
+        Next entrada
+    Next r
+
+    ' Escribe (sin eventos: N° guía no debe volver a disparar esto).
+    Dim cotizacion As Variant, registrado As Variant, i As Long, ref As String, lote As String, venc As Variant
+    cotizacion = wsI.Cells(fila, Col(ti, "N° cotización")).Value
+    registrado = wsI.Cells(fila, Col(ti, "Registrado por")).Value
+    Application.EnableEvents = False
+    On Error GoTo Fallo
+    For k = 1 To lineas.Count
+        i = lineas(k)
+        r = fila + k - 1
+        If clave <> "" Then wsI.Cells(r, Col(ti, "CLAVE")).Value = clave
+        wsI.Cells(r, Col(ti, "N° guía")).Value = guia
+        wsI.Cells(r, Col(ti, "Tipo de línea")).Value = TIPO_CONTENIDO_GUIA
+        If Txt(cotizacion) <> "" Then wsI.Cells(r, Col(ti, "N° cotización")).Value = cotizacion
+        If Txt(registrado) <> "" Then wsI.Cells(r, Col(ti, "Registrado por")).Value = registrado
+        ' Referencia; si la guía no la trae, el código.
+        ref = Txt(datos(i, 2))
+        If ref = "" Then ref = Txt(datos(i, 3))
+        wsI.Cells(r, Col(ti, "Referencia")).Value = ref
+        If Txt(datos(i, 5)) <> "" Then wsI.Cells(r, Col(ti, "Cantidad (ingresar)")).Value = Num(datos(i, 5))
+        lote = Txt(datos(i, 6))
+        If lote = "" Then lote = "Sin lote"
+        wsI.Cells(r, Col(ti, "Lote")).Value = lote
+        venc = datos(i, 7)
+        If Txt(venc) = "" Then venc = "Sin fecha"
+        wsI.Cells(r, Col(ti, "Vencimiento")).Value = venc
+    Next k
+    TraerGuiaAuto = "OK;" & lineas.Count
+Fin:
+    Application.EnableEvents = True
+    Exit Function
+Fallo:
+    TraerGuiaAuto = "ERROR;No se pudo traer la guía: " & Err.Description
     Resume Fin
 End Function
 
@@ -641,17 +773,24 @@ Public Function CrearLibroDelMesAuto(ByVal anio As Variant, ByVal mes As Variant
         End If
     Next wb
 
+    ' Se prepara con un nombre temporal y recién al final queda con su nombre:
+    ' si algo falla a mitad de camino (o Excel se cierra), no queda un
+    ' respaldo_implantes_AAAA-MM.xlsm sin preparar y se puede volver a crear.
+    Dim temporal As String
+    temporal = ThisWorkbook.Path & Application.PathSeparator & "creando_" & nombre
     On Error GoTo Fallo
-    ThisWorkbook.SaveCopyAs destino
-    Set wb = Application.Workbooks.Open(destino)
+    If Dir(temporal) <> "" Then Kill temporal
+    ThisWorkbook.SaveCopyAs temporal
+    Set wb = Application.Workbooks.Open(temporal)
     resultado = Application.Run("'" & wb.Name & "'!PrepararLibroDelMes", CLng(anio), CLng(mes))
     If Left(resultado, 2) <> "OK" Then
         wb.Close False
-        Kill destino
+        Kill temporal
         CrearLibroDelMesAuto = resultado
         Exit Function
     End If
-    wb.Save
+    wb.SaveAs Filename:=destino, FileFormat:=xlOpenXMLWorkbookMacroEnabled
+    Kill temporal
     If abrir Then
         wb.Activate
         wb.Worksheets(HOJA_GESTIONES).Activate
@@ -679,6 +818,8 @@ Public Function PrepararLibroDelMes(ByVal anio As Long, ByVal mes As Long) As St
     calculo = Application.Calculation
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
+    ' Sin eventos: vaciar miles de celdas no debe pasar por Workbook_SheetChange.
+    Application.EnableEvents = False
     On Error GoTo Fallo
     Desproteger wsG: Desproteger wsI: Desproteger wsC: Desproteger wsS: Desproteger wsR: Desproteger wsCat
 
@@ -729,6 +870,7 @@ Public Function PrepararLibroDelMes(ByVal anio As Long, ByVal mes As Long) As St
     ThisWorkbook.RemovePersonalInformation = False
     PrepararLibroDelMes = "OK"
 Fin:
+    Application.EnableEvents = True
     Proteger wsG: Proteger wsI: Proteger wsC: Proteger wsS: Proteger wsR: Proteger wsCat
     Application.Calculation = calculo
     Application.ScreenUpdating = True
@@ -988,7 +1130,7 @@ Private Function FormulaDefectoTexto(ByVal ws As Worksheet, ByVal ti As Object, 
     Dim tipo As String
     tipo = ws.Cells(fila, Col(ti, "Tipo de línea")).Address(False, False)
     If titulo = "Estado carga" Then
-        FormulaDefectoTexto = "=IF(" & tipo & "=""CONTENIDO PAD"",""" & ESTADO_CONTENIDO & ""","""")"
+        FormulaDefectoTexto = "=IF(OR(" & tipo & "=""CONTENIDO PAD""," & tipo & "=""" & TIPO_CONTENIDO_GUIA & """),""" & ESTADO_CONTENIDO & ""","""")"
     Else
         FormulaDefectoTexto = "=IF(" & tipo & "=""PAD PADRE"",""" & VALOR_PAD & ""","""")"
     End If

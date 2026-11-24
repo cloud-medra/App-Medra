@@ -8,7 +8,7 @@ import {
 import { filasDesdeGestiones, catalogoReferencias, datosPlantilla, TAMANO_PLANTILLA, MINIMO_CATALOGOS } from './datosRespaldo.js';
 
 // Instrucciones y Nuevo mes al final (24-11-2026).
-const HOJAS = ['Gestiones', 'Ítems', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
+const HOJAS = ['Gestiones', 'Ítems', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Guías', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
   'Previsiones', 'Convenios', 'Catálogos', 'Instrucciones', 'Nuevo mes'];
 
 const releer = async (libro) => {
@@ -62,9 +62,15 @@ describe('plantilla', () => {
     // "PAD"; CONTENIDO PAD -> Estado carga "CONTENIDO". Se puede escribir encima.
     expect(hojaItems.getCell(`${I.lote}3`).value.formula).toBe('IF(I3="PAD PADRE","PAD","")');
     expect(hojaItems.getCell(`${I.vencimiento}3`).value.formula).toBe('IF(I3="PAD PADRE","PAD","")');
-    expect(hojaItems.getCell('G3').value.formula).toBe('IF(I3="CONTENIDO PAD","CONTENIDO","")');
+    expect(hojaItems.getCell('G3').value.formula).toBe('IF(OR(I3="CONTENIDO PAD",I3="CONTENIDO GUÍA"),"CONTENIDO","")');
+    // N° guía (consignación) después de Cantidad (ingresar).
+    expect(I.numGuia).toBe('N');
+    expect(hojaItems.getCell('N2').value).toBe('N° guía');
+    expect(bloqueada(hojaItems.getCell('N3'))).toBe(false);
+    expect(hojaItems.getCell('D3').value.formula).toContain('="CONTENIDO GUÍA"');
+    expect(hojaItems.getCell(`${I.alerta}3`).value.formula).toContain('Guía en gestión que no es de CONSIGNACION');
     expect([I.lote, I.vencimiento].map((l) => bloqueada(hojaItems.getCell(`${l}3`)))).toEqual([false, false]);
-    expect(hojaItems.getCell(`${I.estadoEf}3`).value.formula).toBe(`IF(${I.tipoEf}3="","",IF(${I.tipoEf}3="CONTENIDO PAD","CONTENIDO",IF(G3="","PENDIENTE",G3)))`);
+    expect(hojaItems.getCell(`${I.estadoEf}3`).value.formula).toBe(`IF(${I.tipoEf}3="","",IF(OR(${I.tipoEf}3="CONTENIDO PAD",${I.tipoEf}3="CONTENIDO GUÍA"),"CONTENIDO",IF(G3="","PENDIENTE",G3)))`);
     expect(hojaItems.getCell(`${I.estadoNorm}3`).value.formula).toContain('"CONTENIDO"');
     expect(hojaItems.getCell(`${I.alerta}3`).value.formula).toContain('PAD PADRE: Lote y Vencimiento deben ser PAD');
     // Código real: el del catálogo en toda línea; Código sigue con "No lleva OC".
@@ -132,10 +138,10 @@ describe('plantilla', () => {
     expect(bloqueada(rec.getCell('E52'))).toBe(false);
     // Veces costo y venta leen la hoja Recargos (por desde-hasta, sin los INACTIVOS).
     const it3 = libro.getWorksheet('Ítems');
-    expect(it3.getCell(`${I.tramo}3`).value.formula).toContain(`COUNTIFS('Recargos'!$A$3:$A$52,"<="&R3,'Recargos'!$B$3:$B$52,">="&R3`);
+    expect(it3.getCell(`${I.tramo}3`).value.formula).toContain(`COUNTIFS('Recargos'!$A$3:$A$52,"<="&S3,'Recargos'!$B$3:$B$52,">="&S3`);
     expect(it3.getCell(`${I.tramo}3`).value.formula).toContain(`'Recargos'!$E$3:$E$52,"<>INACTIVO"`);
     expect(it3.getCell(`${I.veces}3`).value.formula).toContain(`SUMIFS('Recargos'!$C$3:$C$52`);
-    expect(it3.getCell('F3').value.formula).toBe('IF(AC3="","",R3*W3*N(E3))');
+    expect(it3.getCell('F3').value.formula).toBe('IF(AD3="","",S3*X3*N(E3))');
     // Gestiones lee de Ítems la CLAVE, el total y los auxiliares por su letra nueva.
     expect(g.getCell('R4').value.formula).toBe(`IF(A4="","",COUNTIF('Ítems'!$H$3:$H$${2 + TAMANO_PLANTILLA.itemsLibres},A4))`);
     expect(g.getCell('S4').value.formula).toContain(`'Ítems'!$${I.total}$3:$${I.total}$`);
@@ -143,7 +149,7 @@ describe('plantilla', () => {
     // Cargados: vacía, con las columnas que escribe la macro, protegida.
     const carg = libro.getWorksheet('Cargados');
     expect(carg.getRow(2).values.slice(1)).toEqual(COLUMNAS_CARGADOS.map((col) => col.titulo));
-    expect(COLUMNAS_CARGADOS).toHaveLength(45);
+    expect(COLUMNAS_CARGADOS).toHaveLength(46);
     expect(COLUMNAS_CARGADOS.slice(0, 7).map((col) => col.titulo)).toEqual(['N° línea (original)', ...VISTA_CARGA.slice(1)]);
     expect(COLUMNAS_CARGADOS.map((col) => col.titulo)).toContain('Código real');
     expect(carg.views[0]).toMatchObject({ state: 'frozen', xSplit: 7, ySplit: 2 });
@@ -505,36 +511,36 @@ describe('construirLibro', () => {
     const it_ = libro.getWorksheet('Ítems');
     // Línea normal: Cantidad (ingresar) (M), Lote (O), Vencimiento (P) y
     // Estado carga (G). Cantidad (E) es la fórmula que la muestra.
-    expect(['M3', 'O3', 'P3', 'G3'].map((c) => bloqueada(it_.getCell(c)))).toEqual([false, false, false, false]);
-    expect(['E3', 'L3', 'D3', 'R3', 'K3'].map((c) => bloqueada(it_.getCell(c)))).toEqual([true, true, true, true, true]);
+    expect(['M3', 'P3', 'Q3', 'G3'].map((c) => bloqueada(it_.getCell(c)))).toEqual([false, false, false, false]);
+    expect(['E3', 'L3', 'D3', 'S3', 'K3'].map((c) => bloqueada(it_.getCell(c)))).toEqual([true, true, true, true, true]);
     expect(it_.getCell('M3').value).toBe(2);
     expect(it_.getCell('E3').value.formula).toBe('IF(M3="","",M3)');
-    expect(it_.getCell('AP3').value).toBe(2);
-    expect(it_.getCell('AQ3').value).toBe('L1');
-    expect(it_.getCell('AS3').value).toBe('CARGADO');
-    expect(it_.getCell('AO3').value.formula).toBe('IF(OR(G3<>AS3,M3<>AP3,O3<>AQ3,P3<>AR3),"SÍ","NO")');
-    expect(it_.getCell('X3').value.formula).toBe('IF(G3="SIN CARGO",0,R3*N(E3))');
-    expect(it_.getCell('F3').value.formula).toBe('IF(G3="SIN CARGO",0,R3*W3*N(E3))');
+    expect(it_.getCell('AQ3').value).toBe(2);
+    expect(it_.getCell('AR3').value).toBe('L1');
+    expect(it_.getCell('AT3').value).toBe('CARGADO');
+    expect(it_.getCell('AP3').value.formula).toBe('IF(OR(G3<>AT3,M3<>AQ3,P3<>AR3,Q3<>AS3),"SÍ","NO")');
+    expect(it_.getCell('Y3').value.formula).toBe('IF(G3="SIN CARGO",0,S3*N(E3))');
+    expect(it_.getCell('F3').value.formula).toBe('IF(G3="SIN CARGO",0,S3*X3*N(E3))');
     // PAD PADRE: Cantidad y Estado carga. Sin código: todo salvo Estado carga.
-    expect(['M4', 'O4', 'P4', 'G4'].map((c) => bloqueada(it_.getCell(c)))).toEqual([false, true, true, false]);
-    expect(['M5', 'O5', 'P5', 'G5'].map((c) => bloqueada(it_.getCell(c)))).toEqual([false, false, false, true]);
+    expect(['M4', 'P4', 'Q4', 'G4'].map((c) => bloqueada(it_.getCell(c)))).toEqual([false, true, true, false]);
+    expect(['M5', 'P5', 'Q5', 'G5'].map((c) => bloqueada(it_.getCell(c)))).toEqual([false, false, false, true]);
     // El filtro llega hasta MODIFICADO (después de las auxiliares ocultas).
-    expect(I.modificado).toBe('AO');
-    expect(JSON.stringify(it_.autoFilter)).toContain('AO2');
+    expect(I.modificado).toBe('AP');
+    expect(JSON.stringify(it_.autoFilter)).toContain('AP2');
   });
 
   it('colores de Estado carga y Total ítem / Venta si la gestión no cuadra con su Total cotización', async () => {
     const { libro } = await armar();
     const it_ = libro.getWorksheet('Ítems');
     // La diferencia de la gestión (Gestiones T) llega a cada línea por la CLAVE.
-    expect(I.difCotizacion).toBe('AT');
-    expect(it_.getColumn('AT').hidden).toBe(true);
-    expect(it_.getCell('AT5').value.formula).toBe("IF(OR(AC5=\"\",AF5=\"\"),\"\",IFERROR(INDEX('Gestiones'!$T$3:$T$8,MATCH(H5,'Gestiones'!$A$3:$A$8,0))*1,\"\"))");
+    expect(I.difCotizacion).toBe('AU');
+    expect(it_.getColumn('AU').hidden).toBe(true);
+    expect(it_.getCell('AU5').value.formula).toBe("IF(OR(AD5=\"\",AG5=\"\"),\"\",IFERROR(INDEX('Gestiones'!$T$3:$T$8,MATCH(H5,'Gestiones'!$A$3:$A$8,0))*1,\"\"))");
     const reglas = (ref) => it_.conditionalFormattings.filter((cf) => cf.ref === ref).flatMap((cf) => cf.rules.map((x) => x.formulae[0]));
     const rango = (l) => it_.conditionalFormattings.map((cf) => cf.ref).find((ref) => ref.startsWith(`${l}3:`));
-    expect(reglas(rango('X'))).toContain('AND(ISNUMBER($AT3),ROUND($AT3,0)<>0)');
-    expect(reglas(rango('F'))).toContain('AND(ISNUMBER($AT3),ROUND($AT3,0)<>0)');
-    expect(reglas(rango('G'))).toEqual(expect.arrayContaining(['OR($AD3="CARGADO",$AD3="CONTENIDO",$AD3="PAD",$AD3="SIN CARGO")', '$AD3="PENDIENTE"']));
+    expect(reglas(rango('Y'))).toContain('AND(ISNUMBER($AU3),ROUND($AU3,0)<>0)');
+    expect(reglas(rango('F'))).toContain('AND(ISNUMBER($AU3),ROUND($AU3,0)<>0)');
+    expect(reglas(rango('G'))).toEqual(expect.arrayContaining(['OR($AE3="CARGADO",$AE3="CONTENIDO",$AE3="PAD",$AE3="SIN CARGO")', '$AE3="PENDIENTE"']));
     // En Cargados, por el valor guardado de Estado carga (columna G).
     const carg = libro.getWorksheet('Cargados');
     expect(carg.conditionalFormattings.find((cf) => cf.ref === 'G3:G10002').rules[1].formulae[0]).toBe('G3="PENDIENTE"');
@@ -549,15 +555,26 @@ describe('construirLibro', () => {
     expect(it_.dataValidations.find('L5')).toMatchObject({ type: 'list', errorStyle: 'warning' });
     expect(it_.dataValidations.find('E5')).toBeUndefined();
     const rojos = it_.conditionalFormattings.filter((cf) => cf.rules[0].formulae[0] === `AND($${I.origen}3="CONTINGENCIA",${cf.ref.split(':')[0]}="")`).map((cf) => cf.ref.replace(/\d+/g, ''));
-    expect(rojos).toEqual(['H:H', 'I:I', 'K:K', 'L:L', 'M:M', 'O:O', 'P:P', 'AA:AA']);
+    expect(rojos).toEqual(['H:H', 'I:I', 'K:K', 'L:L', 'M:M', 'P:P', 'Q:Q', 'AB:AB']);
     expect(it_.dataValidations.find('M5')).toMatchObject({ type: 'decimal' });
     // Estado carga: en CONTENIDO PAD la lista solo trae CONTENIDO.
-    expect(it_.dataValidations.find('G5')).toMatchObject({ type: 'list', formulae: ["IF($I3=\"CONTENIDO PAD\",'Catálogos'!$I$3:$I$3,'Catálogos'!$B$3:$B$7)"] });
+    expect(it_.dataValidations.find('G5')).toMatchObject({ type: 'list', formulae: ["IF(OR($I3=\"CONTENIDO PAD\",$I3=\"CONTENIDO GUÍA\"),'Catálogos'!$I$3:$I$3,'Catálogos'!$B$3:$B$7)"] });
     // PAD PADRE: Lote y Vencimiento no se escriben (son PAD).
-    expect(it_.dataValidations.find('O5')).toMatchObject({ type: 'custom', formulae: ['$I3<>"PAD PADRE"'] });
+    expect(it_.dataValidations.find('P5')).toMatchObject({ type: 'custom', formulae: ['$I3<>"PAD PADRE"'] });
     // Vencimiento: una fecha o "Sin fecha".
-    expect(it_.dataValidations.find('P5')).toMatchObject({ type: 'custom', formulae: ['AND($I3<>"PAD PADRE",OR(P3="Sin fecha",AND(ISNUMBER(P3),P3>=DATE(2020,1,1),P3<=DATE(2100,12,31))))'] });
+    expect(it_.dataValidations.find('Q5')).toMatchObject({ type: 'custom', formulae: ['AND($I3<>"PAD PADRE",OR(Q3="Sin fecha",AND(ISNUMBER(Q3),Q3>=DATE(2020,1,1),Q3<=DATE(2100,12,31))))'] });
     const cat = libro.getWorksheet('Catálogos');
+    // Tipos de línea: los del sistema más CONTENIDO GUÍA.
+    expect([3, 4, 5, 6, 7].map((n) => cat.getCell(`E${n}`).value)).toEqual(['NORMAL', 'PAD PADRE', 'CONTENIDO PAD', 'LOTE ADICIONAL', 'CONTENIDO GUÍA']);
+    // Gestiones: Atributo con la lista de segmentos.
+    expect(g.dataValidations.find('J4')).toMatchObject({ type: 'list', formulae: ["'Catálogos'!$G$3:$G$5"] });
+    // Hoja Guías: columnas, desbloqueadas por columna, protegida.
+    const gu = libro.getWorksheet('Guías');
+    expect(gu.getRow(2).values.slice(1)).toEqual(['N° guía', 'Referencia', 'Código', 'Delivery', 'Cantidad', 'Lote', 'Vencimiento', 'Descripción']);
+    expect(gu.getColumn('A').protection).toMatchObject({ locked: false });
+    expect(gu.getColumn('G').numFmt).toBe('dd-mm-yyyy');
+    expect(gu.getCell('A2').protection?.locked ?? true).toBe(true);
+    expect(gu.sheetProtection).toMatchObject({ sheet: true });
     expect(cat.getCell('I3').value).toBe('CONTENIDO');
     // Registrado por: lista que se escribe en Catálogos N (avisa, no bloquea).
     expect(cat.getCell('N2').value).toBe('Registrado por');
