@@ -484,11 +484,13 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
             If Txt(wsI.Cells(ri, Col(ti, "Lote")).Value) = VALOR_PAD Then FormulaDefecto wsI, ti, ri, "Lote"
             If Txt(wsI.Cells(ri, Col(ti, "Vencimiento")).Value) = VALOR_PAD Then FormulaDefecto wsI, ti, ri, "Vencimiento"
         End If
-        If tipo = "CONTENIDO PAD" Then
+        If tipo = "CONTENIDO PAD" Or Txt(wsI.Cells(ri, Col(ti, "Estado carga")).Value) = "PAD" Then
             FormulaDefecto wsI, ti, ri, "Estado carga"
-        ElseIf Txt(wsI.Cells(ri, Col(ti, "Estado carga")).Value) = "PAD" Then
-            wsI.Cells(ri, Col(ti, "Estado carga")).ClearContents
         End If
+        ' Lo que volvió vacío también queda con su fórmula (como una fila libre).
+        For Each entrada In Split("Lote|Vencimiento|Estado carga", "|")
+            If Txt(wsI.Cells(ri, Col(ti, entrada)).Value) = "" Then FormulaDefecto wsI, ti, ri, CStr(entrada)
+        Next entrada
         wsI.Cells(ri, Col(ti, "Registrado por")).Value = wsC.Cells(rc, Col(tc, "Registrado por (ítem)")).Value
     Next k
 
@@ -957,12 +959,23 @@ End Sub
 Private Sub FormulasDefectoItem(ByVal ws As Worksheet, ByVal ti As Object, ByVal desde As Long, ByVal hasta As Long)
     Dim f As Variant
     For Each f In Split("Lote|Vencimiento|Estado carga", "|")
-        ws.Range(ws.Cells(desde, Col(ti, f)), ws.Cells(hasta, Col(ti, f))).Formula = FormulaDefectoTexto(ws, ti, desde, CStr(f))
+        PonerFormula ws.Range(ws.Cells(desde, Col(ti, f)), ws.Cells(hasta, Col(ti, f))), FormulaDefectoTexto(ws, ti, desde, CStr(f))
     Next f
 End Sub
 
 Private Sub FormulaDefecto(ByVal ws As Worksheet, ByVal ti As Object, ByVal fila As Long, ByVal titulo As String)
-    ws.Cells(fila, Col(ti, titulo)).Formula = FormulaDefectoTexto(ws, ti, fila, titulo)
+    PonerFormula ws.Cells(fila, Col(ti, titulo)), FormulaDefectoTexto(ws, ti, fila, titulo)
+End Sub
+
+' Lote tiene formato Texto (@): una fórmula escrita en una celda de texto
+' queda como texto literal. Se escribe con formato General y después se
+' vuelve al formato que tenía (la fórmula sigue siendo fórmula).
+Private Sub PonerFormula(ByVal rango As Range, ByVal formula As String)
+    Dim formato As Variant
+    formato = rango.Cells(1, 1).NumberFormat
+    rango.NumberFormat = "General"
+    rango.Formula = formula
+    rango.NumberFormat = formato
 End Sub
 
 ' Fórmula (en inglés, con la fila relativa) del valor automático de una columna.
