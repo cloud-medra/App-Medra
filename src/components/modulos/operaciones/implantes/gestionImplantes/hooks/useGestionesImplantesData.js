@@ -35,7 +35,8 @@ import { useGranularPermission } from '../../../../../../hooks/useGranularPermis
 import { fechaISOEnChile } from '../../../shared/gestion/rangoFechaGestiones';
 import { cambiaIdentidad, revisarDuplicadoGestion, confirmarRegistroDuplicado } from '../../../shared/gestion/duplicadosGestion';
 import { periodoConsultaGestiones, rangoRutaMesGestiones, esRutaDelMes } from '../../../shared/gestion/consultaGestiones';
-import { LADO_POR_DEFECTO } from '../../../../../../../functions/bodymap/nucleo.mjs';
+import { LADO_POR_DEFECTO, nombreLado } from '../../../../../../../functions/bodymap/nucleo.mjs';
+import { ladoAGuardar, CAMPOS_ADMISION, valoresAdmision, unirGestionesDeAdmision, gestionesParaPropagarLado } from '../utils/ladoAdmision';
 
 const getFechaActualISO = () => {
   const hoy = new Date();
@@ -102,6 +103,19 @@ const getDetallesRef = (fechaString, admisionId, empresaNombre) => {
   );
 };
 
+// Gestiones de una admisión: una consulta por campo (gestionId y agendaId).
+// La usan el listener del detalle (modo `admision`) y la propagación del Lado
+// desde el formulario. Sin rango de documentId(): el filtro por igualdad ya
+// acota a la admisión, y unirGestionesDeAdmision descarta otros módulos.
+const consultaGestionesDeAdmision = (campo, valores) =>
+  query(collectionGroup(db, "detalles"), where(campo, "in", valores));
+
+const leerGestionesDeAdmision = async (admision) => {
+  const valores = valoresAdmision(admision);
+  const snaps = await Promise.all(CAMPOS_ADMISION.map(campo => getDocs(consultaGestionesDeAdmision(campo, valores))));
+  return unirGestionesDeAdmision(...snaps.map(s => s.docs));
+};
+
 // Normalización de una gestión a partir de los campos del formulario
 // (vacíos → 'P'). Compartida por el formulario principal y el alta rápida
 // Empresa/Fecha del detalle, para que ambos registros queden iguales.
@@ -118,9 +132,6 @@ const normalizarGestion = (formData) => {
     empresa: formData.empresa?.trim() || 'P',
     informe: formData.informe || 'PENDIENTE',
     observacion: formData.observacion?.trim() || '',
-    // Lado (Bodymap): solo si viene del formulario. El alta rápida
-    // Empresa/Fecha del detalle no lo trae (CAMPOS_BASE), igual que antes.
-    ...(formData.lado ? { lado: formData.lado } : {}),
     convenio: formData.convenio === 'Cargando...' ? 'P' : (formData.convenio || 'P'),
     prevision: formData.prevision === 'Cargando...' ? 'P' : (formData.prevision || 'P'),
     medico: formData.medico === 'Cargando...' ? 'P' : (formData.medico || 'P'),
@@ -236,20 +247,17 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
     }
 
     if (admision) {
-      // gestionId/agendaId pueden estar guardados como texto o número.
+      // gestionId/agendaId pueden estar guardados como texto o número
+      // (misma búsqueda que leerGestionesDeAdmision, utils/ladoAdmision.js).
       const texto = String(admision).trim();
-      const valores = Number.isFinite(Number(texto)) && texto !== '' ? [texto, Number(texto)] : [texto];
+      const valores = valoresAdmision(texto);
       const porCampo = { gestionId: [], agendaId: [] };
       const publicar = () => {
-        const unicos = new Map();
-        [...porCampo.gestionId, ...porCampo.agendaId]
-          .filter(d => d.ref.path.startsWith('implantes_gestiones/'))
-          .forEach(d => unicos.set(d.ref.path, d));
-        setImplantes(mapearYOrdenar([...unicos.values()]));
+        setImplantes(mapearYOrdenar(unirGestionesDeAdmision(porCampo.gestionId, porCampo.agendaId)));
         setHayMasGestiones(false);
       };
-      const unsubs = Object.keys(porCampo).map(campo => onSnapshotVisible(
-        query(collectionGroup(db, "detalles"), where(campo, "in", valores)),
+      const unsubs = CAMPOS_ADMISION.map(campo => onSnapshotVisible(
+        consultaGestionesDeAdmision(campo, valores),
         (snapshot) => { porCampo[campo] = snapshot.docs; publicar(); },
         (error) => console.error(`Error al escuchar gestiones de la admisión ${texto} (${campo}):`, error)
       ));
@@ -589,6 +597,25 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
     }
   };
 
+  // Lado elegido en el formulario → las demás gestiones de la admisión (las
+  // que tengan otro), como hace Información al guardar el detalle. Solo
+  // escribe `lado` y deja constancia en el log de cada una. La gestión del
+  // formulario ya quedó guardada: si esto falla, se avisa sin deshacerla.
+  const aplicarLadoAAdmision = async (admision, lado, rutaGuardada) => {
+    try {
+      const otras = gestionesParaPropagarLado(await leerGestionesDeAdmision(admision), lado, rutaGuardada);
+      if (otras.length === 0) return;
+      const batch = writeBatch(db);
+      otras.forEach(d => batch.update(d.ref, { lado }));
+      await batch.commit();
+      await Promise.all(otras.map(d => registrarLog(d.ref, 'EDICION', { lado, origen: 'FORMULARIO_ADMISION' })));
+      showToast(`Lado "${nombreLado(lado)}" aplicado también a ${otras.length} gestión(es) más de la admisión ${admision}.`, 'info');
+    } catch (error) {
+      console.error('No se pudo aplicar el lado a la admisión:', error);
+      showToast(`La gestión se guardó, pero no se pudo aplicar el lado a las demás gestiones de la admisión: ${error.message}`, 'error');
+    }
+  };
+
   // Devuelve { ok: true, nueva } o { ok: false, campo }: el formulario deja
   // el cursor en Nombre tras registrar una nueva, o en el campo con el error
   // (`campo` null si el error no es de un campo, ej. sin conexión).
@@ -634,12 +661,19 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
         }
       }
 
+      // Lado (Bodymap): es de la admisión. Solo si cambió respecto del
+      // guardado (misma regla que la pestaña Información); se escribe en esta
+      // gestión y, después, en las demás de la admisión.
+      const cambioLado = ladoAGuardar(formData.lado, original?.lado);
+      let rutaGuardada = editingRefPath;
+
       if (editingId && editingRefPath) {
         const docRef = doc(db, editingRefPath);
         const implanteExistente = implantes.find(i => i.id === editingId);
 
         const dataAEnviar = {
           ...dataNormalizada,
+          ...cambioLado,
           fechaRegistro: implanteExistente?.fechaRegistro || new Date(),
           fechaRegistroAdmision: calcularFechaRegistroAdmision({
             idAnterior: implanteExistente?.gestionId || implanteExistente?.agendaId,
@@ -655,11 +689,16 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
         }
 
         await updateDoc(docRef, dataAEnviar);
-        await registrarLog(docRef, 'EDICION', { ...dataNormalizada });
+        await registrarLog(docRef, 'EDICION', { ...dataNormalizada, ...cambioLado });
         showToast("Gestión actualizada correctamente", "success");
       } else {
-        await crearGestion(dataNormalizada);
+        const creada = await crearGestion({ ...dataNormalizada, ...cambioLado });
+        rutaGuardada = creada.refPath;
         showToast("Gestión registrada correctamente", "success");
+      }
+
+      if (cambioLado.lado && dataNormalizada.admision !== 'SIN_ADMISION') {
+        await aplicarLadoAAdmision(dataNormalizada.admision, cambioLado.lado, rutaGuardada);
       }
 
       cancelarEdicion();

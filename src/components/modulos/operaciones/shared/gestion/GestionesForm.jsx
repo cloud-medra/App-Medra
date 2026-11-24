@@ -8,7 +8,8 @@ import { LADOS, LADO_POR_DEFECTO } from '../../../../../../functions/bodymap/nuc
 // Formulario de registro de Gestión de Implantes y de Hemodinamia (`modulo`,
 // ver modulosGestion.js: centro, atributo y textos).
 // "Lado" (solo Implantes, `config.conLado`): el mismo campo de la pestaña
-// Información del detalle, con las mismas opciones (LADOS del Bodymap).
+// Información del detalle, con las mismas opciones (LADOS del Bodymap). Es de
+// la admisión: al guardar se aplica a todas sus gestiones (useGestionesImplantesData).
 // Tras registrar una gestión nueva el formulario queda limpio (no se
 // conserva ningún campo; la fecha vuelve a hoy) y el cursor en Nombre, listo
 // para la siguiente. Si falla, el cursor va al campo con el error
@@ -165,7 +166,7 @@ const GestionesForm = ({
                 id="lado-formulario-gestion"
                 value={formData.lado || LADO_POR_DEFECTO}
                 onChange={e => setFormData({ ...formData, lado: e.target.value })}
-                title="Para el Bodymap: tiene prioridad sobre el lado del Maestro de zonas."
+                title="Para el Bodymap. Se aplica a todas las gestiones de la admisión y tiene prioridad sobre el lado del Maestro de zonas."
                 className="w-full h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-subtitulo md:text-secundario outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal cursor-pointer"
               >
                 {LADOS.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
