@@ -5,6 +5,7 @@ import { useColumnasPermitidas } from '../../../../../hooks/useColumnasPermitida
 import { MAX_ACCIONES_TRANSITO } from '../../../../../../functions/bodega/nucleo.mjs';
 import { estadoVencimiento } from '../vencimientos';
 import { BotonRestablecerAnchos } from '../../../../ui/BotonRestablecerAnchos';
+import { BotonConTooltip } from '../../../../ui/BotonConTooltip';
 import { TablaBodega, FilaBodega, FilaAnchoCompleto } from '../TablaBodega';
 import { TD_BODEGA as TD, useAnchosTablaBodega } from '../anchosTablaBodega';
 import GestionTransitoModal from './GestionTransitoModal';
@@ -32,6 +33,15 @@ const COLUMNAS = [
 ];
 const BOTON = 'p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700';
 const BOTON_SELECCION = 'h-7 px-2.5 rounded text-white text-etiqueta flex items-center gap-1';
+// Texto de los íconos de Acciones: tooltip inmediato y `aria-label`
+// (BotonConTooltip). Mismas palabras que el título del modal que abren.
+const TEXTO_ACCION = {
+  ENTREGAR: 'Entregar (usado)',
+  DEVOLVER: 'Devolver a stock (no usado)',
+  DEJAR_EN_CENTRO: 'Dejar en centro (no usado)',
+  NOTA: 'Mantener en tránsito (nota)',
+  HISTORIAL: 'Ver historial',
+};
 
 // Tabla de tránsitos abiertos con acciones de a uno o sobre los
 // seleccionados (máx. MAX_ACCIONES_TRANSITO). onCambio() se llama después de
@@ -113,11 +123,11 @@ const TablaTransitos = ({ transitos, rutaVista, origen, onCambio, ocultarCentro 
               salida: <td className={`${TD} text-right text-numero-tabla`}>{t.salidaNumero}</td>,
               acciones: (
                 <td className={TD}>
-                  {puede.ENTREGAR && <button type="button" onClick={() => abrir('ENTREGAR', [t])} title="Entregar (usado)" className={`${BOTON} text-emerald-600`}><PackageCheck size={14} /></button>}
-                  {puede.DEVOLVER && <button type="button" onClick={() => abrir('DEVOLVER', [t])} title="Devolver a stock" className={`${BOTON} text-[#2383C2]`}><Undo2 size={14} /></button>}
-                  {puede.DEJAR_EN_CENTRO && (t.pendiente || 0) > 0 && <button type="button" onClick={() => abrir('DEJAR_EN_CENTRO', [t])} title="Dejar en centro (no usado)" className={`${BOTON} text-violet-600`}><Building2 size={14} /></button>}
-                  {puede.NOTA && <button type="button" onClick={() => abrir('NOTA', [t])} title="Mantener en tránsito (nota)" className={`${BOTON} text-amber-600`}><StickyNote size={14} /></button>}
-                  <button type="button" onClick={() => setHistorial(t)} title="Historial" className={`${BOTON} text-tinta-secundaria`}><History size={14} /></button>
+                  {puede.ENTREGAR && <BotonConTooltip texto={TEXTO_ACCION.ENTREGAR} onClick={() => abrir('ENTREGAR', [t])} className={`${BOTON} text-emerald-600`}><PackageCheck size={14} /></BotonConTooltip>}
+                  {puede.DEVOLVER && <BotonConTooltip texto={TEXTO_ACCION.DEVOLVER} onClick={() => abrir('DEVOLVER', [t])} className={`${BOTON} text-[#2383C2]`}><Undo2 size={14} /></BotonConTooltip>}
+                  {puede.DEJAR_EN_CENTRO && (t.pendiente || 0) > 0 && <BotonConTooltip texto={TEXTO_ACCION.DEJAR_EN_CENTRO} onClick={() => abrir('DEJAR_EN_CENTRO', [t])} className={`${BOTON} text-violet-600`}><Building2 size={14} /></BotonConTooltip>}
+                  {puede.NOTA && <BotonConTooltip texto={TEXTO_ACCION.NOTA} onClick={() => abrir('NOTA', [t])} className={`${BOTON} text-amber-600`}><StickyNote size={14} /></BotonConTooltip>}
+                  <BotonConTooltip texto={TEXTO_ACCION.HISTORIAL} onClick={() => setHistorial(t)} className={`${BOTON} text-tinta-secundaria`}><History size={14} /></BotonConTooltip>
                 </td>
               ),
             };
