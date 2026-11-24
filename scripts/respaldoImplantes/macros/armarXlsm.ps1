@@ -52,7 +52,7 @@ try {
   # partes del documento incluyan información personal…" (y una macro que
   # guarda queda esperando esa respuesta).
   $wb.RemovePersonalInformation = $false
-  # Hoja inicial al abrir: Instrucciones.
+  # Hoja inicial al abrir: la primera (Gestiones; Instrucciones va al final).
   $wb.Worksheets.Item(1).Activate()
   if (Test-Path $Xlsm) { Remove-Item $Xlsm -Force }
   $wb.SaveAs($Xlsm, 52)

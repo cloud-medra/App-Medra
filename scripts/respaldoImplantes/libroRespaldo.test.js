@@ -7,8 +7,9 @@ import {
 } from './libroRespaldo.js';
 import { filasDesdeGestiones, catalogoReferencias, datosPlantilla, TAMANO_PLANTILLA, MINIMO_CATALOGOS } from './datosRespaldo.js';
 
-const HOJAS = ['Instrucciones', 'Nuevo mes', 'Gestiones', 'Ítems', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
-  'Previsiones', 'Convenios', 'Catálogos'];
+// Instrucciones y Nuevo mes al final (24-11-2026).
+const HOJAS = ['Gestiones', 'Ítems', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
+  'Previsiones', 'Convenios', 'Catálogos', 'Instrucciones', 'Nuevo mes'];
 
 const releer = async (libro) => {
   const leido = new ExcelJS.Workbook();
@@ -125,7 +126,7 @@ describe('plantilla', () => {
     const cen = libro.getWorksheet('Centros');
     expect(cen.getRow(2).values.slice(1, 5)).toEqual(['NOMBRE', 'COMENTARIO', 'ESTADO', 'USAR_EN_GESTIONES']);
     expect(bloqueada(cen.getCell('A3'))).toBe(false);
-    expect(g.dataValidations.find('H3')).toMatchObject({ type: 'list', formulae: [`'Centros'!$A$3:$A$${2 + MINIMO_CATALOGOS.centros}`] });
+    expect(g.dataValidations.find('I3')).toMatchObject({ type: 'list', formulae: [`'Centros'!$A$3:$A$${2 + MINIMO_CATALOGOS.centros}`] });
     const rec = libro.getWorksheet('Recargos');
     expect(rec.getRow(2).values.slice(1, 6)).toEqual(['DESDE', 'HASTA', 'VECES COSTO', 'COMENTARIO', 'ESTADO']);
     expect(bloqueada(rec.getCell('E52'))).toBe(false);
@@ -205,8 +206,8 @@ describe('plantilla', () => {
 
     const g = libro.getWorksheet('Gestiones');
     // Las celdas visibles muestran el auxiliar (=AG3...) y se pueden escribir encima.
-    expect(['E3', 'L3', 'M3', 'N3', 'O3'].map((c) => g.getCell(c).value.formula)).toEqual(['AG3', 'AH3', 'AI3', 'AJ3', 'AK3']);
-    expect(['E3', 'L3', 'M3', 'N3', 'O3'].map((c) => bloqueada(g.getCell(c)))).toEqual([false, false, false, false, false]);
+    expect(['E3', 'M3', 'N3', 'O3', 'P3'].map((c) => g.getCell(c).value.formula)).toEqual(['AG3', 'AH3', 'AI3', 'AJ3', 'AK3']);
+    expect(['E3', 'M3', 'N3', 'O3', 'P3'].map((c) => bloqueada(g.getCell(c)))).toEqual([false, false, false, false, false]);
     expect(g.getCell('AF3').value.formula).toContain("MATCH(TRIM(B3),'Reporte Info'!$H$3:$H$");
     expect(g.getCell('AI3').value.formula).toContain("INDEX('Reporte Info'!$E$3:$E$");
     expect(g.getCell('AE3').value.formula).toContain('Admisión no está en Reporte Info');
@@ -214,8 +215,8 @@ describe('plantilla', () => {
     expect(g.getColumn('AE').hidden).toBe(false);
     expect(g.getColumn('AG').hidden).toBe(true);
     // A mano: lista que avisa pero no bloquea.
-    expect(g.dataValidations.find('M3')).toMatchObject({ type: 'list', errorStyle: 'warning', formulae: [`'Previsiones'!$A$3:$A$${2 + MINIMO_CATALOGOS.previsiones}`] });
-    expect(g.dataValidations.find('L3')).toMatchObject({ type: 'list', errorStyle: 'warning' });
+    expect(g.dataValidations.find('N3')).toMatchObject({ type: 'list', errorStyle: 'warning', formulae: [`'Previsiones'!$A$3:$A$${2 + MINIMO_CATALOGOS.previsiones}`] });
+    expect(g.dataValidations.find('M3')).toMatchObject({ type: 'list', errorStyle: 'warning' });
     expect(libro.getWorksheet('Previsiones').getCell('A3').value).toBe('ISAPRE A');
   });
 
@@ -457,7 +458,14 @@ describe('construirLibro', () => {
     expect(g.getCell('B3').value).toBe('00123'); // texto: conserva el cero
     expect(g.getCell('V3').value).toBe('SISTEMA');
     expect(g.getCell('B3').protection?.locked ?? true).toBe(true);
-    expect(g.getCell('Q3').value.formula).toContain('COUNTIFS');
+    // Estado en H, junto a Informe; lee "Estado sin ítems" (Q).
+    expect(g.getCell('H2').value).toBe('Estado');
+    expect(g.getCell('H3').value.formula).toContain('COUNTIFS');
+    expect(g.getCell('H4').value.formula).toContain('IF(Q4="","AGENDADO",Q4)');
+    // Fila entera (A:AE) con color según el Estado.
+    const colores = g.conditionalFormattings.find((cf) => cf.ref === 'A3:AE8');
+    expect(colores.rules.map((x) => x.formulae[0])).toEqual(['OR($H3="CARGADO")', 'OR($H3="AGENDADO")', 'OR($H3="PENDIENTE")', 'OR($H3="INCOMPLETO",$H3="REVISAR",$H3="S/COTIZACION")']);
+    expect(colores.rules[0].style.fill.bgColor.argb).toBe('FFE2EFDA');
     // Fila libre: CLAVE con AAAA-MM-DD armado sin depender del idioma de Excel.
     expect(g.getCell('A4').value.formula).toContain('TEXT(MONTH(C4),"00")');
     expect(g.getCell('B4').protection?.locked ?? true).toBe(false);
@@ -486,11 +494,11 @@ describe('construirLibro', () => {
     });
     const bloqueada = (celda) => celda.protection?.locked ?? true;
     const g = libro.getWorksheet('Gestiones');
-    expect(['G3', 'J3', 'K3'].map((c) => bloqueada(g.getCell(c)))).toEqual([false, false, false]);
-    expect(['B3', 'D3', 'E3', 'P3'].map((c) => bloqueada(g.getCell(c)))).toEqual([true, true, true, true]);
+    expect(['G3', 'K3', 'L3'].map((c) => bloqueada(g.getCell(c)))).toEqual([false, false, false]);
+    expect(['B3', 'D3', 'E3', 'H3', 'Q3'].map((c) => bloqueada(g.getCell(c)))).toEqual([true, true, true, true, true]);
     expect(g.getCell('AB3').value).toBe('PENDIENTE');
     expect(g.getCell('AD3').value).toBe('OBS');
-    expect(g.getCell('AA3').value.formula).toBe('IF(OR(G3<>AB3,J3<>AC3,K3<>AD3),"SÍ","NO")');
+    expect(g.getCell('AA3').value.formula).toBe('IF(OR(G3<>AB3,K3<>AC3,L3<>AD3),"SÍ","NO")');
     expect(g.getColumn('AA').hidden).toBe(false);
     expect(g.getColumn('AB').hidden).toBe(true);
 
@@ -540,6 +548,8 @@ describe('construirLibro', () => {
     expect(it_.dataValidations.find('H5')).toMatchObject({ type: 'list', formulae: ["'Gestiones'!$A$3:$A$8"] });
     expect(it_.dataValidations.find('L5')).toMatchObject({ type: 'list', errorStyle: 'warning' });
     expect(it_.dataValidations.find('E5')).toBeUndefined();
+    const rojos = it_.conditionalFormattings.filter((cf) => cf.rules[0].formulae[0] === `AND($${I.origen}3="CONTINGENCIA",${cf.ref.split(':')[0]}="")`).map((cf) => cf.ref.replace(/\d+/g, ''));
+    expect(rojos).toEqual(['H:H', 'I:I', 'K:K', 'L:L', 'M:M', 'O:O', 'P:P', 'AA:AA']);
     expect(it_.dataValidations.find('M5')).toMatchObject({ type: 'decimal' });
     // Estado carga: en CONTENIDO PAD la lista solo trae CONTENIDO.
     expect(it_.dataValidations.find('G5')).toMatchObject({ type: 'list', formulae: ["IF($I3=\"CONTENIDO PAD\",'Catálogos'!$I$3:$I$3,'Catálogos'!$B$3:$B$7)"] });

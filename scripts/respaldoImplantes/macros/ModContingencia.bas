@@ -72,18 +72,19 @@ Private Const FILA_TITULOS As Long = 2
 Private Const CLAVE_HOJAS As String = "__CLAVE_HOJAS__"
 
 ' Gestiones (A = 1)
-Private Const G_ULTIMA_ENTRADA As Long = 16   ' B..P se escriben
-Private Const G_ESTADO As Long = 17           ' Q
+' Estado va en H, junto a Informe (24-11-2026): B..G e I..Q se escriben.
+Private Const G_ULTIMA_ENTRADA As Long = 17   ' Q (Estado sin ítems)
+Private Const G_ESTADO As Long = 8            ' H (fórmula, no se limpia)
 Private Const G_N_ITEMS As Long = 18          ' R
 Private Const G_ORIGEN As Long = 22           ' V
 Private Const G_REGISTRADO As Long = 23       ' W
 Private Const G_COLUMNAS As Long = 26         ' hasta Z
 ' Autocompletado desde Reporte Info: celda visible -> auxiliar con el dato de
 ' Reporte Info (AUTOCOMPLETADO_GESTION en libroRespaldo.js). E=5->AG=33,
-' L=12->AH=34, M=13->AI=35, N=14->AJ=36, O=15->AK=37.
-Private Const G_AUTOCOMPLETADO As String = "5:33,12:34,13:35,14:36,15:37"
+' M=13->AH=34, N=14->AI=35, O=15->AJ=36, P=16->AK=37.
+Private Const G_AUTOCOMPLETADO As String = "5:33,13:34,14:35,15:36,16:37"
 ' Columna de Cargados de cada columna de Gestiones que se escribe (B..P y W).
-Private Const G_DESDE_CARGADOS As String = "2:Admisión|3:Fecha|4:Empresa|5:Nombre paciente|6:Total cotización|7:Informe|8:Centro|9:Atributo|10:Lado|11:Observación|12:Convenio|13:Previsión|14:Médico|15:Descripción|16:Estado sin ítems|23:Registrado por (gestión)"
+Private Const G_DESDE_CARGADOS As String = "2:Admisión|3:Fecha|4:Empresa|5:Nombre paciente|6:Total cotización|7:Informe|9:Centro|10:Atributo|11:Lado|12:Observación|13:Convenio|14:Previsión|15:Médico|16:Descripción|17:Estado sin ítems|23:Registrado por (gestión)"
 
 ' Items: celdas que se escriben (se limpian al mover y se llenan al devolver).
 Private Const I_ENTRADAS As String = "CLAVE|Tipo de línea|Línea padre|N° cotización|Referencia|Cantidad (ingresar)|Lote|Vencimiento|Estado carga|Precio manual|Registrado por"
@@ -292,7 +293,7 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
         tipoLinea = Txt(iDatos(ii, iTipoEf))
         sol(k, 1) = Txt(gDatos(gi, 2))                                  ' ID
         sol(k, 2) = OP(gDatos(gi, 5))                                   ' PACIENTE
-        sol(k, 3) = OP(gDatos(gi, 14))                                  ' MEDICO
+        sol(k, 3) = OP(gDatos(gi, 15))                                  ' MEDICO
         sol(k, 4) = FechaTexto(gDatos(gi, 3))                           ' FECHA
         sol(k, 5) = OP(gDatos(gi, 4))                                   ' EMPRESA
         sol(k, 6) = OP(iDatos(ii, iCodigo))                             ' CODIGO ("No lleva OC" donde corresponde)
@@ -309,13 +310,13 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
         sol(k, 17) = DateValue(ahora)                                   ' FECHA MOVIMIENTO
         sol(k, 18) = Txt(gDatos(gi, 1))                                 ' CLAVE
         res(k, 1) = fechaTxt                                            ' Ingreso
-        res(k, 2) = IIf(Txt(gDatos(gi, 8)) = "", "PABELLON", Txt(gDatos(gi, 8)))  ' Area (centro)
-        res(k, 3) = OP(gDatos(gi, 13))                                  ' Previsión
+        res(k, 2) = IIf(Txt(gDatos(gi, 9)) = "", "PABELLON", Txt(gDatos(gi, 9)))  ' Area (centro)
+        res(k, 3) = OP(gDatos(gi, 14))                                  ' Previsión
         res(k, 4) = Txt(gDatos(gi, 2))                                  ' Id
         res(k, 5) = OP(iDatos(ii, iCodigo))                             ' Cód
         res(k, 6) = Num(iDatos(ii, iCantidad))                          ' Cant
         res(k, 7) = Num(iDatos(ii, iVenta))                             ' Venta
-        res(k, 8) = OP(gDatos(gi, 14))                                  ' Médico
+        res(k, 8) = OP(gDatos(gi, 15))                                  ' Médico
         res(k, 9) = FechaTexto(gDatos(gi, 3))                           ' Fecha
         res(k, 10) = OP(iDatos(ii, iDescriptor))                        ' Descripción
         res(k, 11) = IIf(Txt(iDatos(ii, iEstadoEf)) = "", "PENDIENTE", Txt(iDatos(ii, iEstadoEf)))  ' Estado
@@ -354,7 +355,9 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
         FormulasDefectoItem wsI, ti, CLng(fi), CLng(fi)
     Next fi
     For Each fg In filasG
-        wsG.Range(wsG.Cells(fg, 2), wsG.Cells(fg, G_ULTIMA_ENTRADA)).ClearContents
+        ' Sin tocar Estado (H), que es fórmula.
+        wsG.Range(wsG.Cells(fg, 2), wsG.Cells(fg, G_ESTADO - 1)).ClearContents
+        wsG.Range(wsG.Cells(fg, G_ESTADO + 1), wsG.Cells(fg, G_ULTIMA_ENTRADA)).ClearContents
         wsG.Cells(fg, G_REGISTRADO).ClearContents
         RestaurarAutocompletado wsG, CLng(fg)
     Next fg
@@ -402,7 +405,7 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
         If filaG = 0 Then
             libre = (Txt(gDatos(r, G_REGISTRADO)) = "")
             For c = 2 To G_ULTIMA_ENTRADA
-                If Txt(gDatos(r, c)) <> "" And AuxiliarDe(c) = 0 Then libre = False
+                If Txt(gDatos(r, c)) <> "" And AuxiliarDe(c) = 0 And c <> G_ESTADO Then libre = False
             Next c
             If Txt(gDatos(r, 2)) <> "" Then libre = False
             If libre Then filaG = r + PRIMERA - 1
@@ -684,7 +687,7 @@ Public Function PrepararLibroDelMes(ByVal anio As Long, ByVal mes As Long) As St
     ultima = UltimaFila(wsG, 1)
     If ultima >= PRIMERA Then
         For c = 2 To G_ULTIMA_ENTRADA
-            If AuxiliarDe(c) = 0 Then wsG.Range(wsG.Cells(PRIMERA, c), wsG.Cells(ultima, c)).ClearContents
+            If AuxiliarDe(c) = 0 And c <> G_ESTADO Then wsG.Range(wsG.Cells(PRIMERA, c), wsG.Cells(ultima, c)).ClearContents
         Next c
         wsG.Range(wsG.Cells(PRIMERA, G_REGISTRADO), wsG.Cells(ultima, G_REGISTRADO)).ClearContents
         For Each par In Split(G_AUTOCOMPLETADO, ",")

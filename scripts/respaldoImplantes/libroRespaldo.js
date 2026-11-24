@@ -108,16 +108,19 @@ const COLUMNAS_GESTIONES = [
   { l: 'E', titulo: 'Nombre paciente', clase: 'opcional', ancho: 28, ayuda: 'Se completa desde Reporte Info al escribir la admisión. Se puede escribir encima.' },
   { l: 'F', titulo: 'Total cotización', clase: 'opcional', ancho: 14, pesos: true, ayuda: 'Total que indica la cotización (se compara con la suma de los ítems; si no cuadra, en Ítems Total ítem y Venta quedan en naranja).' },
   { l: 'G', titulo: 'Informe', clase: 'opcional', ancho: 12, campo: 'informe', original: 'AB', ayuda: 'Vacío = PENDIENTE.' },
-  { l: 'H', titulo: 'Centro', clase: 'opcional', ancho: 16, ayuda: 'Vacío = PABELLON.' },
-  { l: 'I', titulo: 'Atributo', clase: 'opcional', ancho: 12, ayuda: 'Vacío = IMPLANTES.' },
-  { l: 'J', titulo: 'Lado', clase: 'opcional', ancho: 14, campo: 'lado', original: 'AC', ayuda: 'Vacío = No especificado.' },
-  { l: 'K', titulo: 'Observación', clase: 'opcional', ancho: 30, campo: 'observacion', original: 'AD', ayuda: 'Nota libre.' },
-  { l: 'L', titulo: 'Convenio', clase: 'opcional', ancho: 16, ayuda: 'Desde Reporte Info. A mano: de la lista (avisa si no está).' },
-  { l: 'M', titulo: 'Previsión', clase: 'opcional', ancho: 14, ayuda: 'Desde Reporte Info (Isapre). A mano: de la lista (avisa si no está).' },
-  { l: 'N', titulo: 'Médico', clase: 'opcional', ancho: 22, ayuda: 'Desde Reporte Info (1° cirujano). Se puede escribir encima.' },
-  { l: 'O', titulo: 'Descripción', clase: 'opcional', ancho: 30, ayuda: 'Desde Reporte Info. Se puede escribir encima.' },
-  { l: 'P', titulo: 'Estado sin ítems', clase: 'opcional', ancho: 14, ayuda: 'Solo si la gestión no tiene ítems. Vacío = AGENDADO.' },
-  { l: 'Q', titulo: 'Estado', clase: 'formula', ancho: 14, ayuda: 'Automático, misma regla del sistema.' },
+  // Estado junto a Informe, a la vista (decisión del 24-11-2026; antes era
+  // la Q). Las columnas de N° ítems en adelante no se movieron. La macro usa
+  // estas posiciones (G_ESTADO, G_AUTOCOMPLETADO, G_DESDE_CARGADOS).
+  { l: 'H', titulo: 'Estado', clase: 'formula', ancho: 14, ayuda: 'Automático, misma regla del sistema. La fila se colorea según el Estado.' },
+  { l: 'I', titulo: 'Centro', clase: 'opcional', ancho: 16, ayuda: 'Vacío = PABELLON.' },
+  { l: 'J', titulo: 'Atributo', clase: 'opcional', ancho: 12, ayuda: 'Vacío = IMPLANTES.' },
+  { l: 'K', titulo: 'Lado', clase: 'opcional', ancho: 14, campo: 'lado', original: 'AC', ayuda: 'Vacío = No especificado.' },
+  { l: 'L', titulo: 'Observación', clase: 'opcional', ancho: 30, campo: 'observacion', original: 'AD', ayuda: 'Nota libre.' },
+  { l: 'M', titulo: 'Convenio', clase: 'opcional', ancho: 16, ayuda: 'Desde Reporte Info. A mano: de la lista (avisa si no está).' },
+  { l: 'N', titulo: 'Previsión', clase: 'opcional', ancho: 14, ayuda: 'Desde Reporte Info (Isapre). A mano: de la lista (avisa si no está).' },
+  { l: 'O', titulo: 'Médico', clase: 'opcional', ancho: 22, ayuda: 'Desde Reporte Info (1° cirujano). Se puede escribir encima.' },
+  { l: 'P', titulo: 'Descripción', clase: 'opcional', ancho: 30, ayuda: 'Desde Reporte Info. Se puede escribir encima.' },
+  { l: 'Q', titulo: 'Estado sin ítems', clase: 'opcional', ancho: 14, ayuda: 'Solo si la gestión no tiene ítems. Vacío = AGENDADO.' },
   { l: 'R', titulo: 'N° ítems', clase: 'formula', ancho: 9, ayuda: 'Automático.' },
   { l: 'S', titulo: 'Suma ítems', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Suma de Total ítem.' },
   { l: 'T', titulo: 'Diferencia', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Total cotización − suma. En rojo si no cuadra.' },
@@ -134,7 +137,7 @@ const COLUMNAS_GESTIONES = [
   { l: 'AC', titulo: 'orig: Lado', clase: 'formula', oculta: true },
   { l: 'AD', titulo: 'orig: Observación', clase: 'formula', oculta: true },
   { l: 'AE', titulo: 'Alerta', clase: 'formula', ancho: 34, ayuda: 'Admisión que no está en Reporte Info, o convenio/previsión fuera de su lista.' },
-  // Lo que trae Reporte Info para la admisión (las celdas visibles E, L-O
+  // Lo que trae Reporte Info para la admisión (las celdas visibles E, M-P
   // las muestran con =AG…; escribir encima no toca estas, y la macro "Mover
   // cargados" usa estas para restaurar el autocompletado de una fila).
   { l: 'AF', titulo: 'aux: fila Reporte Info', clase: 'formula', oculta: true },
@@ -146,7 +149,7 @@ const COLUMNAS_GESTIONES = [
 ];
 
 // Celdas de Gestiones que se autocompletan desde Reporte Info → su auxiliar.
-export const AUTOCOMPLETADO_GESTION = Object.freeze({ E: 'AG', L: 'AH', M: 'AI', N: 'AJ', O: 'AK' });
+export const AUTOCOMPLETADO_GESTION = Object.freeze({ E: 'AG', M: 'AH', N: 'AI', O: 'AJ', P: 'AK' });
 
 // Letra de Excel de una columna (1 = A, 27 = AA).
 const letraColumna = (n) => (n > 26 ? letraColumna(Math.floor((n - 1) / 26)) : '') + String.fromCharCode(65 + ((n - 1) % 26));
@@ -169,14 +172,14 @@ const DEF_ITEMS = [
   { k: 'venta', titulo: 'Venta', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Precio × veces costo × cantidad.' },
   { k: 'estadoCarga', titulo: 'Estado carga', clase: 'opcional', ancho: 13, campo: 'estadoCarga', original: 'origEstadoCarga', ayuda: 'Vacío = PENDIENTE. Se cambia en NORMAL y PAD PADRE; CONTENIDO PAD dice CONTENIDO (automático).' },
   { k: 'clave', titulo: 'CLAVE', clase: 'obligatorio', ancho: 34, ayuda: 'Gestión a la que pertenece (lista de Gestiones).' },
-  { k: 'tipoLinea', titulo: 'Tipo de línea', clase: 'opcional', ancho: 16, ayuda: 'Vacío = NORMAL.' },
+  { k: 'tipoLinea', titulo: 'Tipo de línea', clase: 'obligatorio', ancho: 16, ayuda: 'NORMAL, PAD PADRE, CONTENIDO PAD o LOTE ADICIONAL. En rojo si falta (vacío se toma como NORMAL).' },
   { k: 'padre', titulo: 'Línea padre', clase: 'opcional', ancho: 9, ayuda: 'Solo CONTENIDO PAD (N° del PAD PADRE) y LOTE ADICIONAL (N° de la línea NORMAL).' },
   { k: 'numCot', titulo: 'N° cotización', clase: 'obligatorio', ancho: 14, texto: true, ayuda: 'N° de la cotización del proveedor.' },
   { k: 'referencia', titulo: 'Referencia', clase: 'obligatorio', ancho: 24, texto: true, ayuda: 'De la lista (se puede escribir). Si no existe queda "Sin código".' },
   { k: 'cantidadIngreso', titulo: 'Cantidad (ingresar)', clase: 'obligatorio', ancho: 10, campo: 'cantidad', original: 'origCantidad', ayuda: 'Obligatoria. Mayor que 0. En una referencia con lotes: la cantidad TOTAL. Se ve también en Cantidad (E).' },
   { k: 'codigoReal', titulo: 'Código real', clase: 'formula', ancho: 12, ayuda: 'Código del catálogo según la referencia, en TODAS las líneas (también CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO).' },
-  { k: 'lote', titulo: 'Lote', clase: 'opcional', ancho: 14, texto: true, campo: 'lote', original: 'origLote', ayuda: 'Vacío = Sin lote. PAD PADRE: PAD (automático).' },
-  { k: 'vencimiento', titulo: 'Vencimiento', clase: 'opcional', ancho: 12, fecha: true, campo: 'vencimiento', original: 'origVencimiento', ayuda: 'dd-mm-aaaa o "Sin fecha" (vacío también = Sin fecha). PAD PADRE: PAD (automático).' },
+  { k: 'lote', titulo: 'Lote', clase: 'obligatorio', ancho: 14, texto: true, campo: 'lote', original: 'origLote', ayuda: 'En rojo si falta: escriba el lote o "Sin lote". PAD PADRE: PAD (automático).' },
+  { k: 'vencimiento', titulo: 'Vencimiento', clase: 'obligatorio', ancho: 12, fecha: true, campo: 'vencimiento', original: 'origVencimiento', ayuda: 'dd-mm-aaaa o "Sin fecha". En rojo si falta. PAD PADRE: PAD (automático).' },
   { k: 'precioManual', titulo: 'Precio manual', clase: 'opcional', ancho: 12, pesos: true, ayuda: 'Opcional: reemplaza el precio del catálogo (ej. referencia sin código).' },
   { k: 'precio', titulo: 'Precio unitario', clase: 'formula', ancho: 12, pesos: true, ayuda: 'Catálogo o precio manual.' },
   { k: 'empresaProducto', titulo: 'Empresa producto', clase: 'formula', ancho: 22, ayuda: 'En rojo si no coincide con la empresa de la gestión.' },
@@ -890,9 +893,17 @@ const formulasGestion = (r, x) => ({
   AE: f(`IF(B${r}&C${r}&D${r}="","",IF(${SIN_MES},"Plantilla base: no registre aquí (cree el libro del mes) · ","")`
     + `&IF(${fueraDelMes(`C${r}`)},"Fecha fuera del mes del libro (es de "&INDEX(${L.meses},MONTH(C${r}))&" "&YEAR(C${r})&") · ","")`
     + `&IF(AND(TRIM(B${r})<>"",AF${r}=""),"Admisión no está en Reporte Info · ","")`
-    + `&IF(${fueraDeLista(`L${r}`, x.convenios)},"Convenio fuera de la lista · ","")`
-    + `&IF(${fueraDeLista(`M${r}`, x.previsiones)},"Previsión fuera de la lista · ",""))`),
+    + `&IF(${fueraDeLista(`M${r}`, x.convenios)},"Convenio fuera de la lista · ","")`
+    + `&IF(${fueraDeLista(`N${r}`, x.previsiones)},"Previsión fuera de la lista · ",""))`),
 });
+
+// Color de la fila de Gestiones según su Estado (fondos claros).
+export const COLORES_ESTADO_GESTION = Object.freeze([
+  [['CARGADO'], 'FFE2EFDA'],                         // verde claro
+  [['AGENDADO'], 'FFDDEBF7'],                        // azul claro
+  [['PENDIENTE'], 'FFFFF2CC'],                       // amarillo claro
+  [['INCOMPLETO', 'REVISAR', 'S/COTIZACION'], 'FFFCE4D6'], // naranja claro: hay que revisar
+]);
 
 // Fecha escrita que no es del mes del libro (en la base, ninguna lo es).
 const fueraDelMes = (celda) => `AND(ISNUMBER(${celda}),${celda}<>"",OR(${SIN_MES},YEAR(${celda})<>${L.anio},MONTH(${celda})<>${L.mes}))`;
@@ -903,16 +914,16 @@ const formulasEstadoGestion = (r, x) => ({
   R: f(`IF(A${r}="","",COUNTIF(${x.iB},A${r}))`),
   Y: f(`IF(N(R${r})=0,"",INDEX(${x.iAA},MATCH(A${r},${x.iB},0)))`),
   Z: f(`IF(N(R${r})=0,0,COUNTIFS(${x.iB},A${r},${x.iAG},1))`),
-  Q: f(`IF(A${r}="","",IF(N(R${r})=0,IF(P${r}="","AGENDADO",P${r}),IF(Z${r}>0,"INCOMPLETO",IF(COUNTIFS(${x.iB},A${r},${x.iAA},Y${r})=R${r},Y${r},"INCOMPLETO"))))`),
+  H: f(`IF(A${r}="","",IF(N(R${r})=0,IF(Q${r}="","AGENDADO",Q${r}),IF(Z${r}>0,"INCOMPLETO",IF(COUNTIFS(${x.iB},A${r},${x.iAA},Y${r})=R${r},Y${r},"INCOMPLETO"))))`),
   S: f(`IF(A${r}="","",SUMIF(${x.iB},A${r},${x.iS}))`),
   T: f(`IF(OR(A${r}="",F${r}=""),"",F${r}-S${r})`),
 });
 
 const valoresGestionSistema = (g) => ({
   A: g.clave, B: g.admision, C: g.fecha, D: g.empresa, E: g.nombre, F: g.totalCotizacion,
-  G: g.informe, H: g.centro, I: g.atributo, J: g.lado, K: g.observacion,
-  L: g.convenio, M: g.prevision, N: g.medico, O: g.descripcion,
-  P: g.estado, U: g.solicitud, V: 'SISTEMA', W: g.registradoPor, X: g.idSistema,
+  G: g.informe, I: g.centro, J: g.atributo, K: g.lado, L: g.observacion,
+  M: g.convenio, N: g.prevision, O: g.medico, P: g.descripcion,
+  Q: g.estado, U: g.solicitud, V: 'SISTEMA', W: g.registradoPor, X: g.idSistema,
 });
 
 // --- Hoja Ítems ------------------------------------------------------------------
@@ -1323,8 +1334,8 @@ export const construirLibro = async (datosEntrada) => {
   const ultimaGestion = PRIMERA + filasGestiones.length + tamano.gestionesLibres - 1;
   const ultimaItem = PRIMERA + filasItems.length + tamano.itemsLibres - 1;
 
-  hojaInstrucciones(libro, datos);
-  const hNM = hojaNuevoMes(libro);
+  // Orden de las hojas: primero las de trabajo; Instrucciones y Nuevo mes al
+  // final (decisión del 24-11-2026), después de Catálogos.
   const hG = libro.addWorksheet(H.G);
   const hI = libro.addWorksheet(H.I);
   const hC = hojaCargados(libro);
@@ -1344,6 +1355,8 @@ export const construirLibro = async (datosEntrada) => {
   const convenios = hojaNombres(libro, H.CONV, 'Convenios activos (desplegable de Convenio en Gestiones, solo avisa si el valor no está). Se regenera con el script; también se puede pegar desde A3 el archivo de Maestros → Convenios → Exportar (solo ACTIVOS).',
     datos.convenios || [], datos.filasCatalogos.convenios);
   const { rangos: cat } = hojaCatalogos(libro, datos.libroMes);
+  hojaInstrucciones(libro, datos);
+  const hNM = hojaNuevoMes(libro);
 
   const enHoja = (hoja, l, ultima) => `${ref(hoja)}$${l}$${PRIMERA}:$${l}$${ultima}`;
   const x = {
@@ -1411,13 +1424,13 @@ export const construirLibro = async (datosEntrada) => {
   validar(hG, rg('D'), lista(empresasNombres, { errorTitle: 'Empresa', error: 'Elija una empresa de la lista (hoja Empresas).' }));
   validar(hG, rg('F'), { type: 'decimal', operator: 'greaterThanOrEqual', formulae: [0], error: 'Monto mayor o igual a 0.' });
   validar(hG, rg('G'), lista(cat.C));
-  validar(hG, rg('H'), lista(centros('A')));
-  validar(hG, rg('J'), lista(cat.D));
-  validar(hG, rg('P'), lista(cat.A));
+  validar(hG, rg('I'), lista(centros('A')));
+  validar(hG, rg('K'), lista(cat.D));
+  validar(hG, rg('Q'), lista(cat.A));
   validar(hG, rg('W'), listaRegistradoPor(cat.registrado));
   // A mano: avisa (no bloquea) si el valor no está en la lista.
-  validar(hG, rg('L'), lista(convenios, { errorStyle: 'warning', errorTitle: 'Convenio', error: 'No está en la lista de Convenios. ¿Usarlo igual?' }));
-  validar(hG, rg('M'), lista(previsiones, { errorStyle: 'warning', errorTitle: 'Previsión', error: 'No está en la lista de Previsiones. ¿Usarla igual?' }));
+  validar(hG, rg('M'), lista(convenios, { errorStyle: 'warning', errorTitle: 'Convenio', error: 'No está en la lista de Convenios. ¿Usarlo igual?' }));
+  validar(hG, rg('N'), lista(previsiones, { errorStyle: 'warning', errorTitle: 'Previsión', error: 'No está en la lista de Previsiones. ¿Usarla igual?' }));
   hG.addConditionalFormatting({
     ref: rg('A'),
     rules: [{ type: 'expression', priority: 1, formulae: [`AND(A${PRIMERA}<>"",OR(A${PRIMERA}="FECHA INVÁLIDA",COUNTIF($A$${PRIMERA}:$A$${ultimaGestion},A${PRIMERA})>1))`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { color: { argb: COLOR.textoError } } } }],
@@ -1427,11 +1440,22 @@ export const construirLibro = async (datosEntrada) => {
     rules: [{ type: 'expression', priority: 1, formulae: [`AND(ISNUMBER(T${PRIMERA}),ROUND(T${PRIMERA},0)<>0)`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { color: { argb: COLOR.textoError } } } }],
   });
   hG.addConditionalFormatting({
-    ref: rg('Q'),
+    ref: rg('H'),
     rules: [
-      { type: 'expression', priority: 1, formulae: [`Q${PRIMERA}="INCOMPLETO"`], style: { font: { bold: true, color: { argb: COLOR.textoError } } } },
-      { type: 'expression', priority: 2, formulae: [`Q${PRIMERA}="CARGADO"`], style: { font: { bold: true, color: { argb: COLOR.ok } } } },
+      { type: 'expression', priority: 1, formulae: [`H${PRIMERA}="INCOMPLETO"`], style: { font: { bold: true, color: { argb: COLOR.textoError } } } },
+      { type: 'expression', priority: 2, formulae: [`H${PRIMERA}="CARGADO"`], style: { font: { bold: true, color: { argb: COLOR.ok } } } },
     ],
+  });
+  // 2. Fila entera (columnas visibles A:AE) con color según el Estado
+  // (decisión del 24-11-2026). Prioridad baja: los avisos de cada celda
+  // (obligatorio vacío, diferencia, alerta…) se siguen viendo encima.
+  hG.addConditionalFormatting({
+    ref: `A${PRIMERA}:AE${ultimaGestion}`,
+    rules: COLORES_ESTADO_GESTION.map(([estados, argb], i) => ({
+      type: 'expression', priority: 20 + i,
+      formulae: [`OR(${estados.map((e) => `$H${PRIMERA}="${e}"`).join(',')})`],
+      style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb } } },
+    })),
   });
   reglaObligatorio(hG, ['B', 'C', 'D', 'W'], 'V', PRIMERA, ultimaGestion);
   reglasCambio(hG, COLUMNAS_GESTIONES, 'V', 'AA', PRIMERA, ultimaGestion);
@@ -1518,7 +1542,10 @@ export const construirLibro = async (datosEntrada) => {
     ref: ri('alerta'),
     rules: [{ type: 'expression', priority: 1, formulae: [`${I.alerta}${PRIMERA}<>""`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } }, font: { bold: true, color: { argb: COLOR.textoError } } } }],
   });
-  reglaObligatorio(hI, ['clave', 'numCot', 'referencia', 'cantidadIngreso', 'registrado'].map((k) => I[k]), I.origen, PRIMERA, ultimaItem);
+  // Tipo de línea, Lote y Vencimiento también (decisión del 24-11-2026): se
+  // escriben siempre (NORMAL, "Sin lote", "Sin fecha"); en el PAD PADRE
+  // Lote y Vencimiento ya traen PAD.
+  reglaObligatorio(hI, ['clave', 'tipoLinea', 'numCot', 'referencia', 'cantidadIngreso', 'lote', 'vencimiento', 'registrado'].map((k) => I[k]), I.origen, PRIMERA, ultimaItem);
   // Estado carga en colores, según el estado efectivo (vacío = PENDIENTE).
   hI.addConditionalFormatting({ ref: ri('estadoCarga'), rules: reglasEstadoCarga(`$${I.estadoEf}${PRIMERA}`) });
   // Total ítem y Venta en naranja si la suma de la gestión no cuadra con su
@@ -1550,7 +1577,7 @@ export const construirLibro = async (datosEntrada) => {
   // Fórmulas ocultas (decisión del 23-11-2026): toda celda con fórmula queda
   // "Oculta", así con la hoja protegida la barra muestra solo el resultado.
   // Las que ya estaban bloqueadas siguen bloqueadas; las del autocompletado
-  // de Gestiones (E, L-O) siguen desbloqueadas para escribir encima.
+  // de Gestiones (E, M-P) siguen desbloqueadas para escribir encima.
   libro.worksheets.forEach((hoja) => hoja.eachRow({ includeEmpty: false }, (fila) => fila.eachCell({ includeEmpty: false }, (celda) => {
     if (celda.formula) celda.protection = { locked: celda.protection?.locked ?? true, hidden: true };
   })));
