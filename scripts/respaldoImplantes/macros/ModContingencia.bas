@@ -929,6 +929,8 @@ End Function
 
 Private Function VencimientoSistema(ByVal v As Variant, ByVal tipoLinea As String) As String
     VencimientoSistema = FechaTexto(v)
+    ' "sin fecha" escrito a mano queda como lo guarda el sistema.
+    If LCase(VencimientoSistema) = "sin fecha" Then VencimientoSistema = "Sin fecha"
     If tipoLinea = "PAD PADRE" Then
         VencimientoSistema = "PAD"
     ElseIf VencimientoSistema = "" And tipoLinea <> "CONTENIDO PAD" Then
