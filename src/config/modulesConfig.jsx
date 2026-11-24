@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  DatabaseZap,
   Activity,
   Archive,
   Cable,
@@ -280,6 +281,17 @@ export const MODULES = {
       { label: 'Flexibles', path: '/armadoKits/flexibles', icon: <Package size={14} />, color: PALETA_MENU.verde },
       // Receta y modelos de los flexibles (solo dev hasta asignarlo).
       { label: 'Configuración Flexibles', path: '/armadoKits/configuracionFlexibles', icon: <SlidersHorizontal size={14} />, color: PALETA_MENU.indigo },
+    ]
+  },
+  // Exportación (24-11-2026): sacar lo registrado en Implantes, Consignación
+  // y Hemodinamia de un mes, para pasarlo a la planilla de Implantes antes de
+  // borrar los datos de la app. Solo Desarrollador (datos de pacientes).
+  exportacion: {
+    label: 'Exportación',
+    icon: <DatabaseZap size={18} />,
+    color: PALETA_MENU.pizarra,
+    subItems: [
+      { label: 'Exportar datos', path: '/exportacion/exportarDatos', icon: <DatabaseZap size={14} />, color: PALETA_MENU.azul, soloDesarrollador: true },
     ]
   },
   documentos: {

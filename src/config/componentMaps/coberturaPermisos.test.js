@@ -149,6 +149,8 @@ const TABLAS_PENDIENTES = new Set([
 const TABLAS_SOLO_ADMINISTRADORES = new Set([
   'modulos/administracion/permisosCentro/PermisosPorCentro.jsx',
   'modulos/administracion/permisosCentro/ConfigurarCentro.jsx',
+  // Exportación → Exportar datos: solo rol Desarrollador (soloDesarrollador), que ve todas las columnas.
+  'modulos/exportacion/exportarDatos/ExportarDatos.jsx',
 ]);
 
 const usosColumnas = [];
