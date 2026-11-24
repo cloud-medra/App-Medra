@@ -32,7 +32,7 @@ describe('códigos de módulos', () => {
       implantes: 'IMP', hemodinamia: 'HEM', consignacion: 'CON', documentos: 'DOC',
       laboratorio: 'LAB', vacunatorio: 'VAC', bodega: 'BOD',
       maestros: 'MAE', finanzas: 'FIN', usuarios: 'USR', administracion: 'HER',
-      dashboard: 'DSH', ajustes: 'AJU', portalProveedores: 'POR', armadoKits: 'KIT',
+      dashboard: 'DSH', ajustes: 'AJU', portalProveedores: 'POR', armadoKits: 'KIT', exportacion: 'EXP',
     });
   });
 });
@@ -154,6 +154,7 @@ const PUBLICADOS = `
   /bodega/catalogosBodega BODCAT
   /armadoKits/flexibles KITFLX
   /armadoKits/configuracionFlexibles KITCFG
+/exportacion/exportarDatos EXPDAT
   /documentos/reportesInfo DOCREP
   /documentos/importarDetallesOC DOCIOC
   /documentos/seguimientoFacturasGuias DOCSEG
