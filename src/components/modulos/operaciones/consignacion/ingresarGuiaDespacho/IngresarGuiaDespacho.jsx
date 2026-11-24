@@ -3,7 +3,10 @@ import { httpsCallable } from 'firebase/functions';
 import { writeBatch, doc, collection, serverTimestamp } from 'firebase/firestore';
 import { db, functions } from '../../../../../firebaseConfig';
 import { useToast } from '../../../../../context/ToastContext';
+import { useModal } from '../../../../../context/ModalContext';
 import Spinner from '../../../../ui/Spinner';
+import { descargarExcelGuias, nombreArchivoGuias } from '../utils/excelGuias';
+import { contarLineasGuias, leerLineasGuias } from './guiasGuardadasData';
 
 import {
   Layers,
@@ -14,13 +17,11 @@ import {
   Plus,
   Save,
   RotateCcw,
-  Calendar,
-  Hash,
-  FileText,
   ChevronDown,
   ChevronUp,
   RefreshCw,
   Loader2,
+  Download,
 } from 'lucide-react';
 
 const NOMBRES_MESES = [
@@ -110,6 +111,7 @@ const BadgeEstado = ({ estado, errorMsg }) => {
 
 const IngresarGuiaDespacho = () => {
   const { showToast } = useToast();
+  const { confirmAction } = useModal();
   const inputArchivosRef = useRef(null);
   const inputCamaraRef = useRef(null);
 
@@ -121,6 +123,7 @@ const IngresarGuiaDespacho = () => {
   const [progreso, setProgreso] = useState({ actual: 0, total: 0, nombre: '' });
   const [guardandoTodo, setGuardandoTodo] = useState(false);
   const [guardandoId, setGuardandoId] = useState(null);
+  const [descargando, setDescargando] = useState(false);
 
   const extraerDatos = httpsCallable(functions, 'extraerGuiaDespacho');
 
@@ -312,24 +315,25 @@ const IngresarGuiaDespacho = () => {
     setDocumentos((prev) => prev.map((d) => (d.id === docId ? { ...d, filas: [...d.filas, FILA_VACIA()] } : d)));
   };
 
+  // Devuelve las líneas guardadas (para el Excel de "Guardar todas") o null.
   const guardarDocumento = async (docId) => {
     const documento = documentos.find((d) => d.id === docId);
-    if (!documento) return false;
+    if (!documento) return null;
 
     const filasSeleccionadas = documento.filas.filter((f) => f.incluir);
 
     if (filasSeleccionadas.length === 0) {
       showToast(`No hay filas seleccionadas en "${documento.archivoNombre}"`, 'error');
-      return false;
+      return null;
     }
     const incompletas = filasSeleccionadas.filter((f) => !f.codigo.trim());
     if (incompletas.length > 0) {
       showToast(`Hay filas sin código en "${documento.archivoNombre}", complétalas antes de guardar`, 'error');
-      return false;
+      return null;
     }
     if (!documento.fechaEmision || !documento.numeroGuia.trim() || !documento.numeroDocumento.trim()) {
       showToast(`Completa fecha de emisión, N° de guía y N° de documento en "${documento.archivoNombre}"`, 'error');
-      return false;
+      return null;
     }
 
     setGuardandoId(docId);
@@ -366,31 +370,31 @@ const IngresarGuiaDespacho = () => {
         db, COLECCION_RAIZ, año, 'mes', nombreDelMes, 'documento', numDocLimpio, 'detalles'
       );
       const descripcionPrimerItem = (documento.filas[0]?.descripcion || '').trim();
-      filasSeleccionadas.forEach((fila) => {
-        const refItem = doc(refDetalles);
-        lote.set(refItem, {
-          codigo: fila.codigo.trim(),
-          descripcion: fila.descripcion.trim(),
-          lote: fila.lote.trim(),
-          vencimiento: fila.vencimiento.trim(),
-          cantidad: fila.cantidad === '' ? null : Number(fila.cantidad) || fila.cantidad,
-          numeroGuia: documento.numeroGuia.trim(),
-          numeroDocumento: documento.numeroDocumento.trim(),
-          fechaEmision: documento.fechaEmision,
-          descripcionPrimerItem,
-          origen: 'guia_despacho_ocr',
-          creadoEl: serverTimestamp(),
-        });
-      });
+      // `linea`: orden de la línea en la guía (los detalles tienen ID
+      // automático, sin orden); lo usa el Excel de guías.
+      const lineas = filasSeleccionadas.map((fila, i) => ({
+        codigo: fila.codigo.trim(),
+        descripcion: fila.descripcion.trim(),
+        lote: fila.lote.trim(),
+        vencimiento: fila.vencimiento.trim(),
+        cantidad: fila.cantidad === '' ? null : Number(fila.cantidad) || fila.cantidad,
+        numeroGuia: documento.numeroGuia.trim(),
+        numeroDocumento: documento.numeroDocumento.trim(),
+        fechaEmision: documento.fechaEmision,
+        descripcionPrimerItem,
+        linea: i + 1,
+        origen: 'guia_despacho_ocr',
+      }));
+      lineas.forEach((datos) => lote.set(doc(refDetalles), { ...datos, creadoEl: serverTimestamp() }));
 
       await lote.commit();
 
       setDocumentos((prev) => prev.map((d) => (d.id === docId ? { ...d, estado: 'guardado' } : d)));
-      return true;
+      return lineas;
     } catch (err) {
       console.error('Error al guardar la guía:', documento.archivoNombre, err);
       showToast(`No se pudo guardar "${documento.archivoNombre}"`, 'error');
-      return false;
+      return null;
     } finally {
       setGuardandoId(null);
     }
@@ -406,11 +410,14 @@ const IngresarGuiaDespacho = () => {
     setGuardandoTodo(true);
     let exitosas = 0;
     let fallidas = 0;
+    const guardadas = [];
 
     for (const documento of listas) {
-      const ok = await guardarDocumento(documento.id);
-      if (ok) exitosas += 1;
-      else fallidas += 1;
+      const lineas = await guardarDocumento(documento.id);
+      if (lineas) {
+        exitosas += 1;
+        guardadas.push(...lineas);
+      } else fallidas += 1;
     }
 
     setGuardandoTodo(false);
@@ -420,6 +427,56 @@ const IngresarGuiaDespacho = () => {
     } else {
       showToast(`${exitosas} guardada(s), ${fallidas} con error. Revísalas.`, 'error');
     }
+
+    // Excel con lo que se acaba de guardar (sin lecturas: sale de lo que
+    // está en pantalla), una hoja por mes de emisión.
+    if (guardadas.length > 0) {
+      try {
+        descargarExcelGuias(guardadas, nombreArchivoGuias('guias_importadas'));
+      } catch (err) {
+        console.error('Error al generar el Excel de las guías guardadas:', err);
+        showToast('Las guías se guardaron, pero no se pudo descargar el Excel', 'error');
+      }
+    }
+  };
+
+  // Excel de todas las guías guardadas, una hoja por mes. Cuenta primero y
+  // pide confirmar, porque lee cada línea guardada.
+  const descargarGuiasGuardadas = async () => {
+    setDescargando(true);
+    let total;
+    try {
+      total = await contarLineasGuias();
+    } catch (err) {
+      console.error('Error al contar las guías guardadas:', err);
+      showToast('No se pudo consultar las guías guardadas', 'error');
+      setDescargando(false);
+      return;
+    }
+    setDescargando(false);
+    if (!total) {
+      showToast('No hay guías guardadas', 'error');
+      return;
+    }
+    confirmAction(
+      'Descargar Excel de guías',
+      `Se leerán ${total.toLocaleString('es-CL')} líneas de guía guardadas para armar el Excel (una hoja por mes). ¿Continuar?`,
+      async () => {
+        setDescargando(true);
+        try {
+          const lineas = await leerLineasGuias();
+          const { hojas, lineas: escritas } = descargarExcelGuias(lineas, nombreArchivoGuias('guias_consignacion'));
+          if (escritas === 0) showToast('No hay líneas de guía para descargar', 'error');
+          else showToast(`Excel descargado: ${escritas} línea(s) en ${hojas} mes(es)`, 'success');
+        } catch (err) {
+          console.error('Error al descargar el Excel de guías:', err);
+          showToast('No se pudo descargar el Excel de guías', 'error');
+        } finally {
+          setDescargando(false);
+        }
+      },
+      { confirmText: 'Descargar' },
+    );
   };
 
   const totalPendientes = documentos.filter((d) => d.estado === 'pendiente').length;
@@ -430,12 +487,14 @@ const IngresarGuiaDespacho = () => {
   return (
     <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden p-0 relative text-secundario">
       {/* --- OVERLAY DE PROCESO (mismo patrón que el "Procesando..." de Empresas) --- */}
-      {(procesandoCola || guardandoTodo) && (
+      {(procesandoCola || guardandoTodo || descargando) && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-500/20 dark:bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl shadow-xl flex flex-col items-center gap-2">
             <Spinner size="md" color="#2383C2" />
             <h3 className="text-[#2383C2] text-subtitulo">
-              {procesandoCola ? `Extrayendo guía ${progreso.actual} de ${progreso.total}...` : 'Guardando guías...'}
+              {procesandoCola
+                ? `Extrayendo guía ${progreso.actual} de ${progreso.total}...`
+                : guardandoTodo ? 'Guardando guías...' : 'Preparando Excel de guías...'}
             </h3>
             {procesandoCola && progreso.nombre && (
               <p className="text-tinta-secundaria text-pequeno max-w-[220px] truncate">{progreso.nombre}</p>
@@ -450,6 +509,16 @@ const IngresarGuiaDespacho = () => {
           Ingresar guías de despacho
         </h2>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={descargarGuiasGuardadas}
+            disabled={procesandoCola || guardandoTodo || descargando}
+            title="Descargar en Excel todas las guías guardadas (una hoja por mes)"
+            className="h-6 px-2 flex items-center gap-1 border border-gray-300 dark:border-gray-600 rounded text-pequeno text-tinta-secundaria hover:border-[#2383C2] hover:text-[#2383C2] transition disabled:opacity-40"
+          >
+            <Download size={13} />
+            Descargar Excel
+          </button>
           {documentos.length > 0 && (
             <span className="text-pequeno text-tinta-atenuada">
               {documentos.length} cargada(s)

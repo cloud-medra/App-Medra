@@ -135,6 +135,11 @@ const CONTEOS = {
   'components/modulos/operaciones/shared/gestion/usePeriodosConDatos.js': [
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: [] },
   ],
+  // Ingresar Guía → "Descargar Excel": líneas de consignacion_guias, solo por
+  // rango de documentId() (como usePeriodosConDatos).
+  'components/modulos/operaciones/consignacion/ingresarGuiaDespacho/guiasGuardadasData.js': [
+    { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: [] },
+  ],
   // Inicio → Pendientes (gestiones de Implantes).
   'components/modulos/dashboard/panelInicio/usePendientesInicioData.js': [
     { coleccion: 'detalles', alcance: 'COLLECTION_GROUP', filtros: ['solicitud'] },
