@@ -35,6 +35,7 @@ import { useGranularPermission } from '../../../../../../hooks/useGranularPermis
 import { fechaISOEnChile } from '../../../shared/gestion/rangoFechaGestiones';
 import { cambiaIdentidad, revisarDuplicadoGestion, confirmarRegistroDuplicado } from '../../../shared/gestion/duplicadosGestion';
 import { periodoConsultaGestiones, rangoRutaMesGestiones, esRutaDelMes } from '../../../shared/gestion/consultaGestiones';
+import { LADO_POR_DEFECTO } from '../../../../../../../functions/bodymap/nucleo.mjs';
 
 const getFechaActualISO = () => {
   const hoy = new Date();
@@ -51,6 +52,7 @@ export const getInitialFormState = () => ({
   empresa: '',
   informe: 'PENDIENTE',
   observacion: '',
+  lado: LADO_POR_DEFECTO,
   convenio: 'P',
   prevision: 'P',
   medico: 'P',
@@ -116,6 +118,9 @@ const normalizarGestion = (formData) => {
     empresa: formData.empresa?.trim() || 'P',
     informe: formData.informe || 'PENDIENTE',
     observacion: formData.observacion?.trim() || '',
+    // Lado (Bodymap): solo si viene del formulario. El alta rápida
+    // Empresa/Fecha del detalle no lo trae (CAMPOS_BASE), igual que antes.
+    ...(formData.lado ? { lado: formData.lado } : {}),
     convenio: formData.convenio === 'Cargando...' ? 'P' : (formData.convenio || 'P'),
     prevision: formData.prevision === 'Cargando...' ? 'P' : (formData.prevision || 'P'),
     medico: formData.medico === 'Cargando...' ? 'P' : (formData.medico || 'P'),
@@ -1113,6 +1118,7 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
       empresa: i.empresa || '',
       informe: i.informe || 'PENDIENTE',
       observacion: i.observacion || '',
+      lado: i.lado || LADO_POR_DEFECTO,
       convenio: i.convenio || 'P',
       prevision: i.prevision || 'P',
       medico: i.medico || 'P',

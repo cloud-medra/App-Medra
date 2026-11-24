@@ -32,6 +32,15 @@ const COLUMNAS = [
 ];
 const BOTON = 'p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700';
 const BOTON_SELECCION = 'h-7 px-2.5 rounded text-white text-etiqueta flex items-center gap-1';
+// Texto de los íconos de Acciones: tooltip (`title`, como el resto de la
+// app) y `aria-label`. Mismas palabras que el título del modal que abren.
+const TEXTO_ACCION = {
+  ENTREGAR: 'Entregar (usado)',
+  DEVOLVER: 'Devolver a stock (no usado)',
+  DEJAR_EN_CENTRO: 'Dejar en centro (no usado)',
+  NOTA: 'Mantener en tránsito (nota)',
+  HISTORIAL: 'Ver historial',
+};
 
 // Tabla de tránsitos abiertos con acciones de a uno o sobre los
 // seleccionados (máx. MAX_ACCIONES_TRANSITO). onCambio() se llama después de
@@ -113,11 +122,11 @@ const TablaTransitos = ({ transitos, rutaVista, origen, onCambio, ocultarCentro 
               salida: <td className={`${TD} text-right text-numero-tabla`}>{t.salidaNumero}</td>,
               acciones: (
                 <td className={TD}>
-                  {puede.ENTREGAR && <button type="button" onClick={() => abrir('ENTREGAR', [t])} title="Entregar (usado)" className={`${BOTON} text-emerald-600`}><PackageCheck size={14} /></button>}
-                  {puede.DEVOLVER && <button type="button" onClick={() => abrir('DEVOLVER', [t])} title="Devolver a stock" className={`${BOTON} text-[#2383C2]`}><Undo2 size={14} /></button>}
-                  {puede.DEJAR_EN_CENTRO && (t.pendiente || 0) > 0 && <button type="button" onClick={() => abrir('DEJAR_EN_CENTRO', [t])} title="Dejar en centro (no usado)" className={`${BOTON} text-violet-600`}><Building2 size={14} /></button>}
-                  {puede.NOTA && <button type="button" onClick={() => abrir('NOTA', [t])} title="Mantener en tránsito (nota)" className={`${BOTON} text-amber-600`}><StickyNote size={14} /></button>}
-                  <button type="button" onClick={() => setHistorial(t)} title="Historial" className={`${BOTON} text-tinta-secundaria`}><History size={14} /></button>
+                  {puede.ENTREGAR && <button type="button" onClick={() => abrir('ENTREGAR', [t])} title={TEXTO_ACCION.ENTREGAR} aria-label={TEXTO_ACCION.ENTREGAR} className={`${BOTON} text-emerald-600`}><PackageCheck size={14} /></button>}
+                  {puede.DEVOLVER && <button type="button" onClick={() => abrir('DEVOLVER', [t])} title={TEXTO_ACCION.DEVOLVER} aria-label={TEXTO_ACCION.DEVOLVER} className={`${BOTON} text-[#2383C2]`}><Undo2 size={14} /></button>}
+                  {puede.DEJAR_EN_CENTRO && (t.pendiente || 0) > 0 && <button type="button" onClick={() => abrir('DEJAR_EN_CENTRO', [t])} title={TEXTO_ACCION.DEJAR_EN_CENTRO} aria-label={TEXTO_ACCION.DEJAR_EN_CENTRO} className={`${BOTON} text-violet-600`}><Building2 size={14} /></button>}
+                  {puede.NOTA && <button type="button" onClick={() => abrir('NOTA', [t])} title={TEXTO_ACCION.NOTA} aria-label={TEXTO_ACCION.NOTA} className={`${BOTON} text-amber-600`}><StickyNote size={14} /></button>}
+                  <button type="button" onClick={() => setHistorial(t)} title={TEXTO_ACCION.HISTORIAL} aria-label={TEXTO_ACCION.HISTORIAL} className={`${BOTON} text-tinta-secundaria`}><History size={14} /></button>
                 </td>
               ),
             };

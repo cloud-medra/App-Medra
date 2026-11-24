@@ -3,9 +3,12 @@ import { Plus, Save, X, Info, Loader2, AlertCircle } from 'lucide-react';
 import EmpresaSelect from '../../implantes/gestionImplantes/components/EmpresaSelect';
 import EstadoBadge from '../estadoGestion/EstadoBadge';
 import { moduloGestion } from '../modulosGestion';
+import { LADOS, LADO_POR_DEFECTO } from '../../../../../../functions/bodymap/nucleo.mjs';
 
 // Formulario de registro de Gestión de Implantes y de Hemodinamia (`modulo`,
 // ver modulosGestion.js: centro, atributo y textos).
+// "Lado" (solo Implantes, `config.conLado`): el mismo campo de la pestaña
+// Información del detalle, con las mismas opciones (LADOS del Bodymap).
 // Tras registrar una gestión nueva el formulario queda limpio (no se
 // conserva ningún campo; la fecha vuelve a hoy) y el cursor en Nombre, listo
 // para la siguiente. Si falla, el cursor va al campo con el error
@@ -154,6 +157,21 @@ const GestionesForm = ({
               placeholder="Observación libre..."
             />
           </div>
+
+          {config.conLado && (
+            <div className="w-full sm:w-[150px]">
+              <label htmlFor="lado-formulario-gestion" className="block text-pequeno text-tinta-secundaria uppercase mb-0.5">Lado</label>
+              <select
+                id="lado-formulario-gestion"
+                value={formData.lado || LADO_POR_DEFECTO}
+                onChange={e => setFormData({ ...formData, lado: e.target.value })}
+                title="Para el Bodymap: tiene prioridad sobre el lado del Maestro de zonas."
+                className="w-full h-9 md:h-7 px-2 border border-gray-300 dark:border-gray-600 rounded text-subtitulo md:text-secundario outline-none focus:border-[#2383C2] bg-white dark:bg-gray-900 text-tinta-principal cursor-pointer"
+              >
+                {LADOS.map((l) => <option key={l.id} value={l.id}>{l.nombre}</option>)}
+              </select>
+            </div>
+          )}
 
           <button
             type="submit"

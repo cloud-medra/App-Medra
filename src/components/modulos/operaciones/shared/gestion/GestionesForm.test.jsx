@@ -62,3 +62,28 @@ describe('GestionesForm — cursor tras registrar', () => {
     await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('ID')));
   });
 });
+
+describe('GestionesForm — Lado (solo Implantes)', () => {
+  it('Implantes: muestra Lado después de Observación, con las opciones del Bodymap y "No especificado" por defecto', () => {
+    formulario();
+    const lado = screen.getByLabelText('Lado');
+    expect(lado.value).toBe('no_especificado');
+    expect([...lado.options].map((o) => o.text)).toEqual(['No especificado', 'Derecho', 'Izquierdo', 'Bilateral']);
+    const observacion = screen.getByPlaceholderText('Observación libre...');
+    expect(observacion.compareDocumentPosition(lado) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('carga el valor guardado al editar y lo cambia en formData', () => {
+    const setFormData = vi.fn();
+    formulario({ editingId: 'x', setFormData, formData: { fecha: '2026-10-28', observacion: 'OBS', lado: 'izquierdo' } });
+    const lado = screen.getByLabelText('Lado');
+    expect(lado.value).toBe('izquierdo');
+    fireEvent.change(lado, { target: { value: 'bilateral' } });
+    expect(setFormData).toHaveBeenCalledWith({ fecha: '2026-10-28', observacion: 'OBS', lado: 'bilateral' });
+  });
+
+  it('Hemodinamia: no muestra Lado', () => {
+    formulario({ modulo: 'hemodinamia' });
+    expect(screen.queryByLabelText('Lado')).toBeNull();
+  });
+});
