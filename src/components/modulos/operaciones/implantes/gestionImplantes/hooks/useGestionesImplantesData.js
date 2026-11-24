@@ -36,7 +36,7 @@ import { fechaISOEnChile } from '../../../shared/gestion/rangoFechaGestiones';
 import { cambiaIdentidad, revisarDuplicadoGestion, confirmarRegistroDuplicado } from '../../../shared/gestion/duplicadosGestion';
 import { periodoConsultaGestiones, rangoRutaMesGestiones, esRutaDelMes } from '../../../shared/gestion/consultaGestiones';
 import { LADO_POR_DEFECTO, nombreLado } from '../../../../../../../functions/bodymap/nucleo.mjs';
-import { ladoAGuardar, CAMPOS_ADMISION, valoresAdmision, unirGestionesDeAdmision, gestionesParaPropagarLado } from '../utils/ladoAdmision';
+import { CAMPOS_ADMISION, valoresAdmision, unirGestionesDeAdmision, debeLeerAdmisionParaLado, planLadoAlGuardar } from '../utils/ladoAdmision';
 
 const getFechaActualISO = () => {
   const hoy = new Date();
@@ -597,14 +597,13 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
     }
   };
 
-  // Lado elegido en el formulario → las demás gestiones de la admisión (las
-  // que tengan otro), como hace Información al guardar el detalle. Solo
-  // escribe `lado` y deja constancia en el log de cada una. La gestión del
-  // formulario ya quedó guardada: si esto falla, se avisa sin deshacerla.
-  const aplicarLadoAAdmision = async (admision, lado, rutaGuardada) => {
+  // Lado elegido en el formulario → las demás gestiones de la admisión que
+  // indique planLadoAlGuardar, como hace Información al guardar el detalle.
+  // Solo escribe `lado` y deja constancia en el log de cada una. La gestión
+  // del formulario ya quedó guardada: si esto falla, se avisa sin deshacerla.
+  const aplicarLadoAAdmision = async (admision, lado, otras) => {
+    if (otras.length === 0) return;
     try {
-      const otras = gestionesParaPropagarLado(await leerGestionesDeAdmision(admision), lado, rutaGuardada);
-      if (otras.length === 0) return;
       const batch = writeBatch(db);
       otras.forEach(d => batch.update(d.ref, { lado }));
       await batch.commit();
@@ -661,13 +660,26 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
         }
       }
 
-      // Lado (Bodymap): es de la admisión. Solo si cambió respecto del
-      // guardado (misma regla que la pestaña Información); se escribe en esta
-      // gestión y, después, en las demás de la admisión.
-      const cambioLado = ladoAGuardar(formData.lado, original?.lado);
-      let rutaGuardada = editingRefPath;
+      // Lado (Bodymap): es de la admisión (utils/ladoAdmision.js). Se leen
+      // sus gestiones ANTES de escribir (2 consultas) si el lado cambió o si
+      // la gestión es nueva. Cambiado: va en esta y en las demás. Nueva con
+      // "No especificado": hereda el de la admisión y no toca las demás.
+      const esNueva = !(editingId && editingRefPath);
+      const datosLado = { ladoFormulario: formData.lado, ladoGuardado: original?.lado, esNueva, admision: dataNormalizada.admision };
+      let gestionesAdmision = null;
+      let errorLecturaLado = null;
+      if (debeLeerAdmisionParaLado(datosLado)) {
+        try {
+          gestionesAdmision = await leerGestionesDeAdmision(dataNormalizada.admision);
+        } catch (error) {
+          console.error('No se pudieron leer las gestiones de la admisión (Lado):', error);
+          errorLecturaLado = error;
+        }
+      }
+      const planLado = planLadoAlGuardar({ ...datosLado, gestionesAdmision, rutaGuardada: editingRefPath });
+      const cambioLado = planLado.campoLado;
 
-      if (editingId && editingRefPath) {
+      if (!esNueva) {
         const docRef = doc(db, editingRefPath);
         const implanteExistente = implantes.find(i => i.id === editingId);
 
@@ -692,13 +704,15 @@ export const useGestionesImplantesData = ({ admision, refPath, periodo } = {}) =
         await registrarLog(docRef, 'EDICION', { ...dataNormalizada, ...cambioLado });
         showToast("Gestión actualizada correctamente", "success");
       } else {
-        const creada = await crearGestion({ ...dataNormalizada, ...cambioLado });
-        rutaGuardada = creada.refPath;
+        await crearGestion({ ...dataNormalizada, ...cambioLado });
         showToast("Gestión registrada correctamente", "success");
+        if (planLado.heredado) showToast(`Lado heredado de la admisión ${dataNormalizada.admision}: ${nombreLado(cambioLado.lado)}.`, 'info');
       }
 
-      if (cambioLado.lado && dataNormalizada.admision !== 'SIN_ADMISION') {
-        await aplicarLadoAAdmision(dataNormalizada.admision, cambioLado.lado, rutaGuardada);
+      if (errorLecturaLado) {
+        showToast(`La gestión se guardó, pero no se pudo revisar el lado de la admisión: ${errorLecturaLado.message}`, 'error');
+      } else if (cambioLado.lado && !planLado.heredado) {
+        await aplicarLadoAAdmision(dataNormalizada.admision, cambioLado.lado, planLado.propagarA);
       }
 
       cancelarEdicion();

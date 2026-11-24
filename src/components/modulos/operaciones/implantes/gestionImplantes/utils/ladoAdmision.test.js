@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ladoAGuardar, valoresAdmision, unirGestionesDeAdmision, gestionesParaPropagarLado } from './ladoAdmision';
+import {
+  ladoAGuardar, valoresAdmision, unirGestionesDeAdmision, gestionesParaPropagarLado,
+  ladoDeAdmision, debeLeerAdmisionParaLado, planLadoAlGuardar,
+} from './ladoAdmision';
 
 const docDe = (path, data = {}) => ({ ref: { path }, data: () => data });
 
@@ -35,5 +38,65 @@ describe('búsqueda por admisión', () => {
     expect(gestionesParaPropagarLado([guardada, igual, distinta, sinLado], 'derecho', 'implantes_gestiones/a'))
       .toEqual([distinta, sinLado]);
     expect(gestionesParaPropagarLado([sinLado], 'no_especificado', 'x')).toEqual([]);
+  });
+});
+
+describe('Lado al guardar desde el formulario (planLadoAlGuardar)', () => {
+  const derecha1 = docDe('implantes_gestiones/a', { lado: 'derecho' });
+  const derecha2 = docDe('implantes_gestiones/b', { lado: 'derecho' });
+  const sinLado = docDe('implantes_gestiones/c');
+  const izquierda = docDe('implantes_gestiones/d', { lado: 'izquierdo' });
+
+  it('gestión nueva con "No especificado" en una admisión con "Derecho": NUNCA sobrescribe las otras y hereda Derecho', () => {
+    const plan = planLadoAlGuardar({
+      ladoFormulario: 'no_especificado', ladoGuardado: undefined, esNueva: true,
+      gestionesAdmision: [derecha1, derecha2, sinLado], rutaGuardada: null,
+    });
+    expect(plan.propagarA).toEqual([]);
+    expect(plan.campoLado).toEqual({ lado: 'derecho' });
+    expect(plan.heredado).toBe(true);
+  });
+
+  it('gestión nueva con "No especificado" nunca propaga, aunque la admisión tenga lados distintos o ninguno', () => {
+    for (const gestiones of [[derecha1, izquierda], [sinLado], [], null]) {
+      const plan = planLadoAlGuardar({ ladoFormulario: 'no_especificado', esNueva: true, gestionesAdmision: gestiones });
+      expect(plan.propagarA).toEqual([]);
+      expect(plan.campoLado).toEqual({});
+      expect(plan.heredado).toBe(false);
+    }
+  });
+
+  it('gestión nueva con un lado elegido: se aplica a todas las de la admisión que tengan otro', () => {
+    const plan = planLadoAlGuardar({ ladoFormulario: 'izquierdo', esNueva: true, gestionesAdmision: [derecha1, sinLado, izquierda] });
+    expect(plan.campoLado).toEqual({ lado: 'izquierdo' });
+    expect(plan.heredado).toBe(false);
+    expect(plan.propagarA).toEqual([derecha1, sinLado]);
+  });
+
+  it('edición que cambia el lado: propaga a las demás, sin repetir la editada', () => {
+    const plan = planLadoAlGuardar({
+      ladoFormulario: 'bilateral', ladoGuardado: 'derecho', esNueva: false,
+      gestionesAdmision: [derecha1, derecha2], rutaGuardada: 'implantes_gestiones/a',
+    });
+    expect(plan.campoLado).toEqual({ lado: 'bilateral' });
+    expect(plan.propagarA).toEqual([derecha2]);
+  });
+
+  it('edición sin cambiar el lado: no escribe ni hereda', () => {
+    const plan = planLadoAlGuardar({ ladoFormulario: 'no_especificado', ladoGuardado: undefined, esNueva: false, gestionesAdmision: [derecha1] });
+    expect(plan).toEqual({ campoLado: {}, heredado: false, propagarA: [] });
+  });
+
+  it('ladoDeAdmision: el único lado especificado; con varios distintos o ninguno, null', () => {
+    expect(ladoDeAdmision([derecha1, sinLado, derecha2])).toBe('derecho');
+    expect(ladoDeAdmision([derecha1, izquierda])).toBeNull();
+    expect(ladoDeAdmision([sinLado])).toBeNull();
+  });
+
+  it('debeLeerAdmisionParaLado: si es nueva o cambió el lado, y nunca sin admisión', () => {
+    expect(debeLeerAdmisionParaLado({ ladoFormulario: 'no_especificado', esNueva: true, admision: '102' })).toBe(true);
+    expect(debeLeerAdmisionParaLado({ ladoFormulario: 'derecho', ladoGuardado: 'izquierdo', esNueva: false, admision: '102' })).toBe(true);
+    expect(debeLeerAdmisionParaLado({ ladoFormulario: 'derecho', ladoGuardado: 'derecho', esNueva: false, admision: '102' })).toBe(false);
+    expect(debeLeerAdmisionParaLado({ ladoFormulario: 'derecho', esNueva: true, admision: 'SIN_ADMISION' })).toBe(false);
   });
 });
