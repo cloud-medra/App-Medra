@@ -18,6 +18,7 @@ import { EmpresasFechasPanel } from '../../../shared/gestion/EmpresasFechasPanel
 import { validarNuevaEmpresaFecha, extraerDatosBase } from '../../../shared/empresaFechaDesdeDetalle';
 import { HistorialLogsContenido } from '../GestionesImplanteDrawers';
 import { nombreParaGuardar } from '../utils/camposPaciente';
+import { ladoAGuardar } from '../utils/ladoAdmision';
 import { ocsDeGestion } from '../../../shared/ocIndex/indiceOC';
 import { OrdenTab } from '../../../shared/ordenesOC/OrdenTab';
 import { BodymapTab } from './Bodymaptab/BodymapTab';
@@ -492,8 +493,9 @@ const GestionesImplantesDetalleView = forwardRef(({
         centro: formDataParaGuardar.centro,
         descripcion: formDataParaGuardar.descripcion,
         observacion: formDataParaGuardar.observacion,
-        // Solo si se cambió: así no se escribe en gestiones que no lo tocan.
-        ...(formDataParaGuardar.lado !== (item?.lado || 'no_especificado') ? { lado: formDataParaGuardar.lado } : {})
+        // Lado de la admisión: solo si se cambió (va a todas sus gestiones).
+        // Mismo criterio que el formulario de registro (utils/ladoAdmision.js).
+        ...ladoAGuardar(formDataParaGuardar.lado, item?.lado)
       },
       registrosActualizados: formDataParaGuardar.bloques.map((b, idx) => {
         const idsOriginales = idsItemsOriginalesRef.current[idx] || [];
