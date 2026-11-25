@@ -11,7 +11,7 @@
 //     Lote y vencimiento escritos en Cargas, o si no los de la guía vinculada.
 //
 // El Excel trae la tabla y dos hojas con las columnas de Gestiones e Ítems de
-// la planilla EN SUS MISMAS LETRAS (COLUMNAS_GESTIONES y DEF_ITEMS de
+// la planilla EN SUS MISMAS LETRAS (Ítems con Nombre paciente en G, desde el 25-11-2026) (COLUMNAS_GESTIONES y DEF_ITEMS de
 // scripts/respaldoImplantes/libroRespaldo.js): las columnas con fórmula de
 // la planilla van vacías y marcadas "no pegar", porque están bloqueadas.
 import * as XLSX from 'xlsx';
@@ -223,19 +223,19 @@ export const filasPlanillaItems = (filas, lineaInicial = 1) => {
   return conItems.map((f, i) => {
     const fila = [];
     fila[col('A')] = lineaInicial + i;
-    fila[col('G')] = f.estadoCarga;
-    fila[col('H')] = f.clave;
-    fila[col('I')] = f.tipoLinea;
-    fila[col('J')] = f.idPadre ? (lineaPorId.get(`${f.clave}#${f.idPadre}`) ?? '') : '';
-    fila[col('K')] = f.numCotizacion;
-    fila[col('L')] = f.referencia;
-    fila[col('M')] = f.cantidad;
-    fila[col('N')] = f.numGuia;
-    fila[col('P')] = f.lote;
-    fila[col('Q')] = celdaFecha(f.vencimiento);
+    fila[col('H')] = f.estadoCarga;
+    fila[col('I')] = f.clave;
+    fila[col('J')] = f.tipoLinea;
+    fila[col('K')] = f.idPadre ? (lineaPorId.get(`${f.clave}#${f.idPadre}`) ?? '') : '';
+    fila[col('L')] = f.numCotizacion;
+    fila[col('M')] = f.referencia;
+    fila[col('N')] = f.cantidad;
+    fila[col('O')] = f.numGuia;
+    fila[col('Q')] = f.lote;
+    fila[col('R')] = celdaFecha(f.vencimiento);
     // Precio del sistema, para conservar el total (no en las líneas sin cobro).
-    fila[col('R')] = ['NORMAL', 'PAD PADRE'].includes(f.tipoLinea) ? f.precio : '';
-    fila[col('AB')] = f.registradoPor;
+    fila[col('S')] = ['NORMAL', 'PAD PADRE'].includes(f.tipoLinea) ? f.precio : '';
+    fila[col('AC')] = f.registradoPor;
     return fila;
   });
 };
@@ -253,17 +253,17 @@ const ENCABEZADO_GESTIONES = (() => {
 const ENCABEZADO_ITEMS = (() => {
   const t = [];
   [['A', 'N° línea (referencia)'], ['B', NO_PEGAR], ['C', NO_PEGAR], ['D', NO_PEGAR], ['E', NO_PEGAR], ['F', NO_PEGAR],
-    ['G', 'Estado carga'], ['H', 'CLAVE'], ['I', 'Tipo de línea'], ['J', 'Línea padre'], ['K', 'N° cotización'], ['L', 'Referencia'],
-    ['M', 'Cantidad (ingresar)'], ['N', 'N° guía'], ['O', NO_PEGAR], ['P', 'Lote'], ['Q', 'Vencimiento'], ['R', 'Precio manual'],
-    ['S', NO_PEGAR], ['T', NO_PEGAR], ['U', NO_PEGAR], ['V', NO_PEGAR], ['W', NO_PEGAR], ['X', NO_PEGAR], ['Y', NO_PEGAR],
-    ['Z', NO_PEGAR], ['AA', NO_PEGAR], ['AB', 'Registrado por']]
+    ['G', `Nombre paciente ${NO_PEGAR}`], ['H', 'Estado carga'], ['I', 'CLAVE'], ['J', 'Tipo de línea'], ['K', 'Línea padre'],
+    ['L', 'N° cotización'], ['M', 'Referencia'], ['N', 'Cantidad (ingresar)'], ['O', 'N° guía'], ['P', NO_PEGAR], ['Q', 'Lote'],
+    ['R', 'Vencimiento'], ['S', 'Precio manual'], ['T', NO_PEGAR], ['U', NO_PEGAR], ['V', NO_PEGAR], ['W', NO_PEGAR], ['X', NO_PEGAR],
+    ['Y', NO_PEGAR], ['Z', NO_PEGAR], ['AA', NO_PEGAR], ['AB', NO_PEGAR], ['AC', 'Registrado por']]
     .forEach(([l, v]) => { t[col(l)] = v; });
   return t;
 })();
 
 export const INSTRUCCIONES = Object.freeze({
   gestiones: 'Pegue en la hoja Gestiones de la planilla, en la primera fila libre, con Pegado especial → Valores, en dos partes: B:G y I:Q (la columna H, Estado, es fórmula y está bloqueada). Después W (Registrado por).',
-  items: 'Pegue en la hoja Ítems de la planilla con Pegado especial → Valores, en cuatro partes: G:N, P:R y AB (O y S..AA son fórmulas). Los N° de línea de la columna A son los de la planilla desde el N° indicado al descargar: pegue en esa misma fila para que la Línea padre calce.',
+  items: 'Pegue en la hoja Ítems de la planilla con Pegado especial → Valores, en tres partes: H:O, Q:S y AC (G, P y T..AB son fórmulas). Los N° de línea de la columna A son los de la planilla desde el N° indicado al descargar: pegue en esa misma fila para que la Línea padre calce.',
 });
 
 export const construirLibroExportacion = (filas, { lineaInicial = 1 } = {}) => {
