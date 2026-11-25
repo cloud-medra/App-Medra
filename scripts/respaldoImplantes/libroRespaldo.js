@@ -171,6 +171,8 @@ const DEF_ITEMS = [
   // (decisión del 24-11-2026); aquí se muestra, como Admisión y Fecha.
   { k: 'cantidad', titulo: 'Cantidad', clase: 'formula', ancho: 9, ayuda: 'Automática: la de "Cantidad (ingresar)".' },
   { k: 'venta', titulo: 'Venta', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Precio × veces costo × cantidad.' },
+  // Decisión del 25-11-2026: el paciente a la vista, junto a la venta.
+  { k: 'nombrePaciente', titulo: 'Nombre paciente', clase: 'formula', ancho: 24, ayuda: 'Automático: el Nombre paciente de la gestión (Gestiones) según la CLAVE.' },
   { k: 'estadoCarga', titulo: 'Estado carga', clase: 'opcional', ancho: 13, campo: 'estadoCarga', original: 'origEstadoCarga', ayuda: 'Vacío = PENDIENTE. Se cambia en NORMAL y PAD PADRE; CONTENIDO PAD dice CONTENIDO (automático).' },
   { k: 'clave', titulo: 'CLAVE', clase: 'obligatorio', ancho: 34, ayuda: 'Gestión a la que pertenece (lista de Gestiones).' },
   { k: 'tipoLinea', titulo: 'Tipo de línea', clase: 'obligatorio', ancho: 16, ayuda: 'NORMAL, PAD PADRE, CONTENIDO PAD, LOTE ADICIONAL o CONTENIDO GUÍA (lo pone la guía). En rojo si falta (vacío se toma como NORMAL).' },
@@ -221,7 +223,7 @@ const DEF_ITEMS = [
 export const I = Object.freeze(Object.fromEntries(DEF_ITEMS.map((c, i) => [c.k, letraColumna(i + 1)])));
 export const COLUMNAS_ITEMS = DEF_ITEMS.map((c) => ({ ...c, l: I[c.k], ...(c.original ? { original: I[c.original] } : {}) }));
 // Columnas de la vista de carga (las primeras de Ítems y de Cargados).
-export const VISTA_CARGA = Object.freeze(['N° línea', 'Admisión', 'Fecha', 'Código', 'Cantidad', 'Venta', 'Estado carga']);
+export const VISTA_CARGA = Object.freeze(['N° línea', 'Admisión', 'Fecha', 'Código', 'Cantidad', 'Venta', 'Nombre paciente', 'Estado carga']);
 
 // Valores automáticos por tipo de línea (decisión del 24-11-2026): el PAD
 // PADRE lleva Lote y Vencimiento "PAD" (como lo guarda el sistema) y el
@@ -1014,6 +1016,7 @@ const formulasItemComunes = (r, x) => {
     estadoEf: f(`IF(${c.tipoEf}="","",IF(${esContenido(c.tipoEf)},"${ESTADO_CONTENIDO}",IF(${c.estadoCarga}="","PENDIENTE",${c.estadoCarga})))`),
     estadoNorm: f(`IF(${c.estadoEf}="","",IF(OR(${c.estadoEf}="CARGADO",${c.estadoEf}="PAD",${c.estadoEf}="${ESTADO_CONTENIDO}",${c.estadoEf}="SIN CARGO"),"CARGADO",${c.estadoEf}))`),
     empresaGestion: f(`IF(${c.clave}="","",IFERROR(INDEX(${x.gD},MATCH(${c.clave},${x.gA},0)),""))`),
+    nombrePaciente: f(`IF(${c.clave}="","",IFERROR(INDEX(${x.gE},MATCH(${c.clave},${x.gA},0))&"",""))`),
     // Vacía si la gestión no tiene Total cotización (Gestiones T vacía).
     difCotizacion: f(`IF(OR(${c.tipoEf}="",${c.empresaGestion}=""),"",IFERROR(INDEX(${x.gT},MATCH(${c.clave},${x.gA},0))*1,""))`),
     filaPadre: f(`IF(${c.padre}="","",IFERROR(MATCH(${c.padre},${enLineas('linea')},0),""))`),
@@ -1207,7 +1210,7 @@ const textoInstrucciones = (d) => [
   [''],
   ['COLORES DE LOS ENCABEZADOS', 'seccion'],
   ['Amarillo: obligatorio. Azul: opcional. Gris: automático (no se escribe). Una celda obligatoria vacía en una fila nueva se pinta de rojo.'],
-  ['Verde (Ítems y Cargados): la vista de carga, las primeras columnas, fijas al desplazarse: N° línea, Admisión, Fecha, Código, Cantidad, Venta y Estado carga. Es lo que se revisa al cargar en el sistema. Ahí se escribe solo Estado carga; Admisión y Fecha salen de la CLAVE y Cantidad de "Cantidad (ingresar)" (junto a Referencia), donde se escribe.'],
+  ['Verde (Ítems y Cargados): la vista de carga, las primeras columnas, fijas al desplazarse: N° línea, Admisión, Fecha, Código, Cantidad, Venta, Nombre paciente y Estado carga. Es lo que se revisa al cargar en el sistema. Ahí se escribe solo Estado carga; Admisión y Fecha salen de la CLAVE y Cantidad de "Cantidad (ingresar)" (junto a Referencia), donde se escribe.'],
   [''],
   ['HOJA GESTIONES (una fila por admisión + empresa + fecha)', 'seccion'],
   ['1. Escriba Admisión (solo dígitos), Fecha (dd-mm-aaaa, del mes del libro) y elija la Empresa (lista de la hoja Empresas). La CLAVE se arma sola: admisión|empresa|AAAA-MM-DD.'],
@@ -1424,6 +1427,7 @@ export const construirLibro = async (datosEntrada) => {
     ultimaItem,
     gA: enHoja(H.G, 'A', ultimaGestion),
     gD: enHoja(H.G, 'D', ultimaGestion),
+    gE: enHoja(H.G, 'E', ultimaGestion),
     gT: enHoja(H.G, 'T', ultimaGestion),
     gJ: enHoja(H.G, 'J', ultimaGestion),
     // Columna CLAVE de Cargados, entera (la hoja crece con cada movimiento).
