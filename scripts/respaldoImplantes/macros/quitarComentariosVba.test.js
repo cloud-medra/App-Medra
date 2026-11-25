@@ -34,7 +34,7 @@ describe('quitarComentariosVba', () => {
     // Ninguna línea con ' fuera de texto: se comprueba quitando los textos.
     const sinTextos = limpio.replace(/"(?:[^"]|"")*"/g, '""');
     expect(sinTextos).not.toMatch(/'/);
-    expect(limpio).not.toMatch(/medra/i);
+    expect(limpio).not.toMatch(/medra|respaldo|contingencia/i);
     expect(limpio).toContain('Public Sub MoverCargados()');
     expect(limpio.split(/\r?\n/).length).toBeLessThan(bas.split(/\r?\n/).length);
   });

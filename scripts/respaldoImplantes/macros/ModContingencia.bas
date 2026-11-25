@@ -1,4 +1,4 @@
-Attribute VB_Name = "ModContingencia"
+Attribute VB_Name = "ModLibro"
 ' Respaldo de contingencia de Implantes: botones "Mover cargados" (hoja
 ' Items) y "Devolver a pendientes" (hoja Cargados).
 '
@@ -63,7 +63,10 @@ Private Const LIBRO_MES As String = "L3"
 Private Const NM_ANIO As String = "B5"
 Private Const NM_MES As String = "B6"
 Private Const MESES As String = "ENERO,FEBRERO,MARZO,ABRIL,MAYO,JUNIO,JULIO,AGOSTO,SEPTIEMBRE,OCTUBRE,NOVIEMBRE,DICIEMBRE"
-Private Const PREFIJO_LIBRO As String = "respaldo_implantes_"
+' Libros del mes Implantes_AAAA-MM.xlsm (PREFIJO_LIBRO en libroRespaldo.js).
+Private Const PREFIJO_LIBRO As String = "Implantes_"
+' Valor de ORIGEN en las filas en uso de Gestiones e Ítems (ORIGEN_REGISTRADO).
+Private Const ORIGEN_REGISTRADO As String = "REGISTRADO"
 ' Mensajes de la validación de Gestiones en un libro con mes (MENSAJES_LIBRO
 ' en libroRespaldo.js; la plantilla base trae el de "sin mes").
 Private Const MSJ_ADMISION As String = "Solo dígitos, sin puntos ni espacios."
@@ -71,7 +74,7 @@ Private Const MSJ_ADMISION As String = "Solo dígitos, sin puntos ni espacios."
 ' (MARCAS_CAMBIO en libroRespaldo.js; lo comprueba un test).
 ' Las columnas "orig: ..." empiezan justo después de FECHA CAMBIO.
 Private Const MARCAS As String = "Códigos:2:14:17:18|Empresas:1:3:4:5|Centros:1:4:5:6|Recargos:1:5:6:7"
-Private Const MSJ_FECHA As String = "Este libro es de {MES}. Registra esta gestión en el libro del mes de su fecha (respaldo_implantes_AAAA-MM.xlsm)."
+Private Const MSJ_FECHA As String = "Este libro es de {MES}. Registra esta gestión en el libro del mes de su fecha (Implantes_AAAA-MM.xlsm)."
 Private Const S_COLUMNAS As Long = 18          ' ... FECHA MOVIMIENTO (17), CLAVE (18)
 Private Const R_COLUMNAS As Long = 13          ' ... FECHA MOVIMIENTO (12), CLAVE (13)
 Private Const PRIMERA As Long = 3
@@ -328,8 +331,8 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
         sol(k, 12) = FechaTexto(gDatos(gi, 3))                          ' FECHA CARGA
         sol(k, 13) = OP(iDatos(ii, iCot))                               ' N° COTIZACION
         sol(k, 14) = fechaTxt                                           ' FECHA INGRESO
-        sol(k, 15) = LoteSistema(iDatos(ii, iLote), tipoLinea)          ' LOTE
-        sol(k, 16) = VencimientoSistema(iDatos(ii, iVenc), tipoLinea)   ' VENCIMIENTO
+        sol(k, 15) = LoteSolicitud(iDatos(ii, iLote), tipoLinea)          ' LOTE
+        sol(k, 16) = VencimientoSolicitud(iDatos(ii, iVenc), tipoLinea)   ' VENCIMIENTO
         sol(k, 17) = DateValue(ahora)                                   ' FECHA MOVIMIENTO
         sol(k, 18) = Txt(gDatos(gi, 1))                                 ' CLAVE
         res(k, 1) = fechaTxt                                            ' Ingreso
@@ -379,6 +382,11 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
     Next fi
     ' La gestión se queda en Gestiones: sin ítems y con líneas en Cargados,
     ' su Estado pasa a FINALIZADO (fórmula de la columna Estado).
+
+    ' El filtro cubre las filas nuevas (con la hoja protegida Excel no lo amplía).
+    AjustarFiltro wsC, FILA_TITULOS, False
+    AjustarFiltro wsS, 1, False
+    AjustarFiltro wsR, 1, False
 
     MoverCargadosAuto = filasG.Count & ";" & filasI.Count & ";" & nFuera & ";" & ExportarSolicitud(sol, res, filasI.Count, ahora)
 Fin:
@@ -598,6 +606,11 @@ End Function
 ' guía en Ítems trae las líneas de esa guía. Una sola celda por vez: un
 ' pegado de varias no trae nada.
 Public Sub TraerGuia(ByVal Sh As Object, ByVal Target As Range)
+    ' Al pegar en Guías, el filtro se amplía a las filas pegadas.
+    If Sh.Name = HOJA_GUIAS Then
+        AjustarFiltro Sh, FILA_TITULOS, True
+        Exit Sub
+    End If
     If Sh.Name <> HOJA_ITEMS Then Exit Sub
     If Target.Cells.Count <> 1 Or Target.Row < PRIMERA Then Exit Sub
     Dim colGuia As Long
@@ -817,7 +830,7 @@ Public Function CrearLibroDelMesAuto(ByVal anio As Variant, ByVal mes As Variant
     End If
     ' Las filas exportadas del sistema no se vacían con la macro.
     If Application.WorksheetFunction.CountIf(ThisWorkbook.Worksheets(HOJA_GESTIONES).Columns(G_ORIGEN), "SISTEMA") > 0 Then
-        CrearLibroDelMesAuto = "ERROR;Este libro tiene filas exportadas del sistema: cree el libro del mes desde la plantilla base (respaldo_implantes.xlsm)."
+        CrearLibroDelMesAuto = "ERROR;Este libro tiene filas importadas: cree el libro del mes desde un libro sin ellas."
         Exit Function
     End If
 
@@ -999,7 +1012,7 @@ Private Sub BuscarCargados(ByRef filasG As Collection, ByRef filasI As Collectio
     Set claves = CreateObject("Scripting.Dictionary")
     gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
     For r = 1 To UBound(gDatos, 1)
-        If Txt(gDatos(r, G_ORIGEN)) = "CONTINGENCIA" And Txt(gDatos(r, G_ESTADO)) = "CARGADO" And Val(Txt(gDatos(r, G_N_ITEMS))) > 0 Then
+        If Txt(gDatos(r, G_ORIGEN)) = ORIGEN_REGISTRADO And Txt(gDatos(r, G_ESTADO)) = "CARGADO" And Val(Txt(gDatos(r, G_N_ITEMS))) > 0 Then
             If Not EsDelMes(gDatos(r, 3)) Then
                 nFuera = nFuera + 1
             ElseIf Not claves.Exists(Txt(gDatos(r, 1))) Then
@@ -1015,7 +1028,7 @@ Private Sub BuscarCargados(ByRef filasG As Collection, ByRef filasI As Collectio
     iClave = Col(ti, "CLAVE"): iOrigen = Col(ti, "ORIGEN"): iAlerta = Col(ti, "Alerta")
     iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, Col(ti, "N° línea")), UltimaColumna(wsI))).Value
     For r = 1 To UBound(iDatos, 1)
-        If claves.Exists(Txt(iDatos(r, iClave))) And Txt(iDatos(r, iOrigen)) = "CONTINGENCIA" Then
+        If claves.Exists(Txt(iDatos(r, iClave))) And Txt(iDatos(r, iOrigen)) = ORIGEN_REGISTRADO Then
             filasI.Add r + PRIMERA - 1
             If Txt(iDatos(r, iAlerta)) <> "" Then nAlertas = nAlertas + 1
         End If
@@ -1046,7 +1059,7 @@ End Function
 
 ' Columna de un título; si no existe, error claro (la planilla no coincide con la macro).
 Private Function Col(ByVal titulos As Object, ByVal titulo As String) As Long
-    If Not titulos.Exists(titulo) Then Err.Raise vbObjectError + 1, "ModContingencia", "No se encontró la columna """ & titulo & """: la planilla no coincide con la macro."
+    If Not titulos.Exists(titulo) Then Err.Raise vbObjectError + 1, "ModLibro", "No se encontró la columna """ & titulo & """: la planilla no coincide con la macro."
     Col = titulos(titulo)
 End Function
 
@@ -1125,23 +1138,23 @@ End Function
 ' Lote y vencimiento como los guarda el sistema al cargar: el PAD PADRE
 ' lleva "PAD"; el contenido del PAD, "P" y vacío; las demás líneas,
 ' "Sin lote" y "Sin fecha" si no se escribieron.
-Private Function LoteSistema(ByVal v As Variant, ByVal tipoLinea As String) As String
-    LoteSistema = Txt(v)
+Private Function LoteSolicitud(ByVal v As Variant, ByVal tipoLinea As String) As String
+    LoteSolicitud = Txt(v)
     If tipoLinea = "PAD PADRE" Then
-        LoteSistema = "PAD"
-    ElseIf LoteSistema = "" Then
-        If tipoLinea = "CONTENIDO PAD" Then LoteSistema = "P" Else LoteSistema = "Sin lote"
+        LoteSolicitud = "PAD"
+    ElseIf LoteSolicitud = "" Then
+        If tipoLinea = "CONTENIDO PAD" Then LoteSolicitud = "P" Else LoteSolicitud = "Sin lote"
     End If
 End Function
 
-Private Function VencimientoSistema(ByVal v As Variant, ByVal tipoLinea As String) As String
-    VencimientoSistema = FechaTexto(v)
+Private Function VencimientoSolicitud(ByVal v As Variant, ByVal tipoLinea As String) As String
+    VencimientoSolicitud = FechaTexto(v)
     ' "sin fecha" escrito a mano queda como lo guarda el sistema.
-    If LCase(VencimientoSistema) = "sin fecha" Then VencimientoSistema = "Sin fecha"
+    If LCase(VencimientoSolicitud) = "sin fecha" Then VencimientoSolicitud = "Sin fecha"
     If tipoLinea = "PAD PADRE" Then
-        VencimientoSistema = "PAD"
-    ElseIf VencimientoSistema = "" And tipoLinea <> "CONTENIDO PAD" Then
-        VencimientoSistema = "Sin fecha"
+        VencimientoSolicitud = "PAD"
+    ElseIf VencimientoSolicitud = "" And tipoLinea <> "CONTENIDO PAD" Then
+        VencimientoSolicitud = "Sin fecha"
     End If
 End Function
 
@@ -1197,6 +1210,27 @@ Private Function FormulaDefectoTexto(ByVal ws As Worksheet, ByVal ti As Object, 
         FormulaDefectoTexto = "=IF(" & tipo & "=""PAD PADRE"",""" & VALOR_PAD & ""","""")"
     End If
 End Function
+
+' Filtro de una hoja que crece (Cargados, Solicitud Implantes, Resumen,
+' Guías) desde la fila de títulos hasta la última con datos en la columna A.
+' Con la hoja protegida Excel no amplía el filtro solo. Si ya las cubre, no
+' hace nada (así no se pierden los filtros elegidos).
+Private Sub AjustarFiltro(ByVal ws As Worksheet, ByVal fila As Long, ByVal conProteccion As Boolean)
+    Dim ultima As Long, ultCol As Long, eventos As Boolean
+    ultima = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    If ultima <= fila Then Exit Sub
+    If ws.AutoFilterMode Then
+        If ws.AutoFilter.Range.Row + ws.AutoFilter.Range.Rows.Count - 1 >= ultima Then Exit Sub
+    End If
+    ultCol = ws.Cells(fila, ws.Columns.Count).End(xlToLeft).Column
+    eventos = Application.EnableEvents
+    Application.EnableEvents = False
+    If conProteccion Then ws.Unprotect Password:=CLAVE_HOJAS
+    If ws.AutoFilterMode Then ws.AutoFilterMode = False
+    ws.Range(ws.Cells(fila, 1), ws.Cells(ultima, ultCol)).AutoFilter
+    If conProteccion Then Proteger ws
+    Application.EnableEvents = eventos
+End Sub
 
 ' Mismas opciones que pone el script al generar la planilla.
 Private Sub Proteger(ByVal ws As Worksheet)

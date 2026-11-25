@@ -168,10 +168,21 @@ describe('plantilla', () => {
     expect(textos).toContain('"Devolver a pendientes"');
     // Dónde pegar cada catálogo y en qué orden.
     expect(textos).toContain('PEGAR LOS CATÁLOGOS');
-    expect(textos).toContain('Recargos → celda A3: DESDE, HASTA, VECES COSTO, COMENTARIO, ESTADO');
-    expect(textos).toContain('Centros → celda A3: NOMBRE, COMENTARIO, ESTADO, USAR_EN_GESTIONES');
+    expect(textos).toContain('Recargos → A3: DESDE, HASTA, VECES COSTO, COMENTARIO, ESTADO');
+    expect(textos).toContain('Centros → A3: NOMBRE, COMENTARIO, ESTADO, USAR_EN_GESTIONES');
+    // Libro de trabajo: ningún texto de respaldo, contingencia, la app ni Medra
+    // (decisión del 25-11-2026), en Instrucciones ni en el resto de las hojas.
+    expect(textos).toContain('IMPLANTES — LIBRO DE TRABAJO');
+    const visibles = libro.worksheets.flatMap((h) => {
+      const v = [];
+      h.eachRow((fila) => fila.eachCell((c) => { if (typeof c.value === 'string') v.push(c.value); if (c.note) v.push(String(c.note)); }));
+      return v;
+    }).join('\n');
+    expect(visibles).not.toMatch(/respaldo|contingencia|medra|\bapp\b|del sistema|Maestros →/i);
+    const errores = libro.worksheets.flatMap((h) => Object.values(h.dataValidations.model || {}).map((v) => `${v.errorTitle || ''} ${v.error || ''}`)).join('\n');
+    expect(errores).not.toMatch(/respaldo|contingencia|sistema/i);
     expect(textos).toContain('Códigos → celda B3: CODIGO, REFERENCIA');
-    expect(textos).toContain('FIJAR CATÁLOGOS COMO BASE');
+    expect(textos).toContain('"Fijar catálogos como base" toma lo que hay');
     // Pasos para bloquear el proyecto VBA a mano (Excel no lo permite por automatización).
     expect(textos).toContain('"Bloquear proyecto para visualización"');
     expect(textos.toLowerCase()).not.toContain('fibra');
@@ -237,7 +248,7 @@ describe('plantilla', () => {
     });
     const libro = await releer((await construirLibro(datos)).libro);
     const textos = libro.getWorksheet('Instrucciones').getColumn('A').values.filter(Boolean).join('\n');
-    expect(textos).toContain('Rangos de recargo: 1 cargados de forma PROVISIONAL. Deben reemplazarse por la exportación oficial de la app');
+    expect(textos).toContain('Rangos de recargo: 1 cargados de forma PROVISIONAL. Deben reemplazarse por el archivo oficial');
     expect(textos).not.toContain('recargos_transcritos.xlsx');
   });
 
@@ -308,14 +319,14 @@ describe('plantilla', () => {
     const nm = libro.getWorksheet('Nuevo mes');
     expect([CELDAS_NUEVO_MES.anio, CELDAS_NUEVO_MES.mes].map((c) => bloqueada(nm.getCell(c)))).toEqual([false, false]);
     expect(nm.dataValidations.find('B6')).toMatchObject({ type: 'whole', formulae: [1, 12] });
-    expect(nm.getCell('B7').value.formula).toContain('"respaldo_implantes_"&B5&"-"&TEXT(B6,"00")&".xlsm"');
+    expect(nm.getCell('B7').value.formula).toContain('"Implantes_"&B5&"-"&TEXT(B6,"00")&".xlsm"');
     expect(nm.sheetProtection).toMatchObject({ sheet: true });
     // Instrucciones: el mes del libro arriba y cómo crear el libro.
     const ins = libro.getWorksheet('Instrucciones');
     expect(ins.getCell('A2').value.formula).toContain('PLANTILLA BASE (sin mes)');
     const textos = ins.getColumn('A').values.filter((v) => typeof v === 'string').join('\n');
     expect(textos).toContain('CÓMO SE TRABAJA MES A MES');
-    expect(textos).toContain('a fin de mes, desde el libro actual, cree el libro del mes siguiente'.replace('a fin', 'A fin'));
+    expect(textos).toContain('1. A fin de mes, desde el libro actual: hoja "Nuevo mes"');
     expect(textos).toContain('ACTUALIZAR REPORTE INFO');
     expect(textos).toContain('AGREGAR O CORREGIR CATÁLOGOS');
     expect(textos).toContain('"Crear libro del mes"');
@@ -329,7 +340,7 @@ describe('plantilla', () => {
     expect(cat.getCell('M3').value.formula).toBe('IF(N(K3)=0,"",INDEX($J$3:$J$14,L3)&" "&K3)');
     const g = libro.getWorksheet('Gestiones');
     expect(nombreLibroMes({ anio: 2026, mes: 11 })).toBe('NOVIEMBRE 2026');
-    expect(g.dataValidations.find('C3').error).toBe('Este libro es de NOVIEMBRE 2026. Registra esta gestión en el libro del mes de su fecha (respaldo_implantes_AAAA-MM.xlsm).');
+    expect(g.dataValidations.find('C3').error).toBe('Este libro es de NOVIEMBRE 2026. Registra esta gestión en el libro del mes de su fecha (Implantes_AAAA-MM.xlsm).');
     expect(g.dataValidations.find('B3').error).toBe(MENSAJES_LIBRO.admision);
   });
 
@@ -560,7 +571,7 @@ describe('construirLibro', () => {
     expect(it_.dataValidations.find('I5')).toMatchObject({ type: 'list', formulae: ["'Gestiones'!$A$3:$A$8"] });
     expect(it_.dataValidations.find('M5')).toMatchObject({ type: 'list', errorStyle: 'warning' });
     expect(it_.dataValidations.find('E5')).toBeUndefined();
-    const rojos = it_.conditionalFormattings.filter((cf) => cf.rules[0].formulae[0] === `AND($${I.origen}3="CONTINGENCIA",${cf.ref.split(':')[0]}="")`).map((cf) => cf.ref.replace(/\d+/g, ''));
+    const rojos = it_.conditionalFormattings.filter((cf) => cf.rules[0].formulae[0] === `AND($${I.origen}3="REGISTRADO",${cf.ref.split(':')[0]}="")`).map((cf) => cf.ref.replace(/\d+/g, ''));
     expect(rojos).toEqual(['I:I', 'J:J', 'L:L', 'M:M', 'N:N', 'Q:Q', 'R:R', 'AC:AC']);
     expect(it_.dataValidations.find('N5')).toMatchObject({ type: 'decimal' });
     // Estado carga: en CONTENIDO PAD la lista solo trae CONTENIDO.

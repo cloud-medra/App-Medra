@@ -51,6 +51,12 @@ const ref = (hoja) => `'${hoja}'!`;
 // año y el mes en estas celdas de Catálogos (bloqueadas). Las validaciones,
 // la alerta de Gestiones y la macro "Mover cargados" leen de aquí. La macro
 // usa las mismas celdas (LIBRO_ANIO, LIBRO_MES en ModContingencia.bas).
+// Libro de trabajo (decisión del 25-11-2026): sin "respaldo" ni
+// "contingencia" en ningún texto. Los libros del mes se llaman
+// Implantes_AAAA-MM.xlsm (PREFIJO_LIBRO en ModContingencia.bas) y las filas
+// en uso dicen ORIGEN = REGISTRADO (antes CONTINGENCIA).
+export const PREFIJO_LIBRO = 'Implantes_';
+export const ORIGEN_REGISTRADO = 'REGISTRADO';
 export const CELDAS_LIBRO = Object.freeze({ meses: 'J', anio: 'K3', mes: 'L3', nombre: 'M3' });
 const MESES_LIBRO = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
 const L = {
@@ -68,7 +74,7 @@ export const nombreLibroMes = ({ anio, mes }) => `${MESES_LIBRO[mes - 1]} ${anio
 export const MENSAJES_LIBRO = Object.freeze({
   base: 'Esta es la plantilla base (sin mes): no permite registrar. Cree el libro del mes en la hoja "Nuevo mes" (botón "Crear libro del mes").',
   admision: 'Solo dígitos, sin puntos ni espacios.',
-  fecha: (nombre) => `Este libro es de ${nombre}. Registra esta gestión en el libro del mes de su fecha (respaldo_implantes_AAAA-MM.xlsm).`,
+  fecha: (nombre) => `Este libro es de ${nombre}. Registra esta gestión en el libro del mes de su fecha (${PREFIJO_LIBRO}AAAA-MM.xlsm).`,
 });
 
 // Colores (ARGB).
@@ -112,7 +118,7 @@ const COLUMNAS_GESTIONES = [
   // Estado junto a Informe, a la vista (decisión del 24-11-2026; antes era
   // la Q). Las columnas de N° ítems en adelante no se movieron. La macro usa
   // estas posiciones (G_ESTADO, G_AUTOCOMPLETADO, G_DESDE_CARGADOS).
-  { l: 'H', titulo: 'Estado', clase: 'formula', ancho: 14, ayuda: 'Automático, misma regla del sistema. La fila se colorea según el Estado.' },
+  { l: 'H', titulo: 'Estado', clase: 'formula', ancho: 14, ayuda: 'Automático, según el estado de carga de sus líneas. La fila se colorea según el Estado.' },
   { l: 'I', titulo: 'Centro', clase: 'opcional', ancho: 16, ayuda: 'Vacío = PABELLON.' },
   { l: 'J', titulo: 'Atributo', clase: 'opcional', ancho: 14, ayuda: 'Segmento, de la lista (Catálogos): IMPLANTES, CONSIGNACION o HEMODINAMIA. Vacío = IMPLANTES. Solo CONSIGNACION trae guías en Ítems.' },
   { l: 'K', titulo: 'Lado', clase: 'opcional', ancho: 14, campo: 'lado', original: 'AC', ayuda: 'Vacío = No especificado.' },
@@ -125,15 +131,15 @@ const COLUMNAS_GESTIONES = [
   { l: 'R', titulo: 'N° ítems', clase: 'formula', ancho: 9, ayuda: 'Automático.' },
   { l: 'S', titulo: 'Suma ítems', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Suma de Total ítem.' },
   { l: 'T', titulo: 'Diferencia', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Total cotización − suma. En rojo si no cuadra.' },
-  { l: 'U', titulo: 'Solicitud', clase: 'formula', ancho: 12, ayuda: 'Solo informativo (filas del sistema).' },
-  { l: 'V', titulo: 'ORIGEN', clase: 'formula', ancho: 14, ayuda: 'SISTEMA = foto del sistema (no editar). CONTINGENCIA = registrado en la caída.' },
+  { l: 'U', titulo: 'Solicitud', clase: 'formula', ancho: 12, ayuda: 'Solo informativo (filas importadas).' },
+  { l: 'V', titulo: 'ORIGEN', clase: 'formula', ancho: 14, ayuda: 'Automático: REGISTRADO en las filas en uso.' },
   { l: 'W', titulo: 'Registrado por', clase: 'obligatorio', ancho: 18, ayuda: 'Quién la registró (lista de Catálogos, columna N).' },
-  { l: 'X', titulo: 'ID sistema', clase: 'formula', ancho: 18, ayuda: 'Solo filas del sistema.' },
+  { l: 'X', titulo: 'ID externo', clase: 'formula', ancho: 18, ayuda: 'Solo filas importadas.' },
   { l: 'Y', titulo: 'aux: primer estado', clase: 'formula', oculta: true },
   { l: 'Z', titulo: 'aux: líneas sin código', clase: 'formula', oculta: true },
   // Después de las auxiliares (ocultas) para no mover sus letras; en
   // pantalla queda junto a ID sistema.
-  { l: 'AA', titulo: 'MODIFICADO', clase: 'formula', ancho: 12, ayuda: 'Filas del sistema: SÍ si se cambió Informe, Lado u Observación.' },
+  { l: 'AA', titulo: 'MODIFICADO', clase: 'formula', ancho: 12, ayuda: 'Filas importadas: SÍ si se cambió Informe, Lado u Observación.' },
   { l: 'AB', titulo: 'orig: Informe', clase: 'formula', oculta: true },
   { l: 'AC', titulo: 'orig: Lado', clase: 'formula', oculta: true },
   { l: 'AD', titulo: 'orig: Observación', clase: 'formula', oculta: true },
@@ -193,9 +199,9 @@ const DEF_ITEMS = [
   { k: 'veces', titulo: 'Veces costo', clase: 'formula', ancho: 8, ayuda: 'Según rango de recargo.' },
   { k: 'total', titulo: 'Total ítem', clase: 'formula', ancho: 13, pesos: true, ayuda: 'Precio × cantidad.' },
   { k: 'alerta', titulo: 'Alerta', clase: 'formula', ancho: 40, ayuda: 'Problemas de la fila. Debe quedar vacía.' },
-  { k: 'origen', titulo: 'ORIGEN', clase: 'formula', ancho: 14, ayuda: 'SISTEMA o CONTINGENCIA.' },
+  { k: 'origen', titulo: 'ORIGEN', clase: 'formula', ancho: 14, ayuda: 'Automático: REGISTRADO en las filas en uso.' },
   { k: 'registrado', titulo: 'Registrado por', clase: 'obligatorio', ancho: 18, ayuda: 'Quién la registró (lista de Catálogos, columna N).' },
-  { k: 'idSistema', titulo: 'ID sistema', clase: 'formula', ancho: 18, ayuda: 'Solo filas del sistema.' },
+  { k: 'idSistema', titulo: 'ID externo', clase: 'formula', ancho: 18, ayuda: 'Solo filas importadas.' },
   { k: 'tipoEf', titulo: 'aux: tipo', clase: 'formula', oculta: true },
   { k: 'estadoEf', titulo: 'aux: estado', clase: 'formula', oculta: true },
   { k: 'estadoNorm', titulo: 'aux: estado normalizado', clase: 'formula', oculta: true },
@@ -209,7 +215,7 @@ const DEF_ITEMS = [
   { k: 'recargoOk', titulo: 'aux: recargo encontrado', clase: 'formula', oculta: true },
   { k: 'empresaNoCoincide', titulo: 'aux: empresa no coincide', clase: 'formula', oculta: true },
   // Después de las auxiliares (ocultas); en pantalla queda junto a ID sistema.
-  { k: 'modificado', titulo: 'MODIFICADO', clase: 'formula', ancho: 12, ayuda: 'Filas del sistema: SÍ si se cambió Cantidad (ingresar), Lote, Vencimiento o Estado carga.' },
+  { k: 'modificado', titulo: 'MODIFICADO', clase: 'formula', ancho: 12, ayuda: 'Filas importadas: SÍ si se cambió Cantidad (ingresar), Lote, Vencimiento o Estado carga.' },
   { k: 'origCantidad', titulo: 'orig: Cantidad', clase: 'formula', oculta: true },
   { k: 'origLote', titulo: 'orig: Lote', clase: 'formula', oculta: true, texto: true },
   { k: 'origVencimiento', titulo: 'orig: Vencimiento', clase: 'formula', oculta: true, fecha: true },
@@ -376,7 +382,7 @@ const soloDigitos = (celda) => ({
 const reglaObligatorio = (hoja, columnas, colOrigen, desde, hasta) => {
   columnas.forEach((l) => hoja.addConditionalFormatting({
     ref: `${l}${desde}:${l}${hasta}`,
-    rules: [{ type: 'expression', priority: 1, formulae: [`AND($${colOrigen}${desde}="CONTINGENCIA",${l}${desde}="")`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } } } }],
+    rules: [{ type: 'expression', priority: 1, formulae: [`AND($${colOrigen}${desde}="${ORIGEN_REGISTRADO}",${l}${desde}="")`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.error } } } }],
   }));
 };
 
@@ -412,7 +418,7 @@ const listaRegistradoPor = (rango) => lista(rango, { errorStyle: 'warning', erro
 const hojaCatalogos = (libro, libroMes) => {
   const hoja = libro.addWorksheet(H.C);
   const rangos = {};
-  hoja.getCell('A1').value = 'Listas fijas del sistema (no modificar). La columna N (Registrado por) sí se escribe.';
+  hoja.getCell('A1').value = 'Listas fijas (no modificar). La columna N (Registrado por) sí se escribe.';
   hoja.getCell('A1').font = { italic: true };
   LISTAS_FIJAS.forEach((b) => {
     hoja.getColumn(b.l).width = b.ancho;
@@ -471,7 +477,7 @@ const hojaCodigos = (libro, catalogo, totalFilas) => {
   // A1: botón "Fijar catálogos como base" (macro FijarCatalogosBase); la
   // descripción va a su derecha.
   hoja.getRow(1).height = 30;
-  hoja.getCell('B1').value = 'Maestro de Códigos. Pegue desde B3 (ver Instrucciones, "PEGAR LOS CATÁLOGOS"). Para agregar un código, escríbalo en la primera fila vacía; para corregir uno, escriba encima. CAMBIO marca lo NUEVO, MODIFICADO o BORRADO. A, O, P, CAMBIO y FECHA CAMBIO son automáticas; las INACTIVAS no se usan.';
+  hoja.getCell('B1').value = 'Catálogo de códigos. Pegue desde B3 (ver Instrucciones, "PEGAR LOS CATÁLOGOS"). Para agregar un código, escríbalo en la primera fila vacía; para corregir uno, escriba encima. CAMBIO marca lo NUEVO, MODIFICADO o BORRADO. A, O, P, CAMBIO y FECHA CAMBIO son automáticas; las INACTIVAS no se usan.';
   hoja.getCell('B1').font = { italic: true };
   hoja.getCell('B1').alignment = { vertical: 'middle' };
   const ultima = PRIMERA + totalFilas - 1;
@@ -578,7 +584,7 @@ const hojaEmpresas = (libro, empresas, totalFilas) => {
   const hoja = libro.addWorksheet(H.E);
   const marca = MARCAS_CAMBIO[H.E];
   prepararHoja(hoja, [...COLUMNAS_EMPRESAS.map((c) => ({ ...c, clase: 'opcional' })), ...columnasMarcas(marca, COLUMNAS_EMPRESAS)], { conAyuda: false, congelarColumnas: 1 });
-  hoja.getCell('A1').value = 'Empresas activas (desplegable de Gestiones). Para agregar una, escríbala en la primera fila vacía; CAMBIO marca lo NUEVO, MODIFICADO o BORRADO para pasarlo después al Maestro de la app.';
+  hoja.getCell('A1').value = 'Empresas activas (desplegable de Gestiones). Para agregar una, escríbala en la primera fila vacía; CAMBIO marca lo NUEVO, MODIFICADO o BORRADO.';
   hoja.getCell('A1').font = { italic: true };
   const ultima = PRIMERA + totalFilas - 1;
   const registros = (empresas || []).map((e) => (typeof e === 'string' ? { nombre: e } : e));
@@ -741,6 +747,7 @@ const hojaGuias = (libro) => {
     if (c.fecha) col.numFmt = FORMATO_FECHA;
     col.protection = { locked: false };
   });
+  hoja.autoFilter = { from: { row: FILA_ENCABEZADO, column: 1 }, to: { row: FILAS_FILTRO, column: COLUMNAS_GUIAS.length } };
   // Ayuda y encabezados quedan bloqueados.
   [FILA_AYUDA, FILA_ENCABEZADO].forEach((n) => COLUMNAS_GUIAS.forEach((c) => { hoja.getCell(`${c.l}${n}`).protection = { locked: true }; }));
   return hoja;
@@ -879,7 +886,9 @@ const hojaSolicitud = (libro, nombre, columnas) => {
     if (c.fecha) col.numFmt = FORMATO_FECHA;
   });
   hoja.views = [{ state: 'frozen', ySplit: 1 }];
-  hoja.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columnas.length } };
+  // El filtro cubre las filas que agrega la macro: con la hoja protegida
+  // Excel no puede ampliarlo solo (decisión del 25-11-2026).
+  hoja.autoFilter = { from: { row: 1, column: 1 }, to: { row: FILAS_FILTRO, column: columnas.length } };
   return hoja;
 };
 
@@ -892,6 +901,9 @@ const reglasEstadoCarga = (celda) => [
 ];
 // Filas de Cargados con colores en Estado carga (las agrega la macro).
 const FILAS_COLOR_CARGADOS = 10000;
+// Hasta qué fila llega el filtro de las hojas que llenan las macros o se
+// pegan (Cargados, Solicitud Implantes, Resumen, Guías).
+export const FILAS_FILTRO = 20000;
 
 const hojaCargados = (libro) => {
   const hoja = libro.addWorksheet(H.CARG);
@@ -919,7 +931,7 @@ const hojaCargados = (libro) => {
   hoja.getRow(FILA_AYUDA).height = 30;
   enc.height = 42;
   hoja.views = [{ state: 'frozen', xSplit: nVista, ySplit: FILA_ENCABEZADO }];
-  hoja.autoFilter = { from: { row: FILA_ENCABEZADO, column: 1 }, to: { row: FILA_ENCABEZADO, column: COLUMNAS_CARGADOS.length } };
+  hoja.autoFilter = { from: { row: FILA_ENCABEZADO, column: 1 }, to: { row: FILAS_FILTRO, column: COLUMNAS_CARGADOS.length } };
   const lEstado = letraColumna(COLUMNAS_CARGADOS.findIndex((c) => c.titulo === 'Estado carga') + 1);
   hoja.addConditionalFormatting({ ref: `${lEstado}${PRIMERA}:${lEstado}${PRIMERA + FILAS_COLOR_CARGADOS - 1}`, rules: reglasEstadoCarga(`${lEstado}${PRIMERA}`) });
   return hoja;
@@ -937,7 +949,7 @@ const fueraDeLista = (celda, lista) => `AND(${celda}<>"",COUNTIF(${lista},"?*")>
 const formulasGestion = (r, x) => ({
   A: f(`IF(OR(B${r}="",C${r}="",D${r}=""),"",IFERROR(TRIM(B${r})&"|"&TRIM(D${r})&"|"&YEAR(C${r})&"-"&TEXT(MONTH(C${r}),"00")&"-"&TEXT(DAY(C${r}),"00"),"FECHA INVÁLIDA"))`),
   // B&C&D (no E): Nombre se autocompleta y no indica que la fila se usó.
-  V: f(`IF(B${r}&C${r}&D${r}="","","CONTINGENCIA")`),
+  V: f(`IF(B${r}&C${r}&D${r}="","","${ORIGEN_REGISTRADO}")`),
   ...formulasEstadoGestion(r, x),
   // Autocompletado desde Reporte Info: la admisión se busca como texto (la
   // columna H de Reporte Info la convierte), igual que el sistema busca la
@@ -1075,7 +1087,7 @@ const formulasItemNuevas = (r, x) => {
       veces: f(`IF(${c.tipoEf}="","",IF(${sinCobro},1,IF(N(${c.tramo})>=1,SUMIFS(${x.recargo.veces},${x.recargo.desde},"<="&${c.precio},${x.recargo.hasta},">="&${c.precio},${x.recargo.estado},"<>INACTIVO")/${c.tramo},1)))`),
       total: f(`IF(${c.tipoEf}="","",${c.precio}*N(${c.cantidad}))`),
       venta: f(`IF(${c.tipoEf}="","",${c.precio}*${c.veces}*N(${c.cantidad}))`),
-      origen: f(`IF(${c.tipoEf}="","","CONTINGENCIA")`),
+      origen: f(`IF(${c.tipoEf}="","","${ORIGEN_REGISTRADO}")`),
       // Valores automáticos según el tipo de línea (se puede escribir encima
       // donde corresponde; las macros vuelven a poner estas fórmulas al
       // limpiar o devolver una fila: ver FormulasDefectoItem en la macro).
@@ -1098,9 +1110,9 @@ const valoresItemSistema = (it) => porLetra({
 
 // Origen de los catálogos cargados por el script (plantilla).
 const lineaCatalogo = (nombre, o) => {
-  if (!o) return `${nombre}: vacío (se puede pegar a mano; ver "ACTUALIZAR LOS CATÁLOGOS").`;
+  if (!o) return `${nombre}: vacío (se puede pegar a mano; ver "PEGAR LOS CATÁLOGOS").`;
   // Cargado desde un archivo que no es la exportación oficial de la app.
-  if (o.provisional) return `${nombre}: ${o.cargadas} cargados de forma PROVISIONAL. Deben reemplazarse por la exportación oficial de la app (ver "ACTUALIZAR LOS CATÁLOGOS").`;
+  if (o.provisional) return `${nombre}: ${o.cargadas} cargados de forma PROVISIONAL. Deben reemplazarse por el archivo oficial (ver "PEGAR LOS CATÁLOGOS").`;
   return `${nombre}: ${o.cargadas} cargadas del archivo ${o.archivo}${o.fecha ? ` (exportado el ${o.fecha})` : ''}${o.detalle ? `; ${o.detalle}` : ''}.`;
 };
 
@@ -1203,7 +1215,125 @@ const ACTUALIZAR_CATALOGOS = [
   ['La plantilla base la regenera el encargado con el script (docs/respaldo-contingencia-implantes.md): sale con los catálogos vacíos, para pegarlos. Una plantilla regenerada no trae los cambios hechos en los libros del mes.'],
 ];
 
-const textoInstrucciones = (d) => [
+// Manual del libro de trabajo (decisión del 25-11-2026: el libro es la
+// herramienta de trabajo, sin textos de respaldo ni contingencia). Lo usa la
+// plantilla y se exporta para reemplazar Instrucciones en un libro con datos.
+// `conOrigen`: líneas con la fecha de generación y el origen de los
+// catálogos (solo al generar la plantilla).
+export const instruccionesLibro = (d = {}, { conOrigen = true } = {}) => [
+  ['IMPLANTES — LIBRO DE TRABAJO', 'titulo'],
+  ['', 'libro'],
+  ...(conOrigen ? [
+    [`Plantilla generada: ${d.generadoEl}. Filas preparadas: ${d.tamano?.gestionesLibres} gestiones y ${d.tamano?.itemsLibres} ítems.`],
+  ] : []),
+  ['Catálogos actualizados al →', 'fecha'],
+  ...(conOrigen ? [
+    [lineaCatalogo('Reporte Info', d.origenCatalogos?.reporteInfo)],
+    [lineaCatalogo('Códigos', d.origenCatalogos?.codigos)],
+    [lineaCatalogo('Empresas', d.origenCatalogos?.empresas)],
+    [lineaCatalogo('Centros', d.origenCatalogos?.centros)],
+    [lineaCatalogo('Rangos de recargo', d.origenCatalogos?.recargos)],
+    [lineaCatalogo('Previsiones', d.origenCatalogos?.previsiones)],
+    [lineaCatalogo('Convenios', d.origenCatalogos?.convenios)],
+  ] : []),
+  [''],
+  ['CÓMO SE TRABAJA MES A MES', 'seccion'],
+  [`Hay un libro por mes, ${PREFIJO_LIBRO}AAAA-MM.xlsm, todos en la misma carpeta. En el libro del mes se registran las gestiones y se agregan o corrigen los catálogos.`],
+  ['1. A fin de mes, desde el libro actual: hoja "Nuevo mes" → escriba el Año y el Mes (1 a 12) → botón "Crear libro del mes". Se crea y se abre el libro de ese mes con los catálogos tal como quedaron (con sus cambios y marcas). Gestiones, Ítems, Cargados, Solicitud Implantes y Resumen quedan vacías.'],
+  ['2. Las gestiones no se traspasan: las pendientes se terminan en el libro de su mes. Si el libro de ese mes ya existe, no se sobrescribe.'],
+  ['3. Cada libro solo acepta gestiones con fecha de su mes (no importa la fecha de hoy). Al escribir otra fecha Excel la rechaza; si se pega, la Fecha se pinta de rojo, la Alerta dice "Fecha fuera del mes del libro" y "Mover cargados" no mueve esa gestión.'],
+  ['El mes del libro se ve aquí arriba, en el nombre del archivo y en la fila 1 de Gestiones.'],
+  [''],
+  ['COLORES', 'seccion'],
+  ['Encabezados: amarillo obligatorio, azul opcional, gris automático (no se escribe). Una celda obligatoria vacía en una fila en uso se pinta de rojo.'],
+  ['Verde (Ítems y Cargados): la vista de carga, las primeras columnas, fijas al desplazarse: N° línea, Admisión, Fecha, Código, Cantidad, Venta, Nombre paciente y Estado carga. Ahí se escribe solo Estado carga; lo demás sale de la CLAVE y de la línea.'],
+  ['Filas de Gestiones según su Estado: verde CARGADO o FINALIZADO, azul AGENDADO, amarillo PENDIENTE, naranja INCOMPLETO, REVISAR o S/COTIZACION.'],
+  [''],
+  ['HOJA GESTIONES (una fila por admisión + empresa + fecha)', 'seccion'],
+  ['1. Escriba Admisión (solo dígitos), Fecha (dd-mm-aaaa, del mes del libro) y elija la Empresa (lista de la hoja Empresas). La CLAVE se arma sola: admisión|empresa|AAAA-MM-DD.'],
+  ['   Al escribir la admisión, Nombre, Convenio, Previsión, Médico y Descripción se completan solos desde la hoja Reporte Info (la Previsión es la columna "Isapre").'],
+  ['   Si la admisión no está en Reporte Info, la Admisión se pinta naranja y la Alerta dice "Admisión no está en Reporte Info": escriba esos datos a mano. Convenio y Previsión tienen lista; si escribe un valor que no está, Excel pregunta y la Alerta lo avisa, pero se puede usar.'],
+  ['   También se puede escribir encima de un dato autocompletado: queda en letra azul cursiva y solo cambia esa celda. Para volver al dato de Reporte Info, copie la misma celda de una fila de abajo y péguela.'],
+  ['2. Complete Registrado por (de la lista; los nombres se agregan en la hoja Catálogos, columna N), el Atributo (IMPLANTES, CONSIGNACION o HEMODINAMIA) y, si los tiene, Total cotización y los demás datos.'],
+  ['3. La misma admisión con otra empresa u otra fecha es otra fila. Una CLAVE repetida se pinta de rojo: no la duplique.'],
+  ['4. Estado se calcula solo: con alguna línea sin código = INCOMPLETO; si todas las líneas tienen el mismo estado de carga, ese estado (CONTENIDO y SIN CARGO cuentan como CARGADO); si se mezclan, INCOMPLETO. Sin ítems: el "Estado sin ítems" (vacío = AGENDADO). Cuando sus líneas ya están en Cargados: FINALIZADO.'],
+  ['5. Diferencia en rojo: la suma de los ítems no cuadra con el Total cotización.'],
+  [''],
+  ['HOJA ÍTEMS (una fila por línea)', 'seccion'],
+  ['1. Elija la CLAVE de la gestión (lista). Primero debe existir la gestión en la hoja Gestiones. Admisión, Fecha y Nombre paciente se llenan solos con ella.'],
+  ['2. Escriba N° cotización, Referencia y la cantidad en "Cantidad (ingresar)" (la columna Cantidad de la vista de carga la muestra sola). Al escribir la referencia se completan desde la hoja Códigos el código, precio, empresa, clase, tipo y descriptor, y se calculan veces costo (hoja Recargos), total y venta. Si la referencia existe para varias empresas, se usa la de la empresa de la gestión.'],
+  ['   Código y Código real: Código es el que va en la Solicitud ("No lleva OC" en CONTENIDO PAD, CONTENIDO GUÍA, LOTE ADICIONAL y SIN CARGO). Código real es siempre el del catálogo según la referencia.'],
+  ['3. Una referencia que no está en Códigos se puede escribir igual (Excel avisa): queda "Sin código" y la gestión INCOMPLETO. Si conoce el precio, escríbalo en Precio manual.'],
+  ['4. Tipos de línea (obligatorio):'],
+  ['   NORMAL: una referencia común.'],
+  ['   PAD PADRE: la referencia del PAD (clase PAD). Lote y Vencimiento dicen PAD solos. Su Estado carga se cambia como en una línea NORMAL.'],
+  ['   CONTENIDO PAD: cada producto dentro del PAD. En "Línea padre" ponga el N° de línea del PAD PADRE. No se cobra (código "No lleva OC", precio 0). Estado carga dice CONTENIDO solo y cuenta como cargado.'],
+  ['   LOTE ADICIONAL: cuando una referencia viene en varios lotes. La línea NORMAL lleva la cantidad TOTAL y su lote; cada LOTE ADICIONAL indica cuántas unidades son de otro lote, con "Línea padre" = N° de la línea NORMAL. La suma de los lotes adicionales no puede superar la cantidad total.'],
+  ['   CONTENIDO GUÍA: líneas de una guía de consignación (ver abajo).'],
+  ['   Ejemplo PAD: línea 120 PAD PADRE "PAD-RODILLA"; líneas 121 y 122 CONTENIDO PAD con Línea padre 120.'],
+  ['5. Lote: el lote o "Sin lote". Vencimiento: una fecha (dd-mm-aaaa) o "Sin fecha". Tipo de línea, Lote y Vencimiento se pintan de rojo si faltan.'],
+  ['6. Colores: Estado carga en verde (CARGADO, CONTENIDO, SIN CARGO), rojo (PENDIENTE o vacío) y naranja (REVISAR, S/COTIZACION). Total ítem y Venta en naranja: la suma de la gestión no coincide con su Total cotización; revise precios y cantidades.'],
+  ['7. Guías de consignación: pegue el detalle de las guías en la hoja Guías. En una gestión con Atributo CONSIGNACION, escriba en Ítems la CLAVE y el N° guía en una fila vacía (si quiere, también N° cotización y Registrado por): desde esa fila hacia abajo se llena una línea por cada línea de la guía, como CONTENIDO GUÍA, con su referencia, cantidad, lote y vencimiento. Si no hay filas vacías suficientes, la guía no está o la gestión no es de CONSIGNACION, avisa y no escribe nada.'],
+  ['8. La columna Alerta debe quedar vacía. Avisos: Falta CLAVE / CLAVE no existe · Falta N° cotización · Falta referencia · Cantidad inválida · Sin código · Referencia ambigua · Empresa no coincide · Sin rango de recargo · Línea padre inválida · Lotes superan la cantidad · PAD PADRE: Lote y Vencimiento deben ser PAD · Guía en gestión que no es de CONSIGNACION.'],
+  [''],
+  ['BOTONES', 'seccion'],
+  [TEXTOS_MACROS.mover],
+  [TEXTOS_MACROS.devolver],
+  ['"Crear libro del mes" (hoja Nuevo mes): ver CÓMO SE TRABAJA MES A MES.'],
+  ['Después de usar un botón, guarde el archivo (Ctrl+G). Los botones no se pueden deshacer con Ctrl+Z: para revertir, use el botón contrario.'],
+  [''],
+  ['HOJAS SOLICITUD IMPLANTES Y RESUMEN', 'seccion'],
+  ['Cada vez que se presiona "Mover cargados" se agregan al final las líneas movidas (fechas como texto dd-mm-aaaa); nunca se borra lo anterior. FECHA INGRESO, Ingreso y FECHA REGISTRO llevan la fecha del movimiento. Al final van FECHA MOVIMIENTO y CLAVE. "Devolver a pendientes" quita las filas de esa gestión.'],
+  [''],
+  ['HOJA CARGADOS', 'seccion'],
+  ['Una fila por línea movida, con los datos de su gestión repetidos: cada línea con su código, código real, precio, recargo, total y venta, y quién la registró y la movió. Empieza con la misma vista de carga que Ítems (en verde).'],
+  [''],
+  ['FILTROS', 'seccion'],
+  ['Todas las tablas tienen filtros en la fila de títulos y se pueden usar con las hojas bloqueadas: flecha del título → elegir valores o "Filtros de texto". Para quitar un filtro: flecha → "Borrar filtro". No se puede ordenar (rompería las fórmulas).'],
+  [''],
+  ['AGREGAR O CORREGIR CATÁLOGOS', 'seccion'],
+  ['Códigos, Empresas, Centros, Recargos, Previsiones, Convenios y Guías se editan con las hojas protegidas: para agregar, escriba en la primera fila vacía; para corregir, escriba encima. No inserte ni borre filas (está bloqueado): para quitar un dato, borre el contenido de sus celdas o márquelo INACTIVO en ESTADO.'],
+  ['Las búsquedas, los desplegables y las alertas reconocen solas las filas nuevas.'],
+  ['En Códigos, Empresas, Centros y Recargos la columna CAMBIO marca cada fila NUEVO (verde), MODIFICADO (ámbar) o BORRADO (rojo) respecto de lo original, y FECHA CAMBIO guarda el día del último cambio (con las macros habilitadas). Si vuelve a escribir el valor original, la marca se quita.'],
+  [''],
+  ['PEGAR LOS CATÁLOGOS', 'seccion'],
+  ['Pegue SIN la fila de encabezados, desde la celda indicada, con "Pegar valores" (Ctrl+Alt+V → Valores) y las columnas en el orden de la fila 2 de cada hoja:'],
+  ['• Códigos → celda B3: CODIGO, REFERENCIA, DESCRIPTOR_EMPRESA, EMPRESA, TIPO, SEGMENTO, CLASE, DESCRIPTOR_AUTO, PRECIO_NETO, CX, OBSERVACION, REGISTRADO_POR, ESTADO (13 columnas). La columna A es automática.'],
+  ['• Empresas → A3: NOMBRE, RUT, ESTADO. • Centros → A3: NOMBRE, COMENTARIO, ESTADO, USAR_EN_GESTIONES. • Recargos → A3: DESDE, HASTA, VECES COSTO, COMENTARIO, ESTADO. • Previsiones y Convenios → A3: NOMBRE, COMENTARIO, ESTADO.'],
+  ['• Guías → A3: N° guía, Referencia, Código, Delivery, Cantidad, Lote, Vencimiento, Descripción.'],
+  ['Para reemplazar un catálogo: seleccione los datos anteriores (sin encabezados), Supr, y pegue el nuevo. Códigos con ceros a la izquierda (ej. 000123): abra el CSV con Datos → Desde texto/CSV y marque CODIGO como Texto antes de copiar.'],
+  ['En Códigos, EMPRESA tiene la lista de la hoja Empresas, y TIPO, SEGMENTO y CLASE las listas de la hoja Catálogos: un valor que no está en su lista se pinta de rojo.'],
+  ['Después de pegar: presione "Fijar catálogos como base" (hoja Códigos, arriba a la izquierda), escriba la fecha en "Catálogos actualizados al" (arriba) y guarde.'],
+  ['"Fijar catálogos como base" toma lo que hay en Códigos, Empresas, Centros y Recargos como valores originales y deja vacías las marcas CAMBIO y FECHA CAMBIO. Pide confirmación antes.'],
+  [''],
+  ['ACTUALIZAR REPORTE INFO', 'seccion'],
+  ['Si una admisión nueva no se autocompleta (Alerta "Admisión no está en Reporte Info"), pegue un Reporte Info más reciente:'],
+  ['1. Abra el Excel de Reporte Info de la clínica.'],
+  ['2. En la hoja Reporte Info seleccione desde A3 hasta la última fila con datos en las columnas A a G y presione Supr.'],
+  ['3. Copie del archivo, sin encabezados, columna por columna y en este orden, y pegue con "Pegar valores" desde la fila 3: Admisión → A, Fecha → B, Paciente → C, Convenio → D, Isapre → E, 1° Cirujano → F, Descripción → G.'],
+  ['4. Puede pegar todas las filas, aunque una admisión aparezca varias veces: se usa la primera. Hay 10.000 filas preparadas; si el archivo trae más, pegue las más recientes. Las gestiones ya registradas no cambian.'],
+  [''],
+  ['HABILITAR LAS MACROS (para los botones)', 'seccion'],
+  ['El archivo es .xlsm (con macros). Sin macros todo lo demás funciona igual (fórmulas, listas, alertas y filtros); solo los botones no.'],
+  ['1. Al abrirlo aparece una barra amarilla "ADVERTENCIA DE SEGURIDAD: Las macros se han deshabilitado": haga clic en "Habilitar contenido".'],
+  ['2. Si aparece una barra roja "RIESGO DE SEGURIDAD: Microsoft ha bloqueado la ejecución de macros…": cierre Excel, clic derecho en el archivo → Propiedades → pestaña General → marque "Desbloquear" → Aceptar, y vuelva a abrirlo.'],
+  [''],
+  ['QUÉ NO HACER', 'seccion'],
+  ['No cambie los N° de línea. No ordene las hojas; use los filtros.'],
+  ['Las hojas están protegidas con contraseña y las fórmulas están ocultas: al seleccionar una celda calculada se ve solo el resultado. Se escribe solo en las celdas que no son grises; los filtros, los desplegables y los botones funcionan igual.'],
+  [''],
+  ['BLOQUEAR EL CÓDIGO DE LAS MACROS', 'seccion'],
+  ['Las macros guardan la contraseña de las hojas. Para que no se vea con Alt+F11, bloquee el proyecto VBA una vez:'],
+  ['   1. Abra el libro y presione Alt+F11. En el Explorador de proyectos (Ctrl+R si no se ve), clic derecho en "VBAProject (nombre del libro)" → "Propiedades de VBAProject...".'],
+  ['   2. Pestaña "Protección": marque "Bloquear proyecto para visualización" y escriba la contraseña de las hojas en "Contraseña" y en "Confirmar contraseña". Aceptar.'],
+  ['   3. Cierre el editor, guarde (Ctrl+G) y cierre Excel. El bloqueo se aplica al volver a abrir. Los libros que se creen desde este con "Crear libro del mes" lo heredan.'],
+  [''],
+  ['SEGURIDAD', 'seccion'],
+  ['Contiene datos de pacientes: póngale contraseña (Archivo → Información → Proteger libro → Cifrar con contraseña). No lo envíe por correo ni WhatsApp y no lo imprima. Ábralo con Microsoft Excel.'],
+];
+
+// Instrucciones de un libro con filas importadas (modo con datos).
+const textoInstruccionesImportado = (d) => [
   ...encabezadoInstrucciones(d),
   [''],
   ...LIBRO_DEL_MES,
@@ -1271,6 +1401,8 @@ const textoInstrucciones = (d) => [
   ...(d.plantilla ? [[''], ...ACTUALIZAR_CATALOGOS] : []),
 ];
 
+const textoInstrucciones = (d) => (d.plantilla ? instruccionesLibro(d) : textoInstruccionesImportado(d));
+
 const hojaInstrucciones = (libro, datos) => {
   const hoja = libro.addWorksheet(H.INS);
   hoja.getColumn('A').width = 150;
@@ -1307,6 +1439,13 @@ const hojaInstrucciones = (libro, datos) => {
 // (macro CrearLibroDelMes, en A9) usa estas celdas (NM_ANIO y NM_MES en
 // ModContingencia.bas).
 export const CELDAS_NUEVO_MES = Object.freeze({ anio: 'B5', mes: 'B6' });
+// Textos de la hoja (A11 en adelante). Exportados para actualizar un libro con datos.
+export const TEXTOS_NUEVO_MES = Object.freeze([
+  `Crea en la misma carpeta de este archivo el libro ${PREFIJO_LIBRO}AAAA-MM.xlsm, copia de este (con sus macros y protección), y lo abre.`,
+  'El libro nuevo trae los catálogos de este libro tal como están ahora (Códigos, Empresas, Centros, Recargos, Previsiones, Convenios, Reporte Info, Guías y Catálogos) e Instrucciones; Gestiones, Ítems, Cargados, Solicitud Implantes y Resumen quedan vacías.',
+  'No se traspasan gestiones: las pendientes se quedan en el libro de su mes. Si el libro de ese mes ya existe, no se sobrescribe.',
+  'A fin de mes, cree desde el libro actual el libro del mes siguiente: trae los catálogos tal como quedaron, con los cambios del mes y sus marcas. Cada libro solo acepta gestiones con fecha de su mes.',
+]);
 
 const hojaNuevoMes = (libro) => {
   const hoja = libro.addWorksheet(H.NM);
@@ -1328,7 +1467,7 @@ const hojaNuevoMes = (libro) => {
   fila(5, 'Año del libro nuevo:');
   fila(6, 'Mes (1 a 12):');
   hoja.getCell('C6').value = f(`IF(AND(ISNUMBER(B6),B6>=1,B6<=12),INDEX(${L.meses},B6),"")`);
-  fila(7, 'Archivo que se creará:', f('IF(AND(ISNUMBER(B5),ISNUMBER(B6),B6>=1,B6<=12),"respaldo_implantes_"&B5&"-"&TEXT(B6,"00")&".xlsm","")'));
+  fila(7, 'Archivo que se creará:', f(`IF(AND(ISNUMBER(B5),ISNUMBER(B6),B6>=1,B6<=12),"${PREFIJO_LIBRO}"&B5&"-"&TEXT(B6,"00")&".xlsm","")`));
   ['B5', 'B6'].forEach((c) => {
     const celda = hoja.getCell(c);
     celda.fill = relleno(COLOR.obligatorio);
@@ -1341,10 +1480,7 @@ const hojaNuevoMes = (libro) => {
   // A9: botón "Crear libro del mes" (lo crea la macro InstalarBotones).
   hoja.getRow(9).height = 30;
   [
-    'Crea en la misma carpeta de este archivo el libro respaldo_implantes_AAAA-MM.xlsm, copia de este (con sus macros y protección), y lo abre.',
-    'El libro nuevo trae los catálogos de este libro tal como están ahora (Códigos, Empresas, Centros, Recargos, Previsiones, Convenios, Reporte Info y Catálogos) e Instrucciones; Gestiones, Ítems, Cargados, Solicitud Implantes y Resumen quedan vacías.',
-    'No se traspasan gestiones: las pendientes se quedan en el libro de su mes. Si el libro de ese mes ya existe, no se sobrescribe.',
-    'A fin de mes, cree desde el libro actual el libro del mes siguiente: trae los catálogos tal como quedaron, con los cambios del mes y sus marcas. La plantilla base solo se usa para el primer libro. Cada libro solo acepta gestiones con fecha de su mes.',
+    ...TEXTOS_NUEVO_MES,
   ].forEach((texto, i) => {
     const c = hoja.getCell(`A${11 + i}`);
     c.value = texto;
@@ -1387,7 +1523,7 @@ export const construirLibro = async (datosEntrada) => {
     }),
   };
   const libro = new ExcelJS.Workbook();
-  libro.creator = 'Medra — respaldo de contingencia';
+  libro.creator = 'Implantes';
   libro.created = new Date();
   // Recalcular todo al abrir: el archivo se guarda sin
   // resultados de fórmulas.
@@ -1409,14 +1545,14 @@ export const construirLibro = async (datosEntrada) => {
   const { col: rCol } = hojaCodigos(libro, datos.catalogo, datos.filasCatalogos.referencias);
   const { nombres: empresasNombres } = hojaEmpresas(libro, datos.empresas, datos.filasCatalogos.empresas);
   const centros = hojaMaestro(libro, H.CEN, COLUMNAS_CENTROS,
-    'Centros activos que se usan en Gestiones (desplegable de Centro). Pegue desde A3 el archivo de Maestros → Centros → Exportar (solo ACTIVOS con USAR_EN_GESTIONES = SI) o escriba en la primera fila vacía. CAMBIO marca lo NUEVO, MODIFICADO o BORRADO.',
+    'Centros activos que se usan en Gestiones (desplegable de Centro). Escriba en la primera fila vacía o pegue desde A3 (solo ACTIVOS con USAR_EN_GESTIONES = SI). CAMBIO marca lo NUEVO, MODIFICADO o BORRADO.',
     filasCentros(datos.centros), datos.filasCatalogos.centros);
   const recargos = hojaMaestro(libro, H.REC, COLUMNAS_RECARGOS,
-    'Rangos de recargo (veces costo según el precio). Para agregar un rango, escríbalo en la primera fila vacía; para corregirlo, escriba encima. CAMBIO marca lo NUEVO, MODIFICADO o BORRADO para pasarlo después al Maestro de la app. Los INACTIVOS no se usan y el orden no importa.',
+    'Rangos de recargo (veces costo según el precio). Para agregar un rango, escríbalo en la primera fila vacía; para corregirlo, escriba encima. CAMBIO marca lo NUEVO, MODIFICADO o BORRADO. Los INACTIVOS no se usan y el orden no importa.',
     filasRecargos(datos.recargos), datos.filasCatalogos.recargos);
-  const previsiones = hojaNombres(libro, H.PREV, 'Previsiones activas (desplegable de Previsión en Gestiones, solo avisa si el valor no está). Se regenera con el script; también se puede pegar desde A3 el archivo de Maestros → Previsiones → Exportar (solo ACTIVAS).',
+  const previsiones = hojaNombres(libro, H.PREV, 'Previsiones activas (desplegable de Previsión en Gestiones, solo avisa si el valor no está). Escriba en la primera fila vacía o pegue desde A3 NOMBRE, COMENTARIO y ESTADO (solo ACTIVAS).',
     datos.previsiones || [], datos.filasCatalogos.previsiones);
-  const convenios = hojaNombres(libro, H.CONV, 'Convenios activos (desplegable de Convenio en Gestiones, solo avisa si el valor no está). Se regenera con el script; también se puede pegar desde A3 el archivo de Maestros → Convenios → Exportar (solo ACTIVOS).',
+  const convenios = hojaNombres(libro, H.CONV, 'Convenios activos (desplegable de Convenio en Gestiones, solo avisa si el valor no está). Escriba en la primera fila vacía o pegue desde A3 NOMBRE, COMENTARIO y ESTADO (solo ACTIVOS).',
     datos.convenios || [], datos.filasCatalogos.convenios);
   const { rangos: cat } = hojaCatalogos(libro, datos.libroMes);
   hojaInstrucciones(libro, datos);
@@ -1532,11 +1668,11 @@ export const construirLibro = async (datosEntrada) => {
   // (distinto de lo que trae Reporte Info): letra azul en cursiva.
   hG.addConditionalFormatting({
     ref: rg('B'),
-    rules: [{ type: 'expression', priority: 2, formulae: [`AND($V${PRIMERA}="CONTINGENCIA",TRIM($B${PRIMERA})<>"",$AF${PRIMERA}="")`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.aviso } } } }],
+    rules: [{ type: 'expression', priority: 2, formulae: [`AND($V${PRIMERA}="${ORIGEN_REGISTRADO}",TRIM($B${PRIMERA})<>"",$AF${PRIMERA}="")`], style: { fill: { type: 'pattern', pattern: 'solid', bgColor: { argb: COLOR.aviso } } } }],
   });
   Object.entries(AUTOCOMPLETADO_GESTION).forEach(([l, aux]) => hG.addConditionalFormatting({
     ref: rg(l),
-    rules: [{ type: 'expression', priority: 2, formulae: [`AND($V${PRIMERA}="CONTINGENCIA",${l}${PRIMERA}<>"",${l}${PRIMERA}&""<>${aux}${PRIMERA})`], style: { font: { italic: true, color: { argb: COLOR.manual } } } }],
+    rules: [{ type: 'expression', priority: 2, formulae: [`AND($V${PRIMERA}="${ORIGEN_REGISTRADO}",${l}${PRIMERA}<>"",${l}${PRIMERA}&""<>${aux}${PRIMERA})`], style: { font: { italic: true, color: { argb: COLOR.manual } } } }],
   }));
   const alertaRoja = `OR(ISNUMBER(SEARCH("Fecha fuera",AE${PRIMERA})),ISNUMBER(SEARCH("Plantilla base",AE${PRIMERA})))`;
   hG.addConditionalFormatting({
@@ -1634,8 +1770,8 @@ export const construirLibro = async (datosEntrada) => {
   const hR = libro.getWorksheet(H.R);
   const ultimaCodigo = PRIMERA + datos.filasCatalogos.referencias - 1;
   const rr = (l) => `${l}${PRIMERA}:${l}${ultimaCodigo}`;
-  [['E', empresasNombres, 'Empresa', 'No está en la hoja Empresas.'], ['F', cat.F, 'Tipo', 'No es un tipo del sistema.'],
-    ['G', cat.G, 'Segmento', 'No es un segmento del sistema.'], ['H', cat.H, 'Clase', 'No es una clase del sistema.']].forEach(([l, listaRango, titulo, error]) => {
+  [['E', empresasNombres, 'Empresa', 'No está en la hoja Empresas.'], ['F', cat.F, 'Tipo', 'No es un tipo de la lista.'],
+    ['G', cat.G, 'Segmento', 'No es un segmento de la lista.'], ['H', cat.H, 'Clase', 'No es una clase de la lista.']].forEach(([l, listaRango, titulo, error]) => {
     validar(hR, rr(l), lista(listaRango, { errorStyle: 'warning', errorTitle: titulo, error: `${error} ¿Usarlo igual?` }));
     hR.addConditionalFormatting({
       ref: rr(l),
