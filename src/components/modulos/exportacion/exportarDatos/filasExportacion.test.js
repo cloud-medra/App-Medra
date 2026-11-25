@@ -43,18 +43,27 @@ describe('Exportar datos: filas', () => {
     expect(filasExportacion({ consignacion: [registro({ lote: 'PROPIO', vencimiento: '2028-01-01' })] })[0]).toMatchObject({ lote: 'PROPIO', vencimiento: '2028-01-01' });
   });
 
-  it('orden: Implantes, Consignación, Hemodinamia; dentro, por fecha y admisión', () => {
+  it('orden: por fecha; en el mismo día Implantes, Consignación, Hemodinamia y por admisión', () => {
     const filas = filasExportacion({
       hemodinamia: [gestion({ cotizaciones: [], gestionId: '1' })],
       consignacion: [registro({ fecha: '2026-11-20' }), registro({ fecha: '2026-11-01', gestionId: '5' })],
       implantes: [gestion({ cotizaciones: [], fecha: '2026-11-15', gestionId: '9' }), gestion({ cotizaciones: [], fecha: '2026-11-15', gestionId: '10' })],
     });
-    expect(filas.map((f) => `${f.segmento}:${f.admision}`)).toEqual(['IMPLANTES:9', 'IMPLANTES:10', 'CONSIGNACION:5', 'CONSIGNACION:777', 'HEMODINAMIA:1']);
+    expect(filas.map((f) => `${f.fecha} ${f.segmento}:${f.admision}`)).toEqual([
+      '2026-11-01 CONSIGNACION:5', '2026-11-10 HEMODINAMIA:1', '2026-11-15 IMPLANTES:9', '2026-11-15 IMPLANTES:10', '2026-11-20 CONSIGNACION:777',
+    ]);
+    // Mismo día: Implantes, Consignación, Hemodinamia.
+    const mismoDia = filasExportacion({
+      hemodinamia: [gestion({ cotizaciones: [], gestionId: '1' })],
+      consignacion: [registro({ fecha: '2026-11-10' })],
+      implantes: [gestion({ cotizaciones: [], gestionId: '2' })],
+    });
+    expect(mismoDia.map((f) => f.segmento)).toEqual(['IMPLANTES', 'CONSIGNACION', 'HEMODINAMIA']);
   });
 });
 
 describe('Exportar datos: hojas para la planilla', () => {
-  const filas = filasExportacion({ implantes: [gestion(), gestion({ gestionId: '00999', cotizaciones: [] })], consignacion: [registro(), registro({ id: 'r2', referencia: 'X8', cantidad: 1 })] });
+  const filas = filasExportacion({ implantes: [gestion(), gestion({ gestionId: '00999', cotizaciones: [] })], consignacion: [registro({ fecha: '2026-11-12' }), registro({ id: 'r2', referencia: 'X8', cantidad: 1, fecha: '2026-11-12' })] });
 
   it('Gestiones: una fila por CLAVE en las letras de la planilla (H vacía)', () => {
     const g = filasPlanillaGestiones(filas);
@@ -74,15 +83,20 @@ describe('Exportar datos: hojas para la planilla', () => {
   it('Ítems: N° de línea desde el inicial y Línea padre a esos números', () => {
     const it = filasPlanillaItems(filas, 26);
     expect(it.map((f) => f[0])).toEqual([26, 27, 28, 29, 30]);
-    expect(it.map((f) => f[8])).toEqual(['PAD PADRE', 'CONTENIDO PAD', 'NORMAL', 'NORMAL', 'NORMAL']);
-    expect(it[1][9]).toBe(26);               // J Línea padre del contenido = el PAD
-    expect(it[0][9]).toBe('');
-    expect([it[0][17], it[1][17], it[2][17]]).toEqual([3000, '', 2000]); // R Precio manual (no en el contenido)
-    expect(it[3][13]).toBe('814761');        // N N° guía
-    expect(it[3][15]).toBe('LG');            // P Lote
-    expect(it[1][16]).toEqual(celdaFecha('2027-05-31'));
-    expect(it[2][16]).toBe('Sin fecha');
-    expect(it[0][27]).toBe('Ana');           // AB Registrado por
+    // Letras de la planilla desde el 25-11-2026: G Nombre paciente (fórmula,
+    // vacía aquí), H Estado carga, I CLAVE, J Tipo, K Línea padre, … AC Registrado por.
+    expect(it[0][6]).toBeUndefined();
+    expect(it[0][7]).toBe('CARGADO');        // H Estado carga
+    expect(it[0][8]).toBe('00123|EMP|2026-11-10'); // I CLAVE
+    expect(it.map((f) => f[9])).toEqual(['PAD PADRE', 'CONTENIDO PAD', 'NORMAL', 'NORMAL', 'NORMAL']);
+    expect(it[1][10]).toBe(26);              // K Línea padre del contenido = el PAD
+    expect(it[0][10]).toBe('');
+    expect([it[0][18], it[1][18], it[2][18]]).toEqual([3000, '', 2000]); // S Precio manual (no en el contenido)
+    expect(it[3][14]).toBe('814761');        // O N° guía
+    expect(it[3][16]).toBe('LG');            // Q Lote
+    expect(it[1][17]).toEqual(celdaFecha('2027-05-31'));
+    expect(it[2][17]).toBe('Sin fecha');
+    expect(it[0][28]).toBe('Ana');           // AC Registrado por
   });
 
   it('el libro trae la tabla y las dos hojas para pegar', () => {
@@ -95,6 +109,9 @@ describe('Exportar datos: hojas para la planilla', () => {
     const g = XLSX.utils.sheet_to_json(libro.Sheets['Para Gestiones'], { header: 1, defval: '' });
     expect(g[1][7]).toBe('Estado (no pegar)');
     expect(g[2][1]).toBe('00123');
+    const i = XLSX.utils.sheet_to_json(libro.Sheets['Para Ítems'], { header: 1, defval: '' });
+    expect(i[1].slice(6, 9)).toEqual(['Nombre paciente (no pegar)', 'Estado carga', 'CLAVE']);
+    expect(i[1][28]).toBe('Registrado por');
   });
 
   it('fecha ISO como fecha de Excel; otro texto tal cual', () => {
