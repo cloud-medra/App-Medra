@@ -587,11 +587,15 @@ describe('construirLibro', () => {
     expect(g.dataValidations.find('J4')).toMatchObject({ type: 'list', formulae: ["'Catálogos'!$G$3:$G$5"] });
     // Hoja Guías: columnas, desbloqueadas por columna, protegida.
     const gu = libro.getWorksheet('Guías');
-    expect(gu.getRow(2).values.slice(1)).toEqual(['N° guía', 'Referencia', 'Código', 'Delivery', 'Cantidad', 'Lote', 'Vencimiento', 'Descripción']);
+    expect(gu.getRow(2).values.slice(1)).toEqual(['N° guía', 'Referencia', 'Código', 'Delivery', 'Cantidad', 'Lote', 'Vencimiento', 'Descripción', 'Agregada a (CLAVE)']);
     expect(gu.getColumn('A').protection).toMatchObject({ locked: false });
     expect(gu.getColumn('G').numFmt).toBe('dd-mm-yyyy');
     expect(gu.getCell('A2').protection?.locked ?? true).toBe(true);
     expect(gu.sheetProtection).toMatchObject({ sheet: true });
+    // "Agregada a (CLAVE)": la escribe la macro (bloqueada).
+    expect(gu.getCell('I2').value).toBe('Agregada a (CLAVE)');
+    expect(gu.getColumn('I').protection?.locked ?? true).toBe(true);
+    expect(gu.getColumn('H').protection).toMatchObject({ locked: false });
     // Hoja Consignación: se pegan A..H (C a J del registro); I..N las escribe la macro.
     const co = libro.getWorksheet('Consignación');
     expect(co.getRow(2).values.slice(1)).toEqual(['Admisión', 'Paciente', 'Médico', 'Fecha CX', 'Empresa', 'Código', 'Cantidad', 'Delivery', 'Tipo de línea', 'Referencia', 'Lote', 'Vencimiento', 'N° guía', 'Estado']);

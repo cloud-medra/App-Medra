@@ -51,7 +51,10 @@ Private Const HOJA_CATALOGOS_CODIGOS As String = "Códigos"
 ' B Referencia, C Código, D Delivery, E Cantidad, F Lote, G Vencimiento,
 ' H Descripción. Datos desde la fila 3.
 Private Const HOJA_GUIAS As String = "Guías"
-Private Const GU_COLUMNAS As Long = 8
+Private Const GU_COLUMNAS As Long = 9
+' Columna "Agregada a (CLAVE)" de Guías: la escribe AgregarConsignacionAuto y
+' MoverCargadosAuto borra esas líneas cuando la gestión ya no tiene ítems.
+Private Const GU_AGREGADA As Long = 9
 Private Const TIPO_CONTENIDO_GUIA As String = "CONTENIDO GUÍA"
 Private Const SEGMENTO_CONSIGNACION As String = "CONSIGNACION"
 ' Consignación (COLUMNAS_CONSIGNACION en libroRespaldo.js): se pegan A..H
@@ -158,13 +161,22 @@ Public Sub MoverCargados()
         Dim partes As Variant, archivo As String
         partes = Split(resultado, ";")
         If UBound(partes) >= 3 Then archivo = partes(3)
+        ' El último dato es la cantidad de líneas borradas de Guías (la ruta del Excel podría traer ";").
+        If UBound(partes) >= 4 Then
+            archivo = Mid(resultado, Len(partes(0)) + Len(partes(1)) + Len(partes(2)) + 4)
+            archivo = Left(archivo, InStrRev(archivo, ";") - 1)
+        End If
         If Left(archivo, 6) = "ERROR:" Then
             archivo = "No se pudo guardar el Excel de Solicitud: " & Mid(archivo, 7)
         ElseIf archivo <> "" Then
             archivo = "Excel de Solicitud guardado en:" & vbCrLf & archivo
         End If
+        Dim guias As String
+        If UBound(partes) >= 4 Then
+            If Val(partes(UBound(partes))) > 0 Then guias = vbCrLf & vbCrLf & partes(UBound(partes)) & " línea(s) de guía ya agregadas se borraron de la hoja Guías (quedan en Cargados)."
+        End If
         MsgBox "Listo: " & partes(0) & " gestión(es) y " & partes(1) & " ítem(s) movidos a Cargados." & vbCrLf & vbCrLf & _
-               archivo & vbCrLf & vbCrLf & "Guarde el archivo (Ctrl+G).", vbInformation, "Mover cargados"
+               archivo & guias & vbCrLf & vbCrLf & "Guarde el archivo (Ctrl+G).", vbInformation, "Mover cargados"
     End If
 End Sub
 
@@ -394,12 +406,17 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
     ' La gestión se queda en Gestiones: sin ítems y con líneas en Cargados,
     ' su Estado pasa a FINALIZADO (fórmula de la columna Estado).
 
+    ' Guías: se borran las líneas agregadas de las gestiones que ya no tienen
+    ' ítems (lo vinculado queda en Cargados); quedan las no agregadas.
+    Dim nGuias As Long
+    nGuias = LimpiarGuias(wsI, ti)
+
     ' El filtro cubre las filas nuevas (con la hoja protegida Excel no lo amplía).
     AjustarFiltro wsC, FILA_TITULOS, False
     AjustarFiltro wsS, 1, False
     AjustarFiltro wsR, 1, False
 
-    MoverCargadosAuto = filasG.Count & ";" & filasI.Count & ";" & nFuera & ";" & ExportarSolicitud(sol, res, filasI.Count, ahora)
+    MoverCargadosAuto = filasG.Count & ";" & filasI.Count & ";" & nFuera & ";" & ExportarSolicitud(sol, res, filasI.Count, ahora) & ";" & nGuias
 Fin:
     Proteger wsG: Proteger wsI: Proteger wsC: Proteger wsS: Proteger wsR
     Application.Calculation = calculo
@@ -762,7 +779,10 @@ Public Function VincularConsignacionAuto() As String
                 Else
                     nVinc = nVinc + 1
                     usada = False
+                    Dim yaAgregada As String
+                    yaAgregada = ""
                     For Each kk In porDelivery(del)
+                        If Txt(gu(kk, GU_AGREGADA)) <> "" Then yaAgregada = Txt(gu(kk, GU_AGREGADA))
                         refG = Txt(gu(kk, 2))
                         If refG = "" Then refG = Txt(gu(kk, 3))
                         If numGuia = "" Then numGuia = Txt(gu(kk, 1))
@@ -777,6 +797,7 @@ Public Function VincularConsignacionAuto() As String
                         End If
                     Next kk
                     estado = estado & "Vinculada: " & contenido.Count & " línea(s) de contenido."
+                    If yaAgregada <> "" Then estado = estado & " Ojo: esta guía ya se agregó a " & yaAgregada & "."
                 End If
                 fila(11) = lote: fila(12) = venc: fila(13) = numGuia: fila(14) = Trim(estado)
                 salida.Add fila
@@ -812,6 +833,59 @@ Fin:
 Fallo:
     VincularConsignacionAuto = "ERROR;No se pudo vincular: " & Err.Description
     Resume Fin
+End Function
+
+' Marca en Guías (columna "Agregada a") las líneas del Delivery que pasaron a
+' Ítems con la CLAVE de su gestión. Las ya marcadas no se tocan.
+Private Sub MarcarGuia(ByVal delivery As String, ByVal clave As String)
+    Dim wsGu As Worksheet, ult As Long, d As Variant, k As Long
+    Set wsGu = ThisWorkbook.Worksheets(HOJA_GUIAS)
+    ult = wsGu.Cells(wsGu.Rows.Count, 1).End(xlUp).Row
+    If ult < PRIMERA Then Exit Sub
+    d = wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(ult, GU_COLUMNAS)).Value
+    Desproteger wsGu
+    For k = 1 To UBound(d, 1)
+        If UCase(Txt(d(k, 4))) = UCase(delivery) And Txt(d(k, GU_AGREGADA)) = "" Then wsGu.Cells(k + PRIMERA - 1, GU_AGREGADA).Value = clave
+    Next k
+    Proteger wsGu
+End Sub
+
+' Borra de Guías las líneas agregadas cuya gestión (CLAVE) ya no tiene líneas
+' en Ítems. Reescribe la hoja de una vez (sin borrar filas una a una).
+' Devuelve cuántas líneas borró.
+Private Function LimpiarGuias(ByVal wsI As Worksheet, ByVal ti As Object) As Long
+    Dim wsGu As Worksheet, ult As Long, d As Variant, k As Long, c As Long, n As Long
+    Set wsGu = ThisWorkbook.Worksheets(HOJA_GUIAS)
+    ult = wsGu.Cells(wsGu.Rows.Count, 1).End(xlUp).Row
+    If ult < PRIMERA Then Exit Function
+    d = wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(ult, GU_COLUMNAS)).Value
+
+    Dim enItems As Object, iDatos As Variant, iClave As Long, ultI As Long
+    Set enItems = CreateObject("Scripting.Dictionary")
+    iClave = Col(ti, "CLAVE")
+    ultI = UltimaFila(wsI, Col(ti, "N° línea"))
+    If ultI >= PRIMERA Then
+        iDatos = wsI.Range(wsI.Cells(PRIMERA, iClave), wsI.Cells(ultI, iClave)).Value
+        For k = 1 To UBound(iDatos, 1)
+            If Txt(iDatos(k, 1)) <> "" Then enItems(Txt(iDatos(k, 1))) = True
+        Next k
+    End If
+
+    Dim quedan() As Variant
+    ReDim quedan(1 To UBound(d, 1), 1 To GU_COLUMNAS)
+    For k = 1 To UBound(d, 1)
+        If Txt(d(k, GU_AGREGADA)) = "" Or enItems.Exists(Txt(d(k, GU_AGREGADA))) Then
+            n = n + 1
+            For c = 1 To GU_COLUMNAS: quedan(n, c) = d(k, c): Next c
+        End If
+    Next k
+    LimpiarGuias = UBound(d, 1) - n
+    If LimpiarGuias = 0 Then Exit Function
+    Desproteger wsGu
+    wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(ult, GU_COLUMNAS)).ClearContents
+    If n > 0 Then wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(PRIMERA + n - 1, GU_COLUMNAS)).Value = quedan
+    AjustarFiltro wsGu, FILA_TITULOS, False
+    Proteger wsGu
 End Function
 
 ' Reescribe la hoja Consignación desde la fila 3 con las filas dadas (las de
@@ -982,6 +1056,7 @@ Public Function AgregarConsignacionAuto() As String
                 nLineas = nLineas + 1
             Next j
             nAgregadas = nAgregadas + 1
+            If Txt(datos(ini, 8)) <> "" Then MarcarGuia Txt(datos(ini, 8)), clave
         Else
             For j = ini To fin
                 ReDim fila(1 To CO_COLUMNAS)

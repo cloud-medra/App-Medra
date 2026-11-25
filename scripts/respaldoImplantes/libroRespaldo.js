@@ -733,20 +733,26 @@ export const COLUMNAS_GUIAS = [
   { l: 'F', titulo: 'Lote', ancho: 16, texto: true },
   { l: 'G', titulo: 'Vencimiento', ancho: 12, fecha: true },
   { l: 'H', titulo: 'Descripción', ancho: 40 },
+  // La escribe "Agregar a Ítems" (hoja Consignación) en las líneas de la guía
+  // que pasaron a Ítems; "Mover cargados" borra esas líneas de Guías cuando ya
+  // no queda en Ítems ninguna línea de esa gestión (decisión del
+  // 25-11-2026: Guías no se vacía con el mes, se limpia sola; lo vinculado queda
+  // en Cargados). La macro lee por posición (GU_COLUMNAS en ModContingencia.bas).
+  { l: 'I', titulo: 'Agregada a (CLAVE)', ancho: 36, macro: true },
 ];
 
 // Sin fila por fila (serán muchas): el formato y el desbloqueo van por
 // columna, que Excel aplica a toda celda nueva de la columna.
 const hojaGuias = (libro) => {
   const hoja = libro.addWorksheet(H.GUIAS);
-  prepararHoja(hoja, COLUMNAS_GUIAS.map((c) => ({ ...c, clase: 'opcional' })), { conAyuda: false, congelarColumnas: 1 });
-  hoja.getCell('A1').value = 'Guías de consignación: pegue desde A3 el detalle (N° guía, Referencia, Código, Delivery, Cantidad, Lote, Vencimiento, Descripción). La hoja Consignación busca aquí el Delivery ("Vincular guías").';
+  prepararHoja(hoja, COLUMNAS_GUIAS.map((c) => ({ ...c, clase: c.macro ? 'formula' : 'opcional' })), { conAyuda: false, congelarColumnas: 1 });
+  hoja.getCell('A1').value = 'Guías de consignación: pegue desde A3 el detalle (N° guía, Referencia, Código, Delivery, Cantidad, Lote, Vencimiento, Descripción). La hoja Consignación busca aquí el Delivery ("Vincular guías"). Las líneas que pasan a Ítems quedan marcadas en "Agregada a" y se borran de aquí al moverlas a Cargados; esta hoja no se vacía al crear el libro del mes.';
   hoja.getCell('A1').font = { italic: true };
   COLUMNAS_GUIAS.forEach((c) => {
     const col = hoja.getColumn(c.l);
     if (c.texto) col.numFmt = '@';
     if (c.fecha) col.numFmt = FORMATO_FECHA;
-    col.protection = { locked: false };
+    col.protection = { locked: !!c.macro };
   });
   hoja.autoFilter = { from: { row: FILA_ENCABEZADO, column: 1 }, to: { row: FILAS_FILTRO, column: COLUMNAS_GUIAS.length } };
   // Ayuda y encabezados quedan bloqueados.
@@ -1330,6 +1336,7 @@ export const instruccionesLibro = (d = {}, { conOrigen = true } = {}) => [
   ['3. Botón "Vincular guías": busca la Referencia de cada Código en la hoja Códigos y, con el Delivery, las líneas de su guía en la hoja Guías. Debajo de cada fila agrega el contenido de la guía (CONTENIDO GUÍA, en gris) con su referencia, cantidad, lote y vencimiento. La línea de la guía que es el mismo producto de la fila no se repite: su lote y vencimiento pasan a la fila. La columna Estado dice cuántas líneas trajo, o si falta el Código o el Delivery. Se puede presionar de nuevo después de corregir algo.'],
   ['4. Botón "Agregar a Ítems": pasa cada fila (línea NORMAL que cobra) y su contenido a Ítems. Si la gestión (Admisión + Empresa + Fecha CX) no existe, la crea en Gestiones con Atributo CONSIGNACION (Nombre y Médico desde Reporte Info, o los pegados). Lo agregado se borra de la hoja; lo que no se pudo agregar queda con el motivo en Estado (fecha de otro mes, empresa que no está en Empresas, código sin referencia, Delivery cuya guía aún no está en Guías, sin filas libres).'],
   ['5. Después complete en Ítems N° cotización y Registrado por, y en Gestiones lo que falte (Registrado por, Total cotización).'],
+  ['6. Las líneas de la guía que pasaron a Ítems quedan marcadas en la hoja Guías (columna "Agregada a", con la CLAVE). Al "Mover cargados", se borran de Guías cuando esa gestión ya no tiene líneas en Ítems (sus datos quedan en Cargados). En Guías quedan solo las guías sin agregar. La hoja Guías no se vacía al crear el libro del mes.'],
   [''],
   ['BOTONES', 'seccion'],
   [TEXTOS_MACROS.mover],
