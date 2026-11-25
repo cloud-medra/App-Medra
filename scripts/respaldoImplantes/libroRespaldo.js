@@ -40,6 +40,7 @@ export const H = {
   CEN: 'Centros', REC: 'Recargos', PREV: 'Previsiones', CONV: 'Convenios', C: 'Catálogos', INS: 'Instrucciones',
   NM: 'Nuevo mes',
   GUIAS: 'Guías',
+  CONSIG: 'Consignación',
 };
 const ref = (hoja) => `'${hoja}'!`;
 
@@ -186,7 +187,7 @@ const DEF_ITEMS = [
   { k: 'numCot', titulo: 'N° cotización', clase: 'obligatorio', ancho: 14, texto: true, ayuda: 'N° de la cotización del proveedor.' },
   { k: 'referencia', titulo: 'Referencia', clase: 'obligatorio', ancho: 24, texto: true, ayuda: 'De la lista (se puede escribir). Si no existe queda "Sin código".' },
   { k: 'cantidadIngreso', titulo: 'Cantidad (ingresar)', clase: 'obligatorio', ancho: 10, campo: 'cantidad', original: 'origCantidad', ayuda: 'Obligatoria. Mayor que 0. En una referencia con lotes: la cantidad TOTAL. Se ve también en Cantidad (E).' },
-  { k: 'numGuia', titulo: 'N° guía', clase: 'opcional', ancho: 12, texto: true, ayuda: 'Consignación: escriba el N° de guía en una fila vacía y se llenan, desde esa fila hacia abajo, las líneas de esa guía (hoja Guías) como CONTENIDO GUÍA.' },
+  { k: 'numGuia', titulo: 'N° guía', clase: 'opcional', ancho: 12, texto: true, ayuda: 'Consignación: lo escribe "Agregar a Ítems" (hoja Consignación).' },
   { k: 'codigoReal', titulo: 'Código real', clase: 'formula', ancho: 12, ayuda: 'Código del catálogo según la referencia, en TODAS las líneas (también CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO).' },
   { k: 'lote', titulo: 'Lote', clase: 'obligatorio', ancho: 14, texto: true, campo: 'lote', original: 'origLote', ayuda: 'En rojo si falta: escriba el lote o "Sin lote". PAD PADRE: PAD (automático).' },
   { k: 'vencimiento', titulo: 'Vencimiento', clase: 'obligatorio', ancho: 12, fecha: true, campo: 'vencimiento', original: 'origVencimiento', ayuda: 'dd-mm-aaaa o "Sin fecha". En rojo si falta. PAD PADRE: PAD (automático).' },
@@ -739,7 +740,7 @@ export const COLUMNAS_GUIAS = [
 const hojaGuias = (libro) => {
   const hoja = libro.addWorksheet(H.GUIAS);
   prepararHoja(hoja, COLUMNAS_GUIAS.map((c) => ({ ...c, clase: 'opcional' })), { conAyuda: false, congelarColumnas: 1 });
-  hoja.getCell('A1').value = 'Guías de consignación: pegue desde A3 el detalle (N° guía, Referencia, Código, Delivery, Cantidad, Lote, Vencimiento, Descripción). En Ítems, al escribir un N° guía en una gestión de CONSIGNACION se traen sus líneas.';
+  hoja.getCell('A1').value = 'Guías de consignación: pegue desde A3 el detalle (N° guía, Referencia, Código, Delivery, Cantidad, Lote, Vencimiento, Descripción). La hoja Consignación busca aquí el Delivery ("Vincular guías").';
   hoja.getCell('A1').font = { italic: true };
   COLUMNAS_GUIAS.forEach((c) => {
     const col = hoja.getColumn(c.l);
@@ -750,6 +751,53 @@ const hojaGuias = (libro) => {
   hoja.autoFilter = { from: { row: FILA_ENCABEZADO, column: 1 }, to: { row: FILAS_FILTRO, column: COLUMNAS_GUIAS.length } };
   // Ayuda y encabezados quedan bloqueados.
   [FILA_AYUDA, FILA_ENCABEZADO].forEach((n) => COLUMNAS_GUIAS.forEach((c) => { hoja.getCell(`${c.l}${n}`).protection = { locked: true }; }));
+  return hoja;
+};
+
+// --- Hoja Consignación ----------------------------------------------------------------
+// Registro de consignación por cargar (decisión del 25-11-2026): se pegan
+// desde A3 las columnas C a J del registro de consignación (Admisión, Paciente,
+// Médico, Fecha CX, Empresa, Código, Cantidad, Delivery). "Vincular guías"
+// (macro VincularConsignacion) escribe I..N y agrega debajo de cada fila el
+// contenido de su guía; "Agregar a Ítems" (AgregarConsignacion) lo pasa a
+// Gestiones e Ítems y lo borra de aquí. La macro lee por posición
+// (CO_COLUMNAS en ModContingencia.bas).
+export const COLUMNAS_CONSIGNACION = [
+  { l: 'A', titulo: 'Admisión', ancho: 11, texto: true, pega: true },
+  { l: 'B', titulo: 'Paciente', ancho: 26, pega: true },
+  { l: 'C', titulo: 'Médico', ancho: 24, pega: true },
+  { l: 'D', titulo: 'Fecha CX', ancho: 11, fecha: true, pega: true },
+  { l: 'E', titulo: 'Empresa', ancho: 28, pega: true },
+  { l: 'F', titulo: 'Código', ancho: 11, texto: true, pega: true },
+  { l: 'G', titulo: 'Cantidad', ancho: 9, pega: true },
+  { l: 'H', titulo: 'Delivery', ancho: 13, texto: true, pega: true },
+  { l: 'I', titulo: 'Tipo de línea', ancho: 15 },
+  { l: 'J', titulo: 'Referencia', ancho: 22 },
+  { l: 'K', titulo: 'Lote', ancho: 14 },
+  { l: 'L', titulo: 'Vencimiento', ancho: 12, fecha: true },
+  { l: 'M', titulo: 'N° guía', ancho: 11 },
+  { l: 'N', titulo: 'Estado', ancho: 44 },
+];
+
+const hojaConsignacion = (libro) => {
+  const hoja = libro.addWorksheet(H.CONSIG);
+  prepararHoja(hoja, COLUMNAS_CONSIGNACION.map((c) => ({ ...c, clase: c.pega ? 'opcional' : 'formula' })), { conAyuda: false, congelarColumnas: 1 });
+  // A1 y C1: botones "Vincular guías" y "Agregar a Ítems"; la ayuda, a la derecha.
+  hoja.getRow(1).height = 30;
+  const ayuda = hoja.getCell('E1');
+  ayuda.value = 'Pegue desde A3 las columnas C a J del registro de consignación (Pegar valores). "Vincular guías" busca la referencia del Código y el contenido de la guía del Delivery (hoja Guías); "Agregar a Ítems" lo pasa a Gestiones e Ítems y lo borra de aquí.';
+  ayuda.font = { italic: true, size: 9, color: { argb: 'FF595959' } };
+  ayuda.alignment = { wrapText: true, vertical: 'middle' };
+  hoja.mergeCells('E1:N1');
+  COLUMNAS_CONSIGNACION.forEach((c) => {
+    const col = hoja.getColumn(c.l);
+    if (c.texto) col.numFmt = '@';
+    if (c.fecha) col.numFmt = FORMATO_FECHA;
+    // Se pegan A..H; I..N las escribe la macro.
+    col.protection = { locked: !c.pega };
+  });
+  hoja.autoFilter = { from: { row: FILA_ENCABEZADO, column: 1 }, to: { row: FILAS_FILTRO, column: COLUMNAS_CONSIGNACION.length } };
+  [FILA_AYUDA, FILA_ENCABEZADO].forEach((n) => COLUMNAS_CONSIGNACION.forEach((c) => { hoja.getCell(`${c.l}${n}`).protection = { locked: true }; }));
   return hoja;
 };
 
@@ -1273,8 +1321,15 @@ export const instruccionesLibro = (d = {}, { conOrigen = true } = {}) => [
   ['   Ejemplo PAD: línea 120 PAD PADRE "PAD-RODILLA"; líneas 121 y 122 CONTENIDO PAD con Línea padre 120.'],
   ['5. Lote: el lote o "Sin lote". Vencimiento: una fecha (dd-mm-aaaa) o "Sin fecha". Tipo de línea, Lote y Vencimiento se pintan de rojo si faltan.'],
   ['6. Colores: Estado carga en verde (CARGADO, CONTENIDO, SIN CARGO), rojo (PENDIENTE o vacío) y naranja (REVISAR, S/COTIZACION). Total ítem y Venta en naranja: la suma de la gestión no coincide con su Total cotización; revise precios y cantidades.'],
-  ['7. Guías de consignación: pegue el detalle de las guías en la hoja Guías. En una gestión con Atributo CONSIGNACION, escriba en Ítems la CLAVE y el N° guía en una fila vacía (si quiere, también N° cotización y Registrado por): desde esa fila hacia abajo se llena una línea por cada línea de la guía, como CONTENIDO GUÍA, con su referencia, cantidad, lote y vencimiento. Si no hay filas vacías suficientes, la guía no está o la gestión no es de CONSIGNACION, avisa y no escribe nada.'],
+  ['7. Consignación: las líneas de consignación se cargan desde la hoja Consignación (ver HOJA CONSIGNACIÓN): llegan como una línea NORMAL (la que cobra) y su contenido como CONTENIDO GUÍA, con su N° guía. La columna N° guía de Ítems solo la escribe "Agregar a Ítems".'],
   ['8. La columna Alerta debe quedar vacía. Avisos: Falta CLAVE / CLAVE no existe · Falta N° cotización · Falta referencia · Cantidad inválida · Sin código · Referencia ambigua · Empresa no coincide · Sin rango de recargo · Línea padre inválida · Lotes superan la cantidad · PAD PADRE: Lote y Vencimiento deben ser PAD · Guía en gestión que no es de CONSIGNACION.'],
+  [''],
+  ['HOJA CONSIGNACIÓN (registro de consignación por cargar)', 'seccion'],
+  ['1. Pegue en la hoja Guías el detalle de las guías (si no están).'],
+  ['2. En la hoja Consignación, pegue desde A3 (Pegar valores) las columnas C a J del registro de consignación: Admisión, Paciente, Médico, Fecha CX, Empresa, Código, Cantidad, Delivery.'],
+  ['3. Botón "Vincular guías": busca la Referencia de cada Código en la hoja Códigos y, con el Delivery, las líneas de su guía en la hoja Guías. Debajo de cada fila agrega el contenido de la guía (CONTENIDO GUÍA, en gris) con su referencia, cantidad, lote y vencimiento. La línea de la guía que es el mismo producto de la fila no se repite: su lote y vencimiento pasan a la fila. La columna Estado dice cuántas líneas trajo, o si falta el Código o el Delivery. Se puede presionar de nuevo después de corregir algo.'],
+  ['4. Botón "Agregar a Ítems": pasa cada fila (línea NORMAL que cobra) y su contenido a Ítems. Si la gestión (Admisión + Empresa + Fecha CX) no existe, la crea en Gestiones con Atributo CONSIGNACION (Nombre y Médico desde Reporte Info, o los pegados). Lo agregado se borra de la hoja; lo que no se pudo agregar queda con el motivo en Estado (fecha de otro mes, empresa que no está en Empresas, código sin referencia, Delivery cuya guía aún no está en Guías, sin filas libres).'],
+  ['5. Después complete en Ítems N° cotización y Registrado por, y en Gestiones lo que falte (Registrado por, Total cotización).'],
   [''],
   ['BOTONES', 'seccion'],
   [TEXTOS_MACROS.mover],
@@ -1300,7 +1355,7 @@ export const instruccionesLibro = (d = {}, { conOrigen = true } = {}) => [
   ['Pegue SIN la fila de encabezados, desde la celda indicada, con "Pegar valores" (Ctrl+Alt+V → Valores) y las columnas en el orden de la fila 2 de cada hoja:'],
   ['• Códigos → celda B3: CODIGO, REFERENCIA, DESCRIPTOR_EMPRESA, EMPRESA, TIPO, SEGMENTO, CLASE, DESCRIPTOR_AUTO, PRECIO_NETO, CX, OBSERVACION, REGISTRADO_POR, ESTADO (13 columnas). La columna A es automática.'],
   ['• Empresas → A3: NOMBRE, RUT, ESTADO. • Centros → A3: NOMBRE, COMENTARIO, ESTADO, USAR_EN_GESTIONES. • Recargos → A3: DESDE, HASTA, VECES COSTO, COMENTARIO, ESTADO. • Previsiones y Convenios → A3: NOMBRE, COMENTARIO, ESTADO.'],
-  ['• Guías → A3: N° guía, Referencia, Código, Delivery, Cantidad, Lote, Vencimiento, Descripción.'],
+  ['• Guías → A3: N° guía, Referencia, Código, Delivery, Cantidad, Lote, Vencimiento, Descripción. • Consignación → A3: columnas C a J del registro de consignación.'],
   ['Para reemplazar un catálogo: seleccione los datos anteriores (sin encabezados), Supr, y pegue el nuevo. Códigos con ceros a la izquierda (ej. 000123): abra el CSV con Datos → Desde texto/CSV y marque CODIGO como Texto antes de copiar.'],
   ['En Códigos, EMPRESA tiene la lista de la hoja Empresas, y TIPO, SEGMENTO y CLASE las listas de la hoja Catálogos: un valor que no está en su lista se pinta de rojo.'],
   ['Después de pegar: presione "Fijar catálogos como base" (hoja Códigos, arriba a la izquierda), escriba la fecha en "Catálogos actualizados al" (arriba) y guarde.'],
@@ -1365,7 +1420,7 @@ const textoInstruccionesImportado = (d) => [
   ['   Ejemplo PAD: línea 120 PAD PADRE "PAD-RODILLA"; líneas 121 y 122 CONTENIDO PAD con Línea padre 120.'],
   ['   Colores: Estado carga en verde (CARGADO, CONTENIDO, SIN CARGO), rojo (PENDIENTE o vacío) y naranja (REVISAR, S/COTIZACION). Total ítem y Venta en naranja: la suma de Total ítem de la gestión no coincide con su Total cotización (la diferencia está en Gestiones, columna Diferencia): revise precios y cantidades.'],
   ['   Vencimiento: una fecha (dd-mm-aaaa) o "Sin fecha" si el producto no la trae.'],
-  ['   GUÍAS DE CONSIGNACIÓN: pegue el detalle de las guías en la hoja Guías. En una gestión con Atributo CONSIGNACION, escriba en Ítems la CLAVE y el N° guía en una fila vacía (si quiere, también N° cotización y Registrado por): desde esa fila hacia abajo se llena una línea por cada línea de la guía, como CONTENIDO GUÍA ("No lleva OC", precio 0, Estado carga CONTENIDO), con su referencia, cantidad, lote y vencimiento. Necesita tantas filas vacías como líneas tenga la guía; si no las hay, o la guía no está en la hoja Guías, o la gestión no es de CONSIGNACION, avisa y no escribe nada.'],
+  ['   GUÍAS DE CONSIGNACIÓN: pegue el detalle de las guías en la hoja Guías y las líneas del registro de consignación en la hoja Consignación; sus botones "Vincular guías" y "Agregar a Ítems" las pasan a Ítems con el contenido de la guía (CONTENIDO GUÍA).'],
   ['5. La columna Alerta debe quedar vacía. Avisos: Falta CLAVE / CLAVE no existe · Falta N° cotización · Falta referencia · Cantidad inválida · Sin código · Referencia ambigua (la referencia existe para varias empresas y ninguna es la de la gestión) · Empresa no coincide · Sin rango de recargo · Línea padre inválida · Lotes superan la cantidad · PAD PADRE: Lote y Vencimiento deben ser PAD (se escribió un lote o fecha antes de elegir PAD PADRE: bórrelos y copie la celda de una fila vacía de abajo para que vuelva a decir PAD).'],
   ...(d.plantilla ? [
     ['6. Si el ítem es de una gestión que ya estaba en el sistema, regístrela igual en la hoja Gestiones (misma admisión, empresa y fecha) y cargue aquí solo lo nuevo.'],
@@ -1541,6 +1596,7 @@ export const construirLibro = async (datosEntrada) => {
   const hSol = hojaSolicitud(libro, H.SOL, COLUMNAS_SOLICITUD);
   const hRes = hojaSolicitud(libro, H.RES, COLUMNAS_RESUMEN);
   hojaGuias(libro);
+  hojaConsignacion(libro);
   const { col: riCol } = hojaReporteInfo(libro, datos.reporteInfo || [], datos.filasCatalogos.reporteInfo);
   const { col: rCol } = hojaCodigos(libro, datos.catalogo, datos.filasCatalogos.referencias);
   const { nombres: empresasNombres } = hojaEmpresas(libro, datos.empresas, datos.filasCatalogos.empresas);
@@ -1797,7 +1853,7 @@ export const construirLibro = async (datosEntrada) => {
   await hNM.protect(clave, { selectLockedCells: true, selectUnlockedCells: true });
   // Mismas opciones con que vuelven a proteger las macros (Proteger en
   // ModContingencia.bas), que editan Catálogos y las hojas con marcas.
-  for (const nombre of [H.GUIAS, H.RI, H.R, H.E, H.CEN, H.REC, H.PREV, H.CONV, H.C, H.INS]) {
+  for (const nombre of [H.GUIAS, H.CONSIG, H.RI, H.R, H.E, H.CEN, H.REC, H.PREV, H.CONV, H.C, H.INS]) {
     await libro.getWorksheet(nombre).protect(clave, { selectLockedCells: true, selectUnlockedCells: true, autoFilter: true, formatColumns: true, formatRows: true });
   }
 

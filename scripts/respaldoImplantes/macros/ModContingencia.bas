@@ -54,9 +54,14 @@ Private Const HOJA_GUIAS As String = "Guías"
 Private Const GU_COLUMNAS As Long = 8
 Private Const TIPO_CONTENIDO_GUIA As String = "CONTENIDO GUÍA"
 Private Const SEGMENTO_CONSIGNACION As String = "CONSIGNACION"
-' Celdas de la fila de la guía que se pueden escribir antes de traerla (se
-' copian a las demás líneas).
-Private Const ANTES_DE_GUIA As String = "CLAVE|N° guía|N° cotización|Registrado por"
+' Consignación (COLUMNAS_CONSIGNACION en libroRespaldo.js): se pegan A..H
+' (Admisión, Paciente, Médico, Fecha CX, Empresa, Código, Cantidad, Delivery)
+' y la macro escribe I..N (Tipo de línea, Referencia, Lote, Vencimiento,
+' N° guía, Estado). Datos desde la fila 3.
+Private Const HOJA_CONSIG As String = "Consignación"
+Private Const CO_COLUMNAS As Long = 14
+Private Const TIPO_NORMAL As String = "NORMAL"
+Private Const HOJA_EMPRESAS As String = "Empresas"
 ' Mes del libro (Catálogos) y datos del libro a crear (Nuevo mes).
 Private Const LIBRO_ANIO As String = "K3"
 Private Const LIBRO_MES As String = "L3"
@@ -198,6 +203,12 @@ Public Sub InstalarBotones()
     CrearBoton ThisWorkbook.Worksheets(HOJA_CARGADOS), "btnDevolverPendientes", "Devolver a pendientes", "DevolverAPendientes", 170
     CrearBoton ThisWorkbook.Worksheets(HOJA_NUEVO_MES), "btnCrearLibroMes", "Crear libro del mes", "CrearLibroDelMes", 170, "A9"
     CrearBoton ThisWorkbook.Worksheets(HOJA_CATALOGOS_CODIGOS), "btnFijarCatalogos", "Fijar catálogos como base", "FijarCatalogosBase", 190
+    InstalarBotonesConsignacion
+End Sub
+
+Public Sub InstalarBotonesConsignacion()
+    CrearBoton ThisWorkbook.Worksheets(HOJA_CONSIG), "btnVincularGuias", "Vincular guías", "VincularConsignacion", 120
+    CrearBoton ThisWorkbook.Worksheets(HOJA_CONSIG), "btnAgregarItems", "Agregar a Ítems", "AgregarConsignacion", 120, "C1"
 End Sub
 
 Public Sub FijarCatalogosBase()
@@ -607,117 +618,393 @@ End Function
 ' pegado de varias no trae nada.
 Public Sub TraerGuia(ByVal Sh As Object, ByVal Target As Range)
     ' Al pegar en Guías, el filtro se amplía a las filas pegadas.
-    If Sh.Name = HOJA_GUIAS Then
-        AjustarFiltro Sh, FILA_TITULOS, True
-        Exit Sub
-    End If
-    If Sh.Name <> HOJA_ITEMS Then Exit Sub
-    If Target.Cells.Count <> 1 Or Target.Row < PRIMERA Then Exit Sub
-    Dim colGuia As Long
-    colGuia = Col(Titulos(Sh), "N° guía")
-    If Target.Column <> colGuia Or Txt(Target.Value) = "" Then Exit Sub
-    Dim resultado As String
-    resultado = TraerGuiaAuto(Target.Row)
-    If Left(resultado, 6) = "ERROR;" Then MsgBox Mid(resultado, 7), vbExclamation, "Traer guía"
+    ' Desde el 25-11-2026 el contenido de las guías se trae en la hoja
+    ' Consignación ("Vincular guías"), no al escribir el N° guía en Ítems.
+    If Sh.Name = HOJA_GUIAS Or Sh.Name = HOJA_CONSIG Then AjustarFiltro Sh, FILA_TITULOS, True
 End Sub
 
-' Llena, desde la fila de la guía hacia abajo, una línea CONTENIDO GUÍA por
-' cada línea de la guía en la hoja Guías. Devuelve "OK;líneas" o
-' "ERROR;mensaje" (no escribe nada si hay error).
-Public Function TraerGuiaAuto(ByVal fila As Long) As String
-    Dim wsI As Worksheet, wsG As Worksheet, wsGu As Worksheet, ti As Object
-    Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
-    Set wsG = ThisWorkbook.Worksheets(HOJA_GESTIONES)
+
+' ---------------------------------------------------------------------------
+' Consignación: vincular guías y agregar a Ítems (decisión del 25-11-2026)
+' ---------------------------------------------------------------------------
+
+Public Sub VincularConsignacion()
+    Dim r As String, p As Variant
+    r = VincularConsignacionAuto()
+    If Left(r, 6) = "ERROR;" Then
+        MsgBox Mid(r, 7), vbExclamation, "Vincular guías"
+    Else
+        p = Split(r, ";")
+        MsgBox "Listo: " & p(1) & " fila(s) revisadas, " & p(2) & " con guía vinculada y " & p(3) & " línea(s) de contenido." & vbCrLf & _
+               "Revise la columna Estado y presione ""Agregar a Ítems"".", vbInformation, "Vincular guías"
+    End If
+End Sub
+
+Public Sub AgregarConsignacion()
+    If MsgBox("Se agregarán a Ítems las filas de la hoja Consignación (las gestiones que no existan se crean en Gestiones con Atributo CONSIGNACION)." & vbCrLf & _
+              "Lo agregado se borra de esta hoja; lo que no se pueda agregar queda con el motivo en Estado." & vbCrLf & vbCrLf & "¿Continuar?", _
+              vbYesNo + vbQuestion + vbDefaultButton2, "Agregar a Ítems") <> vbYes Then Exit Sub
+    Dim r As String, p As Variant
+    r = AgregarConsignacionAuto()
+    If Left(r, 6) = "ERROR;" Then
+        MsgBox Mid(r, 7), vbExclamation, "Agregar a Ítems"
+    Else
+        p = Split(r, ";")
+        MsgBox "Listo: " & p(1) & " fila(s) agregadas a Ítems (" & p(2) & " línea(s) en total, " & p(3) & " gestión(es) nuevas en Gestiones)." & vbCrLf & _
+               IIf(Val(p(4)) > 0, p(4) & " fila(s) quedaron en la hoja Consignación: vea el motivo en Estado." & vbCrLf, "") & _
+               "Guarde el archivo (Ctrl+G).", vbInformation, "Agregar a Ítems"
+    End If
+End Sub
+
+' Última fila con datos de la hoja Consignación (columnas A..N).
+Private Function UltimaFilaConsig(ByVal ws As Worksheet) As Long
+    Dim c As Long, u As Long
+    UltimaFilaConsig = PRIMERA - 1
+    For c = 1 To CO_COLUMNAS
+        u = ws.Cells(ws.Rows.Count, c).End(xlUp).Row
+        If u > UltimaFilaConsig Then UltimaFilaConsig = u
+    Next c
+End Function
+
+' Fecha de una celda: fecha de Excel o texto dd-mm-aaaa / aaaa-mm-dd. Empty si no.
+Private Function FechaDe(ByVal v As Variant) As Variant
+    Dim s As String, partes As Variant
+    FechaDe = Empty
+    If IsError(v) Or IsEmpty(v) Then Exit Function
+    If VarType(v) = vbDate Then FechaDe = DateValue(v): Exit Function
+    If IsNumeric(v) Then FechaDe = DateValue(CDate(CDbl(v))): Exit Function
+    s = Trim(CStr(v))
+    partes = Split(Replace(s, "/", "-"), "-")
+    If UBound(partes) <> 2 Then Exit Function
+    On Error GoTo Fin
+    If Len(partes(0)) = 4 Then
+        FechaDe = DateSerial(CLng(partes(0)), CLng(partes(1)), CLng(partes(2)))
+    Else
+        FechaDe = DateSerial(CLng(partes(2)), CLng(partes(1)), CLng(partes(0)))
+    End If
+Fin:
+End Function
+
+' Busca la referencia de cada código y el contenido de la guía de cada
+' Delivery, y vuelve a escribir la hoja: cada fila pegada (NORMAL) con sus
+' líneas CONTENIDO GUÍA debajo. Se puede repetir: rehace el contenido.
+' Devuelve "OK;filas;vinculadas;contenido" o "ERROR;mensaje".
+Public Function VincularConsignacionAuto() As String
+    Dim ws As Worksheet, wsGu As Worksheet, wsR As Worksheet
+    Set ws = ThisWorkbook.Worksheets(HOJA_CONSIG)
     Set wsGu = ThisWorkbook.Worksheets(HOJA_GUIAS)
-    Set ti = Titulos(wsI)
+    Set wsR = ThisWorkbook.Worksheets(HOJA_CATALOGOS_CODIGOS)
+    Dim ultima As Long
+    ultima = UltimaFilaConsig(ws)
+    If ultima < PRIMERA Then VincularConsignacionAuto = "ERROR;No hay filas en la hoja Consignación: pegue desde la fila 3 las columnas C a J del registro.": Exit Function
 
-    Dim guia As String, clave As String
-    guia = Txt(wsI.Cells(fila, Col(ti, "N° guía")).Value)
-    If guia = "" Then TraerGuiaAuto = "ERROR;Escriba el N° de guía.": Exit Function
-    clave = Txt(wsI.Cells(fila, Col(ti, "CLAVE")).Value)
+    Dim datos As Variant, k As Long, i As Long
+    datos = ws.Range(ws.Cells(PRIMERA, 1), ws.Cells(ultima, CO_COLUMNAS)).Value
 
-    ' Si ya tiene CLAVE, la gestión debe ser de consignación.
-    If clave <> "" Then
-        Dim fg As Variant
-        fg = Application.Match(clave, wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), 1)), 0)
-        If Not IsError(fg) Then
-            If UCase(Txt(wsG.Cells(PRIMERA + CLng(fg) - 1, G_ATRIBUTO).Value)) <> SEGMENTO_CONSIGNACION Then
-                TraerGuiaAuto = "ERROR;La gestión " & clave & " no es de " & SEGMENTO_CONSIGNACION & ". Cambie su Atributo en Gestiones y vuelva a escribir el N° de guía."
-                Exit Function
+    ' Código -> Referencia (Códigos B -> C; se prefiere la fila ACTIVA).
+    Dim refs As Object, cod As Variant, ultR As Long, rDatos As Variant
+    Set refs = CreateObject("Scripting.Dictionary")
+    ultR = wsR.Cells(wsR.Rows.Count, 2).End(xlUp).Row
+    If ultR >= PRIMERA Then
+        rDatos = wsR.Range(wsR.Cells(PRIMERA, 2), wsR.Cells(ultR, 14)).Value
+        For k = 1 To UBound(rDatos, 1)
+            cod = UCase(Txt(rDatos(k, 1)))
+            If cod <> "" And Txt(rDatos(k, 2)) <> "" Then
+                If Not refs.Exists(cod) Or UCase(Txt(rDatos(k, 13))) = "ACTIVO" Then refs(cod) = Txt(rDatos(k, 2))
+            End If
+        Next k
+    End If
+
+    ' Líneas de cada Delivery (Guías D), en orden.
+    Dim porDelivery As Object, ultGu As Long, gu As Variant, del As String
+    Set porDelivery = CreateObject("Scripting.Dictionary")
+    ultGu = wsGu.Cells(wsGu.Rows.Count, 1).End(xlUp).Row
+    If ultGu >= PRIMERA Then
+        gu = wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(ultGu, GU_COLUMNAS)).Value
+        For k = 1 To UBound(gu, 1)
+            del = UCase(Txt(gu(k, 4)))
+            If del <> "" Then
+                If Not porDelivery.Exists(del) Then porDelivery.Add del, New Collection
+                porDelivery(del).Add k
+            End If
+        Next k
+    End If
+
+    ' Filas de salida: cada fila pegada y debajo su contenido.
+    Dim salida As New Collection, fila() As Variant, c As Long, nFilas As Long, nVinc As Long, nCont As Long
+    Dim ref As String, refG As String, lote As String, venc As Variant, numGuia As String, estado As String, usada As Boolean, kk As Variant
+    For i = 1 To UBound(datos, 1)
+        If Txt(datos(i, 9)) <> TIPO_CONTENIDO_GUIA Then
+            Dim hayDato As Boolean
+            hayDato = False
+            For c = 1 To 8
+                If Txt(datos(i, c)) <> "" Then hayDato = True
+            Next c
+            If hayDato Then
+                nFilas = nFilas + 1
+                ReDim fila(1 To CO_COLUMNAS)
+                For c = 1 To 8: fila(c) = datos(i, c): Next c
+                fila(9) = TIPO_NORMAL
+                cod = UCase(Txt(datos(i, 6)))
+                ref = ""
+                If refs.Exists(cod) Then ref = refs(cod)
+                fila(10) = ref
+                estado = ""
+                If ref = "" Then estado = "Código no está en Códigos. "
+                lote = "Sin lote": venc = "Sin fecha": numGuia = ""
+                del = UCase(Txt(datos(i, 8)))
+                Dim contenido As New Collection
+                Set contenido = New Collection
+                If del = "" Then
+                    estado = estado & "Sin Delivery: entra sin contenido."
+                ElseIf Not porDelivery.Exists(del) Then
+                    estado = estado & "El Delivery no está en la hoja Guías."
+                Else
+                    nVinc = nVinc + 1
+                    usada = False
+                    For Each kk In porDelivery(del)
+                        refG = Txt(gu(kk, 2))
+                        If refG = "" Then refG = Txt(gu(kk, 3))
+                        If numGuia = "" Then numGuia = Txt(gu(kk, 1))
+                        ' La línea de la guía que es el mismo producto que la fila pegada
+                        ' no se repite: su lote y vencimiento pasan a la fila.
+                        If Not usada And ref <> "" And UCase(refG) = UCase(ref) Then
+                            usada = True
+                            If Txt(gu(kk, 6)) <> "" Then lote = Txt(gu(kk, 6))
+                            If Txt(gu(kk, 7)) <> "" Then venc = gu(kk, 7)
+                        Else
+                            contenido.Add kk
+                        End If
+                    Next kk
+                    estado = estado & "Vinculada: " & contenido.Count & " línea(s) de contenido."
+                End If
+                fila(11) = lote: fila(12) = venc: fila(13) = numGuia: fila(14) = Trim(estado)
+                salida.Add fila
+                For Each kk In contenido
+                    ReDim fila(1 To CO_COLUMNAS)
+                    For c = 1 To 5: fila(c) = datos(i, c): Next c
+                    fila(7) = gu(kk, 5): fila(8) = datos(i, 8): fila(9) = TIPO_CONTENIDO_GUIA
+                    refG = Txt(gu(kk, 2))
+                    If refG = "" Then refG = Txt(gu(kk, 3))
+                    fila(10) = refG
+                    fila(11) = IIf(Txt(gu(kk, 6)) = "", "Sin lote", Txt(gu(kk, 6)))
+                    fila(12) = IIf(Txt(gu(kk, 7)) = "", "Sin fecha", gu(kk, 7))
+                    fila(13) = Txt(gu(kk, 1)): fila(14) = ""
+                    salida.Add fila
+                    nCont = nCont + 1
+                Next kk
             End If
         End If
-    End If
+    Next i
 
-    ' Líneas de la guía.
-    Dim ultimaGu As Long, datos As Variant, k As Long, lineas As New Collection
-    ultimaGu = wsGu.Cells(wsGu.Rows.Count, 1).End(xlUp).Row
-    If ultimaGu < PRIMERA Then
-        TraerGuiaAuto = "ERROR;La hoja " & HOJA_GUIAS & " está vacía: pegue ahí el detalle de las guías."
-        Exit Function
-    End If
-    datos = wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(ultimaGu, GU_COLUMNAS)).Value
-    For k = 1 To UBound(datos, 1)
-        If UCase(Txt(datos(k, 1))) = UCase(guia) Then lineas.Add k
-    Next k
-    If lineas.Count = 0 Then
-        TraerGuiaAuto = "ERROR;La guía " & guia & " no está en la hoja " & HOJA_GUIAS & "."
-        Exit Function
-    End If
-
-    ' Filas libres: la de la guía (solo con lo de ANTES_DE_GUIA) y las de abajo.
-    Dim ultimaI As Long, r As Long, entrada As Variant, permitido As Boolean, p As Variant
-    ultimaI = UltimaFila(wsI, Col(ti, "N° línea"))
-    If fila + lineas.Count - 1 > ultimaI Then
-        TraerGuiaAuto = "ERROR;La guía " & guia & " tiene " & lineas.Count & " líneas y no caben desde la fila " & fila & "."
-        Exit Function
-    End If
-    For r = fila To fila + lineas.Count - 1
-        For Each entrada In Split(I_ENTRADAS, "|")
-            permitido = False
-            If r = fila Then
-                For Each p In Split(ANTES_DE_GUIA, "|")
-                    If p = entrada Then permitido = True
-                Next p
-            End If
-            If Not permitido And Txt(wsI.Cells(r, Col(ti, entrada)).Value) <> "" Then
-                TraerGuiaAuto = "ERROR;La guía " & guia & " tiene " & lineas.Count & " líneas: hacen falta " & lineas.Count & " filas vacías desde la fila " & fila & ", pero la fila " & r & " ya tiene datos (" & entrada & "). Escriba la guía en una fila vacía con espacio debajo."
-                Exit Function
-            End If
-        Next entrada
-    Next r
-
-    ' Escribe (sin eventos: N° guía no debe volver a disparar esto).
-    Dim cotizacion As Variant, registrado As Variant, i As Long, ref As String, lote As String, venc As Variant
-    cotizacion = wsI.Cells(fila, Col(ti, "N° cotización")).Value
-    registrado = wsI.Cells(fila, Col(ti, "Registrado por")).Value
+    Dim eventos As Boolean
+    eventos = Application.EnableEvents
     Application.EnableEvents = False
     On Error GoTo Fallo
-    For k = 1 To lineas.Count
-        i = lineas(k)
-        r = fila + k - 1
-        If clave <> "" Then wsI.Cells(r, Col(ti, "CLAVE")).Value = clave
-        wsI.Cells(r, Col(ti, "N° guía")).Value = guia
-        wsI.Cells(r, Col(ti, "Tipo de línea")).Value = TIPO_CONTENIDO_GUIA
-        If Txt(cotizacion) <> "" Then wsI.Cells(r, Col(ti, "N° cotización")).Value = cotizacion
-        If Txt(registrado) <> "" Then wsI.Cells(r, Col(ti, "Registrado por")).Value = registrado
-        ' Referencia; si la guía no la trae, el código.
-        ref = Txt(datos(i, 2))
-        If ref = "" Then ref = Txt(datos(i, 3))
-        wsI.Cells(r, Col(ti, "Referencia")).Value = ref
-        If Txt(datos(i, 5)) <> "" Then wsI.Cells(r, Col(ti, "Cantidad (ingresar)")).Value = Num(datos(i, 5))
-        lote = Txt(datos(i, 6))
-        If lote = "" Then lote = "Sin lote"
-        wsI.Cells(r, Col(ti, "Lote")).Value = lote
-        venc = datos(i, 7)
-        If Txt(venc) = "" Then venc = "Sin fecha"
-        wsI.Cells(r, Col(ti, "Vencimiento")).Value = venc
-    Next k
-    TraerGuiaAuto = "OK;" & lineas.Count
+    Desproteger ws
+    EscribirConsignacion ws, salida, ultima
+    AjustarFiltro ws, FILA_TITULOS, False
+    VincularConsignacionAuto = "OK;" & nFilas & ";" & nVinc & ";" & nCont
 Fin:
-    Application.EnableEvents = True
+    Proteger ws
+    Application.EnableEvents = eventos
     Exit Function
 Fallo:
-    TraerGuiaAuto = "ERROR;No se pudo traer la guía: " & Err.Description
+    VincularConsignacionAuto = "ERROR;No se pudo vincular: " & Err.Description
+    Resume Fin
+End Function
+
+' Reescribe la hoja Consignación desde la fila 3 con las filas dadas (las de
+' contenido en gris cursiva) y borra lo que sobra hasta "hasta".
+Private Sub EscribirConsignacion(ByVal ws As Worksheet, ByVal filas As Collection, ByVal hasta As Long)
+    Dim n As Long, arr() As Variant, i As Long, c As Long, f As Variant
+    If hasta >= PRIMERA Then
+        With ws.Range(ws.Cells(PRIMERA, 1), ws.Cells(hasta, CO_COLUMNAS))
+            .ClearContents
+            .Font.Italic = False
+            .Font.Color = vbBlack
+        End With
+    End If
+    n = filas.Count
+    If n = 0 Then Exit Sub
+    ReDim arr(1 To n, 1 To CO_COLUMNAS)
+    i = 0
+    For Each f In filas
+        i = i + 1
+        For c = 1 To CO_COLUMNAS: arr(i, c) = f(c): Next c
+    Next f
+    ws.Range(ws.Cells(PRIMERA, 1), ws.Cells(PRIMERA + n - 1, CO_COLUMNAS)).Value = arr
+    For i = 1 To n
+        If arr(i, 9) = TIPO_CONTENIDO_GUIA Then
+            With ws.Range(ws.Cells(PRIMERA + i - 1, 1), ws.Cells(PRIMERA + i - 1, CO_COLUMNAS)).Font
+                .Italic = True
+                .Color = RGB(89, 89, 89)
+            End With
+        End If
+    Next i
+End Sub
+
+' Pasa a Ítems cada fila de Consignación (NORMAL) con su contenido (CONTENIDO
+' GUÍA); crea la gestión en Gestiones si no existe. Lo agregado se borra de
+' la hoja. Devuelve "OK;filas;líneas;gestiones nuevas;pendientes" o "ERROR;...".
+Public Function AgregarConsignacionAuto() As String
+    Dim ws As Worksheet, wsG As Worksheet, wsI As Worksheet, wsE As Worksheet
+    Set ws = ThisWorkbook.Worksheets(HOJA_CONSIG)
+    Set wsG = ThisWorkbook.Worksheets(HOJA_GESTIONES)
+    Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
+    Set wsE = ThisWorkbook.Worksheets(HOJA_EMPRESAS)
+    If LibroMes() = 0 Then AgregarConsignacionAuto = "ERROR;Esta es la plantilla base (sin mes): cree el libro del mes en la hoja " & HOJA_NUEVO_MES & ".": Exit Function
+
+    Dim ultima As Long, datos As Variant, i As Long, c As Long
+    ultima = UltimaFilaConsig(ws)
+    If ultima < PRIMERA Then AgregarConsignacionAuto = "ERROR;No hay filas en la hoja Consignación.": Exit Function
+    datos = ws.Range(ws.Cells(PRIMERA, 1), ws.Cells(ultima, CO_COLUMNAS)).Value
+    ' Sin vincular todavía: se vincula primero.
+    For i = 1 To UBound(datos, 1)
+        If Txt(datos(i, 9)) = "" And Txt(datos(i, 1)) & Txt(datos(i, 6)) <> "" Then
+            Dim rv As String
+            rv = VincularConsignacionAuto()
+            If Left(rv, 6) = "ERROR;" Then AgregarConsignacionAuto = rv: Exit Function
+            ultima = UltimaFilaConsig(ws)
+            datos = ws.Range(ws.Cells(PRIMERA, 1), ws.Cells(ultima, CO_COLUMNAS)).Value
+            Exit For
+        End If
+    Next i
+
+    ' Empresas válidas.
+    Dim empresas As Object, ultE As Long, k As Long
+    Set empresas = CreateObject("Scripting.Dictionary")
+    ultE = wsE.Cells(wsE.Rows.Count, 1).End(xlUp).Row
+    For k = PRIMERA To ultE
+        If Txt(wsE.Cells(k, 1).Value) <> "" Then empresas(UCase(Txt(wsE.Cells(k, 1).Value))) = Txt(wsE.Cells(k, 1).Value)
+    Next k
+
+    Dim ti As Object
+    Set ti = Titulos(wsI)
+    Application.Calculate
+    Dim gDatos As Variant, iDatos As Variant
+    gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
+    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, Col(ti, "N° línea")), UltimaColumna(wsI))).Value
+
+    ' Filas libres de Ítems (todas sus celdas de escritura vacías), en orden.
+    Dim libresI As New Collection, entrada As Variant, libre As Boolean
+    For i = 1 To UBound(iDatos, 1)
+        libre = True
+        For Each entrada In Split(I_ENTRADAS, "|")
+            If Txt(iDatos(i, Col(ti, entrada))) <> "" Then libre = False: Exit For
+        Next entrada
+        If libre Then libresI.Add i + PRIMERA - 1
+    Next i
+    Dim siguienteI As Long
+    siguienteI = 1
+
+    Dim calculo As XlCalculation, eventos As Boolean
+    calculo = Application.Calculation: eventos = Application.EnableEvents
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+    On Error GoTo Fallo
+    Desproteger ws: Desproteger wsG: Desproteger wsI
+
+    Dim quedan As New Collection, fila() As Variant, nAgregadas As Long, nLineas As Long, nGestiones As Long
+    Dim ini As Long, fin As Long, adm As String, emp As String, fecha As Variant, clave As String, motivo As String
+    Dim filaG As Long, r As Long, n As Long, destino As Long, j As Long
+    i = 1
+    Do While i <= UBound(datos, 1)
+        ' Grupo: fila NORMAL + su contenido.
+        ini = i: fin = i
+        Do While fin + 1 <= UBound(datos, 1)
+            If Txt(datos(fin + 1, 9)) <> TIPO_CONTENIDO_GUIA Then Exit Do
+            fin = fin + 1
+        Loop
+        i = fin + 1
+        If Txt(datos(ini, 9)) = TIPO_CONTENIDO_GUIA Then GoTo Siguiente
+        adm = Txt(datos(ini, 1)): emp = Txt(datos(ini, 5)): fecha = FechaDe(datos(ini, 4))
+        motivo = ""
+        If adm = "" Or emp = "" Or IsEmpty(fecha) Then
+            motivo = "Falta Admisión, Fecha CX o Empresa."
+        ElseIf Not EsDelMes(fecha) Then
+            motivo = "Fecha CX fuera del mes del libro."
+        ElseIf Not empresas.Exists(UCase(emp)) Then
+            motivo = "La empresa no está en la hoja Empresas."
+        ElseIf Txt(datos(ini, 10)) = "" Then
+            motivo = "Código no está en Códigos (agréguelo y vuelva a vincular)."
+        ElseIf Txt(datos(ini, 8)) <> "" And Txt(datos(ini, 13)) = "" Then
+            ' Con Delivery y sin guía vinculada: espera la guía para no entrar sin contenido.
+            motivo = "El Delivery no está en la hoja Guías (péguela y vuelva a vincular)."
+        ElseIf libresI.Count - siguienteI + 1 < fin - ini + 1 Then
+            motivo = "No quedan suficientes filas libres en Ítems."
+        End If
+        If motivo = "" Then
+            emp = empresas(UCase(emp))
+            clave = adm & "|" & emp & "|" & Format(fecha, "yyyy-mm-dd")
+            ' Gestión: la existente o una nueva en la primera fila libre.
+            filaG = 0
+            For r = 1 To UBound(gDatos, 1)
+                If Txt(gDatos(r, 1)) = clave Then filaG = r + PRIMERA - 1: Exit For
+            Next r
+            If filaG = 0 Then
+                For r = 1 To UBound(gDatos, 1)
+                    libre = (Txt(gDatos(r, 2)) = "" And Txt(gDatos(r, G_REGISTRADO)) = "")
+                    For c = 2 To G_ULTIMA_ENTRADA
+                        If Txt(gDatos(r, c)) <> "" And AuxiliarDe(c) = 0 And c <> G_ESTADO Then libre = False
+                    Next c
+                    If libre Then filaG = r + PRIMERA - 1: Exit For
+                Next r
+                If filaG = 0 Then
+                    motivo = "No quedan filas libres en Gestiones."
+                Else
+                    wsG.Cells(filaG, 2).NumberFormat = "@"
+                    wsG.Cells(filaG, 2).Value = adm
+                    wsG.Cells(filaG, 3).Value = fecha
+                    wsG.Cells(filaG, 4).Value = emp
+                    wsG.Cells(filaG, G_ATRIBUTO).Value = SEGMENTO_CONSIGNACION
+                    wsG.Calculate
+                    ' Sin la admisión en Reporte Info: nombre y médico de lo pegado.
+                    If Txt(wsG.Cells(filaG, AuxiliarDe(5)).Value) = "" And Txt(datos(ini, 2)) <> "" Then wsG.Cells(filaG, 5).Value = datos(ini, 2)
+                    If Txt(wsG.Cells(filaG, AuxiliarDe(15)).Value) = "" And Txt(datos(ini, 3)) <> "" Then wsG.Cells(filaG, 15).Value = datos(ini, 3)
+                    gDatos(filaG - PRIMERA + 1, 1) = clave
+                    gDatos(filaG - PRIMERA + 1, 2) = adm
+                    nGestiones = nGestiones + 1
+                End If
+            End If
+        End If
+        If motivo = "" Then
+            For j = ini To fin
+                destino = libresI(siguienteI): siguienteI = siguienteI + 1
+                wsI.Cells(destino, Col(ti, "CLAVE")).Value = clave
+                wsI.Cells(destino, Col(ti, "Tipo de línea")).Value = IIf(j = ini, TIPO_NORMAL, TIPO_CONTENIDO_GUIA)
+                wsI.Cells(destino, Col(ti, "Referencia")).Value = datos(j, 10)
+                If Txt(datos(j, 7)) <> "" Then wsI.Cells(destino, Col(ti, "Cantidad (ingresar)")).Value = Num(datos(j, 7))
+                If Txt(datos(j, 13)) <> "" Then wsI.Cells(destino, Col(ti, "N° guía")).Value = Txt(datos(j, 13))
+                wsI.Cells(destino, Col(ti, "Lote")).Value = IIf(Txt(datos(j, 11)) = "", "Sin lote", datos(j, 11))
+                wsI.Cells(destino, Col(ti, "Vencimiento")).Value = IIf(Txt(datos(j, 12)) = "", "Sin fecha", datos(j, 12))
+                nLineas = nLineas + 1
+            Next j
+            nAgregadas = nAgregadas + 1
+        Else
+            For j = ini To fin
+                ReDim fila(1 To CO_COLUMNAS)
+                For c = 1 To CO_COLUMNAS: fila(c) = datos(j, c): Next c
+                If j = ini Then fila(14) = motivo
+                quedan.Add fila
+            Next j
+        End If
+Siguiente:
+    Loop
+
+    EscribirConsignacion ws, quedan, ultima
+    AjustarFiltro ws, FILA_TITULOS, False
+    AgregarConsignacionAuto = "OK;" & nAgregadas & ";" & nLineas & ";" & nGestiones & ";" & (quedan.Count)
+Fin:
+    Proteger ws: Proteger wsG: Proteger wsI
+    Application.Calculation = calculo
+    Application.EnableEvents = eventos
+    Application.ScreenUpdating = True
+    Application.Calculate
+    Exit Function
+Fallo:
+    AgregarConsignacionAuto = "ERROR;No se pudo agregar: " & Err.Description
     Resume Fin
 End Function
 
@@ -937,6 +1224,13 @@ Public Function PrepararLibroDelMes(ByVal anio As Long, ByVal mes As Long) As St
     If ultima >= 2 Then wsS.Rows("2:" & ultima).Delete
     ultima = wsR.Cells(wsR.Rows.Count, R_COLUMNAS).End(xlUp).Row
     If ultima >= 2 Then wsR.Rows("2:" & ultima).Delete
+    ' Consignación (desde la fila 3).
+    Dim wsCo As Worksheet
+    Set wsCo = ThisWorkbook.Worksheets(HOJA_CONSIG)
+    Desproteger wsCo
+    ultima = UltimaFilaConsig(wsCo)
+    If ultima >= PRIMERA Then wsCo.Rows(PRIMERA & ":" & ultima).Delete
+    Proteger wsCo
 
     wsCat.Range(LIBRO_ANIO).Value = anio
     wsCat.Range(LIBRO_MES).Value = mes

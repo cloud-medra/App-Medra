@@ -8,7 +8,7 @@ import {
 import { filasDesdeGestiones, catalogoReferencias, datosPlantilla, TAMANO_PLANTILLA, MINIMO_CATALOGOS } from './datosRespaldo.js';
 
 // Instrucciones y Nuevo mes al final (24-11-2026).
-const HOJAS = ['Gestiones', 'Ítems', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Guías', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
+const HOJAS = ['Gestiones', 'Ítems', 'Cargados', 'Solicitud Implantes', 'Resumen', 'Guías', 'Consignación', 'Reporte Info', 'Códigos', 'Empresas', 'Centros', 'Recargos',
   'Previsiones', 'Convenios', 'Catálogos', 'Instrucciones', 'Nuevo mes'];
 
 const releer = async (libro) => {
@@ -592,6 +592,16 @@ describe('construirLibro', () => {
     expect(gu.getColumn('G').numFmt).toBe('dd-mm-yyyy');
     expect(gu.getCell('A2').protection?.locked ?? true).toBe(true);
     expect(gu.sheetProtection).toMatchObject({ sheet: true });
+    // Hoja Consignación: se pegan A..H (C a J del registro); I..N las escribe la macro.
+    const co = libro.getWorksheet('Consignación');
+    expect(co.getRow(2).values.slice(1)).toEqual(['Admisión', 'Paciente', 'Médico', 'Fecha CX', 'Empresa', 'Código', 'Cantidad', 'Delivery', 'Tipo de línea', 'Referencia', 'Lote', 'Vencimiento', 'N° guía', 'Estado']);
+    expect(co.getColumn('A').protection).toMatchObject({ locked: false });
+    expect(co.getColumn('H').protection).toMatchObject({ locked: false });
+    expect(co.getColumn('I').protection?.locked ?? true).toBe(true);
+    expect(co.getColumn('D').numFmt).toBe('dd-mm-yyyy');
+    expect(co.sheetProtection).toMatchObject({ sheet: true, autoFilter: true });
+    // El N° guía de Ítems ya no trae la guía: lo escribe "Agregar a Ítems".
+    expect(it_.getCell(`${I.numGuia}2`).note || '').toBe('');
     expect(cat.getCell('I3').value).toBe('CONTENIDO');
     // Registrado por: lista que se escribe en Catálogos N (avisa, no bloquea).
     expect(cat.getCell('N2').value).toBe('Registrado por');
