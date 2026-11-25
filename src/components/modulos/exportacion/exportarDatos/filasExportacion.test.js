@@ -43,18 +43,27 @@ describe('Exportar datos: filas', () => {
     expect(filasExportacion({ consignacion: [registro({ lote: 'PROPIO', vencimiento: '2028-01-01' })] })[0]).toMatchObject({ lote: 'PROPIO', vencimiento: '2028-01-01' });
   });
 
-  it('orden: Implantes, Consignación, Hemodinamia; dentro, por fecha y admisión', () => {
+  it('orden: por fecha; en el mismo día Implantes, Consignación, Hemodinamia y por admisión', () => {
     const filas = filasExportacion({
       hemodinamia: [gestion({ cotizaciones: [], gestionId: '1' })],
       consignacion: [registro({ fecha: '2026-11-20' }), registro({ fecha: '2026-11-01', gestionId: '5' })],
       implantes: [gestion({ cotizaciones: [], fecha: '2026-11-15', gestionId: '9' }), gestion({ cotizaciones: [], fecha: '2026-11-15', gestionId: '10' })],
     });
-    expect(filas.map((f) => `${f.segmento}:${f.admision}`)).toEqual(['IMPLANTES:9', 'IMPLANTES:10', 'CONSIGNACION:5', 'CONSIGNACION:777', 'HEMODINAMIA:1']);
+    expect(filas.map((f) => `${f.fecha} ${f.segmento}:${f.admision}`)).toEqual([
+      '2026-11-01 CONSIGNACION:5', '2026-11-10 HEMODINAMIA:1', '2026-11-15 IMPLANTES:9', '2026-11-15 IMPLANTES:10', '2026-11-20 CONSIGNACION:777',
+    ]);
+    // Mismo día: Implantes, Consignación, Hemodinamia.
+    const mismoDia = filasExportacion({
+      hemodinamia: [gestion({ cotizaciones: [], gestionId: '1' })],
+      consignacion: [registro({ fecha: '2026-11-10' })],
+      implantes: [gestion({ cotizaciones: [], gestionId: '2' })],
+    });
+    expect(mismoDia.map((f) => f.segmento)).toEqual(['IMPLANTES', 'CONSIGNACION', 'HEMODINAMIA']);
   });
 });
 
 describe('Exportar datos: hojas para la planilla', () => {
-  const filas = filasExportacion({ implantes: [gestion(), gestion({ gestionId: '00999', cotizaciones: [] })], consignacion: [registro(), registro({ id: 'r2', referencia: 'X8', cantidad: 1 })] });
+  const filas = filasExportacion({ implantes: [gestion(), gestion({ gestionId: '00999', cotizaciones: [] })], consignacion: [registro({ fecha: '2026-11-12' }), registro({ id: 'r2', referencia: 'X8', cantidad: 1, fecha: '2026-11-12' })] });
 
   it('Gestiones: una fila por CLAVE en las letras de la planilla (H vacía)', () => {
     const g = filasPlanillaGestiones(filas);

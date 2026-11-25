@@ -120,7 +120,9 @@ const filaDeConsignacion = (r) => {
 };
 
 // { implantes: [docs], hemodinamia: [docs], consignacion: [docs] } → filas
-// ordenadas por segmento, fecha, admisión, empresa y orden de la línea.
+// ordenadas por fecha (decisión del 25-11-2026), y dentro del día por
+// segmento, admisión, empresa y orden de la línea: las líneas de una misma
+// gestión (CLAVE) quedan juntas.
 export const filasExportacion = ({ implantes = [], hemodinamia = [], consignacion = [] } = {}) => {
   const filas = [
     ...implantes.flatMap((g) => filasDeGestion(g, SEGMENTOS.implantes)),
@@ -129,8 +131,8 @@ export const filasExportacion = ({ implantes = [], hemodinamia = [], consignacio
   ];
   return filas
     .map((f, i) => ({ ...f, clave: claveDe(f), _i: i }))
-    .sort((a, b) => ORDEN_SEGMENTO.indexOf(a.segmento) - ORDEN_SEGMENTO.indexOf(b.segmento)
-      || a.fecha.localeCompare(b.fecha)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha)
+      || ORDEN_SEGMENTO.indexOf(a.segmento) - ORDEN_SEGMENTO.indexOf(b.segmento)
       || a.admision.localeCompare(b.admision, 'es', { numeric: true })
       || a.empresa.localeCompare(b.empresa)
       || a._i - b._i)
