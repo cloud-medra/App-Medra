@@ -166,8 +166,12 @@ const DocListasIngreso = () => {
                     onVolver={handleVolverALista}
                     puedeFinalizarActa={hasPermission(PATH_VISTA, "acciones_detalle", "btn_finalizar_acta")}
                     onActualizarDocumento={(documentoActualizado) => {
+                        // Si el documento salió de los estados de esta pestaña
+                        // (p. ej. quedó 'Finalizado'), se quita de la tabla.
                         setDocumentos(prev =>
-                            prev.map(f => (f.id === documentoActualizado.id ? { ...f, ...documentoActualizado } : f))
+                            prev
+                                .map(f => (f.id === documentoActualizado.id ? { ...f, ...documentoActualizado } : f))
+                                .filter(f => ESTADOS_PERMITIDOS.includes(f.estado))
                         );
                         setDocumentoSeleccionado(documentoActualizado);
                     }}
