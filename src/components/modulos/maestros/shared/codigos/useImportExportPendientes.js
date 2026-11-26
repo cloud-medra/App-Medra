@@ -59,7 +59,12 @@ export function useImportExportPendientes({ registros, userData, showToast, colB
       DESCRIPTOR_AUTO: r.descriptorAuto || '',
       PRECIO_NETO: r.precioNeto || 0,
       CX: r.cx || '',
-      OBSERVACION: r.observacion || ''
+      OBSERVACION: r.observacion || '',
+      // Al final y siempre (no tiene columna en pantalla): la plantilla de
+      // contingencia de Implantes la usa para quitar las inactivas. La
+      // importación de este archivo lee por nombre de columna y la ignora.
+      // Sin campo = activo (igual que esCodigoActivo en Cargas).
+      ESTADO: r.estado || 'ACTIVO'
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(filtrarFilasExport(dataExportar, COLUMNA_DE_EXPORT, ver));

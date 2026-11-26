@@ -4,28 +4,30 @@
 
 Decisión del 23-11-2026: por ahora se usa una **plantilla** sin datos de pacientes, sin conexión a Firestore, sin credenciales y sin tarea programada. La exportación automática con datos del sistema (más abajo) queda para más adelante.
 
-Es **un solo archivo**: `C:\Users\<usuario>\Documents\Medra\Contingencia\respaldo_implantes.xlsm`.
+El script genera **un solo archivo**, la **plantilla base**: `C:\Users\<usuario>\Documents\Medra\Contingencia\respaldo_implantes.xlsm`.
 - Se reemplaza cada vez que se regenera.
 - En esa carpeta no quedan copias, pruebas ni archivos intermedios: el script los arma en una carpeta temporal del sistema y la borra al terminar, también si algo falla.
+- La plantilla base no tiene mes y no deja registrar: solo sirve para crear los **libros mensuales** (`respaldo_implantes_AAAA-MM.xlsm`, en la misma carpeta) con el botón "Crear libro del mes". Ver "Un libro por mes".
 
-Tiene 14 hojas, en este orden:
+Tiene 15 hojas, en este orden:
 
 | # | Hoja | Qué tiene |
 |---|---|---|
 | 1 | Instrucciones | Cómo usarla, de dónde salen los catálogos y la fecha en que se cargaron |
-| 2 | Gestiones | 1.000 filas |
-| 3 | Ítems | 4.000 filas, con el botón "Mover cargados" |
-| 4 | Cargados | Gestiones ya cargadas, con el botón "Devolver a pendientes" |
-| 5 | Solicitud Implantes | Como la hoja del Excel de Solicitud de la app; se llena al mover (acumulativo) |
-| 6 | Resumen | Como la hoja Resumen del Excel de Solicitud; se llena al mover (acumulativo) |
-| 7 | Reporte Info | Admisiones de los últimos 60 días (autocompletado de Gestiones) |
-| 8 | Códigos | Maestro de Códigos (búsqueda por referencia en Ítems). EMPRESA, TIPO, SEGMENTO y CLASE con desplegable y en rojo si el valor no está en su lista |
-| 9 | Empresas | Desplegable de Empresa en Gestiones |
-| 10 | Centros | Desplegable de Centro en Gestiones |
-| 11 | Recargos | Rangos de recargo (veces costo y venta en Ítems) |
-| 12 | Previsiones | Desplegable de Previsión en Gestiones |
-| 13 | Convenios | Desplegable de Convenio en Gestiones |
-| 14 | Catálogos | Solo las listas fijas del sistema (estados, informe, lado, tipo de línea, y Tipo, Segmento y Clase de Códigos) |
+| 2 | Nuevo mes | Año y mes, con el botón "Crear libro del mes" |
+| 3 | Gestiones | 1.000 filas; en la fila 1, el mes del libro ("LIBRO NOVIEMBRE 2026") |
+| 4 | Ítems | 4.000 filas, con el botón "Mover cargados" |
+| 5 | Cargados | Gestiones ya cargadas, con el botón "Devolver a pendientes" |
+| 6 | Solicitud Implantes | Como la hoja del Excel de Solicitud de la app; se llena al mover (acumulativo) |
+| 7 | Resumen | Como la hoja Resumen del Excel de Solicitud; se llena al mover (acumulativo) |
+| 8 | Reporte Info | Admisiones de los últimos 60 días (autocompletado de Gestiones) |
+| 9 | Códigos | Maestro de Códigos (búsqueda por referencia en Ítems). EMPRESA, TIPO, SEGMENTO y CLASE con desplegable y en rojo si el valor no está en su lista |
+| 10 | Empresas | Desplegable de Empresa en Gestiones |
+| 11 | Centros | Desplegable de Centro en Gestiones |
+| 12 | Recargos | Rangos de recargo (veces costo y venta en Ítems) |
+| 13 | Previsiones | Desplegable de Previsión en Gestiones |
+| 14 | Convenios | Desplegable de Convenio en Gestiones |
+| 15 | Catálogos | Listas fijas del sistema (estados, informe, lado, tipo de línea, y Tipo, Segmento y Clase de Códigos), los meses y el mes del libro (K3 año, L3 mes) |
 
 La hoja Documentos se eliminó el 23-11-2026 (no se usa).
 
@@ -70,7 +72,8 @@ Si se regenera el archivo, el bloqueo se pierde (el archivo es nuevo) y hay que 
 
    | Catálogo | Dónde se exporta | Archivo |
    |---|---|---|
-   | Códigos | Maestros → Codigos → pestaña "Con código" → Importar / Exportar → Exportar registros | `registros_con_codigo_AAAA-MM-DD.csv` |
+   | Códigos (con código) | Maestros → Codigos → pestaña "Con código" → Importar / Exportar → Exportar registros | `registros_con_codigo_AAAA-MM-DD.csv` |
+   | Códigos (sin código) | Maestros → Codigos → pestaña "Sin código" → Importar / Exportar → Exportar | `codigos_pendientes_AAAA-MM-DD.xlsx` |
    | Empresas | Maestros → Empresas → configuración → Exportar a Excel / CSV | `empresas_maestros_AAAA-MM-DD.xlsx` |
    | Centros | Maestros → Centros → configuración → Exportar (hoja Centros) | `centros_maestros_AAAA-MM-DD.xlsx` |
    | Recargos | Maestros → Recargos → configuración → Exportar (hoja Recargos; las fórmulas de veces costo y venta la leen) | `recargos_maestros_AAAA-MM-DD.xlsx` |
@@ -88,6 +91,7 @@ Si se regenera el archivo, el bloqueo se pierde (el archivo es nuevo) y hay que 
    $d = "$env:USERPROFILE\Downloads"
    node scripts/respaldoImplantes/generarPlantillaImplantes.js `
      --codigos  "$d\registros_con_codigo_2026-11-23.csv" `
+     --codigos  "$d\codigos_pendientes_2026-11-23.xlsx" `
      --empresas "$d\empresas_maestros_2026-11-23.xlsx" `
      --centros  "$d\centros_maestros_2026-11-23.xlsx" `
      --recargos "$d\recargos_maestros_2026-11-23.xlsx" `
@@ -127,6 +131,15 @@ Un archivo que no tiene el nombre de la exportación oficial de la app (por ejem
 
 El 23-11-2026 los Recargos se cargaron así, transcritos de un pantallazo de Maestros → Recargos (15 rangos, todos como ACTIVO). Hay que reemplazarlos por el export oficial.
 
+### Códigos: "Con código" + "Sin código"
+
+La vista general de Códigos Maestros no se puede exportar, pero es exactamente la suma de las pestañas "Con código" (registros con código o con la marca `tieneCodigo`) y "Sin código" (registros sin código). Por eso:
+- `--codigos` se puede repetir y se pasan los dos exports.
+- El script los une (`unirCodigos`) y quita repetidos: un registro marcado como con código pero con el código vacío aparece en las dos pestañas. Se considera el mismo registro si coinciden código, referencia y empresa.
+- Van primero los que tienen código, así una referencia que está con y sin código en la misma empresa encuentra la que tiene código.
+- Las referencias sin código **sí van en la plantilla**: Cargas las ofrece al escribir la referencia (el autocompletado solo exige que estén activas), y al elegirlas la línea queda "sin código" y la gestión INCOMPLETO. En la plantilla pasa lo mismo: se completan empresa, precio y descriptor, y la alerta dice "Sin código".
+- El export de "Sin código" trae ESTADO al final desde la rama `feat/contingencia-codigos-sin-codigo` (`useImportExportPendientes.js`, igual que "Con código"). Con un export anterior a ese despliegue sus inactivas no se pueden quitar y el script lo avisa.
+
 ### Reporte Info y autocompletado en Gestiones
 
 La hoja Reporte Info tiene **una fila por admisión**, como la arma `reporteInfoDesdeFilas` (`catalogosExportados.js`). Toma los mismos campos que el sistema al escribir el ID en Gestiones (`handleIdChange` en `useGestionesImplantesData.js`):
@@ -158,12 +171,73 @@ exceljs no puede escribir macros. El script genera el `.xlsx` y llama a `macros/
 
 ### Macros
 
-`ModContingencia.bas` sigue las columnas de `libroRespaldo.js` (`COLUMNAS_GESTIONES`, `COLUMNAS_ITEMS` y `COLUMNAS_CARGADOS`): si cambian allá, hay que cambiarlas acá.
+### Un libro por mes
+
+Decisión del 23-11-2026, para que el archivo no crezca: un libro por mes, `respaldo_implantes_AAAA-MM.xlsm`.
+- **Crear:** hoja "Nuevo mes" → Año y Mes (1 a 12) → botón "Crear libro del mes" (macro `CrearLibroDelMes`). Valida año (2020 a 2100) y mes, y crea el libro en la carpeta del archivo abierto con `SaveCopyAs`, que conserva macros, bloqueo del proyecto VBA y protección. Después lo abre y corre en él `PrepararLibroDelMes`, que vacía Gestiones, Ítems (las celdas que se escriben; N° de línea y fórmulas quedan), Cargados, Solicitud Implantes y Resumen, restaura el autocompletado y escribe el año y el mes en Catálogos K3 y L3. Queda abierto en Gestiones.
+- **El libro del mes es el que manda** (aclaración del 23-11-2026): durante el mes ahí se agregan o corrigen los catálogos, y a fin de mes el libro siguiente se crea **desde ese mismo libro**. La plantilla base solo se usa para crear el primer libro; una plantilla regenerada no trae los cambios hechos en los libros.
+- **Se mantienen:** Códigos, Empresas, Centros, Recargos, Previsiones, Convenios, Reporte Info, Catálogos e Instrucciones, tal como estén en el libro desde el que se crea (con los cambios del mes y sus marcas), y todas sus filas preparadas.
+- **No se traspasan gestiones:** las pendientes se quedan en el libro de su mes. Todos los libros tienen las mismas columnas (sirve para el resumen anual).
+- **Repetido:** si ya existe el libro de ese año y mes en la carpeta (o hay uno abierto con ese nombre), no lo sobrescribe y avisa. Tampoco se crea desde un libro con filas exportadas del sistema.
+- **Solo fechas de su mes:** la Fecha de Gestiones tiene una validación que exige el año y el mes de Catálogos K3/L3; no depende de la fecha de hoy. El mensaje dice "Este libro es de NOVIEMBRE 2026. Registra esta gestión en el libro del mes de su fecha…". Excel no permite que el mensaje de una validación dependa del valor escrito, así que el mes que corresponde lo dice la Alerta.
+- **Lo pegado se salta la validación:** la Fecha se pinta de rojo, la Alerta (en rojo) dice "Fecha fuera del mes del libro (es de OCTUBRE 2026)" y "Mover cargados" no mueve esas gestiones: las cuenta y lo avisa (`MoverCargadosAuto` devuelve `gestiones;ítems;fuera del mes`).
+- **Plantilla base (sin mes):** Admisión y Fecha rechazan todo con el mensaje "Esta es la plantilla base (sin mes): no permite registrar…" (sin ellas no hay CLAVE para Ítems), la fila 1 de Gestiones lo dice en rojo y "Mover cargados" no hace nada. La macro cambia esos mensajes al crear el libro.
+- Las validaciones de Admisión y Fecha van **sin "Omitir blancos"**: con esa opción, Excel no valida cuando la fórmula mira una celda vacía (el mes de la plantilla base).
+- El mes del libro se ve en la fila 2 de Instrucciones, en "Nuevo mes", en la fila 1 de Gestiones y en el nombre del archivo.
+- El modo con datos del sistema arma el libro ya con su mes (`libroMes`, el mes exportado).
+
+Probado en Excel 16 (23-11-2026), en una carpeta de prueba que se borró al terminar. La aceptación se midió con `Range.Validation.Value`, porque escribir por automatización no dispara la validación, igual que pegar:
+- base: rechaza Admisión y Fecha, y "Mover cargados" no hace nada; mes 13 y año 1999 se rechazan;
+- libro de noviembre 2026: acepta 20-11-2026 y rechaza 15-10-2026 (en rojo, con la alerta); con las dos gestiones CARGADO, "Mover cargados" movió solo la de noviembre (`1;1;1`);
+- crear noviembre otra vez: "Ya existe el libro…";
+- libro de octubre 2026: acepta 15-10-2026 y rechaza 20-11-2026;
+- diciembre creado desde el libro de noviembre con datos: Gestiones, Ítems, Cargados, Solicitud y Resumen vacías, el autocompletado restaurado, las mismas columnas y todas las hojas protegidas; noviembre conservó su gestión.
+
+### Catálogos editables y marcas de cambio
+
+- **Edición con las hojas protegidas:** las celdas de datos de Códigos (B a N), Empresas, Centros, Recargos, Previsiones, Convenios y Reporte Info (A a G) están desbloqueadas en todas las filas preparadas. Para agregar se escribe en la primera fila vacía; no se insertan ni borran filas (bloqueado). Las fórmulas (Códigos A, O, P; Reporte Info H; las marcas) siguen bloqueadas y ocultas.
+- **Las búsquedas cubren todas las filas preparadas:** Ítems busca en Códigos, y los recargos, los desplegables de Gestiones (Empresa, Centro, Convenio, Previsión) y el autocompletado desde Reporte Info, sobre el rango completo. Una fila nueva se reconoce sin hacer nada. Filas preparadas (`MINIMO_CATALOGOS`): Códigos 6.000, Empresas 300, Centros 100, Recargos 50, Previsiones 200, Convenios 300 y Reporte Info 10.000 (subió de 3.000 porque se pega a mano el Excel de la clínica, con varias filas por admisión). Si un catálogo trae más, se dejan 1,5 veces lo cargado.
+- **Catálogos pegados a mano** (decisión del 23-11-2026): la plantilla base se genera con todos los catálogos vacíos (el script sin `--codigos` ni los demás archivos) y el usuario los pega. Instrucciones, sección "PEGAR LOS CATÁLOGOS", dice en qué celda pegar cada uno y el orden de sus columnas (el de la fila 2). Probado en Excel con las hojas protegidas: tanto "Pegar valores" como el pegado normal funcionan y no dañan las fórmulas, la protección, el desbloqueo de las celdas ni los desplegables de Códigos. Un código con ceros a la izquierda llega como número si el CSV se abrió con doble clic; Instrucciones explica cómo evitarlo.
+- **Orden la primera vez:** en la plantilla base, pegar los catálogos, "Fijar catálogos como base", guardar, y crear el libro del mes con "Nuevo mes". "Crear libro del mes" funciona desde la plantilla base y copia lo que haya en ella.
+- **Fijar catálogos como base** (botón en Códigos, A1; macro `FijarCatalogosBase` / `FijarCatalogosBaseAuto`): pide confirmación ("Se reiniciarán todas las marcas de cambio. ¿Continuar?"), copia los datos actuales de Códigos, Empresas, Centros y Recargos a sus columnas `orig: …` y borra FECHA CAMBIO, así CAMBIO queda vacío. Se usa después de pegar los catálogos y después de pasar los cambios al Maestro de la app.
+- **Marcas (Códigos, Empresas, Centros y Recargos, `MARCAS_CAMBIO`):** a la derecha de los datos van CAMBIO, FECHA CAMBIO y una columna oculta `orig: …` por cada dato, con el valor original (el de la última vez que se fijó la base).
+  - CAMBIO es una fórmula: NUEVO (fila sin original), MODIFICADO (alguna celda distinta de su original) o BORRADO (fila vaciada que tenía original). Se pinta verde, ámbar o rojo. Compara celda a celda y sin convertir a texto, así no depende del separador decimal del equipo. Excel compara textos sin distinguir mayúsculas, así que un cambio solo de mayúsculas no se marca.
+  - FECHA CAMBIO la escribe `RegistrarCambioCatalogo` (en `ModContingencia.bas`), llamada desde `Workbook_SheetChange`, que `armarXlsm.ps1` agrega al módulo del libro (ThisWorkbook o EsteLibro). Con las macros deshabilitadas queda vacía.
+  - Volver a escribir el valor original quita la marca y la fecha.
+  - Las marcas y los originales viajan con la copia al libro del mes siguiente; se reinician solo al regenerar la plantilla, después de pasar los cambios al Maestro de la app.
+- **Reporte Info:** Instrucciones explica cómo pegar uno nuevo en el libro del mes, columna por columna desde A3, con "Pegar valores". Se puede pegar con admisiones repetidas, porque se usa la primera de cada una.
+- **Advertencia de privacidad al guardar:** Excel dejaba activada en el libro la opción "Quitar información personal al guardar" (`RemovePersonalInformation`). Con macros, esa opción muestra en cada guardado "Ten cuidado: es posible que algunas partes del documento incluyan información personal…" y una macro que guarda queda esperando. `armarXlsm.ps1` y `PrepararLibroDelMes` la desactivan.
+
+### Vista de carga y Código real (Ítems y Cargados)
+
+Desde el 23-11-2026 Ítems y Cargados empiezan con la **vista de carga**, lo que se revisa al cargar en el sistema: `N° línea | Admisión | Fecha | Código | Cantidad | Venta | Estado carga`. Encabezado verde, borde grueso al final y congelada hasta Estado carga. Después siguen CLAVE, Tipo de línea, Línea padre, N° cotización, Referencia, Cantidad (ingresar), Código real, Lote, Vencimiento y el resto.
+- En Ítems, Admisión y Fecha son fórmulas (bloqueadas y ocultas) que salen de la CLAVE (`admisión|empresa|AAAA-MM-DD`); Fecha en `dd-mm-aaaa`. Se escribe Estado carga; Código y Venta siguen siendo fórmulas.
+- Desde el 24-11-2026 la cantidad se escribe en **Cantidad (ingresar)**, justo después de Referencia; Cantidad (E, vista de carga) es una fórmula que la muestra, como Admisión y Fecha. En las filas del sistema la celda editable y su original (`orig: Cantidad`) son los de Cantidad (ingresar).
+- **Valores automáticos por tipo de línea** (24-11-2026; `valoresPorTipo` en `libroRespaldo.js`, `FormulasDefectoItem` en la macro): PAD PADRE → Lote y Vencimiento "PAD"; CONTENIDO PAD → Estado carga "CONTENIDO". Son fórmulas en celdas que se escriben (como el autocompletado de Gestiones); la validación no deja escribir Lote/Vencimiento en un PAD PADRE ni otro estado en un CONTENIDO PAD (su lista solo trae CONTENIDO, Catálogos I3). Las macros vuelven a poner las fórmulas al limpiar una fila (Mover cargados, Crear libro del mes) y al devolverla.
+- **Total cotización vs. ítems** (24-11-2026): cada línea de Ítems lee la Diferencia de su gestión (Gestiones T) en la auxiliar oculta `aux: diferencia cotización` (al final, no mueve letras); si no es 0, Total ítem y Venta quedan en naranja. Sin Total cotización no se marca. Total y Venta usan `N(Cantidad)`: una línea sin cantidad da 0 y no `#¡VALOR!` (que rompía la suma de la gestión).
+- **Libro de trabajo, sin "respaldo" ni "contingencia"** (25-11-2026): los libros del mes se llaman `Implantes_AAAA-MM.xlsm` (`PREFIJO_LIBRO`), ORIGEN dice `REGISTRADO` (`ORIGEN_REGISTRADO`; antes CONTINGENCIA) en fórmulas, formatos y macro, Instrucciones es un manual nuevo (`instruccionesLibro`) y ningún texto visible nombra la app, el sistema ni Medra (lo comprueba un test). El módulo VBA del libro se llama `ModLibro`. Los filtros de Cargados, Solicitud Implantes, Resumen y Guías se amplían con la macro (`AjustarFiltro`) al agregar o pegar filas, porque con la hoja protegida Excel no amplía el filtro. Aplicado con COM al libro de diciembre del usuario; al cambiar formatos condicionales por COM, `Modify` lee la fórmula desde la primera celda de la regla pero la escribe desde A1: hay que traducirla y restituir prioridades.
+- **Nombre paciente en Ítems** (25-11-2026): columna G, después de Venta y dentro de la vista de carga (congelada hasta Estado carga, ahora H): `INDEX(Gestiones!E, MATCH(CLAVE, Gestiones!A))`. Todo lo que estaba desde G se corrió una columna (CLAVE en I, Referencia en M, Cantidad (ingresar) en N, N° guía en O, Lote en Q, Vencimiento en R, Registrado por en AC). Cargados no cambia (ya trae Nombre paciente). Aplicado al libro con datos insertando la columna con COM (Excel corrigió solo las demás referencias).
+- **El libro pasa a ser el de trabajo** (24-11-2026; el usuario deja la app para Implantes): "Mover cargados" ya no limpia Gestiones; la gestión queda con Estado **FINALIZADO** (sin ítems en Ítems y con líneas en Cargados: `COUNTIF(Cargados!J:J)`, fila verde). Cargados guarda ORIGEN = CARGADO. Además guarda junto al libro `Solicitud_Implantes_AAAA-MM-DD_HHMM.xlsx` con Solicitud Implantes y Resumen de lo movido (solo valores, columnas de texto como Texto). "Devolver a pendientes" pide la CLAVE (por defecto la de la fila seleccionada) y reutiliza la fila de Gestiones si sigue ahí. El VBA del libro va sin comentarios: `quitarComentariosVba` al armarlo (el .bas del repo los conserva). Los cambios se aplicaron con COM al libro con datos del usuario (fórmula H de Gestiones, formatos de FINALIZADO, textos y módulo VBA), sin regenerarlo.
+- **Guías de consignación** (24-11-2026): hoja **Guías** (`COLUMNAS_GUIAS`: N° guía, Referencia, Código, Delivery, Cantidad, Lote, Vencimiento, Descripción; desbloqueada por columna, sin filas preparadas) donde se pega el detalle de las guías (el Excel que descargará Consignación → Ingreso de guías, pendiente en la app). En Gestiones, Atributo es la lista de segmentos (Catálogos G). En Ítems, la columna **N° guía** (después de Cantidad (ingresar)) dispara `TraerGuia` (Workbook_SheetChange): si la gestión de la fila es de CONSIGNACION (o aún no tiene CLAVE), llena desde esa fila hacia abajo una línea por línea de la guía con el tipo **CONTENIDO GUÍA** (solo de la contingencia: "No lleva OC", precio 0, Estado carga CONTENIDO, sin línea padre), copiando CLAVE, N° cotización y Registrado por de la primera fila; lote y vencimiento vacíos quedan "Sin lote"/"Sin fecha". No escribe nada si la guía no está, no hay filas libres o la gestión no es de consignación (avisa). Alerta "Guía en gestión que no es de CONSIGNACION" si después se cambia la CLAVE. Cargados guarda el N° guía; Mover/Devolver apagan los eventos al escribir.
+- **Hoja Consignación** (25-11-2026, reemplaza traer la guía al escribir el N° guía en Ítems: `TraerGuia` ahora solo amplía filtros): hoja **Consignación** (`COLUMNAS_CONSIGNACION`) donde se pegan desde A3 las columnas C a J del registro de consignación (Admisión, Paciente, Médico, Fecha CX, Empresa, Código, Cantidad, Delivery); I..N las escribe la macro. "Vincular guías" (`VincularConsignacionAuto`) busca la referencia del Código en Códigos (prefiere ACTIVO) y el Delivery en Guías (columna D): la fila queda NORMAL (la que cobra) con lote y vencimiento de la línea de la guía con la misma referencia, y debajo el resto como CONTENIDO GUÍA (en gris). "Agregar a Ítems" (`AgregarConsignacionAuto`, vincula primero si falta) crea la gestión si no existe (Atributo CONSIGNACION; Nombre y Médico de Reporte Info o los pegados), escribe en Ítems CLAVE, Tipo, Referencia, Cantidad (ingresar), N° guía, Lote y Vencimiento, y borra lo agregado; queda con su motivo en Estado lo que tiene fecha de otro mes, empresa fuera de Empresas, código sin referencia, Delivery cuya guía aún no está en Guías o no cabe. Probado con COM en una copia con filas reales del registro y una guía inventada; aplicado al libro de diciembre del usuario.
+- **Guías se limpia sola** (25-11-2026): Guías no se vacía al crear el libro del mes (nunca lo hizo: `PrepararLibroDelMes` no la toca). Columna I "Agregada a (CLAVE)" (`GU_AGREGADA`, bloqueada): "Agregar a Ítems" marca con la CLAVE las líneas del Delivery agregado (`MarcarGuia`); "Mover cargados" borra de Guías las líneas marcadas cuya gestión ya no tiene líneas en Ítems (`LimpiarGuias`, reescribe la hoja de una vez) y lo informa (último dato del resultado de `MoverCargadosAuto`). Vincular avisa si el Delivery ya se agregó a otra gestión.
+- **Crear libro del mes** prepara la copia como `creando_respaldo_implantes_AAAA-MM.xlsm` y recién al final la guarda con su nombre (y sin eventos mientras vacía): Excel se cerró dos veces en pruebas por automatización (`combase.dll`) a mitad de la creación y dejaba un libro del mes sin preparar.
+- **Gestiones: Estado en H** (24-11-2026), junto a Informe; Centro..Estado sin ítems pasaron de H..P a I..Q y desde N° ítems (R) no cambió nada. La macro usa esas posiciones (`G_ESTADO` = 8, `G_ULTIMA_ENTRADA` = 17, `G_AUTOCOMPLETADO`, `G_DESDE_CARGADOS`, y Centro/Previsión/Médico al llenar Solicitud y Resumen) y no limpia H, que es fórmula. La fila entera (A:AE) se colorea según el Estado (`COLORES_ESTADO_GESTION`): verde CARGADO, azul AGENDADO, amarillo PENDIENTE, naranja INCOMPLETO/REVISAR/S/COTIZACION; con prioridad baja, los avisos de cada celda se ven encima.
+- **Orden de las hojas**: Instrucciones y Nuevo mes van al final; el libro abre en Gestiones.
+- **Ítems**: Tipo de línea, Lote y Vencimiento también se marcan en rojo si faltan en una fila usada (se escriben NORMAL, "Sin lote", "Sin fecha"; el PAD PADRE ya trae PAD).
+- **Vencimiento** acepta una fecha o el texto "Sin fecha" (`SIN_FECHA`); la macro lo deja como "Sin fecha" en la Solicitud aunque se escriba en minúsculas.
+- **Colores de Estado carga** (Ítems, por el estado efectivo, y Cargados, por el valor): verde CARGADO, CONTENIDO, PAD y SIN CARGO; rojo PENDIENTE (o vacío); naranja REVISAR y S/COTIZACION.
+- **Registrado por**: lista en Catálogos, columna N (50 filas desbloqueadas); desplegable en Gestiones W e Ítems. Solo avisa si el nombre no está, así con la lista vacía no impide escribir. Pasa al libro del mes siguiente con el resto de Catálogos.
+- **Estado carga**: se cambia en NORMAL y en PAD PADRE (antes el PAD tenía estado fijo "PAD"); el CONTENIDO PAD es CONTENIDO y cuenta como cargado. Una gestión queda CARGADO cuando todas sus líneas están CARGADO, CONTENIDO o SIN CARGO (también "PAD", que traen las filas del sistema).
+- **Código real**: el código del catálogo según la referencia en **todas** las líneas, también CONTENIDO PAD, LOTE ADICIONAL y SIN CARGO. **Código** no cambia: "No lleva OC" en esas líneas. Solicitud Implantes y Resumen siguen usando Código.
+- Ítems se define por clave en `DEF_ITEMS` (`libroRespaldo.js`): la letra sale de la posición y las fórmulas usan `I.<clave>`, así el orden se cambia en un solo lugar.
+
+`ModContingencia.bas` ubica las columnas de Ítems y Cargados **por el título** del encabezado (fila 2), no por la posición. Cambiar el orden en `COLUMNAS_ITEMS` o `COLUMNAS_CARGADOS` no toca la macro; cambiar o agregar un título sí (`I_ENTRADAS`, `C_DESDE_ITEMS`, `G_DESDE_CARGADOS`), y lo comprueba un test. Gestiones (`COLUMNAS_GESTIONES`) sigue por posición.
 
 **Mover cargados** (botón en la hoja Ítems, donde se trabaja el detalle; mueve la gestión completa):
-- Toma las gestiones con `ORIGEN = CONTINGENCIA` y Estado = CARGADO, la misma regla del sistema: todas sus líneas CARGADO, PAD o SIN CARGO.
+- Toma las gestiones con `ORIGEN = CONTINGENCIA` y Estado = CARGADO, la misma regla del sistema: todas sus líneas CARGADO, CONTENIDO o SIN CARGO (o "PAD" en filas del sistema). Solo las de fecha del mes del libro; en la plantilla base no hace nada.
 - Antes de mover, avisa cuántas gestiones e ítems son (y cuántos ítems tienen alerta), pide el nombre de quien mueve y la confirmación.
-- Escribe en Cargados **valores**, una fila por línea, con la cabecera de su gestión, lo calculado (código, precio, veces costo, total, venta, sin código, recargo encontrado) y el N° de línea y la línea padre originales.
+- Escribe en Cargados **valores**, una fila por línea, con la cabecera de su gestión, lo calculado (código, código real, precio, veces costo, total, venta, sin código, recargo encontrado) y el N° de línea y la línea padre originales.
 - En Gestiones e Ítems limpia solo las celdas que se escriben; las fórmulas quedan.
 
 **Devolver a pendientes** (hoja Cargados, con una celda de la gestión seleccionada):
@@ -300,7 +374,7 @@ Durante la caída se pueden actualizar algunos campos de lo ya registrado (filas
 | Hoja | Campos editables | Excepciones (igual que en Cargas) |
 |---|---|---|
 | Gestiones | Informe, Lado, Observación | — |
-| Ítems | Cantidad, Lote, Vencimiento, Estado carga | Sin Estado carga en PAD (padre y contenido) ni en líneas sin código; sin Lote ni Vencimiento en el PAD PADRE |
+| Ítems | Cantidad (ingresar), Lote, Vencimiento, Estado carga | Sin Estado carga en el CONTENIDO PAD ni en líneas sin código; sin Lote ni Vencimiento en el PAD PADRE |
 
 - Las celdas editables de una fila del sistema van en blanco, no en gris (`camposEditablesItem` y `CAMPOS_EDITABLES_GESTION` en `datosRespaldo.js`).
 - El valor exportado queda en columnas ocultas (`orig: …`). La columna **MODIFICADO** (fórmula) dice SÍ si alguno difiere, y cada celda cambiada se pinta ámbar. Si se vuelve a escribir el valor original, regresa a NO.

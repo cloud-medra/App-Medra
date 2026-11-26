@@ -8,7 +8,7 @@
 //
 // Uso (desde la raíz del repo; ver docs/respaldo-contingencia-implantes.md):
 //   node scripts/respaldoImplantes/generarPlantillaImplantes.js \
-//     --codigos "<registros_con_codigo_AAAA-MM-DD.csv>" --empresas "<empresas_maestros_AAAA-MM-DD.xlsx>" \
+//     --codigos "<registros_con_codigo_AAAA-MM-DD.csv>" --codigos "<codigos_pendientes_AAAA-MM-DD.xlsx>" --empresas "<empresas_maestros_AAAA-MM-DD.xlsx>" \
 //     --centros "<centros_maestros_….xlsx>" --recargos "<recargos_maestros_….xlsx>" \
 //     --reporte-info "<Excel de la clínica>" (se puede repetir) [--dias 60] \
 //     --previsiones "<previsiones_maestros_….xlsx>" --convenios "<convenios_maestros_….xlsx>" \
@@ -33,10 +33,11 @@ import process from 'node:process';
 import { Buffer } from 'node:buffer';
 import { spawnSync } from 'node:child_process';
 import { construirLibro } from './libroRespaldo.js';
+import { quitarComentariosVba } from './macros/quitarComentariosVba.js';
 import { datosPlantilla, fechaHoraChile, fechaISOChile, isoAFechaExcel, ARCHIVO_PLANTILLA } from './datosRespaldo.js';
 import {
   leerArchivoExportado, codigosDesdeFilas, empresasDesdeFilas, centrosDesdeFilas, recargosDesdeFilas, fechaDesdeNombre,
-  reporteInfoDesdeFilas, previsionesDesdeFilas, conveniosDesdeFilas, valoresDistintos, esExportOficial,
+  reporteInfoDesdeFilas, previsionesDesdeFilas, conveniosDesdeFilas, valoresDistintos, esExportOficial, unirCodigos,
 } from './catalogosExportados.js';
 
 const DIAS_REPORTE_INFO = 60;
@@ -56,15 +57,17 @@ const LARGO_MINIMO_CLAVE_HOJAS = 8;
 const salir = (mensaje) => { console.error(`\nERROR: ${mensaje}\n`); process.exit(1); };
 
 const leerArgumentos = (argv) => {
-  const args = { salida: CARPETA_POR_DEFECTO, reporteInfo: [], dias: DIAS_REPORTE_INFO };
+  const args = { salida: CARPETA_POR_DEFECTO, reporteInfo: [], codigos: [], dias: DIAS_REPORTE_INFO };
   const conValor = {
-    '--salida': 'salida', '--codigos': 'codigos', '--empresas': 'empresas', '--centros': 'centros', '--recargos': 'recargos',
+    '--salida': 'salida', '--empresas': 'empresas', '--centros': 'centros', '--recargos': 'recargos',
     '--previsiones': 'previsiones', '--convenios': 'convenios',
   };
   for (let i = 0; i < argv.length; i += 1) {
-    if (argv[i] === '--reporte-info') {
-      if (!argv[i + 1]) salir('Falta el valor de --reporte-info.');
-      args.reporteInfo.push(path.resolve(argv[++i]));
+    if (argv[i] === '--reporte-info' || argv[i] === '--codigos') {
+      // Se pueden repetir: Reporte Info (un Excel por mes) y Códigos (los
+      // exports de "Con código" y "Sin código").
+      if (!argv[i + 1]) salir(`Falta el valor de ${argv[i]}.`);
+      args[argv[i] === '--codigos' ? 'codigos' : 'reporteInfo'].push(path.resolve(argv[++i]));
     } else if (argv[i] === '--dias') {
       const n = Number(argv[++i]);
       if (!Number.isInteger(n) || n < 1) salir('--dias debe ser un número entero mayor que 0.');
@@ -94,7 +97,10 @@ const desdeHaceDias = (dias) => {
 };
 
 const detalleDe = (id, resumen) => {
-  if (id === 'codigos') return `${resumen.leidas} en el archivo; sin ${resumen.inactivas} inactivas`;
+  if (id === 'codigos') {
+    return `${resumen.leidas} en ${resumen.archivos} archivo(s); sin ${resumen.inactivas} inactivas`
+      + `${resumen.repetidos ? `; ${resumen.repetidos} repetidos quitados` : ''}; ${resumen.sinCodigo} sin código`;
+  }
   return `${resumen.leidas} en el archivo; solo activos`;
 };
 
@@ -104,7 +110,8 @@ const basParaExcel = async (claveHojas) => {
   const original = await fs.readFile(BAS, 'utf8');
   if (!original.includes('__CLAVE_HOJAS__')) throw new Error('ModContingencia.bas no tiene el marcador __CLAVE_HOJAS__.');
   // En VBA las comillas dentro de un texto se escriben dobles.
-  const contenido = original.replace('__CLAVE_HOJAS__', claveHojas.replace(/"/g, '""')).replace(/\r?\n/g, '\r\n');
+  // El libro va sin comentarios en el VBA (decisión del 24-11-2026).
+  const contenido = quitarComentariosVba(original).replace('__CLAVE_HOJAS__', claveHojas.replace(/"/g, '""')).replace(/\r?\n/g, '\r\n');
   const raro = [...contenido].find((ch) => ch.charCodeAt(0) > 0xff);
   if (raro) throw new Error(`ModContingencia.bas tiene un carácter que no es Windows-1252: "${raro}"`);
   return Buffer.from(contenido, 'latin1');
@@ -125,15 +132,29 @@ const main = async () => {
   const advertencias = [];
   let fecha = null;
   for (const [id, lector] of Object.entries(LECTORES)) {
-    if (!args[id]) continue;
-    const { registros, resumen, advertencias: avisos = [] } = lector.leer(await leerArchivoExportado(args[id]));
-    if (!registros.length) salir(`${lector.nombre}: el archivo ${args[id]} no trajo registros usables.`);
+    const archivos = id === 'codigos' ? args.codigos : (args[id] ? [args[id]] : []);
+    if (!archivos.length) continue;
+    const leidos = [];
+    for (const archivo of archivos) {
+      const r = lector.leer(await leerArchivoExportado(archivo));
+      advertencias.push(...(r.advertencias || []).map((a) => `${lector.nombre} (${path.basename(archivo)}): ${a}`));
+      leidos.push(r);
+    }
+    const sumar = (campo) => leidos.reduce((s, r) => s + (r.resumen[campo] || 0), 0);
+    let registros = leidos.flatMap((r) => r.registros);
+    const resumen = { leidas: sumar('leidas'), inactivas: sumar('inactivas'), archivos: archivos.length };
+    if (id === 'codigos') {
+      const unidos = unirCodigos(leidos.map((r) => r.registros));
+      registros = unidos.registros;
+      Object.assign(resumen, { repetidos: unidos.repetidos, sinCodigo: unidos.sinCodigo });
+    }
+    if (!registros.length) salir(`${lector.nombre}: ${archivos.map((a) => path.basename(a)).join(', ')} no trajo registros usables.`);
     catalogos[id] = registros;
-    const oficial = esExportOficial(id, path.basename(args[id]));
-    const fechaArchivo = oficial ? fechaDesdeNombre(path.basename(args[id])) : null;
-    origen[id] = { archivo: path.basename(args[id]), fecha: fechaArchivo, cargadas: registros.length, detalle: detalleDe(id, resumen), provisional: !oficial };
+    const nombres = archivos.map((a) => path.basename(a));
+    const oficial = nombres.every((n) => esExportOficial(id, n));
+    const fechaArchivo = oficial ? (nombres.map(fechaDesdeNombre).find(Boolean) || null) : null;
+    origen[id] = { archivo: nombres.join(', '), fecha: fechaArchivo, cargadas: registros.length, detalle: detalleDe(id, resumen), provisional: !oficial };
     if (!oficial) advertencias.push(`${lector.nombre}: el archivo no es la exportación oficial de la app; queda marcado como PROVISIONAL en Instrucciones.`);
-    advertencias.push(...avisos.map((a) => `${lector.nombre}: ${a}`));
     // Fecha de los catálogos: la del archivo de códigos (o la del primero que la traiga).
     if (fechaArchivo && (id === 'codigos' || !fecha)) fecha = isoAFechaExcel(fechaArchivo);
   }

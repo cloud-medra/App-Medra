@@ -1,19 +1,38 @@
-Attribute VB_Name = "ModContingencia"
+Attribute VB_Name = "ModLibro"
 ' Respaldo de contingencia de Implantes: botones "Mover cargados" (hoja
 ' Items) y "Devolver a pendientes" (hoja Cargados).
 '
 ' - Mover cargados: las gestiones de contingencia con Estado = CARGADO
-'   (todas sus lineas CARGADO, PAD o SIN CARGO; lo calcula la formula de la
+'   (todas sus lineas CARGADO, CONTENIDO o SIN CARGO; lo calcula la formula de la
 '   columna Estado) pasan a la hoja Cargados como VALORES, una fila por linea
-'   con la cabecera de su gestion, la fecha/hora y quien las movio. Sus filas
-'   en Gestiones e Items se limpian (solo las celdas que se escriben): las
-'   formulas quedan para reutilizarlas.
+'   con la cabecera de su gestion, la fecha/hora y quien las movio. Ademas se
+'   agregan a Solicitud Implantes y Resumen. Sus filas en Gestiones e Items
+'   se limpian (solo las celdas que se escriben): las formulas quedan, y
+'   Lote, Vencimiento y Estado carga vuelven a su valor automatico.
 ' - Devolver a pendientes: vuelve una gestion de Cargados a filas libres de
 '   Gestiones e Items. Los N de linea son fijos por fila, asi que la linea
 '   padre se traduce del N original al N de la fila donde queda.
 '
-' Las columnas siguen a libroRespaldo.js (COLUMNAS_GESTIONES, COLUMNAS_ITEMS
-' y COLUMNAS_CARGADOS): si cambian alla, hay que cambiarlas aca.
+' - Crear libro del mes (hoja Nuevo mes): copia este libro como
+'   respaldo_implantes_AAAA-MM.xlsm en la misma carpeta, vacía Gestiones,
+'   Items, Cargados, Solicitud Implantes y Resumen, escribe el año y el mes
+'   del libro (Catálogos K3 y L3, CELDAS_LIBRO en libroRespaldo.js) y lo abre.
+'   Cada libro solo acepta gestiones con fecha de su mes; la plantilla base
+'   (sin mes) no deja registrar.
+'
+' - Fijar catálogos como base (botón en Códigos): lo que hay ahora en
+'   Códigos, Empresas, Centros y Recargos pasa a ser lo original y las
+'   marcas quedan vacías (después de pegar los catálogos, o de pasar los
+'   cambios al Maestro de la app).
+' - Marcas de cambio en Códigos, Empresas, Centros y Recargos: la columna CAMBIO es
+'   una fórmula (NUEVO / MODIFICADO / BORRADO); FECHA CAMBIO la escribe
+'   RegistrarCambioCatalogo, llamada desde Workbook_SheetChange del módulo
+'   del libro (lo agrega macros/armarXlsm.ps1).
+'
+' Items y Cargados se leen POR EL TITULO de su encabezado (fila 2), no por
+' la posicion: el orden de sus columnas puede cambiar en libroRespaldo.js
+' (COLUMNAS_ITEMS, COLUMNAS_CARGADOS) sin tocar este modulo, mientras los
+' titulos sean los mismos. Gestiones (COLUMNAS_GESTIONES) usa posiciones.
 ' Este archivo se importa en Windows-1252: solo caracteres latinos (sin
 ' rayas largas ni flechas).
 Option Explicit
@@ -25,64 +44,109 @@ Private Const HOJA_CARGADOS As String = "Cargados"
 ' COLUMNAS_RESUMEN en libroRespaldo.js). Encabezado en la fila 1.
 Private Const HOJA_SOLICITUD As String = "Solicitud Implantes"
 Private Const HOJA_RESUMEN As String = "Resumen"
+Private Const HOJA_CATALOGOS As String = "Catálogos"
+Private Const HOJA_NUEVO_MES As String = "Nuevo mes"
+Private Const HOJA_CATALOGOS_CODIGOS As String = "Códigos"
+' Guías de consignación (COLUMNAS_GUIAS en libroRespaldo.js): A N° guía,
+' B Referencia, C Código, D Delivery, E Cantidad, F Lote, G Vencimiento,
+' H Descripción. Datos desde la fila 3.
+Private Const HOJA_GUIAS As String = "Guías"
+Private Const GU_COLUMNAS As Long = 9
+' Columna "Agregada a (CLAVE)" de Guías: la escribe AgregarConsignacionAuto y
+' MoverCargadosAuto borra esas líneas cuando la gestión ya no tiene ítems.
+Private Const GU_AGREGADA As Long = 9
+Private Const TIPO_CONTENIDO_GUIA As String = "CONTENIDO GUÍA"
+Private Const SEGMENTO_CONSIGNACION As String = "CONSIGNACION"
+' Consignación (COLUMNAS_CONSIGNACION en libroRespaldo.js): se pegan A..H
+' (Admisión, Paciente, Médico, Fecha CX, Empresa, Código, Cantidad, Delivery)
+' y la macro escribe I..N (Tipo de línea, Referencia, Lote, Vencimiento,
+' N° guía, Estado). Datos desde la fila 3.
+Private Const HOJA_CONSIG As String = "Consignación"
+Private Const CO_COLUMNAS As Long = 14
+Private Const TIPO_NORMAL As String = "NORMAL"
+Private Const HOJA_EMPRESAS As String = "Empresas"
+' Mes del libro (Catálogos) y datos del libro a crear (Nuevo mes).
+Private Const LIBRO_ANIO As String = "K3"
+Private Const LIBRO_MES As String = "L3"
+Private Const NM_ANIO As String = "B5"
+Private Const NM_MES As String = "B6"
+Private Const MESES As String = "ENERO,FEBRERO,MARZO,ABRIL,MAYO,JUNIO,JULIO,AGOSTO,SEPTIEMBRE,OCTUBRE,NOVIEMBRE,DICIEMBRE"
+' Libros del mes Implantes_AAAA-MM.xlsm (PREFIJO_LIBRO en libroRespaldo.js).
+Private Const PREFIJO_LIBRO As String = "Implantes_"
+' Valor de ORIGEN en las filas en uso de Gestiones e Ítems (ORIGEN_REGISTRADO).
+Private Const ORIGEN_REGISTRADO As String = "REGISTRADO"
+' Mensajes de la validación de Gestiones en un libro con mes (MENSAJES_LIBRO
+' en libroRespaldo.js; la plantilla base trae el de "sin mes").
+Private Const MSJ_ADMISION As String = "Solo dígitos, sin puntos ni espacios."
+' Hojas con marcas de cambio: hoja:primera columna de datos:última:CAMBIO:FECHA CAMBIO
+' (MARCAS_CAMBIO en libroRespaldo.js; lo comprueba un test).
+' Las columnas "orig: ..." empiezan justo después de FECHA CAMBIO.
+Private Const MARCAS As String = "Códigos:2:14:17:18|Empresas:1:3:4:5|Centros:1:4:5:6|Recargos:1:5:6:7"
+Private Const MSJ_FECHA As String = "Este libro es de {MES}. Registra esta gestión en el libro del mes de su fecha (Implantes_AAAA-MM.xlsm)."
 Private Const S_COLUMNAS As Long = 18          ' ... FECHA MOVIMIENTO (17), CLAVE (18)
 Private Const R_COLUMNAS As Long = 13          ' ... FECHA MOVIMIENTO (12), CLAVE (13)
 Private Const PRIMERA As Long = 3
+Private Const ORIGEN_CARGADOS As String = "CARGADO"
+Private Const FILA_TITULOS As Long = 2
 ' Contraseña de protección de las hojas. En el repo queda solo el marcador:
 ' generarPlantillaImplantes.js lo reemplaza al armar el .xlsm con el valor de
 ' la variable de entorno RESPALDO_IMPLANTES_CLAVE_HOJAS.
 Private Const CLAVE_HOJAS As String = "__CLAVE_HOJAS__"
 
 ' Gestiones (A = 1)
-Private Const G_ULTIMA_ENTRADA As Long = 16   ' B..P se escriben
-Private Const G_ESTADO As Long = 17           ' Q
+' Estado va en H, junto a Informe (24-11-2026): B..G e I..Q se escriben.
+Private Const G_ULTIMA_ENTRADA As Long = 17   ' Q (Estado sin ítems)
+Private Const G_ESTADO As Long = 8            ' H (fórmula, no se limpia)
+Private Const G_ATRIBUTO As Long = 10         ' J (segmento: CONSIGNACION trae guías)
 Private Const G_N_ITEMS As Long = 18          ' R
 Private Const G_ORIGEN As Long = 22           ' V
 Private Const G_REGISTRADO As Long = 23       ' W
 Private Const G_COLUMNAS As Long = 26         ' hasta Z
 ' Autocompletado desde Reporte Info: celda visible -> auxiliar con el dato de
 ' Reporte Info (AUTOCOMPLETADO_GESTION en libroRespaldo.js). E=5->AG=33,
-' L=12->AH=34, M=13->AI=35, N=14->AJ=36, O=15->AK=37.
-Private Const G_AUTOCOMPLETADO As String = "5:33,12:34,13:35,14:36,15:37"
+' M=13->AH=34, N=14->AI=35, O=15->AJ=36, P=16->AK=37.
+Private Const G_AUTOCOMPLETADO As String = "5:33,13:34,14:35,15:36,16:37"
+' Columna de Cargados de cada columna de Gestiones que se escribe (B..P y W).
+Private Const G_DESDE_CARGADOS As String = "2:Admisión|3:Fecha|4:Empresa|5:Nombre paciente|6:Total cotización|7:Informe|9:Centro|10:Atributo|11:Lado|12:Observación|13:Convenio|14:Previsión|15:Médico|16:Descripción|17:Estado sin ítems|23:Registrado por (gestión)"
 
-' Items
-Private Const I_LINEA As Long = 1             ' A
-Private Const I_CLAVE As Long = 2             ' B
-Private Const I_TIPO As Long = 3              ' C
-Private Const I_PADRE As Long = 4             ' D
-Private Const I_ULTIMA_ENTRADA As Long = 11   ' B..K se escriben
-Private Const I_ALERTA As Long = 21           ' U
-Private Const I_ORIGEN As Long = 22           ' V
-Private Const I_REGISTRADO As Long = 23       ' W
-Private Const I_TIPO_EF As Long = 25          ' Y (vacio = NORMAL)
-Private Const I_ESTADO_EF As Long = 26        ' Z (PAD en lineas PAD)
-Private Const I_SIN_CODIGO As Long = 33       ' AG
-Private Const I_RECARGO As Long = 35          ' AI
-Private Const I_COLUMNAS As Long = 36         ' hasta AJ
-
-' Cargados
-Private Const C_COLUMNAS As Long = 44
-Private Const C_CLAVE As Long = 3
-Private Const C_LINEA As Long = 21
+' Items: celdas que se escriben (se limpian al mover y se llenan al devolver).
+Private Const I_ENTRADAS As String = "CLAVE|Tipo de línea|Línea padre|N° cotización|Referencia|Cantidad (ingresar)|N° guía|Lote|Vencimiento|Estado carga|Precio manual|Registrado por"
+' Items: celdas que se escriben pero traen un valor automático según el tipo
+' de línea (valoresPorTipo en libroRespaldo.js): PAD PADRE -> Lote y
+' Vencimiento "PAD"; CONTENIDO PAD -> Estado carga "CONTENIDO". Al limpiar
+' una fila vuelven a su fórmula (FormulasDefectoItem).
+Private Const VALOR_PAD As String = "PAD"
+Private Const ESTADO_CONTENIDO As String = "CONTENIDO"
+' Columna de Items de donde sale cada columna de Cargados, como Cargados>Items
+' (con '>': algunos títulos tienen ':'). Las de la gestión
+' salen de Gestiones; ver ValorGestion).
+Private Const C_DESDE_ITEMS As String = "N° línea (original)>N° línea|Tipo de línea>aux: tipo|Línea padre (original)>Línea padre|N° cotización>N° cotización|N° guía>N° guía|Referencia>Referencia|Código real>Código real|Cantidad>Cantidad|Lote>Lote|Vencimiento>Vencimiento|Estado carga>aux: estado|Precio manual>Precio manual|Código>Código|Precio unitario>Precio unitario|Empresa producto>Empresa producto|Clase>Clase|Tipo>Tipo|Descriptor>Descriptor|Veces costo>Veces costo|Total ítem>Total ítem|Venta>Venta|Sin código (1 = sí)>aux: sin código|Recargo encontrado (1 = sí)>aux: recargo encontrado|Alerta>Alerta|Registrado por (ítem)>Registrado por|ORIGEN>ORIGEN"
 
 ' ---------------------------------------------------------------------------
 ' Botones
 ' ---------------------------------------------------------------------------
 
 Public Sub MoverCargados()
-    Dim filasG As Collection, filasI As Collection, nAlertas As Long
-    BuscarCargados filasG, filasI, nAlertas
+    If LibroMes() = 0 Then
+        MsgBox "Esta es la plantilla base (sin mes): no tiene gestiones." & vbCrLf & "Cree el libro del mes en la hoja " & HOJA_NUEVO_MES & ".", vbExclamation, "Mover cargados"
+        Exit Sub
+    End If
+    Dim filasG As Collection, filasI As Collection, nAlertas As Long, nFuera As Long
+    BuscarCargados filasG, filasI, nAlertas, nFuera
+    Dim avisoFuera As String
+    If nFuera > 0 Then avisoFuera = vbCrLf & vbCrLf & nFuera & " gestión(es) CARGADO con fecha fuera del mes del libro (" & NombreLibro() & ") no se moverán: regístrelas en el libro de su mes (columna Alerta de Gestiones)."
     If filasG.Count = 0 Then
         MsgBox "No hay gestiones con Estado CARGADO para mover." & vbCrLf & _
-               "(Una gestión queda CARGADO cuando todas sus líneas están CARGADO, PAD o SIN CARGO.)", _
+               "(Una gestión queda CARGADO cuando todas sus líneas están CARGADO, CONTENIDO o SIN CARGO.)" & avisoFuera, _
                vbInformation, "Mover cargados"
         Exit Sub
     End If
 
     Dim aviso As String
-    aviso = "Se moverán " & filasG.Count & " gestión(es) y " & filasI.Count & " ítem(s) a la hoja Cargados."
+    aviso = "Se moverán " & filasG.Count & " gestión(es) y " & filasI.Count & " ítem(s) a la hoja Cargados." & avisoFuera
     If nAlertas > 0 Then aviso = aviso & vbCrLf & vbCrLf & "Atención: " & nAlertas & " de esos ítems tienen una alerta (columna Alerta de Ítems)."
-    aviso = aviso & vbCrLf & vbCrLf & "Sus filas en Gestiones e Ítems quedarán libres para volver a usarlas." & vbCrLf & "¿Continuar?"
+    aviso = aviso & vbCrLf & vbCrLf & "Sus líneas en Ítems quedarán libres. Las gestiones se quedan en Gestiones con Estado FINALIZADO." & vbCrLf & _
+            "Además se guardará, junto a este libro, un Excel con Solicitud Implantes y Resumen de lo movido." & vbCrLf & vbCrLf & "¿Continuar?"
     If MsgBox(aviso, vbYesNo + vbQuestion + vbDefaultButton2, "Mover cargados") <> vbYes Then Exit Sub
 
     Dim quien As String
@@ -91,27 +155,48 @@ Public Sub MoverCargados()
 
     Dim resultado As String
     resultado = MoverCargadosAuto(quien)
-    MsgBox "Listo: " & Split(resultado, ";")(0) & " gestión(es) y " & Split(resultado, ";")(1) & " ítem(s) movidos a Cargados." & vbCrLf & _
-           "Guarde el archivo (Ctrl+G).", vbInformation, "Mover cargados"
+    If Left(resultado, 5) = "ERROR" Then
+        MsgBox Mid(resultado, 7), vbExclamation, "Mover cargados"
+    Else
+        Dim partes As Variant, archivo As String
+        partes = Split(resultado, ";")
+        If UBound(partes) >= 3 Then archivo = partes(3)
+        ' El último dato es la cantidad de líneas borradas de Guías (la ruta del Excel podría traer ";").
+        If UBound(partes) >= 4 Then
+            archivo = Mid(resultado, Len(partes(0)) + Len(partes(1)) + Len(partes(2)) + 4)
+            archivo = Left(archivo, InStrRev(archivo, ";") - 1)
+        End If
+        If Left(archivo, 6) = "ERROR:" Then
+            archivo = "No se pudo guardar el Excel de Solicitud: " & Mid(archivo, 7)
+        ElseIf archivo <> "" Then
+            archivo = "Excel de Solicitud guardado en:" & vbCrLf & archivo
+        End If
+        Dim guias As String
+        If UBound(partes) >= 4 Then
+            If Val(partes(UBound(partes))) > 0 Then guias = vbCrLf & vbCrLf & partes(UBound(partes)) & " línea(s) de guía ya agregadas se borraron de la hoja Guías (quedan en Cargados)."
+        End If
+        MsgBox "Listo: " & partes(0) & " gestión(es) y " & partes(1) & " ítem(s) movidos a Cargados." & vbCrLf & vbCrLf & _
+               archivo & guias & vbCrLf & vbCrLf & "Guarde el archivo (Ctrl+G).", vbInformation, "Mover cargados"
+    End If
 End Sub
 
+' Pide la CLAVE de la gestión a devolver (por defecto, la de la fila
+' seleccionada en Cargados) y devuelve todas sus líneas a Ítems.
 Public Sub DevolverAPendientes()
-    Dim wsC As Worksheet
+    Dim wsC As Worksheet, sugerida As String
     Set wsC = ThisWorkbook.Worksheets(HOJA_CARGADOS)
-    If Not ActiveSheet Is wsC Or ActiveCell.Row < PRIMERA Then
-        MsgBox "En la hoja Cargados, seleccione una celda de una fila de la gestión que quiere devolver y vuelva a presionar el botón.", _
-               vbInformation, "Devolver a pendientes"
-        Exit Sub
-    End If
+    If ActiveSheet Is wsC And ActiveCell.Row >= PRIMERA Then sugerida = Txt(wsC.Cells(ActiveCell.Row, Col(Titulos(wsC), "CLAVE")).Value)
     Dim clave As String
-    clave = Txt(wsC.Cells(ActiveCell.Row, C_CLAVE).Value)
-    If clave = "" Then
-        MsgBox "La fila seleccionada no tiene una gestión.", vbInformation, "Devolver a pendientes"
-        Exit Sub
-    End If
+    clave = Trim(InputBox("CLAVE de la gestión que vuelve a Ítems (admisión|empresa|AAAA-MM-DD)." & vbCrLf & vbCrLf & _
+                          "Por defecto, la de la fila seleccionada en Cargados. Se devuelven todas sus líneas.", "Devolver a pendientes", sugerida))
+    If clave = "" Then Exit Sub
     Dim filas As Collection
     Set filas = FilasDeClaveEnCargados(wsC, clave)
-    If MsgBox("Se devolverá la gestión" & vbCrLf & clave & vbCrLf & "con " & filas.Count & " línea(s) a Gestiones e Ítems." & vbCrLf & vbCrLf & "¿Continuar?", _
+    If filas.Count = 0 Then
+        MsgBox "La CLAVE" & vbCrLf & clave & vbCrLf & "no está en la hoja Cargados.", vbExclamation, "Devolver a pendientes"
+        Exit Sub
+    End If
+    If MsgBox("Se devolverá la gestión" & vbCrLf & clave & vbCrLf & "con " & filas.Count & " línea(s) a Ítems." & vbCrLf & vbCrLf & "¿Continuar?", _
               vbYesNo + vbQuestion + vbDefaultButton2, "Devolver a pendientes") <> vbYes Then Exit Sub
 
     Dim resultado As String
@@ -119,22 +204,56 @@ Public Sub DevolverAPendientes()
     If Left(resultado, 5) = "ERROR" Then
         MsgBox Mid(resultado, 7), vbExclamation, "Devolver a pendientes"
     Else
-        MsgBox "Listo: la gestión volvió a Gestiones (fila " & Split(resultado, ";")(1) & ") con " & Split(resultado, ";")(2) & " línea(s) en Ítems." & vbCrLf & _
+        MsgBox "Listo: la gestión (fila " & Split(resultado, ";")(1) & " de Gestiones) volvió con " & Split(resultado, ";")(2) & " línea(s) a Ítems." & vbCrLf & _
                "Guarde el archivo (Ctrl+G).", vbInformation, "Devolver a pendientes"
     End If
 End Sub
 
-' Crea los botones (una vez, al armar el .xlsm o tras importar este módulo a mano).
+' Crea los botones (una vez, al armar el .xlsm).
 Public Sub InstalarBotones()
     CrearBoton ThisWorkbook.Worksheets(HOJA_ITEMS), "btnMoverCargados", "Mover cargados", "MoverCargados", 150
     CrearBoton ThisWorkbook.Worksheets(HOJA_CARGADOS), "btnDevolverPendientes", "Devolver a pendientes", "DevolverAPendientes", 170
+    CrearBoton ThisWorkbook.Worksheets(HOJA_NUEVO_MES), "btnCrearLibroMes", "Crear libro del mes", "CrearLibroDelMes", 170, "A9"
+    CrearBoton ThisWorkbook.Worksheets(HOJA_CATALOGOS_CODIGOS), "btnFijarCatalogos", "Fijar catálogos como base", "FijarCatalogosBase", 190
+    InstalarBotonesConsignacion
+End Sub
+
+Public Sub InstalarBotonesConsignacion()
+    CrearBoton ThisWorkbook.Worksheets(HOJA_CONSIG), "btnVincularGuias", "Vincular guías", "VincularConsignacion", 120
+    CrearBoton ThisWorkbook.Worksheets(HOJA_CONSIG), "btnAgregarItems", "Agregar a Ítems", "AgregarConsignacion", 120, "C1"
+End Sub
+
+Public Sub FijarCatalogosBase()
+    If MsgBox("Se reiniciarán todas las marcas de cambio. ¿Continuar?" & vbCrLf & vbCrLf & _
+              "Los datos que hay ahora en Códigos, Empresas, Centros y Recargos pasan a ser los originales: CAMBIO y FECHA CAMBIO quedan vacíos.", _
+              vbYesNo + vbQuestion + vbDefaultButton2, "Fijar catálogos como base") <> vbYes Then Exit Sub
+    Dim resultado As String
+    resultado = FijarCatalogosBaseAuto()
+    If Left(resultado, 5) = "ERROR" Then
+        MsgBox Mid(resultado, 7), vbExclamation, "Fijar catálogos como base"
+    Else
+        MsgBox "Listo. Filas con datos fijadas como base:" & vbCrLf & Replace(Mid(resultado, 4), "|", vbCrLf) & vbCrLf & vbCrLf & _
+               "Guarde el archivo (Ctrl+G).", vbInformation, "Fijar catálogos como base"
+    End If
+End Sub
+
+Public Sub CrearLibroDelMes()
+    Dim ws As Worksheet, resultado As String
+    Set ws = ThisWorkbook.Worksheets(HOJA_NUEVO_MES)
+    resultado = CrearLibroDelMesAuto(ws.Range(NM_ANIO).Value, ws.Range(NM_MES).Value, True)
+    If Left(resultado, 5) = "ERROR" Then
+        MsgBox Mid(resultado, 7), vbExclamation, "Crear libro del mes"
+    Else
+        MsgBox "Listo: se creó y se abrió el libro" & vbCrLf & Mid(resultado, 4) & vbCrLf & vbCrLf & _
+               "Registre ahí las gestiones de ese mes.", vbInformation, "Crear libro del mes"
+    End If
 End Sub
 
 ' ---------------------------------------------------------------------------
 ' Lógica sin diálogos (también la usa la prueba automática)
 ' ---------------------------------------------------------------------------
 
-' Devuelve "gestiones;items".
+' Devuelve "gestiones;items;fuera del mes" o "ERROR;mensaje".
 ' `fechaMovimiento` (opcional): para la prueba automática; el botón usa Now.
 Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMovimiento As Variant) As String
     Dim wsG As Worksheet, wsI As Worksheet, wsC As Worksheet
@@ -142,16 +261,24 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
     Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
     Set wsC = ThisWorkbook.Worksheets(HOJA_CARGADOS)
 
-    Dim filasG As Collection, filasI As Collection, nAlertas As Long
-    BuscarCargados filasG, filasI, nAlertas
+    If LibroMes() = 0 Then
+        MoverCargadosAuto = "ERROR;Esta es la plantilla base (sin mes): cree el libro del mes en la hoja " & HOJA_NUEVO_MES & "."
+        Exit Function
+    End If
+    Dim filasG As Collection, filasI As Collection, nAlertas As Long, nFuera As Long
+    BuscarCargados filasG, filasI, nAlertas, nFuera
     If filasG.Count = 0 Then
-        MoverCargadosAuto = "0;0"
+        MoverCargadosAuto = "0;0;" & nFuera
         Exit Function
     End If
 
+    Dim ti As Object, tc As Object
+    Set ti = Titulos(wsI)
+    Set tc = Titulos(wsC)
+
     Dim gDatos As Variant, iDatos As Variant
     gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
-    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, I_LINEA), I_COLUMNAS)).Value
+    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, Col(ti, "N° línea")), UltimaColumna(wsI))).Value
 
     ' CLAVE -> índice de fila en gDatos
     Dim porClave As Object, fg As Variant
@@ -160,39 +287,37 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
         porClave(Txt(gDatos(fg - PRIMERA + 1, 1))) = fg - PRIMERA + 1
     Next fg
 
+    ' Cargados: una fila por ítem, cada columna según su título.
+    Dim nC As Long, tituloC As Variant, desdeItems As Object, par As Variant
+    nC = UltimaColumna(wsC)
+    Set desdeItems = CreateObject("Scripting.Dictionary")
+    For Each par In Split(C_DESDE_ITEMS, "|")
+        desdeItems(Split(par, ">")(0)) = Col(ti, Split(par, ">")(1))
+    Next par
+
     Dim salida() As Variant, k As Long, fi As Variant, gi As Long, ii As Long, c As Long, ahora As Date
-    ReDim salida(1 To filasI.Count, 1 To C_COLUMNAS)
+    ReDim salida(1 To filasI.Count, 1 To nC)
     If IsMissing(fechaMovimiento) Then ahora = Now Else ahora = CDate(fechaMovimiento)
+    Dim iClave As Long
+    iClave = Col(ti, "CLAVE")
     k = 0
     For Each fi In filasI
         k = k + 1
         ii = fi - PRIMERA + 1
-        gi = porClave(Txt(iDatos(ii, I_CLAVE)))
-        salida(k, 1) = ahora
-        salida(k, 2) = quien
-        salida(k, 3) = gDatos(gi, 1)                       ' CLAVE
-        For c = 2 To G_ULTIMA_ENTRADA                       ' Admisión .. Estado sin ítems
-            salida(k, c + 2) = gDatos(gi, c)
-        Next c
-        salida(k, 19) = gDatos(gi, G_ESTADO)
-        salida(k, 20) = gDatos(gi, G_REGISTRADO)
-        salida(k, 21) = iDatos(ii, I_LINEA)
-        salida(k, 22) = iDatos(ii, I_TIPO_EF)
-        salida(k, 23) = iDatos(ii, I_PADRE)
-        For c = 5 To 9                                      ' N° cotización .. Vencimiento
-            salida(k, c + 19) = iDatos(ii, c)
-        Next c
-        salida(k, 29) = iDatos(ii, I_ESTADO_EF)
-        salida(k, 30) = iDatos(ii, 11)                      ' Precio manual
-        For c = 12 To 20                                    ' Código .. Venta
-            salida(k, c + 19) = iDatos(ii, c)
-        Next c
-        salida(k, 40) = iDatos(ii, I_SIN_CODIGO)
-        salida(k, 41) = iDatos(ii, I_RECARGO)
-        salida(k, 42) = iDatos(ii, I_ALERTA)
-        salida(k, 43) = iDatos(ii, I_REGISTRADO)
-        salida(k, 44) = iDatos(ii, I_ORIGEN)
-        For c = 1 To C_COLUMNAS
+        gi = porClave(Txt(iDatos(ii, iClave)))
+        For c = 1 To nC
+            tituloC = Txt(wsC.Cells(FILA_TITULOS, c).Value)
+            If tituloC = "Movido el" Then
+                salida(k, c) = ahora
+            ElseIf tituloC = "Movido por" Then
+                salida(k, c) = quien
+            ElseIf tituloC = "ORIGEN" Then
+                salida(k, c) = ORIGEN_CARGADOS
+            ElseIf desdeItems.Exists(tituloC) Then
+                salida(k, c) = iDatos(ii, desdeItems(tituloC))
+            Else
+                salida(k, c) = ValorGestion(gDatos, gi, tituloC)
+            End If
             If IsError(salida(k, c)) Then salida(k, c) = ""
         Next c
     Next fi
@@ -203,43 +328,49 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
     ReDim sol(1 To filasI.Count, 1 To S_COLUMNAS)
     ReDim res(1 To filasI.Count, 1 To R_COLUMNAS)
     fechaTxt = Format(ahora, "dd-mm-yyyy")
+    Dim iCodigo As Long, iDescriptor As Long, iCantidad As Long, iPrecio As Long, iTipo As Long
+    Dim iCot As Long, iLote As Long, iVenc As Long, iVenta As Long, iTipoEf As Long, iEstadoEf As Long
+    iCodigo = Col(ti, "Código"): iDescriptor = Col(ti, "Descriptor"): iCantidad = Col(ti, "Cantidad")
+    iPrecio = Col(ti, "Precio unitario"): iTipo = Col(ti, "Tipo"): iCot = Col(ti, "N° cotización")
+    iLote = Col(ti, "Lote"): iVenc = Col(ti, "Vencimiento"): iVenta = Col(ti, "Venta")
+    iTipoEf = Col(ti, "aux: tipo"): iEstadoEf = Col(ti, "aux: estado")
     k = 0
     For Each fi In filasI
         k = k + 1
         ii = fi - PRIMERA + 1
-        gi = porClave(Txt(iDatos(ii, I_CLAVE)))
-        tipoLinea = Txt(iDatos(ii, I_TIPO_EF))
-        sol(k, 1) = Txt(gDatos(gi, 2))                              ' ID
-        sol(k, 2) = OP(gDatos(gi, 5))                               ' PACIENTE
-        sol(k, 3) = OP(gDatos(gi, 14))                              ' MEDICO
-        sol(k, 4) = FechaTexto(gDatos(gi, 3))                       ' FECHA
-        sol(k, 5) = OP(gDatos(gi, 4))                               ' EMPRESA
-        sol(k, 6) = OP(iDatos(ii, 12))                              ' CODIGO
-        sol(k, 7) = OP(iDatos(ii, 17))                              ' DESCRIPCION
-        sol(k, 8) = Num(iDatos(ii, 7))                              ' CANTIDAD
-        sol(k, 9) = Num(iDatos(ii, 13))                             ' PRECIO
-        sol(k, 10) = OP(iDatos(ii, 16))                             ' ATRIBUTO (tipo del ítem)
-        sol(k, 11) = fechaTxt                                       ' FECHA REGISTRO
-        sol(k, 12) = FechaTexto(gDatos(gi, 3))                      ' FECHA CARGA
-        sol(k, 13) = OP(iDatos(ii, 5))                              ' N° COTIZACION
-        sol(k, 14) = fechaTxt                                       ' FECHA INGRESO
-        sol(k, 15) = LoteSistema(iDatos(ii, 8), tipoLinea)          ' LOTE
-        sol(k, 16) = VencimientoSistema(iDatos(ii, 9), tipoLinea)   ' VENCIMIENTO
-        sol(k, 17) = DateValue(ahora)                               ' FECHA MOVIMIENTO
-        sol(k, 18) = Txt(gDatos(gi, 1))                             ' CLAVE
-        res(k, 1) = fechaTxt                                        ' Ingreso
-        res(k, 2) = IIf(Txt(gDatos(gi, 8)) = "", "PABELLON", Txt(gDatos(gi, 8)))  ' Area (centro)
-        res(k, 3) = OP(gDatos(gi, 13))                              ' Previsión
-        res(k, 4) = Txt(gDatos(gi, 2))                              ' Id
-        res(k, 5) = OP(iDatos(ii, 12))                              ' Cód
-        res(k, 6) = Num(iDatos(ii, 7))                              ' Cant
-        res(k, 7) = Num(iDatos(ii, 20))                             ' Venta
-        res(k, 8) = OP(gDatos(gi, 14))                              ' Médico
-        res(k, 9) = FechaTexto(gDatos(gi, 3))                       ' Fecha
-        res(k, 10) = OP(iDatos(ii, 17))                             ' Descripción
-        res(k, 11) = IIf(Txt(iDatos(ii, I_ESTADO_EF)) = "", "PENDIENTE", Txt(iDatos(ii, I_ESTADO_EF)))  ' Estado
-        res(k, 12) = DateValue(ahora)                               ' FECHA MOVIMIENTO
-        res(k, 13) = Txt(gDatos(gi, 1))                             ' CLAVE
+        gi = porClave(Txt(iDatos(ii, iClave)))
+        tipoLinea = Txt(iDatos(ii, iTipoEf))
+        sol(k, 1) = Txt(gDatos(gi, 2))                                  ' ID
+        sol(k, 2) = OP(gDatos(gi, 5))                                   ' PACIENTE
+        sol(k, 3) = OP(gDatos(gi, 15))                                  ' MEDICO
+        sol(k, 4) = FechaTexto(gDatos(gi, 3))                           ' FECHA
+        sol(k, 5) = OP(gDatos(gi, 4))                                   ' EMPRESA
+        sol(k, 6) = OP(iDatos(ii, iCodigo))                             ' CODIGO ("No lleva OC" donde corresponde)
+        sol(k, 7) = OP(iDatos(ii, iDescriptor))                         ' DESCRIPCION
+        sol(k, 8) = Num(iDatos(ii, iCantidad))                          ' CANTIDAD
+        sol(k, 9) = Num(iDatos(ii, iPrecio))                            ' PRECIO
+        sol(k, 10) = OP(iDatos(ii, iTipo))                              ' ATRIBUTO (tipo del ítem)
+        sol(k, 11) = fechaTxt                                           ' FECHA REGISTRO
+        sol(k, 12) = FechaTexto(gDatos(gi, 3))                          ' FECHA CARGA
+        sol(k, 13) = OP(iDatos(ii, iCot))                               ' N° COTIZACION
+        sol(k, 14) = fechaTxt                                           ' FECHA INGRESO
+        sol(k, 15) = LoteSolicitud(iDatos(ii, iLote), tipoLinea)          ' LOTE
+        sol(k, 16) = VencimientoSolicitud(iDatos(ii, iVenc), tipoLinea)   ' VENCIMIENTO
+        sol(k, 17) = DateValue(ahora)                                   ' FECHA MOVIMIENTO
+        sol(k, 18) = Txt(gDatos(gi, 1))                                 ' CLAVE
+        res(k, 1) = fechaTxt                                            ' Ingreso
+        res(k, 2) = IIf(Txt(gDatos(gi, 9)) = "", "PABELLON", Txt(gDatos(gi, 9)))  ' Area (centro)
+        res(k, 3) = OP(gDatos(gi, 14))                                  ' Previsión
+        res(k, 4) = Txt(gDatos(gi, 2))                                  ' Id
+        res(k, 5) = OP(iDatos(ii, iCodigo))                             ' Cód
+        res(k, 6) = Num(iDatos(ii, iCantidad))                          ' Cant
+        res(k, 7) = Num(iDatos(ii, iVenta))                             ' Venta
+        res(k, 8) = OP(gDatos(gi, 15))                                  ' Médico
+        res(k, 9) = FechaTexto(gDatos(gi, 3))                           ' Fecha
+        res(k, 10) = OP(iDatos(ii, iDescriptor))                        ' Descripción
+        res(k, 11) = IIf(Txt(iDatos(ii, iEstadoEf)) = "", "PENDIENTE", Txt(iDatos(ii, iEstadoEf)))  ' Estado
+        res(k, 12) = DateValue(ahora)                                   ' FECHA MOVIMIENTO
+        res(k, 13) = Txt(gDatos(gi, 1))                                 ' CLAVE
     Next fi
 
     Dim wsS As Worksheet, wsR As Worksheet
@@ -261,21 +392,31 @@ Public Function MoverCargadosAuto(ByVal quien As String, Optional ByVal fechaMov
     wsR.Range(wsR.Cells(filaR, 1), wsR.Cells(filaR + filasI.Count - 1, R_COLUMNAS)).Value = res
 
     Dim destino As Long
-    destino = UltimaFila(wsC, C_CLAVE) + 1
+    destino = UltimaFila(wsC, Col(tc, "CLAVE")) + 1
     If destino < PRIMERA Then destino = PRIMERA
-    wsC.Range(wsC.Cells(destino, 1), wsC.Cells(destino + filasI.Count - 1, C_COLUMNAS)).Value = salida
+    wsC.Range(wsC.Cells(destino, 1), wsC.Cells(destino + filasI.Count - 1, nC)).Value = salida
 
+    Dim entrada As Variant
     For Each fi In filasI
-        wsI.Range(wsI.Cells(fi, I_CLAVE), wsI.Cells(fi, I_ULTIMA_ENTRADA)).ClearContents
-        wsI.Cells(fi, I_REGISTRADO).ClearContents
+        For Each entrada In Split(I_ENTRADAS, "|")
+            wsI.Cells(fi, Col(ti, entrada)).ClearContents
+        Next entrada
+        FormulasDefectoItem wsI, ti, CLng(fi), CLng(fi)
     Next fi
-    For Each fg In filasG
-        wsG.Range(wsG.Cells(fg, 2), wsG.Cells(fg, G_ULTIMA_ENTRADA)).ClearContents
-        wsG.Cells(fg, G_REGISTRADO).ClearContents
-        RestaurarAutocompletado wsG, CLng(fg)
-    Next fg
+    ' La gestión se queda en Gestiones: sin ítems y con líneas en Cargados,
+    ' su Estado pasa a FINALIZADO (fórmula de la columna Estado).
 
-    MoverCargadosAuto = filasG.Count & ";" & filasI.Count
+    ' Guías: se borran las líneas agregadas de las gestiones que ya no tienen
+    ' ítems (lo vinculado queda en Cargados); quedan las no agregadas.
+    Dim nGuias As Long
+    nGuias = LimpiarGuias(wsI, ti)
+
+    ' El filtro cubre las filas nuevas (con la hoja protegida Excel no lo amplía).
+    AjustarFiltro wsC, FILA_TITULOS, False
+    AjustarFiltro wsS, 1, False
+    AjustarFiltro wsR, 1, False
+
+    MoverCargadosAuto = filasG.Count & ";" & filasI.Count & ";" & nFuera & ";" & ExportarSolicitud(sol, res, filasI.Count, ahora) & ";" & nGuias
 Fin:
     Proteger wsG: Proteger wsI: Proteger wsC: Proteger wsS: Proteger wsR
     Application.Calculation = calculo
@@ -285,6 +426,53 @@ Fallo:
     MoverCargadosAuto = "ERROR;" & Err.Description
     Resume Fin
 End Function
+
+' Excel aparte, junto a este libro, con las hojas Solicitud Implantes y
+' Resumen de lo que se acaba de mover (solo valores). Devuelve la ruta o
+' "ERROR:mensaje".
+Private Function ExportarSolicitud(ByVal sol As Variant, ByVal res As Variant, ByVal n As Long, ByVal ahora As Date) As String
+    Dim nb As Workbook, eventos As Boolean, ruta As String, base As String, k As Long
+    eventos = Application.EnableEvents
+    On Error GoTo Fallo
+    Application.EnableEvents = False
+    base = ThisWorkbook.Path & Application.PathSeparator & "Solicitud_Implantes_" & Format(ahora, "yyyy-mm-dd_hhnn")
+    ruta = base & ".xlsx"
+    k = 1
+    Do While Dir(ruta) <> ""
+        k = k + 1
+        ruta = base & "_" & k & ".xlsx"
+    Loop
+    Set nb = Application.Workbooks.Add(xlWBATWorksheet)
+    CopiarHojaSolicitud nb.Worksheets(1), ThisWorkbook.Worksheets(HOJA_SOLICITUD), HOJA_SOLICITUD, sol, n, S_COLUMNAS
+    CopiarHojaSolicitud nb.Worksheets.Add(After:=nb.Worksheets(1)), ThisWorkbook.Worksheets(HOJA_RESUMEN), HOJA_RESUMEN, res, n, R_COLUMNAS
+    nb.Worksheets(1).Activate
+    nb.SaveAs Filename:=ruta, FileFormat:=xlOpenXMLWorkbook
+    nb.Close False
+    ExportarSolicitud = ruta
+Fin:
+    Application.EnableEvents = eventos
+    Exit Function
+Fallo:
+    ExportarSolicitud = "ERROR:" & Err.Description
+    If Not nb Is Nothing Then nb.Close False
+    Resume Fin
+End Function
+
+' Encabezado (fila 1 de la hoja del libro) y las filas movidas, como valores.
+Private Sub CopiarHojaSolicitud(ByVal destino As Worksheet, ByVal origen As Worksheet, ByVal nombre As String, ByVal datos As Variant, ByVal n As Long, ByVal columnas As Long)
+    destino.Name = nombre
+    destino.Range(destino.Cells(1, 1), destino.Cells(1, columnas)).Value = origen.Range(origen.Cells(1, 1), origen.Cells(1, columnas)).Value
+    destino.Rows(1).Font.Bold = True
+    ' Columnas de texto como Texto: si no, Excel convierte "02-11-2026" en
+    ' fecha (y puede leerla como mes-día) y "00123" en número.
+    Dim j As Long
+    For j = 1 To columnas
+        If VarType(datos(1, j)) = vbString Then destino.Columns(j).NumberFormat = "@"
+    Next j
+    destino.Columns(columnas - 1).NumberFormat = "dd-mm-yyyy"
+    destino.Range(destino.Cells(2, 1), destino.Cells(n + 1, columnas)).Value = datos
+    destino.Range(destino.Cells(1, 1), destino.Cells(n + 1, columnas)).Columns.AutoFit
+End Sub
 
 ' Devuelve "OK;filaGestion;lineas" o "ERROR;mensaje".
 Public Function DevolverGestionAuto(ByVal clave As String) As String
@@ -300,22 +488,32 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
         Exit Function
     End If
 
-    Application.Calculate
-    Dim gDatos As Variant, iDatos As Variant, r As Long, c As Long, libre As Boolean
-    gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
-    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, I_LINEA), I_COLUMNAS)).Value
+    Dim ti As Object, tc As Object
+    Set ti = Titulos(wsI)
+    Set tc = Titulos(wsC)
 
-    Dim filaG As Long
+    Application.Calculate
+    Dim gDatos As Variant, iDatos As Variant, r As Long, c As Long, libre As Boolean, entrada As Variant
+    gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
+    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, Col(ti, "N° línea")), UltimaColumna(wsI))).Value
+
+    ' La gestión normalmente sigue en Gestiones (FINALIZADO): se usa esa fila.
+    ' Si no está (movida con una versión anterior), va a la primera libre.
+    Dim filaG As Long, existe As Boolean
     For r = 1 To UBound(gDatos, 1)
         If Txt(gDatos(r, 1)) = clave Then
-            DevolverGestionAuto = "ERROR;En Gestiones ya hay una gestión con la CLAVE " & clave & " (fila " & (r + PRIMERA - 1) & "). Cámbiela o bórrela antes de devolver."
-            Exit Function
+            filaG = r + PRIMERA - 1
+            existe = True
+            Exit For
         End If
+    Next r
+    For r = 1 To UBound(gDatos, 1)
         If filaG = 0 Then
             libre = (Txt(gDatos(r, G_REGISTRADO)) = "")
             For c = 2 To G_ULTIMA_ENTRADA
-                If Txt(gDatos(r, c)) <> "" Then libre = False
+                If Txt(gDatos(r, c)) <> "" And AuxiliarDe(c) = 0 And c <> G_ESTADO Then libre = False
             Next c
+            If Txt(gDatos(r, 2)) <> "" Then libre = False
             If libre Then filaG = r + PRIMERA - 1
         End If
     Next r
@@ -327,10 +525,10 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     Dim filasI As New Collection
     For r = 1 To UBound(iDatos, 1)
         If filasI.Count = filasC.Count Then Exit For
-        libre = (Txt(iDatos(r, I_REGISTRADO)) = "")
-        For c = I_CLAVE To I_ULTIMA_ENTRADA
-            If Txt(iDatos(r, c)) <> "" Then libre = False
-        Next c
+        libre = True
+        For Each entrada In Split(I_ENTRADAS, "|")
+            If Txt(iDatos(r, Col(ti, entrada))) <> "" Then libre = False
+        Next entrada
         If libre Then filasI.Add r + PRIMERA - 1
     Next r
     If filasI.Count < filasC.Count Then
@@ -342,7 +540,7 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     Dim nueva As Object, k As Long
     Set nueva = CreateObject("Scripting.Dictionary")
     For k = 1 To filasC.Count
-        nueva(Txt(wsC.Cells(filasC(k), C_LINEA).Value)) = wsI.Cells(filasI(k), I_LINEA).Value
+        nueva(Txt(wsC.Cells(filasC(k), Col(tc, "N° línea (original)")).Value)) = wsI.Cells(filasI(k), Col(ti, "N° línea")).Value
     Next k
 
     Dim calculo As XlCalculation
@@ -351,43 +549,63 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
     Application.Calculation = xlCalculationManual
     On Error GoTo Fallo
     Desproteger wsG: Desproteger wsI: Desproteger wsC
+    ' Escribir N° guía no debe volver a traer la guía (TraerGuia).
+    Application.EnableEvents = False
 
-    Dim r0 As Long
+    ' Gestión (solo si no estaba en Gestiones): cada columna que se escribe,
+    ' desde su columna de Cargados.
+    Dim r0 As Long, par As Variant, colG As Long, valorC As Variant
     r0 = filasC(1)
-    For c = 2 To G_ULTIMA_ENTRADA
-        If AuxiliarDe(c) = 0 Then wsG.Cells(filaG, c).Value = wsC.Cells(r0, c + 2).Value
-    Next c
-    wsG.Cells(filaG, G_REGISTRADO).Value = wsC.Cells(r0, 20).Value
+    If Not existe Then
+    For Each par In Split(G_DESDE_CARGADOS, "|")
+        colG = CLng(Split(par, ":")(0))
+        If AuxiliarDe(colG) = 0 Then wsG.Cells(filaG, colG).Value = wsC.Cells(r0, Col(tc, Split(par, ":")(1))).Value
+    Next par
     ' Autocompletado: si lo guardado es lo mismo que trae Reporte Info (o
     ' está vacío), vuelve la fórmula; si se había escrito a mano, el valor.
     RestaurarAutocompletado wsG, filaG
     wsG.Calculate
-    Dim aux As Long
-    For c = 2 To G_ULTIMA_ENTRADA
-        aux = AuxiliarDe(c)
-        If aux > 0 Then
-            If Txt(wsC.Cells(r0, c + 2).Value) <> "" And Txt(wsC.Cells(r0, c + 2).Value) <> Txt(wsG.Cells(filaG, aux).Value) Then
-                wsG.Cells(filaG, c).Value = wsC.Cells(r0, c + 2).Value
-            End If
+    For Each par In Split(G_DESDE_CARGADOS, "|")
+        colG = CLng(Split(par, ":")(0))
+        If AuxiliarDe(colG) > 0 Then
+            valorC = wsC.Cells(r0, Col(tc, Split(par, ":")(1))).Value
+            If Txt(valorC) <> "" And Txt(valorC) <> Txt(wsG.Cells(filaG, AuxiliarDe(colG)).Value) Then wsG.Cells(filaG, colG).Value = valorC
         End If
-    Next c
+    Next par
+    End If
 
-    Dim rc As Long, ri As Long, padre As String
+    ' Ítems: las celdas que se escriben, desde Cargados (la línea padre se
+    ' traduce al N° de la fila donde queda).
+    Dim rc As Long, ri As Long, padre As String, tipo As String
     For k = 1 To filasC.Count
         rc = filasC(k)
         ri = filasI(k)
-        wsI.Cells(ri, I_CLAVE).Value = clave
-        wsI.Cells(ri, I_TIPO).Value = wsC.Cells(rc, 22).Value
-        padre = Txt(wsC.Cells(rc, 23).Value)
+        wsI.Cells(ri, Col(ti, "CLAVE")).Value = clave
+        wsI.Cells(ri, Col(ti, "Tipo de línea")).Value = wsC.Cells(rc, Col(tc, "Tipo de línea")).Value
+        padre = Txt(wsC.Cells(rc, Col(tc, "Línea padre (original)")).Value)
         If padre <> "" Then
-            If nueva.Exists(padre) Then wsI.Cells(ri, I_PADRE).Value = nueva(padre) Else wsI.Cells(ri, I_PADRE).Value = wsC.Cells(rc, 23).Value
+            If nueva.Exists(padre) Then wsI.Cells(ri, Col(ti, "Línea padre")).Value = nueva(padre) Else wsI.Cells(ri, Col(ti, "Línea padre")).Value = padre
         End If
-        For c = 5 To 9
-            wsI.Cells(ri, c).Value = wsC.Cells(rc, c + 19).Value
-        Next c
-        wsI.Cells(ri, 10).Value = wsC.Cells(rc, 29).Value   ' Estado carga
-        wsI.Cells(ri, 11).Value = wsC.Cells(rc, 30).Value   ' Precio manual
-        wsI.Cells(ri, I_REGISTRADO).Value = wsC.Cells(rc, 43).Value
+        For Each entrada In Split("N° cotización|N° guía|Referencia|Lote|Vencimiento|Estado carga|Precio manual", "|")
+            wsI.Cells(ri, Col(ti, entrada)).Value = wsC.Cells(rc, Col(tc, entrada)).Value
+        Next entrada
+        wsI.Cells(ri, Col(ti, "Cantidad (ingresar)")).Value = wsC.Cells(rc, Col(tc, "Cantidad")).Value
+        ' Lo que era automático (PAD del PAD PADRE, CONTENIDO del contenido)
+        ' vuelve a su fórmula, como al registrarla. "PAD" en Estado carga es de
+        ' libros anteriores (el PAD tenía estado fijo): queda vacío = PENDIENTE.
+        tipo = Txt(wsC.Cells(rc, Col(tc, "Tipo de línea")).Value)
+        If tipo = "PAD PADRE" Then
+            If Txt(wsI.Cells(ri, Col(ti, "Lote")).Value) = VALOR_PAD Then FormulaDefecto wsI, ti, ri, "Lote"
+            If Txt(wsI.Cells(ri, Col(ti, "Vencimiento")).Value) = VALOR_PAD Then FormulaDefecto wsI, ti, ri, "Vencimiento"
+        End If
+        If tipo = "CONTENIDO PAD" Or tipo = TIPO_CONTENIDO_GUIA Or Txt(wsI.Cells(ri, Col(ti, "Estado carga")).Value) = "PAD" Then
+            FormulaDefecto wsI, ti, ri, "Estado carga"
+        End If
+        ' Lo que volvió vacío también queda con su fórmula (como una fila libre).
+        For Each entrada In Split("Lote|Vencimiento|Estado carga", "|")
+            If Txt(wsI.Cells(ri, Col(ti, entrada)).Value) = "" Then FormulaDefecto wsI, ti, ri, CStr(entrada)
+        Next entrada
+        wsI.Cells(ri, Col(ti, "Registrado por")).Value = wsC.Cells(rc, Col(tc, "Registrado por (ítem)")).Value
     Next k
 
     For k = filasC.Count To 1 Step -1
@@ -398,6 +616,7 @@ Public Function DevolverGestionAuto(ByVal clave As String) As String
 
     DevolverGestionAuto = "OK;" & filaG & ";" & filasC.Count
 Fin:
+    Application.EnableEvents = True
     Proteger wsG: Proteger wsI: Proteger wsC
     Application.Calculation = calculo
     Application.ScreenUpdating = True
@@ -408,25 +627,764 @@ Fallo:
 End Function
 
 ' ---------------------------------------------------------------------------
+' Guías de consignación
+' ---------------------------------------------------------------------------
+
+' Evento (Workbook_SheetChange, lo agrega armarXlsm.ps1): al escribir un N°
+' guía en Ítems trae las líneas de esa guía. Una sola celda por vez: un
+' pegado de varias no trae nada.
+Public Sub TraerGuia(ByVal Sh As Object, ByVal Target As Range)
+    ' Al pegar en Guías, el filtro se amplía a las filas pegadas.
+    ' Desde el 25-11-2026 el contenido de las guías se trae en la hoja
+    ' Consignación ("Vincular guías"), no al escribir el N° guía en Ítems.
+    If Sh.Name = HOJA_GUIAS Or Sh.Name = HOJA_CONSIG Then AjustarFiltro Sh, FILA_TITULOS, True
+End Sub
+
+
+' ---------------------------------------------------------------------------
+' Consignación: vincular guías y agregar a Ítems (decisión del 25-11-2026)
+' ---------------------------------------------------------------------------
+
+Public Sub VincularConsignacion()
+    Dim r As String, p As Variant
+    r = VincularConsignacionAuto()
+    If Left(r, 6) = "ERROR;" Then
+        MsgBox Mid(r, 7), vbExclamation, "Vincular guías"
+    Else
+        p = Split(r, ";")
+        MsgBox "Listo: " & p(1) & " fila(s) revisadas, " & p(2) & " con guía vinculada y " & p(3) & " línea(s) de contenido." & vbCrLf & _
+               "Revise la columna Estado y presione ""Agregar a Ítems"".", vbInformation, "Vincular guías"
+    End If
+End Sub
+
+Public Sub AgregarConsignacion()
+    If MsgBox("Se agregarán a Ítems las filas de la hoja Consignación (las gestiones que no existan se crean en Gestiones con Atributo CONSIGNACION)." & vbCrLf & _
+              "Lo agregado se borra de esta hoja; lo que no se pueda agregar queda con el motivo en Estado." & vbCrLf & vbCrLf & "¿Continuar?", _
+              vbYesNo + vbQuestion + vbDefaultButton2, "Agregar a Ítems") <> vbYes Then Exit Sub
+    Dim r As String, p As Variant
+    r = AgregarConsignacionAuto()
+    If Left(r, 6) = "ERROR;" Then
+        MsgBox Mid(r, 7), vbExclamation, "Agregar a Ítems"
+    Else
+        p = Split(r, ";")
+        MsgBox "Listo: " & p(1) & " fila(s) agregadas a Ítems (" & p(2) & " línea(s) en total, " & p(3) & " gestión(es) nuevas en Gestiones)." & vbCrLf & _
+               IIf(Val(p(4)) > 0, p(4) & " fila(s) quedaron en la hoja Consignación: vea el motivo en Estado." & vbCrLf, "") & _
+               "Guarde el archivo (Ctrl+G).", vbInformation, "Agregar a Ítems"
+    End If
+End Sub
+
+' Última fila con datos de la hoja Consignación (columnas A..N).
+Private Function UltimaFilaConsig(ByVal ws As Worksheet) As Long
+    Dim c As Long, u As Long
+    UltimaFilaConsig = PRIMERA - 1
+    For c = 1 To CO_COLUMNAS
+        u = ws.Cells(ws.Rows.Count, c).End(xlUp).Row
+        If u > UltimaFilaConsig Then UltimaFilaConsig = u
+    Next c
+End Function
+
+' Fecha de una celda: fecha de Excel o texto dd-mm-aaaa / aaaa-mm-dd. Empty si no.
+Private Function FechaDe(ByVal v As Variant) As Variant
+    Dim s As String, partes As Variant
+    FechaDe = Empty
+    If IsError(v) Or IsEmpty(v) Then Exit Function
+    If VarType(v) = vbDate Then FechaDe = DateValue(v): Exit Function
+    If IsNumeric(v) Then FechaDe = DateValue(CDate(CDbl(v))): Exit Function
+    s = Trim(CStr(v))
+    partes = Split(Replace(s, "/", "-"), "-")
+    If UBound(partes) <> 2 Then Exit Function
+    On Error GoTo Fin
+    If Len(partes(0)) = 4 Then
+        FechaDe = DateSerial(CLng(partes(0)), CLng(partes(1)), CLng(partes(2)))
+    Else
+        FechaDe = DateSerial(CLng(partes(2)), CLng(partes(1)), CLng(partes(0)))
+    End If
+Fin:
+End Function
+
+' Busca la referencia de cada código y el contenido de la guía de cada
+' Delivery, y vuelve a escribir la hoja: cada fila pegada (NORMAL) con sus
+' líneas CONTENIDO GUÍA debajo. Se puede repetir: rehace el contenido.
+' Devuelve "OK;filas;vinculadas;contenido" o "ERROR;mensaje".
+Public Function VincularConsignacionAuto() As String
+    Dim ws As Worksheet, wsGu As Worksheet, wsR As Worksheet
+    Set ws = ThisWorkbook.Worksheets(HOJA_CONSIG)
+    Set wsGu = ThisWorkbook.Worksheets(HOJA_GUIAS)
+    Set wsR = ThisWorkbook.Worksheets(HOJA_CATALOGOS_CODIGOS)
+    Dim ultima As Long
+    ultima = UltimaFilaConsig(ws)
+    If ultima < PRIMERA Then VincularConsignacionAuto = "ERROR;No hay filas en la hoja Consignación: pegue desde la fila 3 las columnas C a J del registro.": Exit Function
+
+    Dim datos As Variant, k As Long, i As Long
+    datos = ws.Range(ws.Cells(PRIMERA, 1), ws.Cells(ultima, CO_COLUMNAS)).Value
+
+    ' Código -> Referencia (Códigos B -> C; se prefiere la fila ACTIVA).
+    Dim refs As Object, cod As Variant, ultR As Long, rDatos As Variant
+    Set refs = CreateObject("Scripting.Dictionary")
+    ultR = wsR.Cells(wsR.Rows.Count, 2).End(xlUp).Row
+    If ultR >= PRIMERA Then
+        rDatos = wsR.Range(wsR.Cells(PRIMERA, 2), wsR.Cells(ultR, 14)).Value
+        For k = 1 To UBound(rDatos, 1)
+            cod = UCase(Txt(rDatos(k, 1)))
+            If cod <> "" And Txt(rDatos(k, 2)) <> "" Then
+                If Not refs.Exists(cod) Or UCase(Txt(rDatos(k, 13))) = "ACTIVO" Then refs(cod) = Txt(rDatos(k, 2))
+            End If
+        Next k
+    End If
+
+    ' Líneas de cada Delivery (Guías D), en orden.
+    Dim porDelivery As Object, ultGu As Long, gu As Variant, del As String
+    Set porDelivery = CreateObject("Scripting.Dictionary")
+    ultGu = wsGu.Cells(wsGu.Rows.Count, 1).End(xlUp).Row
+    If ultGu >= PRIMERA Then
+        gu = wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(ultGu, GU_COLUMNAS)).Value
+        For k = 1 To UBound(gu, 1)
+            del = UCase(Txt(gu(k, 4)))
+            If del <> "" Then
+                If Not porDelivery.Exists(del) Then porDelivery.Add del, New Collection
+                porDelivery(del).Add k
+            End If
+        Next k
+    End If
+
+    ' Filas de salida: cada fila pegada y debajo su contenido.
+    Dim salida As New Collection, fila() As Variant, c As Long, nFilas As Long, nVinc As Long, nCont As Long
+    Dim ref As String, refG As String, lote As String, venc As Variant, numGuia As String, estado As String, usada As Boolean, kk As Variant
+    For i = 1 To UBound(datos, 1)
+        If Txt(datos(i, 9)) <> TIPO_CONTENIDO_GUIA Then
+            Dim hayDato As Boolean
+            hayDato = False
+            For c = 1 To 8
+                If Txt(datos(i, c)) <> "" Then hayDato = True
+            Next c
+            If hayDato Then
+                nFilas = nFilas + 1
+                ReDim fila(1 To CO_COLUMNAS)
+                For c = 1 To 8: fila(c) = datos(i, c): Next c
+                fila(9) = TIPO_NORMAL
+                cod = UCase(Txt(datos(i, 6)))
+                ref = ""
+                If refs.Exists(cod) Then ref = refs(cod)
+                fila(10) = ref
+                estado = ""
+                If ref = "" Then estado = "Código no está en Códigos. "
+                lote = "Sin lote": venc = "Sin fecha": numGuia = ""
+                del = UCase(Txt(datos(i, 8)))
+                Dim contenido As New Collection
+                Set contenido = New Collection
+                If del = "" Then
+                    estado = estado & "Sin Delivery: entra sin contenido."
+                ElseIf Not porDelivery.Exists(del) Then
+                    estado = estado & "El Delivery no está en la hoja Guías."
+                Else
+                    nVinc = nVinc + 1
+                    usada = False
+                    Dim yaAgregada As String
+                    yaAgregada = ""
+                    For Each kk In porDelivery(del)
+                        If Txt(gu(kk, GU_AGREGADA)) <> "" Then yaAgregada = Txt(gu(kk, GU_AGREGADA))
+                        refG = Txt(gu(kk, 2))
+                        If refG = "" Then refG = Txt(gu(kk, 3))
+                        If numGuia = "" Then numGuia = Txt(gu(kk, 1))
+                        ' La línea de la guía que es el mismo producto que la fila pegada
+                        ' no se repite: su lote y vencimiento pasan a la fila.
+                        If Not usada And ref <> "" And UCase(refG) = UCase(ref) Then
+                            usada = True
+                            If Txt(gu(kk, 6)) <> "" Then lote = Txt(gu(kk, 6))
+                            If Txt(gu(kk, 7)) <> "" Then venc = gu(kk, 7)
+                        Else
+                            contenido.Add kk
+                        End If
+                    Next kk
+                    estado = estado & "Vinculada: " & contenido.Count & " línea(s) de contenido."
+                    If yaAgregada <> "" Then estado = estado & " Ojo: esta guía ya se agregó a " & yaAgregada & "."
+                End If
+                fila(11) = lote: fila(12) = venc: fila(13) = numGuia: fila(14) = Trim(estado)
+                salida.Add fila
+                For Each kk In contenido
+                    ReDim fila(1 To CO_COLUMNAS)
+                    For c = 1 To 5: fila(c) = datos(i, c): Next c
+                    fila(7) = gu(kk, 5): fila(8) = datos(i, 8): fila(9) = TIPO_CONTENIDO_GUIA
+                    refG = Txt(gu(kk, 2))
+                    If refG = "" Then refG = Txt(gu(kk, 3))
+                    fila(10) = refG
+                    fila(11) = IIf(Txt(gu(kk, 6)) = "", "Sin lote", Txt(gu(kk, 6)))
+                    fila(12) = IIf(Txt(gu(kk, 7)) = "", "Sin fecha", gu(kk, 7))
+                    fila(13) = Txt(gu(kk, 1)): fila(14) = ""
+                    salida.Add fila
+                    nCont = nCont + 1
+                Next kk
+            End If
+        End If
+    Next i
+
+    Dim eventos As Boolean
+    eventos = Application.EnableEvents
+    Application.EnableEvents = False
+    On Error GoTo Fallo
+    Desproteger ws
+    EscribirConsignacion ws, salida, ultima
+    AjustarFiltro ws, FILA_TITULOS, False
+    VincularConsignacionAuto = "OK;" & nFilas & ";" & nVinc & ";" & nCont
+Fin:
+    Proteger ws
+    Application.EnableEvents = eventos
+    Exit Function
+Fallo:
+    VincularConsignacionAuto = "ERROR;No se pudo vincular: " & Err.Description
+    Resume Fin
+End Function
+
+' Marca en Guías (columna "Agregada a") las líneas del Delivery que pasaron a
+' Ítems con la CLAVE de su gestión. Las ya marcadas no se tocan.
+Private Sub MarcarGuia(ByVal delivery As String, ByVal clave As String)
+    Dim wsGu As Worksheet, ult As Long, d As Variant, k As Long
+    Set wsGu = ThisWorkbook.Worksheets(HOJA_GUIAS)
+    ult = wsGu.Cells(wsGu.Rows.Count, 1).End(xlUp).Row
+    If ult < PRIMERA Then Exit Sub
+    d = wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(ult, GU_COLUMNAS)).Value
+    Desproteger wsGu
+    For k = 1 To UBound(d, 1)
+        If UCase(Txt(d(k, 4))) = UCase(delivery) And Txt(d(k, GU_AGREGADA)) = "" Then wsGu.Cells(k + PRIMERA - 1, GU_AGREGADA).Value = clave
+    Next k
+    Proteger wsGu
+End Sub
+
+' Borra de Guías las líneas agregadas cuya gestión (CLAVE) ya no tiene líneas
+' en Ítems. Reescribe la hoja de una vez (sin borrar filas una a una).
+' Devuelve cuántas líneas borró.
+Private Function LimpiarGuias(ByVal wsI As Worksheet, ByVal ti As Object) As Long
+    Dim wsGu As Worksheet, ult As Long, d As Variant, k As Long, c As Long, n As Long
+    Set wsGu = ThisWorkbook.Worksheets(HOJA_GUIAS)
+    ult = wsGu.Cells(wsGu.Rows.Count, 1).End(xlUp).Row
+    If ult < PRIMERA Then Exit Function
+    d = wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(ult, GU_COLUMNAS)).Value
+
+    Dim enItems As Object, iDatos As Variant, iClave As Long, ultI As Long
+    Set enItems = CreateObject("Scripting.Dictionary")
+    iClave = Col(ti, "CLAVE")
+    ultI = UltimaFila(wsI, Col(ti, "N° línea"))
+    If ultI >= PRIMERA Then
+        iDatos = wsI.Range(wsI.Cells(PRIMERA, iClave), wsI.Cells(ultI, iClave)).Value
+        For k = 1 To UBound(iDatos, 1)
+            If Txt(iDatos(k, 1)) <> "" Then enItems(Txt(iDatos(k, 1))) = True
+        Next k
+    End If
+
+    Dim quedan() As Variant
+    ReDim quedan(1 To UBound(d, 1), 1 To GU_COLUMNAS)
+    For k = 1 To UBound(d, 1)
+        If Txt(d(k, GU_AGREGADA)) = "" Or enItems.Exists(Txt(d(k, GU_AGREGADA))) Then
+            n = n + 1
+            For c = 1 To GU_COLUMNAS: quedan(n, c) = d(k, c): Next c
+        End If
+    Next k
+    LimpiarGuias = UBound(d, 1) - n
+    If LimpiarGuias = 0 Then Exit Function
+    Desproteger wsGu
+    wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(ult, GU_COLUMNAS)).ClearContents
+    If n > 0 Then wsGu.Range(wsGu.Cells(PRIMERA, 1), wsGu.Cells(PRIMERA + n - 1, GU_COLUMNAS)).Value = quedan
+    AjustarFiltro wsGu, FILA_TITULOS, False
+    Proteger wsGu
+End Function
+
+' Reescribe la hoja Consignación desde la fila 3 con las filas dadas (las de
+' contenido en gris cursiva) y borra lo que sobra hasta "hasta".
+Private Sub EscribirConsignacion(ByVal ws As Worksheet, ByVal filas As Collection, ByVal hasta As Long)
+    Dim n As Long, arr() As Variant, i As Long, c As Long, f As Variant
+    If hasta >= PRIMERA Then
+        With ws.Range(ws.Cells(PRIMERA, 1), ws.Cells(hasta, CO_COLUMNAS))
+            .ClearContents
+            .Font.Italic = False
+            .Font.Color = vbBlack
+        End With
+    End If
+    n = filas.Count
+    If n = 0 Then Exit Sub
+    ReDim arr(1 To n, 1 To CO_COLUMNAS)
+    i = 0
+    For Each f In filas
+        i = i + 1
+        For c = 1 To CO_COLUMNAS: arr(i, c) = f(c): Next c
+    Next f
+    ws.Range(ws.Cells(PRIMERA, 1), ws.Cells(PRIMERA + n - 1, CO_COLUMNAS)).Value = arr
+    For i = 1 To n
+        If arr(i, 9) = TIPO_CONTENIDO_GUIA Then
+            With ws.Range(ws.Cells(PRIMERA + i - 1, 1), ws.Cells(PRIMERA + i - 1, CO_COLUMNAS)).Font
+                .Italic = True
+                .Color = RGB(89, 89, 89)
+            End With
+        End If
+    Next i
+End Sub
+
+' Pasa a Ítems cada fila de Consignación (NORMAL) con su contenido (CONTENIDO
+' GUÍA); crea la gestión en Gestiones si no existe. Lo agregado se borra de
+' la hoja. Devuelve "OK;filas;líneas;gestiones nuevas;pendientes" o "ERROR;...".
+Public Function AgregarConsignacionAuto() As String
+    Dim ws As Worksheet, wsG As Worksheet, wsI As Worksheet, wsE As Worksheet
+    Set ws = ThisWorkbook.Worksheets(HOJA_CONSIG)
+    Set wsG = ThisWorkbook.Worksheets(HOJA_GESTIONES)
+    Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
+    Set wsE = ThisWorkbook.Worksheets(HOJA_EMPRESAS)
+    If LibroMes() = 0 Then AgregarConsignacionAuto = "ERROR;Esta es la plantilla base (sin mes): cree el libro del mes en la hoja " & HOJA_NUEVO_MES & ".": Exit Function
+
+    Dim ultima As Long, datos As Variant, i As Long, c As Long
+    ultima = UltimaFilaConsig(ws)
+    If ultima < PRIMERA Then AgregarConsignacionAuto = "ERROR;No hay filas en la hoja Consignación.": Exit Function
+    datos = ws.Range(ws.Cells(PRIMERA, 1), ws.Cells(ultima, CO_COLUMNAS)).Value
+    ' Sin vincular todavía: se vincula primero.
+    For i = 1 To UBound(datos, 1)
+        If Txt(datos(i, 9)) = "" And Txt(datos(i, 1)) & Txt(datos(i, 6)) <> "" Then
+            Dim rv As String
+            rv = VincularConsignacionAuto()
+            If Left(rv, 6) = "ERROR;" Then AgregarConsignacionAuto = rv: Exit Function
+            ultima = UltimaFilaConsig(ws)
+            datos = ws.Range(ws.Cells(PRIMERA, 1), ws.Cells(ultima, CO_COLUMNAS)).Value
+            Exit For
+        End If
+    Next i
+
+    ' Empresas válidas.
+    Dim empresas As Object, ultE As Long, k As Long
+    Set empresas = CreateObject("Scripting.Dictionary")
+    ultE = wsE.Cells(wsE.Rows.Count, 1).End(xlUp).Row
+    For k = PRIMERA To ultE
+        If Txt(wsE.Cells(k, 1).Value) <> "" Then empresas(UCase(Txt(wsE.Cells(k, 1).Value))) = Txt(wsE.Cells(k, 1).Value)
+    Next k
+
+    Dim ti As Object
+    Set ti = Titulos(wsI)
+    Application.Calculate
+    Dim gDatos As Variant, iDatos As Variant
+    gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
+    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, Col(ti, "N° línea")), UltimaColumna(wsI))).Value
+
+    ' Filas libres de Ítems (todas sus celdas de escritura vacías), en orden.
+    Dim libresI As New Collection, entrada As Variant, libre As Boolean
+    For i = 1 To UBound(iDatos, 1)
+        libre = True
+        For Each entrada In Split(I_ENTRADAS, "|")
+            If Txt(iDatos(i, Col(ti, entrada))) <> "" Then libre = False: Exit For
+        Next entrada
+        If libre Then libresI.Add i + PRIMERA - 1
+    Next i
+    Dim siguienteI As Long
+    siguienteI = 1
+
+    Dim calculo As XlCalculation, eventos As Boolean
+    calculo = Application.Calculation: eventos = Application.EnableEvents
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+    On Error GoTo Fallo
+    Desproteger ws: Desproteger wsG: Desproteger wsI
+
+    Dim quedan As New Collection, fila() As Variant, nAgregadas As Long, nLineas As Long, nGestiones As Long
+    Dim ini As Long, fin As Long, adm As String, emp As String, fecha As Variant, clave As String, motivo As String
+    Dim filaG As Long, r As Long, n As Long, destino As Long, j As Long
+    i = 1
+    Do While i <= UBound(datos, 1)
+        ' Grupo: fila NORMAL + su contenido.
+        ini = i: fin = i
+        Do While fin + 1 <= UBound(datos, 1)
+            If Txt(datos(fin + 1, 9)) <> TIPO_CONTENIDO_GUIA Then Exit Do
+            fin = fin + 1
+        Loop
+        i = fin + 1
+        If Txt(datos(ini, 9)) = TIPO_CONTENIDO_GUIA Then GoTo Siguiente
+        adm = Txt(datos(ini, 1)): emp = Txt(datos(ini, 5)): fecha = FechaDe(datos(ini, 4))
+        motivo = ""
+        If adm = "" Or emp = "" Or IsEmpty(fecha) Then
+            motivo = "Falta Admisión, Fecha CX o Empresa."
+        ElseIf Not EsDelMes(fecha) Then
+            motivo = "Fecha CX fuera del mes del libro."
+        ElseIf Not empresas.Exists(UCase(emp)) Then
+            motivo = "La empresa no está en la hoja Empresas."
+        ElseIf Txt(datos(ini, 10)) = "" Then
+            motivo = "Código no está en Códigos (agréguelo y vuelva a vincular)."
+        ElseIf Txt(datos(ini, 8)) <> "" And Txt(datos(ini, 13)) = "" Then
+            ' Con Delivery y sin guía vinculada: espera la guía para no entrar sin contenido.
+            motivo = "El Delivery no está en la hoja Guías (péguela y vuelva a vincular)."
+        ElseIf libresI.Count - siguienteI + 1 < fin - ini + 1 Then
+            motivo = "No quedan suficientes filas libres en Ítems."
+        End If
+        If motivo = "" Then
+            emp = empresas(UCase(emp))
+            clave = adm & "|" & emp & "|" & Format(fecha, "yyyy-mm-dd")
+            ' Gestión: la existente o una nueva en la primera fila libre.
+            filaG = 0
+            For r = 1 To UBound(gDatos, 1)
+                If Txt(gDatos(r, 1)) = clave Then filaG = r + PRIMERA - 1: Exit For
+            Next r
+            If filaG = 0 Then
+                For r = 1 To UBound(gDatos, 1)
+                    libre = (Txt(gDatos(r, 2)) = "" And Txt(gDatos(r, G_REGISTRADO)) = "")
+                    For c = 2 To G_ULTIMA_ENTRADA
+                        If Txt(gDatos(r, c)) <> "" And AuxiliarDe(c) = 0 And c <> G_ESTADO Then libre = False
+                    Next c
+                    If libre Then filaG = r + PRIMERA - 1: Exit For
+                Next r
+                If filaG = 0 Then
+                    motivo = "No quedan filas libres en Gestiones."
+                Else
+                    wsG.Cells(filaG, 2).NumberFormat = "@"
+                    wsG.Cells(filaG, 2).Value = adm
+                    wsG.Cells(filaG, 3).Value = fecha
+                    wsG.Cells(filaG, 4).Value = emp
+                    wsG.Cells(filaG, G_ATRIBUTO).Value = SEGMENTO_CONSIGNACION
+                    wsG.Calculate
+                    ' Sin la admisión en Reporte Info: nombre y médico de lo pegado.
+                    If Txt(wsG.Cells(filaG, AuxiliarDe(5)).Value) = "" And Txt(datos(ini, 2)) <> "" Then wsG.Cells(filaG, 5).Value = datos(ini, 2)
+                    If Txt(wsG.Cells(filaG, AuxiliarDe(15)).Value) = "" And Txt(datos(ini, 3)) <> "" Then wsG.Cells(filaG, 15).Value = datos(ini, 3)
+                    gDatos(filaG - PRIMERA + 1, 1) = clave
+                    gDatos(filaG - PRIMERA + 1, 2) = adm
+                    nGestiones = nGestiones + 1
+                End If
+            End If
+        End If
+        If motivo = "" Then
+            For j = ini To fin
+                destino = libresI(siguienteI): siguienteI = siguienteI + 1
+                wsI.Cells(destino, Col(ti, "CLAVE")).Value = clave
+                wsI.Cells(destino, Col(ti, "Tipo de línea")).Value = IIf(j = ini, TIPO_NORMAL, TIPO_CONTENIDO_GUIA)
+                wsI.Cells(destino, Col(ti, "Referencia")).Value = datos(j, 10)
+                If Txt(datos(j, 7)) <> "" Then wsI.Cells(destino, Col(ti, "Cantidad (ingresar)")).Value = Num(datos(j, 7))
+                If Txt(datos(j, 13)) <> "" Then wsI.Cells(destino, Col(ti, "N° guía")).Value = Txt(datos(j, 13))
+                wsI.Cells(destino, Col(ti, "Lote")).Value = IIf(Txt(datos(j, 11)) = "", "Sin lote", datos(j, 11))
+                wsI.Cells(destino, Col(ti, "Vencimiento")).Value = IIf(Txt(datos(j, 12)) = "", "Sin fecha", datos(j, 12))
+                nLineas = nLineas + 1
+            Next j
+            nAgregadas = nAgregadas + 1
+            If Txt(datos(ini, 8)) <> "" Then MarcarGuia Txt(datos(ini, 8)), clave
+        Else
+            For j = ini To fin
+                ReDim fila(1 To CO_COLUMNAS)
+                For c = 1 To CO_COLUMNAS: fila(c) = datos(j, c): Next c
+                If j = ini Then fila(14) = motivo
+                quedan.Add fila
+            Next j
+        End If
+Siguiente:
+    Loop
+
+    EscribirConsignacion ws, quedan, ultima
+    AjustarFiltro ws, FILA_TITULOS, False
+    AgregarConsignacionAuto = "OK;" & nAgregadas & ";" & nLineas & ";" & nGestiones & ";" & (quedan.Count)
+Fin:
+    Proteger ws: Proteger wsG: Proteger wsI
+    Application.Calculation = calculo
+    Application.EnableEvents = eventos
+    Application.ScreenUpdating = True
+    Application.Calculate
+    Exit Function
+Fallo:
+    AgregarConsignacionAuto = "ERROR;No se pudo agregar: " & Err.Description
+    Resume Fin
+End Function
+
+' ---------------------------------------------------------------------------
+' Marcas de cambio en catálogos
+' ---------------------------------------------------------------------------
+
+' Al editar datos de Códigos, Empresas o Recargos: FECHA CAMBIO = hoy en las
+' filas que quedaron marcadas (NUEVO, MODIFICADO o BORRADO); vacía si la
+' fila volvió a su valor original. Solo mira las filas preparadas.
+Public Sub RegistrarCambioCatalogo(ByVal Sh As Object, ByVal Target As Range)
+    Dim par As Variant, partes As Variant, ws As Worksheet, zona As Range, area As Range
+    Dim colCambio As Long, colFecha As Long, ultima As Long, r As Long
+    For Each par In Split(MARCAS, "|")
+        partes = Split(par, ":")
+        If Sh.Name = partes(0) Then
+            Set ws = Sh
+            colCambio = CLng(partes(3))
+            colFecha = CLng(partes(4))
+            ultima = ws.Cells(ws.Rows.Count, colCambio).End(xlUp).Row
+            If ultima < PRIMERA Then Exit Sub
+            Set zona = Application.Intersect(Target, ws.Range(ws.Cells(PRIMERA, CLng(partes(1))), ws.Cells(ultima, CLng(partes(2)))))
+            If zona Is Nothing Then Exit Sub
+            Application.EnableEvents = False
+            On Error GoTo Fin
+            Desproteger ws
+            For Each area In zona.Areas
+                For r = area.Row To area.Row + area.Rows.Count - 1
+                    ws.Cells(r, colCambio).Calculate
+                    If Txt(ws.Cells(r, colCambio).Value) = "" Then
+                        ws.Cells(r, colFecha).ClearContents
+                    Else
+                        ws.Cells(r, colFecha).Value = Date
+                    End If
+                Next r
+            Next area
+Fin:
+            Proteger ws
+            Application.EnableEvents = True
+            Exit Sub
+        End If
+    Next par
+End Sub
+
+' Copia los datos actuales de cada hoja de MARCAS a sus columnas "orig: ..."
+' y borra FECHA CAMBIO: CAMBIO (fórmula) queda vacío en todas las filas.
+' Devuelve "OK;Códigos: n|Empresas: n|..." o "ERROR;mensaje".
+Public Function FijarCatalogosBaseAuto() As String
+    Dim par As Variant, partes As Variant, ws As Worksheet, ultima As Long, desde As Long, hasta As Long
+    Dim colCambio As Long, colFecha As Long, datos As Variant, r As Long, c As Long, conDatos As Long, resumen As String
+    Dim calculo As XlCalculation, eventos As Boolean
+    calculo = Application.Calculation
+    eventos = Application.EnableEvents
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+    On Error GoTo Fallo
+    For Each par In Split(MARCAS, "|")
+        partes = Split(par, ":")
+        Set ws = ThisWorkbook.Worksheets(CStr(partes(0)))
+        desde = CLng(partes(1)): hasta = CLng(partes(2)): colCambio = CLng(partes(3)): colFecha = CLng(partes(4))
+        ultima = ws.Cells(ws.Rows.Count, colCambio).End(xlUp).Row
+        conDatos = 0
+        If ultima >= PRIMERA Then
+            Desproteger ws
+            datos = ws.Range(ws.Cells(PRIMERA, desde), ws.Cells(ultima, hasta)).Value
+            ws.Range(ws.Cells(PRIMERA, colFecha + 1), ws.Cells(ultima, colFecha + 1 + hasta - desde)).Value = datos
+            ws.Range(ws.Cells(PRIMERA, colFecha), ws.Cells(ultima, colFecha)).ClearContents
+            Proteger ws
+            For r = 1 To UBound(datos, 1)
+                For c = 1 To UBound(datos, 2)
+                    If Txt(datos(r, c)) <> "" Then conDatos = conDatos + 1: Exit For
+                Next c
+            Next r
+        End If
+        resumen = resumen & IIf(resumen = "", "", "|") & partes(0) & ": " & conDatos
+    Next par
+    FijarCatalogosBaseAuto = "OK;" & resumen
+Fin:
+    If Not ws Is Nothing Then Proteger ws
+    Application.Calculation = calculo
+    Application.EnableEvents = eventos
+    Application.ScreenUpdating = True
+    Application.Calculate
+    Exit Function
+Fallo:
+    FijarCatalogosBaseAuto = "ERROR;No se pudieron fijar los catálogos: " & Err.Description
+    Resume Fin
+End Function
+
+' ---------------------------------------------------------------------------
+' Libro del mes
+' ---------------------------------------------------------------------------
+
+' Crea respaldo_implantes_AAAA-MM.xlsm en la carpeta de este libro, como copia
+' (conserva macros, bloqueo del proyecto VBA y protección), y lo prepara.
+' Devuelve "OK;ruta" o "ERROR;mensaje". `abrir` = False lo deja cerrado.
+Public Function CrearLibroDelMesAuto(ByVal anio As Variant, ByVal mes As Variant, Optional ByVal abrir As Boolean = True) As String
+    If Not EsEntero(anio, 2020, 2100) Then
+        CrearLibroDelMesAuto = "ERROR;Escriba un año válido (2020 a 2100) en la hoja " & HOJA_NUEVO_MES & "."
+        Exit Function
+    End If
+    If Not EsEntero(mes, 1, 12) Then
+        CrearLibroDelMesAuto = "ERROR;Escriba un mes válido (1 a 12) en la hoja " & HOJA_NUEVO_MES & "."
+        Exit Function
+    End If
+    If ThisWorkbook.Path = "" Then
+        CrearLibroDelMesAuto = "ERROR;Guarde este archivo antes de crear el libro del mes."
+        Exit Function
+    End If
+    ' Las filas exportadas del sistema no se vacían con la macro.
+    If Application.WorksheetFunction.CountIf(ThisWorkbook.Worksheets(HOJA_GESTIONES).Columns(G_ORIGEN), "SISTEMA") > 0 Then
+        CrearLibroDelMesAuto = "ERROR;Este libro tiene filas importadas: cree el libro del mes desde un libro sin ellas."
+        Exit Function
+    End If
+
+    Dim nombre As String, destino As String, wb As Workbook, resultado As String
+    nombre = PREFIJO_LIBRO & CLng(anio) & "-" & Format(CLng(mes), "00") & ".xlsm"
+    destino = ThisWorkbook.Path & Application.PathSeparator & nombre
+    If Dir(destino) <> "" Then
+        CrearLibroDelMesAuto = "ERROR;Ya existe el libro " & nombre & " en esta carpeta: no se sobrescribe. Ábralo desde la carpeta."
+        Exit Function
+    End If
+    For Each wb In Application.Workbooks
+        If LCase(wb.Name) = LCase(nombre) Then
+            CrearLibroDelMesAuto = "ERROR;Hay un libro abierto con el nombre " & nombre & ": ciérrelo antes."
+            Exit Function
+        End If
+    Next wb
+
+    ' Se prepara con un nombre temporal y recién al final queda con su nombre:
+    ' si algo falla a mitad de camino (o Excel se cierra), no queda un
+    ' respaldo_implantes_AAAA-MM.xlsm sin preparar y se puede volver a crear.
+    Dim temporal As String
+    temporal = ThisWorkbook.Path & Application.PathSeparator & "creando_" & nombre
+    On Error GoTo Fallo
+    If Dir(temporal) <> "" Then Kill temporal
+    ThisWorkbook.SaveCopyAs temporal
+    Set wb = Application.Workbooks.Open(temporal)
+    resultado = Application.Run("'" & wb.Name & "'!PrepararLibroDelMes", CLng(anio), CLng(mes))
+    If Left(resultado, 2) <> "OK" Then
+        wb.Close False
+        Kill temporal
+        CrearLibroDelMesAuto = resultado
+        Exit Function
+    End If
+    wb.SaveAs Filename:=destino, FileFormat:=xlOpenXMLWorkbookMacroEnabled
+    Kill temporal
+    If abrir Then
+        wb.Activate
+        wb.Worksheets(HOJA_GESTIONES).Activate
+    Else
+        wb.Close False
+    End If
+    CrearLibroDelMesAuto = "OK;" & destino
+    Exit Function
+Fallo:
+    CrearLibroDelMesAuto = "ERROR;No se pudo crear " & nombre & ": " & Err.Description
+End Function
+
+' Corre en el libro nuevo (ThisWorkbook = la copia): vacía las hojas de
+' trabajo y escribe su año y mes. Devuelve "OK" o "ERROR;mensaje".
+Public Function PrepararLibroDelMes(ByVal anio As Long, ByVal mes As Long) As String
+    Dim wsG As Worksheet, wsI As Worksheet, wsC As Worksheet, wsS As Worksheet, wsR As Worksheet, wsCat As Worksheet
+    Set wsG = ThisWorkbook.Worksheets(HOJA_GESTIONES)
+    Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
+    Set wsC = ThisWorkbook.Worksheets(HOJA_CARGADOS)
+    Set wsS = ThisWorkbook.Worksheets(HOJA_SOLICITUD)
+    Set wsR = ThisWorkbook.Worksheets(HOJA_RESUMEN)
+    Set wsCat = ThisWorkbook.Worksheets(HOJA_CATALOGOS)
+
+    Dim calculo As XlCalculation
+    calculo = Application.Calculation
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+    ' Sin eventos: vaciar miles de celdas no debe pasar por Workbook_SheetChange.
+    Application.EnableEvents = False
+    On Error GoTo Fallo
+    Desproteger wsG: Desproteger wsI: Desproteger wsC: Desproteger wsS: Desproteger wsR: Desproteger wsCat
+
+    ' Gestiones: las celdas que se escriben; el autocompletado vuelve a su fórmula.
+    Dim ultima As Long, c As Long, par As Variant, entrada As Variant, ti As Object
+    ultima = UltimaFila(wsG, 1)
+    If ultima >= PRIMERA Then
+        For c = 2 To G_ULTIMA_ENTRADA
+            If AuxiliarDe(c) = 0 And c <> G_ESTADO Then wsG.Range(wsG.Cells(PRIMERA, c), wsG.Cells(ultima, c)).ClearContents
+        Next c
+        wsG.Range(wsG.Cells(PRIMERA, G_REGISTRADO), wsG.Cells(ultima, G_REGISTRADO)).ClearContents
+        For Each par In Split(G_AUTOCOMPLETADO, ",")
+            wsG.Range(wsG.Cells(PRIMERA, CLng(Split(par, ":")(0))), wsG.Cells(ultima, CLng(Split(par, ":")(0)))).FormulaR1C1 = "=RC" & CLng(Split(par, ":")(1))
+        Next par
+        ' Mensajes de la validación con el mes de este libro.
+        With wsG.Range(wsG.Cells(PRIMERA, 2), wsG.Cells(ultima, 2)).Validation
+            .ErrorTitle = "Admisión"
+            .ErrorMessage = MSJ_ADMISION
+        End With
+        With wsG.Range(wsG.Cells(PRIMERA, 3), wsG.Cells(ultima, 3)).Validation
+            .ErrorTitle = "Fecha"
+            .ErrorMessage = Replace(MSJ_FECHA, "{MES}", Split(MESES, ",")(mes - 1) & " " & anio)
+        End With
+    End If
+
+    ' Ítems: las celdas que se escriben (N° de línea y fórmulas quedan).
+    Set ti = Titulos(wsI)
+    ultima = UltimaFila(wsI, Col(ti, "N° línea"))
+    If ultima >= PRIMERA Then
+        For Each entrada In Split(I_ENTRADAS, "|")
+            wsI.Range(wsI.Cells(PRIMERA, Col(ti, entrada)), wsI.Cells(ultima, Col(ti, entrada))).ClearContents
+        Next entrada
+        FormulasDefectoItem wsI, ti, PRIMERA, ultima
+    End If
+
+    ' Cargados (datos desde la fila 3), Solicitud Implantes y Resumen (desde la 2).
+    ultima = UltimaFila(wsC, Col(Titulos(wsC), "CLAVE"))
+    If ultima >= PRIMERA Then wsC.Rows(PRIMERA & ":" & ultima).Delete
+    ultima = wsS.Cells(wsS.Rows.Count, S_COLUMNAS).End(xlUp).Row
+    If ultima >= 2 Then wsS.Rows("2:" & ultima).Delete
+    ultima = wsR.Cells(wsR.Rows.Count, R_COLUMNAS).End(xlUp).Row
+    If ultima >= 2 Then wsR.Rows("2:" & ultima).Delete
+    ' Consignación (desde la fila 3).
+    Dim wsCo As Worksheet
+    Set wsCo = ThisWorkbook.Worksheets(HOJA_CONSIG)
+    Desproteger wsCo
+    ultima = UltimaFilaConsig(wsCo)
+    If ultima >= PRIMERA Then wsCo.Rows(PRIMERA & ":" & ultima).Delete
+    Proteger wsCo
+
+    wsCat.Range(LIBRO_ANIO).Value = anio
+    wsCat.Range(LIBRO_MES).Value = mes
+    ' Sin "Quitar información personal al guardar" (ver armarXlsm.ps1): si
+    ' no, cada guardado muestra una advertencia de privacidad.
+    ThisWorkbook.RemovePersonalInformation = False
+    PrepararLibroDelMes = "OK"
+Fin:
+    Application.EnableEvents = True
+    Proteger wsG: Proteger wsI: Proteger wsC: Proteger wsS: Proteger wsR: Proteger wsCat
+    Application.Calculation = calculo
+    Application.ScreenUpdating = True
+    Application.Calculate
+    Exit Function
+Fallo:
+    PrepararLibroDelMes = "ERROR;No se pudo preparar el libro: " & Err.Description
+    Resume Fin
+End Function
+
+' Mes del libro (0 en la plantilla base) y su nombre ("NOVIEMBRE 2026").
+Private Function LibroMes() As Long
+    LibroMes = Val(Txt(ThisWorkbook.Worksheets(HOJA_CATALOGOS).Range(LIBRO_MES).Value))
+End Function
+
+Private Function LibroAnio() As Long
+    LibroAnio = Val(Txt(ThisWorkbook.Worksheets(HOJA_CATALOGOS).Range(LIBRO_ANIO).Value))
+End Function
+
+Private Function NombreLibro() As String
+    If LibroMes() < 1 Or LibroMes() > 12 Then Exit Function
+    NombreLibro = Split(MESES, ",")(LibroMes() - 1) & " " & LibroAnio()
+End Function
+
+' La fecha de una gestión es del mes del libro.
+Private Function EsDelMes(ByVal v As Variant) As Boolean
+    Dim d As Date
+    If IsError(v) Or IsEmpty(v) Then Exit Function
+    If VarType(v) = vbDate Then
+        d = v
+    ElseIf IsNumeric(v) Then
+        d = CDate(v)
+    Else
+        Exit Function
+    End If
+    EsDelMes = (Year(d) = LibroAnio() And Month(d) = LibroMes())
+End Function
+
+Private Function EsEntero(ByVal v As Variant, ByVal minimo As Long, ByVal maximo As Long) As Boolean
+    If IsError(v) Or IsEmpty(v) Then Exit Function
+    If Not IsNumeric(v) Then Exit Function
+    If CDbl(v) <> Int(CDbl(v)) Then Exit Function
+    EsEntero = (CDbl(v) >= minimo And CDbl(v) <= maximo)
+End Function
+
+' ---------------------------------------------------------------------------
 ' Auxiliares
 ' ---------------------------------------------------------------------------
 
-' Filas de Gestiones (de contingencia, Estado CARGADO, con ítems) y de sus ítems.
-Private Sub BuscarCargados(ByRef filasG As Collection, ByRef filasI As Collection, ByRef nAlertas As Long)
+' Filas de Gestiones (de contingencia, Estado CARGADO, con ítems y fecha del
+' mes del libro) y de sus ítems. nFuera: las CARGADO de otro mes (pegadas
+' saltándose la validación), que no se mueven.
+Private Sub BuscarCargados(ByRef filasG As Collection, ByRef filasI As Collection, ByRef nAlertas As Long, ByRef nFuera As Long)
     Dim wsG As Worksheet, wsI As Worksheet
     Set wsG = ThisWorkbook.Worksheets(HOJA_GESTIONES)
     Set wsI = ThisWorkbook.Worksheets(HOJA_ITEMS)
     Set filasG = New Collection
     Set filasI = New Collection
     nAlertas = 0
+    nFuera = 0
     Application.Calculate
 
     Dim gDatos As Variant, iDatos As Variant, r As Long, claves As Object
     Set claves = CreateObject("Scripting.Dictionary")
     gDatos = wsG.Range(wsG.Cells(PRIMERA, 1), wsG.Cells(UltimaFila(wsG, 1), G_COLUMNAS)).Value
     For r = 1 To UBound(gDatos, 1)
-        If Txt(gDatos(r, G_ORIGEN)) = "CONTINGENCIA" And Txt(gDatos(r, G_ESTADO)) = "CARGADO" And Val(Txt(gDatos(r, G_N_ITEMS))) > 0 Then
-            If Not claves.Exists(Txt(gDatos(r, 1))) Then
+        If Txt(gDatos(r, G_ORIGEN)) = ORIGEN_REGISTRADO And Txt(gDatos(r, G_ESTADO)) = "CARGADO" And Val(Txt(gDatos(r, G_N_ITEMS))) > 0 Then
+            If Not EsDelMes(gDatos(r, 3)) Then
+                nFuera = nFuera + 1
+            ElseIf Not claves.Exists(Txt(gDatos(r, 1))) Then
                 claves(Txt(gDatos(r, 1))) = True
                 filasG.Add r + PRIMERA - 1
             End If
@@ -434,20 +1392,56 @@ Private Sub BuscarCargados(ByRef filasG As Collection, ByRef filasI As Collectio
     Next r
     If filasG.Count = 0 Then Exit Sub
 
-    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, I_LINEA), I_COLUMNAS)).Value
+    Dim ti As Object, iClave As Long, iOrigen As Long, iAlerta As Long
+    Set ti = Titulos(wsI)
+    iClave = Col(ti, "CLAVE"): iOrigen = Col(ti, "ORIGEN"): iAlerta = Col(ti, "Alerta")
+    iDatos = wsI.Range(wsI.Cells(PRIMERA, 1), wsI.Cells(UltimaFila(wsI, Col(ti, "N° línea")), UltimaColumna(wsI))).Value
     For r = 1 To UBound(iDatos, 1)
-        If claves.Exists(Txt(iDatos(r, I_CLAVE))) And Txt(iDatos(r, I_ORIGEN)) = "CONTINGENCIA" Then
+        If claves.Exists(Txt(iDatos(r, iClave))) And Txt(iDatos(r, iOrigen)) = ORIGEN_REGISTRADO Then
             filasI.Add r + PRIMERA - 1
-            If Txt(iDatos(r, I_ALERTA)) <> "" Then nAlertas = nAlertas + 1
+            If Txt(iDatos(r, iAlerta)) <> "" Then nAlertas = nAlertas + 1
         End If
     Next r
 End Sub
 
+' Valor de la gestión para una columna de Cargados (por su título).
+Private Function ValorGestion(ByVal gDatos As Variant, ByVal gi As Long, ByVal titulo As String) As Variant
+    Dim par As Variant
+    ValorGestion = ""
+    If titulo = "CLAVE" Then ValorGestion = gDatos(gi, 1): Exit Function
+    If titulo = "Estado gestión" Then ValorGestion = gDatos(gi, G_ESTADO): Exit Function
+    For Each par In Split(G_DESDE_CARGADOS, "|")
+        If Split(par, ":")(1) = titulo Then ValorGestion = gDatos(gi, CLng(Split(par, ":")(0))): Exit Function
+    Next par
+End Function
+
+' Títulos de la fila de encabezados -> N° de columna.
+Private Function Titulos(ByVal ws As Worksheet) As Object
+    Dim d As Object, c As Long, t As String
+    Set d = CreateObject("Scripting.Dictionary")
+    For c = 1 To UltimaColumna(ws)
+        t = Txt(ws.Cells(FILA_TITULOS, c).Value)
+        If t <> "" And Not d.Exists(t) Then d(t) = c
+    Next c
+    Set Titulos = d
+End Function
+
+' Columna de un título; si no existe, error claro (la planilla no coincide con la macro).
+Private Function Col(ByVal titulos As Object, ByVal titulo As String) As Long
+    If Not titulos.Exists(titulo) Then Err.Raise vbObjectError + 1, "ModLibro", "No se encontró la columna """ & titulo & """: la planilla no coincide con la macro."
+    Col = titulos(titulo)
+End Function
+
+Private Function UltimaColumna(ByVal ws As Worksheet) As Long
+    UltimaColumna = ws.Cells(FILA_TITULOS, ws.Columns.Count).End(xlToLeft).Column
+End Function
+
 Private Function FilasDeClaveEnCargados(ByVal wsC As Worksheet, ByVal clave As String) As Collection
-    Dim filas As New Collection, r As Long, ultima As Long
-    ultima = UltimaFila(wsC, C_CLAVE)
+    Dim filas As New Collection, r As Long, ultima As Long, cClave As Long
+    cClave = Col(Titulos(wsC), "CLAVE")
+    ultima = UltimaFila(wsC, cClave)
     For r = PRIMERA To ultima
-        If Txt(wsC.Cells(r, C_CLAVE).Value) = clave Then filas.Add r
+        If Txt(wsC.Cells(r, cClave).Value) = clave Then filas.Add r
     Next r
     Set FilasDeClaveEnCargados = filas
 End Function
@@ -513,21 +1507,23 @@ End Function
 ' Lote y vencimiento como los guarda el sistema al cargar: el PAD PADRE
 ' lleva "PAD"; el contenido del PAD, "P" y vacío; las demás líneas,
 ' "Sin lote" y "Sin fecha" si no se escribieron.
-Private Function LoteSistema(ByVal v As Variant, ByVal tipoLinea As String) As String
-    LoteSistema = Txt(v)
+Private Function LoteSolicitud(ByVal v As Variant, ByVal tipoLinea As String) As String
+    LoteSolicitud = Txt(v)
     If tipoLinea = "PAD PADRE" Then
-        LoteSistema = "PAD"
-    ElseIf LoteSistema = "" Then
-        If tipoLinea = "CONTENIDO PAD" Then LoteSistema = "P" Else LoteSistema = "Sin lote"
+        LoteSolicitud = "PAD"
+    ElseIf LoteSolicitud = "" Then
+        If tipoLinea = "CONTENIDO PAD" Then LoteSolicitud = "P" Else LoteSolicitud = "Sin lote"
     End If
 End Function
 
-Private Function VencimientoSistema(ByVal v As Variant, ByVal tipoLinea As String) As String
-    VencimientoSistema = FechaTexto(v)
+Private Function VencimientoSolicitud(ByVal v As Variant, ByVal tipoLinea As String) As String
+    VencimientoSolicitud = FechaTexto(v)
+    ' "sin fecha" escrito a mano queda como lo guarda el sistema.
+    If LCase(VencimientoSolicitud) = "sin fecha" Then VencimientoSolicitud = "Sin fecha"
     If tipoLinea = "PAD PADRE" Then
-        VencimientoSistema = "PAD"
-    ElseIf VencimientoSistema = "" And tipoLinea <> "CONTENIDO PAD" Then
-        VencimientoSistema = "Sin fecha"
+        VencimientoSolicitud = "PAD"
+    ElseIf VencimientoSolicitud = "" And tipoLinea <> "CONTENIDO PAD" Then
+        VencimientoSolicitud = "Sin fecha"
     End If
 End Function
 
@@ -548,6 +1544,63 @@ Private Sub RestaurarAutocompletado(ByVal ws As Worksheet, ByVal fila As Long)
     Next par
 End Sub
 
+' Fórmulas de los valores automáticos de Ítems (valoresPorTipo en
+' libroRespaldo.js) en las filas desde..hasta: Lote y Vencimiento "PAD" en el
+' PAD PADRE, Estado carga "CONTENIDO" en el CONTENIDO PAD.
+Private Sub FormulasDefectoItem(ByVal ws As Worksheet, ByVal ti As Object, ByVal desde As Long, ByVal hasta As Long)
+    Dim f As Variant
+    For Each f In Split("Lote|Vencimiento|Estado carga", "|")
+        PonerFormula ws.Range(ws.Cells(desde, Col(ti, f)), ws.Cells(hasta, Col(ti, f))), FormulaDefectoTexto(ws, ti, desde, CStr(f))
+    Next f
+End Sub
+
+Private Sub FormulaDefecto(ByVal ws As Worksheet, ByVal ti As Object, ByVal fila As Long, ByVal titulo As String)
+    PonerFormula ws.Cells(fila, Col(ti, titulo)), FormulaDefectoTexto(ws, ti, fila, titulo)
+End Sub
+
+' Lote tiene formato Texto (@): una fórmula escrita en una celda de texto
+' queda como texto literal. Se escribe con formato General y después se
+' vuelve al formato que tenía (la fórmula sigue siendo fórmula).
+Private Sub PonerFormula(ByVal rango As Range, ByVal formula As String)
+    Dim formato As Variant
+    formato = rango.Cells(1, 1).NumberFormat
+    rango.NumberFormat = "General"
+    rango.Formula = formula
+    rango.NumberFormat = formato
+End Sub
+
+' Fórmula (en inglés, con la fila relativa) del valor automático de una columna.
+Private Function FormulaDefectoTexto(ByVal ws As Worksheet, ByVal ti As Object, ByVal fila As Long, ByVal titulo As String) As String
+    Dim tipo As String
+    tipo = ws.Cells(fila, Col(ti, "Tipo de línea")).Address(False, False)
+    If titulo = "Estado carga" Then
+        FormulaDefectoTexto = "=IF(OR(" & tipo & "=""CONTENIDO PAD""," & tipo & "=""" & TIPO_CONTENIDO_GUIA & """),""" & ESTADO_CONTENIDO & ""","""")"
+    Else
+        FormulaDefectoTexto = "=IF(" & tipo & "=""PAD PADRE"",""" & VALOR_PAD & ""","""")"
+    End If
+End Function
+
+' Filtro de una hoja que crece (Cargados, Solicitud Implantes, Resumen,
+' Guías) desde la fila de títulos hasta la última con datos en la columna A.
+' Con la hoja protegida Excel no amplía el filtro solo. Si ya las cubre, no
+' hace nada (así no se pierden los filtros elegidos).
+Private Sub AjustarFiltro(ByVal ws As Worksheet, ByVal fila As Long, ByVal conProteccion As Boolean)
+    Dim ultima As Long, ultCol As Long, eventos As Boolean
+    ultima = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    If ultima <= fila Then Exit Sub
+    If ws.AutoFilterMode Then
+        If ws.AutoFilter.Range.Row + ws.AutoFilter.Range.Rows.Count - 1 >= ultima Then Exit Sub
+    End If
+    ultCol = ws.Cells(fila, ws.Columns.Count).End(xlToLeft).Column
+    eventos = Application.EnableEvents
+    Application.EnableEvents = False
+    If conProteccion Then ws.Unprotect Password:=CLAVE_HOJAS
+    If ws.AutoFilterMode Then ws.AutoFilterMode = False
+    ws.Range(ws.Cells(fila, 1), ws.Cells(ultima, ultCol)).AutoFilter
+    If conProteccion Then Proteger ws
+    Application.EnableEvents = eventos
+End Sub
+
 ' Mismas opciones que pone el script al generar la planilla.
 Private Sub Proteger(ByVal ws As Worksheet)
     ws.Protect Password:=CLAVE_HOJAS, DrawingObjects:=False, Contents:=True, Scenarios:=False, _
@@ -558,13 +1611,13 @@ Private Sub Desproteger(ByVal ws As Worksheet)
     ws.Unprotect Password:=CLAVE_HOJAS
 End Sub
 
-Private Sub CrearBoton(ByVal ws As Worksheet, ByVal nombre As String, ByVal texto As String, ByVal accion As String, ByVal ancho As Double)
+Private Sub CrearBoton(ByVal ws As Worksheet, ByVal nombre As String, ByVal texto As String, ByVal accion As String, ByVal ancho As Double, Optional ByVal celda As String = "A1")
     Desproteger ws
     On Error Resume Next
     ws.Buttons(nombre).Delete
     On Error GoTo 0
     Dim b As Object
-    Set b = ws.Buttons.Add(ws.Range("A1").Left + 3, ws.Range("A1").Top + 3, ancho, 24)
+    Set b = ws.Buttons.Add(ws.Range(celda).Left + 3, ws.Range(celda).Top + 3, ancho, 24)
     b.Name = nombre
     b.Caption = texto
     b.OnAction = accion

@@ -227,13 +227,13 @@ export const CAMPOS_EDITABLES_ITEM = Object.freeze(['cantidad', 'lote', 'vencimi
 
 // Campos editables de un ítem del sistema, con las mismas restricciones que
 // la pantalla Cargas:
-//   - Estado carga: no en PAD (padre ni contenido, su estado es PAD fijo) ni
-//     en líneas sin código (en Cargas no tienen selector).
+//   - Estado carga: no en el CONTENIDO PAD (su estado es CONTENIDO fijo) ni
+//     en líneas sin código (en Cargas no tienen selector). El PAD PADRE sí
+//     (decisión del 24-11-2026).
 //   - Lote y vencimiento: no en el PAD PADRE (son "PAD").
 export const camposEditablesItem = (fila) => {
-  const esPad = fila.tipo === TIPOS_LINEA.PAD_PADRE || fila.tipo === TIPOS_LINEA.CONTENIDO_PAD;
   return CAMPOS_EDITABLES_ITEM.filter((campo) => {
-    if (campo === 'estadoCarga') return !esPad && !fila.sinCodigo;
+    if (campo === 'estadoCarga') return fila.tipo !== TIPOS_LINEA.CONTENIDO_PAD && !fila.sinCodigo;
     if (campo === 'lote' || campo === 'vencimiento') return fila.tipo !== TIPOS_LINEA.PAD_PADRE;
     if (campo === 'cantidad') return true;
     return false;
@@ -333,9 +333,12 @@ export const dimensionar = ({ gestionesMes, itemsMes, gestionesMesAnterior = 0 }
 
 // Filas de cada catálogo: lo que trae más margen, con un mínimo pensado para
 // la plantilla (se pegan desde las exportaciones de la app; el Maestro de
-// Códigos tiene ~3.000 referencias).
+// Códigos tiene ~3.000 referencias). Reporte Info deja 10.000 filas: en el
+// libro del mes se pega a mano el Excel de la clínica, con varias filas por
+// admisión (decisión del 23-11-2026). Las filas preparadas viajan al libro
+// del mes siguiente, así que las agregadas a mano se reconocen siempre.
 export const MINIMO_CATALOGOS = Object.freeze({
-  referencias: 6000, empresas: 300, centros: 100, recargos: 50, reporteInfo: 3000, previsiones: 200, convenios: 300,
+  referencias: 6000, empresas: 300, centros: 100, recargos: 50, reporteInfo: 10000, previsiones: 200, convenios: 300,
 });
 export const dimensionarCatalogos = (cantidades) => Object.fromEntries(
   Object.entries(MINIMO_CATALOGOS).map(([k, minimo]) => [k, Math.max(minimo, Math.ceil((cantidades[k] || 0) * 1.5))]),

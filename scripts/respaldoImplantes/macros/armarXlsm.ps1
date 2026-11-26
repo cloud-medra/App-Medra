@@ -41,8 +41,19 @@ try {
   $xl.AutomationSecurity = 1
   $wb = $xl.Workbooks.Open($Xlsx)
   $null = $wb.VBProject.VBComponents.Import($Bas)
+  # Evento del libro: al editar Códigos, Empresas o Recargos escribe FECHA
+  # CAMBIO (ModContingencia.RegistrarCambioCatalogo) y, al escribir un N° guía
+  # en Ítems, trae las líneas de la guía (ModContingencia.TraerGuia). El
+  # módulo del libro se llama ThisWorkbook o EsteLibro según el idioma.
+  $moduloLibro = $wb.VBProject.VBComponents.Item($wb.CodeName).CodeModule
+  $moduloLibro.AddFromString("Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)`r`n    RegistrarCambioCatalogo Sh, Target`r`n    TraerGuia Sh, Target`r`nEnd Sub")
   $xl.Run("'" + $wb.Name + "'!InstalarBotones")
-  # Hoja inicial al abrir: Instrucciones.
+  # Sin "Quitar información personal al guardar": con macros, Excel muestra
+  # en cada guardado la advertencia "Ten cuidado: es posible que algunas
+  # partes del documento incluyan información personal…" (y una macro que
+  # guarda queda esperando esa respuesta).
+  $wb.RemovePersonalInformation = $false
+  # Hoja inicial al abrir: la primera (Gestiones; Instrucciones va al final).
   $wb.Worksheets.Item(1).Activate()
   if (Test-Path $Xlsm) { Remove-Item $Xlsm -Force }
   $wb.SaveAs($Xlsm, 52)
