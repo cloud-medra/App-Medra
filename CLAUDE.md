@@ -28,6 +28,7 @@
 
 - Hacer las tareas directo, sin pedir confirmación, salvo para cambiar reglas o índices de Firestore (mostrar antes el cambio) y para escribir datos en producción (simulación y aprobación).
 - Al terminar: `npm run build` y los tests unitarios que correspondan, commit y push a `main`, y desplegar solo lo que cambió (hosting y/o Functions por tandas, nunca `npm run deploy`).
+- **Versión en cada deploy de hosting:** antes del build, agregar una entrada al inicio de `HISTORIAL_VERSIONES` en `src/config/versionApp.js`, subiendo en 1 el último número (1.0.1 → 1.0.2), con la fecha y los cambios en lenguaje simple para el usuario (es lo que muestra el ícono de información junto a la versión en el sidebar). Si el deploy es solo de Functions o reglas, no se sube.
 - Respuesta final breve: qué cambió, qué se desplegó y qué no se probó.
 
 ## Pendientes

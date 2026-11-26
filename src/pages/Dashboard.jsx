@@ -14,7 +14,7 @@ import GestionTickets from '../components/modulos/general/soporte/GestionTickets
 import { useNovedadesTicketsUsuario, useTicketsPendientesGestor } from '../components/modulos/general/soporte/useIndicadoresTickets';
 import { RUTA_GESTION_TICKETS, RUTA_AYUDA_SOPORTE } from '../components/modulos/general/soporte/ticketsConfig';
 import { LIMITE_PENDIENTES_GESTOR } from '../components/modulos/general/soporte/ticketsServicio';
-import { VERSION_APP } from '../config/versionApp';
+import NovedadesVersion from '../components/layout/NovedadesVersion';
 import AvatarUsuario from '../components/ui/AvatarUsuario';
 import FotoPerfilModal from '../components/modulos/general/fotoPerfil/FotoPerfilModal';
 
@@ -1067,18 +1067,10 @@ const Dashboard = () => {
                   <span className="truncate">Términos de Servicio</span>
                 </button>
               </div>
-              <div className="flex justify-between items-center text-pequeno tabular-nums text-tinta-secundaria px-0.5">
-                <span>Versión</span>
-                <span>v{VERSION_APP}</span>
-              </div>
+              <NovedadesVersion />
             </div>
           ) : (
-            <div
-              className="flex justify-center items-center text-pequeno tabular-nums text-tinta-secundaria py-1 cursor-help opacity-100 transition-all duration-300"
-              title="Versión 1.0.0 — Políticas disponibles en menú expandido"
-            >
-              <span>v1.0</span>
-            </div>
+            <NovedadesVersion colapsado />
           )}
         </div>
       </aside>
